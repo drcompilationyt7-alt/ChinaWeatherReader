@@ -56,8 +56,9 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
+          sudo apt-get install -y -qq yt-dlp
           sudo apt-get install -y -qq chromium-browser 2>/dev/null || true
-          echo "✅ System deps installed"
+          echo "✅ System deps installed (ffmpeg, yt-dlp, chromium)"
 
       - name: Install Node.js dependencies
         run: |
@@ -76,7 +77,8 @@ jobs:
 
       - name: Install Python deps (Edge-TTS)
         run: |
-          pip install edge-tts 2>/dev/null || true
+          pip install edge-tts 2>&1
+          python3 -m edge_tts --help | head -3
           echo "✅ Edge-TTS ready"
 
       - name: Restore Hermes CLI memory from repo
