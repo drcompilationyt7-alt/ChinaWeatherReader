@@ -35,8 +35,12 @@ class ExplainPipeline {
     const script = await this._generateExplainScript(sourceContent, explainThing, explainCategory, ai);
     this.logger.info(`Script generated: ${script.title}`);
 
-    // Step 2: Save script
-    const scriptPath = path.join(config.paths.scripts, `explain_${safeId}_script.txt`);
+    // Step 2: Save script — ensure scripts directory exists
+    const scriptsDir = config.paths.scripts;
+    if (!fs.existsSync(scriptsDir)) {
+      fs.mkdirSync(scriptsDir, { recursive: true });
+    }
+    const scriptPath = path.join(scriptsDir, `explain_${safeId}_script.txt`);
     fs.writeFileSync(scriptPath, script.fullScript);
     this.logger.info(`Script saved to: ${scriptPath}`);
 

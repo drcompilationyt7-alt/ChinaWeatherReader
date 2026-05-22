@@ -269,8 +269,11 @@ class GitHubActionsRunner {
 
     // Step 1: Hermes Agent researches trending content globally
     this.logger.info('Step 1: Hermes researching global trends...');
-    const trendsResult = await this.agent.run(
-      `RESEARCH GLOBAL TRENDS FOR Mr. WorldWideWebster
+
+    let trendsResult;
+    try {
+      trendsResult = await this.agent.run(
+        `RESEARCH GLOBAL TRENDS FOR Mr. WorldWideWebster
 
 Your job: Find what's trending RIGHT NOW around the world.
 
@@ -291,10 +294,17 @@ Prefer content from countries we haven't covered recently.
 Previous countries used: ${JSON.stringify(this.memory['channel-memory'].countriesUsedThisWeek || [])}
 
 Return as JSON array.`,
-      { verbose: false, maxSteps: 6 }
-    );
+        { verbose: false, maxSteps: 6 }
+      );
+    } catch (error) {
+      this.logger.warn(`Hermes agent research failed: ${error.message}`);
+      trendsResult = { stepsCount: 0, steps: [], output: '' };
+    }
 
-    this.logger.success(`Found ${trendsResult.stepsCount || 0} trending items`);
+    // Normalize: HermesCLIWrapper returns steps as a number (step count),
+    // while built-in HermesAgent returns steps as an array of step objects
+    const stepsArray = Array.isArray(trendsResult.steps) ? trendsResult.steps : [];
+    this.logger.success(`Found ${trendsResult.stepsCount || stepsArray.length} trending items`);
 
     // Step 2: Generate topics for "What is this...?" explainer
     this.logger.info('Step 2: Generating explainer topics...');
@@ -409,7 +419,7 @@ Return as JSON array.`,
     const trendingLog = this.memory['trending-log'];
     trendingLog.lastUpdated = new Date().toISOString();
     trendingLog.trends = [
-      ...(trendsResult.steps || []).map(s => ({
+      ...stepsArray.map(s => ({
         country: 'web',
         trend: s.result?.substring(0, 200) || 'Researched web trends',
         timestamp: new Date().toISOString(),
