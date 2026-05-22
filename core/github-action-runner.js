@@ -28,7 +28,7 @@ const path = require('path');
 const fs = require('fs');
 const config = require('./config');
 const { AIService } = require('./ai-service');
-const { HermesAgent } = require('../hermes-agent/agent-core');
+const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper');
 const { Logger } = require('./logger');
 
 class GitHubActionsRunner {
@@ -49,9 +49,18 @@ class GitHubActionsRunner {
     // Initialize AI
     this.ai = new AIService();
 
-    // Initialize Hermes Agent with web scraping tools
-    const { HermesAgentWithScraping } = require('../hermes-agent/agent-tools');
-    this.agent = new HermesAgentWithScraping(this.ai);
+    // PRIMARY: Official Hermes CLI from Nous Research (installed via curl)
+    const hermesCLI = new HermesCLIWrapper();
+    if (hermesCLI.isAvailable()) {
+      this.agent = hermesCLI;
+      this.logger.success('✅ Using official Hermes CLI as primary agent');
+    } else {
+      // FALLBACK: Built-in Hermes JS agent
+      this.logger.info('Falling back to built-in Hermes JS agent...');
+      const { HermesAgentWithScraping } = require('../hermes-agent/agent-tools');
+      this.agent = new HermesAgentWithScraping(this.ai);
+      this.logger.info('Using built-in Hermes JS agent (custom code)');
+    }
 
     // Load persistent memory from repo
     this._loadMemory();
