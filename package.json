@@ -1,0 +1,36 @@
+{
+  "name": "mr-worldwidewebster",
+  "version": "1.0.0",
+  "description": "AI YouTube Channel - Bringing the world to you. Global content sourcing, clipping, translation, and AI creation.",
+  "main": "core/index.js",
+  "scripts": {
+    "start": "node core/index.js",
+    "setup": "node scripts/setup.js",
+    "dashboard": "node dashboard/server.js",
+    "source": "node core/index.js --source-only",
+    "pipeline": "node core/index.js --pipeline-only",
+    "test": "node scripts/test.js",
+    "setup-youtube": "node youtube-automation/setup-youtube.js",
+    "boost": "node boost/boost-engine.js --url <video-url> --views 100",
+    "discord-test": "node discord/discord-bridge.js --test"
+  },
+  "dependencies": {
+    "openai": "^4.20.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2",
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "winston": "^3.11.0",
+    "sqlite3": "^5.1.6",
+    "googleapis": "^128.0.0",
+    "youtube-dl-exec": "^3.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer": "^22.0.0",
+    "discord.js": "^14.14.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "channelName": "Mr. WorldWideWebster",
+  "tagline": "Bringing the world to you",
+  "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "totalVideosPosted": 0,
+  "lastCountryUsed": "",
+  "countriesUsedThisWeek": [],
+  "bestPerformingFormats": [],
+  "titleFormulas": [
+    "What is this [thing]? ([country] edition)",
+    "[country]'s favorite [category] right now",
+    "Americans don't understand [country] [thing]",
+    "[country] vs [country]: Who does it better?",
+    "This [category] from [country] is going viral"
+  ],
+  "postingSchedule": {
+    "hour": 6,
+    "minute": 0,
+    "timezone": "UTC"
+  },
+  "skills": [],
+  "lastUpdated": "2025-01-01T00:00:00.000Z"
+}
