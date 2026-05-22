@@ -1,19 +1,22 @@
 /**
- * Mr. WorldWideWebster — OpenRouter Provider
- * 
- * Gives access to 200+ models through a single API.
- * Uses the same OpenAI-compatible format, just with a different baseURL.
- * 
- * Key models for Mr. WorldWideWebster:
- * - nousresearch/hermes-3-70b (agent/tool use) — ~$0.90/1M tokens
- * - qwen/qwen-2.5-72b (Chinese→English translation) — ~$0.35/1M tokens
- * - mistralai/mistral-7b (fast, cheap scripts) — ~$0.07/1M tokens
- * - deepseek/deepseek-chat (cheap GPT-4 competitor) — ~$0.50/1M tokens
- * - meta-llama/llama-3.1-8b (free tier) — $0
- * - black-forest-labs/flux-pro (image gen) — ~$0.05/image
- * - stability-ai/stable-diffusion-3 (image gen) — ~$0.002/image
+ * Mr. WorldWideWebster — OpenRouter Provider (Official SDK)
+ *
+ * Uses the official @openrouter/sdk for all AI interactions.
+ * This is the brain of the Hermes agent — powers decisions,
+ * script writing, translations, and all LLM operations.
+ *
+ * The SDK provides:
+ * - Streaming support (real-time responses)
+ * - Official OpenRouter API compatibility
+ * - Automatic model selection and routing
+ * - Built-in error handling
+ *
+ * Installation:
+ *   npm install @openrouter/sdk
+ *
+ * Docs: https://openrouter.ai/docs
  */
-const OpenAI = require('openai');
+const { OpenRouter } = require('@openrouter/sdk');
 const axios = require('axios');
 const { Logger } = require('../core/logger');
 
@@ -23,17 +26,17 @@ class OpenRouterProvider {
     this.config = config;
     this.client = null;
     this.apiKey = config.openrouter?.apiKey || process.env.OPENROUTER_API_KEY;
-    
+
     if (this.apiKey) {
-      this.client = new OpenAI({
-        baseURL: 'https://openrouter.ai/api/v1',
+      this.client = new OpenRouter({
         apiKey: this.apiKey,
+        // Identify the app to OpenRouter for analytics
         defaultHeaders: {
           'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
           'X-Title': 'Mr. WorldWideWebster',
         },
       });
-      this.logger.info('OpenRouter initialized');
+      this.logger.info('OpenRouter SDK initialized');
     } else {
       this.logger.warn('No OpenRouter API key — set OPENROUTER_API_KEY in .env');
     }
@@ -44,65 +47,9 @@ class OpenRouterProvider {
   }
 
   /**
-   * Chat completion via OpenRouter
-   * @param {string} systemPrompt
-   * @param {string} userMessage
-   * @param {Object} options — { model, temperature, maxTokens, responseFormat }
-   */
-  async chat(systemPrompt, userMessage, options = {}) {
-    const model = options.model || this._getDefaultModel(options);
-
-    try {
-      const response = await this.client.chat.completions.create({
-        model: model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: options.maxTokens || 2000,
-        temperature: options.temperature ?? 0.7,
-      });
-
-      return response.choices[0].message.content;
-    } catch (error) {
-      this.logger.error(`OpenRouter chat failed (${model}): ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Get JSON response from OpenRouter
-   */
-  async chatJSON(systemPrompt, userMessage, options = {}) {
-    const model = options.model || this._getDefaultModel(options);
-    const enhancedPrompt = systemPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no explanation.';
-
-    try {
-      const response = await this.client.chat.completions.create({
-        model: model,
-        messages: [
-          { role: 'system', content: enhancedPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: options.maxTokens || 2000,
-        temperature: options.temperature ?? 0.4,
-      });
-
-      const raw = response.choices[0].message.content;
-      // Clean potential markdown fences
-      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleaned);
-    } catch (error) {
-      this.logger.error(`OpenRouter JSON failed (${model}): ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
    * Selects the best model for the task
    */
   _getDefaultModel(options) {
-    // User-specified model override
     if (options.useScriptModel) {
       return this.config.openrouter?.scriptModel || 'openrouter/owl-alpha';
     }
@@ -112,8 +59,129 @@ class OpenRouterProvider {
     if (options.useAgentModel) {
       return this.config.openrouter?.agentModel || 'openrouter/owl-alpha';
     }
-    // Default: openrouter/owl-alpha is FREE
     return this.config.openrouter?.defaultModel || 'openrouter/owl-alpha';
+  }
+
+  /**
+   * Chat completion via OpenRouter SDK
+   * Uses the official streaming API under the hood
+   *
+   * @param {string} systemPrompt
+   * @param {string} userMessage
+   * @param {Object} options — { model, temperature, maxTokens }
+   * @returns {Promise<string>}
+   */
+  async chat(systemPrompt, userMessage, options = {}) {
+    const model = options.model || this._getDefaultModel(options);
+
+    try {
+      const response = await this.client.chat.send({
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: options.maxTokens || 2000,
+        temperature: options.temperature ?? 0.7,
+      });
+
+      // Handle streaming and non-streaming responses
+      if (response && response.choices) {
+        return response.choices[0]?.message?.content || '';
+      }
+
+      // If it's a stream, collect all chunks
+      if (response && response[Symbol.asyncIterator]) {
+        let fullContent = '';
+        for await (const chunk of response) {
+          const content = chunk.choices?.[0]?.delta?.content;
+          if (content) fullContent += content;
+        }
+        return fullContent;
+      }
+
+      // Fallback: handle raw response
+      if (typeof response === 'string') return response;
+      return JSON.stringify(response);
+
+    } catch (error) {
+      this.logger.error(`OpenRouter SDK chat failed (${model}): ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Stream a chat response (for real-time display)
+   */
+  async chatStream(systemPrompt, userMessage, onChunk, options = {}) {
+    const model = options.model || this._getDefaultModel(options);
+
+    try {
+      const stream = await this.client.chat.send({
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: options.maxTokens || 2000,
+        temperature: options.temperature ?? 0.7,
+        stream: true,
+      });
+
+      let fullContent = '';
+      for await (const chunk of stream) {
+        const content = chunk.choices?.[0]?.delta?.content;
+        if (content) {
+          fullContent += content;
+          if (onChunk) onChunk(content);
+        }
+      }
+      return fullContent;
+    } catch (error) {
+      this.logger.error(`OpenRouter SDK stream failed (${model}): ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get JSON response from OpenRouter SDK
+   * Forces JSON mode for structured data extraction
+   */
+  async chatJSON(systemPrompt, userMessage, options = {}) {
+    const model = options.model || this._getDefaultModel(options);
+    const enhancedPrompt = systemPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no explanation.';
+
+    try {
+      const response = await this.client.chat.send({
+        model: model,
+        messages: [
+          { role: 'system', content: enhancedPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        max_tokens: options.maxTokens || 2000,
+        temperature: options.temperature ?? 0.4,
+      });
+
+      // Extract content from response
+      let raw = '';
+      if (response?.choices) {
+        raw = response.choices[0]?.message?.content || '';
+      } else if (response[Symbol.asyncIterator]) {
+        for await (const chunk of response) {
+          const content = chunk.choices?.[0]?.delta?.content;
+          if (content) raw += content;
+        }
+      } else {
+        raw = String(response);
+      }
+
+      // Clean potential markdown fences
+      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleaned);
+    } catch (error) {
+      this.logger.error(`OpenRouter SDK JSON failed (${model}): ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -125,14 +193,18 @@ class OpenRouterProvider {
     const size = options.size || '1024x1024';
 
     try {
-      const response = await this.client.images.generate({
+      const response = await this.client.images?.generate?.({
         model: model,
         prompt: prompt,
         n: 1,
         size: size,
-      });
+      }) || await this._fallbackGenerateImage(prompt, outputPath, model, size);
 
-      const imageUrl = response.data[0].url;
+      const imageUrl = response.data?.[0]?.url || response.url;
+      if (!imageUrl) {
+        throw new Error('No image URL in response');
+      }
+
       const fs = require('fs');
       const imgResponse = await axios({ method: 'GET', url: imageUrl, responseType: 'stream' });
       const writer = fs.createWriteStream(outputPath);
@@ -149,7 +221,19 @@ class OpenRouterProvider {
   }
 
   /**
-   * List available free/cheap models from OpenRouter
+   * Fallback image generation using raw OpenRouter API
+   */
+  async _fallbackGenerateImage(prompt, outputPath, model, size) {
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/images/generations',
+      { model, prompt, n: 1, size },
+      { headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' } }
+    );
+    return response.data;
+  }
+
+  /**
+   * List available models from OpenRouter
    */
   async listAvailableModels() {
     try {
