@@ -17,7 +17,17 @@ class AIService {
     this.llm = null;      // Language model provider
     this.tts = null;      // Text-to-speech provider
     this.imageGen = null; // Image generation provider
-    this._initialize();
+    this._initPromise = this._initialize();
+  }
+
+  /**
+   * Wait for initialization to complete before using the service.
+   * Call this after construction when in async context.
+   */
+  async waitForInit() {
+    if (this._initPromise) {
+      await this._initPromise;
+    }
   }
 
   async _initialize() {

@@ -46,8 +46,9 @@ class GitHubActionsRunner {
   async initialize() {
     this.logger.header('🤖 Mr. WorldWideWebster — GitHub Actions');
 
-    // Initialize AI
+    // Initialize AI — await async initialization (TTS provider, etc.)
     this.ai = new AIService();
+    await this.ai.waitForInit();
 
     // PRIMARY: Official Hermes CLI from Nous Research (installed via curl)
     const hermesCLI = new HermesCLIWrapper();
@@ -373,9 +374,10 @@ Return as JSON array.`,
       this.logger.success(`✅ Explainer created: ${explainResult.title}`);
 
       // Step 3a: Upload explainer to YouTube
-      if (explainResult.outputPath && fs.existsSync(explainResult.outputPath)) {
+      const uploadVideoPath = explainResult.videoFile;
+      if (uploadVideoPath && fs.existsSync(uploadVideoPath)) {
         const uploadResult = await this._uploadToYouTube({
-          videoPath: explainResult.outputPath,
+          videoPath: uploadVideoPath,
           title: explainResult.title,
           description: `${explainResult.title}\n\n🌍 Bringing the world to you\n\n#${explainTopic.country} #${explainTopic.format.category} #shorts #worldwidewebster`,
           type: 'shorts',

@@ -103,6 +103,18 @@ class YouTubeBridge {
         'http://localhost:8080/oauth2callback'
       );
 
+      // Apply refresh token if available
+      const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
+      if (refreshToken) {
+        this.oauth2Client.setCredentials({
+          refresh_token: refreshToken,
+        });
+        this.logger.info('YouTube refresh token applied');
+      } else {
+        this.logger.warn('No YOUTUBE_REFRESH_TOKEN set — uploads will fail');
+        return false;
+      }
+
       this.youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
       this.authenticated = true;
       return true;
