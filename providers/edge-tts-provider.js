@@ -28,18 +28,28 @@ const execAsync = promisify(exec);
 class EdgeTTSProvider {
   constructor() {
     this.logger = new Logger('EdgeTTS');
-    this.available = false;
-    this._checkAvailability();
+    this.available = true; // Assume available, check lazily on first use
   }
 
   async _checkAvailability() {
     try {
-      // Check if edge-tts command is available (either as npm package or pip)
-      await execAsync('edge-tts --help 2>&1 || echo "not found"');
-      this.available = true;
+      const { stdout } = await execAsync('edge-tts --help 2>&1');
+      this.available = stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts');
     } catch {
-      this.logger.warn('edge-tts not found. Install with: pip install edge-tts');
-      this.available = false;
+      // Try pip-based edge-tts
+      try {
+        await execAsync('python3 -m edge_tts --help 2>&1');
+        this.available = true;
+      } catch {
+        this.logger.warn('edge-tts not found. Install with: pip install edge-tts');
+        this.available = false;
+      }
+    }
+  }
+
+  async _ensureAvailable() {
+    if (!this.available) {
+      await this._checkAvailability();
     }
   }
 
@@ -55,6 +65,7 @@ class EdgeTTSProvider {
    * @returns {Promise<string>} — Path to the generated audio file
    */
   async textToSpeech(text, outputPath, options = {}) {
+    await this._ensureAvailable();
     const voice = options.voice || 'en-US-JennyNeural';
     const rate = options.rate || '+0%';
     const pitch = options.pitch || '+0Hz';

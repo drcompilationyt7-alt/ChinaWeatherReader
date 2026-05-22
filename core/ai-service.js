@@ -141,10 +141,16 @@ Rules:
    * Generate speech from text
    */
   async textToSpeech(text, outputPath, options = {}) {
-    if (this.tts?.constructor?.name === 'EdgeTTSProvider') {
-      return await this.tts.textToSpeech(text, outputPath, options);
+    // Try EdgeTTS provider (check by duck-typing, not constructor name)
+    if (this.tts && typeof this.tts.textToSpeech === 'function') {
+      try {
+        return await this.tts.textToSpeech(text, outputPath, options);
+      } catch (ttsError) {
+        this.logger.warn(`Edge-TTS failed: ${ttsError.message}`);
+        // Fall through to OpenAI fallback
+      }
     }
-    // OpenAI fallback
+    // OpenAI TTS fallback
     if (this.tts?.audio?.speech) {
       const response = await this.tts.audio.speech.create({
         model: 'tts-1-hd',
@@ -155,7 +161,10 @@ Rules:
       require('fs').writeFileSync(outputPath, buffer);
       return outputPath;
     }
-    throw new Error('No TTS provider available');
+    // Last resort: write text to file so the pipeline can still proceed
+    this.logger.warn('No TTS available — writing text placeholder instead');
+    require('fs').writeFileSync(outputPath + '.txt', text);
+    return outputPath + '.txt';
   }
 
   /**

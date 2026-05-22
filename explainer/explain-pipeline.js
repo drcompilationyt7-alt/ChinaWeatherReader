@@ -56,7 +56,10 @@ class ExplainPipeline {
       visuals = [sourceContent.thumbnailUrl || null];
     }
 
-    // Step 5: Compile the final video (metadata for now)
+    // Step 5: Compile the final video using ffmpeg (free)
+    const videoFile = `${basePath}.mp4`;
+    const compiled = await this._compileVideo(audioResult, visuals, basePath, videoFile, script);
+
     const result = {
       type: 'explain',
       title: script.title,
@@ -68,8 +71,7 @@ class ExplainPipeline {
       scriptPath: scriptPath,
       outputPath: basePath,
       duration: script.estimatedDuration,
-      // Placeholder for actual video file (will be compiled by video compiler)
-      videoFile: `${basePath}.mp4`,
+      videoFile: compiled || videoFile,
       metadata: {
         sourceTitle: sourceContent.title,
         sourcePlatform: sourceContent.platform,
@@ -227,6 +229,66 @@ Respond with JSON:
     }
 
     return audioFiles;
+  }
+
+  /**
+   * Compile a simple explainer video using ffmpeg from audio files
+   * Creates a static image with text overlay + audio track
+   */
+  async _compileVideo(audioResult, visuals, basePath, videoFile, script) {
+    // If no audio files were actually generated (TTS unavailable), skip compilation
+    const allAudio = [
+      ...(audioResult?.curious || []),
+      ...(audioResult?.explainer || []),
+    ];
+    if (allAudio.length === 0) {
+      this.logger.warn('No audio files to compile — skipping video creation');
+      return null;
+    }
+
+    // Try to use ffmpeg to combine audio into a video
+    try {
+      const { execSync } = require('child_process');
+      const fs = require('fs');
+
+      // Create a concat file listing all audio clips in order
+      const concatFile = path.join(basePath, '_audio_list.txt');
+
+      // Sort audio files by scene number
+      const sorted = [...allAudio].sort((a, b) => a.scene - b.scene);
+
+      // Build a filter_complex that concatenates audio clips
+      const audioInputs = sorted
+        .filter(a => a.file && fs.existsSync(a.file))
+        .map((a, i) => `[${i}:a]`).join('');
+
+      const totalInputs = sorted.filter(a => a.file && fs.existsSync(a.file));
+
+      if (totalInputs.length === 0) {
+        this.logger.warn('No valid audio files exist — skipping video');
+        return null;
+      }
+
+      // Generate a simple black background with text
+      const title = (script.title || 'Mr. WorldWideWebster').replace(/"/g, '\\"');
+      const totalDuration = sorted.reduce((sum, s) => sum + (s.duration || 5), 0);
+
+      // Create video from audio using ffmpeg:
+      // 1. Concat all audio files
+      // 2. Add a colored background with title text
+      const cmd = `ffmpeg -y -f lavfi -i "color=c=#1a1a2e:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ${totalInputs.map((a, i) => `-i "${a.file}"`).join(' ')} -filter_complex "${totalInputs.map((a, i) => `[${i + 1}:a]`).join('')} concat=n=${totalInputs.length}:v=0:a=1[audio]" -map "0:v" -map "[audio]" -c:v libx264 -preset ultrafast -crf 28 -c:a aac -shortest "${videoFile}" 2>&1`;
+
+      this.logger.info('Compiling video with ffmpeg...');
+      execSync(cmd, { timeout: 120000, maxBuffer: 50 * 1024 * 1024 });
+
+      if (fs.existsSync(videoFile)) {
+        this.logger.info(`Video compiled: ${videoFile}`);
+        return videoFile;
+      }
+    } catch (error) {
+      this.logger.warn(`Video compilation failed: ${error.message}`);
+    }
+    return null;
   }
 
   /**
