@@ -102,18 +102,23 @@ class HermesAgent {
       },
 
       download_video: {
-        description: 'Download a video from a URL using yt-dlp.',
-        parameters: { url: 'string' },
+        description: 'Download a video from ANY platform (YouTube, Bilibili, TikTok, Douyin, Instagram, Twitter/X, Facebook, Reddit, and 1700+ more). Uses yt-dlp with Puppeteer and API fallbacks.',
+        parameters: { url: 'string', outputDir: 'string' },
         execute: async (args) => {
-          this.logger.info(`📥 Downloading: ${args.url}`);
-          const { execSync } = require('child_process');
+          this.logger.info(`📥 Universal download: ${args.url}`);
           try {
-            const outDir = config.paths.output;
-            if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-            execSync(`yt-dlp -f best[height<=720] -o "${outDir}/%(id)s.%(ext)s" "${args.url}"`, { timeout: 300000 });
-            return `Downloaded: ${args.url} to ${outDir}`;
+            const { UniversalDownloader } = require('../sourcing/universal-downloader');
+            const downloader = new UniversalDownloader();
+            const result = await downloader.download(args.url, {
+              outputDir: args.outputDir || config.paths.output,
+              maxHeight: 720,
+            });
+            if (result.success) {
+              return `✅ Downloaded from ${result.platform} using ${result.method}: ${result.filePath}\nTitle: ${result.title || 'Unknown'}`;
+            }
+            return `❌ All download methods failed for ${args.url}. The platform may require special handling.`;
           } catch (error) {
-            return `Download failed: ${error.message}. May need platform-specific handling.`;
+            return `❌ Download failed: ${error.message}`;
           }
         }
       },
