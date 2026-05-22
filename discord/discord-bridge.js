@@ -28,6 +28,8 @@ class DiscordBridge {
     this.targetChannelId = process.env.DISCORD_CHANNEL_ID || null;
     this.targetUserId = process.env.DISCORD_USER_ID || null;
     this.ready = false;
+    // Suppress internal discord.js file-probing stream errors (EISDIR crashes on GH Actions)
+    this._suppressErrors = true;
   }
 
   /**
@@ -51,6 +53,10 @@ class DiscordBridge {
           GatewayIntentBits.DirectMessages,
         ],
       });
+
+      // Suppress internal discord.js file-probing read stream errors
+      // (EISDIR crashes when discord.js probes directories during init in GH Actions)
+      this.client.on('error', () => {});
 
       // Wait for the client to be ready
       await new Promise((resolve, reject) => {

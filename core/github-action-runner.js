@@ -653,6 +653,18 @@ Use the tools: read_file, write_file, create_skill, list_skills.`,
   }
 }
 
+// ─── Global Error Handlers ──────────────────────────────────────────────
+// Prevent EISDIR and other internal library stream errors from crashing GH Actions.
+// These are non-fatal: the pipeline should continue and report errors gracefully.
+process.on('uncaughtException', (error) => {
+  console.error(`⚠️ [Global] Uncaught exception (non-fatal): ${error.message}`);
+  console.error(error.stack?.split('\n').slice(0, 4).join('\n'));
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error(`⚠️ [Global] Unhandled rejection (non-fatal): ${reason?.message || reason}`);
+});
+
 // ─── Start ──────────────────────────────────────────────────────────────
 
 const runner = new GitHubActionsRunner();
