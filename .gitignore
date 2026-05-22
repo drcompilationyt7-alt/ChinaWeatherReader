@@ -1,0 +1,8 @@
+node_modules/
+.env
+output/
+*.mp4
+*.mp3
+*.png
+*.srt
+content_queue.json
