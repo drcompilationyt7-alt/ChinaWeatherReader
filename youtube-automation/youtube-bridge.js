@@ -124,9 +124,38 @@ class YouTubeBridge {
   }
 
   /**
+   * Detect video orientation from the file using ffprobe
+   * @param {string} videoPath - Path to the video file
+   * @returns {Promise<string>} - 'portrait' (9:16), 'landscape' (16:9), or 'square'
+   */
+  async _detectOrientation(videoPath) {
+    try {
+      const { execSync } = require('child_process');
+      const probeCmd = `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}"`;
+      const output = execSync(probeCmd, { timeout: 10000 }).toString().trim();
+      const parts = output.split(',').map(s => parseInt(s.trim()));
+      const width = parts[0];
+      const height = parts[1];
+      
+      if (!width || !height) return 'unknown';
+      
+      const ratio = width / height;
+      
+      // Portrait (9:16 or similar vertical aspect)
+      if (ratio < 0.7) return 'portrait';
+      // Square (1:1 or close)
+      if (ratio >= 0.7 && ratio <= 1.3) return 'square';
+      // Landscape (16:9 or similar)
+      return 'landscape';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  /**
    * Upload a video to YouTube
    * @param {Object} params - { videoPath, title, description, tags, thumbnailPath, captionsPath }
-   * @returns {Promise<Object>} - { videoId, url, publishedAt }
+   * @returns {Promise<Object>} - { videoId, url, publishedAt, orientation }
    */
   async uploadVideo(params) {
     if (!this.authenticated) {
@@ -137,7 +166,15 @@ class YouTubeBridge {
 
     this.logger.info(`Uploading: "${title?.substring(0, 60) || 'Untitled'}"`);
 
+    // Detect orientation for proper categorization
+    const orientation = await this._detectOrientation(videoPath);
+    this.logger.info(`Video orientation: ${orientation} (${orientation === 'portrait' ? 'YouTube Shorts' : 'Standard landscape video'})`);
+
     // Prepare video metadata
+    // Support scheduled publishing via publishAt parameter
+    const privacyStatus = config.youtube.privacyStatus || 'public';
+    const isScheduled = params.publishAt && new Date(params.publishAt) > new Date();
+
     const videoMetadata = {
       snippet: {
         title: title || 'Mr. WorldWideWebster - Global Content',
@@ -148,15 +185,23 @@ class YouTubeBridge {
         defaultAudioLanguage: 'en',
       },
       status: {
-        privacyStatus: config.youtube.privacyStatus || 'public',
+        privacyStatus: isScheduled ? 'private' : privacyStatus,
         selfDeclaredMadeForKids: false,
       },
     };
 
+    // Add publishAt for scheduled publishing (must be > current time and < 2 weeks out)
+    if (isScheduled) {
+      videoMetadata.status.publishAt = params.publishAt;
+      // YouTube requires scheduled videos to be private initially
+      videoMetadata.status.privacyStatus = 'private';
+    }
+
     try {
       // Upload the video
+      const parts = isScheduled ? ['snippet', 'status'] : ['snippet', 'status'];
       const response = await this.youtube.videos.insert({
-        part: ['snippet', 'status'],
+        part: parts,
         requestBody: videoMetadata,
         media: {
           body: fs.createReadStream(videoPath),

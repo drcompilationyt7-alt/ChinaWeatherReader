@@ -6,7 +6,7 @@
  * Entry point for GitHub Actions workflows. Handles:
  * - Loading/storing persistent memory via git commits
  * - Running Hermes Agent for web scraping (no APIs needed)
- * - Creating daily shorts (2 clips + 1 "What is this...?")
+ * - Creating daily shorts (download+trim clips, explainers, landscapes)
  * - Creating weekly long-form videos
  * - Uploading created videos to YouTube
  * - Boosting views with Puppeteer headless browser
@@ -90,6 +90,7 @@ class GitHubActionsRunner {
         tagline: 'Bringing the world to you',
         totalVideosPosted: 0,
         lastCountryUsed: '',
+        lastContentType: '',
         countriesUsedThisWeek: [],
         bestPerformingFormats: [],
         titleFormulas: [],
@@ -260,7 +261,103 @@ class GitHubActionsRunner {
   }
 
   /**
+   * Download a trending video, trim to short, and upload to YouTube
+   * This content type uses the video's original audio — no TTS needed
+   */
+  async _createClipShort() {
+    const { execSync } = require('child_process');
+    
+    // Trending content search queries for variety
+    const searches = [
+      'funny fail compilation 2026 short',
+      'beautiful nature drone 4k',
+      'viral tiktok dance 2026',
+      'cute animal moments compilation',
+      'satisfying video no music',
+      'amazing sports moments',
+      'street food cooking viral',
+      'beautiful sunset timelapse',
+    ];
+
+    const searchQuery = searches[Math.floor(Math.random() * searches.length)];
+
+    try {
+      this.logger.info(`Searching YouTube for: "${searchQuery}"`);
+
+      // Use yt-dlp to search YouTube for a trending video
+      const searchCmd = `yt-dlp --no-playlist --flat-playlist --print "url,title" "ytsearch3:${searchQuery}" 2>/dev/null`;
+      const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
+      
+      if (!searchOutput) {
+        throw new Error('No search results found');
+      }
+
+      // Pick a random result line
+      const lines = searchOutput.split('\n').filter(Boolean);
+      const randomLine = lines[Math.floor(Math.random() * lines.length)];
+      const [videoUrl, ...titleParts] = randomLine.split(',');
+      const videoTitle = titleParts.join(',').trim() || searchQuery;
+
+      if (!videoUrl || !videoUrl.startsWith('http')) {
+        throw new Error('Invalid video URL from search');
+      }
+
+      this.logger.info(`Downloading: "${videoTitle}"`);
+      
+      const { UniversalDownloader } = require('../sourcing/universal-downloader');
+      const downloader = new UniversalDownloader();
+      
+      // Download the video
+      const downloadResult = await downloader.download(videoUrl, {
+        outputDir: config.paths.clips,
+        maxHeight: 720,
+      });
+
+      if (!downloadResult.success || !downloadResult.filePath) {
+        throw new Error('Download failed');
+      }
+
+      // Trim to 30-second short
+      const clipPipeline = require('../clipping/clip-pipeline');
+      const shortPath = path.join(config.paths.clips, `clip_upload_${Date.now()}.mp4`);
+      
+      const trimmedPath = await clipPipeline.trimToShort({
+        videoPath: downloadResult.filePath,
+        startTime: 3,  // Skip first few seconds
+        duration: 30,
+        outputPath: shortPath,
+      });
+
+      if (!trimmedPath || !fs.existsSync(trimmedPath)) {
+        throw new Error('Trim produced no output');
+      }
+
+      // Upload to YouTube
+      const uploadResult = await this._uploadToYouTube({
+        videoPath: trimmedPath,
+        title: (downloadResult.title || videoTitle).substring(0, 100),
+        description: `🔥 ${downloadResult.title || videoTitle}\n\n🌍 Bringing the world to you\n\nFollow @MrWorldWideWebster for more global content!`,
+        type: 'shorts',
+        tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral'],
+      });
+
+      if (uploadResult) {
+        await this._boostVideo(uploadResult.url, 50);
+        return {
+          title: (downloadResult.title || videoTitle).substring(0, 100),
+          url: uploadResult.url,
+          type: 'clip',
+        };
+      }
+    } catch (error) {
+      this.logger.warn(`Clip creation failed: ${error.message}`);
+    }
+    return null;
+  }
+
+  /**
    * MODE: daily — Create content, upload, boost, notify
+   * Produces multiple content types: clip, landscape, explainer
    */
   async runDaily() {
     this.logger.header('🌅 DAILY: Content Creation + Upload + Boost');
@@ -302,13 +399,22 @@ Return as JSON array.`,
       trendsResult = { stepsCount: 0, steps: [], output: '' };
     }
 
-    // Normalize: HermesCLIWrapper returns steps as a number (step count),
-    // while built-in HermesAgent returns steps as an array of step objects
+    // Normalize steps (HermesCLI returns number, HermesAgent returns array)
     const stepsArray = Array.isArray(trendsResult.steps) ? trendsResult.steps : [];
     this.logger.success(`Found ${trendsResult.stepsCount || stepsArray.length} trending items`);
 
-    // Step 2: Generate topics for "What is this...?" explainer
-    this.logger.info('Step 2: Generating explainer topics...');
+    // Step 2: Download + upload a trending clip (original audio, no TTS needed)
+    this.logger.info('Step 2: Downloading trending clip...');
+    const clipResult = await this._createClipShort();
+    if (clipResult) {
+      uploadedVideos.push(clipResult);
+      this.logger.success(`✅ Clip uploaded: ${clipResult.title}`);
+    } else {
+      errors.push('Clip: No video uploaded');
+    }
+
+    // Step 3: Generate and upload an explainer video (AI script + optional TTS)
+    this.logger.info('Step 3: Creating explainer video...');
 
     const channelMemory = this.memory['channel-memory'];
     const usedCountries = channelMemory.countriesUsedThisWeek || [];
@@ -320,8 +426,8 @@ Return as JSON array.`,
     ];
 
     const availableCountries = allCountries.filter(c => !usedCountries.includes(c));
-    const country1 = availableCountries[0] || allCountries[Math.floor(Math.random() * allCountries.length)];
-    const country2 = availableCountries[1] || allCountries[Math.floor(Math.random() * allCountries.length)];
+    const country = availableCountries[Math.floor(Math.random() * availableCountries.length)] || 
+                    allCountries[Math.floor(Math.random() * allCountries.length)];
 
     const explainFormats = [
       { category: 'food', prompt: 'What is this food?' },
@@ -331,20 +437,10 @@ Return as JSON array.`,
       { category: 'culture', prompt: 'What is this tradition?' },
     ];
 
-    const format1 = explainFormats[Math.floor(Math.random() * explainFormats.length)];
-    const format2 = explainFormats[Math.floor(Math.random() * explainFormats.length)];
+    const format = explainFormats[Math.floor(Math.random() * explainFormats.length)];
+    const explainTopic = { country, format, title: `${format.prompt} (${country} edition) 🌍` };
 
-    const explainerTopics = [
-      { country: country1, format: format1, title: `${format1.prompt} (${country1} edition) 🇨🇮` },
-      { country: country2, format: format2, title: `${format2.prompt} (${country2} edition) 🇨🇮` },
-    ];
-
-    this.logger.info(`Explainer topics: ${explainerTopics.map(t => t.title).join(', ')}`);
-
-    // Step 3: Create explainer
-    const explainTopic = explainerTopics[Math.floor(Math.random() * explainerTopics.length)];
-
-    this.logger.info(`Step 3: Creating explainer: "${explainTopic.title}"`);
+    this.logger.info(`Creating explainer: "${explainTopic.title}"`);
 
     const explainPipeline = require('../explainer/explain-pipeline');
     let explainResult;
@@ -373,7 +469,7 @@ Return as JSON array.`,
 
       this.logger.success(`✅ Explainer created: ${explainResult.title}`);
 
-      // Step 3a: Upload explainer to YouTube
+      // Upload explainer to YouTube if video file exists
       const uploadVideoPath = explainResult.videoFile;
       if (uploadVideoPath && fs.existsSync(uploadVideoPath)) {
         const uploadResult = await this._uploadToYouTube({
@@ -394,11 +490,10 @@ Return as JSON array.`,
             country: explainTopic.country,
           });
 
-          // Step 3b: Boost the uploaded video
           await this._boostVideo(uploadResult.url, 75);
         }
       } else {
-        this.logger.warn('No output video file found — skipping YouTube upload');
+        this.logger.warn('No output video file found — skipping explainer upload');
       }
     } catch (error) {
       this.logger.error(`Explainer pipeline failed: ${error.message}`);
@@ -406,13 +501,16 @@ Return as JSON array.`,
     }
 
     // Step 4: Update memory
-    channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + (uploadedVideos.length > 0 ? 1 : 0);
-    channelMemory.lastCountryUsed = explainTopic.country;
+    channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + uploadedVideos.length;
+    channelMemory.lastCountryUsed = explainTopic?.country || 'Global';
+    channelMemory.lastContentType = uploadedVideos.length > 0 ? uploadedVideos[0].type : 'none';
 
     if (!channelMemory.countriesUsedThisWeek) {
       channelMemory.countriesUsedThisWeek = [];
     }
-    channelMemory.countriesUsedThisWeek.push(explainTopic.country);
+    if (explainTopic?.country && !channelMemory.countriesUsedThisWeek.includes(explainTopic.country)) {
+      channelMemory.countriesUsedThisWeek.push(explainTopic.country);
+    }
     if (channelMemory.countriesUsedThisWeek.length > 14) {
       channelMemory.countriesUsedThisWeek = channelMemory.countriesUsedThisWeek.slice(-14);
     }
@@ -437,8 +535,8 @@ Return as JSON array.`,
         ...(this.memory['content-history']?.videos || []),
         ...uploadedVideos.map(v => ({
           title: v.title,
-          type: v.type,
-          country: v.country,
+          type: v.type || 'shorts',
+          country: v.country || 'Global',
           url: v.url,
           createdAt: new Date().toISOString(),
         })),
@@ -457,7 +555,7 @@ Return as JSON array.`,
     this.logger.header('DAILY SUMMARY');
     this.logger.info(`Videos uploaded: ${uploadedVideos.length}`);
     if (uploadedVideos.length > 0) {
-      uploadedVideos.forEach(v => this.logger.info(`  📺 ${v.title} → ${v.url}`));
+      uploadedVideos.forEach(v => this.logger.info(`  📺 [${v.type}] ${v.title} → ${v.url}`));
     }
     if (errors.length > 0) {
       this.logger.warn(`Errors: ${errors.length}`);
@@ -468,60 +566,88 @@ Return as JSON array.`,
   }
 
   /**
-   * MODE: weekly — Create 1 long-form video
+   * MODE: weekly — Create 2 landscape compilation videos
+   * Delegates to the landscape/weekly-runner.js pipeline which produces
+   * actual 1920×1080 video files from clips + TTS + music.
+   * This replaces the old long-form slideshow approach.
    */
   async runWeekly(customTopic) {
-    this.logger.header('📺 WEEKLY: Long-Form Video');
+    this.logger.header('🎬 WEEKLY: Landscape Compilation Videos');
 
-    const topic = customTopic || this._pickWeeklyTopic();
-    this.logger.info(`Topic: ${topic}`);
+    try {
+      const { WeeklyRunner } = require('../landscape/weekly-runner');
+      const runner = new WeeklyRunner();
 
-    // Have Hermes research and write a script
-    const result = await this.agent.run(
-      `Create a long-form YouTube video script for Mr. WorldWideWebster.
+      const options = {
+        count: '2',
+        type: 'auto',
+        'skip-research': 'false',
+      };
 
-TOPIC: ${topic}
+      // If a custom topic was passed, override the type to compilation with that topic
+      if (customTopic) {
+        options.type = 'compilation';
+        // Store the topic for the runner to use (passed via environment or other means)
+        process.env.MWW_CUSTOM_TOPIC = customTopic;
+        this.logger.info(`Custom topic: ${customTopic}`);
+      }
 
-Requirements:
-- 5-10 minutes of content
-- Compare/contrast the topic across different countries
-- Include interesting facts that would surprise an international audience
-- End with a call to action
+      const result = await runner.run(options);
 
-Output the full script as text.`,
-      { verbose: false, maxSteps: 4 }
-    );
+      // Upload created videos to YouTube
+      const uploadedVideos = [];
+      if (result.results && result.results.length > 0) {
+        for (const videoResult of result.results) {
+          if (videoResult.videoPath && fs.existsSync(videoResult.videoPath)) {
+            const uploadResult = await this._uploadToYouTube({
+              videoPath: videoResult.videoPath,
+              title: videoResult.title || customTopic || 'Weekly Landscape Video',
+              description: `${videoResult.title}\n\n🌍 Bringing the world to you.\n\nFollow Mr. WorldWideWebster for more global content!\n\n#global #travel #culture #landscape`,
+              type: 'landscape',
+              tags: ['mr worldwidewebster', 'global', 'travel', 'culture', 'landscape'],
+            });
+            if (uploadResult) {
+              uploadedVideos.push({
+                title: videoResult.title,
+                url: uploadResult.url,
+                type: 'landscape',
+              });
+            }
+          }
+        }
+      }
 
-    // Save the script
-    const scriptsDir = config.paths.scripts;
-    if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir, { recursive: true });
+      // Update memory
+      const channelMemory = this.memory['channel-memory'];
+      channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + uploadedVideos.length;
+      this._saveMemory('channel-memory', channelMemory);
 
-    const scriptPath = path.join(scriptsDir, `weekly_${Date.now()}_script.txt`);
-    fs.writeFileSync(scriptPath, result.result || 'Script generation placeholder');
+      // Send Discord weekly report
+      await this._sendDiscordNotification('weekly', {
+        weekRange: `Week of ${new Date().toLocaleDateString()}`,
+        videos: uploadedVideos.map(v => ({ title: v.title, views: 'New' })),
+        countries: channelMemory.countriesUsedThisWeek || [],
+        stats: {
+          'Total Videos': channelMemory.totalVideosPosted,
+          'Countries Covered': (channelMemory.countriesUsedThisWeek || []).length,
+          'Videos Created': result.succeeded || 0,
+        },
+      });
 
-    // Update memory
-    const channelMemory = this.memory['channel-memory'];
-    channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + 1;
-    this._saveMemory('channel-memory', channelMemory);
-
-    // Send Discord weekly report
-    await this._sendDiscordNotification('weekly', {
-      weekRange: `Week of ${new Date().toLocaleDateString()}`,
-      videos: [{ title: topic, views: 'New' }],
-      countries: channelMemory.countriesUsedThisWeek || [],
-      stats: {
-        'Total Videos': channelMemory.totalVideosPosted,
-        'Countries Covered': (channelMemory.countriesUsedThisWeek || []).length,
-        'Script': 'Generated',
-      },
-    });
-
-    this.logger.success(`✅ Weekly video script created: ${topic}`);
-    this.logger.info(`Script: ${scriptPath}`);
-
-    return { topic, scriptPath, result };
+      this.logger.success(`✅ Weekly landscape pipeline finished: ${result.succeeded} videos`);
+      return { topic: customTopic || 'auto-generated', videos: uploadedVideos, result };
+    } catch (error) {
+      this.logger.error(`Weekly pipeline failed: ${error.message}`);
+      // Fallback: just create a script like before
+      this.logger.info('Falling back to script-only generation...');
+      const topic = customTopic || this._pickWeeklyTopic();
+      const scriptsDir = config.paths.scripts;
+      if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir, { recursive: true });
+      const scriptPath = path.join(scriptsDir, `weekly_${Date.now()}_script.txt`);
+      fs.writeFileSync(scriptPath, `Weekly topic: ${topic}\nLandscape pipeline was unavailable.`);
+      return { topic, scriptPath, error: error.message };
+    }
   }
-
   /**
    * Pick a weekly topic based on what's trending
    */
@@ -547,13 +673,23 @@ Output the full script as text.`,
   }
 
   /**
-   * MODE: review — Midnight self-improvement
+   * MODE: review — Midnight self-improvement with video-before-commit loop
+   *
+   * Flow:
+   * 1. Performance Analysis — analyze YouTube analytics + channel memory
+   * 2. Strategy Design — Hermes agent reads code + performance, proposes changes
+   * 3. Brand Validation — CodeEvolver + BrandGuardian validate proposals
+   * 4. Apply Code Edits — changes saved to disk (not committed yet)
+   * 5. Create & Post Video — test video using NEW strategy, uploaded to YouTube
+   * 6. Commit Everything — git add + commit + push (code + video metadata)
    */
   async runReview() {
-    this.logger.header('🌙 MIDNIGHT: Self-Improvement Review');
+    this.logger.header('🌙 MIDNIGHT: Self-Improvement Review + Video-Before-Commit');
 
     const channelMemory = this.memory['channel-memory'];
     const trendingLog = this.memory['trending-log'];
+    const { CodeEvolver } = require('../hermes-agent/code-evolver');
+    const evolver = new CodeEvolver({ repoRoot: path.resolve(__dirname, '..') });
 
     const stats = {
       totalVideosPosted: channelMemory.totalVideosPosted || 0,
@@ -564,63 +700,131 @@ Output the full script as text.`,
 
     this.logger.info(`Current stats: ${JSON.stringify(stats)}`);
 
-    // Run the self-improvement agent
+    // ──────────────── STEP 1: Performance Analysis ────────────────
+    this.logger.header('STEP 1: Performance Analysis');
+    this.logger.info(`Total videos: ${stats.totalVideosPosted}, Countries this week: ${stats.countriesUsedThisWeek.length}`);
+
+    // Read performance metrics
+    let perfData = { totalVideosTracked: 0, recommendations: ['No performance data yet'] };
+    try {
+      const perfPath = path.join(this.memoryPath, 'performance-metrics.json');
+      if (fs.existsSync(perfPath)) {
+        perfData = JSON.parse(fs.readFileSync(perfPath, 'utf8'));
+      }
+    } catch {
+      this.logger.warn('Could not read performance metrics');
+    }
+
+    // ──────────────── STEP 2: Strategy Design via Hermes Agent ────────────────
+    this.logger.header('STEP 2: Hermes Agent Strategy Design (with code editing tools)');
+
+    const brandGuidelines = evolver.brandGuardian.getGuidelines();
+
+    // Run the Hermes agent with SELF-IMPROVEMENT tools that can edit code + create videos
     const result = await this.agent.run(
       `You are the SELF-IMPROVEMENT module for Mr. WorldWideWebster YouTube channel.
 
-CHANNEL IDENTITY: "Mr. WorldWideWebster" — shows Americans what's trending around the world.
-Content types: Clip (viral moments), Voiceover (translated), Explain ("What is this...?"), Compare (US vs UK etc.)
+CHANNEL IDENTITY: "Mr. WorldWideWebster" — shows people what's trending around the world.
+Content types: Clip (viral moments), Voiceover (translated), Explain ("What is this...?"), AI Create (comparisons/original content)
 
 CURRENT STATE:
-- Total videos: ${stats.totalVideosPosted}
-- Countries covered: ${JSON.stringify(stats.countriesUsedThisWeek)}
-- Best formats: ${JSON.stringify(stats.bestPerformingFormats)}
+- Total videos posted: ${stats.totalVideosPosted}
+- Countries covered this week: ${JSON.stringify(stats.countriesUsedThisWeek)}
+- Best performing formats: ${JSON.stringify(stats.bestPerformingFormats)}
+- Performance recommendations: ${JSON.stringify(perfData.recommendations || [])}
+- Trends tracked: ${stats.trendsFound}
 
-YOUR TASKS:
+BRAND GUIDELINES (read these carefully):
+- Allowed content types: ${brandGuidelines.allowedContentTypes.join(', ')}
+- Preferred title formulas: ${JSON.stringify(brandGuidelines.titleRules.preferredFormulas)}
+- Max title length: ${brandGuidelines.titleRules.maxLength} chars
+- Must avoid: ${JSON.stringify(brandGuidelines.titleRules.forbiddenPatterns)}
+- Ethical bounds: ${JSON.stringify(brandGuidelines.ethicalBounds)}
+- Voice tone: ${brandGuidelines.voice.tone}
 
-1. ANALYZE the content strategy. What countries should we focus on more? What types of content work best for Shorts?
+YOUR WORKFLOW (follow this order):
 
-2. IMPROVE TITLE STRATEGY — Save better title formulas:
-   Read: mr-worldwidewebster/memory/channel-memory.json
-   Update: "titleFormulas" array with better templates
-   Good formulas include: "What is this [thing]? ([country] edition)", "[country]'s favorite [category]", etc.
+PHASE 1: ANALYZE
+1. Call analyze_performance to see current channel stats
+2. Call get_brand_guidelines to understand brand rules
+3. Read memory/channel-memory.json to see full state
+4. Read memory/performance-metrics.json to see what's working
 
-3. IMPROVE POSTING SCHEDULE — If we have performance data, suggest better upload times:
-   Read: .github/workflows/daily-create.yml
-   The cron is at: '0 6 * * *' (6 AM)
+PHASE 2: IMPROVE CODE
+5. Call edit_source_code (dryRun:true first!) to preview changes:
+   a) Update titleFormulas in memory/channel-memory.json with better templates
+   b) Improve priority countries in config/brand-guidelines.json if needed
+   c) Optimize posting schedule in memory/channel-memory.json
+   d) Update decision-engine.js confidence thresholds if needed
+   e) Create new skills with create_skill tool
+6. After dry-run looks good, call edit_source_code (dryRun:false) to apply
 
-4. CREATE NEW SKILLS — Save reusable scraping strategies:
-   Use the create_skill tool to save skills like:
-   - "scrape-bilibili-trending": Steps to find trending Chinese content
-   - "scrape-african-trends": Steps to find African viral content
-   - "scrape-japanese-trends": Steps to find Japanese trends
+PHASE 3: CREATE TEST VIDEO
+7. Call create_and_post_video with a topic that uses the NEW strategy
+   - Pick a country not covered recently
+   - Use one of the new title formulas
+   - Content type should be one of: explain, ai_create, clip
+   - This uploads to YouTube to PROVE the improvement works
 
-5. SAVE LEARNINGS — Update channel-memory.json with:
-   - New title formulas that worked
-   - Countries to prioritize
-   - Content types to focus on
+PHASE 4: COMMIT
+8. Call commit_improvements with descriptive message
+9. Report what was accomplished
 
-IMPORTANT: Actually READ the existing files before editing them.
-Use the tools: read_file, write_file, create_skill, list_skills.`,
-      { verbose: true, maxSteps: 10 }
+IMPORTANT: Follow the phases in order. Don't skip phase 3 — the video must be created and posted before committing!`,
+      { verbose: true, maxSteps: 15 }
     );
 
-    this.logger.success(`✅ Self-improvement completed: ${result.stepsCount} steps`);
+    this.logger.success(`✅ Hermes agent completed: ${result.stepsCount} steps`);
+
+    // ──────────────── POST-AGENT: Commit any uncommitted changes ────────────────
+    // If the agent didn't call commit_improvements, do it now
+    const changeLog = evolver.getChangeLog();
+    if (changeLog.length > 0) {
+      this.logger.info(`Agent left ${changeLog.length} uncommitted changes — committing now`);
+      const commitResult = evolver.commitChanges('🌙 Midnight self-improvements (auto-commit)');
+      this.logger.info(`Commit result: ${commitResult.success ? 'Success' : 'Failed'}`);
+    } else {
+      this.logger.info('No pending changes to commit');
+    }
 
     // Reset weekly countries counter at midnight
     channelMemory.countriesUsedThisWeek = [];
     this._saveMemory('channel-memory', channelMemory);
 
-    // Send Discord review summary
+    // Update performance metrics with any video we created
+    try {
+      const videoHistoryPath = path.join(this.memoryPath, 'self-improvement-videos.json');
+      if (fs.existsSync(videoHistoryPath)) {
+        const videoHistory = JSON.parse(fs.readFileSync(videoHistoryPath, 'utf8'));
+        perfData.totalVideosTracked = (perfData.totalVideosTracked || 0) + videoHistory.length;
+        perfData.lastUpdated = new Date().toISOString();
+        perfData.lastVideo = videoHistory[videoHistory.length - 1] || null;
+        this._saveMemory('performance-metrics', perfData);
+        this.logger.info(`Updated performance metrics (${videoHistory.length} self-improvement videos tracked)`);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to update performance metrics: ${error.message}`);
+    }
+
+    // Send Discord review summary with details about what changed
+    const changeSummary = changeLog
+      .map(c => `📝 ${c.filePath}: ${c.description} (${c.changes} changes)`)
+      .join('\n');
+
     await this._sendDiscordNotification('daily', {
       videos: [],
       countries: [],
       totalVideos: stats.totalVideosPosted,
       errors: [],
       title: '🌙 Midnight Review Complete',
+      message: `Changes made:\n${changeSummary || '  No code changes — strategy analysis only'}\n\nReview cycle finished.`,
     });
 
-    return result;
+    return {
+      ...result,
+      codeChanges: changeLog,
+      evolverLog: changeLog,
+    };
   }
 
   /**

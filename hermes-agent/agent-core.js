@@ -85,7 +85,7 @@ class HermesAgent {
 
       // ─── Content Creation Tools ──────────────────────────────────────
       write_script: {
-        description: 'Write a video script for a given topic and content type. Content types: explainer, comparison, news_summary, listicle',
+        description: 'Write a video script for a given topic and content type. Content types: explainer, comparison, news_summary, listicle, compilation, versus',
         parameters: { topic: 'string', contentType: 'string' },
         execute: async (args) => {
           this.logger.info(`✍️ Writing script: ${args.topic}`);
@@ -119,6 +119,184 @@ class HermesAgent {
             return `❌ All download methods failed for ${args.url}. The platform may require special handling.`;
           } catch (error) {
             return `❌ Download failed: ${error.message}`;
+          }
+        }
+      },
+
+      // ─── Market Research Tools ─────────────────────────────────────
+      research_category: {
+        description: 'Research winning video formats in a specific category. Categories: architecture, meme, streamer, explainer, compilation, versus, listicle. Searches YouTube/TikTok/Instagram for trending content and returns title patterns, top channels, and recommendations.',
+        parameters: { category: 'string', maxResults: 'number' },
+        execute: async (args) => {
+          this.logger.info(`🔬 Researching category: "${args.category}"`);
+          try {
+            const { CompetitorResearcher } = require('./competitor-researcher');
+            const researcher = new CompetitorResearcher();
+            const analysis = await researcher.researchCategory(args.category, {
+              maxResults: args.maxResults || 10,
+            });
+            await researcher.destroy();
+            return JSON.stringify(analysis, null, 2).substring(0, 4000);
+          } catch (error) {
+            return `Research failed: ${error.message}`;
+          }
+        }
+      },
+
+      research_all_categories: {
+        description: 'Research ALL video categories at once (architecture, meme, streamer, explainer, compilation, versus, listicle). Returns analysis of what formats are winning in each niche. Use this before planning daily content.',
+        parameters: {},
+        execute: async () => {
+          this.logger.info(`🔬 Researching ALL categories...`);
+          try {
+            const { CompetitorResearcher } = require('./competitor-researcher');
+            const researcher = new CompetitorResearcher();
+            const allResults = await researcher.researchAllCategories();
+            await researcher.destroy();
+            
+            // Return summary
+            const summary = {};
+            for (const [cat, analysis] of Object.entries(allResults)) {
+              summary[cat] = {
+                avgViews: analysis.avgViews,
+                recommendations: analysis.recommendations?.slice(0, 3),
+                topFormats: Object.keys(analysis.titlePatterns || {}).slice(0, 3),
+                totalResults: analysis.totalFindings,
+              };
+            }
+            return JSON.stringify(summary, null, 2);
+          } catch (error) {
+            return `Research failed: ${error.message}`;
+          }
+        }
+      },
+
+      get_latest_research: {
+        description: 'Get the latest saved research for a category without re-running the search. Categories: architecture, meme, streamer, explainer, compilation, versus, listicle.',
+        parameters: { category: 'string' },
+        execute: async (args) => {
+          try {
+            const { CompetitorResearcher } = require('./competitor-researcher');
+            const researcher = new CompetitorResearcher();
+            const latest = researcher.getLatestResearch(args.category);
+            return latest ? JSON.stringify(latest, null, 2) : `No saved research for "${args.category}". Run research_category first.`;
+          } catch (error) {
+            return `Failed to get research: ${error.message}`;
+          }
+        }
+      },
+
+      // ─── Landscape Video Tools ─────────────────────────────────────
+      create_landscape_video: {
+        description: 'Create a cinematic 1920x1080 landscape video from downloaded clips, script, and optional music. Video types: compilation, versus, listicle, cinematic. Uses FFmpeg with TTS voiceover, background music, and text overlays.',
+        parameters: { 
+          title: 'string', 
+          videoType: 'string', 
+          clipPaths: 'array', 
+          scriptText: 'string',
+          musicMood: 'string'
+        },
+        execute: async (args) => {
+          this.logger.info(`🎬 Creating landscape video: "${args.title?.substring(0, 50)}"`);
+          try {
+            const { CompilationPipeline } = require('../landscape/compilation-pipeline');
+            const pipeline = new CompilationPipeline();
+            const result = await pipeline.createVideo({
+              title: args.title || 'Mr. WorldWideWebster Landscape',
+              videoType: args.videoType || 'compilation',
+              clipPaths: args.clipPaths || [],
+              script: args.scriptText ? { fullScript: args.scriptText, estimatedDuration: 60 } : null,
+              musicMood: args.musicMood || 'chill',
+            });
+            return JSON.stringify(result, null, 2).substring(0, 3000);
+          } catch (error) {
+            return `Landscape video creation failed: ${error.message}`;
+          }
+        }
+      },
+
+      find_background_music: {
+        description: 'Find and download FREE background music matching a mood or category. Moods: cinematic, upbeat, chill, intense, funny, emotional. Downloads from Pixabay Music, YouTube Audio Library. Returns path to downloaded music file.',
+        parameters: { mood: 'string', category: 'string', videoTitle: 'string' },
+        execute: async (args) => {
+          this.logger.info(`🎵 Finding music for mood: "${args.mood || args.category}"`);
+          try {
+            const { MusicFinder } = require('../landscape/music-finder');
+            const finder = new MusicFinder();
+            const music = await finder.findMusic({
+              mood: args.mood,
+              category: args.category,
+              videoTitle: args.videoTitle,
+              duration: 60,
+            });
+            if (music) {
+              return JSON.stringify(music, null, 2);
+            }
+            return 'No music found matching the criteria.';
+          } catch (error) {
+            return `Music search failed: ${error.message}`;
+          }
+        }
+      },
+
+      // ─── Smart Scheduling Tools ─────────────────────────────────────
+      schedule_upload: {
+        description: 'Schedule a video for future publishing on YouTube at a specific time. Uses YouTube API scheduled publishing. Time format: ISO 8601 (e.g., "2026-05-23T12:00:00Z")',
+        parameters: { videoPath: 'string', title: 'string', description: 'string', tags: 'array', publishAt: 'string' },
+        execute: async (args) => {
+          this.logger.info(`📅 Scheduling upload: "${args.title?.substring(0, 50)}"`);
+          try {
+            const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
+            const bridge = new YouTubeBridge();
+            await bridge.initialize();
+            if (!bridge.isAuthenticated()) {
+              return '❌ YouTube not authenticated. Run setup-youtube first.';
+            }
+            const result = await bridge.uploadVideo({
+              videoPath: args.videoPath,
+              title: args.title,
+              description: args.description,
+              tags: args.tags || ['mr worldwidewebster', 'global', 'culture'],
+              publishAt: args.publishAt || null,
+            });
+            return JSON.stringify(result, null, 2);
+          } catch (error) {
+            return `Scheduling failed: ${error.message}`;
+          }
+        }
+      },
+
+      schedule_batch_upload: {
+        description: 'Upload multiple videos and schedule them for staggered publishing (each video X hours apart). Uses YouTube scheduled publishing.',
+        parameters: { videoPaths: 'array', titles: 'array', intervalHours: 'number' },
+        execute: async (args) => {
+          this.logger.info(`📅 Scheduling batch of ${args.videoPaths?.length || 0} videos`);
+          try {
+            const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
+            const bridge = new YouTubeBridge();
+            await bridge.initialize();
+            if (!bridge.isAuthenticated()) {
+              return '❌ YouTube not authenticated.';
+            }
+            
+            const intervalMs = (args.intervalHours || 6) * 60 * 60 * 1000;
+            const results = [];
+            
+            for (let i = 0; i < (args.videoPaths || []).length; i++) {
+              const publishTime = new Date(Date.now() + intervalMs * (i + 1)).toISOString();
+              const result = await bridge.uploadVideo({
+                videoPath: args.videoPaths[i],
+                title: (args.titles || [])[i] || `Mr. WorldWideWebster - Video ${i + 1}`,
+                description: '🌍 Bringing the world to you. Follow Mr. WorldWideWebster!',
+                tags: ['mr worldwidewebster', 'global', 'culture'],
+                publishAt: publishTime,
+              });
+              results.push({ index: i, result });
+            }
+            
+            return JSON.stringify({ scheduled: results.length, results }, null, 2);
+          } catch (error) {
+            return `Batch scheduling failed: ${error.message}`;
           }
         }
       },
@@ -221,6 +399,139 @@ class HermesAgent {
           return JSON.stringify({ skill: args.name, steps: results.length, results }, null, 2);
         }
       },
+    };
+
+    // ─── Self-Improvement Tools (for midnight review) ────────────────
+    tools['edit_source_code'] = {
+      description: '[SELF-IMPROVEMENT] Propose and apply code edits to improve content strategy. Validates against brand guidelines before applying. Use this to modify source code files during midnight review. Change types: title_formula, sourcing, config, scheduling, content_type, memory, strategy.',
+      parameters: { filePath: 'string', description: 'string', changeType: 'string', searchPattern: 'string', replacement: 'string', dryRun: 'boolean' },
+      execute: async (args) => {
+        this.logger.info(`✏️ Code edit proposed: ${args.filePath}`);
+        try {
+          const { CodeEvolver } = require('./code-evolver');
+          const evolver = new CodeEvolver({ repoRoot: path.resolve(__dirname, '..') });
+          
+          if (args.dryRun) {
+            const preview = evolver.proposeEdit(args);
+            return JSON.stringify(preview, null, 2);
+          }
+          
+          const result = evolver.applyEdit(args);
+          return JSON.stringify(result, null, 2);
+        } catch (error) {
+          return `Code edit failed: ${error.message}`;
+        }
+      }
+    };
+
+    tools['create_and_post_video'] = {
+      description: '[SELF-IMPROVEMENT] Create a test video using the NEW improved strategy and post it to YouTube. This proves the improvement works before code is committed. Use after applying code edits. Returns video URL and metadata.',
+      parameters: { topic: 'string', contentType: 'string', country: 'string' },
+      execute: async (args) => {
+        this.logger.info(`🎬 Test video: "${args.topic}"`);
+        try {
+          const { CodeEvolver } = require('./code-evolver');
+          const evolver = new CodeEvolver({ repoRoot: path.resolve(__dirname, '..') });
+          const { AIService } = require('../core/ai-service');
+          const ai = new AIService();
+          await ai.waitForInit();
+          
+          const result = await evolver.createAndPostVideo({
+            topic: args.topic,
+            contentType: args.contentType || 'explain',
+            country: args.country || 'Global',
+            aiService: ai,
+            config: config,
+          });
+          return JSON.stringify(result, null, 2);
+        } catch (error) {
+          return `Test video creation failed: ${error.message}. Continuing with commit.`;
+        }
+      }
+    };
+
+    tools['analyze_performance'] = {
+      description: '[SELF-IMPROVEMENT] Analyze YouTube channel performance metrics. Reads performance-metrics.json and channel-memory.json. Returns stats about what formats/countries/titles are working best. Call this BEFORE making improvement decisions.',
+      parameters: {},
+      execute: async () => {
+        this.logger.info(`📊 Analyzing performance...`);
+        try {
+          const perfPath = path.join(__dirname, '..', 'memory', 'performance-metrics.json');
+          const channelPath = path.join(__dirname, '..', 'memory', 'channel-memory.json');
+          
+          let perfData = { totalVideosTracked: 0, videos: [], topFormats: [], recommendations: [] };
+          let channelData = { totalVideosPosted: 0, countriesUsedThisWeek: [], bestPerformingFormats: [], titleFormulas: [] };
+          
+          if (fs.existsSync(perfPath)) {
+            perfData = JSON.parse(fs.readFileSync(perfPath, 'utf8'));
+          }
+          if (fs.existsSync(channelPath)) {
+            channelData = JSON.parse(fs.readFileSync(channelPath, 'utf8'));
+          }
+          
+          return JSON.stringify({
+            performance: perfData,
+            channel: {
+              totalVideos: channelData.totalVideosPosted,
+              countriesThisWeek: channelData.countriesUsedThisWeek,
+              bestFormats: channelData.bestPerformingFormats,
+              titleFormulas: channelData.titleFormulas,
+            },
+            insights: perfData.recommendations || ['Collect more data for better insights'],
+          }, null, 2);
+        } catch (error) {
+          return `Performance analysis failed: ${error.message}`;
+        }
+      }
+    };
+
+    tools['get_brand_guidelines'] = {
+      description: '[SELF-IMPROVEMENT] Get the current brand guidelines. Read this to understand the channel identity before proposing changes. Returns all rules about content types, titles, countries, voice, and ethics.',
+      parameters: {},
+      execute: async () => {
+        try {
+          const { BrandGuardian } = require('./brand-guardian');
+          const guardian = new BrandGuardian();
+          return JSON.stringify(guardian.getGuidelines(), null, 2);
+        } catch (error) {
+          return `Failed to load brand guidelines: ${error.message}`;
+        }
+      }
+    };
+
+    tools['commit_improvements'] = {
+      description: '[SELF-IMPROVEMENT] Commit all code changes + video metadata to git with a descriptive message. Call this AFTER creating and posting the test video. This is the final step of the self-improvement loop.',
+      parameters: { message: 'string' },
+      execute: async (args) => {
+        this.logger.info(`💾 Committing improvements...`);
+        try {
+          const { CodeEvolver } = require('./code-evolver');
+          const evolver = new CodeEvolver({ repoRoot: path.resolve(__dirname, '..') });
+          const result = evolver.commitChanges(args.message || '🌙 Midnight self-improvements');
+          return JSON.stringify(result, null, 2);
+        } catch (error) {
+          return `Commit failed: ${error.message}. Changes are saved locally.`;
+        }
+      }
+    };
+
+    tools['validate_strategy'] = {
+      description: '[SELF-IMPROVEMENT] Validate a content strategy proposal against brand guidelines. Use this BEFORE applying changes to check if your strategy plan is on-brand.',
+      parameters: { countries: 'array', contentTypes: 'array', schedule: 'object' },
+      execute: async (args) => {
+        try {
+          const { BrandGuardian } = require('./brand-guardian');
+          const guardian = new BrandGuardian();
+          const result = guardian.validateStrategy({
+            countries: args.countries || [],
+            contentTypes: args.contentTypes || [],
+            schedule: args.schedule || {},
+          });
+          return JSON.stringify(result, null, 2);
+        } catch (error) {
+          return `Strategy validation failed: ${error.message}`;
+        }
+      }
     };
 
     this.tools = tools;

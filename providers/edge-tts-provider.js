@@ -33,13 +33,14 @@ class EdgeTTSProvider {
 
   async _checkAvailability() {
     try {
-      const { stdout } = await execAsync('edge-tts --help 2>&1');
+      // Try python3 -m edge_tts first (works even when CLI isn't on PATH)
+      const { stdout } = await execAsync('python3 -m edge_tts --help 2>&1');
       this.available = stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts');
     } catch {
-      // Try pip-based edge-tts
+      // Fallback: try bare edge-tts CLI
       try {
-        await execAsync('python3 -m edge_tts --help 2>&1');
-        this.available = true;
+        const { stdout } = await execAsync('edge-tts --help 2>&1');
+        this.available = stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts');
       } catch {
         this.logger.warn('edge-tts not found. Install with: pip install edge-tts');
         this.available = false;
@@ -67,25 +68,39 @@ class EdgeTTSProvider {
   async textToSpeech(text, outputPath, options = {}) {
     await this._ensureAvailable();
     const voice = options.voice || 'en-US-JennyNeural';
-    const rate = options.rate || '+0%';
-    const pitch = options.pitch || '+0Hz';
 
     try {
-      // Try using the edge-tts Python package (most reliable)
+      // Use python3 -m edge_tts instead of bare edge-tts command since pip
+      // installs to ~/.local/bin which may not be on Node.js exec PATH in GitHub Actions
       const escapedText = text.replace(/"/g, '\\"').replace(/'/g, "\\'");
-      const cmd = `edge-tts --voice "${voice}" --rate "${rate}" --pitch "${pitch}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
+      const cmd = `python3 -m edge_tts --voice "${voice}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
 
       await execAsync(cmd, { timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
       
-      if (fs.existsSync(outputPath)) {
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
         this.logger.info(`Edge-TTS generated: ${path.basename(outputPath)}`);
         return outputPath;
       }
 
-      throw new Error('Output file not created');
+      throw new Error('Output file not created or empty');
     } catch (error) {
-      this.logger.warn(`Edge-TTS failed (${error.message}), trying fallback...`);
-      return await this._fallbackTTS(text, outputPath, voice);
+      this.logger.warn(`Edge-TTS python3 module failed (${error.message}), trying CLI fallback...`);
+      // Fallback: try bare edge-tts CLI
+      try {
+        const escapedText = text.replace(/"/g, '\\"').replace(/'/g, "\\'");
+        const cmd = `edge-tts --voice "${voice}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
+        await execAsync(cmd, { timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
+        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
+          this.logger.info(`Edge-TTS CLI generated: ${path.basename(outputPath)}`);
+          return outputPath;
+        }
+      } catch (cliError) {
+        this.logger.warn(`Edge-TTS CLI also failed: ${cliError.message}`);
+      }
+      // Last resort: write text placeholder so pipeline can still proceed
+      this.logger.warn('All TTS methods failed, writing text placeholder');
+      fs.writeFileSync(outputPath + '.txt', text);
+      return outputPath + '.txt';
     }
   }
 
@@ -94,13 +109,10 @@ class EdgeTTSProvider {
    */
   async _fallbackTTS(text, outputPath, voice) {
     try {
-      // Try Node.js say package
       const say = require('say');
       return new Promise((resolve, reject) => {
         say.export(text, voice || 'Microsoft Zira Desktop', 1, outputPath, (err) => {
           if (err) {
-            // Last resort: create a text file noting TTS wasn't available
-            this.logger.warn('All TTS methods failed, creating placeholder');
             fs.writeFileSync(outputPath + '.txt', text);
             resolve(outputPath + '.txt');
           } else {
@@ -109,7 +121,6 @@ class EdgeTTSProvider {
         });
       });
     } catch {
-      // Absolute last resort
       fs.writeFileSync(outputPath + '.txt', text);
       return outputPath + '.txt';
     }
@@ -127,13 +138,8 @@ class EdgeTTSProvider {
     }
 
     const voiceMap = {
-      'curious': 'en-US-JennyNeural',  // Female, higher pitch
-      'explainer': 'en-US-GuyNeural',  // Male, lower voice
-    };
-
-    const pitchMap = {
-      'curious': '+30Hz',   // Higher pitch for curious
-      'explainer': '-10Hz', // Deeper for explainer
+      'curious': 'en-US-JennyNeural',
+      'explainer': 'en-US-GuyNeural',
     };
 
     const files = [];
@@ -141,21 +147,19 @@ class EdgeTTSProvider {
       const scene = scenes[i];
       const voiceType = scene.voice || 'explainer';
       const voice = voiceMap[voiceType] || 'en-US-JennyNeural';
-      const pitch = pitchMap[voiceType] || '+0Hz';
       const outputFile = path.join(outputDir, `scene_${String(i + 1).padStart(2, '0')}_${voiceType}.mp3`);
 
       try {
-        await this.textToSpeech(scene.dialogue, outputFile, { 
-          voice, 
-          pitch,
-          rate: voiceType === 'curious' ? '+10%' : '+0%',
-        });
-        files.push({
-          scene: i + 1,
-          voice: voiceType,
-          file: outputFile,
-          dialogue: scene.dialogue,
-        });
+        const result = await this.textToSpeech(scene.dialogue, outputFile, { voice });
+        // Only add if it's a real audio file (not a .txt placeholder)
+        if (result.endsWith('.mp3')) {
+          files.push({
+            scene: i + 1,
+            voice: voiceType,
+            file: outputFile,
+            dialogue: scene.dialogue,
+          });
+        }
       } catch (error) {
         this.logger.error(`Failed to generate scene ${i + 1}: ${error.message}`);
       }
@@ -169,7 +173,7 @@ class EdgeTTSProvider {
    */
   async listVoices() {
     try {
-      const { stdout } = await execAsync('edge-tts --list-voices 2>&1');
+      const { stdout } = await execAsync('python3 -m edge_tts --list-voices 2>&1');
       return stdout.split('\n')
         .filter(line => line.includes('en-') || line.includes('zh-') || line.includes('ja-') || line.includes('ko-') || line.includes('fr-'))
         .map(line => {

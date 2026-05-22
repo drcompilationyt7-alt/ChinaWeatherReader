@@ -1,0 +1,73 @@
+{
+  "channelName": "Mr. WorldWideWebster",
+  "tagline": "Bringing the world to you",
+  "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
+  "allowedContentTypes": ["clip", "voiceover", "explain", "ai_create", "landscape"],
+  "countryDiversity": {
+    "minNewCountriesPerWeek": 3,
+    "maxSameCountryPerWeek": 1,
+    "prioritizeCountries": ["Nigeria", "Japan", "Germany", "Australia", "France", "Brazil", "Thailand", "India", "Mexico", "UK", "South Korea", "Egypt", "Italy", "Spain", "South Africa", "Argentina", "Turkey", "Vietnam", "Indonesia", "Canada"]
+  },
+  "titleRules": {
+    "maxLength": 60,
+    "requireCuriosityGap": true,
+    "preferredFormulas": [
+      "What is this [thing]? ([country] edition)",
+      "[country]'s favorite [category] right now 🇨🇳",
+      "Why [country] does [thing] better than everyone",
+      "[country] vs [country]: Who does it better?",
+      "This [category] from [country] is going viral",
+      "Americans don't understand [country] [thing]",
+      "The truth about [thing] in [country]",
+      "How [country] [verb] [noun] (you won't believe it)"
+    ],
+    "forbiddenPatterns": [
+      "misleading", "fake", "shock", "you won't believe what happens next",
+      "göre", "şok", "you must see", "mind blowing"
+    ],
+    "requireEmoji": true
+  },
+  "visualStyle": {
+    "aspectRatio": {
+      "shorts": "9:16",
+      "landscape": "16:9"
+    },
+    "watermark": {
+      "enabled": true,
+      "text": "@MrWorldWideWebster",
+      "position": "bottom-right"
+    },
+    "minimumDuration": 15,
+    "maximumDuration": 60
+  },
+  "sourcingRules": {
+    "maxPerPlatform": 3,
+    "requireDiversePlatforms": true,
+    "preferredPlatforms": ["bilibili", "tiktok", "twitter", "news", "reddit", "douyin", "rednote"],
+    "minimumSourcesPerDay": 3
+  },
+  "ethicalBounds": {
+    "noMisinformation": true,
+    "noHateContent": true,
+    "noPoliticalDivision": true,
+    "transformOriginalContent": true,
+    "creditOriginalCreator": true,
+    "noHarmfulStereotypes": true
+  },
+  "voice": {
+    "tone": "curious, global, educational",
+    "perspective": "outside observer explaining to an American audience",
+    "forbiddenTopics": ["US politics", "religious extremism", "graphic violence"],
+    "preferredPhrases": [
+      "What is this...?",
+      "Here's what's trending in...",
+      "Let me explain what's happening in..."
+    ]
+  },
+  "postingSchedule": {
+    "recommendedHours": [6, 12, 18, 21],
+    "timezone": "UTC",
+    "maxPerDay": 5,
+    "minIntervalMinutes": 120
+  }
+}
