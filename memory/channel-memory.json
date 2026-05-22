@@ -4,8 +4,10 @@
   "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
   "createdAt": "2025-01-01T00:00:00.000Z",
   "totalVideosPosted": 0,
-  "lastCountryUsed": "",
-  "countriesUsedThisWeek": [],
+  "lastCountryUsed": "Japan",
+  "countriesUsedThisWeek": [
+    "Japan"
+  ],
   "bestPerformingFormats": [],
   "titleFormulas": [
     "What is this [thing]? ([country] edition)",
