@@ -61,41 +61,65 @@ jobs:
 
       - name: Install Node.js dependencies
         run: |
-          cd mr-worldwidewebster
           npm ci --production || npm install
           echo "✅ Dependencies installed"
+
+      - name: Install Hermes Agent (official)
+        run: |
+          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+          hermes config set OPENROUTER_API_KEY "${{ secrets.OPENROUTER_API_KEY }}"
+          hermes config set OPENROUTER_MODEL "openrouter/owl-alpha"
+          hermes config set DISCORD_BOT_TOKEN "${{ secrets.DISCORD_BOT_TOKEN }}"
+          hermes config set DISCORD_CHANNEL_ID "${{ secrets.DISCORD_CHANNEL_ID }}"
+          hermes config set YOUTUBE_CHANNEL "Mr. WorldWideWebster"
+          echo "✅ Hermes Agent installed and configured with Discord + YouTube"
 
       - name: Install Python deps (Edge-TTS)
         run: |
           pip install edge-tts 2>/dev/null || true
           echo "✅ Edge-TTS ready"
 
-      - name: Load memory from repo
+      - name: Restore Hermes CLI memory from repo
         run: |
-          echo "📂 Loading persistent memory..."
-          cat mr-worldwidewebster/memory/channel-memory.json 2>/dev/null || echo '{"initialRun":true}' > mr-worldwidewebster/memory/channel-memory.json
-          cat mr-worldwidewebster/memory/trending-log.json 2>/dev/null || echo '{"trends":[]}' > mr-worldwidewebster/memory/trending-log.json
-          echo "✅ Memory loaded"
+          echo "📂 Restoring Hermes Agent persistent memory..."
+          # Hermes CLI stores config in ~/.hermes — link it from repo for persistence
+          mkdir -p ~/.hermes 2>/dev/null || true
+          if [ -d "hermes-memory" ]; then
+            cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
+            echo "✅ Hermes memory restored from repo"
+          else
+            echo "ℹ️ No existing Hermes memory found — starting fresh"
+            mkdir -p hermes-memory
+          fi
+          # Also load channel memory
+          cat memory/channel-memory.json 2>/dev/null || echo '{"initialRun":true}' > memory/channel-memory.json
+          cat memory/trending-log.json 2>/dev/null || echo '{"trends":[]}' > memory/trending-log.json
+          echo "✅ All memory loaded"
 
       - name: Run daily creation pipeline
         id: create
         run: |
-          cd mr-worldwidewebster
-          
           # Run the GitHub Actions runner — creates content, uploads, boosts, notifies Discord
           node core/github-action-runner.js --mode daily
           
           echo "status=completed" >> $GITHUB_OUTPUT
           echo "✅ Daily creation pipeline finished"
 
-      - name: Save memory back to repo
+      - name: Save memory back to repo (persists across GH Action runs)
         run: |
+          # Save Hermes CLI memory to repo so it survives container destruction
+          if [ -d ~/.hermes ]; then
+            mkdir -p hermes-memory
+            cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
+            echo "✅ Hermes CLI memory saved"
+          fi
+          
           git config user.name "Mr. WorldWideWebster Bot"
           git config user.email "bot@worldwidewebster.com"
-          git add mr-worldwidewebster/memory/
-          git add mr-worldwidewebster/output/scripts/ 2>/dev/null || true
+          git add memory/
+          git add hermes-memory/
+          git add output/scripts/ 2>/dev/null || true
           
-          # Only commit if there are changes
           if ! git diff --staged --quiet; then
             git commit -m "📊 Daily memory update: $(date +%Y-%m-%d)"
             git push
@@ -107,5 +131,5 @@ jobs:
       - name: Cleanup temp files
         if: always()
         run: |
-          rm -rf mr-worldwidewebster/output/temp 2>/dev/null || true
+          rm -rf output/temp 2>/dev/null || true
           echo "🧹 Cleanup done"
