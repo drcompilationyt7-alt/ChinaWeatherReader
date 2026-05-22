@@ -1,0 +1,76 @@
+# 🌙 Mr. WorldWideWebster — Midnight Self-Improvement Review
+# Runs at midnight: Analyzes performance, improves strategy,
+# creates new skills, and sends a Discord summary
+
+name: 🌙 Midnight Self-Improvement Review
+
+on:
+  schedule:
+    - cron: '0 0 * * *'          # Midnight daily
+  workflow_dispatch:
+
+env:
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+  DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
+  CHANNEL_NAME: Mr. WorldWideWebster
+  GH_PAT: ${{ secrets.GH_PAT }}
+
+jobs:
+  self-improvement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mr-worldwidewebster/package-lock.json
+
+      - name: Install Node.js deps
+        run: |
+          cd mr-worldwidewebster
+          npm ci --production || npm install
+
+      - name: Load memory
+        run: |
+          echo "📂 Loading memory..."
+          cat mr-worldwidewebster/memory/channel-memory.json 2>/dev/null || echo '{}' > mr-worldwidewebster/memory/channel-memory.json
+          cat mr-worldwidewebster/memory/trending-log.json 2>/dev/null || echo '{}' > mr-worldwidewebster/memory/trending-log.json
+
+      - name: Run self-improvement review
+        run: |
+          cd mr-worldwidewebster
+          
+          echo "🌙 Running midnight review..."
+          node core/github-action-runner.js --mode review
+          
+          echo "✅ Review complete"
+          echo "status=completed" >> $GITHUB_OUTPUT
+
+      - name: Save memory & improvements
+        run: |
+          git config user.name "Mr. WorldWideWebster Bot"
+          git config user.email "bot@worldwidewebster.com"
+          git add mr-worldwidewebster/memory/
+          git add mr-worldwidewebster/hermes-agent/skills/
+          git add mr-worldwidewebster/output/scripts/ 2>/dev/null || true
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "🌙 Midnight improvements: $(date +%Y-%m-%d)"
+            git push
+            echo "✅ Improvements saved to repo"
+          else
+            echo "ℹ️ No changes to commit"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf mr-worldwidewebster/output/temp 2>/dev/null || true

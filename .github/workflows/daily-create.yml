@@ -1,0 +1,113 @@
+# 🌅 Mr. WorldWideWebster — Daily Content Creation
+# Runs at 6 AM: Creates 2 clipped shorts + 1 "What is this...?" explainer
+# Uploads all 3 to YouTube Shorts
+# Boosts views with organic Puppeteer sessions
+# Sends daily summary to Discord
+# Total runtime: ~15-30 minutes (well within 6 hour limit)
+
+name: 🌅 Daily Shorts Creation
+
+on:
+  schedule:
+    - cron: '0 6 * * *'          # 6 AM daily
+  workflow_dispatch:              # Manual trigger for testing
+    inputs:
+      debug:
+        description: 'Run in debug mode (skip uploads)'
+        type: boolean
+        default: false
+      skip_boost:
+        description: 'Skip view boosting'
+        type: boolean
+        default: false
+
+env:
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+  YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+  DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
+  CHANNEL_NAME: Mr. WorldWideWebster
+  GH_PAT: ${{ secrets.GH_PAT }}
+  BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
+  BOOST_MAX_VIEWS: 100
+
+jobs:
+  create-shorts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300  # 5 hours max (GitHub limit is 6)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # Full history for memory commits
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mr-worldwidewebster/package-lock.json
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          sudo apt-get install -y -qq chromium-browser 2>/dev/null || true
+          echo "✅ System deps installed"
+
+      - name: Install Node.js dependencies
+        run: |
+          cd mr-worldwidewebster
+          npm ci --production || npm install
+          echo "✅ Dependencies installed"
+
+      - name: Install Python deps (Edge-TTS)
+        run: |
+          pip install edge-tts 2>/dev/null || true
+          echo "✅ Edge-TTS ready"
+
+      - name: Load memory from repo
+        run: |
+          echo "📂 Loading persistent memory..."
+          cat mr-worldwidewebster/memory/channel-memory.json 2>/dev/null || echo '{"initialRun":true}' > mr-worldwidewebster/memory/channel-memory.json
+          cat mr-worldwidewebster/memory/trending-log.json 2>/dev/null || echo '{"trends":[]}' > mr-worldwidewebster/memory/trending-log.json
+          echo "✅ Memory loaded"
+
+      - name: Run daily creation pipeline
+        id: create
+        run: |
+          cd mr-worldwidewebster
+          
+          # Run the GitHub Actions runner — creates content, uploads, boosts, notifies Discord
+          node core/github-action-runner.js --mode daily
+          
+          echo "status=completed" >> $GITHUB_OUTPUT
+          echo "✅ Daily creation pipeline finished"
+
+      - name: Save memory back to repo
+        run: |
+          git config user.name "Mr. WorldWideWebster Bot"
+          git config user.email "bot@worldwidewebster.com"
+          git add mr-worldwidewebster/memory/
+          git add mr-worldwidewebster/output/scripts/ 2>/dev/null || true
+          
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "📊 Daily memory update: $(date +%Y-%m-%d)"
+            git push
+            echo "✅ Memory saved to repo"
+          else
+            echo "ℹ️ No memory changes to commit"
+          fi
+
+      - name: Cleanup temp files
+        if: always()
+        run: |
+          rm -rf mr-worldwidewebster/output/temp 2>/dev/null || true
+          echo "🧹 Cleanup done"
