@@ -4,10 +4,8 @@
   "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
   "createdAt": "2025-01-01T00:00:00.000Z",
   "totalVideosPosted": 0,
-  "lastCountryUsed": "UK",
-  "countriesUsedThisWeek": [
-    "UK"
-  ],
+  "lastCountryUsed": "",
+  "countriesUsedThisWeek": [],
   "bestPerformingFormats": [],
   "titleFormulas": [
     "What is this [thing]? ([country] edition)",
@@ -22,6 +20,5 @@
     "timezone": "UTC"
   },
   "skills": [],
-  "lastUpdated": "2025-01-01T00:00:00.000Z",
-  "lastContentType": "none"
+  "lastUpdated": "2025-01-01T00:00:00.000Z"
 }

@@ -29,22 +29,41 @@ class EdgeTTSProvider {
   constructor() {
     this.logger = new Logger('EdgeTTS');
     this.available = true; // Assume available, check lazily on first use
+    this.useSayFallback = false; // Windows-native TTS fallback
   }
 
   async _checkAvailability() {
+    // Try python3 -m edge_tts first (works even when CLI isn't on PATH)
     try {
-      // Try python3 -m edge_tts first (works even when CLI isn't on PATH)
-      const { stdout } = await execAsync('python3 -m edge_tts --help 2>&1');
-      this.available = stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts');
-    } catch {
-      // Fallback: try bare edge-tts CLI
-      try {
-        const { stdout } = await execAsync('edge-tts --help 2>&1');
-        this.available = stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts');
-      } catch {
-        this.logger.warn('edge-tts not found. Install with: pip install edge-tts');
-        this.available = false;
+      const { stdout } = await execAsync('python3 -m edge_tts --help', { timeout: 10000 });
+      if (stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts')) {
+        this.available = true;
+        this.logger.info('Edge-TTS available via python3');
+        return;
       }
+    } catch {
+      this.logger.info('Python edge-tts not found via python3');
+    }
+    // Fallback: try bare edge-tts CLI
+    try {
+      const { stdout } = await execAsync('edge-tts --help', { timeout: 10000 });
+      if (stdout.toLowerCase().includes('usage') || stdout.toLowerCase().includes('edge-tts')) {
+        this.available = true;
+        this.logger.info('Edge-TTS available via edge-tts CLI');
+        return;
+      }
+    } catch {
+      this.logger.info('edge-tts CLI not found');
+    }
+    // Fallback: try Node.js say module (works natively on Windows)
+    try {
+      require.resolve('say');
+      this.available = true;
+      this.useSayFallback = true;
+      this.logger.info('Using Node.js say.js for TTS (Windows native fallback)');
+    } catch {
+      this.logger.warn('No TTS available. Install edge-tts (pip install edge-tts) or say.js (npm install say)');
+      this.available = false;
     }
   }
 
@@ -69,39 +88,58 @@ class EdgeTTSProvider {
     await this._ensureAvailable();
     const voice = options.voice || 'en-US-JennyNeural';
 
+    // Try python3 edge-tts first
     try {
-      // Use python3 -m edge_tts instead of bare edge-tts command since pip
-      // installs to ~/.local/bin which may not be on Node.js exec PATH in GitHub Actions
       const escapedText = text.replace(/"/g, '\\"').replace(/'/g, "\\'");
       const cmd = `python3 -m edge_tts --voice "${voice}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
-
       await execAsync(cmd, { timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
-      
       if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
-        this.logger.info(`Edge-TTS generated: ${path.basename(outputPath)}`);
+        this.logger.info(`Edge-TTS (python3): ${path.basename(outputPath)}`);
         return outputPath;
       }
-
       throw new Error('Output file not created or empty');
     } catch (error) {
-      this.logger.warn(`Edge-TTS python3 module failed (${error.message}), trying CLI fallback...`);
-      // Fallback: try bare edge-tts CLI
-      try {
-        const escapedText = text.replace(/"/g, '\\"').replace(/'/g, "\\'");
-        const cmd = `edge-tts --voice "${voice}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
-        await execAsync(cmd, { timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
-        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
-          this.logger.info(`Edge-TTS CLI generated: ${path.basename(outputPath)}`);
-          return outputPath;
-        }
-      } catch (cliError) {
-        this.logger.warn(`Edge-TTS CLI also failed: ${cliError.message}`);
-      }
-      // Last resort: write text placeholder so pipeline can still proceed
-      this.logger.warn('All TTS methods failed, writing text placeholder');
-      fs.writeFileSync(outputPath + '.txt', text);
-      return outputPath + '.txt';
+      this.logger.info(`Python edge-tts failed: ${error.message.substring(0, 60)}`);
     }
+
+    // Fallback: try bare edge-tts CLI
+    try {
+      const escapedText = text.replace(/"/g, '\\"').replace(/'/g, "\\'");
+      const cmd = `edge-tts --voice "${voice}" --text "${escapedText}" --write-media "${outputPath}" 2>&1`;
+      await execAsync(cmd, { timeout: 60000, maxBuffer: 10 * 1024 * 1024 });
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
+        this.logger.info(`Edge-TTS (CLI): ${path.basename(outputPath)}`);
+        return outputPath;
+      }
+    } catch (cliError) {
+      this.logger.info(`CLI edge-tts failed: ${cliError.message.substring(0, 60)}`);
+    }
+
+    // Fallback: Node.js say.js (works natively on Windows without Python)
+    if (this.useSayFallback) {
+      try {
+        const say = require('say');
+        const voiceName = voice === 'en-US-JennyNeural' ? 'Microsoft Zira Desktop' : 'Microsoft David Desktop';
+        return await new Promise((resolve, reject) => {
+          say.export(text, voiceName, 1, outputPath, (err) => {
+            if (!err && fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100) {
+              this.logger.info(`say.js TTS: ${path.basename(outputPath)}`);
+              resolve(outputPath);
+            } else {
+              reject(err || new Error('say.js output empty'));
+            }
+          });
+        });
+      } catch (sayError) {
+        this.logger.info(`say.js failed: ${sayError.message.substring(0, 60)}`);
+      }
+    }
+
+    // Last resort: write text placeholder so pipeline can still proceed
+    this.logger.warn('All TTS methods failed — writing text placeholder');
+    const placeholderPath = outputPath + '.txt';
+    fs.writeFileSync(placeholderPath, text);
+    return placeholderPath;
   }
 
   /**

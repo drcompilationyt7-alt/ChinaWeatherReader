@@ -285,7 +285,7 @@ class GitHubActionsRunner {
       this.logger.info(`Searching YouTube for: "${searchQuery}"`);
 
       // Use yt-dlp to search YouTube for a trending video
-      const searchCmd = `yt-dlp --no-playlist --flat-playlist --print "url,title" "ytsearch3:${searchQuery}" 2>/dev/null`;
+      const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
       const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
       
       if (!searchOutput) {

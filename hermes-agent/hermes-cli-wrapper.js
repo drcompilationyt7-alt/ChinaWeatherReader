@@ -136,13 +136,15 @@ ${task}
         };
       }
 
-      // Return fallback instruction
+      // If CLI failed, signal that we should fall back to JS agent
+      this.logger.warn('Hermes CLI run failed — caller should fall back to built-in Hermes JS agent');
       return {
         success: false,
         error: error.message,
-        output: `Hermes CLI failed: ${error.message}. Try the built-in Hermes JS agent as fallback.`,
+        output: `Hermes CLI failed: ${error.message}. Falling back to built-in Hermes JS agent.`,
         agent: 'hermes-cli',
         steps: 0,
+        shouldFallback: true,  // Flag for the runner to use JS agent
       };
     }
   }
