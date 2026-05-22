@@ -28,7 +28,7 @@ const execAsync = promisify(exec);
 class EdgeTTSProvider {
   constructor() {
     this.logger = new Logger('EdgeTTS');
-    this.available = true; // Assume available, check lazily on first use
+    this.available = false; // Will be set to true only after successful check
     this.useSayFallback = false; // Windows-native TTS fallback
   }
 

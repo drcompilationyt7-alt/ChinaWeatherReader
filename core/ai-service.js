@@ -50,13 +50,18 @@ class AIService {
     if (config.tts.provider === 'edge' || !config.tts.provider) {
       const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
       this.tts = new EdgeTTSProvider();
-      this.logger.info('Using Edge-TTS (free)');
-    } else {
-      // Fallback to OpenAI TTS
-      if (this.llm?.audio?.speech) {
-        this.tts = this.llm;
-        this.logger.info('Using OpenAI TTS');
+      // Actually check if TTS is available (async)
+      await this.tts._ensureAvailable();
+      if (this.tts.isAvailable()) {
+        this.logger.info(`TTS available: ${this.tts.useSayFallback ? 'say.js (Windows)' : 'Edge-TTS'}`);
+      } else {
+        this.logger.warn('No TTS provider available — audio will be skipped');
       }
+    } else if (this.llm?.audio?.speech) {
+      this.tts = this.llm;
+      this.logger.info('Using OpenAI TTS');
+    } else {
+      this.logger.warn('No TTS provider configured');
     }
   }
 

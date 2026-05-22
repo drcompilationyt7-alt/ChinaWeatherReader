@@ -285,6 +285,9 @@ class GitHubActionsRunner {
       this.logger.info(`Searching YouTube for: "${searchQuery}"`);
 
       // Use yt-dlp to search YouTube for a trending video
+      // --print url --print title outputs URL and title on SEPARATE lines:
+      //   https://www.youtube.com/watch?v=abc123
+      //   Video Title Here
       const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
       const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
       
@@ -292,11 +295,25 @@ class GitHubActionsRunner {
         throw new Error('No search results found');
       }
 
-      // Pick a random result line
+      // Parse (url, title) pairs from alternating lines
       const lines = searchOutput.split('\n').filter(Boolean);
-      const randomLine = lines[Math.floor(Math.random() * lines.length)];
-      const [videoUrl, ...titleParts] = randomLine.split(',');
-      const videoTitle = titleParts.join(',').trim() || searchQuery;
+      const pairs = [];
+      for (let i = 0; i < lines.length - 1; i += 2) {
+        const url = lines[i].trim();
+        const title = lines[i + 1] ? lines[i + 1].trim() : '';
+        if (url.startsWith('http')) {
+          pairs.push({ url, title });
+        }
+      }
+
+      if (pairs.length === 0) {
+        throw new Error('No valid video URLs in search results');
+      }
+
+      // Pick a random result
+      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+      const videoUrl = randomPair.url;
+      const videoTitle = randomPair.title || searchQuery;
 
       if (!videoUrl || !videoUrl.startsWith('http')) {
         throw new Error('Invalid video URL from search');

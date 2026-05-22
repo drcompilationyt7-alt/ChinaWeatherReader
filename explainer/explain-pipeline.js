@@ -234,16 +234,18 @@ Respond with JSON:
   /**
    * Compile a simple explainer video using ffmpeg from audio files
    * Creates a static image with text overlay + audio track
+   * Falls back to text-overlay video if no audio is available
    */
   async _compileVideo(audioResult, visuals, basePath, videoFile, script) {
-    // If no audio files were actually generated (TTS unavailable), skip compilation
     const allAudio = [
       ...(audioResult?.curious || []),
       ...(audioResult?.explainer || []),
     ];
+
+    // If no audio files were actually generated (TTS unavailable), create text-overlay video
     if (allAudio.length === 0) {
-      this.logger.warn('No audio files to compile — skipping video creation');
-      return null;
+      this.logger.warn('No audio files — creating text-overlay video instead');
+      return await this._createTextOverlayVideo(script, basePath, videoFile);
     }
 
     // Try to use ffmpeg to combine audio into a video
@@ -287,6 +289,85 @@ Respond with JSON:
       }
     } catch (error) {
       this.logger.warn(`Video compilation failed: ${error.message}`);
+    }
+    return null;
+  }
+
+  /**
+   * Create a text-overlay video when TTS is unavailable
+   * Uses ffmpeg to generate a video with text scenes on a colored background
+   */
+  async _createTextOverlayVideo(script, basePath, videoFile) {
+    try {
+      const { execSync } = require('child_process');
+      const fs = require('fs');
+
+      const scenes = script.scenes || [];
+      const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 5), 0);
+      const safeTitle = (script.title || 'Mr. WorldWideWebster').replace(/'/g, "'\\''");
+
+      // Build a filter_complex that creates text scenes
+      // Each scene shows the dialogue text on a colored background for its duration
+      const bgColor = '#1a1a2e';
+      const textColor = '#ffffff';
+      const accentColor = '#e94560';
+
+      // Create individual scene videos
+      const sceneFiles = [];
+      for (let i = 0; i < scenes.length; i++) {
+        const scene = scenes[i];
+        const sceneDuration = scene.duration || 5;
+        const sceneFile = `${basePath}_scene_${i}.mp4`;
+        const dialogue = (scene.dialogue || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
+        const voiceLabel = (scene.voice || 'explainer').toUpperCase();
+
+        // Create a colored background with text overlay
+        const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30" ` +
+          `-vf "drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold," +
+          "drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900," +
+          "drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
+          `-c:v libx264 -preset ultrafast -crf 28 "${sceneFile}" 2>&1`;
+
+        try {
+          execSync(cmd, { timeout: 30000 });
+          if (fs.existsSync(sceneFile)) {
+            sceneFiles.push(sceneFile);
+          }
+        } catch (sceneError) {
+          this.logger.warn(`Scene ${i} creation failed: ${sceneError.message}`);
+        }
+      }
+
+      if (sceneFiles.length === 0) {
+        // Ultimate fallback: single static image
+        this.logger.warn('All scene creations failed — using single static video');
+        const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ` +
+          `-vf "drawtext=text='${safeTitle}':fontsize=56:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900," +
+          "drawtext=text='Follow Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
+          `-c:v libx264 -preset ultrafast -crf 28 "${videoFile}" 2>&1`;
+        execSync(cmd, { timeout: 30000 });
+      } else {
+        // Concatenate all scene videos
+        const concatList = sceneFiles.map(f => `file '${f}'`).join('\n');
+        const concatFile = `${basePath}_concat.txt`;
+        fs.writeFileSync(concatFile, concatList);
+
+        const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c:v libx264 -preset ultrafast -crf 28 "${videoFile}" 2>&1`;
+        execSync(cmd, { timeout: 60000 });
+
+        // Cleanup scene files
+        for (const f of sceneFiles) {
+          try { fs.unlinkSync(f); } catch {}
+        }
+        try { fs.unlinkSync(concatFile); } catch {}
+      }
+
+      if (fs.existsSync(videoFile)) {
+        this.logger.success(`Text-overlay video created: ${videoFile}`);
+        return videoFile;
+      }
+    } catch (error) {
+      this.logger.error(`Text-overlay video creation failed: ${error.message}`);
     }
     return null;
   }

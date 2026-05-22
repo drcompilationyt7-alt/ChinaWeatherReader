@@ -6,13 +6,6 @@
  *
  * The official Hermes is installed in GitHub Actions via:
  *   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
- *
- * It provides a permanent CLI tool that can:
- * - Browse the web autonomously
- * - Write and execute code
- * - Use tools and APIs
- * - Remember context across sessions
- * - Run as a system service
  */
 const { execSync, exec } = require('child_process');
 const { promisify } = require('util');
@@ -27,9 +20,6 @@ class HermesCLIWrapper {
     this._checkCLI();
   }
 
-  /**
-   * Check if the official hermes CLI is installed
-   */
   _checkCLI() {
     try {
       const version = execSync('hermes --version 2>/dev/null', { timeout: 5000 }).toString().trim();
@@ -38,7 +28,6 @@ class HermesCLIWrapper {
     } catch {
       this.cliAvailable = false;
       this.logger.warn('Official Hermes CLI not found — will fall back to built-in Hermes JS agent');
-      this.logger.warn('Install via: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash');
     }
   }
 
@@ -54,7 +43,7 @@ class HermesCLIWrapper {
    */
   async run(task, options = {}) {
     if (!this.cliAvailable) {
-      throw new Error('Hermes CLI not available. Install with the curl command.');
+      throw new Error('Hermes CLI not available.');
     }
 
     const maxSteps = options.maxSteps || 15;
@@ -64,14 +53,12 @@ class HermesCLIWrapper {
     this.logger.info(`Task: ${task.substring(0, 100)}`);
 
     try {
-      // Create a temporary task file for Hermes to execute
       const taskFile = path.join(__dirname, '..', 'output', 'temp', `hermes_task_${Date.now()}.md`);
       const taskDir = path.dirname(taskFile);
       if (!fs.existsSync(taskDir)) {
         fs.mkdirSync(taskDir, { recursive: true });
       }
 
-      // Write the task with context about our channel
       const taskContent = `# Mr. WorldWideWebster - Autonomous Task
 
 ## Channel Identity
@@ -98,12 +85,12 @@ ${task}
       this.logger.info(`Task written to: ${taskFile}`);
 
       // Execute the task via Hermes CLI
-      // hermes run reads a task file and executes it autonomously
-      const cmd = `hermes run "${taskFile}" --max-steps ${maxSteps} 2>&1`;
+      // Note: hermes run does NOT accept --max-steps flag
+      const cmd = `hermes run "${taskFile}"`;
       this.logger.info(`Executing: hermes run`);
 
       const output = execSync(cmd, {
-        timeout: maxSteps * 60000, // ~1 min per step max
+        timeout: maxSteps * 60000,
         maxBuffer: 10 * 1024 * 1024,
         env: {
           ...process.env,
@@ -126,37 +113,37 @@ ${task}
 
       // Check if we got partial output before the error
       if (error.stdout) {
-        this.logger.info('Partial output before error captured');
-        return {
-          success: true,
-          output: error.stdout.toString().substring(0, 10000),
-          partial: true,
-          steps: maxSteps,
-          agent: 'hermes-cli',
-        };
+        const partialOut = error.stdout.toString();
+        // Only treat as partial if it looks like real output (not just help/usage text)
+        if (partialOut.length > 200 && !partialOut.includes('Usage:') && !partialOut.includes('Commands:')) {
+          this.logger.info('Partial output before error captured');
+          return {
+            success: true,
+            output: partialOut.substring(0, 10000),
+            partial: true,
+            steps: maxSteps,
+            agent: 'hermes-cli',
+          };
+        }
       }
 
-      // If CLI failed, signal that we should fall back to JS agent
+      // Signal that caller should fall back to JS agent
       this.logger.warn('Hermes CLI run failed — caller should fall back to built-in Hermes JS agent');
       return {
         success: false,
         error: error.message,
-        output: `Hermes CLI failed: ${error.message}. Falling back to built-in Hermes JS agent.`,
+        output: '',
         agent: 'hermes-cli',
         steps: 0,
-        shouldFallback: true,  // Flag for the runner to use JS agent
+        shouldFallback: true,
       };
     }
   }
 
-  /**
-   * Call Hermes CLI directly with a prompt
-   */
   async chat(prompt) {
     if (!this.cliAvailable) return null;
-
     try {
-      const output = execSync(`hermes chat "${prompt.replace(/"/g, '\\"')}" 2>&1`, {
+      const output = execSync(`hermes chat "${prompt.replace(/"/g, '\\"')}"`, {
         timeout: 60000,
         maxBuffer: 5 * 1024 * 1024,
       }).toString();
@@ -166,20 +153,12 @@ ${task}
     }
   }
 
-  /**
-   * List available tools/models from Hermes CLI
-   */
   async getInfo() {
     if (!this.cliAvailable) return { available: false };
-
     try {
       const config = execSync('hermes config list 2>&1', { timeout: 5000 }).toString();
       const tools = execSync('hermes tools 2>&1', { timeout: 5000 }).toString();
-      return {
-        available: true,
-        config: config.trim(),
-        tools: tools.trim(),
-      };
+      return { available: true, config: config.trim(), tools: tools.trim() };
     } catch {
       return { available: true, error: 'Could not list config' };
     }
