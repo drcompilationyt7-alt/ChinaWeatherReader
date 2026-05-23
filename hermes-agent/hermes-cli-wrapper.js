@@ -186,12 +186,12 @@ class HermesCLIWrapper {
   buildArguments(task){
 
     const args=[
+      '--yolo',
       'chat',
       '-q',
       task,
       '--toolsets',
-      'web,terminal,skills,browser',
-      '--yolo'
+      'web,terminal,skills,browser'
     ];
 
     return args;

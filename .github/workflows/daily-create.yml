@@ -204,7 +204,7 @@ jobs:
           hermes status || true
           echo ""
           echo "===== TEST ====="
-          hermes chat -q "Reply only OK" --toolsets "web,terminal,skills,browser" --yolo
+          timeout 180s hermes --yolo chat -q "Reply only OK" --toolsets "web,terminal,skills,browser"
           
           # Export HERMES_CONFIG explicitly for child processes
           echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
