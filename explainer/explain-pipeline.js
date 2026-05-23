@@ -56,39 +56,106 @@ class ExplainPipeline {
 
     // Step 4: Generate visual assets - use Hermes to find/download matching video if URL provided
     let visuals = [];
+    let downloadedFromHermes = false;
+    
+    // First try: Download from provided URL
     if (sourceContent.url && hermesAgent) {
-      // Hermes found a specific URL - download it!
       this.logger.info(`Hermes found URL: ${sourceContent.url}, downloading...`);
       try {
         const { UniversalDownloader } = require('../sourcing/universal-downloader');
         const downloader = new UniversalDownloader();
         
-        const downloadResult = await downloader.download(sourceContent.url, {
-          outputDir: path.join(config.paths.assets, `explain_${safeId}`),
-          maxHeight: 720,
+        const downloadResult = await downloader.download({
+          url: sourceContent.url,
+          type: 'video',
+          outputDir: path.join(config.paths.assets, `explain_${safeId}`)
         });
         
-        if (downloadResult.success && downloadResult.filePath) {
+        if (downloadResult && downloadResult.filePath) {
           visuals.push(downloadResult.filePath);
+          downloadedFromHermes = true;
           this.logger.success(`✅ Downloaded video from Hermes: ${downloadResult.filePath}`);
-        } else {
-          this.logger.warn('Download failed, falling back to free visuals search');
-          visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
         }
       } catch (error) {
         this.logger.warn(`Failed to download Hermes URL: ${error.message}`);
-        visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
       }
-    } else if (!sourceContent.thumbnailUrl && explainCategory === 'other') {
-      visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
-    } else {
-      visuals = [sourceContent.thumbnailUrl || null];
     }
+    
+    // Second try: If no URL provided but we have hermesAgent, ask Hermes to find matching content
+    if (!downloadedFromHermes && hermesAgent) {
+      this.logger.info('Asking Hermes to find matching viral content for the script topic...');
+      try {
+        const hermesTask = `Find a viral video URL about: ${explainThing}
+        
+        Search platforms like Bilibili, TikTok, YouTube, Douyin.
+        Find ONE specific video URL that matches this topic.
+        Return ONLY the raw URL, nothing else.
+        
+        Find URL now:`;
+        
+        const hermesResult = await hermesAgent.run(hermesTask, { verbose: false, maxSteps: 2 });
+        
+        // Log full Hermes output for debugging
+        const hermesOutput = hermesResult?.output || '';
+        this.logger.info('═══════════════════════════════════════════');
+        this.logger.info('🤖 HERMES RAW OUTPUT (Explain Pipeline Content Search):');
+        this.logger.info('═══════════════════════════════════════════');
+        console.log(hermesOutput || '[No output]');
+        this.logger.info('═══════════════════════════════════════════');
+        
+        // Save to temp file for debugging
+        const fs = require('fs');
+        const debugPath = path.join(config.paths.temp, `hermes_explain_debug_${Date.now()}.txt`);
+        try {
+          fs.mkdirSync(config.paths.temp, { recursive: true });
+          fs.writeFileSync(debugPath, hermesOutput);
+          this.logger.info(`💾 Full output saved to: ${debugPath}`);
+        } catch (e) {
+          this.logger.warn(`Could not save debug file: ${e.message}`);
+        }
+        
+        if (hermesResult && hermesResult.output) {
+          // Extract URL using regex
+          const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+          const matches = hermesResult.output.match(urlRegex);
+          
+          if (matches && matches.length > 0) {
+            const foundUrl = matches[0];
+            this.logger.info(`Hermes found matching URL: ${foundUrl}`);
+            
+            const { UniversalDownloader } = require('../sourcing/universal-downloader');
+            const downloader = new UniversalDownloader();
+            
+            const downloadResult = await downloader.download({
+              url: foundUrl,
+              type: 'video',
+              outputDir: path.join(config.paths.assets, `explain_${safeId}`)
+            });
+            
+            if (downloadResult && downloadResult.filePath) {
+              visuals.push(downloadResult.filePath);
+              downloadedFromHermes = true;
+              this.logger.success(`✅ Downloaded matching video from Hermes search: ${downloadResult.filePath}`);
+            }
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Hermes content search failed: ${error.message}`);
+      }
+    }
+    
+    // Fallback: Generate/find free visuals
+    if (!downloadedFromHermes) {
+      this.logger.info('Using fallback visual generation/search...');
+      visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
+    }
+
 
     // Step 5: Compile the final video
     const videoFile = `${basePath}.mp4`;
     const compiled = await this._compileVideo(audioResult, visuals, basePath, videoFile, script);
 
+    
     const result = {
       type: 'explain',
       title: script.title,

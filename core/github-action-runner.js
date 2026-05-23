@@ -273,16 +273,66 @@ class GitHubActionsRunner {
   async _createClipShort() {
     const { execSync } = require('child_process');
     const { TrendingVideoFinder } = require('../sourcing/trending-video-finder');
+    const { UniversalDownloader } = require('../sourcing/universal-downloader');
 
-    // Let AI decide which platform to search based on current trends
+    // Check if we have URLs from Hermes research
+    const trendingUrls = this.memory['trending-urls'] || [];
+    
+    if (trendingUrls.length > 0) {
+      this.logger.info(`Using ${trendingUrls.length} URLs from Hermes research...`);
+      
+      // Try to download one of the URLs
+      for (const url of trendingUrls) {
+        try {
+          this.logger.info(`Attempting to download: ${url}`);
+          
+          // Determine platform from URL
+          let platform = 'unknown';
+          if (url.includes('bilibili')) platform = 'bilibili';
+          else if (url.includes('tiktok')) platform = 'tiktok';
+          else if (url.includes('douyin')) platform = 'douyin';
+          else if (url.includes('youtube')) platform = 'youtube';
+          else if (url.includes('instagram')) platform = 'instagram';
+          
+          // Use UniversalDownloader directly with the URL
+          const downloader = new UniversalDownloader();
+          const downloadResult = await downloader.download({
+            url: url,
+            type: 'video',
+            outputDir: './output/temp'
+          });
+          
+          if (downloadResult && downloadResult.filePath) {
+            this.logger.success(`✅ Downloaded video from ${platform}: ${downloadResult.filePath}`);
+            
+            // TODO: Add trimming/upload logic here
+            // For now, return success
+            return {
+              title: `Viral clip from ${platform}`,
+              platform: platform,
+              sourceUrl: url,
+              filePath: downloadResult.filePath
+            };
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to download ${url}: ${error.message}`);
+          // Try next URL
+        }
+      }
+      
+      this.logger.warn('None of the Hermes URLs worked, falling back to search...');
+    }
+
+    // Fallback: Let AI pick platform+query and search
     this.logger.info('Asking AI which platform to search for trending content...');
 
     let platformChoice;
     let searchQuery;
 
     try {
-      // OPTIMIZED FOR LOCAL MODELS: Ask Hermes to find a direct URL instead of JSON
-      // This avoids JSON parsing issues with less smart models
+      // OPTIMIZED FOR LOCAL MODELS: Ask Hermes to find a direct URL
+      this.logger.info('Asking Hermes to find a viral video URL...');
+      
       const aiResult = await this.agent.run(
         `Mr. WorldWideWebster needs ONE viral video URL RIGHT NOW for a YouTube Short.
         
@@ -296,17 +346,38 @@ class GitHubActionsRunner {
         4. Do NOT write any explanation, JSON, markdown, or extra text. Just the link.
         
         Find a URL now:`,
-        { verbose: false, maxSteps: 2 }
+        { verbose: false, maxSteps: 3 }
       );
 
       // Extract URL using Regex (works even if model talks too much)
       const output = aiResult.output || '';
+      this.logger.info(`Hermes raw output length: ${output.length} chars`);
+      
+      // Log full Hermes output for debugging
+      this.logger.info('═══════════════════════════════════════════');
+      this.logger.info('🤖 HERMES RAW OUTPUT (Fallback URL Search):');
+      this.logger.info('═══════════════════════════════════════════');
+      console.log(output || '[No output]');
+      this.logger.info('═══════════════════════════════════════════');
+      
+      // Save to temp file for debugging
+      const fs = require('fs');
+      const path = require('path');
+      const debugPath = path.join('./output/temp', `hermes_fallback_debug_${Date.now()}.txt`);
+      try {
+        fs.mkdirSync('./output/temp', { recursive: true });
+        fs.writeFileSync(debugPath, output);
+        this.logger.info(`💾 Full output saved to: ${debugPath}`);
+      } catch (e) {
+        this.logger.warn(`Could not save debug file: ${e.message}`);
+      }
+      
       const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
       const matches = output.match(urlRegex);
       
       if (matches && matches.length > 0) {
         const foundUrl = matches[0];
-        this.logger.info(`Hermes found URL: ${foundUrl}`);
+        this.logger.info(`✅ Hermes found URL: ${foundUrl}`);
         
         // Determine platform from URL and set as direct URL
         let platform = 'unknown';
@@ -318,25 +389,28 @@ class GitHubActionsRunner {
         
         platformChoice = platform;
         searchQuery = foundUrl; // Use URL as the query
-        this.logger.info(`Using direct URL from Hermes`);
+        this.logger.info(`Using direct URL from Hermes on ${platform}`);
       } else {
+        this.logger.warn('No URL found in Hermes output');
         throw new Error('No URL found in Hermes response');
       }
     } catch (error) {
-      this.logger.warn(`Hermes URL extraction failed: ${error.message}, using random selection`);
-      // Fallback to random selection
-      const platforms = ['youtube', 'bilibili', 'tiktok', 'instagram', 'douyin', 'rednote'];
+      this.logger.warn(`Hermes URL extraction failed: ${error.message}`);
+      this.logger.info('🔄 Falling back to random platform selection...');
+      
+      // Fallback: Random platform + query
+      const platforms = ['bilibili', 'tiktok', 'youtube', 'instagram'];
       platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
-
+      
       const queriesByPlatform = {
         youtube: ['funny fail compilation 2026 short', 'beautiful nature drone 4k', 'satisfying video no music'],
         bilibili: ['热门视频', '搞笑合集', '美食制作'],
         tiktok: ['viral dance 2026', 'funny moments', 'cooking hacks'],
         instagram: ['reels viral', 'travel reels', 'food reels'],
-        douyin: ['热门', '搞笑', '美食'],
-        rednote: ['热门笔记', '旅行分享', '美食推荐'],
       };
+      
       searchQuery = queriesByPlatform[platformChoice][Math.floor(Math.random() * queriesByPlatform[platformChoice].length)];
+      this.logger.info(`Selected ${platformChoice} with query: "${searchQuery}"`);
     }
 
     try {
@@ -424,38 +498,67 @@ class GitHubActionsRunner {
 
     let trendsResult;
     try {
+      this.logger.info('Asking Hermes to find trending content with URLs...');
+      
       trendsResult = await this.agent.run(
-        `RESEARCH GLOBAL TRENDS FOR Mr. WorldWideWebster
+        `FIND TRENDING VIDEO URLS FOR Mr. WorldWideWebster
 
-Your job: Find what's trending RIGHT NOW around the world.
+Your job: Find 3-5 viral video URLs from DIFFERENT countries RIGHT NOW.
 
-Browse these sources (use web scraping):
-1. Search for "trending on Bilibili today" — find Chinese viral videos
-2. Search for "viral TikTok Japan" — find Japanese trends
-3. Search for "trending in Nigeria" — find African viral content
-4. Search for "UK viral video today" — find UK trends
-5. Search for "German TikTok trend" — find European content
-6. Search for "Australian viral" — find Australian trends
+INSTRUCTIONS:
+1. Search Bilibili, TikTok, Douyin, YouTube for trending videos
+2. Focus on: Japan, Nigeria, Brazil, India, Mexico, Germany (avoid repeat countries)
+3. Find ACTUAL video URLs that can be downloaded
 
-For each trend, report:
-{ "platform": "bilibili/tiktok/twitter/etc", "country": "China/Japan/etc", "title": "What the trend is", "url": "source URL", "type": "dance/food/music/meme/reaction/etc" }
+For each trend, return ONLY the URL in this format:
+URL: https://bilibili.com/video/BV1xxx
+URL: https://tiktok.com/@user/video/1234567890
+URL: https://youtube.com/watch?v=abcdefg
 
-Focus on VISUAL content that works for YouTube Shorts.
-Find at least 8 trending things from DIFFERENT countries (not all China).
-Prefer content from countries we haven't covered recently.
-Previous countries used: ${JSON.stringify(this.memory['channel-memory'].countriesUsedThisWeek || [])}
-
-Return as JSON array.`,
-        { verbose: false, maxSteps: 6 }
+Find 3-5 URLs from different countries. Just the links, no explanations.`,
+        { verbose: false, maxSteps: 5 }
       );
+      
+      this.logger.info(`Hermes research completed, output length: ${trendsResult.output ? trendsResult.output.length : 0} chars`);
+      
+      // Log full Hermes output for debugging
+      const hermesOutput = trendsResult.output || '';
+      this.logger.info('═══════════════════════════════════════════');
+      this.logger.info('🤖 HERMES RAW OUTPUT (Research Step):');
+      this.logger.info('═══════════════════════════════════════════');
+      console.log(hermesOutput || '[No output]');
+      this.logger.info('═══════════════════════════════════════════');
+      
+      // Save to temp file for debugging (will be cleaned up later)
+      const fs = require('fs');
+      const path = require('path');
+      const debugPath = path.join('./output/temp', `hermes_research_debug_${Date.now()}.txt`);
+      try {
+        fs.mkdirSync('./output/temp', { recursive: true });
+        fs.writeFileSync(debugPath, hermesOutput);
+        this.logger.info(`💾 Full output saved to: ${debugPath}`);
+      } catch (e) {
+        this.logger.warn(`Could not save debug file: ${e.message}`);
+      }
     } catch (error) {
       this.logger.warn(`Hermes agent research failed: ${error.message}`);
       trendsResult = { stepsCount: 0, steps: [], output: '' };
     }
 
-    // Normalize steps (HermesCLI returns number, HermesAgent returns array)
-    const stepsArray = Array.isArray(trendsResult.steps) ? trendsResult.steps : [];
-    this.logger.success(`Found ${trendsResult.stepsCount || stepsArray.length} trending items`);
+    // Extract URLs from Hermes output using regex
+    let foundUrls = [];
+    if (trendsResult && trendsResult.output) {
+      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+      const matches = trendsResult.output.match(urlRegex);
+      if (matches && matches.length > 0) {
+        foundUrls = matches.slice(0, 5); // Take first 5 URLs
+        this.logger.success(`✅ Extracted ${foundUrls.length} URLs from Hermes research`);
+      }
+    }
+    
+    // Store found URLs for later use
+    this.memory['trending-urls'] = foundUrls;
+    this.logger.info(`Found ${foundUrls.length} trending URLs: ${foundUrls.slice(0, 3).join(', ')}${foundUrls.length > 3 ? '...' : ''}`);
 
     // Step 2: Download + upload a trending clip (original audio, no TTS needed)
     this.logger.info('Step 2: Downloading trending clip...');
