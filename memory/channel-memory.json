@@ -4,13 +4,14 @@
   "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
   "createdAt": "2025-01-01T00:00:00.000Z",
   "totalVideosPosted": 8,
-  "lastCountryUsed": "Nigeria",
+  "lastCountryUsed": "Italy",
   "countriesUsedThisWeek": [
     "South Africa",
     "Argentina",
     "Mexico",
     "Egypt",
-    "Nigeria"
+    "Nigeria",
+    "Italy"
   ],
   "bestPerformingFormats": [],
   "titleFormulas": [
@@ -27,5 +28,5 @@
   },
   "skills": [],
   "lastUpdated": "2025-01-01T00:00:00.000Z",
-  "lastContentType": "explainer"
+  "lastContentType": "none"
 }
