@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const { Logger } = require('../core/logger');
 
 class HermesCLIWrapper {
@@ -6,9 +6,11 @@ class HermesCLIWrapper {
     this.logger = new Logger('HermesCLI');
 
     this.cliAvailable = false;
-    this.camofoxAvailable = null;
+    this.browserProvider = null;
+    this.browserCapabilities = {};
 
     this._checkCLI();
+    this._detectBrowserProvider();
   }
 
   _checkCLI() {
@@ -16,303 +18,307 @@ class HermesCLIWrapper {
       const version = execSync(
         'hermes --version',
         {
-          timeout: 10000,
-          encoding: 'utf8'
+          encoding: 'utf8',
+          timeout: 10000
         }
       ).trim();
 
       this.cliAvailable = true;
 
       this.logger.info(
-        `Official Hermes CLI detected: ${version}`
+        `Hermes CLI detected (${version})`
       );
 
-    } catch (e) {
+    } catch (err) {
 
       this.cliAvailable = false;
 
       this.logger.warn(
-        `Hermes CLI unavailable: ${e.message}`
+        `Hermes unavailable: ${err.message}`
       );
     }
   }
 
-  isAvailable() {
-    return this.cliAvailable;
-  }
-
-  async _checkCamofox() {
-
-    if (this.camofoxAvailable !== null)
-      return this.camofoxAvailable;
-
-    const url =
-      process.env.CAMOFOX_URL ||
-      'http://localhost:9377';
+  _detectBrowserProvider() {
 
     try {
 
-      this.logger.info(
-        `Checking Camofox at ${url}`
-      );
+      if(process.env.BROWSERBASE_API_KEY){
 
-      execSync(
-        `curl -sf ${url}/health`,
-        {
-          timeout:5000,
-          stdio:'pipe'
-        }
-      );
+        this.browserProvider='browserbase';
 
-      execSync(
-        `curl -sf ${url}/json/version`,
-        {
-          timeout:5000,
-          stdio:'pipe'
-        }
-      );
+      } else if(process.env.BROWSER_USE_API_KEY){
 
-      this.camofoxAvailable=true;
+        this.browserProvider='browser-use';
 
-      this.logger.info(
-        'Camofox browser fully available'
-      );
+      } else if(process.env.FIRECRAWL_API_KEY){
 
-    } catch(e){
+        this.browserProvider='firecrawl';
 
-      this.camofoxAvailable=false;
+      } else if(process.env.CAMOFOX_URL){
 
-      this.logger.warn(
-        `Camofox unavailable: ${e.message}`
-      );
-    }
+        this.browserProvider='camofox';
 
-    return this.camofoxAvailable;
-  }
+      } else if(process.env.BROWSER_CDP_URL){
 
-  escapeShell(str='') {
-    return str
-      .replace(/\\/g,'\\\\')
-      .replace(/"/g,'\\"')
-      .replace(/\$/g,'\\$')
-      .replace(/`/g,'\\`')
-      .replace(/\n/g,' ');
-  }
-
-  async run(task, options={}) {
-
-    if (!this.cliAvailable) {
-
-      return {
-        success:false,
-        error:'Hermes unavailable',
-        output:'',
-        shouldFallback:true
-      };
-
-    }
-
-    this.logger.header(
-      'OFFICIAL HERMES CLI AGENT'
-    );
-
-    this.logger.info(
-      `Task: ${task.substring(0,150)}`
-    );
-
-    try {
-
-      const camofoxOk =
-        await this._checkCamofox();
-
-      const tools = camofoxOk
-        ? 'web,terminal,skills,browser'
-        : 'web,terminal,skills';
-
-      this.logger.info(
-        `Using tools: ${tools}`
-      );
-
-      const escapedTask =
-        this.escapeShell(task);
-
-      // Use -z flag for zero-turn non-interactive mode (top-level flag)
-      // Do NOT use 'chat' subcommand - it conflicts with -z
-      // Do NOT add --yolo as a subcommand flag - it's a top-level flag
-      // The tools list must be quoted per Hermes CLI docs
-      const cmd = [
-        'hermes',
-        '-z',
-        `"${escapedTask}"`,
-        '-t',
-        `"${tools}"`,
-        '--yolo'
-      ].join(' ');
-
-      this.logger.info(
-        'Executing Hermes...'
-      );
-
-      this.logger.info(
-        `Command: ${cmd.substring(0,250)}`
-      );
-
-      const maxTimeout =
-        options.timeout ||
-        360000;
-
-      let output='';
-
-      try {
-
-        // Build isolated environment for Hermes - DO NOT inherit cloud API keys
-        // This prevents Hermes from auto-selecting OpenRouter/OpenAI/Anthropic
-        // and forces it to use the local Ollama config in ~/.hermes/config.yaml
-        const hermesEnv = {
-          // Essential system variables with GitHub Actions defaults
-          PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
-          HOME: process.env.HOME || '/home/runner',
-          USER: process.env.USER || 'runner',
-          LANG: process.env.LANG || 'en_US.UTF-8',
-          TERM: process.env.TERM || 'xterm',
-          PWD: process.env.PWD || process.env.HOME || '/home/runner',
-
-          // Hermes-specific variables for local Ollama
-          OLLAMA_HOST: process.env.OLLAMA_HOST || 'http://localhost:11434',
-          OLLAMA_MODEL: process.env.OLLAMA_MODEL || 'llama3.2:3b',
-
-          // Camofox browser URL
-          CAMOFOX_URL: process.env.CAMOFOX_URL || 'http://localhost:9377',
-
-          // CRITICAL: Tell Hermes where config.yaml is located
-          HERMES_CONFIG: `${process.env.HOME || '/home/runner'}/.hermes/config.yaml`,
-          
-          // Point to .env file for any additional config
-          HERMES_ENV: `${process.env.HOME || '/home/runner'}/.hermes/.env`,
-
-          // Verbose mode for debugging
-          HERMES_VERBOSE: '1',
-          
-          // Pass cloud API keys as fallback providers
-          // Hermes will try Ollama first (from config.yaml), then fall back to these
-          ...(process.env.OPENROUTER_API_KEY && { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY }),
-          ...(process.env.OPENAI_API_KEY && { OPENAI_API_KEY: process.env.OPENAI_API_KEY }),
-          ...(process.env.ANTHROPIC_API_KEY && { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }),
-          ...(process.env.GEMINI_API_KEY && { GEMINI_API_KEY: process.env.GEMINI_API_KEY }),
-          ...(process.env.DEEPSEEK_API_KEY && { DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY }),
-        };
-
-        const apiKeysStatus = [
-          process.env.OPENROUTER_API_KEY ? 'OpenRouter' : '',
-          process.env.OPENAI_API_KEY ? 'OpenAI' : '',
-          process.env.ANTHROPIC_API_KEY ? 'Anthropic' : ''
-        ].filter(Boolean).join(', ') || 'none';
-        this.logger.info(`Hermes env: Ollama=${hermesEnv.OLLAMA_HOST}, API keys=${apiKeysStatus}`);
-
-        output = execSync(
-          cmd,
-          {
-            env: hermesEnv,
-            timeout: maxTimeout,
-            encoding: 'utf8',
-            maxBuffer: 50 * 1024 * 1024,
-            stdio: 'pipe'
-          }
-        );
-
-      }
-      catch(err){
-
-        output=
-          (err.stdout || '')+
-          '\n'+
-          (err.stderr || '');
-
-      }
-
-      output=String(output||'').trim();
-
-      // Check for critical errors that indicate failure
-      const hasCriticalError = 
-        output.toLowerCase().includes('traceback') ||
-        output.includes('AuthError') ||
-        output.toLowerCase().includes('error:') ||
-        output.includes('No inference provider configured');
-
-      this.logger.info(
-        '═══════════════════════════'
-      );
-
-      this.logger.info(
-        `Output length: ${output.length}`
-      );
-
-      if(output){
-
-        this.logger.info(
-          '──── HERMES OUTPUT ────'
-        );
-
-        console.log(
-          output.substring(
-            0,
-            15000
-          )
-        );
-
-        if(output.length>15000){
-
-          console.log(
-            `... ${output.length-15000} more chars`
-          );
-        }
+        this.browserProvider='cdp';
 
       } else {
 
-        this.logger.warn(
-          'Hermes returned empty output'
-        );
+        this.browserProvider='local';
       }
 
-      return {
+      this.browserCapabilities={
 
-        success: output.length > 0 && !hasCriticalError,
+        screenshots:true,
+        forms:true,
+        vision:true,
+
+        persistence:
+          process.env.CAMOFOX_MANAGED_PERSISTENCE==='true',
+
+        recording:
+          process.env.BROWSER_RECORD_SESSIONS==='true',
+
+        cdp:
+          this.browserProvider==='cdp'
+      };
+
+      this.logger.info(
+        `Browser provider: ${this.browserProvider}`
+      );
+
+    } catch(err){
+
+      this.logger.warn(
+        err.message
+      );
+    }
+
+  }
+
+  isAvailable(){
+    return this.cliAvailable;
+  }
+
+  buildEnvironment(){
+
+    const home=
+      process.env.HOME || '/home/runner';
+
+    const env={
+
+      PATH:
+        process.env.PATH,
+
+      HOME:
+        home,
+
+      USER:
+        process.env.USER,
+
+      LANG:
+        process.env.LANG || 'en_US.UTF-8',
+
+      TERM:
+        process.env.TERM || 'xterm',
+
+      PWD:
+        process.cwd(),
+
+      HERMES_CONFIG:
+        process.env.HERMES_CONFIG ||
+        `${home}/.hermes/config.yaml`,
+
+      HERMES_ENV:
+        process.env.HERMES_ENV ||
+        `${home}/.hermes/.env`,
+
+      HERMES_VERBOSE:
+        process.env.HERMES_VERBOSE || '1',
+
+      OLLAMA_HOST:
+        process.env.OLLAMA_HOST ||
+        'http://localhost:11434',
+
+      OLLAMA_MODEL:
+        process.env.OLLAMA_MODEL ||
+        'llama3.2:3b'
+    };
+
+    const allowed=[
+
+      'OPENAI_API_KEY',
+      'OPENROUTER_API_KEY',
+      'ANTHROPIC_API_KEY',
+      'GEMINI_API_KEY',
+      'DEEPSEEK_API_KEY',
+
+      'BROWSERBASE_API_KEY',
+      'BROWSERBASE_PROJECT_ID',
+
+      'BROWSER_USE_API_KEY',
+
+      'FIRECRAWL_API_KEY',
+      'FIRECRAWL_API_URL',
+
+      'CAMOFOX_URL',
+      'CAMOFOX_USER_ID',
+      'CAMOFOX_SESSION_KEY',
+      'CAMOFOX_ADOPT_EXISTING_TAB',
+
+      'BROWSER_CDP_URL',
+
+      'BROWSER_RECORD_SESSIONS'
+    ];
+
+    for(const key of allowed){
+
+      if(process.env[key]){
+
+        env[key]=process.env[key];
+      }
+    }
+
+    return env;
+  }
+
+  buildArguments(task){
+
+    const args=[
+      '-z',
+      task,
+      '--yolo'
+    ];
+
+    return args;
+  }
+
+  detectFailure(output=''){
+
+    const text=
+      output.toLowerCase();
+
+    const failures=[
+
+      'traceback',
+      'autherror',
+      'provider error',
+      'no inference provider configured',
+      'fatal:',
+      'panic:'
+    ];
+
+    return failures.some(
+      x=>text.includes(x)
+    );
+  }
+
+  async run(task,options={}){
+
+    if(!this.cliAvailable){
+
+      return{
+
+        success:false,
+        shouldFallback:true,
+        error:'Hermes unavailable'
+      };
+    }
+
+    try{
+
+      const args=
+        this.buildArguments(task);
+
+      const timeout=
+        options.timeout ||
+        360000;
+
+      this.logger.header(
+        'HERMES AGENT'
+      );
+
+      this.logger.info(
+        `Provider: ${this.browserProvider}`
+      );
+
+      this.logger.info(
+        `Task: ${task.substring(0,200)}`
+      );
+
+      const result=
+        spawnSync(
+          'hermes',
+          args,
+          {
+            encoding:'utf8',
+            timeout,
+            maxBuffer:
+              100*1024*1024,
+            env:
+              this.buildEnvironment()
+          }
+        );
+
+      const output=
+        (
+          (result.stdout||'')+
+          '\n'+
+          (result.stderr||'')
+        ).trim();
+
+      const failed=
+        result.error ||
+        this.detectFailure(output);
+
+      return{
+
+        success:!failed,
 
         output,
 
-        fullOutput: output,
+        fullOutput:output,
 
-        shouldFallback: output.length === 0 || hasCriticalError,
+        shouldFallback:
+          failed,
 
-        agent:'hermes-cli',
+        provider:
+          this.browserProvider,
 
-        steps: hasCriticalError ? 0 : 1,
+        browser:
+          this.browserCapabilities,
 
-        error: hasCriticalError ? 'Hermes execution failed with critical error' : null
+        exitCode:
+          result.status,
+
+        agent:
+          'hermes-cli',
+
+        error:
+          failed
+          ? (
+            result.error?.message ||
+            'Hermes execution failed'
+          )
+          : null
       };
 
-    }
-    catch(err){
+    } catch(err){
 
       this.logger.error(
-        err.stack || err.message
+        err.stack ||
+        err.message
       );
 
-      return {
+      return{
 
         success:false,
-
-        output:'',
-
-        error:err.message,
-
         shouldFallback:true,
-
-        agent:'hermes-cli',
-
-        steps:0
+        output:'',
+        error:err.message,
+        agent:'hermes-cli'
       };
-
     }
   }
 
@@ -322,40 +328,19 @@ class HermesCLIWrapper {
 
   async getInfo(){
 
-    if(!this.cliAvailable){
+    return{
 
-      return {
-        available:false
-      };
-    }
+      available:
+        this.cliAvailable,
 
-    try{
+      provider:
+        this.browserProvider,
 
-      const version=
-        execSync(
-          'hermes --version',
-          {
-            timeout:5000,
-            encoding:'utf8'
-          }
-        ).trim();
-
-      return{
-
-        available:true,
-        version
-      };
-
-    }
-    catch{
-
-      return{
-
-        available:true,
-        version:'unknown'
-      };
-    }
+      browser:
+        this.browserCapabilities
+    };
   }
+
 }
 
 module.exports={
