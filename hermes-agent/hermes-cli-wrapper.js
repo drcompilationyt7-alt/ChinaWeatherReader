@@ -1,14 +1,7 @@
-/**
- * Mr. WorldWideWebster — Official Hermes CLI Wrapper
- *
- * Uses `hermes chat -z "prompt"` (Hermes CLI v0.14.0+)
- * The `run` command was removed in newer versions.
- *
- * Install: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
- */
-const { execSync } = require('child_process');
+const { spawnSync, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { Logger } = require('../core/logger');
 
 class HermesCLIWrapper {
@@ -20,12 +13,22 @@ class HermesCLIWrapper {
 
   _checkCLI() {
     try {
-      const version = execSync('hermes --version 2>/dev/null', { timeout: 5000 }).toString().trim();
+      const version = execSync('hermes --version', {
+        timeout: 5000
+      }).toString().trim();
+
       this.cliAvailable = true;
-      this.logger.info(`Official Hermes CLI detected: ${version}`);
+
+      this.logger.info(
+        `Official Hermes CLI detected: ${version}`
+      );
+
     } catch {
       this.cliAvailable = false;
-      this.logger.warn('Official Hermes CLI not found — will fall back to built-in Hermes JS agent');
+
+      this.logger.warn(
+        'Official Hermes CLI not found'
+      );
     }
   }
 
@@ -33,149 +36,224 @@ class HermesCLIWrapper {
     return this.cliAvailable;
   }
 
-  /**
-   * Run a task using the official Hermes CLI via `hermes chat -z`
-   * Hermes v0.14.0 removed the `run` command; use `chat -z` for one-shot prompts.
-   * 
-   * CRITICAL: For web browsing tasks, we add --toolsets "web,terminal,skills"
-   * to ensure Hermes has access to web browsing tools. Without this, Hermes
-   * cannot browse the internet to find trending content.
-   */
   async run(task, options = {}) {
+
     if (!this.cliAvailable) {
-      throw new Error('Hermes CLI not available.');
+      throw new Error(
+        'Hermes CLI unavailable'
+      );
     }
 
-    this.logger.header('OFFICIAL HERMES CLI AGENT');
-    this.logger.info(`Task: ${task.substring(0, 100)}`);
+    this.logger.header(
+      'OFFICIAL HERMES CLI AGENT'
+    );
+
+    this.logger.info(
+      `Task: ${task.substring(0,120)}`
+    );
 
     try {
-      // Write task to temp file for reference
-      const taskFile = path.join(__dirname, '..', 'output', 'temp', `hermes_task_${Date.now()}.md`);
-      const taskDir = path.dirname(taskFile);
-      if (!fs.existsSync(taskDir)) {
-        fs.mkdirSync(taskDir, { recursive: true });
-      }
 
-      const taskContent = `# Mr. WorldWideWebster - Autonomous Task
+      const tempDir = path.join(
+        __dirname,
+        '..',
+        'output',
+        'temp'
+      );
 
-## Channel Identity
-Mr. WorldWideWebster is a YouTube channel that shows people what's trending around the world.
-Content types: Clip (viral moments), Voiceover (translated), Explain ("What is this...?"), AI Create (comparisons, news, original content)
+      fs.mkdirSync(
+        tempDir,
+        { recursive:true }
+      );
 
-## System Context
-- You are running in a GitHub Actions environment (Ubuntu Linux)
-- You have access to: yt-dlp, ffmpeg, python3, node.js, puppeteer (for web automation)
-- Your AI model is configured via OPENROUTER_API_KEY
-- The repo is at: /home/runner/work/mr-worldwidewebster/mr-worldwidewebster
-- CRITICAL: You MUST use your web browsing tools to find real-time trending content
-- Use search engines and social media platforms (Bilibili, TikTok, Douyin, Instagram, Rednote, Twitter)
-- BROWSER AUTOMATION: Camofox Firefox browser is running at http://localhost:9377 with persistent sessions enabled
-- Use browser_navigate, browser_snapshot, browser_click, browser_type, browser_scroll to interact with websites
-- For video platforms, extract actual video URLs that can be downloaded with yt-dlp
-- Camofox provides anti-detection fingerprinting to bypass bot protection on TikTok, YouTube, etc.
+      const taskFile = path.join(
+        tempDir,
+        `task_${Date.now()}.txt`
+      );
 
-## Task
-${task}
+      fs.writeFileSync(
+        taskFile,
+        task
+      );
 
-## Instructions
-1. Use your WEB BROWSING TOOLS and CAMOFOX browser automation to find trending content
-2. Navigate to platforms: bilibili.com, tiktok.com, douyin.com, xiaohongshu.com, instagram.com, twitter.com
-3. Use browser_snapshot() to see interactive elements with ref IDs like @e1, @e2
-4. Use browser_click(@eX) and browser_type(@eX, "text") to navigate and search
-5. Find specific video URLs that are trending RIGHT NOW
-6. Report back as JSON array with: platform, country, title, url, type
-7. Save findings to memory/ directory for persistence`;
+      this.logger.info(
+        `Task written: ${taskFile}`
+      );
 
-      fs.writeFileSync(taskFile, taskContent);
-      this.logger.info(`Task written to: ${taskFile}`);
+      const env = {
+        ...process.env,
 
-      // Hermes v0.14.0 uses `hermes chat -z "prompt"` (no `run` command)
-      // Use --yolo to skip confirmation prompts (auto-approve mode)
-      // CRITICAL: Add --toolsets "web,terminal,skills,browser" to enable web browsing AND browser automation via Camofox
-      const escapedTask = task.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-      
-      // Build command with optional verbose mode for CI debugging
-      const verboseFlag = process.env.HERMES_VERBOSE ? '--verbose' : '';
-      const cmd = `hermes chat -z "${escapedTask}" --yolo --toolsets "web,terminal,skills,browser" ${verboseFlag} 2>&1`;
-      this.logger.info(`Executing: hermes chat -z "..." --toolsets "web,terminal,skills,browser" ${process.env.HERMES_VERBOSE ? '(verbose mode)' : ''}`);
-      this.logger.info(`Camofox URL: http://localhost:9377 (configured in ~/.hermes/.env)`);
+        OPENROUTER_API_KEY:
+          process.env.OPENROUTER_API_KEY,
 
-      const output = execSync(cmd, {
-        timeout: 300000, // 5 minutes
-        maxBuffer: 10 * 1024 * 1024,
-        env: {
-          ...process.env,
-          OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
-          CAMOFOX_URL: 'http://localhost:9377',
-        },
-      }).toString();
+        CAMOFOX_URL:
+          process.env.CAMOFOX_URL ||
+          'http://localhost:9377',
 
-      this.logger.success('Hermes CLI task completed');
-
-      return {
-        success: true,
-        output: output.substring(0, 10000),
-        fullOutput: output,
-        steps: 1,
-        agent: 'hermes-cli',
+        HERMES_VERBOSE:'1'
       };
-    } catch (error) {
-      this.logger.error(`Hermes CLI failed: ${error.message}`);
 
-      // Check if we got partial output before the error
-      if (error.stdout) {
-        const partialOut = error.stdout.toString();
-        // Only treat as partial if it looks like real output (not just help/usage text)
-        if (partialOut.length > 200 && !partialOut.includes('Usage:') && !partialOut.includes('Commands:') && !partialOut.includes('hermes: error:')) {
-          this.logger.info('Partial output before error captured');
-          return {
-            success: true,
-            output: partialOut.substring(0, 10000),
-            partial: true,
-            steps: 1,
-            agent: 'hermes-cli',
-          };
+      const args = [
+        'chat',
+        '-z',
+        task,
+        '--yolo',
+        '--toolsets',
+        'web,terminal,skills,browser'
+      ];
+
+      this.logger.info(
+        `Executing Hermes...`
+      );
+
+      this.logger.info(
+        `CAMOFOX_URL=${env.CAMOFOX_URL}`
+      );
+
+      const result = spawnSync(
+        'hermes',
+        args,
+        {
+          env,
+          encoding:'utf8',
+          timeout:300000,
+          maxBuffer:
+            20*1024*1024
         }
+      );
+
+      if(result.stdout){
+
+        this.logger.info(
+          'Hermes stdout:'
+        );
+
+        console.log(
+          result.stdout.substring(
+            0,
+            5000
+          )
+        );
       }
 
-      // Signal that caller should fall back to JS agent
-      this.logger.warn('Hermes CLI run failed — caller should fall back to built-in Hermes JS agent');
+      if(result.stderr){
+
+        this.logger.warn(
+          'Hermes stderr:'
+        );
+
+        console.log(
+          result.stderr.substring(
+            0,
+            5000
+          )
+        );
+      }
+
+      if(result.status!==0){
+
+        throw new Error(
+          `Exit code ${result.status}`
+        );
+      }
+
+      this.logger.success(
+        'Hermes completed'
+      );
+
       return {
-        success: false,
-        error: error.message,
-        output: '',
-        agent: 'hermes-cli',
-        steps: 0,
-        shouldFallback: true,
+
+        success:true,
+
+        output:
+          result.stdout,
+
+        fullOutput:
+          result.stdout,
+
+        agent:
+          'hermes-cli',
+
+        steps:1
+      };
+
+    }
+    catch(err){
+
+      this.logger.error(
+        `Hermes failed`
+      );
+
+      this.logger.error(
+        err.stack || err.message
+      );
+
+      return {
+
+        success:false,
+
+        error:
+          err.message,
+
+        shouldFallback:true,
+
+        output:'',
+
+        steps:0,
+
+        agent:
+          'hermes-cli'
       };
     }
   }
 
-  async chat(prompt) {
-    if (!this.cliAvailable) return null;
-    try {
-      const escaped = prompt.replace(/"/g, '\\"').replace(/\$/g, '\\$');
-      // Add --toolsets for web browsing capability
-      const output = execSync(`hermes chat -z "${escaped}" --yolo --toolsets "web,terminal,skills" 2>&1`, {
-        timeout: 120000,
-        maxBuffer: 5 * 1024 * 1024,
-      }).toString();
-      return output;
-    } catch {
-      return null;
-    }
+  async chat(prompt){
+
+    return this.run(prompt);
+
   }
 
-  async getInfo() {
-    if (!this.cliAvailable) return { available: false };
-    try {
-      const version = execSync('hermes --version 2>/dev/null', { timeout: 5000 }).toString();
-      return { available: true, version: version.trim() };
-    } catch {
-      return { available: true, error: 'Could not get version' };
+  async getInfo(){
+
+    if(!this.cliAvailable){
+
+      return {
+        available:false
+      };
+
     }
+
+    try{
+
+      const version =
+      execSync(
+        'hermes --version'
+      )
+      .toString()
+      .trim();
+
+      return {
+
+        available:true,
+        version
+
+      };
+
+    }
+    catch{
+
+      return {
+
+        available:true,
+        version:'unknown'
+
+      };
+
+    }
+
   }
 }
 
-module.exports = { HermesCLIWrapper };
+module.exports={
+  HermesCLIWrapper
+};
