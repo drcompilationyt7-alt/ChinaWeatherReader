@@ -1,4 +1,47 @@
-# Environment
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+*.class
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+node_modules/
+venv/
+.venv/
 .env
 .env.local
-.env.
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Distribution / Build
+dist/
+build/
+target/
+.gradle/
+
+# Python specific
+.mypy_cache/
+.pytest_cache/
+
+# System files
+.DS_Store
+Thumbs.db

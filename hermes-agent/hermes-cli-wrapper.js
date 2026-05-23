@@ -163,12 +163,13 @@ class HermesCLIWrapper {
           'Hermes stdout:'
         );
 
-        console.log(
-          result.stdout.substring(
-            0,
-            10000
-          )
-        );
+        const outputPreview = result.stdout.substring(0, 10000);
+        console.log(outputPreview);
+        
+        // Log if output looks like it contains JSON
+        if (outputPreview.includes('{') && outputPreview.includes('}')) {
+          this.logger.info('Output appears to contain JSON structure');
+        }
       }
 
       if(result.stderr){

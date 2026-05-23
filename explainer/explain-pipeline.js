@@ -31,7 +31,7 @@ class ExplainPipeline {
    * Process content through the EXPLAIN pipeline
    */
   async processExplain(params) {
-    const { sourceContent, explainThing, explainCategory, decision, outputDir, ai, config } = params;
+    const { sourceContent, explainThing, explainCategory, decision, outputDir, ai, config, hermesAgent } = params;
     const safeId = Date.now();
     const basePath = path.join(outputDir, `explain_${safeId}`);
 
@@ -54,9 +54,32 @@ class ExplainPipeline {
     const audioResult = await this._generateTwoVoiceAudio(script, ai, config, basePath);
     this.logger.info(`Two-voice audio generated`);
 
-    // Step 4: Generate visual assets if needed
+    // Step 4: Generate visual assets - use Hermes to find/download matching video if URL provided
     let visuals = [];
-    if (!sourceContent.thumbnailUrl && explainCategory === 'other') {
+    if (sourceContent.url && hermesAgent) {
+      // Hermes found a specific URL - download it!
+      this.logger.info(`Hermes found URL: ${sourceContent.url}, downloading...`);
+      try {
+        const { UniversalDownloader } = require('../sourcing/universal-downloader');
+        const downloader = new UniversalDownloader();
+        
+        const downloadResult = await downloader.download(sourceContent.url, {
+          outputDir: path.join(config.paths.assets, `explain_${safeId}`),
+          maxHeight: 720,
+        });
+        
+        if (downloadResult.success && downloadResult.filePath) {
+          visuals.push(downloadResult.filePath);
+          this.logger.success(`✅ Downloaded video from Hermes: ${downloadResult.filePath}`);
+        } else {
+          this.logger.warn('Download failed, falling back to free visuals search');
+          visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to download Hermes URL: ${error.message}`);
+        visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
+      }
+    } else if (!sourceContent.thumbnailUrl && explainCategory === 'other') {
       visuals = await this._generateVisuals(script, explainThing, ai, config, basePath);
     } else {
       visuals = [sourceContent.thumbnailUrl || null];
@@ -81,6 +104,7 @@ class ExplainPipeline {
       metadata: {
         sourceTitle: sourceContent.title,
         sourcePlatform: sourceContent.platform,
+        sourceUrl: sourceContent.url,
         generatedAt: new Date().toISOString(),
         category: explainCategory,
       },
