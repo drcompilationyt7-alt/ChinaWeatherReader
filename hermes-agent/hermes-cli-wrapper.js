@@ -1,13 +1,13 @@
 const { execSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
 const { Logger } = require('../core/logger');
 
 class HermesCLIWrapper {
   constructor() {
     this.logger = new Logger('HermesCLI');
+
     this.cliAvailable = false;
-    this.camofoxAvailable = null; // null = not checked yet
+    this.camofoxAvailable = null;
+
     this._checkCLI();
   }
 
@@ -15,10 +15,11 @@ class HermesCLIWrapper {
     try {
       const version = execSync(
         'hermes --version',
-        { timeout: 5000 }
-      )
-      .toString()
-      .trim();
+        {
+          timeout: 10000,
+          encoding: 'utf8'
+        }
+      ).trim();
 
       this.cliAvailable = true;
 
@@ -26,12 +27,12 @@ class HermesCLIWrapper {
         `Official Hermes CLI detected: ${version}`
       );
 
-    } catch {
+    } catch (e) {
 
       this.cliAvailable = false;
 
       this.logger.warn(
-        'Official Hermes CLI not found — JS fallback enabled'
+        `Hermes CLI unavailable: ${e.message}`
       );
     }
   }
@@ -40,38 +41,75 @@ class HermesCLIWrapper {
     return this.cliAvailable;
   }
 
-  /**
-   * Check if Camofox browser service is available
-   */
   async _checkCamofox() {
-    if (this.camofoxAvailable !== null) return this.camofoxAvailable;
-    
+
+    if (this.camofoxAvailable !== null)
+      return this.camofoxAvailable;
+
+    const url =
+      process.env.CAMOFOX_URL ||
+      'http://localhost:9377';
+
     try {
-      const camofoxUrl = process.env.CAMOFOX_URL || 'http://localhost:9377';
-      execSync(
-        `curl -sf ${camofoxUrl}/health`,
-        { timeout: 5000, stdio: 'pipe' }
+
+      this.logger.info(
+        `Checking Camofox at ${url}`
       );
-      this.camofoxAvailable = true;
-      this.logger.info(`Camofox browser available at ${camofoxUrl}`);
-    } catch {
-      this.camofoxAvailable = false;
-      this.logger.warn('Camofox browser not available — disabling browser tool for Hermes');
+
+      execSync(
+        `curl -sf ${url}/health`,
+        {
+          timeout:5000,
+          stdio:'pipe'
+        }
+      );
+
+      execSync(
+        `curl -sf ${url}/json/version`,
+        {
+          timeout:5000,
+          stdio:'pipe'
+        }
+      );
+
+      this.camofoxAvailable=true;
+
+      this.logger.info(
+        'Camofox browser fully available'
+      );
+
+    } catch(e){
+
+      this.camofoxAvailable=false;
+
+      this.logger.warn(
+        `Camofox unavailable: ${e.message}`
+      );
     }
+
     return this.camofoxAvailable;
   }
 
-  /**
-   * Run Hermes with a task prompt.
-   * Uses execSync (shell) instead of spawnSync because Hermes v0.14
-   * requires a TTY/PTY to display output. spawnSync returns empty.
-   */
-  async run(task, options = {}) {
+  escapeShell(str='') {
+    return str
+      .replace(/\\/g,'\\\\')
+      .replace(/"/g,'\\"')
+      .replace(/\$/g,'\\$')
+      .replace(/`/g,'\\`')
+      .replace(/\n/g,' ');
+  }
+
+  async run(task, options={}) {
 
     if (!this.cliAvailable) {
-      throw new Error(
-        'Hermes CLI unavailable'
-      );
+
+      return {
+        success:false,
+        error:'Hermes unavailable',
+        output:'',
+        shouldFallback:true
+      };
+
     }
 
     this.logger.header(
@@ -79,168 +117,215 @@ class HermesCLIWrapper {
     );
 
     this.logger.info(
-      `Task: ${task.substring(0,120)}`
+      `Task: ${task.substring(0,150)}`
     );
 
     try {
 
-      const tempDir = path.join(
-        __dirname,
-        '..',
-        'output',
-        'temp'
-      );
+      const camofoxOk =
+        await this._checkCamofox();
 
-      fs.mkdirSync(
-        tempDir,
-        { recursive:true }
-      );
-
-      const taskFile = path.join(
-        tempDir,
-        `task_${Date.now()}.txt`
-      );
-
-      fs.writeFileSync(
-        taskFile,
-        task
-      );
-
-      this.logger.info(
-        `Task written: ${taskFile}`
-      );
-
-      // Check Camofox availability and adjust tools accordingly
-      const camofoxOk = await this._checkCamofox();
-      const toolsList = camofoxOk 
-        ? 'web,terminal,skills,browser' 
+      const tools = camofoxOk
+        ? 'web,terminal,skills,browser'
         : 'web,terminal,skills';
 
-      this.logger.info(`Camofox available: ${camofoxOk} — using tools: ${toolsList}`);
+      this.logger.info(
+        `Using tools: ${tools}`
+      );
 
-      // Build the shell command. execSync runs through a shell which provides
-      // proper TTY handling. Hermes v0.14 returns empty output via spawnSync.
-      // NOTE: -z flag is the correct zero-turn non-interactive mode (top-level flag).
-      // Do NOT add "chat" subcommand — it conflicts with -z.
-      // Do NOT add --yolo as a subcommand flag — it's a top-level flag.
-      // The tools list must be quoted per Hermes CLI docs.
-      const escapedTask = task
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
-        .replace(/\$/g, '\\$')
-        .replace(/`/g, '\\`');
+      const escapedTask =
+        this.escapeShell(task);
 
-      const cmd = `hermes -z "${escapedTask}" -t "${toolsList}" --yolo`;
+      const cmd = [
+
+        'hermes',
+        'chat',
+
+        '-q',
+        `"${escapedTask}"`,
+
+        '--toolsets',
+        `"${tools}"`,
+
+        '--verbose',
+
+        '--yolo'
+
+      ].join(' ');
 
       this.logger.info(
         'Executing Hermes...'
       );
 
       this.logger.info(
-        `Command: ${cmd.substring(0, 200)}`
+        `Command: ${cmd.substring(0,250)}`
       );
 
-      // Use execSync which runs through the shell (provides TTY)
-      // This is CRITICAL — spawnSync causes Hermes to return empty output
-      const maxTimeout = 360000; // 6 minutes - Hermes needs time on first run
-      
-      const stdout = execSync(cmd, {
-        env: {
-          ...process.env,
-          // Hermes uses Ollama for browsing/research tasks
-          OLLAMA_HOST: process.env.OLLAMA_HOST || 'http://localhost:11434',
-          OLLAMA_MODEL: process.env.HERMES_OLLAMA_MODEL || process.env.OLLAMA_MODEL || 'llama3.2',
-          // Do NOT clear cloud keys — Hermes config at ~/.hermes/config.yaml
-          // already points to the custom Ollama provider. Let Hermes resolve
-          // its own provider chain from config without interference.
-          CAMOFOX_URL: process.env.CAMOFOX_URL || 'http://localhost:9377',
-          HERMES_VERBOSE: '1',
-        },
-        timeout: maxTimeout,
-        maxBuffer: 20 * 1024 * 1024,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      const maxTimeout =
+        options.timeout ||
+        360000;
 
-      const output = stdout.toString() || '';
+      let output='';
 
-      // ── Log output diagnostics ──
-      this.logger.info('═══════════════════════════════════════════');
-      this.logger.info('HERMES FULL OUTPUT DIAGNOSTICS:');
-      this.logger.info(`output length: ${output.length} chars`);
-      this.logger.info('═══════════════════════════════════════════');
+      try {
 
-      if (output) {
-        this.logger.info('--- HERMES OUTPUT ---');
-        const outputPreview = output.substring(0, 10000);
-        console.log(outputPreview);
-        if (output.length > 10000) {
-          console.log(`... (${output.length - 10000} more chars)`);
+        output = execSync(
+          cmd,
+          {
+            env:{
+              ...process.env,
+
+              OLLAMA_HOST:
+                process.env.OLLAMA_HOST ||
+                'http://localhost:11434',
+
+              CAMOFOX_URL:
+                process.env.CAMOFOX_URL ||
+                'http://localhost:9377'
+            },
+
+            timeout:maxTimeout,
+
+            encoding:'utf8',
+
+            maxBuffer:
+              50*1024*1024,
+
+            stdio:'pipe'
+          }
+        );
+
+      }
+      catch(err){
+
+        output=
+          (err.stdout || '')+
+          '\n'+
+          (err.stderr || '');
+
+      }
+
+      output=String(output||'').trim();
+
+      this.logger.info(
+        '═══════════════════════════'
+      );
+
+      this.logger.info(
+        `Output length: ${output.length}`
+      );
+
+      if(output){
+
+        this.logger.info(
+          '──── HERMES OUTPUT ────'
+        );
+
+        console.log(
+          output.substring(
+            0,
+            15000
+          )
+        );
+
+        if(output.length>15000){
+
+          console.log(
+            `... ${output.length-15000} more chars`
+          );
         }
+
       } else {
-        this.logger.warn('Hermes output is EMPTY');
+
+        this.logger.warn(
+          'Hermes returned empty output'
+        );
       }
 
-      this.logger.success('Hermes completed');
-
       return {
-        success: true,
-        output: output.trim(),
-        fullOutput: output,
-        agent: 'hermes-cli',
-        steps: 1,
+
+        success:
+          output.length>0,
+
+        output,
+
+        fullOutput:output,
+
+        shouldFallback:
+          output.length===0,
+
+        agent:'hermes-cli',
+
+        steps:1
       };
 
-    } catch (err) {
-      // execSync throws on non-zero exit. But we might still have output.
-      const output = err.stdout || err.stderr || '';
+    }
+    catch(err){
 
-      if (output) {
-        this.logger.info('--- HERMES OUTPUT (from error) ---');
-        console.log(output.substring(0, 5000));
-        this.logger.success('Hermes completed (partial output)');
-        return {
-          success: true,
-          output: output.toString().trim(),
-          fullOutput: output.toString(),
-          agent: 'hermes-cli',
-          steps: 1,
-        };
-      }
-
-      this.logger.error('Hermes failed');
-      this.logger.error(err.message);
+      this.logger.error(
+        err.stack || err.message
+      );
 
       return {
-        success: false,
-        error: err.message,
-        output: '',
-        shouldFallback: true,
-        agent: 'hermes-cli',
-        steps: 0,
+
+        success:false,
+
+        output:'',
+
+        error:err.message,
+
+        shouldFallback:true,
+
+        agent:'hermes-cli',
+
+        steps:0
       };
+
     }
   }
 
-  async chat(prompt) {
+  async chat(prompt){
     return this.run(prompt);
   }
 
-  async getInfo() {
-    if (!this.cliAvailable) {
-      return { available: false };
+  async getInfo(){
+
+    if(!this.cliAvailable){
+
+      return {
+        available:false
+      };
     }
 
-    try {
-      const version = execSync('hermes --version', { timeout: 5000 })
-        .toString()
-        .trim();
-      return { available: true, version };
-    } catch {
-      return { available: true, version: 'unknown' };
+    try{
+
+      const version=
+        execSync(
+          'hermes --version',
+          {
+            timeout:5000,
+            encoding:'utf8'
+          }
+        ).trim();
+
+      return{
+
+        available:true,
+        version
+      };
+
+    }
+    catch{
+
+      return{
+
+        available:true,
+        version:'unknown'
+      };
     }
   }
 }
 
-module.exports = {
+module.exports={
   HermesCLIWrapper
 };
