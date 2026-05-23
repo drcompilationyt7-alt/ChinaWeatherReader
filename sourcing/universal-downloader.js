@@ -60,6 +60,7 @@ class UniversalDownloader {
   async download(url, options = {}) {
     const outputDir = options.outputDir || config?.paths?.output || path.join(__dirname, '..', 'output');
     const maxHeight = options.maxHeight || 720;
+    const cookiesFile = options.cookiesFile || process.env.YOUTUBE_COOKIES_FILE;
     const platform = this._detectPlatform(url);
 
     if (!fs.existsSync(outputDir)) {
@@ -70,7 +71,7 @@ class UniversalDownloader {
 
     // Strategy 1: yt-dlp (works for 1700+ sites)
     try {
-      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform);
+      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform, false, cookiesFile);
       if (result.success) return result;
       this.logger.warn(`yt-dlp failed for ${platform}, trying fallback...`);
     } catch (error) {
@@ -109,7 +110,7 @@ class UniversalDownloader {
 
     // Strategy 5: Try yt-dlp with different format selection
     try {
-      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform, true);
+      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform, true, cookiesFile);
       if (result.success) return result;
     } catch (error) {
       this.logger.warn(`yt-dlp alternative format failed: ${error.message}`);
@@ -141,12 +142,24 @@ class UniversalDownloader {
   /**
    * Primary method: yt-dlp (supports 1700+ sites)
    */
-  async _downloadWithYtDlp(url, outputDir, maxHeight, platform, useAltFormat = false) {
+  async _downloadWithYtDlp(url, outputDir, maxHeight, platform, useAltFormat = false, cookiesFile = null) {
     const safeTimestamp = Date.now();
     const outputTemplate = path.join(outputDir, `%(extractor)s_${safeTimestamp}_%(id)s.%(ext)s`);
 
     // Build yt-dlp command
     let cmd = `yt-dlp`;
+    
+    // Add cookies if provided (bypasses YouTube bot detection)
+    if (cookiesFile && fs.existsSync(cookiesFile)) {
+      cmd += ` --cookies "${cookiesFile}"`;
+      this.logger.info(`Using cookies from: ${cookiesFile}`);
+    }
+    
+    // Try alternative YouTube clients to bypass bot detection
+    if (platform === 'youtube') {
+      // Use android client which often bypasses bot checks
+      cmd += ` --extractor-args "youtube:player_client=android,web"`;
+    }
     
     // Format selection
     if (useAltFormat) {
@@ -503,7 +516,7 @@ class UniversalDownloader {
 
       // Step 4: Wait for results to load (look for resolution options or download links)
       this.logger.info('Waiting for results...');
-      await new Promise(r => setTimeout(r, 5000));
+      await new Promise(r => setTimeout(r, 8000));
 
       // Try to find and click the highest resolution option
       // Common patterns: "1080p", "720p", "HD", "Best Quality", etc.
@@ -515,6 +528,7 @@ class UniversalDownloader {
           for (const btn of allButtons) {
             const text = btn.textContent?.trim() || '';
             if (text.includes(pattern) && text.length < 50) {
+              btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
               btn.click();
               return `Clicked: ${text}`;
             }
@@ -525,11 +539,14 @@ class UniversalDownloader {
 
       if (resolutionClicked) {
         this.logger.info(`Resolution option: ${resolutionClicked}`);
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 5000));
       }
 
       // Step 5: Wait for and click the Download button
       this.logger.info('Looking for Download button...');
+      
+      // Wait longer for download button to appear after resolution selection
+      await new Promise(r => setTimeout(r, 5000));
 
       // Set up download interception — Puppeteer can intercept the download
       const client = await page.target().createCDPSession();
@@ -538,14 +555,16 @@ class UniversalDownloader {
         downloadPath: outputDir,
       });
 
+      // Use evaluate to find and click download button by text content
       const downloadClicked = await page.evaluate(() => {
         const allButtons = Array.from(document.querySelectorAll('button, a, div, span'));
-        const downloadPatterns = ['Download', 'download', 'DOWNLOAD', 'Save', 'Get Video', 'Download Video', 'Download Now'];
+        const downloadPatterns = ['Download', 'DOWNLOAD', 'Save', 'Get Video', 'Download Video', 'Download Now', 'Free Download'];
 
         for (const pattern of downloadPatterns) {
           for (const btn of allButtons) {
             const text = btn.textContent?.trim() || '';
             if (text === pattern || text.includes(pattern)) {
+              btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
               btn.click();
               return `Clicked: ${text}`;
             }
@@ -764,8 +783,78 @@ class UniversalDownloader {
           };
         }
         
+        // If no direct video URL found, try searching for embed URLs or iframe sources
+        this.logger.info('No direct video URL found, trying alternative sources...');
+        
+        const embedUrls = await page.evaluate(() => {
+          const iframes = Array.from(document.querySelectorAll('iframe'));
+          const urls = [];
+          for (const iframe of iframes) {
+            if (iframe.src && iframe.src.startsWith('http')) {
+              urls.push(iframe.src);
+            }
+          }
+          return urls;
+        });
+        
+        if (embedUrls.length > 0) {
+          this.logger.info(`Found ${embedUrls.length} embed URLs, trying first one...`);
+          await page.goto(embedUrls[0], { waitUntil: 'networkidle2', timeout: 30000 });
+          await new Promise(r => setTimeout(r, 3000));
+          
+          // Try to extract video from the embedded page
+          const embeddedVideoUrl = await page.evaluate(() => {
+            const video = document.querySelector('video');
+            if (video?.src) return video.src;
+            const source = document.querySelector('video source');
+            if (source?.src) return source.src;
+            return null;
+          });
+          
+          if (embeddedVideoUrl) {
+            this.logger.info(`Found video in embed: ${embeddedVideoUrl.substring(0, 60)}`);
+            const safeId = Date.now();
+            const outputPath = path.join(outputDir, `hermes_embed_${safeId}.mp4`);
+            const writer = fs.createWriteStream(outputPath);
+            
+            const response = await axios({
+              method: 'GET',
+              url: embeddedVideoUrl,
+              responseType: 'stream',
+              timeout: 60000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Referer': embedUrls[0],
+              },
+            });
+            
+            response.data.pipe(writer);
+            await new Promise((resolve, reject) => {
+              writer.on('finish', () => {
+                if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+                  resolve();
+                } else {
+                  reject(new Error('Empty download'));
+                }
+              });
+              writer.on('error', reject);
+            });
+            
+            this.logger.success(`✅ Hermes downloaded via embed extraction`);
+            await browser.close();
+            return {
+              success: true,
+              filePath: outputPath,
+              platform,
+              method: 'hermes_embed',
+              title: `Video from ${platform}`,
+              url,
+            };
+          }
+        }
+        
         await browser.close();
-        throw new Error('No video URL found');
+        throw new Error('Hermes: No video URL or embed found');
         
       } catch (puppeteerError) {
         await browser.close().catch(() => {});

@@ -32,6 +32,9 @@ env:
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   CHANNEL_NAME: Mr. WorldWideWebster
   GH_PAT: ${{ secrets.GH_PAT }}
+  # YouTube cookies for bypassing bot detection (optional but recommended)
+  # Export from your browser using: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
 
@@ -58,7 +61,12 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           sudo apt-get install -y -qq yt-dlp
           sudo apt-get install -y -qq chromium-browser 2>/dev/null || true
+          
+          # Update yt-dlp to latest version (YouTube frequently changes their API)
+          pip install -U yt-dlp 2>&1 | tail -3
+          
           echo "✅ System deps installed (ffmpeg, yt-dlp, chromium)"
+          echo "✅ yt-dlp updated to latest version"
 
       - name: Install Node.js dependencies
         run: |
@@ -96,6 +104,16 @@ jobs:
           # Also load channel memory
           cat memory/channel-memory.json 2>/dev/null || echo '{"initialRun":true}' > memory/channel-memory.json
           cat memory/trending-log.json 2>/dev/null || echo '{"trends":[]}' > memory/trending-log.json
+          
+          # Setup YouTube cookies if provided (for bypassing bot detection)
+          if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]; then
+            echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
+            export YOUTUBE_COOKIES_FILE="/tmp/youtube_cookies.txt"
+            echo "✅ YouTube cookies loaded for yt-dlp"
+          else
+            echo "⚠️ No YouTube cookies provided — may encounter bot detection"
+          fi
+          
           echo "✅ All memory loaded"
 
       - name: Run daily creation pipeline

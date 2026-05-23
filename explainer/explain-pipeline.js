@@ -323,12 +323,24 @@ Respond with JSON:
         const scene = scenes[i];
         const sceneDuration = scene.duration || 5;
         const sceneFile = `${basePath}_scene_${i}.mp4`;
-        const dialogue = (scene.dialogue || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
+        // Escape special characters for ffmpeg drawtext
+        const dialogue = (scene.dialogue || '')
+          .replace(/\\/g, '\\\\\\\\')
+          .replace(/:/g, '\\\\:')
+          .replace(/%/g, '\\\\%')
+          .replace(/'/g, \"'\\\\''\")
+          .replace(/"/g, '\\\\"');
         const voiceLabel = (scene.voice || 'explainer').toUpperCase();
 
-        // Create a colored background with text overlay
+        // Create a colored background with text overlay using proper filter chain syntax
+        const filterComplex = [
+          `drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold`,
+          `drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900`,
+          `drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial`
+        ].join(',');
+        
         const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30" ` +
-          `-vf "drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold,drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900,drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
+          `-vf "${filterComplex}" ` +
           `-c:v libx264 -preset ultrafast -crf 28 "${sceneFile}"`;
 
         try {
