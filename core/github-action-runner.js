@@ -89,38 +89,80 @@ class GitHubActionsRunner {
         { verbose: false, maxSteps: 1 }
       );
 
-      const output = (result.output || '').trim().toLowerCase();
+      const output = (result.output || '').trim();
       const hasOutput = output.length > 0;
+      
+      // Check for critical errors that indicate failure
+      const hasCriticalError = 
+        output.toLowerCase().includes('traceback') ||
+        output.includes('AuthError') ||
+        output.toLowerCase().includes('error:') ||
+        output.includes('No inference provider configured');
 
-      if (hasOutput) {
+      if (hasOutput && !hasCriticalError) {
         this.logger.info(`✅ Hermes smoke test passed: "${output.substring(0, 50)}"`);
+        return true;
+      } else if (hasCriticalError) {
+        this.logger.error('⚠️  Hermes smoke test failed with critical error');
+        this.logger.error(`  Error in output: ${output.substring(0, 300)}`);
+        return false;
       } else {
         this.logger.warn('⚠️  Hermes smoke test returned empty output');
         this.logger.warn('  Hermes will still be used, but may produce no results');
+        return false;
       }
 
-      // Log stderr if present
-      if (result.stderr) {
-        this.logger.info(`  Hermes smoke stderr: ${result.stderr.substring(0, 200)}`);
-      }
-
-      return hasOutput;
     } catch (error) {
       this.logger.warn(`Hermes smoke test failed: ${error.message}`);
       return false;
     }
   }
 
+
   /**
    * Extract URLs from text using a broad regex
    * Catches URLs with or without protocol, various formats
+   * Filters out obvious placeholder/fake URLs
    */
   _extractUrls(text) {
     if (!text) return [];
     // Broad URL regex: http(s)://anything-not-whitespace-not-quote
-    const urlRegex = /https?:\/\/[^\s"'<>(){}\[\]\\^`|]+/gi;
+    const urlRegex = /https?:\/\/[^\s"'<>(){}[\]\\^`|]+/gi;
     const matches = text.match(urlRegex);
-    return matches || [];
+    
+    if (!matches) return [];
+    
+    // Filter out placeholder/fake URLs that Hermes might generate when it fails
+    const validUrls = matches.filter(url => {
+      // Skip URLs with obvious placeholder patterns
+      if (url.includes('xxx')) return false;
+      if (url.includes('abcdefg')) return false;
+      if (url.includes('BV1xxx')) return false;
+      
+      // Skip YouTube URLs with invalid video ID patterns (must be 11 chars, alphanumeric + _ -)
+      const youtubeMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/i);
+      if (youtubeMatch) {
+        const videoId = youtubeMatch[1];
+        // Valid YouTube IDs are exactly 11 characters
+        if (videoId.length !== 11) return false;
+        // Check for suspicious patterns like all same character or obvious placeholders
+        if (/^(.)\1+$/.test(videoId)) return false; // e.g., "aaaaaaaaaaa"
+      }
+      
+      // Skip Bilibili URLs with placeholder BV numbers
+      const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/i);
+      if (bilibiliMatch) {
+        const bvId = bilibiliMatch[1];
+        // Real BV IDs are typically 10-12 characters after BV
+        if (bvId.length < 10) return false;
+        // Skip if contains 'xxx' placeholder
+        if (bvId.toLowerCase().includes('xxx')) return false;
+      }
+      
+      return true;
+    });
+    
+    return validUrls;
   }
 
   async initialize() {

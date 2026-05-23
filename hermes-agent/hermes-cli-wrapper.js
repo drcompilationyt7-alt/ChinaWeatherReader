@@ -191,10 +191,23 @@ class HermesCLIWrapper {
           HERMES_ENV: `${process.env.HOME || '/home/runner'}/.hermes/.env`,
 
           // Verbose mode for debugging
-          HERMES_VERBOSE: '1'
+          HERMES_VERBOSE: '1',
+          
+          // Pass cloud API keys as fallback providers
+          // Hermes will try Ollama first (from config.yaml), then fall back to these
+          ...(process.env.OPENROUTER_API_KEY && { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY }),
+          ...(process.env.OPENAI_API_KEY && { OPENAI_API_KEY: process.env.OPENAI_API_KEY }),
+          ...(process.env.ANTHROPIC_API_KEY && { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }),
+          ...(process.env.GEMINI_API_KEY && { GEMINI_API_KEY: process.env.GEMINI_API_KEY }),
+          ...(process.env.DEEPSEEK_API_KEY && { DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY }),
         };
 
-        this.logger.info('Hermes environment isolated (no cloud API keys)');
+        const apiKeysStatus = [
+          process.env.OPENROUTER_API_KEY ? 'OpenRouter' : '',
+          process.env.OPENAI_API_KEY ? 'OpenAI' : '',
+          process.env.ANTHROPIC_API_KEY ? 'Anthropic' : ''
+        ].filter(Boolean).join(', ') || 'none';
+        this.logger.info(`Hermes env: Ollama=${hermesEnv.OLLAMA_HOST}, API keys=${apiKeysStatus}`);
 
         output = execSync(
           cmd,
@@ -218,6 +231,13 @@ class HermesCLIWrapper {
       }
 
       output=String(output||'').trim();
+
+      // Check for critical errors that indicate failure
+      const hasCriticalError = 
+        output.toLowerCase().includes('traceback') ||
+        output.includes('AuthError') ||
+        output.toLowerCase().includes('error:') ||
+        output.includes('No inference provider configured');
 
       this.logger.info(
         '═══════════════════════════'
@@ -256,19 +276,19 @@ class HermesCLIWrapper {
 
       return {
 
-        success:
-          output.length>0,
+        success: output.length > 0 && !hasCriticalError,
 
         output,
 
-        fullOutput:output,
+        fullOutput: output,
 
-        shouldFallback:
-          output.length===0,
+        shouldFallback: output.length === 0 || hasCriticalError,
 
         agent:'hermes-cli',
 
-        steps:1
+        steps: hasCriticalError ? 0 : 1,
+
+        error: hasCriticalError ? 'Hermes execution failed with critical error' : null
       };
 
     }
