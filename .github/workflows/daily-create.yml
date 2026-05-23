@@ -17,7 +17,6 @@ on:
         default: false
 
 env:
-  # Used only by your Node/OpenRouter scripts
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -36,7 +35,6 @@ env:
 
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
-
 
 jobs:
   create-shorts:
@@ -68,21 +66,20 @@ jobs:
         sudo apt-get update -qq
 
         sudo apt-get install -y \
-        ffmpeg \
-        yt-dlp \
-        curl \
-        jq
+          ffmpeg \
+          yt-dlp \
+          curl \
+          jq
 
         sudo apt-get install -y chromium || \
         sudo apt-get install -y chromium-browser || true
 
         python3 -m pip install -U \
-        edge-tts \
-        yt-dlp \
-        --break-system-packages
+          edge-tts \
+          yt-dlp \
+          --break-system-packages
 
         npm ci || npm install
-
 
     - name: Install Ollama
       run: |
@@ -91,15 +88,23 @@ jobs:
 
         ollama serve > ollama.log 2>&1 &
 
-        sleep 15
+        echo "Waiting for Ollama..."
 
-        curl http://127.0.0.1:11434/api/tags || true
+        for i in {1..30}; do
 
+          if curl -fs http://127.0.0.1:11434/api/tags >/dev/null 2>&1
+          then
+            echo "Ollama ready"
+            break
+          fi
+
+          sleep 3
+        done
 
     - name: Download Ollama models
       run: |
 
-        echo "Downloading research model..."
+        echo "Downloading browsing model..."
 
         ollama pull qwen3:8b
 
@@ -109,48 +114,60 @@ jobs:
 
         ollama list
 
-
     - name: Setup Docker
       run: docker --version
-
 
     - name: Start Camofox
       run: |
 
-        cd /tmp
+        set -e
 
-        git clone https://github.com/jo-inc/camofox-browser.git
+        mkdir -p ~/.camofox-docker
 
-        cd camofox-browser
+        echo "Pulling Camofox..."
 
-        make down || true
-        make build
-
-        IMAGE=$(docker images \
-        --format "{{.Repository}}:{{.Tag}}" \
-        | grep '^camofox-browser:' \
-        | head -1)
-
-        [ -z "$IMAGE" ] && exit 1
+        docker pull ghcr.io/jo-inc/camofox-browser:latest
 
         docker run -d \
-        --name camofox-browser \
-        -p 9377:9377 \
-        -p 6080:6080 \
-        -e CAMOFOX_PORT=9377 \
-        "$IMAGE"
+          --name camofox-browser \
+          --restart unless-stopped \
+          -p 9377:9377 \
+          -p 6080:6080 \
+          -p 5901:5900 \
+          -e CAMOFOX_PORT=9377 \
+          -e ENABLE_VNC=1 \
+          -e VNC_BIND=0.0.0.0 \
+          -e VNC_RESOLUTION=1920x1080 \
+          -v ~/.camofox-docker:/root/.camofox \
+          ghcr.io/jo-inc/camofox-browser:latest
 
-        for i in {1..30}; do
+        echo "Waiting for Camofox..."
 
-          if curl -fs http://localhost:9377/health >/dev/null
+        for i in {1..40}; do
+
+          if curl -fs http://localhost:9377/health >/dev/null 2>&1
           then
-            echo "Camofox ready"
-            break
+            echo "✅ Camofox healthy"
+
+            curl http://localhost:9377/health || true
+
+            exit 0
           fi
 
           sleep 3
         done
 
+        echo ""
+        echo "===== CONTAINER ====="
+
+        docker ps -a
+
+        echo ""
+        echo "===== LOGS ====="
+
+        docker logs camofox-browser || true
+
+        exit 1
 
     - name: Install Hermes
       run: |
@@ -171,7 +188,6 @@ jobs:
         HERMES_MODEL=qwen3:8b
         HERMES_VERBOSE=1
         EOF
-
 
         cat > ~/.hermes/config.yaml <<EOF
         llm:
@@ -216,12 +232,14 @@ jobs:
         export HERMES_LLM_PROVIDER=ollama
         export HERMES_MODEL=qwen3:8b
 
+        echo "===== HERMES STATUS ====="
+
         hermes status || true
 
-        echo "Testing Hermes..."
+        echo ""
+        echo "===== HERMES TEST ====="
 
         hermes -z "Reply only OK"
-
 
     - name: Restore memory
       run: |
@@ -230,7 +248,6 @@ jobs:
         mkdir -p memory
 
         cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
-
 
     - name: Run content pipeline
       env:
@@ -242,6 +259,24 @@ jobs:
 
         node core/github-action-runner.js --mode daily
 
+    - name: Save memory
+      run: |
+
+        mkdir -p hermes-memory
+
+        cp -r ~/.hermes/* hermes-memory/ || true
+
+        git config user.name "Mr. WorldWideWebster Bot"
+        git config user.email "bot@worldwidewebster.com"
+
+        git add memory/
+        git add hermes-memory/
+
+        if ! git diff --staged --quiet
+        then
+          git commit -m "📊 Memory update $(date +%F)"
+          git push
+        fi
 
     - name: Cleanup
       if: always()
@@ -251,3 +286,9 @@ jobs:
 
         docker stop camofox-browser || true
         docker rm camofox-browser || true
+
+        rm -rf ~/.hermes/sessions || true
+        rm -rf ~/.hermes/checkpoints || true
+        rm -rf output/temp || true
+
+        echo "Cleanup complete"
