@@ -136,21 +136,17 @@ class HermesCLIWrapper {
       const escapedTask =
         this.escapeShell(task);
 
+      // Use -z flag for zero-turn non-interactive mode (top-level flag)
+      // Do NOT use 'chat' subcommand - it conflicts with -z
+      // Do NOT add --yolo as a subcommand flag - it's a top-level flag
+      // The tools list must be quoted per Hermes CLI docs
       const cmd = [
-
         'hermes',
-        'chat',
-
-        '-q',
+        '-z',
         `"${escapedTask}"`,
-
-        '--toolsets',
+        '-t',
         `"${tools}"`,
-
-        '--verbose',
-
         '--yolo'
-
       ].join(' ');
 
       this.logger.info(
@@ -169,29 +165,41 @@ class HermesCLIWrapper {
 
       try {
 
+        // Build isolated environment for Hermes - DO NOT inherit cloud API keys
+        // This prevents Hermes from auto-selecting OpenRouter/OpenAI/Anthropic
+        // and forces it to use the local Ollama config in ~/.hermes/config.yaml
+        const hermesEnv = {
+          // Essential system variables
+          PATH: process.env.PATH,
+          HOME: process.env.HOME,
+          USER: process.env.USER,
+          LANG: process.env.LANG || 'en_US.UTF-8',
+          TERM: process.env.TERM || 'xterm',
+
+          // Hermes-specific variables for local Ollama
+          OLLAMA_HOST: process.env.OLLAMA_HOST || 'http://localhost:11434',
+          OLLAMA_MODEL: process.env.OLLAMA_MODEL || 'llama3.2:3b',
+
+          // Camofox browser URL
+          CAMOFOX_URL: process.env.CAMOFOX_URL || 'http://localhost:9377',
+
+          // Hermes config path
+          HERMES_CONFIG: `${process.env.HOME}/.hermes/config.yaml`,
+
+          // Verbose mode for debugging
+          HERMES_VERBOSE: '1'
+        };
+
+        this.logger.info('Hermes environment isolated (no cloud API keys)');
+
         output = execSync(
           cmd,
           {
-            env:{
-              ...process.env,
-
-              OLLAMA_HOST:
-                process.env.OLLAMA_HOST ||
-                'http://localhost:11434',
-
-              CAMOFOX_URL:
-                process.env.CAMOFOX_URL ||
-                'http://localhost:9377'
-            },
-
-            timeout:maxTimeout,
-
-            encoding:'utf8',
-
-            maxBuffer:
-              50*1024*1024,
-
-            stdio:'pipe'
+            env: hermesEnv,
+            timeout: maxTimeout,
+            encoding: 'utf8',
+            maxBuffer: 50 * 1024 * 1024,
+            stdio: 'pipe'
           }
         );
 
