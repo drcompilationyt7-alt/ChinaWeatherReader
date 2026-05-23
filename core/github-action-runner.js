@@ -296,10 +296,9 @@ class GitHubActionsRunner {
           
           // Use UniversalDownloader directly with the URL
           const downloader = new UniversalDownloader();
-          const downloadResult = await downloader.download({
-            url: url,
-            type: 'video',
-            outputDir: './output/temp'
+          const downloadResult = await downloader.download(url, {
+            outputDir: './output/temp',
+            maxHeight: 720,
           });
           
           if (downloadResult && downloadResult.filePath) {
@@ -398,15 +397,14 @@ class GitHubActionsRunner {
       this.logger.warn(`Hermes URL extraction failed: ${error.message}`);
       this.logger.info('🔄 Falling back to random platform selection...');
       
-      // Fallback: Random platform + query
-      const platforms = ['bilibili', 'tiktok', 'youtube', 'instagram'];
+      // Fallback: Try YouTube first (most reliable with yt-dlp), then Bilibili, then others
+      const platforms = ['youtube', 'bilibili', 'tiktok'];
       platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
       
       const queriesByPlatform = {
-        youtube: ['funny fail compilation 2026 short', 'beautiful nature drone 4k', 'satisfying video no music'],
-        bilibili: ['热门视频', '搞笑合集', '美食制作'],
-        tiktok: ['viral dance 2026', 'funny moments', 'cooking hacks'],
-        instagram: ['reels viral', 'travel reels', 'food reels'],
+        youtube: ['viral dance compilation 2026', 'street food around the world', 'beautiful nature', 'satisfying video', 'travel moments'],
+        bilibili: ['viral', 'trending', 'amazing'],
+        tiktok: ['viral dance', 'funny moments', 'food'],
       };
       
       searchQuery = queriesByPlatform[platformChoice][Math.floor(Math.random() * queriesByPlatform[platformChoice].length)];
@@ -729,8 +727,9 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
     // Update trending log
     const trendingLog = this.memory['trending-log'];
     trendingLog.lastUpdated = new Date().toISOString();
+    const researchSteps = trendsResult?.steps || [];
     trendingLog.trends = [
-      ...stepsArray.map(s => ({
+      ...researchSteps.map(s => ({
         country: 'web',
         trend: s.result?.substring(0, 200) || 'Researched web trends',
         timestamp: new Date().toISOString(),

@@ -65,10 +65,9 @@ class ExplainPipeline {
         const { UniversalDownloader } = require('../sourcing/universal-downloader');
         const downloader = new UniversalDownloader();
         
-        const downloadResult = await downloader.download({
-          url: sourceContent.url,
-          type: 'video',
-          outputDir: path.join(config.paths.assets, `explain_${safeId}`)
+        const downloadResult = await downloader.download(sourceContent.url, {
+          outputDir: path.join(config.paths.assets, `explain_${safeId}`),
+          maxHeight: 720,
         });
         
         if (downloadResult && downloadResult.filePath) {
@@ -126,10 +125,9 @@ class ExplainPipeline {
             const { UniversalDownloader } = require('../sourcing/universal-downloader');
             const downloader = new UniversalDownloader();
             
-            const downloadResult = await downloader.download({
-              url: foundUrl,
-              type: 'video',
-              outputDir: path.join(config.paths.assets, `explain_${safeId}`)
+            const downloadResult = await downloader.download(foundUrl, {
+              outputDir: path.join(config.paths.assets, `explain_${safeId}`),
+              maxHeight: 720,
             });
             
             if (downloadResult && downloadResult.filePath) {

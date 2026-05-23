@@ -104,6 +104,7 @@ const config = {
     aiCreated: path.resolve(__dirname, '..', 'output', 'ai-created'),
     longForm: path.resolve(__dirname, '..', 'output', 'long-form'),
     assets: path.resolve(__dirname, '..', 'output', 'assets'),
+    temp: path.resolve(__dirname, '..', 'output', 'temp'),
     audio: path.resolve(__dirname, '..', 'output', 'audio'),
     scripts: path.resolve(__dirname, '..', 'output', 'scripts'),
     skills: path.resolve(__dirname, '..', 'hermes-agent', 'skills'),
