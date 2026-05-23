@@ -130,16 +130,14 @@ jobs:
           # Configure Camofox for browser automation
           echo "🦊 Configuring Hermes to use Camofox..."
           mkdir -p ~/.hermes
-          cat >> ~/.hermes/.env << EOF
-CAMOFOX_URL=http://localhost:9377
-EOF
+          echo 'CAMOFOX_URL=http://localhost:9377' >> ~/.hermes/.env
           
           # Enable persistent browser sessions in config.yaml
-          cat >> ~/.hermes/config.yaml << EOF
+          cat > ~/.hermes/config.yaml << 'EOFCONFIG'
 browser:
   camofox:
     managed_persistence: true
-EOF
+EOFCONFIG
           
           echo "✅ Hermes Agent installed and configured with Camofox browser automation"
           echo "✅ Camofox URL: http://localhost:9377"
