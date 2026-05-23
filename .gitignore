@@ -1,8 +1,1 @@
-node_modules/
-.env
-output/
-*.mp4
-*.mp3
-*.png
-*.srt
-content_queue.json
+Nothing should be ignored based on the provided file changes, as they only include source code files (.js files) without any build artifacts, dependencies, or temporary files.
