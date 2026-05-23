@@ -107,8 +107,8 @@ class GitHubActionsRunner {
         this.logger.error(`  Error in output: ${output.substring(0, 300)}`);
         return false;
       } else {
-        this.logger.warn('⚠️  Hermes smoke test returned empty output');
-        this.logger.warn('  Hermes will still be used, but may produce no results');
+        this.logger.error('❌ Hermes smoke test returned empty output - cannot continue');
+        this.logger.error('  This indicates Hermes CLI is not properly configured');
         return false;
       }
 
@@ -182,7 +182,11 @@ class GitHubActionsRunner {
       this.logger.success('✅ Using official Hermes CLI as primary agent');
 
       // Run Hermes smoke test to verify it actually outputs something
-      await this._smokeTestHermes();
+      const smokeTestPassed = await this._smokeTestHermes();
+      if (!smokeTestPassed) {
+        this.logger.error('❌ Hermes smoke test failed - falling back to built-in agent');
+        throw new Error('Hermes CLI smoke test failed');
+      }
     } else {
       // FALLBACK: Built-in Hermes JS agent
       this.logger.info('Falling back to built-in Hermes JS agent...');

@@ -136,15 +136,16 @@ class HermesCLIWrapper {
       const escapedTask =
         this.escapeShell(task);
 
-      // Use -z flag for zero-turn non-interactive mode (top-level flag)
-      // Do NOT use 'chat' subcommand - it conflicts with -z
-      // Do NOT add --yolo as a subcommand flag - it's a top-level flag
-      // The tools list must be quoted per Hermes CLI docs
+      // Use chat -q (quiet mode) instead of -z (oneshot) because
+      // -z causes empty output in CI environments. chat -q properly returns responses.
+      // --toolsets specifies which tools Hermes can use
+      // --yolo enables auto-execution without confirmation prompts
       const cmd = [
         'hermes',
-        '-z',
+        'chat',
+        '-q',
         `"${escapedTask}"`,
-        '-t',
+        '--toolsets',
         `"${tools}"`,
         '--yolo'
       ].join(' ');
