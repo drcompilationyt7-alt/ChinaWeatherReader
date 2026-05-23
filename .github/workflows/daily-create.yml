@@ -181,6 +181,9 @@ jobs:
 
       - name: Run content pipeline
         run: |
+          # Unset cloud API keys so Hermes uses the local Ollama model
+          # configured in ~/.hermes/config.yaml instead of OpenRouter
+          unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
