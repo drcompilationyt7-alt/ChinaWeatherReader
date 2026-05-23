@@ -2,7 +2,7 @@ name: 🌅 Daily Shorts Creation
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # 6 AM daily
+    - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
       debug:
@@ -23,9 +23,9 @@ env:
   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
-  CHANNEL_NAME: "Mr. WorldWideWebster"
   GH_PAT: ${{ secrets.GH_PAT }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  CHANNEL_NAME: "Mr. WorldWideWebster"
 
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
@@ -36,13 +36,14 @@ jobs:
     timeout-minutes: 300
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -52,37 +53,58 @@ jobs:
           set -e
 
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg yt-dlp
+
+          sudo apt-get install -y \
+            ffmpeg \
+            yt-dlp \
+            curl \
+            jq
 
           sudo apt-get install -y chromium || \
           sudo apt-get install -y chromium-browser || true
 
-          python3 -m pip install -U yt-dlp
+          python3 -m pip install -U yt-dlp edge-tts
 
-          echo "✅ System dependencies installed"
-          ffmpeg -version | head -1
-          yt-dlp --version
+          echo "✅ Dependencies installed"
 
-      - name: Setup Docker for Camofox
+      - name: Setup Docker
         run: |
-          set -e
-
           docker --version
-          echo "✅ Docker available"
 
-      - name: Clone and start Camofox browser server
+      - name: Build and start Camofox
         run: |
           set -e
 
           cd /tmp
 
+          echo "📦 Clone"
+
           git clone https://github.com/jo-inc/camofox-browser.git
           cd camofox-browser
 
-          echo "🔨 Building Camofox Docker image..."
+          echo "🛑 Stop default containers"
+
+          make down || true
+
+          echo "🔨 Build image"
+
           make build
 
-          echo "🚀 Starting Camofox container..."
+          echo "🔍 Detect image"
+
+          IMAGE=$(docker images \
+          --format "{{.Repository}}:{{.Tag}}" \
+          | grep '^camofox-browser:' \
+          | head -n 1)
+
+          if [ -z "$IMAGE" ]; then
+            echo "No image found"
+            docker images
+            exit 1
+          fi
+
+          echo "Using image:"
+          echo "$IMAGE"
 
           mkdir -p ~/.camofox-docker
 
@@ -98,25 +120,44 @@ jobs:
             -e VNC_RESOLUTION=1920x1080 \
             -e MAX_OLD_SPACE_SIZE=2048 \
             -v ~/.camofox-docker:/root/.camofox \
-            camofox-browser:latest
+            "$IMAGE"
 
-          echo "⏳ Waiting for Camofox..."
-          sleep 20
+          echo "⏳ Waiting for Camofox"
 
-          curl -s http://localhost:9377/health || \
-          echo "⚠️ Health check failed but continuing"
+          for i in {1..30}; do
 
-          echo "✅ Camofox started"
-          echo "📺 VNC: http://localhost:6080"
+            if curl -fs http://localhost:9377/health >/dev/null 2>&1
+            then
+              echo "✅ Camofox healthy"
+              break
+            fi
 
-      - name: Install Node dependencies
+            sleep 3
+          done
+
+          echo "===== HEALTH ====="
+
+          curl http://localhost:9377/health || true
+
+          echo ""
+          echo "===== CONTAINER ====="
+
+          docker ps
+
+          echo ""
+          echo "===== LOGS ====="
+
+          docker logs camofox-browser --tail=100 || true
+
+          echo ""
+          echo "📺 noVNC:"
+          echo "http://localhost:6080"
+
+      - name: Install node packages
         run: |
-          set -e
-
           npm ci --production || npm install
-          echo "✅ Dependencies installed"
 
-      - name: Install Hermes Agent
+      - name: Install Hermes
         run: |
           set -e
 
@@ -127,51 +168,36 @@ jobs:
 
           hermes config set DISCORD_BOT_TOKEN "${{ secrets.DISCORD_BOT_TOKEN }}"
           hermes config set DISCORD_CHANNEL_ID "${{ secrets.DISCORD_CHANNEL_ID }}"
-
-          hermes config set YOUTUBE_CHANNEL "Mr. WorldWideWebster"
-
-          echo "🦊 Configuring Camofox"
+          hermes config set YOUTUBE_CHANNEL "${CHANNEL_NAME}"
 
           mkdir -p ~/.hermes
 
-          echo 'CAMOFOX_URL=http://localhost:9377' >> ~/.hermes/.env
+          cat > ~/.hermes/.env <<EOF
+          CAMOFOX_URL=http://localhost:9377
+          EOF
 
-          printf '%s\n' \
-          'browser:' \
-          '  camofox:' \
-          '    managed_persistence: true' \
-          > ~/.hermes/config.yaml
+          cat > ~/.hermes/config.yaml <<EOF
+          browser:
+            camofox:
+              managed_persistence: true
+          EOF
 
-          echo "===== Hermes Config ====="
+          echo "===== Hermes ENV ====="
+
+          cat ~/.hermes/.env
+
+          echo ""
+
+          echo "===== Hermes CONFIG ====="
+
           cat ~/.hermes/config.yaml
-          echo "========================="
 
-          echo "✅ Hermes configured"
-
-      - name: Install Python dependencies
+      - name: Restore memory
         run: |
-          set -e
-
-          python3 -m pip install edge-tts
-
-          python3 -m edge_tts --help | head -3
-
-          echo "✅ Edge-TTS ready"
-
-      - name: Restore Hermes memory
-        run: |
-          set -e
-
-          echo "📂 Restoring memory"
-
           mkdir -p ~/.hermes
 
-          if [ -d "hermes-memory" ]; then
+          if [ -d hermes-memory ]; then
             cp -r hermes-memory/* ~/.hermes/ || true
-            echo "✅ Hermes memory restored"
-          else
-            echo "ℹ️ Starting fresh"
-            mkdir -p hermes-memory
           fi
 
           mkdir -p memory
@@ -182,59 +208,47 @@ jobs:
           [ -f memory/trending-log.json ] || \
           echo '{"trends":[]}' > memory/trending-log.json
 
-          if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]; then
+      - name: Setup YouTube cookies
+        run: |
+          if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
+          then
             echo "${{ secrets.YOUTUBE_COOKIES }}" \
             > /tmp/youtube_cookies.txt
 
-            export YOUTUBE_COOKIES_FILE=/tmp/youtube_cookies.txt
-
-            echo "✅ YouTube cookies loaded"
-          else
-            echo "⚠️ No YouTube cookies configured"
+            echo "✅ Cookies loaded"
           fi
 
-      - name: Run daily creation pipeline
-        id: create
+      - name: Run content pipeline
         run: |
-          set -e
-
           node core/github-action-runner.js --mode daily
 
-          echo "status=completed" >> "$GITHUB_OUTPUT"
-
-          echo "✅ Pipeline complete"
-
-      - name: Save memory back to repo
+      - name: Save memory
         run: |
-          set -e
 
-          if [ -d ~/.hermes ]; then
-            mkdir -p hermes-memory
-            cp -r ~/.hermes/* hermes-memory/ || true
-          fi
+          mkdir -p hermes-memory
+
+          cp -r ~/.hermes/* hermes-memory/ || true
 
           git config user.name "Mr. WorldWideWebster Bot"
           git config user.email "bot@worldwidewebster.com"
 
           git add memory/
           git add hermes-memory/
+
           git add output/scripts/ 2>/dev/null || true
 
-          if ! git diff --staged --quiet; then
-            git commit -m "📊 Daily memory update: $(date +%Y-%m-%d)"
+          if ! git diff --staged --quiet
+          then
+            git commit -m "📊 Memory update $(date +%F)"
             git push
-
-            echo "✅ Memory saved"
-          else
-            echo "ℹ️ No changes to save"
           fi
 
-      - name: Cleanup temp files
+      - name: Cleanup
         if: always()
         run: |
-          rm -rf output/temp || true
-
           docker stop camofox-browser || true
           docker rm camofox-browser || true
+
+          rm -rf output/temp || true
 
           echo "🧹 Cleanup complete"
