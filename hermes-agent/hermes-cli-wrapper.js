@@ -186,9 +186,12 @@ class HermesCLIWrapper {
   buildArguments(task){
 
     const args=[
-      '-z',
+      '--yolo',
+      'chat',
+      '-q',
       task,
-      '--yolo'
+      '--toolsets',
+      'web,terminal,skills,browser'
     ];
 
     return args;
@@ -270,6 +273,8 @@ class HermesCLIWrapper {
 
       const failed=
         result.error ||
+        result.status !== 0 ||
+        !output ||
         this.detectFailure(output);
 
       return{

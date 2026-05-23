@@ -72,6 +72,7 @@ jobs:
             --break-system-packages
 
           npm ci || npm install
+          npm install -g agent-browser
 
           # Install puppeteer dependencies for Camofox integration
           npx playwright install chromium
@@ -175,6 +176,12 @@ jobs:
               url: http://localhost:9377
               managed_persistence: true
 
+          toolsets:
+            - web
+            - terminal
+            - skills
+            - browser
+
           memory:
             enabled: true
             char_limit: 2000
@@ -197,7 +204,7 @@ jobs:
           hermes status || true
           echo ""
           echo "===== TEST ====="
-          hermes -z "Reply only OK"
+          timeout 180s hermes --yolo chat -q "Reply only OK" --toolsets "web,terminal,skills,browser"
           
           # Export HERMES_CONFIG explicitly for child processes
           echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
@@ -218,7 +225,14 @@ jobs:
         run: |
           mkdir -p ~/.hermes
           mkdir -p memory
-          cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
+          shopt -s dotglob nullglob
+          for item in hermes-memory/*; do
+            base="$(basename "$item")"
+            case "$base" in
+              config.yaml|.env|auth.json) continue ;;
+            esac
+            cp -r "$item" ~/.hermes/
+          done
 
       - name: Run content pipeline
         run: |
