@@ -1,7 +1,6 @@
 const { spawnSync, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 const { Logger } = require('../core/logger');
 
 class HermesCLIWrapper {
@@ -13,9 +12,12 @@ class HermesCLIWrapper {
 
   _checkCLI() {
     try {
-      const version = execSync('hermes --version', {
-        timeout: 5000
-      }).toString().trim();
+      const version = execSync(
+        'hermes --version',
+        { timeout: 5000 }
+      )
+      .toString()
+      .trim();
 
       this.cliAvailable = true;
 
@@ -24,10 +26,11 @@ class HermesCLIWrapper {
       );
 
     } catch {
+
       this.cliAvailable = false;
 
       this.logger.warn(
-        'Official Hermes CLI not found'
+        'Official Hermes CLI not found — JS fallback enabled'
       );
     }
   }
@@ -81,10 +84,11 @@ class HermesCLIWrapper {
       );
 
       const env = {
+
         ...process.env,
 
         OPENROUTER_API_KEY:
-          process.env.OPENROUTER_API_KEY,
+          process.env.OPENROUTER_API_KEY || '',
 
         CAMOFOX_URL:
           process.env.CAMOFOX_URL ||
@@ -93,21 +97,37 @@ class HermesCLIWrapper {
         HERMES_VERBOSE:'1'
       };
 
+      /*
+       Hermes v0.14 syntax:
+
+       hermes -z "prompt" \
+         -t "web,terminal,skills,browser" \
+         chat --yolo
+      */
+
       const args = [
-        'chat',
+
         '-z',
         task,
-        '--yolo',
-        '--toolsets',
-        'web,terminal,skills,browser'
+
+        '-t',
+        'web,terminal,skills,browser',
+
+        'chat',
+
+        '--yolo'
       ];
 
       this.logger.info(
-        `Executing Hermes...`
+        'Executing Hermes...'
       );
 
       this.logger.info(
         `CAMOFOX_URL=${env.CAMOFOX_URL}`
+      );
+
+      this.logger.info(
+        `Command: hermes ${args.join(' ')}`
       );
 
       const result = spawnSync(
@@ -117,8 +137,7 @@ class HermesCLIWrapper {
           env,
           encoding:'utf8',
           timeout:300000,
-          maxBuffer:
-            20*1024*1024
+          maxBuffer:20*1024*1024
         }
       );
 
@@ -131,7 +150,7 @@ class HermesCLIWrapper {
         console.log(
           result.stdout.substring(
             0,
-            5000
+            10000
           )
         );
       }
@@ -145,12 +164,12 @@ class HermesCLIWrapper {
         console.log(
           result.stderr.substring(
             0,
-            5000
+            10000
           )
         );
       }
 
-      if(result.status!==0){
+      if(result.status !== 0){
 
         throw new Error(
           `Exit code ${result.status}`
@@ -181,7 +200,7 @@ class HermesCLIWrapper {
     catch(err){
 
       this.logger.error(
-        `Hermes failed`
+        'Hermes failed'
       );
 
       this.logger.error(
@@ -192,17 +211,15 @@ class HermesCLIWrapper {
 
         success:false,
 
-        error:
-          err.message,
-
-        shouldFallback:true,
+        error:err.message,
 
         output:'',
 
-        steps:0,
+        shouldFallback:true,
 
-        agent:
-          'hermes-cli'
+        agent:'hermes-cli',
+
+        steps:0
       };
     }
   }
@@ -225,7 +242,7 @@ class HermesCLIWrapper {
 
     try{
 
-      const version =
+      const version=
       execSync(
         'hermes --version'
       )
@@ -250,10 +267,9 @@ class HermesCLIWrapper {
       };
 
     }
-
   }
 }
 
-module.exports={
+module.exports = {
   HermesCLIWrapper
 };
