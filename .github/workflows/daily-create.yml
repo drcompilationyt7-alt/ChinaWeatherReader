@@ -17,7 +17,7 @@ on:
         default: false
 
 env:
-  # Keep for Node scripts only
+  # Used only by your Node/OpenRouter scripts
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -37,6 +37,7 @@ env:
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
 
+
 jobs:
   create-shorts:
 
@@ -51,18 +52,15 @@ jobs:
         token: ${{ secrets.GH_PAT || github.token }}
         fetch-depth: 0
 
-
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
         node-version: "20"
 
-
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-
 
     - name: Install dependencies
       run: |
@@ -70,18 +68,18 @@ jobs:
         sudo apt-get update -qq
 
         sudo apt-get install -y \
-          ffmpeg \
-          yt-dlp \
-          curl \
-          jq
+        ffmpeg \
+        yt-dlp \
+        curl \
+        jq
 
         sudo apt-get install -y chromium || \
         sudo apt-get install -y chromium-browser || true
 
         python3 -m pip install -U \
-          edge-tts \
-          yt-dlp \
-          --break-system-packages
+        edge-tts \
+        yt-dlp \
+        --break-system-packages
 
         npm ci || npm install
 
@@ -93,17 +91,21 @@ jobs:
 
         ollama serve > ollama.log 2>&1 &
 
-        sleep 20
+        sleep 15
 
-        curl http://localhost:11434/api/tags
+        curl http://127.0.0.1:11434/api/tags || true
 
 
-    - name: Download model
+    - name: Download Ollama models
       run: |
 
-        echo "Downloading Gemma..."
+        echo "Downloading research model..."
 
-        ollama pull gemma3:4b
+        ollama pull qwen3:8b
+
+        echo "Downloading coding model..."
+
+        ollama pull qwen2.5-coder:7b
 
         ollama list
 
@@ -129,18 +131,14 @@ jobs:
         | grep '^camofox-browser:' \
         | head -1)
 
-        if [ -z "$IMAGE" ]
-        then
-          echo "No image built"
-          exit 1
-        fi
+        [ -z "$IMAGE" ] && exit 1
 
         docker run -d \
-          --name camofox-browser \
-          -p 9377:9377 \
-          -p 6080:6080 \
-          -e CAMOFOX_PORT=9377 \
-          "$IMAGE"
+        --name camofox-browser \
+        -p 9377:9377 \
+        -p 6080:6080 \
+        -e CAMOFOX_PORT=9377 \
+        "$IMAGE"
 
         for i in {1..30}; do
 
@@ -151,10 +149,7 @@ jobs:
           fi
 
           sleep 3
-
         done
-
-        docker logs camofox-browser || true
 
 
     - name: Install Hermes
@@ -164,28 +159,28 @@ jobs:
 
         mkdir -p ~/.hermes
 
-        # IMPORTANT:
-        # Remove OpenRouter so Hermes cannot detect it
-
-        unset OPENROUTER_API_KEY
-
+        rm -f ~/.hermes/config.yaml
         rm -f ~/.hermes/.env
+        rm -f ~/.hermes/auth.json
 
         cat > ~/.hermes/.env <<EOF
         CAMOFOX_URL=http://localhost:9377
-        OLLAMA_HOST=http://localhost:11434
+        OLLAMA_HOST=http://127.0.0.1:11434
+        OLLAMA_API_BASE=http://127.0.0.1:11434/v1
+        HERMES_LLM_PROVIDER=ollama
+        HERMES_MODEL=qwen3:8b
         HERMES_VERBOSE=1
         EOF
 
 
         cat > ~/.hermes/config.yaml <<EOF
-
         llm:
           provider: ollama
-          model: gemma3:4b
-          base_url: http://localhost:11434
+          endpoint: http://127.0.0.1:11434/v1
+          model: qwen3:8b
           temperature: 0.7
           max_tokens: 1000
+          context_window: 4096
 
         completion:
           max_tokens: 800
@@ -215,13 +210,17 @@ jobs:
           terminal: true
           web: true
           skills: true
-
         EOF
 
-        echo "===== HERMES CONFIG ====="
-        cat ~/.hermes/config.yaml
+        export OLLAMA_HOST=http://127.0.0.1:11434
+        export HERMES_LLM_PROVIDER=ollama
+        export HERMES_MODEL=qwen3:8b
 
         hermes status || true
+
+        echo "Testing Hermes..."
+
+        hermes -z "Reply only OK"
 
 
     - name: Restore memory
@@ -232,62 +231,16 @@ jobs:
 
         cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
 
-        [ -f memory/channel-memory.json ] || \
-        echo '{"initialRun":true}' > memory/channel-memory.json
-
-        [ -f memory/trending-log.json ] || \
-        echo '{"trends":[]}' > memory/trending-log.json
-
-        [ -f memory/content-history.json ] || \
-        echo '{"videos":[]}' > memory/content-history.json
-
-
-    - name: Verify model
-      run: |
-
-        ollama run gemma3:4b "hello"
-
-
-    - name: Setup YouTube cookies
-      run: |
-
-        if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
-        then
-          echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
-        fi
-
 
     - name: Run content pipeline
       env:
-        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-
-        OLLAMA_URL: http://localhost:11434
-        OLLAMA_MODEL: gemma3:4b
+        OLLAMA_HOST: http://127.0.0.1:11434
+        HERMES_LLM_PROVIDER: ollama
+        HERMES_MODEL: qwen3:8b
 
       run: |
 
         node core/github-action-runner.js --mode daily
-
-
-    - name: Save memory
-      run: |
-
-        mkdir -p hermes-memory
-
-        cp -r ~/.hermes/* hermes-memory/ || true
-
-        git config user.name "Mr. WorldWideWebster Bot"
-        git config user.email "bot@worldwidewebster.com"
-
-        git add memory/
-        git add hermes-memory/
-        git add output/scripts/ 2>/dev/null || true
-
-        if ! git diff --staged --quiet
-        then
-          git commit -m "📊 Memory update $(date +%F)"
-          git push
-        fi
 
 
     - name: Cleanup
@@ -298,9 +251,3 @@ jobs:
 
         docker stop camofox-browser || true
         docker rm camofox-browser || true
-
-        rm -rf ~/.hermes/sessions || true
-        rm -rf ~/.hermes/checkpoints || true
-        rm -rf output/temp || true
-
-        echo "Cleanup complete"
