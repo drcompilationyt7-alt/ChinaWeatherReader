@@ -328,7 +328,7 @@ Respond with JSON:
           .replace(/\\/g, '\\\\\\\\')
           .replace(/:/g, '\\\\:')
           .replace(/%/g, '\\\\%')
-          .replace(/'/g, \"'\\\\''\")
+          .replace(/'/g, "'\\\\'")
           .replace(/"/g, '\\\\"');
         const voiceLabel = (scene.voice || 'explainer').toUpperCase();
 

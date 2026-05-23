@@ -36,6 +36,10 @@ class HermesCLIWrapper {
   /**
    * Run a task using the official Hermes CLI via `hermes chat -z`
    * Hermes v0.14.0 removed the `run` command; use `chat -z` for one-shot prompts.
+   * 
+   * CRITICAL: For web browsing tasks, we add --toolsets "web,terminal,skills"
+   * to ensure Hermes has access to web browsing tools. Without this, Hermes
+   * cannot browse the internet to find trending content.
    */
   async run(task, options = {}) {
     if (!this.cliAvailable) {
@@ -61,27 +65,34 @@ Content types: Clip (viral moments), Voiceover (translated), Explain ("What is t
 
 ## System Context
 - You are running in a GitHub Actions environment (Ubuntu Linux)
-- You have access to: yt-dlp, ffmpeg, python3, node.js
+- You have access to: yt-dlp, ffmpeg, python3, node.js, puppeteer (for web automation)
 - Your AI model is configured via OPENROUTER_API_KEY
 - The repo is at: /home/runner/work/mr-worldwidewebster/mr-worldwidewebster
+- CRITICAL: You MUST use your web browsing tools to find real-time trending content
+- Use search engines and social media platforms (Bilibili, TikTok, Douyin, Instagram, Rednote, Twitter)
 
 ## Task
 ${task}
 
 ## Instructions
-1. Use your tools to accomplish this task step by step
-2. Search the web for trending international content
-3. Report back what was accomplished as JSON
-4. Save any important findings to the memory/ directory`;
+1. Use your WEB BROWSING TOOLS to search for trending content step by step
+2. Actually visit the platforms mentioned (bilibili.com, tiktok.com, douyin.com, xiaohongshu.com, instagram.com, twitter.com)
+3. Find specific video URLs that are trending RIGHT NOW
+4. Report back as JSON array with: platform, country, title, url, type
+5. Save findings to memory/ directory for persistence`;
 
       fs.writeFileSync(taskFile, taskContent);
       this.logger.info(`Task written to: ${taskFile}`);
 
       // Hermes v0.14.0 uses `hermes chat -z "prompt"` (no `run` command)
-      // Use --yolo to skip confirmation prompts
+      // Use --yolo to skip confirmation prompts (auto-approve mode)
+      // CRITICAL: Add --toolsets "web,terminal,skills" to enable web browsing
       const escapedTask = task.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
-      const cmd = `hermes chat -z "${escapedTask}" --yolo 2>&1`;
-      this.logger.info(`Executing: hermes chat -z "..."`);
+      
+      // Build command with optional verbose mode for CI debugging
+      const verboseFlag = process.env.HERMES_VERBOSE ? '--verbose' : '';
+      const cmd = `hermes chat -z "${escapedTask}" --yolo --toolsets "web,terminal,skills" ${verboseFlag} 2>&1`;
+      this.logger.info(`Executing: hermes chat -z "..." --toolsets "web,terminal,skills" ${process.env.HERMES_VERBOSE ? '(verbose mode)' : ''}`);
 
       const output = execSync(cmd, {
         timeout: 300000, // 5 minutes
@@ -137,7 +148,8 @@ ${task}
     if (!this.cliAvailable) return null;
     try {
       const escaped = prompt.replace(/"/g, '\\"').replace(/\$/g, '\\$');
-      const output = execSync(`hermes chat -z "${escaped}" --yolo 2>&1`, {
+      // Add --toolsets for web browsing capability
+      const output = execSync(`hermes chat -z "${escaped}" --yolo --toolsets "web,terminal,skills" 2>&1`, {
         timeout: 120000,
         maxBuffer: 5 * 1024 * 1024,
       }).toString();
