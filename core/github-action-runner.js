@@ -281,68 +281,49 @@ class GitHubActionsRunner {
     let searchQuery;
 
     try {
-      // Ask AI to recommend platform and search query based on what's trending globally
-      // Note: Hermes CLI with Ollama may produce imperfect JSON, so we add robust parsing
-      const aiRecommendation = await this.agent.run(
-        `Mr. WorldWideWebster needs to find a viral video RIGHT NOW for a YouTube Short.
+      // OPTIMIZED FOR LOCAL MODELS: Ask Hermes to find a direct URL instead of JSON
+      // This avoids JSON parsing issues with less smart models
+      const aiResult = await this.agent.run(
+        `Mr. WorldWideWebster needs ONE viral video URL RIGHT NOW for a YouTube Short.
         
         Current date: ${new Date().toISOString()}
-        Channel mission: "Burst your bubble. Escape the algorithm. See the internet the world sees."
+        Mission: "Burst your bubble. Escape the algorithm."
         
-        Based on what's trending globally TODAY, recommend:
-        1. Which platform to search (choose ONE): bilibili, douyin, tiktok, instagram, rednote, youtube
-           - For Chinese trends: bilibili, douyin, or rednote
-           - For global Gen-Z trends: tiktok
-           - For lifestyle/travel/fashion: instagram
-           - For specific searches: youtube
-        2. What search query to use (in the language of that platform)
-
-        CRITICAL: Return ONLY valid JSON in this exact format, nothing else:
-        {"platform": "tiktok", "query": "viral dance challenge 2026", "reason": "trending in Japan right now"}
+        INSTRUCTIONS:
+        1. Search Bilibili, TikTok, Douyin, or YouTube for trending videos from Japan, Nigeria, Brazil, etc.
+        2. Find ONE specific video URL that is viral right now.
+        3. Return ONLY the raw URL (e.g., https://bilibili.com/video/BV1...). 
+        4. Do NOT write any explanation, JSON, markdown, or extra text. Just the link.
         
-        Do NOT include markdown, code blocks, explanations, or any other text. ONLY the JSON object.`,
+        Find a URL now:`,
         { verbose: false, maxSteps: 2 }
       );
 
-      // Parse AI recommendation with enhanced error handling
-      let parsed;
-      try {
-        const output = aiRecommendation.output || '';
-        this.logger.info(`AI raw output preview: ${output.substring(0, 200)}...`);
+      // Extract URL using Regex (works even if model talks too much)
+      const output = aiResult.output || '';
+      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+      const matches = output.match(urlRegex);
+      
+      if (matches && matches.length > 0) {
+        const foundUrl = matches[0];
+        this.logger.info(`Hermes found URL: ${foundUrl}`);
         
-        // Try multiple strategies to extract JSON
-        // Strategy 1: Look for JSON between curly braces
-        const jsonMatch = output.match(/\{[\s\S]*?"platform"[\s\S]*?"query"[\s\S]*?\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]);
-          this.logger.info('JSON extracted using strategy 1 (curly braces with required fields)');
-        } else {
-          // Strategy 2: Look for any JSON object
-          const anyJsonMatch = output.match(/\{[\s\S]*\}/);
-          if (anyJsonMatch) {
-            parsed = JSON.parse(anyJsonMatch[0]);
-            this.logger.info('JSON extracted using strategy 2 (any JSON object)');
-          } else {
-            // Strategy 3: Try parsing entire output as JSON
-            parsed = JSON.parse(output.trim());
-            this.logger.info('JSON extracted using strategy 3 (entire output)');
-          }
-        }
-      } catch (parseError) {
-        this.logger.warn(`JSON parse failed: ${parseError.message}`);
-        this.logger.warn(`Raw output was: ${aiRecommendation.output || 'empty'}`);
-        throw new Error('AI output was not valid JSON');
-      }
-
-      if (parsed && parsed.platform && parsed.query) {
-        platformChoice = parsed.platform.toLowerCase();
-        searchQuery = parsed.query;
-        this.logger.info(`AI recommends: ${platformChoice} — "${searchQuery}" (${parsed.reason || 'no reason given'})`);
+        // Determine platform from URL and set as direct URL
+        let platform = 'unknown';
+        if (foundUrl.includes('bilibili')) platform = 'bilibili';
+        else if (foundUrl.includes('tiktok')) platform = 'tiktok';
+        else if (foundUrl.includes('douyin')) platform = 'douyin';
+        else if (foundUrl.includes('youtube')) platform = 'youtube';
+        else if (foundUrl.includes('instagram')) platform = 'instagram';
+        
+        platformChoice = platform;
+        searchQuery = foundUrl; // Use URL as the query
+        this.logger.info(`Using direct URL from Hermes`);
       } else {
-        throw new Error('AI did not return valid platform/query');
+        throw new Error('No URL found in Hermes response');
       }
     } catch (error) {
-      this.logger.warn(`AI recommendation failed: ${error.message}, using random selection`);
+      this.logger.warn(`Hermes URL extraction failed: ${error.message}, using random selection`);
       // Fallback to random selection
       const platforms = ['youtube', 'bilibili', 'tiktok', 'instagram', 'douyin', 'rednote'];
       platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
@@ -517,25 +498,41 @@ Return as JSON array.`,
     
     let hermesFoundContent = null;
     try {
-      const searchTask = `Find me a specific viral video or image about ${format.category} from ${country}.
+      // OPTIMIZED FOR LOCAL MODELS: Ask for URL only, no complex JSON
+      const searchTask = `Find ONE viral video URL about ${format.category} from ${country}.
       
-      Search for "${country} ${format.category} viral" on platforms like:
-      - TikTok, Instagram, YouTube for global platforms
-      - Bilibili, Douyin, Rednote for Chinese content
+      Search TikTok, Bilibili, Douyin, YouTube, or Instagram.
+      Return ONLY the raw video URL (e.g., https://tiktok.com/@user/video/123...).
+      Do NOT write JSON, explanations, or any other text. Just the link.
       
-      Return ONLY JSON with this exact format:
-      {"platform": "tiktok", "query": "specific search query in appropriate language", "url": "direct video URL if found"}
+      Find a URL now:`;
       
-      If you find a specific video URL, include it. Otherwise just return platform and query.`;
+      const hermesResult = await this.agent.run(searchTask, { verbose: false, maxSteps: 2 });
       
-      const hermesResult = await this.agent.run(searchTask, { verbose: false, maxSteps: 3 });
-      
-      // Try to parse Hermes response
+      // Extract URL using Regex (works even if model talks too much)
       const output = hermesResult.output || '';
-      const jsonMatch = output.match(/\{[\s\S]*?"platform"[\s\S]*?\}/);
-      if (jsonMatch) {
-        hermesFoundContent = JSON.parse(jsonMatch[0]);
-        this.logger.info(`Hermes found: ${hermesFoundContent.platform} - ${hermesFoundContent.query || 'no query'}`);
+      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+      const matches = output.match(urlRegex);
+      
+      if (matches && matches.length > 0) {
+        const foundUrl = matches[0];
+        
+        // Determine platform from URL
+        let platform = 'unknown';
+        if (foundUrl.includes('bilibili')) platform = 'bilibili';
+        else if (foundUrl.includes('tiktok')) platform = 'tiktok';
+        else if (foundUrl.includes('douyin')) platform = 'douyin';
+        else if (foundUrl.includes('youtube')) platform = 'youtube';
+        else if (foundUrl.includes('instagram')) platform = 'instagram';
+        
+        hermesFoundContent = {
+          platform: platform,
+          url: foundUrl,
+          query: `${country} ${format.category}`
+        };
+        this.logger.info(`Hermes found URL: ${foundUrl} on ${platform}`);
+      } else {
+        this.logger.warn('No URL found in Hermes response');
       }
     } catch (error) {
       this.logger.warn(`Hermes content search failed: ${error.message}, using generic topic`);
