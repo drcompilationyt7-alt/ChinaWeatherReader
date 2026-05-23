@@ -6,7 +6,7 @@ Add these **8 secrets** one by one:
 
 ---
 
-## 1. `OPENROUTER_API_KEY` — AI Brain
+## 1. `OPENROUTER_API_KEY` — AI Brain (Primary)
 
 **How to get:** 
 1. Go to https://openrouter.ai/keys
@@ -15,6 +15,26 @@ Add these **8 secrets** one by one:
 4. Copy the key (starts with `sk-or-v1-`)
 
 **Cost:** Free tier available ($1 credit)
+
+---
+
+## 1b. `OPENROUTER_API_KEY_2`, `OPENROUTER_API_KEY_3`, `OPENROUTER_API_KEY_4` — Backup Keys
+
+**Up to 4 total keys** for automatic rotation when one runs out of credits or hits rate limits.
+
+**How to get:** Same process as above. Open multiple OpenRouter accounts, or use different providers:
+- Key 2: Another OpenRouter account
+- Key 3: Another OpenRouter account
+- Key 4: Another OpenRouter account
+
+**How it works:**
+1. The system tries `openrouter/owl-alpha` first with Key 1
+2. If HTTP 402 (Payment Required) or 429 (Rate Limited), it auto-rotates to Key 2
+3. If that also fails, it tries the **free model** `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`  
+4. If still failing, rotates to Key 3, then Key 4
+5. Each key/model combination is tried before giving up
+
+**Cost:** Free (nemotron is always free) + free credits from each account
 
 ---
 

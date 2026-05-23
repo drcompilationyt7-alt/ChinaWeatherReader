@@ -617,12 +617,12 @@ Always begin by analyzing the task. Be decisive — use tools proactively.`;
     let finalResult = '';
 
     for (let i = 0; i < maxSteps; i++) {
-      // Get response from LLM
+      // Get response from LLM with capped max_tokens to avoid 402 errors
       const model = config.openrouter?.agentModel || 'nousresearch/hermes-3-70b';
       const response = await this.ai.chat(
         messages.map(m => m.content).join('\n\n'),
         'Continue with the next step.',
-        { model, temperature: 0.3, maxTokens: 2000 }
+        { model, temperature: 0.3, maxTokens: 1200 }
       );
 
       // Try to parse as JSON tool call

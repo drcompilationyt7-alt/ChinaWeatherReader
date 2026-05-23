@@ -11,6 +11,12 @@
  * [25-30s] CTA / Follow
  * 
  * Categories: food, music, dance, trend, place, culture, product, other
+ * 
+ * FIXES APPLIED:
+ * - FFmpeg 6.x: removed invalid 'textw=900' drawtext option (causes "Option not found")
+ * - FFmpeg: use textfile= instead of inline text= to avoid escaping issues ("No such filter")
+ * - Added fallback chain for scene creation
+ * - Multi-key OpenRouter API support
  */
 const path = require('path');
 const fs = require('fs');
@@ -35,7 +41,7 @@ class ExplainPipeline {
     const script = await this._generateExplainScript(sourceContent, explainThing, explainCategory, ai);
     this.logger.info(`Script generated: ${script.title}`);
 
-    // Step 2: Save script — ensure scripts directory exists
+    // Step 2: Save script
     const scriptsDir = config.paths.scripts;
     if (!fs.existsSync(scriptsDir)) {
       fs.mkdirSync(scriptsDir, { recursive: true });
@@ -44,7 +50,7 @@ class ExplainPipeline {
     fs.writeFileSync(scriptPath, script.fullScript);
     this.logger.info(`Script saved to: ${scriptPath}`);
 
-    // Step 3: Generate two-voice audio (Curious + Explainer)
+    // Step 3: Generate two-voice audio
     const audioResult = await this._generateTwoVoiceAudio(script, ai, config, basePath);
     this.logger.info(`Two-voice audio generated`);
 
@@ -56,7 +62,7 @@ class ExplainPipeline {
       visuals = [sourceContent.thumbnailUrl || null];
     }
 
-    // Step 5: Compile the final video using ffmpeg (free)
+    // Step 5: Compile the final video
     const videoFile = `${basePath}.mp4`;
     const compiled = await this._compileVideo(audioResult, visuals, basePath, videoFile, script);
 
@@ -125,7 +131,7 @@ Source: ${content.platform || 'unknown'}: ${content.title || 'Unknown'}
 
 Respond with JSON:
 {
-  "title": "What is this [thing]? 🌍",
+  "title": "What is this [thing]? \u{1F30D}",
   "estimatedDuration": 45,
   "scenes": [
     {
@@ -154,13 +160,13 @@ Respond with JSON:
         temperature: 0.7,
       });
 
-      // Also generate a plain text version of the full script
+      // Generate plain text version of the full script
       let fullScript = `"WHAT IS THIS?" EXPLAINER\n`;
       fullScript += `Title: ${scriptData.title}\n`;
       fullScript += `Thing: ${thing}\n`;
       fullScript += `Category: ${category}\n`;
       fullScript += `Duration: ~${scriptData.estimatedDuration}s\n`;
-      fullScript += `━`.repeat(50) + '\n\n';
+      fullScript += `-`.repeat(50) + '\n\n';
       
       if (scriptData.scenes) {
         for (const scene of scriptData.scenes) {
@@ -173,13 +179,12 @@ Respond with JSON:
       fullScript += `\n[FOLLOW Mr. WorldWideWebster for more global discoveries!]`;
 
       scriptData.fullScript = fullScript;
-
       return scriptData;
     } catch (error) {
       this.logger.error(`Script generation failed: ${error.message}`);
       // Fallback script
       return {
-        title: `What is this ${thing}? 🌍`,
+        title: `What is this ${thing}? \u{1F30D}`,
         estimatedDuration: 45,
         scenes: [
           { sceneNumber: 1, duration: 4, visualDescription: `Close up of ${thing}`, voice: 'curious', dialogue: `What is this... ${thing}?` },
@@ -212,12 +217,11 @@ Respond with JSON:
     // Generate audio for each scene
     for (const scene of script.scenes || []) {
       const voiceType = scene.voice === 'curious' ? 'curious' : 'explainer';
-      const voice = voiceType === 'curious' ? 'nova' : 'onyx'; // OpenAI TTS voices
+      const voice = voiceType === 'curious' ? 'nova' : 'onyx';
       const outputFile = path.join(audioDir, `scene_${String(scene.sceneNumber).padStart(2, '0')}_${voiceType}.mp3`);
 
       try {
         const result = await ai.textToSpeech(scene.dialogue, outputFile, { voice });
-        // Only add if it's a real audio file (not a .txt placeholder)
         if (result && !result.endsWith('.txt')) {
           audioFiles[voiceType].push({
             scene: scene.sceneNumber,
@@ -238,7 +242,6 @@ Respond with JSON:
 
   /**
    * Compile a simple explainer video using ffmpeg from audio files
-   * Creates a static image with text overlay + audio track
    * Falls back to text-overlay video if no audio is available
    */
   async _compileVideo(audioResult, visuals, basePath, videoFile, script) {
@@ -247,28 +250,15 @@ Respond with JSON:
       ...(audioResult?.explainer || []),
     ];
 
-    // If no audio files were actually generated (TTS unavailable), create text-overlay video
     if (allAudio.length === 0) {
       this.logger.warn('No audio files — creating text-overlay video instead');
       return await this._createTextOverlayVideo(script, basePath, videoFile);
     }
 
-    // Try to use ffmpeg to combine audio into a video
     try {
       const { execSync } = require('child_process');
-      const fs = require('fs');
 
-      // Create a concat file listing all audio clips in order
-      const concatFile = path.join(basePath, '_audio_list.txt');
-
-      // Sort audio files by scene number
       const sorted = [...allAudio].sort((a, b) => a.scene - b.scene);
-
-      // Build a filter_complex that concatenates audio clips
-      const audioInputs = sorted
-        .filter(a => a.file && fs.existsSync(a.file))
-        .map((a, i) => `[${i}:a]`).join('');
-
       const totalInputs = sorted.filter(a => a.file && fs.existsSync(a.file));
 
       if (totalInputs.length === 0) {
@@ -276,13 +266,7 @@ Respond with JSON:
         return null;
       }
 
-      // Generate a simple black background with text
-      const title = (script.title || 'Mr. WorldWideWebster').replace(/"/g, '\\"');
       const totalDuration = sorted.reduce((sum, s) => sum + (s.duration || 5), 0);
-
-      // Create video from audio using ffmpeg:
-      // 1. Concat all audio files
-      // 2. Add a colored background with title text
       const cmd = `ffmpeg -y -f lavfi -i "color=c=#1a1a2e:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ${totalInputs.map((a, i) => `-i "${a.file}"`).join(' ')} -filter_complex "${totalInputs.map((a, i) => `[${i + 1}:a]`).join('')} concat=n=${totalInputs.length}:v=0:a=1[audio]" -map "0:v" -map "[audio]" -c:v libx264 -preset ultrafast -crf 28 -c:a aac -shortest "${videoFile}"`;
 
       this.logger.info('Compiling video with ffmpeg...');
@@ -299,20 +283,20 @@ Respond with JSON:
   }
 
   /**
-   * Create a text-overlay video when TTS is unavailable
-   * Uses ffmpeg to generate a video with text scenes on a colored background
+   * Create a text-overlay video when TTS is unavailable.
+   * Uses ffmpeg drawtext with textfile= to avoid escaping issues.
+   * 
+   * CRITICAL FIX: FFmpeg 6.x drawtext does NOT support 'textw' parameter.
+   * Using textfile= instead of inline text= to prevent "No such filter" errors
+   * caused by special characters (colons, apostrophes) in dialogue text.
    */
   async _createTextOverlayVideo(script, basePath, videoFile) {
     try {
       const { execSync } = require('child_process');
-      const fs = require('fs');
 
       const scenes = script.scenes || [];
       const totalDuration = scenes.reduce((sum, s) => sum + (s.duration || 5), 0);
-      const safeTitle = (script.title || 'Mr. WorldWideWebster').replace(/'/g, "'\\''");
 
-      // Build a filter_complex that creates text scenes
-      // Each scene shows the dialogue text on a colored background for its duration
       const bgColor = '#1a1a2e';
       const textColor = '#ffffff';
       const accentColor = '#e94560';
@@ -323,51 +307,98 @@ Respond with JSON:
         const scene = scenes[i];
         const sceneDuration = scene.duration || 5;
         const sceneFile = `${basePath}_scene_${i}.mp4`;
-        // Escape special characters for ffmpeg drawtext
-        const dialogue = (scene.dialogue || '')
-          .replace(/\\/g, '\\\\\\\\')
-          .replace(/:/g, '\\\\:')
-          .replace(/%/g, '\\\\%')
-          .replace(/'/g, "'\\\\'")
-          .replace(/"/g, '\\\\"');
+
+        // Use textfile= instead of text= to avoid FFmpeg escaping nightmare
+        const dialogue = scene.dialogue || '';
         const voiceLabel = (scene.voice || 'explainer').toUpperCase();
 
-        // Create a colored background with text overlay using proper filter chain syntax
-        const filterComplex = [
-          `drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold`,
-          `drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900`,
-          `drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial`
-        ].join(',');
-        
-        const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30" ` +
-          `-vf "${filterComplex}" ` +
-          `-c:v libx264 -preset ultrafast -crf 28 "${sceneFile}"`;
+        const textFile = `${basePath}_scene_${i}_text.txt`;
+        const voiceLabelFile = `${basePath}_scene_${i}_label.txt`;
+        const channelFile = `${basePath}_scene_${i}_channel.txt`;
+
+        fs.writeFileSync(textFile, dialogue, 'utf8');
+        fs.writeFileSync(voiceLabelFile, voiceLabel, 'utf8');
+        fs.writeFileSync(channelFile, 'Mr. WorldWideWebster', 'utf8');
+
+        // Build filter chain using textfile= instead of text=
+        // NOTE: textw is NOT a valid drawtext option in FFmpeg 6.x - do NOT use it
+        const toPath = p => p.replace(/\\/g, '/');
+        const filterParts = [
+          `drawtext=textfile='${toPath(voiceLabelFile)}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold`,
+          `drawtext=textfile='${toPath(textFile)}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:line_spacing=10`,
+          `drawtext=textfile='${toPath(channelFile)}':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial`
+        ];
+        const filterComplex = filterParts.join(',');
+
+        const cmd = [
+          'ffmpeg -y',
+          `-f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30"`,
+          `-vf "${filterComplex}"`,
+          '-c:v libx264 -preset ultrafast -crf 28',
+          `"${sceneFile}"`
+        ].join(' ');
 
         try {
-          execSync(cmd, { timeout: 30000 });
+          execSync(cmd, { timeout: 30000, maxBuffer: 50 * 1024 * 1024 });
           if (fs.existsSync(sceneFile)) {
             sceneFiles.push(sceneFile);
           }
         } catch (sceneError) {
-          this.logger.warn(`Scene ${i} creation failed: ${sceneError.message}`);
+          this.logger.warn(`Scene ${i} creation failed (trying simplified): ${sceneError.message}`);
+
+          // Fallback: just voice label with inline text (minimal content)
+          try {
+            const simpleCmd = [
+              'ffmpeg -y',
+              `-f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30"`,
+              `-vf "drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial"`,
+              '-c:v libx264 -preset ultrafast -crf 28',
+              `"${sceneFile}"`
+            ].join(' ');
+            execSync(simpleCmd, { timeout: 30000 });
+            if (fs.existsSync(sceneFile)) {
+              sceneFiles.push(sceneFile);
+            }
+          } catch (fallbackError) {
+            this.logger.warn(`Scene ${i} fallback also failed: ${fallbackError.message}`);
+          }
+        } finally {
+          // Clean up text files
+          for (const f of [textFile, voiceLabelFile, channelFile]) {
+            try { fs.unlinkSync(f); } catch {}
+          }
         }
       }
 
       if (sceneFiles.length === 0) {
-        // Ultimate fallback: single static image
+        // Ultimate fallback: single static image with just title
         this.logger.warn('All scene creations failed — using single static video');
-        const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ` +
-          `-vf "drawtext=text='${safeTitle}':fontsize=56:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900,drawtext=text='Follow Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
-          `-c:v libx264 -preset ultrafast -crf 28 "${videoFile}"`;
+        const title = (script.title || 'Mr. WorldWideWebster').replace(/[^a-zA-Z0-9 ]/g, '');
+        const titleFile = `${basePath}_fallback_title.txt`;
+        fs.writeFileSync(titleFile, title, 'utf8');
+
+        const cmd = [
+          'ffmpeg -y',
+          `-f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30"`,
+          `-vf "drawtext=textfile='${titleFile.replace(/\\/g, '/')}':fontsize=56:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial"`,
+          '-c:v libx264 -preset ultrafast -crf 28',
+          `"${videoFile}"`
+        ].join(' ');
         execSync(cmd, { timeout: 30000 });
+        try { fs.unlinkSync(titleFile); } catch {}
       } else {
         // Concatenate all scene videos
-        const concatList = sceneFiles.map(f => `file '${f}'`).join('\n');
+        const concatList = sceneFiles.map(f => `file '${f.replace(/'/g, "'\\''")}'`).join('\n');
         const concatFile = `${basePath}_concat.txt`;
         fs.writeFileSync(concatFile, concatList);
 
-        const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c:v libx264 -preset ultrafast -crf 28 "${videoFile}"`;
-        execSync(cmd, { timeout: 60000 });
+        const cmd = [
+          'ffmpeg -y',
+          `-f concat -safe 0 -i "${concatFile}"`,
+          '-c:v libx264 -preset ultrafast -crf 28',
+          `"${videoFile}"`
+        ].join(' ');
+        execSync(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
 
         // Cleanup scene files
         for (const f of sceneFiles) {
@@ -388,7 +419,6 @@ Respond with JSON:
 
   /**
    * Generate visual assets for the explainer using FREE video clips
-   * Searches Pexels/Pixabay/YouTube for relevant B-roll footage
    */
   async _generateVisuals(script, thing, ai, config, basePath) {
     const visuals = [];
@@ -401,7 +431,6 @@ Respond with JSON:
       const { FreeVisualSearcher } = require('../hermes-agent/free-visual-searcher');
       const searcher = new FreeVisualSearcher();
       
-      // Search for relevant free video clips based on the thing being explained
       const clips = await searcher.searchFreeVideoClips(thing, {
         maxResults: 3,
         maxDuration: 15,
@@ -410,23 +439,13 @@ Respond with JSON:
 
       for (const clip of clips) {
         visuals.push(clip.file);
-        this.logger.info(`  ✅ Added visual: ${clip.source} - ${clip.file}`);
+        this.logger.info(`  Added visual: ${clip.source} - ${clip.file}`);
       }
 
       await searcher.destroy();
     } catch (error) {
       this.logger.warn(`Could not find free visuals: ${error.message}`);
-      
-      // Fallback: create a simple text-based visual
-      try {
-        const { execSync } = require('child_process');
-        // Generate a simple color frame with text using ffmpeg
-        const fallbackPath = path.join(assetsDir, 'fallback_title.png');
-        // We'll just note the fallback — the video compiler can add text overlays
-        visuals.push(null);
-      } catch (fallbackError) {
-        this.logger.warn(`Fallback visual also failed: ${fallbackError.message}`);
-      }
+      visuals.push(null);
     }
 
     return visuals;

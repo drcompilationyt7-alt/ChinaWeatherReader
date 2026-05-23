@@ -1,152 +1,313 @@
 /**
- * Mr. WorldWideWebster — OpenRouter Provider
- *
- * Uses OpenAI's official SDK to access OpenRouter's 200+ models.
- * OpenRouter is fully OpenAI-compatible — just a different base URL.
- *
- * This powers decisions, script writing, translations, and
- * all LLM operations.
- *
- * Docs: https://openrouter.ai/docs
+ * Mr. WorldWideWebster — OpenRouter Provider with Multi-Key Rotation
+ * 
+ * Features:
+ * - Full OpenAI-compatible chat/images API via OpenRouter
+ * - Multi-key rotation across 4 API keys (fallback if one is rate-limited)
+ * - Automatic model fallback: primary → free model → next key
+ * - Max token limits to avoid 402 Payment Required errors
+ * - Proper error handling for credit limits, rate limits, and timeouts
  */
 const OpenAI = require('openai');
-const axios = require('axios');
 const { Logger } = require('../core/logger');
 
 class OpenRouterProvider {
   constructor(config) {
     this.logger = new Logger('OpenRouter');
-    this.config = config;
-    this.client = null;
-    this.apiKey = config.openrouter?.apiKey || process.env.OPENROUTER_API_KEY;
 
-    if (this.apiKey) {
-      this.client = new OpenAI({
-        baseURL: 'https://openrouter.ai/api/v1',
-        apiKey: this.apiKey,
-        defaultHeaders: {
-          'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
-          'X-Title': 'Mr. WorldWideWebster',
-        },
-      });
-      this.logger.info('OpenRouter initialized (OpenAI-compatible)');
-    } else {
-      this.logger.warn('No OpenRouter API key — set OPENROUTER_API_KEY in .env');
-    }
-  }
+    // Collect all available API keys (up to 4)
+    this.apiKeys = this._collectApiKeys(config);
+    this.currentKeyIndex = 0;
 
-  isAvailable() {
-    return !!this.client;
-  }
+    // Model configuration with fallback chain
+    this.defaultModel = config.openrouter?.defaultModel || 'openrouter/owl-alpha';
+    this.fallbackModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    this.scriptModel = config.openrouter?.scriptModel || this.defaultModel;
+    this.agentModel = config.openrouter?.agentModel || this.defaultModel;
+    this.imageModel = config.openrouter?.imageModel || 'black-forest-labs/flux-schnell';
 
-  _getDefaultModel(options) {
-    if (options.useScriptModel) {
-      return this.config.openrouter?.scriptModel || 'openrouter/owl-alpha';
+    // Safety limits to avoid 402 Payment Required errors
+    this.DEFAULT_MAX_TOKENS = 1500;
+    this.SCRIPT_MAX_TOKENS = 2000;
+    this.CHEAP_MAX_TOKENS = 500;
+    this.AGENT_MAX_TOKENS = 1200;
+
+    // Track which keys have been rate-limited/402'd to skip them
+    this.deadKeys = new Set();
+
+    // Initialize the first OpenAI client
+    this._client = this._buildClient(this.currentKeyIndex);
+
+    this.logger.info(`OpenRouter initialized with ${this.apiKeys.length} key(s)`);
+    this.logger.info(`Default model: ${this.defaultModel}`);
+    this.logger.info(`Fallback model: ${this.fallbackModel}`);
+    if (this.apiKeys.length > 1) {
+      this.logger.info(`Key rotation enabled (${this.apiKeys.length} keys)`);
     }
-    if (options.useCheapModel) {
-      return 'openrouter/owl-alpha';
-    }
-    if (options.useAgentModel) {
-      return this.config.openrouter?.agentModel || 'openrouter/owl-alpha';
-    }
-    return this.config.openrouter?.defaultModel || 'openrouter/owl-alpha';
   }
 
   /**
-   * Chat completion via OpenAI SDK pointing at OpenRouter
+   * Collect up to 4 API keys from environment
+   */
+  _collectApiKeys(config) {
+    const keys = [];
+    // Primary key
+    if (config.openrouter?.apiKey) {
+      keys.push(config.openrouter.apiKey);
+    }
+    // Additional keys 2-4
+    for (let i = 2; i <= 4; i++) {
+      const envKey = process.env[`OPENROUTER_API_KEY_${i}`];
+      if (envKey) {
+        keys.push(envKey);
+      }
+    }
+    return keys;
+  }
+
+  /**
+   * Build an OpenAI client for a given key index
+   */
+  _buildClient(keyIndex) {
+    if (keyIndex >= this.apiKeys.length) {
+      return null;
+    }
+    return new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: this.apiKeys[keyIndex],
+      defaultHeaders: {
+        'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
+        'X-Title': 'Mr. WorldWideWebster',
+      },
+    });
+  }
+
+  /**
+   * Rotate to the next live API key
+   */
+  _rotateKey() {
+    const startIndex = this.currentKeyIndex;
+    for (let i = 0; i < this.apiKeys.length; i++) {
+      const nextIndex = (startIndex + 1 + i) % this.apiKeys.length;
+      if (!this.deadKeys.has(nextIndex)) {
+        this.currentKeyIndex = nextIndex;
+        this._client = this._buildClient(nextIndex);
+        this.logger.info(`Rotated to API key #${nextIndex + 1}`);
+        return true;
+      }
+    }
+    this.logger.error('All API keys are exhausted');
+    return false;
+  }
+
+  /**
+   * Check if an error indicates we should try a different key/model
+   */
+  _isRetryableError(error) {
+    const msg = (error.message || '').toLowerCase();
+    const status = error.status || 0;
+    return (
+      status === 402 ||                           // Payment Required
+      status === 429 ||                           // Rate Limited
+      status === 401 ||                           // Unauthorized
+      status === 403 ||                           // Forbidden
+      msg.includes('payment required') ||
+      msg.includes('insufficient credits') ||
+      msg.includes('rate limit') ||
+      msg.includes('max_tokens') ||
+      msg.includes('quota exceeded') ||
+      msg.includes('insufficient_quota')
+    );
+  }
+
+  /**
+   * Make an API call with retries across keys and model fallbacks
+   */
+  async _callWithRetry(model, messages, options = {}) {
+    const maxRetries = options.maxRetries || (this.apiKeys.length * 2) + 1;
+    let lastError = null;
+
+    const tryModels = [
+      model,
+      this.fallbackModel,                        // Try free model second
+      model,                                     // Try original with new key
+      'openai/gpt-4o-mini',                     // Ultra-cheap fallback
+    ];
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      // Rotate key after first failure or if current key is dead
+      if (attempt > 0 && this.apiKeys.length > 1) {
+        const rotated = this._rotateKey();
+        if (!rotated) break;
+      }
+
+      // Reset dead key if we've tried all keys with current model
+      const currentModel = tryModels[Math.min(attempt, tryModels.length - 1)];
+
+      // Determine appropriate max_tokens based on context
+      let maxTokens = options.maxTokens || this.DEFAULT_MAX_TOKENS;
+      if (options.useCheapModel) maxTokens = this.CHEAP_MAX_TOKENS;
+      if (options.useScriptModel) maxTokens = this.SCRIPT_MAX_TOKENS;
+      if (currentModel === this.fallbackModel) maxTokens = Math.min(maxTokens, 1000);
+
+      try {
+        const response = await this._client.chat.completions.create({
+          model: currentModel,
+          messages: messages,
+          max_tokens: maxTokens,
+          temperature: options.temperature || 0.7,
+          response_format: options.responseFormat || undefined,
+        });
+
+        if (response.choices?.[0]?.message?.content) {
+          return response.choices[0].message.content;
+        }
+        throw new Error('Empty response from LLM');
+      } catch (error) {
+        lastError = error;
+        const retryable = this._isRetryableError(error);
+
+        if (retryable) {
+          // Mark this key as dead temporarily
+          this.deadKeys.add(this.currentKeyIndex);
+          this.logger.warn(
+            `Key #${this.currentKeyIndex + 1} failed (${error.message}) — ` +
+            `trying ${attempt < maxRetries - 1 ? 'next key/model' : 'giving up'}`
+          );
+        } else {
+          // Non-retryable error (e.g., invalid model name)
+          this.logger.warn(`Non-retryable error on attempt ${attempt + 1}: ${error.message}`);
+          if (attempt >= 2) throw error;
+        }
+      }
+    }
+
+    throw lastError || new Error('All retries exhausted');
+  }
+
+  /**
+   * Send a chat completion with automatic key rotation + model fallback
    */
   async chat(systemPrompt, userMessage, options = {}) {
-    const model = options.model || this._getDefaultModel(options);
-
-    try {
-      const response = await this.client.chat.completions.create({
-        model: model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: options.maxTokens || 2000,
-        temperature: options.temperature ?? 0.7,
-      });
-
-      return response.choices[0]?.message?.content || '';
-    } catch (error) {
-      this.logger.error(`OpenRouter chat failed (${model}): ${error.message}`);
-      throw error;
+    if (!this._client) {
+      throw new Error('No OpenRouter API keys configured. Set OPENROUTER_API_KEY in .env');
     }
+
+    const model = options.model || 
+      (options.useScriptModel ? this.scriptModel : 
+       options.useCheapModel ? this.fallbackModel : 
+       this.defaultModel);
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ];
+
+    return await this._callWithRetry(model, messages, options);
   }
 
   /**
-   * Get JSON response from OpenRouter
+   * Get JSON response with automatic retry
    */
   async chatJSON(systemPrompt, userMessage, options = {}) {
-    const model = options.model || this._getDefaultModel(options);
-    const enhancedPrompt = systemPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no explanation.';
+    const strictPrompt = systemPrompt + 
+      '\n\nRespond ONLY with valid JSON. No markdown, no explanation, no code blocks.';
+
+    const result = await this.chat(strictPrompt, userMessage, {
+      ...options,
+      responseFormat: { type: 'json_object' },
+    });
+
+    // Clean up any accidental markdown wrapping
+    const cleaned = result
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: model,
-        messages: [
-          { role: 'system', content: enhancedPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: options.maxTokens || 2000,
-        temperature: options.temperature ?? 0.4,
-      });
-
-      const raw = response.choices[0]?.message?.content || '';
-      const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleaned);
-    } catch (error) {
-      this.logger.error(`OpenRouter JSON failed (${model}): ${error.message}`);
-      throw error;
+    } catch {
+      // Try to extract JSON from the response
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw new Error(`Failed to parse JSON response: ${cleaned.substring(0, 200)}`);
     }
   }
 
   /**
-   * Generate images via OpenRouter
+   * Generate an image via OpenRouter (Flux, DALL-E, etc.)
    */
   async generateImage(prompt, outputPath, options = {}) {
-    const model = options.model || 'black-forest-labs/flux-pro';
-    const size = options.size || '1024x1024';
-
-    try {
-      const response = await this.client.images.generate({
-        model: model,
-        prompt: prompt,
-        n: 1,
-        size: size,
-      });
-
-      const imageUrl = response.data[0].url;
-      const fs = require('fs');
-      const imgResponse = await axios({ method: 'GET', url: imageUrl, responseType: 'stream' });
-      const writer = fs.createWriteStream(outputPath);
-      imgResponse.data.pipe(writer);
-
-      return new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(outputPath));
-        writer.on('error', reject);
-      });
-    } catch (error) {
-      this.logger.error(`Image generation failed (${model}): ${error.message}`);
-      throw error;
+    if (!this._client) {
+      throw new Error('No OpenRouter API keys configured');
     }
+
+    // Use a retry loop for image generation too
+    const maxAttempts = this.apiKeys.length + 1;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0 && this.apiKeys.length > 1) {
+        const rotated = this._rotateKey();
+        if (!rotated) break;
+      }
+
+      try {
+        const response = await this._client.images.generate({
+          model: this.imageModel,
+          prompt: prompt,
+          n: 1,
+          size: options.size || '1792x1024',
+        });
+
+        const imageUrl = response.data?.[0]?.url;
+        if (!imageUrl) throw new Error('No image URL in response');
+
+        // Download the image
+        const axios = require('axios');
+        const fs = require('fs');
+        const imgResponse = await axios({
+          method: 'GET',
+          url: imageUrl,
+          responseType: 'stream',
+        });
+
+        return new Promise((resolve, reject) => {
+          const writer = fs.createWriteStream(outputPath);
+          imgResponse.data.pipe(writer);
+          writer.on('finish', () => resolve(outputPath));
+          writer.on('error', reject);
+        });
+      } catch (error) {
+        lastError = error;
+        if (this._isRetryableError(error)) {
+          this.deadKeys.add(this.currentKeyIndex);
+          this.logger.warn(`Image gen failed on key #${this.currentKeyIndex + 1}: ${error.message}`);
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw lastError || new Error('Image generation failed after all retries');
   }
 
   /**
-   * List available free/cheap models from OpenRouter
+   * List available models from OpenRouter
    */
   async listAvailableModels() {
     try {
+      const axios = require('axios');
       const response = await axios.get('https://openrouter.ai/api/v1/models', {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` }
+        headers: {
+          'Authorization': `Bearer ${this.apiKeys[0] || ''}`,
+        },
+        timeout: 10000,
       });
-      return response.data.data
-        .filter(m => m.pricing?.prompt === '0' || parseFloat(m.pricing?.prompt || '999') < 0.001)
-        .map(m => ({ id: m.id, name: m.name, cost: m.pricing }));
-    } catch (error) {
-      this.logger.error(`Failed to list models: ${error.message}`);
+      return response.data?.data?.slice(0, 50) || [];
+    } catch {
+      this.logger.warn('Could not fetch model list');
       return [];
     }
   }

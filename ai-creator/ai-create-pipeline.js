@@ -241,10 +241,17 @@ Respond with JSON:
     for (const segment of script.segments || []) {
       const outputFile = path.join(audioDir, `seg_${String(segment.segmentNumber).padStart(2, '0')}.mp3`);
       try {
-        await ai.textToSpeech(segment.text, outputFile, { voice: 'onyx' });
-        audioFiles.push({ segment: segment.segmentNumber, file: outputFile, duration: segment.duration });
+        // Use 'en-US-GuyNeural' which is valid for both Edge-TTS and as fallback name
+        await ai.textToSpeech(segment.text, outputFile, { voice: 'en-US-GuyNeural' });
+        if (fs.existsSync(outputFile)) {
+          audioFiles.push({ segment: segment.segmentNumber, file: outputFile, duration: segment.duration });
+        }
       } catch (error) {
         this.logger.warn(`TTS failed for segment ${segment.segmentNumber}: ${error.message}`);
+        // Write text file as placeholder so pipeline can continue
+        const placeholderFile = outputFile + '.txt';
+        fs.writeFileSync(placeholderFile, segment.text, 'utf8');
+        audioFiles.push({ segment: segment.segmentNumber, file: placeholderFile, duration: segment.duration });
       }
     }
 

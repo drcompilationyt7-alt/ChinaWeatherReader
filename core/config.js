@@ -2,6 +2,9 @@
  * Mr. WorldWideWebster - Configuration Loader
  * Loads environment variables and provides typed access to config
  * Supports OpenRouter (primary), OpenAI (fallback), and Gemini
+ * 
+ * Multi-Key Support: Set OPENROUTER_API_KEY_2, OPENROUTER_API_KEY_3, OPENROUTER_API_KEY_4
+ * as GitHub Secrets for automatic key rotation when one hits rate/credit limits.
  */
 require('dotenv').config();
 const path = require('path');
@@ -12,17 +15,18 @@ const config = {
     name: process.env.AI_PROVIDER || 'openrouter',  // openrouter, openai, gemini
   },
 
-  // --- OpenRouter Settings ---
+  // --- OpenRouter Settings (Multi-Key Supported) ---
   openrouter: {
     apiKey: process.env.OPENROUTER_API_KEY,
-    // Default model for all text/thinking tasks — openrouter/owl-alpha is FREE
+    // Additional API keys for multi-key rotation (keys 2-4)
+    // Set these as GitHub Secrets:
+    //   OPENROUTER_API_KEY_2, OPENROUTER_API_KEY_3, OPENROUTER_API_KEY_4
+    // The provider auto-rotates through keys when one hits rate/credit limits (402/429)
     defaultModel: process.env.OPENROUTER_DEFAULT_MODEL || 'openrouter/owl-alpha',
-    // For complex script writing (owl-alpha is great, fallback to qwen)
     scriptModel: process.env.OPENROUTER_SCRIPT_MODEL || 'openrouter/owl-alpha',
-    // For autonomous agent decisions
     agentModel: process.env.OPENROUTER_AGENT_MODEL || 'openrouter/owl-alpha',
-    // For AI image generation (used in slideshow videos)
     imageModel: process.env.OPENROUTER_IMAGE_MODEL || 'black-forest-labs/flux-schnell',
+    freeModel: process.env.OPENROUTER_FREE_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
   },
 
   // --- OpenAI Settings (Fallback) ---
