@@ -15,36 +15,6 @@ node_modules/
 .vscode/
 .idea/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+# Original rules preserved
 *.log
-.git/modules/
-.DS_Store
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-.vscode/
-.idea/
-.mypy_cache/
-.pytest_cache/
-htmlcov/
-.coverage*
 ```

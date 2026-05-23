@@ -272,6 +272,7 @@ class GitHubActionsRunner {
    */
   async _createClipShort() {
     const { execSync } = require('child_process');
+    const { TrendingVideoFinder } = require('../sourcing/trending-video-finder');
 
     // Let AI decide which platform to search based on current trends
     this.logger.info('Asking AI which platform to search for trending content...');
@@ -335,52 +336,21 @@ class GitHubActionsRunner {
 
       let videoTitle = searchQuery;
       let videoUrl = null;
-      if (platformChoice === 'youtube') {
-        // Use yt-dlp to search YouTube
-        const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
-        const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
-        
-        if (!searchOutput) throw new Error('No search results found');
-
-        const lines = searchOutput.split('\n').filter(Boolean);
-        const pairs = [];
-        for (let i = 0; i < lines.length - 1; i += 2) {
-          const url = lines[i].trim();
-          const title = lines[i + 1] ? lines[i + 1].trim() : '';
-          if (url.startsWith('http')) pairs.push({ url, title });
-        }
-
-        if (pairs.length === 0) throw new Error('No valid video URLs in search results');
-
-        const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
-        videoUrl = randomPair.url;
-        videoTitle = randomPair.title || searchQuery;
-      } else {
-        // For other platforms, use Hermes Agent to search and find URLs
-        this.logger.info(`Using Hermes Agent to search ${platformChoice}...`);
-        
-        const searchPrompt = `Search for viral videos on ${platformChoice}. Search query: "${searchQuery}". Find 3-5 video URLs. Return JSON array: [{"url": "https://...", "title": "..."}]`;
-        
-        const hermesResult = await this.agent.run(searchPrompt, { verbose: false, maxSteps: 3 });
-        
-        let urls = [];
-        try {
-          const jsonMatch = hermesResult.output?.match(/\[[\s\S]*\]/);
-          if (jsonMatch) urls = JSON.parse(jsonMatch[0]);
-        } catch (e) {}
-        
-        if (urls.length === 0) {
-          const urlRegex = /https?:\/\/[^\s\]]+/g;
-          const foundUrls = hermesResult.output?.match(urlRegex) || [];
-          urls = foundUrls.map(url => ({ url, title: searchQuery }));
-        }
-        
-        if (urls.length === 0) throw new Error(`No URLs found on ${platformChoice}`);
-        
-        const randomUrl = urls[Math.floor(Math.random() * urls.length)];
-        videoUrl = randomUrl.url;
-        videoTitle = randomUrl.title || searchQuery;
+      
+      // Use direct Puppeteer scraping for all platforms (more reliable than Hermes for this task)
+      const finder = new TrendingVideoFinder();
+      const results = await finder.findTrendingVideos(platformChoice, searchQuery);
+      await finder.destroy();
+      
+      if (results.length === 0) {
+        throw new Error(`No videos found on ${platformChoice}`);
       }
+      
+      // Pick a random video from results
+      const randomVideo = results[Math.floor(Math.random() * results.length)];
+      videoUrl = randomVideo.url;
+      videoTitle = randomVideo.title || searchQuery;
+      this.logger.info(`Found video: ${videoTitle.substring(0, 60)}...`);
 
       if (!videoUrl || !videoUrl.startsWith('http')) throw new Error('Invalid video URL');
 
