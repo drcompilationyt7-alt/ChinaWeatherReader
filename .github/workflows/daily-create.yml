@@ -1,16 +1,9 @@
-# 🌅 Mr. WorldWideWebster — Daily Content Creation
-# Runs at 6 AM: Creates 2 clipped shorts + 1 "What is this...?" explainer
-# Uploads all 3 to YouTube Shorts
-# Boosts views with organic Puppeteer sessions
-# Sends daily summary to Discord
-# Total runtime: ~15-30 minutes (well within 6 hour limit)
-
 name: 🌅 Daily Shorts Creation
 
 on:
   schedule:
-    - cron: '0 6 * * *'          # 6 AM daily
-  workflow_dispatch:              # Manual trigger for testing
+    - cron: '0 6 * * *'   # 6 AM daily
+  workflow_dispatch:
     inputs:
       debug:
         description: 'Run in debug mode (skip uploads)'
@@ -30,65 +23,69 @@ env:
   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
-  CHANNEL_NAME: Mr. WorldWideWebster
+  CHANNEL_NAME: "Mr. WorldWideWebster"
   GH_PAT: ${{ secrets.GH_PAT }}
-  # YouTube cookies for bypassing bot detection (optional but recommended)
-  # Export from your browser using: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
 
 jobs:
   create-shorts:
     runs-on: ubuntu-latest
-    timeout-minutes: 300  # 5 hours max (GitHub limit is 6)
+    timeout-minutes: 300
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-          fetch-depth: 0  # Full history for memory commits
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install system dependencies
         run: |
+          set -e
+
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg
-          sudo apt-get install -y -qq yt-dlp
-          sudo apt-get install -y -qq chromium-browser 2>/dev/null || true
-          
-          # Update yt-dlp to latest version (YouTube frequently changes their API)
-          pip install -U yt-dlp 2>&1 | tail -3
-          
-          echo "✅ System deps installed (ffmpeg, yt-dlp, chromium)"
-          echo "✅ yt-dlp updated to latest version"
+          sudo apt-get install -y -qq ffmpeg yt-dlp
+
+          sudo apt-get install -y chromium || \
+          sudo apt-get install -y chromium-browser || true
+
+          python3 -m pip install -U yt-dlp
+
+          echo "✅ System dependencies installed"
+          ffmpeg -version | head -1
+          yt-dlp --version
 
       - name: Setup Docker for Camofox
         run: |
-          # Docker is pre-installed on GitHub Actions runners
+          set -e
+
           docker --version
           echo "✅ Docker available"
 
       - name: Clone and start Camofox browser server
         run: |
+          set -e
+
           cd /tmp
-          
-          # Clone Camofox browser server
+
           git clone https://github.com/jo-inc/camofox-browser.git
           cd camofox-browser
-          
-          # Build the image (this takes ~5-10 minutes)
+
           echo "🔨 Building Camofox Docker image..."
           make build
-          
-          # Start Camofox with VNC for debugging
+
           echo "🚀 Starting Camofox container..."
+
           mkdir -p ~/.camofox-docker
+
           docker run -d \
             --name camofox-browser \
             --restart unless-stopped \
@@ -102,114 +99,142 @@ jobs:
             -e MAX_OLD_SPACE_SIZE=2048 \
             -v ~/.camofox-docker:/root/.camofox \
             camofox-browser:latest
-          
-          # Wait for Camofox to be ready
-          echo "⏳ Waiting for Camofox to start..."
-          sleep 15
-          
-          # Verify Camofox is running
-          curl -s http://localhost:9377/health || echo "⚠️ Camofox health check failed, but continuing..."
-          
-          echo "✅ Camofox browser server started on port 9377"
-          echo "📺 VNC viewer available at http://localhost:6080"
 
-      - name: Install Node.js dependencies
+          echo "⏳ Waiting for Camofox..."
+          sleep 20
+
+          curl -s http://localhost:9377/health || \
+          echo "⚠️ Health check failed but continuing"
+
+          echo "✅ Camofox started"
+          echo "📺 VNC: http://localhost:6080"
+
+      - name: Install Node dependencies
         run: |
+          set -e
+
           npm ci --production || npm install
           echo "✅ Dependencies installed"
 
-      - name: Install Hermes Agent (official)
+      - name: Install Hermes Agent
         run: |
+          set -e
+
           curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+
           hermes config set OPENROUTER_API_KEY "${{ secrets.OPENROUTER_API_KEY }}"
           hermes config set OPENROUTER_MODEL "openrouter/owl-alpha"
+
           hermes config set DISCORD_BOT_TOKEN "${{ secrets.DISCORD_BOT_TOKEN }}"
           hermes config set DISCORD_CHANNEL_ID "${{ secrets.DISCORD_CHANNEL_ID }}"
-          hermes config set YOUTUBE_CHANNEL "Mr. WorldWideWebster"
-          
-          # Configure Camofox for browser automation
-          echo "🦊 Configuring Hermes to use Camofox..."
-          mkdir -p ~/.hermes
-          echo 'CAMOFOX_URL=http://localhost:9377' >> ~/.hermes/.env
-          
-          # Enable persistent browser sessions in config.yaml
-          cat > ~/.hermes/config.yaml << 'EOFCONFIG'
-browser:
-  camofox:
-    managed_persistence: true
-EOFCONFIG
-          
-          echo "✅ Hermes Agent installed and configured with Camofox browser automation"
-          echo "✅ Camofox URL: http://localhost:9377"
-          echo "✅ Persistent sessions enabled"
 
-      - name: Install Python deps (Edge-TTS)
+          hermes config set YOUTUBE_CHANNEL "Mr. WorldWideWebster"
+
+          echo "🦊 Configuring Camofox"
+
+          mkdir -p ~/.hermes
+
+          echo 'CAMOFOX_URL=http://localhost:9377' >> ~/.hermes/.env
+
+          printf '%s\n' \
+          'browser:' \
+          '  camofox:' \
+          '    managed_persistence: true' \
+          > ~/.hermes/config.yaml
+
+          echo "===== Hermes Config ====="
+          cat ~/.hermes/config.yaml
+          echo "========================="
+
+          echo "✅ Hermes configured"
+
+      - name: Install Python dependencies
         run: |
-          pip install edge-tts 2>&1
+          set -e
+
+          python3 -m pip install edge-tts
+
           python3 -m edge_tts --help | head -3
+
           echo "✅ Edge-TTS ready"
 
-      - name: Restore Hermes CLI memory from repo
+      - name: Restore Hermes memory
         run: |
-          echo "📂 Restoring Hermes Agent persistent memory..."
-          # Hermes CLI stores config in ~/.hermes — link it from repo for persistence
-          mkdir -p ~/.hermes 2>/dev/null || true
+          set -e
+
+          echo "📂 Restoring memory"
+
+          mkdir -p ~/.hermes
+
           if [ -d "hermes-memory" ]; then
-            cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
-            echo "✅ Hermes memory restored from repo"
+            cp -r hermes-memory/* ~/.hermes/ || true
+            echo "✅ Hermes memory restored"
           else
-            echo "ℹ️ No existing Hermes memory found — starting fresh"
+            echo "ℹ️ Starting fresh"
             mkdir -p hermes-memory
           fi
-          # Also load channel memory
-          cat memory/channel-memory.json 2>/dev/null || echo '{"initialRun":true}' > memory/channel-memory.json
-          cat memory/trending-log.json 2>/dev/null || echo '{"trends":[]}' > memory/trending-log.json
-          
-          # Setup YouTube cookies if provided (for bypassing bot detection)
+
+          mkdir -p memory
+
+          [ -f memory/channel-memory.json ] || \
+          echo '{"initialRun":true}' > memory/channel-memory.json
+
+          [ -f memory/trending-log.json ] || \
+          echo '{"trends":[]}' > memory/trending-log.json
+
           if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]; then
-            echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
-            export YOUTUBE_COOKIES_FILE="/tmp/youtube_cookies.txt"
-            echo "✅ YouTube cookies loaded for yt-dlp"
+            echo "${{ secrets.YOUTUBE_COOKIES }}" \
+            > /tmp/youtube_cookies.txt
+
+            export YOUTUBE_COOKIES_FILE=/tmp/youtube_cookies.txt
+
+            echo "✅ YouTube cookies loaded"
           else
-            echo "⚠️ No YouTube cookies provided — may encounter bot detection"
+            echo "⚠️ No YouTube cookies configured"
           fi
-          
-          echo "✅ All memory loaded"
 
       - name: Run daily creation pipeline
         id: create
         run: |
-          # Run the GitHub Actions runner — creates content, uploads, boosts, notifies Discord
-          node core/github-action-runner.js --mode daily
-          
-          echo "status=completed" >> $GITHUB_OUTPUT
-          echo "✅ Daily creation pipeline finished"
+          set -e
 
-      - name: Save memory back to repo (persists across GH Action runs)
+          node core/github-action-runner.js --mode daily
+
+          echo "status=completed" >> "$GITHUB_OUTPUT"
+
+          echo "✅ Pipeline complete"
+
+      - name: Save memory back to repo
         run: |
-          # Save Hermes CLI memory to repo so it survives container destruction
+          set -e
+
           if [ -d ~/.hermes ]; then
             mkdir -p hermes-memory
-            cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
-            echo "✅ Hermes CLI memory saved"
+            cp -r ~/.hermes/* hermes-memory/ || true
           fi
-          
+
           git config user.name "Mr. WorldWideWebster Bot"
           git config user.email "bot@worldwidewebster.com"
+
           git add memory/
           git add hermes-memory/
           git add output/scripts/ 2>/dev/null || true
-          
+
           if ! git diff --staged --quiet; then
             git commit -m "📊 Daily memory update: $(date +%Y-%m-%d)"
             git push
-            echo "✅ Memory saved to repo"
+
+            echo "✅ Memory saved"
           else
-            echo "ℹ️ No memory changes to commit"
+            echo "ℹ️ No changes to save"
           fi
 
       - name: Cleanup temp files
         if: always()
         run: |
-          rm -rf output/temp 2>/dev/null || true
-          echo "🧹 Cleanup done"
+          rm -rf output/temp || true
+
+          docker stop camofox-browser || true
+          docker rm camofox-browser || true
+
+          echo "🧹 Cleanup complete"
