@@ -124,51 +124,25 @@ jobs:
           HERMES_VERBOSE=1
           EOF
 
-          # Write a correct config.yaml
-          cat > ~/.hermes/config.yaml <<'EOF'
-          llm:
-            provider: ollama
-            model: qwen3:8b
-            api_base: http://127.0.0.1:11434
-            temperature: 0.7
-            max_tokens: 1000
-            context_window: 4096
-
-          agent:
-            max_turns: 4
-
-          browser:
-            provider: camofox
-            camofox:
-              url: http://localhost:9377
-              managed_persistence: true
-
-          memory:
-            enabled: true
-            char_limit: 2000
-
-          tools:
-            browser: true
-            terminal: true
-            web: true
-            skills: true
-          EOF
+          # Start with an empty/minimal config (will be overwritten)
+          echo '{}' > ~/.hermes/config.yaml
 
           # Purge any cloud API keys so Hermes can only use local Ollama
           unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
 
-          # ---- Select the default provider & model (the fix) ----
-          # Try the proper CLI command first
-          if hermes model qwen3:8b --provider ollama 2>/dev/null; then
+          # Attempt to set the model via the proper CLI command (no stderr suppression)
+          echo ">>> Trying: hermes model qwen3:8b --provider ollama"
+          if hermes model qwen3:8b --provider ollama; then
             echo "✅ Model set via CLI"
           else
-            echo "⚠️  Falling back to config set"
-            hermes config set llm.provider ollama
-            hermes config set llm.model qwen3:8b
-            hermes config set llm.api_base http://127.0.0.1:11434
+            echo "⚠️  CLI command failed. Falling back to config set (using 'model.' keys)"
+            hermes config set model.provider ollama
+            hermes config set model.default qwen3:8b
+            hermes config set model.base_url http://127.0.0.1:11434
+            hermes config set model.api_mode chat_completions
           fi
 
-          echo "===== CONFIG ====="
+          echo "===== RESULTING CONFIG ====="
           cat ~/.hermes/config.yaml
           echo "===== VERIFY MODEL ====="
           ollama list
@@ -176,7 +150,7 @@ jobs:
           echo "===== HERMES STATUS ====="
           hermes status || true
           echo "===== TEST ====="
-          # This will now run without an AuthError
+          # This must succeed – no AuthError
           hermes -z "Reply only OK"
 
       - name: Restore memory
