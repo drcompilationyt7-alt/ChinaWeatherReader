@@ -426,14 +426,14 @@ class UniversalDownloader {
     
     // Additional cookies-from-browser option for yt-dlp 2024+ versions
     // This allows yt-dlp to directly extract cookies from browser profiles
-    if (!cookiesFile && platform === 'youtube') {
+    if (!cookiesFile && platform === 'youtube' && !process.env.GITHUB_ACTIONS) {
       // Try Chrome/Chromium cookies directly if available
       // Use 'chromium' instead of 'chrome' since we're in Linux with chromium browser
       cmd += ` --cookies-from-browser "chromium:profile-directory=Default"`;
     }
     
     // For other platforms, also try browser cookie extraction
-    if (!cookiesFile && ['bilibili', 'douyin', 'tiktok', 'instagram'].includes(platform)) {
+    if (!cookiesFile && ['bilibili', 'douyin', 'tiktok', 'instagram'].includes(platform) && !process.env.GITHUB_ACTIONS) {
       cmd += ` --cookies-from-browser "chromium"`;
     }
     
