@@ -83,7 +83,7 @@ jobs:
 
       - name: Pull model
         run: |
-          ollama pull phi3:medium-128k
+          ollama pull llama3.2:3b
           ollama list
 
       - name: Start Camofox
@@ -125,7 +125,7 @@ jobs:
           cat > ~/.hermes/config.yaml <<'EOF'
           model:
             provider: custom
-            default: phi3:medium-128k
+            default: llama3.2:3b
             base_url: http://localhost:11434/v1
             api_key: ollama
             api_mode: chat_completions
@@ -162,6 +162,17 @@ jobs:
           echo "===== TEST ====="
           hermes -z "Reply only OK"
 
+      - name: Environment diagnostics
+        run: |
+          echo "=== ENVIRONMENT DIAGNOSTICS ==="
+          echo "Node: $(node --version)"
+          echo "Python: $(python3 --version)"
+          echo "Hermes: $(hermes --version 2>&1)"
+          echo "yt-dlp: $(yt-dlp --version 2>&1)"
+          echo "OpenRouter key length: ${#OPENROUTER_API_KEY}"
+          echo "Camofox health: $(curl -fs http://localhost:9377/health 2>&1 || echo 'UNREACHABLE')"
+          echo "Ollama status: $(curl -fs http://localhost:11434/api/tags 2>&1 | head -c 200 || echo 'UNREACHABLE')"
+
       - name: Restore memory
         run: |
           mkdir -p ~/.hermes
@@ -170,7 +181,6 @@ jobs:
 
       - name: Run content pipeline
         run: |
-          unset OPENROUTER_API_KEY OPENAI_API_KEY
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
