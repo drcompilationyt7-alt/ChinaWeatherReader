@@ -3,15 +3,16 @@
   "tagline": "Bringing the world to you",
   "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
   "createdAt": "2025-01-01T00:00:00.000Z",
-  "totalVideosPosted": 8,
-  "lastCountryUsed": "Italy",
+  "totalVideosPosted": 10,
+  "lastCountryUsed": "Spain",
   "countriesUsedThisWeek": [
     "South Africa",
     "Argentina",
     "Mexico",
     "Egypt",
     "Nigeria",
-    "Italy"
+    "Italy",
+    "Spain"
   ],
   "bestPerformingFormats": [],
   "titleFormulas": [
@@ -28,5 +29,5 @@
   },
   "skills": [],
   "lastUpdated": "2025-01-01T00:00:00.000Z",
-  "lastContentType": "none"
+  "lastContentType": "explainer"
 }

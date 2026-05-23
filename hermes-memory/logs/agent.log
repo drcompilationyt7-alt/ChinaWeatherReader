@@ -106,3 +106,39 @@
 2026-05-22 22:48:35,389 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
 2026-05-22 22:48:35,392 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
 2026-05-22 22:48:35,679 INFO hermes_cli.plugins: Plugin discovery complete: 28 found, 24 enabled
+2026-05-23 17:25:27,581 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-23 17:25:27,581 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-23 17:25:27,582 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-23 17:25:27,582 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-23 17:25:27,583 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-23 17:25:27,583 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-23 17:25:27,584 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-23 17:25:27,624 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-23 17:25:27,625 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-23 17:25:27,626 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-23 17:25:27,626 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-23 17:25:27,627 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-23 17:25:27,628 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-23 17:25:27,628 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-23 17:25:27,629 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-23 17:25:27,629 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-23 17:25:27,630 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-23 17:25:27,759 INFO hermes_cli.plugins: Plugin discovery complete: 28 found, 24 enabled
+2026-05-23 17:25:30,867 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-23 17:25:30,868 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-23 17:25:30,868 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-23 17:25:30,869 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-23 17:25:30,869 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-23 17:25:30,870 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-23 17:25:30,870 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-23 17:25:30,901 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-23 17:25:30,901 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-23 17:25:30,902 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-23 17:25:30,903 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-23 17:25:30,903 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-23 17:25:30,904 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-23 17:25:30,905 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-23 17:25:30,905 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-23 17:25:30,906 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-23 17:25:30,906 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-23 17:25:31,035 INFO hermes_cli.plugins: Plugin discovery complete: 28 found, 24 enabled
