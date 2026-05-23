@@ -15,7 +15,7 @@ on:
         default: false
 
 env:
-  # Used only by Node-side scripts
+  # Used by Node-side scripts and Hermes (OpenRouter)
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -72,21 +72,6 @@ jobs:
 
           npm ci || npm install
 
-      - name: Install Ollama
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve > ollama.log 2>&1 &
-          sleep 15
-          curl http://127.0.0.1:11434/api/tags
-
-      - name: Download Ollama models
-        run: |
-          echo "Downloading research model"
-          ollama pull qwen3:8b
-          echo "Downloading coder model"
-          ollama pull qwen2.5-coder:7b
-          ollama list
-
       - name: Start Camofox
         run: |
           docker pull ghcr.io/jo-inc/camofox-browser:latest
@@ -118,39 +103,46 @@ jobs:
           mkdir -p ~/.hermes
           rm -f ~/.hermes/config.yaml ~/.hermes/.env ~/.hermes/auth.json
 
-          # .env – only essential environment (NO cloud API keys)
+          # .env – only the Camofox URL and verbosity (API key comes from the global env)
           cat > ~/.hermes/.env <<'EOF'
           CAMOFOX_URL=http://localhost:9377
           HERMES_VERBOSE=1
           EOF
 
-          # Start with an empty/minimal config (will be overwritten)
-          echo '{}' > ~/.hermes/config.yaml
+          # Config with the proper model section for OpenRouter
+          cat > ~/.hermes/config.yaml <<'EOF'
+          model:
+            provider: openrouter
+            default: openrouter/owl-alpha
+            base_url: ''
+            api_mode: chat_completions
 
-          # Purge any cloud API keys so Hermes can only use local Ollama
-          unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
+          agent:
+            max_turns: 4
 
-          # Attempt to set the model via the proper CLI command (no stderr suppression)
-          echo ">>> Trying: hermes model qwen3:8b --provider ollama"
-          if hermes model qwen3:8b --provider ollama; then
-            echo "✅ Model set via CLI"
-          else
-            echo "⚠️  CLI command failed. Falling back to config set (using 'model.' keys)"
-            hermes config set model.provider ollama
-            hermes config set model.default qwen3:8b
-            hermes config set model.base_url http://127.0.0.1:11434
-            hermes config set model.api_mode chat_completions
-          fi
+          browser:
+            provider: camofox
+            camofox:
+              url: http://localhost:9377
+              managed_persistence: true
 
-          echo "===== RESULTING CONFIG ====="
+          memory:
+            enabled: true
+            char_limit: 2000
+
+          tools:
+            browser: true
+            terminal: true
+            web: true
+            skills: true
+          EOF
+
+          echo "===== CONFIG ====="
           cat ~/.hermes/config.yaml
-          echo "===== VERIFY MODEL ====="
-          ollama list
-          ollama show qwen3:8b
           echo "===== HERMES STATUS ====="
           hermes status || true
           echo "===== TEST ====="
-          # This must succeed – no AuthError
+          # This will now use OpenRouter with the owl-alpha model (context ≥ 64K)
           hermes -z "Reply only OK"
 
       - name: Restore memory
@@ -161,7 +153,6 @@ jobs:
 
       - name: Run content pipeline
         run: |
-          unset OPENROUTER_API_KEY OPENAI_API_KEY
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
@@ -182,7 +173,6 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          pkill ollama || true
           docker stop camofox-browser || true
           docker rm camofox-browser || true
           rm -rf ~/.hermes/sessions || true
