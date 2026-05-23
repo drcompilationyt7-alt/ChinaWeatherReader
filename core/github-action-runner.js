@@ -297,10 +297,10 @@ class GitHubActionsRunner {
            - For specific searches: youtube
         2. What search query to use (in the language of that platform)
 
-        CRITICAL: Return ONLY valid JSON in this exact format:
+        CRITICAL: Return ONLY valid JSON in this exact format, nothing else:
         {"platform": "tiktok", "query": "viral dance challenge 2026", "reason": "trending in Japan right now"}
-
-        Do NOT include any other text, explanations, or markdown formatting.`,
+        
+        Do NOT include markdown, code blocks, explanations, or any other text. ONLY the JSON object.`,
         { verbose: false, maxSteps: 2 }
       );
 
@@ -308,17 +308,29 @@ class GitHubActionsRunner {
       let parsed;
       try {
         const output = aiRecommendation.output || '';
+        this.logger.info(`AI raw output preview: ${output.substring(0, 200)}...`);
         
-        // Try to extract JSON from the output (Hermes/Ollama may wrap it in text)
-        const jsonMatch = output.match(/\{[\s\S]*\}/);
+        // Try multiple strategies to extract JSON
+        // Strategy 1: Look for JSON between curly braces
+        const jsonMatch = output.match(/\{[\s\S]*?"platform"[\s\S]*?"query"[\s\S]*?\}/);
         if (jsonMatch) {
           parsed = JSON.parse(jsonMatch[0]);
+          this.logger.info('JSON extracted using strategy 1 (curly braces with required fields)');
         } else {
-          // Fallback: try parsing the entire output as JSON
-          parsed = JSON.parse(output);
+          // Strategy 2: Look for any JSON object
+          const anyJsonMatch = output.match(/\{[\s\S]*\}/);
+          if (anyJsonMatch) {
+            parsed = JSON.parse(anyJsonMatch[0]);
+            this.logger.info('JSON extracted using strategy 2 (any JSON object)');
+          } else {
+            // Strategy 3: Try parsing entire output as JSON
+            parsed = JSON.parse(output.trim());
+            this.logger.info('JSON extracted using strategy 3 (entire output)');
+          }
         }
       } catch (parseError) {
         this.logger.warn(`JSON parse failed: ${parseError.message}`);
+        this.logger.warn(`Raw output was: ${aiRecommendation.output || 'empty'}`);
         throw new Error('AI output was not valid JSON');
       }
 
@@ -499,7 +511,43 @@ Return as JSON array.`,
     ];
 
     const format = explainFormats[Math.floor(Math.random() * explainFormats.length)];
-    const explainTopic = { country, format, title: `${format.prompt} (${country} edition) 🌍` };
+    
+    // Use Hermes to find actual content/video matching the script topic
+    this.logger.info(`Asking Hermes to find ${format.category} content from ${country}...`);
+    
+    let hermesFoundContent = null;
+    try {
+      const searchTask = `Find me a specific viral video or image about ${format.category} from ${country}.
+      
+      Search for "${country} ${format.category} viral" on platforms like:
+      - TikTok, Instagram, YouTube for global platforms
+      - Bilibili, Douyin, Rednote for Chinese content
+      
+      Return ONLY JSON with this exact format:
+      {"platform": "tiktok", "query": "specific search query in appropriate language", "url": "direct video URL if found"}
+      
+      If you find a specific video URL, include it. Otherwise just return platform and query.`;
+      
+      const hermesResult = await this.agent.run(searchTask, { verbose: false, maxSteps: 3 });
+      
+      // Try to parse Hermes response
+      const output = hermesResult.output || '';
+      const jsonMatch = output.match(/\{[\s\S]*?"platform"[\s\S]*?\}/);
+      if (jsonMatch) {
+        hermesFoundContent = JSON.parse(jsonMatch[0]);
+        this.logger.info(`Hermes found: ${hermesFoundContent.platform} - ${hermesFoundContent.query || 'no query'}`);
+      }
+    } catch (error) {
+      this.logger.warn(`Hermes content search failed: ${error.message}, using generic topic`);
+    }
+    
+    // Build explain topic based on what Hermes found (or fallback to generic)
+    const explainTopic = {
+      country,
+      format,
+      title: `${format.prompt} (${country} edition) 🌍`,
+      hermesContent: hermesFoundContent
+    };
 
     this.logger.info(`Creating explainer: "${explainTopic.title}"`);
 
@@ -509,7 +557,8 @@ Return as JSON array.`,
       explainResult = await explainPipeline.processExplain({
         sourceContent: {
           title: explainTopic.title,
-          platform: 'web',
+          platform: hermesFoundContent?.platform || 'web',
+          url: hermesFoundContent?.url || null,
           description: `Exploring ${explainTopic.country} ${explainTopic.format.category}`,
           duration: 60,
           hasSpeech: true,
@@ -526,6 +575,7 @@ Return as JSON array.`,
         outputDir: config.paths.explainers,
         ai: this.ai,
         config: config,
+        hermesAgent: this.agent,  // Pass Hermes agent so pipeline can use it to find matching videos
       });
 
       this.logger.success(`✅ Explainer created: ${explainResult.title}`);
