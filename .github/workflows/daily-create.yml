@@ -15,7 +15,7 @@ on:
         default: false
 
 env:
-  # Used by Node-side scripts and Hermes (OpenRouter)
+  # Node-side scripts may still need this, but Hermes will NOT use it
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -72,6 +72,20 @@ jobs:
 
           npm ci || npm install
 
+      - name: Install Ollama (with large context)
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          # Force Ollama to use a 65k context window for all models
+          export OLLAMA_CONTEXT_LENGTH=65536
+          ollama serve > ollama.log 2>&1 &
+          sleep 15
+          curl http://127.0.0.1:11434/api/tags
+
+      - name: Pull model
+        run: |
+          ollama pull phi3:medium-128k
+          ollama list
+
       - name: Start Camofox
         run: |
           docker pull ghcr.io/jo-inc/camofox-browser:latest
@@ -103,19 +117,20 @@ jobs:
           mkdir -p ~/.hermes
           rm -f ~/.hermes/config.yaml ~/.hermes/.env ~/.hermes/auth.json
 
-          # .env – only the Camofox URL and verbosity (API key comes from the global env)
           cat > ~/.hermes/.env <<'EOF'
           CAMOFOX_URL=http://localhost:9377
           HERMES_VERBOSE=1
           EOF
 
-          # Config with the proper model section for OpenRouter
           cat > ~/.hermes/config.yaml <<'EOF'
           model:
-            provider: openrouter
-            default: openrouter/owl-alpha
-            base_url: ''
+            provider: custom
+            default: phi3:medium-128k
+            base_url: http://localhost:11434/v1
+            api_key: ollama
             api_mode: chat_completions
+            ollama_compatible: true
+            context_length: 65536
 
           agent:
             max_turns: 4
@@ -137,12 +152,14 @@ jobs:
             skills: true
           EOF
 
+          # Keep only the local provider, no cloud keys
+          unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
+
           echo "===== CONFIG ====="
           cat ~/.hermes/config.yaml
           echo "===== HERMES STATUS ====="
           hermes status || true
           echo "===== TEST ====="
-          # This will now use OpenRouter with the owl-alpha model (context ≥ 64K)
           hermes -z "Reply only OK"
 
       - name: Restore memory
@@ -153,6 +170,7 @@ jobs:
 
       - name: Run content pipeline
         run: |
+          unset OPENROUTER_API_KEY OPENAI_API_KEY
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
@@ -173,6 +191,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
+          pkill ollama || true
           docker stop camofox-browser || true
           docker rm camofox-browser || true
           rm -rf ~/.hermes/sessions || true
