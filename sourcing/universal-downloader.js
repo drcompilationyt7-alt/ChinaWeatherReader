@@ -69,9 +69,23 @@ class UniversalDownloader {
 
     this.logger.info(`Downloading from ${platform}: ${url.substring(0, 80)}`);
 
+    // For YouTube, try to get cookies from Camofox browser first (real browser session bypasses bot detection)
+    let effectiveCookiesFile = cookiesFile;
+    if (platform === 'youtube' && !effectiveCookiesFile) {
+      try {
+        const camofoxCookies = await this._extractYouTubeCookiesFromCamofox();
+        if (camofoxCookies) {
+          effectiveCookiesFile = camofoxCookies;
+          this.logger.info(`Using Camofox cookies to bypass YouTube bot detection`);
+        }
+      } catch (cookieError) {
+        this.logger.info(`Camofox cookies not available: ${cookieError.message}`);
+      }
+    }
+
     // Strategy 1: yt-dlp (works for 1700+ sites)
     try {
-      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform, false, cookiesFile);
+      const result = await this._downloadWithYtDlp(url, outputDir, maxHeight, platform, false, effectiveCookiesFile);
       if (result.success) return result;
       this.logger.warn(`yt-dlp failed for ${platform}, trying fallback...`);
     } catch (error) {
@@ -142,11 +156,86 @@ class UniversalDownloader {
   /**
    * Primary method: yt-dlp (supports 1700+ sites)
    */
+  /**
+   * Try to extract YouTube cookies from running Camofox browser
+   * Camofox is a real Chromium instance that establishes legitimate sessions
+   */
+  async _extractYouTubeCookiesFromCamofox() {
+    const camofoxUrl = process.env.CAMOFOX_URL || 'http://localhost:9377';
+    const cookiesPath = path.join(__dirname, '..', 'output', 'temp', 'youtube_cookies.txt');
+    
+    try {
+      // Camofox provides a CDP endpoint to interact with the browser
+      const response = await fetch(`${camofoxUrl}/api/cookies?domain=youtube.com`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const cookies = data.cookies || [];
+        
+        if (cookies.length > 0) {
+          // Convert to Netscape format (required by yt-dlp)
+          const header = '# Netscape HTTP Cookie File\n';
+          const lines = cookies.map(c => {
+            const domain = c.domain || '.youtube.com';
+            const flag = domain.startsWith('.') ? 'TRUE' : 'FALSE';
+            const path = c.path || '/';
+            const secure = c.secure ? 'TRUE' : 'FALSE';
+            const expires = Math.floor((c.expires || Date.now()/1000 + 86400));
+            const name = c.name || '';
+            const value = c.value || '';
+            return `${domain}\t${flag}\t${path}\t${secure}\t${expires}\t${name}\t${value}`;
+          }).join('\n');
+          
+          fs.mkdirSync(path.dirname(cookiesPath), { recursive: true });
+          fs.writeFileSync(cookiesPath, header + lines);
+          this.logger.info(`✅ Extracted ${cookies.length} cookies from Camofox`);
+          return cookiesPath;
+        }
+      }
+      
+      // Fallback: try puppeteer connected to Camofox to get cookies
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.connect({
+        browserURL: `${camofoxUrl}/ws` // Camofox CDP endpoint
+      });
+      
+      const page = await browser.newPage();
+      await page.goto('https://www.youtube.com', { waitUntil: 'networkidle2', timeout: 15000 });
+      
+      const cookies = await page.cookies('https://www.youtube.com');
+      await page.close();
+      
+      if (cookies.length > 0) {
+        const header = '# Netscape HTTP Cookie File\n';
+        const lines = cookies.map(c => {
+          const domain = c.domain || '.youtube.com';
+          const flag = domain.startsWith('.') ? 'TRUE' : 'FALSE';
+          const path = c.path || '/';
+          const secure = c.secure ? 'TRUE' : 'FALSE';
+          const expires = Math.floor((c.expires || Date.now()/1000 + 86400));
+          return `${domain}\t${flag}\t${path}\t${secure}\t${expires}\t${c.name}\t${c.value}`;
+        }).join('\n');
+        
+        fs.mkdirSync(path.dirname(cookiesPath), { recursive: true });
+        fs.writeFileSync(cookiesPath, header + lines);
+        this.logger.info(`✅ Extracted ${cookies.length} cookies from Camofox via CDP`);
+        return cookiesPath;
+      }
+      
+      return null;
+    } catch (error) {
+      this.logger.info(`Camofox cookie extraction not available: ${error.message}`);
+      return null;
+    }
+  }
+
   async _downloadWithYtDlp(url, outputDir, maxHeight, platform, useAltFormat = false, cookiesFile = null) {
     const safeTimestamp = Date.now();
     const outputTemplate = path.join(outputDir, `%(extractor)s_${safeTimestamp}_%(id)s.%(ext)s`);
 
-    // Build yt-dlp command
+    // Build yt-dlp command - use pip-installed version which is newer
     let cmd = `yt-dlp`;
     
     // Add cookies if provided (bypasses YouTube bot detection)
@@ -157,8 +246,9 @@ class UniversalDownloader {
     
     // Try alternative YouTube clients to bypass bot detection
     if (platform === 'youtube') {
-      // Use android client which often bypasses bot checks
-      cmd += ` --extractor-args "youtube:player_client=android,web"`;
+      // Use android client ONLY (not web) — web often triggers bot check
+      // Skip webpage/configs to reduce detection surface
+      cmd += ` --extractor-args "youtube:player_client=android;player_skip=webpage,configs"`;
     }
     
     // Format selection

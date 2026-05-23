@@ -1,4 +1,4 @@
-const { spawnSync, execSync } = require('child_process');
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { Logger } = require('../core/logger');
@@ -48,7 +48,7 @@ class HermesCLIWrapper {
     
     try {
       const camofoxUrl = process.env.CAMOFOX_URL || 'http://localhost:9377';
-      const healthResult = execSync(
+      execSync(
         `curl -sf ${camofoxUrl}/health`,
         { timeout: 5000, stdio: 'pipe' }
       );
@@ -61,6 +61,11 @@ class HermesCLIWrapper {
     return this.camofoxAvailable;
   }
 
+  /**
+   * Run Hermes with a task prompt.
+   * Uses execSync (shell) instead of spawnSync because Hermes v0.14
+   * requires a TTY/PTY to display output. spawnSync returns empty.
+   */
   async run(task, options = {}) {
 
     if (!this.cliAvailable) {
@@ -105,36 +110,6 @@ class HermesCLIWrapper {
         `Task written: ${taskFile}`
       );
 
-      const env = {
-
-        ...process.env,
-
-        // ═══════════════════════════════════════════════════════
-        //  HERMES AGENT → OLLAMA (Local Model for Web Research)
-        // ═══════════════════════════════════════════════════════
-        // Hermes uses Ollama for browsing/research tasks
-        OLLAMA_HOST:
-          process.env.OLLAMA_HOST ||
-          'http://localhost:11434',
-        
-        OLLAMA_MODEL:
-          process.env.HERMES_OLLAMA_MODEL ||
-          process.env.OLLAMA_MODEL ||
-          'llama3.2',
-
-        // Clear OpenRouter keys so Hermes CLI uses Ollama instead
-        OPENROUTER_API_KEY: '',
-        OPENROUTER_API_KEY_2: '',
-        OPENROUTER_API_KEY_3: '',
-        OPENROUTER_API_KEY_4: '',
-
-        CAMOFOX_URL:
-          process.env.CAMOFOX_URL ||
-          'http://localhost:9377',
-
-        HERMES_VERBOSE:'1'
-      };
-
       // Check Camofox availability and adjust tools accordingly
       const camofoxOk = await this._checkCamofox();
       const toolsList = camofoxOk 
@@ -143,181 +118,125 @@ class HermesCLIWrapper {
 
       this.logger.info(`Camofox available: ${camofoxOk} — using tools: ${toolsList}`);
 
-      const args = [
+      // Build the shell command. execSync runs through a shell which provides
+      // proper TTY handling. Hermes v0.14 returns empty output via spawnSync.
+      // NOTE: -z flag is the correct zero-turn non-interactive mode (top-level flag).
+      // Do NOT add "chat" subcommand — it conflicts with -z.
+      // Do NOT add --yolo as a subcommand flag — it's a top-level flag.
+      // The tools list must be quoted per Hermes CLI docs.
+      const escapedTask = task
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\$/g, '\\$')
+        .replace(/`/g, '\\`');
 
-        '-z',
-        task,
-
-        '-t',
-        toolsList,
-
-        'chat',
-
-        '--yolo'
-      ];
+      const cmd = `hermes -z "${escapedTask}" -t "${toolsList}" --yolo`;
 
       this.logger.info(
         'Executing Hermes...'
       );
 
       this.logger.info(
-        `CAMOFOX_URL=${env.CAMOFOX_URL}`
+        `Command: ${cmd.substring(0, 200)}`
       );
 
-      this.logger.info(
-        `Command: hermes ${args.join(' ')}`
-      );
+      // Use execSync which runs through the shell (provides TTY)
+      // This is CRITICAL — spawnSync causes Hermes to return empty output
+      const maxTimeout = 360000; // 6 minutes - Hermes needs time on first run
+      
+      const stdout = execSync(cmd, {
+        env: {
+          ...process.env,
+          // Hermes uses Ollama for browsing/research tasks
+          OLLAMA_HOST: process.env.OLLAMA_HOST || 'http://localhost:11434',
+          OLLAMA_MODEL: process.env.HERMES_OLLAMA_MODEL || process.env.OLLAMA_MODEL || 'llama3.2',
+          // Do NOT clear cloud keys — Hermes config at ~/.hermes/config.yaml
+          // already points to the custom Ollama provider. Let Hermes resolve
+          // its own provider chain from config without interference.
+          CAMOFOX_URL: process.env.CAMOFOX_URL || 'http://localhost:9377',
+          HERMES_VERBOSE: '1',
+        },
+        timeout: maxTimeout,
+        maxBuffer: 20 * 1024 * 1024,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-      const result = spawnSync(
-        'hermes',
-        args,
-        {
-          env,
-          encoding:'utf8',
-          timeout:120000,         // 2 min timeout (was 300s)
-          maxBuffer:20*1024*1024
-        }
-      );
+      const output = stdout.toString() || '';
 
-      // ── CRITICAL: Log EVERYTHING Hermes produced ──
+      // ── Log output diagnostics ──
       this.logger.info('═══════════════════════════════════════════');
       this.logger.info('HERMES FULL OUTPUT DIAGNOSTICS:');
-      this.logger.info(`Exit code: ${result.status}`);
-      this.logger.info(`stdout length: ${(result.stdout || '').length} chars`);
-      this.logger.info(`stderr length: ${(result.stderr || '').length} chars`);
+      this.logger.info(`output length: ${output.length} chars`);
       this.logger.info('═══════════════════════════════════════════');
 
-      if(result.stdout){
-        this.logger.info('--- HERMES STDOUT ---');
-        const outputPreview = result.stdout.substring(0, 10000);
+      if (output) {
+        this.logger.info('--- HERMES OUTPUT ---');
+        const outputPreview = output.substring(0, 10000);
         console.log(outputPreview);
-        if (result.stdout.length > 10000) {
-          console.log(`... (${result.stdout.length - 10000} more chars)`);
+        if (output.length > 10000) {
+          console.log(`... (${output.length - 10000} more chars)`);
         }
       } else {
-        this.logger.warn('Hermes stdout is EMPTY');
+        this.logger.warn('Hermes output is EMPTY');
       }
 
-      if(result.stderr){
-        this.logger.warn('--- HERMES STDERR ---');
-        console.log(result.stderr.substring(0, 10000));
-        if (result.stderr.length > 10000) {
-          console.log(`... (${result.stderr.length - 10000} more chars)`);
-        }
-      }
+      this.logger.success('Hermes completed');
 
-      // Combine stdout + stderr for URL extraction
-      const combinedOutput = (result.stdout || '') + '\n' + (result.stderr || '');
+      return {
+        success: true,
+        output: output.trim(),
+        fullOutput: output,
+        agent: 'hermes-cli',
+        steps: 1,
+      };
 
-      if(result.status !== 0){
-        this.logger.warn(`Hermes exited with code ${result.status}`);
-        // Even on non-zero exit, return what we got
+    } catch (err) {
+      // execSync throws on non-zero exit. But we might still have output.
+      const output = err.stdout || err.stderr || '';
+
+      if (output) {
+        this.logger.info('--- HERMES OUTPUT (from error) ---');
+        console.log(output.substring(0, 5000));
+        this.logger.success('Hermes completed (partial output)');
         return {
-          success: true,  // Don't trigger fallback if we got URLs
-          output: combinedOutput.trim(),
-          fullOutput: combinedOutput,
-          stderr: result.stderr || '',
+          success: true,
+          output: output.toString().trim(),
+          fullOutput: output.toString(),
           agent: 'hermes-cli',
           steps: 1,
-          exitCode: result.status,
         };
       }
 
-      this.logger.success(
-        'Hermes completed'
-      );
+      this.logger.error('Hermes failed');
+      this.logger.error(err.message);
 
       return {
-
-        success:true,
-
-        output:
-          combinedOutput.trim(),
-
-        fullOutput:
-          combinedOutput,
-
-        stderr:
-          result.stderr || '',
-
-        agent:
-          'hermes-cli',
-
-        steps:1,
-
-        exitCode: result.status,
-      };
-
-    }
-    catch(err){
-
-      this.logger.error(
-        'Hermes failed'
-      );
-
-      this.logger.error(
-        err.stack || err.message
-      );
-
-      return {
-
-        success:false,
-
-        error:err.message,
-
-        output:'',
-
-        shouldFallback:true,
-
-        agent:'hermes-cli',
-
-        steps:0
+        success: false,
+        error: err.message,
+        output: '',
+        shouldFallback: true,
+        agent: 'hermes-cli',
+        steps: 0,
       };
     }
   }
 
-  async chat(prompt){
-
+  async chat(prompt) {
     return this.run(prompt);
-
   }
 
-  async getInfo(){
-
-    if(!this.cliAvailable){
-
-      return {
-        available:false
-      };
-
+  async getInfo() {
+    if (!this.cliAvailable) {
+      return { available: false };
     }
 
-    try{
-
-      const version=
-      execSync(
-        'hermes --version'
-      )
-      .toString()
-      .trim();
-
-      return {
-
-        available:true,
-        version
-
-      };
-
-    }
-    catch{
-
-      return {
-
-        available:true,
-        version:'unknown'
-
-      };
-
+    try {
+      const version = execSync('hermes --version', { timeout: 5000 })
+        .toString()
+        .trim();
+      return { available: true, version };
+    } catch {
+      return { available: true, version: 'unknown' };
     }
   }
 }
