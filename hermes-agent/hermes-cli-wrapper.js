@@ -87,16 +87,24 @@ class HermesCLIWrapper {
 
         ...process.env,
 
-        OPENROUTER_API_KEY:
-          process.env.OPENROUTER_API_KEY || '',
-          
-        // Pass additional API keys for multi-key rotation
-        OPENROUTER_API_KEY_2:
-          process.env.OPENROUTER_API_KEY_2 || '',
-        OPENROUTER_API_KEY_3:
-          process.env.OPENROUTER_API_KEY_3 || '',
-        OPENROUTER_API_KEY_4:
-          process.env.OPENROUTER_API_KEY_4 || '',
+        // ═══════════════════════════════════════════════════════
+        //  HERMES AGENT → OLLAMA (Local Model for Web Research)
+        // ═══════════════════════════════════════════════════════
+        // Hermes uses Ollama for browsing/research tasks
+        OLLAMA_HOST:
+          process.env.OLLAMA_HOST ||
+          'http://localhost:11434',
+        
+        OLLAMA_MODEL:
+          process.env.HERMES_OLLAMA_MODEL ||
+          process.env.OLLAMA_MODEL ||
+          'llama3.2',
+
+        // Clear OpenRouter keys so Hermes CLI uses Ollama instead
+        OPENROUTER_API_KEY: '',
+        OPENROUTER_API_KEY_2: '',
+        OPENROUTER_API_KEY_3: '',
+        OPENROUTER_API_KEY_4: '',
 
         CAMOFOX_URL:
           process.env.CAMOFOX_URL ||
