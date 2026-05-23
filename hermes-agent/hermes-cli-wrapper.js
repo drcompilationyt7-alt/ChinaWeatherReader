@@ -70,29 +70,36 @@ Content types: Clip (viral moments), Voiceover (translated), Explain ("What is t
 - The repo is at: /home/runner/work/mr-worldwidewebster/mr-worldwidewebster
 - CRITICAL: You MUST use your web browsing tools to find real-time trending content
 - Use search engines and social media platforms (Bilibili, TikTok, Douyin, Instagram, Rednote, Twitter)
+- BROWSER AUTOMATION: Camofox Firefox browser is running at http://localhost:9377 with persistent sessions enabled
+- Use browser_navigate, browser_snapshot, browser_click, browser_type, browser_scroll to interact with websites
+- For video platforms, extract actual video URLs that can be downloaded with yt-dlp
+- Camofox provides anti-detection fingerprinting to bypass bot protection on TikTok, YouTube, etc.
 
 ## Task
 ${task}
 
 ## Instructions
-1. Use your WEB BROWSING TOOLS to search for trending content step by step
-2. Actually visit the platforms mentioned (bilibili.com, tiktok.com, douyin.com, xiaohongshu.com, instagram.com, twitter.com)
-3. Find specific video URLs that are trending RIGHT NOW
-4. Report back as JSON array with: platform, country, title, url, type
-5. Save findings to memory/ directory for persistence`;
+1. Use your WEB BROWSING TOOLS and CAMOFOX browser automation to find trending content
+2. Navigate to platforms: bilibili.com, tiktok.com, douyin.com, xiaohongshu.com, instagram.com, twitter.com
+3. Use browser_snapshot() to see interactive elements with ref IDs like @e1, @e2
+4. Use browser_click(@eX) and browser_type(@eX, "text") to navigate and search
+5. Find specific video URLs that are trending RIGHT NOW
+6. Report back as JSON array with: platform, country, title, url, type
+7. Save findings to memory/ directory for persistence`;
 
       fs.writeFileSync(taskFile, taskContent);
       this.logger.info(`Task written to: ${taskFile}`);
 
       // Hermes v0.14.0 uses `hermes chat -z "prompt"` (no `run` command)
       // Use --yolo to skip confirmation prompts (auto-approve mode)
-      // CRITICAL: Add --toolsets "web,terminal,skills" to enable web browsing
+      // CRITICAL: Add --toolsets "web,terminal,skills,browser" to enable web browsing AND browser automation via Camofox
       const escapedTask = task.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
       
       // Build command with optional verbose mode for CI debugging
       const verboseFlag = process.env.HERMES_VERBOSE ? '--verbose' : '';
-      const cmd = `hermes chat -z "${escapedTask}" --yolo --toolsets "web,terminal,skills" ${verboseFlag} 2>&1`;
-      this.logger.info(`Executing: hermes chat -z "..." --toolsets "web,terminal,skills" ${process.env.HERMES_VERBOSE ? '(verbose mode)' : ''}`);
+      const cmd = `hermes chat -z "${escapedTask}" --yolo --toolsets "web,terminal,skills,browser" ${verboseFlag} 2>&1`;
+      this.logger.info(`Executing: hermes chat -z "..." --toolsets "web,terminal,skills,browser" ${process.env.HERMES_VERBOSE ? '(verbose mode)' : ''}`);
+      this.logger.info(`Camofox URL: http://localhost:9377 (configured in ~/.hermes/.env)`);
 
       const output = execSync(cmd, {
         timeout: 300000, // 5 minutes
@@ -100,6 +107,7 @@ ${task}
         env: {
           ...process.env,
           OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
+          CAMOFOX_URL: 'http://localhost:9377',
         },
       }).toString();
 

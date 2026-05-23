@@ -68,6 +68,51 @@ jobs:
           echo "✅ System deps installed (ffmpeg, yt-dlp, chromium)"
           echo "✅ yt-dlp updated to latest version"
 
+      - name: Setup Docker for Camofox
+        run: |
+          # Docker is pre-installed on GitHub Actions runners
+          docker --version
+          echo "✅ Docker available"
+
+      - name: Clone and start Camofox browser server
+        run: |
+          cd /tmp
+          
+          # Clone Camofox browser server
+          git clone https://github.com/jo-inc/camofox-browser.git
+          cd camofox-browser
+          
+          # Build the image (this takes ~5-10 minutes)
+          echo "🔨 Building Camofox Docker image..."
+          make build
+          
+          # Start Camofox with VNC for debugging
+          echo "🚀 Starting Camofox container..."
+          mkdir -p ~/.camofox-docker
+          docker run -d \
+            --name camofox-browser \
+            --restart unless-stopped \
+            -p 9377:9377 \
+            -p 6080:6080 \
+            -p 5901:5900 \
+            -e CAMOFOX_PORT=9377 \
+            -e ENABLE_VNC=1 \
+            -e VNC_BIND=0.0.0.0 \
+            -e VNC_RESOLUTION=1920x1080 \
+            -e MAX_OLD_SPACE_SIZE=2048 \
+            -v ~/.camofox-docker:/root/.camofox \
+            camofox-browser:latest
+          
+          # Wait for Camofox to be ready
+          echo "⏳ Waiting for Camofox to start..."
+          sleep 15
+          
+          # Verify Camofox is running
+          curl -s http://localhost:9377/health || echo "⚠️ Camofox health check failed, but continuing..."
+          
+          echo "✅ Camofox browser server started on port 9377"
+          echo "📺 VNC viewer available at http://localhost:6080"
+
       - name: Install Node.js dependencies
         run: |
           npm ci --production || npm install
@@ -81,7 +126,24 @@ jobs:
           hermes config set DISCORD_BOT_TOKEN "${{ secrets.DISCORD_BOT_TOKEN }}"
           hermes config set DISCORD_CHANNEL_ID "${{ secrets.DISCORD_CHANNEL_ID }}"
           hermes config set YOUTUBE_CHANNEL "Mr. WorldWideWebster"
-          echo "✅ Hermes Agent installed and configured with Discord + YouTube"
+          
+          # Configure Camofox for browser automation
+          echo "🦊 Configuring Hermes to use Camofox..."
+          mkdir -p ~/.hermes
+          cat >> ~/.hermes/.env << EOF
+CAMOFOX_URL=http://localhost:9377
+EOF
+          
+          # Enable persistent browser sessions in config.yaml
+          cat >> ~/.hermes/config.yaml << EOF
+browser:
+  camofox:
+    managed_persistence: true
+EOF
+          
+          echo "✅ Hermes Agent installed and configured with Camofox browser automation"
+          echo "✅ Camofox URL: http://localhost:9377"
+          echo "✅ Persistent sessions enabled"
 
       - name: Install Python deps (Edge-TTS)
         run: |
