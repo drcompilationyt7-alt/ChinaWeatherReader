@@ -263,99 +263,110 @@ class GitHubActionsRunner {
   /**
    * Download a trending video, trim to short, and upload to YouTube
    * This content type uses the video's original audio — no TTS needed
+   * 
+   * Searches across multiple platforms: YouTube, Bilibili, TikTok, Instagram, Douyin, Rednote
    */
   async _createClipShort() {
     const { execSync } = require('child_process');
     
-    // Trending content search queries for variety
-    const searches = [
-      'funny fail compilation 2026 short',
-      'beautiful nature drone 4k',
-      'viral tiktok dance 2026',
-      'cute animal moments compilation',
-      'satisfying video no music',
-      'amazing sports moments',
-      'street food cooking viral',
-      'beautiful sunset timelapse',
+    // Multi-platform search queries for variety
+    const platformSearches = [
+      { platform: 'youtube', queries: ['funny fail compilation 2026 short', 'beautiful nature drone 4k', 'satisfying video no music', 'amazing sports moments', 'street food cooking viral'] },
+      { platform: 'bilibili', queries: ['热门视频', '搞笑合集', '美食制作', '风景航拍'] },
+      { platform: 'tiktok', queries: ['viral dance 2026', 'funny moments', 'cooking hacks', 'travel vlog'] },
+      { platform: 'instagram', queries: ['reels viral', 'travel reels', 'food reels', 'dance challenge'] },
+      { platform: 'douyin', queries: ['热门', '搞笑', '美食', '旅行'] },
+      { platform: 'rednote', queries: ['热门笔记', '旅行分享', '美食推荐'] },
     ];
-
-    const searchQuery = searches[Math.floor(Math.random() * searches.length)];
+    
+    const platformChoice = platformSearches[Math.floor(Math.random() * platformSearches.length)];
+    const searchQuery = platformChoice.queries[Math.floor(Math.random() * platformChoice.queries.length)];
 
     try {
-      this.logger.info(`Searching YouTube for: "${searchQuery}"`);
-
-      // Use yt-dlp to search YouTube for a trending video
-      // --print url --print title outputs URL and title on SEPARATE lines:
-      //   https://www.youtube.com/watch?v=abc123
-      //   Video Title Here
-      const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
-      const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
+      this.logger.info(`Searching ${platformChoice.platform} for: "${searchQuery}"`);
       
-      if (!searchOutput) {
-        throw new Error('No search results found');
-      }
+      let videoUrl = null;
+      let videoTitle = searchQuery;
+      
+      if (platformChoice.platform === 'youtube') {
+        // Use yt-dlp to search YouTube
+        const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
+        const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
+        
+        if (!searchOutput) throw new Error('No search results found');
 
-      // Parse (url, title) pairs from alternating lines
-      const lines = searchOutput.split('\n').filter(Boolean);
-      const pairs = [];
-      for (let i = 0; i < lines.length - 1; i += 2) {
-        const url = lines[i].trim();
-        const title = lines[i + 1] ? lines[i + 1].trim() : '';
-        if (url.startsWith('http')) {
-          pairs.push({ url, title });
+        const lines = searchOutput.split('\n').filter(Boolean);
+        const pairs = [];
+        for (let i = 0; i < lines.length - 1; i += 2) {
+          const url = lines[i].trim();
+          const title = lines[i + 1] ? lines[i + 1].trim() : '';
+          if (url.startsWith('http')) pairs.push({ url, title });
         }
+
+        if (pairs.length === 0) throw new Error('No valid video URLs in search results');
+
+        const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+        videoUrl = randomPair.url;
+        videoTitle = randomPair.title || searchQuery;
+      } else {
+        // For other platforms, use Hermes Agent to search and find URLs
+        this.logger.info(`Using Hermes Agent to search ${platformChoice.platform}...`);
+        
+        const searchPrompt = `Search for viral videos on ${platformChoice.platform}. Search query: "${searchQuery}". Find 3-5 video URLs. Return JSON array: [{"url": "https://...", "title": "..."}]`;
+        
+        const hermesResult = await this.agent.run(searchPrompt, { verbose: false, maxSteps: 3 });
+        
+        let urls = [];
+        try {
+          const jsonMatch = hermesResult.output?.match(/\[[\s\S]*\]/);
+          if (jsonMatch) urls = JSON.parse(jsonMatch[0]);
+        } catch (e) {}
+        
+        if (urls.length === 0) {
+          const urlRegex = /https?:\/\/[^\s\]]+/g;
+          const foundUrls = hermesResult.output?.match(urlRegex) || [];
+          urls = foundUrls.map(url => ({ url, title: searchQuery }));
+        }
+        
+        if (urls.length === 0) throw new Error(`No URLs found on ${platformChoice.platform}`);
+        
+        const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+        videoUrl = randomUrl.url;
+        videoTitle = randomUrl.title || searchQuery;
       }
 
-      if (pairs.length === 0) {
-        throw new Error('No valid video URLs in search results');
-      }
-
-      // Pick a random result
-      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
-      const videoUrl = randomPair.url;
-      const videoTitle = randomPair.title || searchQuery;
-
-      if (!videoUrl || !videoUrl.startsWith('http')) {
-        throw new Error('Invalid video URL from search');
-      }
+      if (!videoUrl || !videoUrl.startsWith('http')) throw new Error('Invalid video URL');
 
       this.logger.info(`Downloading: "${videoTitle}"`);
       
       const { UniversalDownloader } = require('../sourcing/universal-downloader');
       const downloader = new UniversalDownloader();
       
-      // Download the video
       const downloadResult = await downloader.download(videoUrl, {
         outputDir: config.paths.clips,
         maxHeight: 720,
       });
 
-      if (!downloadResult.success || !downloadResult.filePath) {
-        throw new Error('Download failed');
-      }
+      if (!downloadResult.success || !downloadResult.filePath) throw new Error('Download failed');
 
-      // Trim to 30-second short
       const clipPipeline = require('../clipping/clip-pipeline');
       const shortPath = path.join(config.paths.clips, `clip_upload_${Date.now()}.mp4`);
       
       const trimmedPath = await clipPipeline.trimToShort({
         videoPath: downloadResult.filePath,
-        startTime: 3,  // Skip first few seconds
+        startTime: 3,
         duration: 30,
         outputPath: shortPath,
       });
 
-      if (!trimmedPath || !fs.existsSync(trimmedPath)) {
-        throw new Error('Trim produced no output');
-      }
+      if (!trimmedPath || !fs.existsSync(trimmedPath)) throw new Error('Trim produced no output');
 
-      // Upload to YouTube
       const uploadResult = await this._uploadToYouTube({
         videoPath: trimmedPath,
         title: (downloadResult.title || videoTitle).substring(0, 100),
-        description: `🔥 ${downloadResult.title || videoTitle}\n\n🌍 Bringing the world to you\n\nFollow @MrWorldWideWebster for more global content!`,
+        description: `🔥 ${downloadResult.title || videoTitle}\n\n🌍 Bringing the world to you`,
         type: 'shorts',
-        tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral'],
+        tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral', platformChoice.platform],
       });
 
       if (uploadResult) {
@@ -364,6 +375,7 @@ class GitHubActionsRunner {
           title: (downloadResult.title || videoTitle).substring(0, 100),
           url: uploadResult.url,
           type: 'clip',
+          platform: platformChoice.platform,
         };
       }
     } catch (error) {
