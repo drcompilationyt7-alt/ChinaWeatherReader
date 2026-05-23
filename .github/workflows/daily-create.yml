@@ -38,40 +38,39 @@ env:
 
 jobs:
   create-shorts:
+
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 360
 
     steps:
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         token: ${{ secrets.GH_PAT || github.token }}
         fetch-depth: 0
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: "20"
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
-    - name: Install dependencies
+
+    - name: Install system packages
       run: |
 
         sudo apt-get update -qq
 
         sudo apt-get install -y \
-          ffmpeg \
-          yt-dlp \
-          curl \
-          jq
-
-        sudo apt-get install -y chromium || \
-        sudo apt-get install -y chromium-browser || true
+        ffmpeg \
+        yt-dlp \
+        curl \
+        jq \
+        chromium-browser
 
         python3 -m pip install -U \
         edge-tts \
@@ -80,49 +79,28 @@ jobs:
 
         npm install
 
-    - name: Setup Docker
-      run: docker --version
 
-    - name: Start Camofox
+    - name: Install Ollama
       run: |
 
-        cd /tmp
+        curl -fsSL https://ollama.com/install.sh | sh
 
-        git clone https://github.com/jo-inc/camofox-browser.git
+        ollama serve > ollama.log 2>&1 &
 
-        cd camofox-browser
+        sleep 10
 
-        make down || true
-        make build
+        ollama --version
 
-        IMAGE=$(docker images \
-        --format "{{.Repository}}:{{.Tag}}" \
-        | grep '^camofox-browser:' \
-        | head -1)
 
-        if [ -z "$IMAGE" ]; then
-          echo "No image built"
-          exit 1
-        fi
+    - name: Download fallback model
+      run: |
 
-        docker run -d \
-          --name camofox-browser \
-          -p 9377:9377 \
-          -p 6080:6080 \
-          -e CAMOFOX_PORT=9377 \
-          "$IMAGE"
+        echo "Downloading Gemma 3..."
 
-        for i in {1..30}; do
-          if curl -fs http://localhost:9377/health >/dev/null
-          then
-            echo "Camofox ready"
-            exit 0
-          fi
+        ollama pull gemma3:4b
 
-          sleep 3
-        done
+        ollama list
 
-        docker logs camofox-browser
 
     - name: Install Hermes
       run: |
@@ -146,45 +124,16 @@ jobs:
           provider: openrouter
           model: openrouter/owl-alpha
           max_tokens: 1200
-          temperature: 0.7
 
         completion:
           max_tokens: 800
 
-        agent:
-          max_turns: 5
-          reasoning_effort: none
-
         memory:
           memory_enabled: true
-          user_profile_enabled: true
-
-          memory_char_limit: 2200
-          user_char_limit: 1375
-
-        compression:
-          enabled: true
-
-        tool_output:
-          max_bytes: 20000
-          max_lines: 500
-          max_line_length: 1000
-
-        file_read_max_chars: 30000
-
-        browser:
-          camofox:
-            managed_persistence: true
-
-        tools:
-          browser: true
-          terminal: true
-          web: true
-          skills: true
+          memory_char_limit: 2000
 
         EOF
 
-        hermes status || true
 
     - name: Restore memory
       run: |
@@ -203,58 +152,27 @@ jobs:
         [ -f memory/content-history.json ] || \
         echo '{"videos":[]}' > memory/content-history.json
 
+
     - name: Verify TTS
       run: |
 
         python3 -m edge_tts \
-        --text "Testing voice generation" \
+        --text "test" \
         --write-media test.mp3
 
         ls -lh test.mp3
 
-    - name: Setup YouTube cookies
+
+    - name: Run pipeline
+      env:
+
+        OLLAMA_URL: http://localhost:11434
+        OLLAMA_MODEL: gemma3:4b
+
       run: |
 
-        if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
-        then
-          echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
-        fi
-
-    - name: Run content pipeline
-      run: |
         node core/github-action-runner.js --mode daily
 
-    - name: Trim memory
-      run: |
-
-        node -e "
-
-        const fs=require('fs');
-
-        const files=[
-        'memory/trending-log.json',
-        'memory/content-history.json'
-        ];
-
-        for(const file of files){
-
-          if(fs.existsSync(file)){
-
-            let data=JSON.parse(fs.readFileSync(file));
-
-            if(data.trends)
-                data.trends=data.trends.slice(-20);
-
-            if(data.videos)
-                data.videos=data.videos.slice(-50);
-
-            fs.writeFileSync(
-              file,
-              JSON.stringify(data,null,2)
-            );
-          }
-        }
-        "
 
     - name: Save memory
       run: |
@@ -268,7 +186,6 @@ jobs:
 
         git add memory/
         git add hermes-memory/
-        git add output/scripts/ 2>/dev/null || true
 
         if ! git diff --staged --quiet
         then
@@ -276,15 +193,12 @@ jobs:
           git push
         fi
 
+
     - name: Cleanup
       if: always()
       run: |
 
-        docker stop camofox-browser || true
-        docker rm camofox-browser || true
+        pkill ollama || true
 
         rm -rf ~/.hermes/sessions || true
-        rm -rf ~/.hermes/checkpoints || true
         rm -rf output/temp || true
-
-        echo "Cleanup complete"
