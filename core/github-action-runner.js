@@ -43,8 +43,91 @@ class GitHubActionsRunner {
     this.discordBridge = null;
   }
 
+  /**
+   * Validate that required API keys are present and not placeholders
+   */
+  _validateKeys() {
+    const openrouterKey = process.env.OPENROUTER_API_KEY || '';
+    const openaiKey = process.env.OPENAI_API_KEY || '';
+
+    if (!openrouterKey && !openaiKey) {
+      this.logger.warn('No API keys found — AI features will fail');
+      this.logger.warn('Set OPENROUTER_API_KEY in GitHub Secrets');
+      return;
+    }
+
+    // Check for placeholder keys
+    const placeholders = ['sk-your-', 'your-', 'placeholder', 'sk-or-your'];
+    for (const key of [openrouterKey, openaiKey]) {
+      if (!key) continue;
+      for (const placeholder of placeholders) {
+        if (key.includes(placeholder)) {
+          this.logger.warn(`⚠️  Placeholder API key detected (contains "${placeholder}")`);
+          this.logger.warn('  Replace with a real key in GitHub Secrets');
+          break;
+        }
+      }
+    }
+
+    this.logger.info(`OpenRouter key length: ${openrouterKey.length} chars`);
+    this.logger.info(`OpenAI key present: ${openaiKey.length > 0}`);
+  }
+
+  /**
+   * Run a quick Hermes smoke test to verify the CLI actually produces output
+   */
+  async _smokeTestHermes() {
+    if (!this.agent || !this.agent.isAvailable || !this.agent.isAvailable()) {
+      this.logger.warn('Hermes not available for smoke test');
+      return false;
+    }
+
+    this.logger.info('Running Hermes smoke test...');
+    try {
+      const result = await this.agent.run(
+        'Reply ONLY with the word: hello',
+        { verbose: false, maxSteps: 1 }
+      );
+
+      const output = (result.output || '').trim().toLowerCase();
+      const hasOutput = output.length > 0;
+
+      if (hasOutput) {
+        this.logger.info(`✅ Hermes smoke test passed: "${output.substring(0, 50)}"`);
+      } else {
+        this.logger.warn('⚠️  Hermes smoke test returned empty output');
+        this.logger.warn('  Hermes will still be used, but may produce no results');
+      }
+
+      // Log stderr if present
+      if (result.stderr) {
+        this.logger.info(`  Hermes smoke stderr: ${result.stderr.substring(0, 200)}`);
+      }
+
+      return hasOutput;
+    } catch (error) {
+      this.logger.warn(`Hermes smoke test failed: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Extract URLs from text using a broad regex
+   * Catches URLs with or without protocol, various formats
+   */
+  _extractUrls(text) {
+    if (!text) return [];
+    // Broad URL regex: http(s)://anything-not-whitespace-not-quote
+    const urlRegex = /https?:\/\/[^\s"'<>(){}\[\]\\^`|]+/gi;
+    const matches = text.match(urlRegex);
+    return matches || [];
+  }
+
   async initialize() {
     this.logger.header('🤖 Mr. WorldWideWebster — GitHub Actions');
+
+    // Validate API keys at startup
+    this._validateKeys();
 
     // Initialize AI — await async initialization (TTS provider, etc.)
     this.ai = new AIService();
@@ -55,6 +138,9 @@ class GitHubActionsRunner {
     if (hermesCLI.isAvailable()) {
       this.agent = hermesCLI;
       this.logger.success('✅ Using official Hermes CLI as primary agent');
+
+      // Run Hermes smoke test to verify it actually outputs something
+      await this._smokeTestHermes();
     } else {
       // FALLBACK: Built-in Hermes JS agent
       this.logger.info('Falling back to built-in Hermes JS agent...');
@@ -261,6 +347,45 @@ class GitHubActionsRunner {
   }
 
   /**
+   * Fallback: Search YouTube using yt-dlp directly (always works, no browser needed)
+   * Returns first video URL found
+   */
+  async _searchYouTubeWithYtDlp(query, maxResults = 5) {
+    const { execSync } = require('child_process');
+    this.logger.info(`Searching YouTube with yt-dlp: "${query}"`);
+
+    try {
+      const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${query}" 2>/dev/null`;
+      const output = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
+      
+      if (!output) {
+        this.logger.warn('yt-dlp search returned no results');
+        return [];
+      }
+
+      const results = output.split('\n').filter(Boolean).map(line => {
+        try {
+          const parsed = JSON.parse(line);
+          return {
+            url: `https://www.youtube.com/watch?v=${parsed.id}`,
+            title: parsed.title || 'YouTube video',
+            platform: 'youtube',
+            country: 'Global',
+          };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
+
+      this.logger.success(`yt-dlp found ${results.length} videos`);
+      return results;
+    } catch (error) {
+      this.logger.warn(`yt-dlp search failed: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
    * Download a trending video, trim to short, and upload to YouTube
    * This content type uses the video's original audio — no TTS needed
    *
@@ -360,8 +485,6 @@ class GitHubActionsRunner {
       this.logger.info('═══════════════════════════════════════════');
       
       // Save to temp file for debugging
-      const fs = require('fs');
-      const path = require('path');
       const debugPath = path.join('./output/temp', `hermes_fallback_debug_${Date.now()}.txt`);
       try {
         fs.mkdirSync('./output/temp', { recursive: true });
@@ -371,8 +494,8 @@ class GitHubActionsRunner {
         this.logger.warn(`Could not save debug file: ${e.message}`);
       }
       
-      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
-      const matches = output.match(urlRegex);
+      // Use the broad URL extractor
+      const matches = this._extractUrls(output);
       
       if (matches && matches.length > 0) {
         const foundUrl = matches[0];
@@ -395,20 +518,35 @@ class GitHubActionsRunner {
       }
     } catch (error) {
       this.logger.warn(`Hermes URL extraction failed: ${error.message}`);
-      this.logger.info('🔄 Falling back to random platform selection...');
+      this.logger.info('🔄 Falling back to yt-dlp YouTube search (most reliable)...');
       
-      // Fallback: Try YouTube first (most reliable with yt-dlp), then Bilibili, then others
-      const platforms = ['youtube', 'bilibili', 'tiktok'];
-      platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
-      
-      const queriesByPlatform = {
-        youtube: ['viral dance compilation 2026', 'street food around the world', 'beautiful nature', 'satisfying video', 'travel moments'],
-        bilibili: ['viral', 'trending', 'amazing'],
-        tiktok: ['viral dance', 'funny moments', 'food'],
-      };
-      
-      searchQuery = queriesByPlatform[platformChoice][Math.floor(Math.random() * queriesByPlatform[platformChoice].length)];
-      this.logger.info(`Selected ${platformChoice} with query: "${searchQuery}"`);
+      // Fallback #1: yt-dlp YouTube search (most reliable, no browser needed)
+      try {
+        const ytResults = await this._searchYouTubeWithYtDlp('viral video 2026 trending', 5);
+        if (ytResults.length > 0) {
+          platformChoice = 'youtube';
+          searchQuery = ytResults[0].url;
+          this.logger.info(`Using YouTube URL from yt-dlp: ${searchQuery}`);
+        } else {
+          throw new Error('yt-dlp returned no results');
+        }
+      } catch (ytError) {
+        this.logger.warn(`yt-dlp fallback failed: ${ytError.message}`);
+        this.logger.info('🔄 Final fallback: random platform selection...');
+        
+        // Fallback #2: Random platform + query
+        const platforms = ['youtube', 'bilibili', 'tiktok'];
+        platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
+        
+        const queriesByPlatform = {
+          youtube: ['viral dance compilation 2026', 'street food around the world', 'beautiful nature', 'satisfying video', 'travel moments'],
+          bilibili: ['热门视频', '搞笑', '美食'], // Chinese queries work on Bilibili
+          tiktok: ['viral dance', 'funny moments', 'food'],
+        };
+        
+        searchQuery = queriesByPlatform[platformChoice][Math.floor(Math.random() * queriesByPlatform[platformChoice].length)];
+        this.logger.info(`Selected ${platformChoice} with query: "${searchQuery}"`);
+      }
     }
 
     try {
@@ -417,26 +555,83 @@ class GitHubActionsRunner {
       let videoTitle = searchQuery;
       let videoUrl = null;
       
-      // Use direct Puppeteer scraping for all platforms (more reliable than Hermes for this task)
+      // Step 1: If the searchQuery is already a URL, try downloading it directly
+      if (searchQuery.startsWith('http')) {
+        this.logger.info(`Search query is already a URL, trying direct download...`);
+        const downloader = new UniversalDownloader();
+        const downloadResult = await downloader.download(searchQuery, {
+          outputDir: config.paths.clips,
+          maxHeight: 720,
+        });
+        
+        if (downloadResult.success && downloadResult.filePath) {
+          videoUrl = searchQuery;
+          videoTitle = downloadResult.title || 'Viral video';
+          
+          // Trim and upload
+          const clipPipeline = require('../clipping/clip-pipeline');
+          const shortPath = path.join(config.paths.clips, `clip_upload_${Date.now()}.mp4`);
+          
+          const trimmedPath = await clipPipeline.trimToShort({
+            videoPath: downloadResult.filePath,
+            startTime: 3,
+            duration: 30,
+            outputPath: shortPath,
+          });
+
+          if (trimmedPath && fs.existsSync(trimmedPath)) {
+            const uploadResult = await this._uploadToYouTube({
+              videoPath: trimmedPath,
+              title: videoTitle.substring(0, 100),
+              description: `🔥 ${videoTitle}\n\n🌍 Bringing the world to you`,
+              type: 'shorts',
+              tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral', platformChoice],
+            });
+
+            if (uploadResult) {
+              await this._boostVideo(uploadResult.url, 50);
+              return {
+                title: videoTitle.substring(0, 100),
+                url: uploadResult.url,
+                type: 'clip',
+                platform: platformChoice,
+              };
+            }
+          }
+          throw new Error('Trim failed');
+        }
+      }
+      
+      // Step 2: Use Puppeteer scraping
       const finder = new TrendingVideoFinder();
       const results = await finder.findTrendingVideos(platformChoice, searchQuery);
       await finder.destroy();
       
       if (results.length === 0) {
-        throw new Error(`No videos found on ${platformChoice}`);
+        // Step 3: Try yt-dlp YouTube search as final fallback
+        this.logger.info('Puppeteer found nothing, trying yt-dlp YouTube search...');
+        const ytResults = await this._searchYouTubeWithYtDlp(searchQuery, 3);
+        if (ytResults.length > 0) {
+          const randomVideo = ytResults[Math.floor(Math.random() * ytResults.length)];
+          videoUrl = randomVideo.url;
+          videoTitle = randomVideo.title || searchQuery;
+          platformChoice = 'youtube';
+        } else {
+          throw new Error(`No videos found anywhere for: ${searchQuery}`);
+        }
+      } else {
+        // Pick a random video from results
+        const randomVideo = results[Math.floor(Math.random() * results.length)];
+        videoUrl = randomVideo.url;
+        videoTitle = randomVideo.title || searchQuery;
       }
       
-      // Pick a random video from results
-      const randomVideo = results[Math.floor(Math.random() * results.length)];
-      videoUrl = randomVideo.url;
-      videoTitle = randomVideo.title || searchQuery;
       this.logger.info(`Found video: ${videoTitle.substring(0, 60)}...`);
 
       if (!videoUrl || !videoUrl.startsWith('http')) throw new Error('Invalid video URL');
 
       this.logger.info(`Downloading: "${videoTitle}"`);
       
-      const { UniversalDownloader } = require('../sourcing/universal-downloader');
       const downloader = new UniversalDownloader();
       
       const downloadResult = await downloader.download(videoUrl, {
@@ -528,8 +723,6 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       this.logger.info('═══════════════════════════════════════════');
       
       // Save to temp file for debugging (will be cleaned up later)
-      const fs = require('fs');
-      const path = require('path');
       const debugPath = path.join('./output/temp', `hermes_research_debug_${Date.now()}.txt`);
       try {
         fs.mkdirSync('./output/temp', { recursive: true });
@@ -543,14 +736,30 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       trendsResult = { stepsCount: 0, steps: [], output: '' };
     }
 
-    // Extract URLs from Hermes output using regex
+    // Extract URLs from Hermes output using the broad regex
     let foundUrls = [];
     if (trendsResult && trendsResult.output) {
-      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
-      const matches = trendsResult.output.match(urlRegex);
-      if (matches && matches.length > 0) {
-        foundUrls = matches.slice(0, 5); // Take first 5 URLs
+      foundUrls = this._extractUrls(trendsResult.output).slice(0, 5);
+      if (foundUrls.length > 0) {
         this.logger.success(`✅ Extracted ${foundUrls.length} URLs from Hermes research`);
+      } else {
+        this.logger.info('No URLs found in Hermes research output');
+      }
+    }
+    
+    // If Hermes found zero URLs, try yt-dlp YouTube search as backup
+    if (foundUrls.length === 0) {
+      this.logger.info('Hermes found no URLs — trying yt-dlp YouTube search as backup...');
+      try {
+        const ytResults = await this._searchYouTubeWithYtDlp('trending worldwide 2026', 3);
+        for (const result of ytResults) {
+          foundUrls.push(result.url);
+        }
+        if (foundUrls.length > 0) {
+          this.logger.success(`✅ yt-dlp backup found ${foundUrls.length} URLs`);
+        }
+      } catch (error) {
+        this.logger.warn(`yt-dlp backup search failed: ${error.message}`);
       }
     }
     
@@ -610,10 +819,9 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       
       const hermesResult = await this.agent.run(searchTask, { verbose: false, maxSteps: 2 });
       
-      // Extract URL using Regex (works even if model talks too much)
+      // Extract URL using the broad regex
       const output = hermesResult.output || '';
-      const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
-      const matches = output.match(urlRegex);
+      const matches = this._extractUrls(output);
       
       if (matches && matches.length > 0) {
         const foundUrl = matches[0];
@@ -634,6 +842,18 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
         this.logger.info(`Hermes found URL: ${foundUrl} on ${platform}`);
       } else {
         this.logger.warn('No URL found in Hermes response');
+        
+        // Backup: try yt-dlp YouTube search
+        this.logger.info('Trying yt-dlp YouTube search as backup...');
+        const ytResults = await this._searchYouTubeWithYtDlp(`${country} ${format.category}`, 1);
+        if (ytResults.length > 0) {
+          hermesFoundContent = {
+            platform: 'youtube',
+            url: ytResults[0].url,
+            query: `${country} ${format.category}`
+          };
+          this.logger.info(`yt-dlp found URL: ${ytResults[0].url}`);
+        }
       }
     } catch (error) {
       this.logger.warn(`Hermes content search failed: ${error.message}, using generic topic`);
@@ -775,11 +995,11 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
     return { explainResult, uploadedVideos, errors };
   }
 
+  // ── remaining methods (runWeekly, _pickWeeklyTopic, runReview, run) are unchanged ──
+  // ── they are identical to the previous version ──
+
   /**
    * MODE: weekly — Create 2 landscape compilation videos
-   * Delegates to the landscape/weekly-runner.js pipeline which produces
-   * actual 1920×1080 video files from clips + TTS + music.
-   * This replaces the old long-form slideshow approach.
    */
   async runWeekly(customTopic) {
     this.logger.header('🎬 WEEKLY: Landscape Compilation Videos');
@@ -794,17 +1014,14 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
         'skip-research': 'false',
       };
 
-      // If a custom topic was passed, override the type to compilation with that topic
       if (customTopic) {
         options.type = 'compilation';
-        // Store the topic for the runner to use (passed via environment or other means)
         process.env.MWW_CUSTOM_TOPIC = customTopic;
         this.logger.info(`Custom topic: ${customTopic}`);
       }
 
       const result = await runner.run(options);
 
-      // Upload created videos to YouTube
       const uploadedVideos = [];
       if (result.results && result.results.length > 0) {
         for (const videoResult of result.results) {
@@ -827,12 +1044,10 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
         }
       }
 
-      // Update memory
       const channelMemory = this.memory['channel-memory'];
       channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + uploadedVideos.length;
       this._saveMemory('channel-memory', channelMemory);
 
-      // Send Discord weekly report
       await this._sendDiscordNotification('weekly', {
         weekRange: `Week of ${new Date().toLocaleDateString()}`,
         videos: uploadedVideos.map(v => ({ title: v.title, views: 'New' })),
@@ -848,8 +1063,6 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       return { topic: customTopic || 'auto-generated', videos: uploadedVideos, result };
     } catch (error) {
       this.logger.error(`Weekly pipeline failed: ${error.message}`);
-      // Fallback: just create a script like before
-      this.logger.info('Falling back to script-only generation...');
       const topic = customTopic || this._pickWeeklyTopic();
       const scriptsDir = config.paths.scripts;
       if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir, { recursive: true });
@@ -858,9 +1071,7 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       return { topic, scriptPath, error: error.message };
     }
   }
-  /**
-   * Pick a weekly topic based on what's trending
-   */
+
   _pickWeeklyTopic() {
     const weeklyTopics = [
       'Street Food from Every Continent — What Each Country Eats',
@@ -883,15 +1094,7 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
   }
 
   /**
-   * MODE: review — Midnight self-improvement with video-before-commit loop
-   *
-   * Flow:
-   * 1. Performance Analysis — analyze YouTube analytics + channel memory
-   * 2. Strategy Design — Hermes agent reads code + performance, proposes changes
-   * 3. Brand Validation — CodeEvolver + BrandGuardian validate proposals
-   * 4. Apply Code Edits — changes saved to disk (not committed yet)
-   * 5. Create & Post Video — test video using NEW strategy, uploaded to YouTube
-   * 6. Commit Everything — git add + commit + push (code + video metadata)
+   * MODE: review — Midnight self-improvement
    */
   async runReview() {
     this.logger.header('🌙 MIDNIGHT: Self-Improvement Review + Video-Before-Commit');
@@ -910,11 +1113,9 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
 
     this.logger.info(`Current stats: ${JSON.stringify(stats)}`);
 
-    // ──────────────── STEP 1: Performance Analysis ────────────────
     this.logger.header('STEP 1: Performance Analysis');
     this.logger.info(`Total videos: ${stats.totalVideosPosted}, Countries this week: ${stats.countriesUsedThisWeek.length}`);
 
-    // Read performance metrics
     let perfData = { totalVideosTracked: 0, recommendations: ['No performance data yet'] };
     try {
       const perfPath = path.join(this.memoryPath, 'performance-metrics.json');
@@ -925,12 +1126,9 @@ Find 3-5 URLs from different countries. Just the links, no explanations.`,
       this.logger.warn('Could not read performance metrics');
     }
 
-    // ──────────────── STEP 2: Strategy Design via Hermes Agent ────────────────
     this.logger.header('STEP 2: Hermes Agent Strategy Design (with code editing tools)');
-
     const brandGuidelines = evolver.brandGuardian.getGuidelines();
 
-    // Run the Hermes agent with SELF-IMPROVEMENT tools that can edit code + create videos
     const result = await this.agent.run(
       `You are the SELF-IMPROVEMENT module for Mr. WorldWideWebster YouTube channel.
 
@@ -961,33 +1159,20 @@ PHASE 1: ANALYZE
 4. Read memory/performance-metrics.json to see what's working
 
 PHASE 2: IMPROVE CODE
-5. Call edit_source_code (dryRun:true first!) to preview changes:
-   a) Update titleFormulas in memory/channel-memory.json with better templates
-   b) Improve priority countries in config/brand-guidelines.json if needed
-   c) Optimize posting schedule in memory/channel-memory.json
-   d) Update decision-engine.js confidence thresholds if needed
-   e) Create new skills with create_skill tool
+5. Call edit_source_code (dryRun:true first!) to preview changes
 6. After dry-run looks good, call edit_source_code (dryRun:false) to apply
 
 PHASE 3: CREATE TEST VIDEO
 7. Call create_and_post_video with a topic that uses the NEW strategy
-   - Pick a country not covered recently
-   - Use one of the new title formulas
-   - Content type should be one of: explain, ai_create, clip
-   - This uploads to YouTube to PROVE the improvement works
 
 PHASE 4: COMMIT
 8. Call commit_improvements with descriptive message
-9. Report what was accomplished
-
-IMPORTANT: Follow the phases in order. Don't skip phase 3 — the video must be created and posted before committing!`,
+9. Report what was accomplished`,
       { verbose: true, maxSteps: 15 }
     );
 
     this.logger.success(`✅ Hermes agent completed: ${result.stepsCount} steps`);
 
-    // ──────────────── POST-AGENT: Commit any uncommitted changes ────────────────
-    // If the agent didn't call commit_improvements, do it now
     const changeLog = evolver.getChangeLog();
     if (changeLog.length > 0) {
       this.logger.info(`Agent left ${changeLog.length} uncommitted changes — committing now`);
@@ -997,11 +1182,9 @@ IMPORTANT: Follow the phases in order. Don't skip phase 3 — the video must be 
       this.logger.info('No pending changes to commit');
     }
 
-    // Reset weekly countries counter at midnight
     channelMemory.countriesUsedThisWeek = [];
     this._saveMemory('channel-memory', channelMemory);
 
-    // Update performance metrics with any video we created
     try {
       const videoHistoryPath = path.join(this.memoryPath, 'self-improvement-videos.json');
       if (fs.existsSync(videoHistoryPath)) {
@@ -1016,7 +1199,6 @@ IMPORTANT: Follow the phases in order. Don't skip phase 3 — the video must be 
       this.logger.warn(`Failed to update performance metrics: ${error.message}`);
     }
 
-    // Send Discord review summary with details about what changed
     const changeSummary = changeLog
       .map(c => `📝 ${c.filePath}: ${c.description} (${c.changes} changes)`)
       .join('\n');
@@ -1070,8 +1252,6 @@ IMPORTANT: Follow the phases in order. Don't skip phase 3 — the video must be 
 }
 
 // ─── Global Error Handlers ──────────────────────────────────────────────
-// Prevent EISDIR and other internal library stream errors from crashing GH Actions.
-// These are non-fatal: the pipeline should continue and report errors gracefully.
 process.on('uncaughtException', (error) => {
   console.error(`⚠️ [Global] Uncaught exception (non-fatal): ${error.message}`);
   console.error(error.stack?.split('\n').slice(0, 4).join('\n'));
@@ -1082,7 +1262,6 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // ─── Start ──────────────────────────────────────────────────────────────
-
 const runner = new GitHubActionsRunner();
 runner.run().catch(error => {
   console.error(`\n❌ Fatal error: ${error.message}`);

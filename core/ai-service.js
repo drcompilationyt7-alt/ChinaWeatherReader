@@ -46,29 +46,27 @@ class AIService {
       this.logger.warn('No AI API keys found — set OPENROUTER_API_KEY or OPENAI_API_KEY');
     }
 
-    // ─── Step 2: Initialize TTS ──────────────────────────────────────
+    // ─── Step 2: Initialize TTS (always try edge-tts first — it's free, no API key) ──
     let ttsReady = false;
-    if (config.tts.provider === 'edge' || !config.tts.provider) {
-      try {
-        const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
-        const ttsProvider = new EdgeTTSProvider();
-        await ttsProvider._ensureAvailable();
-        if (ttsProvider.isAvailable()) {
-          this.tts = ttsProvider;
-          ttsReady = true;
-          this.logger.info(`TTS available: ${ttsProvider.useSayFallback ? 'say.js (Windows)' : 'Edge-TTS'}`);
-        } else {
-          this.logger.warn('Edge-TTS not available on this system');
-        }
-      } catch (ttsError) {
-        this.logger.warn(`Edge-TTS init failed: ${ttsError.message}`);
+    try {
+      const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
+      const ttsProvider = new EdgeTTSProvider();
+      await ttsProvider._ensureAvailable();
+      if (ttsProvider.isAvailable()) {
+        this.tts = ttsProvider;
+        ttsReady = true;
+        this.logger.info('TTS: using Edge-TTS (free, no API key)');
+      } else {
+        this.logger.warn('Edge-TTS not available on this system');
       }
+    } catch (ttsError) {
+      this.logger.warn(`Edge-TTS init failed: ${ttsError.message}`);
     }
-    // Fallback: OpenAI TTS
+    // Fallback: OpenAI TTS (only if edge-tts is unavailable AND OpenAI key is valid)
     if (!ttsReady && this.llm?.audio?.speech) {
       this.tts = this.llm;
       ttsReady = true;
-      this.logger.info('Using OpenAI TTS');
+      this.logger.info('TTS: using OpenAI TTS');
     }
     if (!ttsReady) {
       this.tts = null;

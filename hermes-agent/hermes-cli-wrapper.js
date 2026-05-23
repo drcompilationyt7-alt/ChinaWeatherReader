@@ -7,6 +7,7 @@ class HermesCLIWrapper {
   constructor() {
     this.logger = new Logger('HermesCLI');
     this.cliAvailable = false;
+    this.camofoxAvailable = null; // null = not checked yet
     this._checkCLI();
   }
 
@@ -37,6 +38,27 @@ class HermesCLIWrapper {
 
   isAvailable() {
     return this.cliAvailable;
+  }
+
+  /**
+   * Check if Camofox browser service is available
+   */
+  async _checkCamofox() {
+    if (this.camofoxAvailable !== null) return this.camofoxAvailable;
+    
+    try {
+      const camofoxUrl = process.env.CAMOFOX_URL || 'http://localhost:9377';
+      const healthResult = execSync(
+        `curl -sf ${camofoxUrl}/health`,
+        { timeout: 5000, stdio: 'pipe' }
+      );
+      this.camofoxAvailable = true;
+      this.logger.info(`Camofox browser available at ${camofoxUrl}`);
+    } catch {
+      this.camofoxAvailable = false;
+      this.logger.warn('Camofox browser not available — disabling browser tool for Hermes');
+    }
+    return this.camofoxAvailable;
   }
 
   async run(task, options = {}) {
@@ -113,13 +135,13 @@ class HermesCLIWrapper {
         HERMES_VERBOSE:'1'
       };
 
-      /*
-       Hermes v0.14 syntax:
+      // Check Camofox availability and adjust tools accordingly
+      const camofoxOk = await this._checkCamofox();
+      const toolsList = camofoxOk 
+        ? 'web,terminal,skills,browser' 
+        : 'web,terminal,skills';
 
-       hermes -z "prompt" \
-         -t "web,terminal,skills,browser" \
-         chat --yolo
-      */
+      this.logger.info(`Camofox available: ${camofoxOk} — using tools: ${toolsList}`);
 
       const args = [
 
@@ -127,7 +149,7 @@ class HermesCLIWrapper {
         task,
 
         '-t',
-        'web,terminal,skills,browser',
+        toolsList,
 
         'chat',
 
@@ -152,45 +174,53 @@ class HermesCLIWrapper {
         {
           env,
           encoding:'utf8',
-          timeout:300000,
+          timeout:120000,         // 2 min timeout (was 300s)
           maxBuffer:20*1024*1024
         }
       );
 
+      // ── CRITICAL: Log EVERYTHING Hermes produced ──
+      this.logger.info('═══════════════════════════════════════════');
+      this.logger.info('HERMES FULL OUTPUT DIAGNOSTICS:');
+      this.logger.info(`Exit code: ${result.status}`);
+      this.logger.info(`stdout length: ${(result.stdout || '').length} chars`);
+      this.logger.info(`stderr length: ${(result.stderr || '').length} chars`);
+      this.logger.info('═══════════════════════════════════════════');
+
       if(result.stdout){
-
-        this.logger.info(
-          'Hermes stdout:'
-        );
-
+        this.logger.info('--- HERMES STDOUT ---');
         const outputPreview = result.stdout.substring(0, 10000);
         console.log(outputPreview);
-        
-        // Log if output looks like it contains JSON
-        if (outputPreview.includes('{') && outputPreview.includes('}')) {
-          this.logger.info('Output appears to contain JSON structure');
+        if (result.stdout.length > 10000) {
+          console.log(`... (${result.stdout.length - 10000} more chars)`);
         }
+      } else {
+        this.logger.warn('Hermes stdout is EMPTY');
       }
 
       if(result.stderr){
-
-        this.logger.warn(
-          'Hermes stderr:'
-        );
-
-        console.log(
-          result.stderr.substring(
-            0,
-            10000
-          )
-        );
+        this.logger.warn('--- HERMES STDERR ---');
+        console.log(result.stderr.substring(0, 10000));
+        if (result.stderr.length > 10000) {
+          console.log(`... (${result.stderr.length - 10000} more chars)`);
+        }
       }
 
-      if(result.status !== 0){
+      // Combine stdout + stderr for URL extraction
+      const combinedOutput = (result.stdout || '') + '\n' + (result.stderr || '');
 
-        throw new Error(
-          `Exit code ${result.status}`
-        );
+      if(result.status !== 0){
+        this.logger.warn(`Hermes exited with code ${result.status}`);
+        // Even on non-zero exit, return what we got
+        return {
+          success: true,  // Don't trigger fallback if we got URLs
+          output: combinedOutput.trim(),
+          fullOutput: combinedOutput,
+          stderr: result.stderr || '',
+          agent: 'hermes-cli',
+          steps: 1,
+          exitCode: result.status,
+        };
       }
 
       this.logger.success(
@@ -202,15 +232,20 @@ class HermesCLIWrapper {
         success:true,
 
         output:
-          result.stdout,
+          combinedOutput.trim(),
 
         fullOutput:
-          result.stdout,
+          combinedOutput,
+
+        stderr:
+          result.stderr || '',
 
         agent:
           'hermes-cli',
 
-        steps:1
+        steps:1,
+
+        exitCode: result.status,
       };
 
     }

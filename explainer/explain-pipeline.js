@@ -114,8 +114,8 @@ class ExplainPipeline {
         }
         
         if (hermesResult && hermesResult.output) {
-          // Extract URL using regex
-          const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
+          // Extract URL using broad regex
+          const urlRegex = /https?:\/\/[^\s"'<>(){}\[\]\\^`|]+/gi;
           const matches = hermesResult.output.match(urlRegex);
           
           if (matches && matches.length > 0) {
