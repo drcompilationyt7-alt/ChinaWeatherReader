@@ -263,32 +263,79 @@ class GitHubActionsRunner {
   /**
    * Download a trending video, trim to short, and upload to YouTube
    * This content type uses the video's original audio — no TTS needed
-   * 
-   * Searches across multiple platforms: YouTube, Bilibili, TikTok, Instagram, Douyin, Rednote
+   *
+   * AI chooses the best platform based on the trend type and region:
+   * - Bilibili/Douyin/Rednote for Chinese trends
+   * - TikTok for global short-form trends
+   * - Instagram Reels for lifestyle/fashion/travel
+   * - YouTube for longer form or specific searches
    */
   async _createClipShort() {
     const { execSync } = require('child_process');
-    
-    // Multi-platform search queries for variety
-    const platformSearches = [
-      { platform: 'youtube', queries: ['funny fail compilation 2026 short', 'beautiful nature drone 4k', 'satisfying video no music', 'amazing sports moments', 'street food cooking viral'] },
-      { platform: 'bilibili', queries: ['热门视频', '搞笑合集', '美食制作', '风景航拍'] },
-      { platform: 'tiktok', queries: ['viral dance 2026', 'funny moments', 'cooking hacks', 'travel vlog'] },
-      { platform: 'instagram', queries: ['reels viral', 'travel reels', 'food reels', 'dance challenge'] },
-      { platform: 'douyin', queries: ['热门', '搞笑', '美食', '旅行'] },
-      { platform: 'rednote', queries: ['热门笔记', '旅行分享', '美食推荐'] },
-    ];
-    
-    const platformChoice = platformSearches[Math.floor(Math.random() * platformSearches.length)];
-    const searchQuery = platformChoice.queries[Math.floor(Math.random() * platformChoice.queries.length)];
+
+    // Let AI decide which platform to search based on current trends
+    this.logger.info('Asking AI which platform to search for trending content...');
+
+    let platformChoice;
+    let searchQuery;
 
     try {
-      this.logger.info(`Searching ${platformChoice.platform} for: "${searchQuery}"`);
-      
-      let videoUrl = null;
+      // Ask AI to recommend platform and search query based on what's trending globally
+      const aiRecommendation = await this.agent.run(
+        `Mr. WorldWideWebster needs to find a viral video RIGHT NOW for a YouTube Short.
+        
+        Current date: ${new Date().toISOString()}
+        Channel mission: "Burst your bubble. Escape the algorithm. See the internet the world sees."
+        
+        Based on what's trending globally TODAY, recommend:
+        1. Which platform to search (choose ONE): bilibili, douyin, tiktok, instagram, rednote, youtube
+           - For Chinese trends: bilibili, douyin, or rednote
+           - For global Gen-Z trends: tiktok
+           - For lifestyle/travel/fashion: instagram
+           - For specific searches: youtube
+        2. What search query to use (in the language of that platform)
+        
+        Return ONLY JSON: {"platform": "tiktok", "query": "viral dance challenge 2026", "reason": "trending in Japan right now"}`,
+        { verbose: false, maxSteps: 2 }
+      );
+
+      // Parse AI recommendation
+      let parsed;
+      try {
+        const jsonMatch = aiRecommendation.output?.match(/\{[\s\S]*\}/);
+        if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+      } catch (e) {}
+
+      if (parsed && parsed.platform && parsed.query) {
+        platformChoice = parsed.platform.toLowerCase();
+        searchQuery = parsed.query;
+        this.logger.info(`AI recommends: ${platformChoice} — "${searchQuery}" (${parsed.reason || 'no reason given'})`);
+      } else {
+        throw new Error('AI did not return valid platform/query');
+      }
+    } catch (error) {
+      this.logger.warn(`AI recommendation failed: ${error.message}, using random selection`);
+      // Fallback to random selection
+      const platforms = ['youtube', 'bilibili', 'tiktok', 'instagram', 'douyin', 'rednote'];
+      platformChoice = platforms[Math.floor(Math.random() * platforms.length)];
+
+      const queriesByPlatform = {
+        youtube: ['funny fail compilation 2026 short', 'beautiful nature drone 4k', 'satisfying video no music'],
+        bilibili: ['热门视频', '搞笑合集', '美食制作'],
+        tiktok: ['viral dance 2026', 'funny moments', 'cooking hacks'],
+        instagram: ['reels viral', 'travel reels', 'food reels'],
+        douyin: ['热门', '搞笑', '美食'],
+        rednote: ['热门笔记', '旅行分享', '美食推荐'],
+      };
+      searchQuery = queriesByPlatform[platformChoice][Math.floor(Math.random() * queriesByPlatform[platformChoice].length)];
+    }
+
+    try {
+      this.logger.info(`Searching ${platformChoice} for: "${searchQuery}"`);
+
       let videoTitle = searchQuery;
-      
-      if (platformChoice.platform === 'youtube') {
+      let videoUrl = null;
+      if (platformChoice === 'youtube') {
         // Use yt-dlp to search YouTube
         const searchCmd = `yt-dlp --no-playlist --flat-playlist --print url --print title "ytsearch3:${searchQuery}"`;
         const searchOutput = execSync(searchCmd, { timeout: 30000 }).toString().trim();
@@ -310,9 +357,9 @@ class GitHubActionsRunner {
         videoTitle = randomPair.title || searchQuery;
       } else {
         // For other platforms, use Hermes Agent to search and find URLs
-        this.logger.info(`Using Hermes Agent to search ${platformChoice.platform}...`);
+        this.logger.info(`Using Hermes Agent to search ${platformChoice}...`);
         
-        const searchPrompt = `Search for viral videos on ${platformChoice.platform}. Search query: "${searchQuery}". Find 3-5 video URLs. Return JSON array: [{"url": "https://...", "title": "..."}]`;
+        const searchPrompt = `Search for viral videos on ${platformChoice}. Search query: "${searchQuery}". Find 3-5 video URLs. Return JSON array: [{"url": "https://...", "title": "..."}]`;
         
         const hermesResult = await this.agent.run(searchPrompt, { verbose: false, maxSteps: 3 });
         
@@ -328,7 +375,7 @@ class GitHubActionsRunner {
           urls = foundUrls.map(url => ({ url, title: searchQuery }));
         }
         
-        if (urls.length === 0) throw new Error(`No URLs found on ${platformChoice.platform}`);
+        if (urls.length === 0) throw new Error(`No URLs found on ${platformChoice}`);
         
         const randomUrl = urls[Math.floor(Math.random() * urls.length)];
         videoUrl = randomUrl.url;
@@ -366,7 +413,7 @@ class GitHubActionsRunner {
         title: (downloadResult.title || videoTitle).substring(0, 100),
         description: `🔥 ${downloadResult.title || videoTitle}\n\n🌍 Bringing the world to you`,
         type: 'shorts',
-        tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral', platformChoice.platform],
+        tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral', platformChoice],
       });
 
       if (uploadResult) {
@@ -375,7 +422,7 @@ class GitHubActionsRunner {
           title: (downloadResult.title || videoTitle).substring(0, 100),
           url: uploadResult.url,
           type: 'clip',
-          platform: platformChoice.platform,
+          platform: platformChoice,
         };
       }
     } catch (error) {
