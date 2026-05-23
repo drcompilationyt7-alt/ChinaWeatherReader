@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       debug:
-        description: 'Run in debug mode (skip uploads)'
+        description: 'Run in debug mode'
         type: boolean
         default: false
 
@@ -18,6 +18,7 @@ on:
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -35,13 +36,6 @@ env:
   BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
   BOOST_MAX_VIEWS: 100
 
-  # Force Hermes/OpenRouter token limits globally
-  HERMES_MAX_TOKENS: 1500
-  HERMES_CONTEXT_WINDOW: 4000
-  HERMES_MAX_CONTEXT: 4000
-  HERMES_MAX_OUTPUT: 1000
-  HERMES_REASONING: false
-
 jobs:
   create-shorts:
     runs-on: ubuntu-latest
@@ -49,251 +43,248 @@ jobs:
 
     steps:
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT || github.token }}
+        fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
 
-      - name: Install system dependencies
-        run: |
-          set -e
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-          sudo apt-get update -qq
+    - name: Install dependencies
+      run: |
 
-          sudo apt-get install -y \
-            ffmpeg \
-            yt-dlp \
-            curl \
-            jq \
-            python3 \
-            python3-pip
+        sudo apt-get update -qq
 
-          sudo apt-get install -y chromium || \
-          sudo apt-get install -y chromium-browser || true
+        sudo apt-get install -y \
+          ffmpeg \
+          yt-dlp \
+          curl \
+          jq
 
-          python3 -m pip install -U \
-            yt-dlp \
-            edge-tts
+        sudo apt-get install -y chromium || \
+        sudo apt-get install -y chromium-browser || true
 
-          echo "✅ Dependencies installed"
+        python3 -m pip install -U \
+        edge-tts \
+        yt-dlp \
+        --break-system-packages
 
-      - name: Setup Docker
-        run: |
-          docker --version
+        npm install
 
-      - name: Build and start Camofox
-        run: |
-          set -e
+    - name: Setup Docker
+      run: docker --version
 
-          cd /tmp
+    - name: Start Camofox
+      run: |
 
-          echo "📦 Cloning Camofox..."
-          git clone https://github.com/jo-inc/camofox-browser.git
-          cd camofox-browser
+        cd /tmp
 
-          make down || true
-          make build
+        git clone https://github.com/jo-inc/camofox-browser.git
 
-          IMAGE=$(docker images \
-          --format "{{.Repository}}:{{.Tag}}" \
-          | grep '^camofox-browser:' \
-          | head -n 1)
+        cd camofox-browser
 
-          if [ -z "$IMAGE" ]; then
-            echo "❌ No image found"
-            docker images
-            exit 1
-          fi
+        make down || true
+        make build
 
-          mkdir -p ~/.camofox-docker
+        IMAGE=$(docker images \
+        --format "{{.Repository}}:{{.Tag}}" \
+        | grep '^camofox-browser:' \
+        | head -1)
 
-          docker run -d \
-            --name camofox-browser \
-            --restart unless-stopped \
-            -p 9377:9377 \
-            -p 6080:6080 \
-            -p 5901:5900 \
-            -e CAMOFOX_PORT=9377 \
-            -e ENABLE_VNC=1 \
-            -e VNC_BIND=0.0.0.0 \
-            -e VNC_RESOLUTION=1920x1080 \
-            -e MAX_OLD_SPACE_SIZE=2048 \
-            -v ~/.camofox-docker:/root/.camofox \
-            "$IMAGE"
+        if [ -z "$IMAGE" ]; then
+          echo "No image built"
+          exit 1
+        fi
 
-          echo "⏳ Waiting for Camofox..."
+        docker run -d \
+          --name camofox-browser \
+          -p 9377:9377 \
+          -p 6080:6080 \
+          -e CAMOFOX_PORT=9377 \
+          "$IMAGE"
 
-          for i in {1..30}; do
-
-            if curl -fs http://localhost:9377/health >/dev/null 2>&1
-            then
-              echo "✅ Camofox healthy"
-              break
-            fi
-
-            sleep 3
-          done
-
-          echo "===== HEALTH ====="
-          curl http://localhost:9377/health || true
-
-          echo ""
-          echo "===== CONTAINER ====="
-          docker ps
-
-          echo ""
-          echo "===== LOGS ====="
-          docker logs camofox-browser --tail=100 || true
-
-      - name: Install node packages
-        run: |
-          npm ci --production || npm install
-
-      - name: Install Hermes
-        run: |
-          set -e
-
-          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-
-          mkdir -p ~/.hermes
-
-          hermes config set OPENROUTER_API_KEY "${{ secrets.OPENROUTER_API_KEY }}"
-          hermes config set OPENROUTER_MODEL "openrouter/owl-alpha"
-
-          hermes config set DISCORD_BOT_TOKEN "${{ secrets.DISCORD_BOT_TOKEN }}"
-          hermes config set DISCORD_CHANNEL_ID "${{ secrets.DISCORD_CHANNEL_ID }}"
-          hermes config set YOUTUBE_CHANNEL "${CHANNEL_NAME}"
-
-          cat > ~/.hermes/.env <<EOF
-          CAMOFOX_URL=http://localhost:9377
-          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_MODEL=openrouter/owl-alpha
-
-          HERMES_MAX_TOKENS=1500
-          HERMES_CONTEXT_WINDOW=4000
-          HERMES_MAX_CONTEXT=4000
-          HERMES_MAX_OUTPUT=1000
-          HERMES_REASONING=false
-
-          HERMES_VERBOSE=1
-          EOF
-
-          cat > ~/.hermes/config.yaml <<EOF
-          llm:
-            provider: openrouter
-            model: openrouter/owl-alpha
-            max_tokens: 1500
-            context_window: 4000
-            temperature: 0.7
-
-          completion:
-            max_tokens: 1000
-
-          agent:
-            max_steps: 8
-            reasoning: false
-
-          browser:
-            camofox:
-              managed_persistence: true
-
-          tools:
-            browser: true
-            terminal: true
-            web: true
-            skills: true
-          EOF
-
-          echo "===== Hermes ENV ====="
-          cat ~/.hermes/.env
-
-          echo ""
-          echo "===== Hermes CONFIG ====="
-          cat ~/.hermes/config.yaml
-
-          echo ""
-          echo "===== Hermes Status ====="
-          hermes status || true
-
-      - name: Restore memory
-        run: |
-          mkdir -p ~/.hermes
-
-          if [ -d hermes-memory ]; then
-            cp -r hermes-memory/* ~/.hermes/ || true
-          fi
-
-          mkdir -p memory
-
-          [ -f memory/channel-memory.json ] || \
-          echo '{"initialRun":true}' > memory/channel-memory.json
-
-          [ -f memory/trending-log.json ] || \
-          echo '{"trends":[]}' > memory/trending-log.json
-
-          [ -f memory/content-history.json ] || \
-          echo '{"videos":[]}' > memory/content-history.json
-
-      - name: Setup YouTube cookies
-        run: |
-          if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
+        for i in {1..30}; do
+          if curl -fs http://localhost:9377/health >/dev/null
           then
-            echo "${{ secrets.YOUTUBE_COOKIES }}" \
-            > /tmp/youtube_cookies.txt
-
-            echo "✅ Cookies loaded"
+            echo "Camofox ready"
+            exit 0
           fi
 
-      - name: Verify TTS
-        run: |
-          python3 -m edge_tts \
-            --text "Testing voice generation" \
-            --write-media /tmp/test.mp3
+          sleep 3
+        done
 
-          ls -lh /tmp/test.mp3
+        docker logs camofox-browser
 
-      - name: Run content pipeline
-        env:
-          HERMES_MAX_TOKENS: 1500
-          HERMES_CONTEXT_WINDOW: 4000
-          HERMES_MAX_CONTEXT: 4000
-          HERMES_MAX_OUTPUT: 1000
-          HERMES_REASONING: false
-        run: |
-          node core/github-action-runner.js --mode daily
+    - name: Install Hermes
+      run: |
 
-      - name: Save memory
-        run: |
+        curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
-          mkdir -p hermes-memory
+        mkdir -p ~/.hermes
 
-          cp -r ~/.hermes/* hermes-memory/ || true
+        hermes config set OPENROUTER_API_KEY "${{ secrets.OPENROUTER_API_KEY }}"
+        hermes config set OPENROUTER_MODEL "openrouter/owl-alpha"
 
-          git config user.name "Mr. WorldWideWebster Bot"
-          git config user.email "bot@worldwidewebster.com"
+        cat > ~/.hermes/.env <<EOF
+        CAMOFOX_URL=http://localhost:9377
+        OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+        HERMES_VERBOSE=1
+        EOF
 
-          git add memory/
-          git add hermes-memory/
-          git add output/scripts/ 2>/dev/null || true
+        cat > ~/.hermes/config.yaml <<EOF
 
-          if ! git diff --staged --quiet
-          then
-            git commit -m "📊 Memory update $(date +%F)"
-            git push
-          fi
+        llm:
+          provider: openrouter
+          model: openrouter/owl-alpha
+          max_tokens: 1200
+          temperature: 0.7
 
-      - name: Cleanup
-        if: always()
-        run: |
-          docker stop camofox-browser || true
-          docker rm camofox-browser || true
+        completion:
+          max_tokens: 800
 
-          rm -rf output/temp || true
+        agent:
+          max_turns: 5
+          reasoning_effort: none
 
-          echo "🧹 Cleanup complete"
+        memory:
+          memory_enabled: true
+          user_profile_enabled: true
+
+          memory_char_limit: 2200
+          user_char_limit: 1375
+
+        compression:
+          enabled: true
+
+        tool_output:
+          max_bytes: 20000
+          max_lines: 500
+          max_line_length: 1000
+
+        file_read_max_chars: 30000
+
+        browser:
+          camofox:
+            managed_persistence: true
+
+        tools:
+          browser: true
+          terminal: true
+          web: true
+          skills: true
+
+        EOF
+
+        hermes status || true
+
+    - name: Restore memory
+      run: |
+
+        mkdir -p ~/.hermes
+        mkdir -p memory
+
+        cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
+
+        [ -f memory/channel-memory.json ] || \
+        echo '{"initialRun":true}' > memory/channel-memory.json
+
+        [ -f memory/trending-log.json ] || \
+        echo '{"trends":[]}' > memory/trending-log.json
+
+        [ -f memory/content-history.json ] || \
+        echo '{"videos":[]}' > memory/content-history.json
+
+    - name: Verify TTS
+      run: |
+
+        python3 -m edge_tts \
+        --text "Testing voice generation" \
+        --write-media test.mp3
+
+        ls -lh test.mp3
+
+    - name: Setup YouTube cookies
+      run: |
+
+        if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
+        then
+          echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
+        fi
+
+    - name: Run content pipeline
+      run: |
+        node core/github-action-runner.js --mode daily
+
+    - name: Trim memory
+      run: |
+
+        node -e "
+
+        const fs=require('fs');
+
+        const files=[
+        'memory/trending-log.json',
+        'memory/content-history.json'
+        ];
+
+        for(const file of files){
+
+          if(fs.existsSync(file)){
+
+            let data=JSON.parse(fs.readFileSync(file));
+
+            if(data.trends)
+                data.trends=data.trends.slice(-20);
+
+            if(data.videos)
+                data.videos=data.videos.slice(-50);
+
+            fs.writeFileSync(
+              file,
+              JSON.stringify(data,null,2)
+            );
+          }
+        }
+        "
+
+    - name: Save memory
+      run: |
+
+        mkdir -p hermes-memory
+
+        cp -r ~/.hermes/* hermes-memory/ || true
+
+        git config user.name "Mr. WorldWideWebster Bot"
+        git config user.email "bot@worldwidewebster.com"
+
+        git add memory/
+        git add hermes-memory/
+        git add output/scripts/ 2>/dev/null || true
+
+        if ! git diff --staged --quiet
+        then
+          git commit -m "📊 Memory update $(date +%F)"
+          git push
+        fi
+
+    - name: Cleanup
+      if: always()
+      run: |
+
+        docker stop camofox-browser || true
+        docker rm camofox-browser || true
+
+        rm -rf ~/.hermes/sessions || true
+        rm -rf ~/.hermes/checkpoints || true
+        rm -rf output/temp || true
+
+        echo "Cleanup complete"
