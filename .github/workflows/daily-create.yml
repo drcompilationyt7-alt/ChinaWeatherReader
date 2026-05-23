@@ -17,6 +17,8 @@ on:
         default: false
 
 env:
+
+  # ONLY for Node scripts
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -29,12 +31,8 @@ env:
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
 
   GH_PAT: ${{ secrets.GH_PAT }}
-  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
 
   CHANNEL_NAME: "Mr. WorldWideWebster"
-
-  BOOST_ENABLED: ${{ github.event.inputs.skip_boost == 'true' && 'false' || 'true' }}
-  BOOST_MAX_VIEWS: 100
 
 jobs:
   create-shorts:
@@ -44,42 +42,41 @@ jobs:
 
     steps:
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         token: ${{ secrets.GH_PAT || github.token }}
         fetch-depth: 0
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: "20"
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-node@v4
       with:
-        python-version: "3.11"
+        node-version: 20
+
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
 
     - name: Install dependencies
       run: |
 
-        sudo apt-get update -qq
+        sudo apt-get update
 
         sudo apt-get install -y \
-          ffmpeg \
-          yt-dlp \
-          curl \
-          jq
-
-        sudo apt-get install -y chromium || \
-        sudo apt-get install -y chromium-browser || true
+        ffmpeg \
+        yt-dlp \
+        jq \
+        curl \
+        chromium-browser
 
         python3 -m pip install -U \
-          edge-tts \
-          yt-dlp \
-          --break-system-packages
+        edge-tts \
+        yt-dlp \
+        --break-system-packages
 
         npm ci || npm install
+
 
     - name: Install Ollama
       run: |
@@ -88,91 +85,54 @@ jobs:
 
         ollama serve > ollama.log 2>&1 &
 
-        echo "Waiting for Ollama..."
+        sleep 15
 
-        for i in {1..30}; do
+        curl http://127.0.0.1:11434/api/tags
 
-          if curl -fs http://127.0.0.1:11434/api/tags >/dev/null 2>&1
-          then
-            echo "Ollama ready"
-            break
-          fi
-
-          sleep 3
-        done
 
     - name: Download Ollama models
       run: |
 
-        echo "Downloading browsing model..."
-
         ollama pull qwen3:8b
-
-        echo "Downloading coding model..."
-
         ollama pull qwen2.5-coder:7b
 
         ollama list
 
-    - name: Setup Docker
-      run: docker --version
 
     - name: Start Camofox
       run: |
 
-        set -e
-
-        mkdir -p ~/.camofox-docker
-
-        echo "Pulling Camofox..."
-
-        docker pull ghcr.io/jo-inc/camofox-browser:latest
-
         docker run -d \
-          --name camofox-browser \
-          --restart unless-stopped \
-          -p 9377:9377 \
-          -p 6080:6080 \
-          -p 5901:5900 \
-          -e CAMOFOX_PORT=9377 \
-          -e ENABLE_VNC=1 \
-          -e VNC_BIND=0.0.0.0 \
-          -e VNC_RESOLUTION=1920x1080 \
-          -v ~/.camofox-docker:/root/.camofox \
-          ghcr.io/jo-inc/camofox-browser:latest
+        --name camofox-browser \
+        -p 9377:9377 \
+        ghcr.io/jo-inc/camofox-browser:latest
 
-        echo "Waiting for Camofox..."
+        echo "Waiting..."
 
-        for i in {1..40}; do
+        for i in {1..30}; do
 
-          if curl -fs http://localhost:9377/health >/dev/null 2>&1
+          if curl -fs \
+          http://localhost:9377/health
           then
-            echo "✅ Camofox healthy"
-
-            curl http://localhost:9377/health || true
-
-            exit 0
+              echo "Ready"
+              break
           fi
 
-          sleep 3
+          sleep 5
+
         done
-
-        echo ""
-        echo "===== CONTAINER ====="
-
-        docker ps -a
-
-        echo ""
-        echo "===== LOGS ====="
 
         docker logs camofox-browser || true
 
-        exit 1
 
     - name: Install Hermes
       run: |
 
-        curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+        curl -fsSL \
+        https://hermes-agent.nousresearch.com/install.sh \
+        | bash
+
+        source ~/.bashrc
 
         mkdir -p ~/.hermes
 
@@ -180,66 +140,67 @@ jobs:
         rm -f ~/.hermes/.env
         rm -f ~/.hermes/auth.json
 
+
         cat > ~/.hermes/.env <<EOF
-        CAMOFOX_URL=http://localhost:9377
-        OLLAMA_HOST=http://127.0.0.1:11434
-        OLLAMA_API_BASE=http://127.0.0.1:11434/v1
-        HERMES_LLM_PROVIDER=ollama
-        HERMES_MODEL=qwen3:8b
-        HERMES_VERBOSE=1
-        EOF
+CAMOFOX_URL=http://localhost:9377
+OLLAMA_HOST=http://127.0.0.1:11434
+HERMES_VERBOSE=1
+EOF
+
 
         cat > ~/.hermes/config.yaml <<EOF
-        llm:
-          provider: ollama
-          endpoint: http://127.0.0.1:11434/v1
-          model: qwen3:8b
-          temperature: 0.7
-          max_tokens: 1000
-          context_window: 4096
 
-        completion:
-          max_tokens: 800
+llm:
+  provider: ollama
+  model: qwen3:8b
+  endpoint: http://127.0.0.1:11434
+  temperature: 0.7
+  max_tokens: 1000
 
-        agent:
-          max_turns: 4
+completion:
+  max_tokens: 800
 
-        memory:
-          memory_enabled: true
-          user_profile_enabled: true
-          memory_char_limit: 2000
-          user_char_limit: 1000
+agent:
+  max_turns: 4
 
-        compression:
-          enabled: true
+browser:
+  camofox:
+    managed_persistence: true
 
-        tool_output:
-          max_bytes: 15000
-          max_lines: 300
+memory:
+  memory_enabled: true
+  memory_char_limit: 2000
 
-        browser:
-          camofox:
-            managed_persistence: true
+tools:
+  browser: true
+  terminal: true
+  web: true
+  skills: true
 
-        tools:
-          browser: true
-          terminal: true
-          web: true
-          skills: true
-        EOF
+EOF
 
-        export OLLAMA_HOST=http://127.0.0.1:11434
+
+        # Force Hermes internal setup values
+
+        hermes config set provider ollama
+        hermes config set model qwen3:8b
+        hermes config set endpoint http://127.0.0.1:11434
+
+
         export HERMES_LLM_PROVIDER=ollama
         export HERMES_MODEL=qwen3:8b
+        export OLLAMA_HOST=http://127.0.0.1:11434
 
-        echo "===== HERMES STATUS ====="
 
-        hermes status || true
+        echo "==== STATUS ===="
 
-        echo ""
-        echo "===== HERMES TEST ====="
+        hermes status
 
-        hermes -z "Reply only OK"
+
+        echo "==== TEST ===="
+
+        hermes -z "Say OK only"
+
 
     - name: Restore memory
       run: |
@@ -247,36 +208,50 @@ jobs:
         mkdir -p ~/.hermes
         mkdir -p memory
 
-        cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
+        cp -r hermes-memory/* \
+        ~/.hermes/ 2>/dev/null || true
+
 
     - name: Run content pipeline
       env:
-        OLLAMA_HOST: http://127.0.0.1:11434
+
         HERMES_LLM_PROVIDER: ollama
         HERMES_MODEL: qwen3:8b
+        OLLAMA_HOST: http://127.0.0.1:11434
 
       run: |
 
-        node core/github-action-runner.js --mode daily
+        node core/github-action-runner.js \
+        --mode daily
+
 
     - name: Save memory
       run: |
 
         mkdir -p hermes-memory
 
-        cp -r ~/.hermes/* hermes-memory/ || true
+        cp -r ~/.hermes/* \
+        hermes-memory/ || true
 
-        git config user.name "Mr. WorldWideWebster Bot"
-        git config user.email "bot@worldwidewebster.com"
+        git config user.name \
+        "Mr. WorldWideWebster Bot"
+
+        git config user.email \
+        "bot@worldwidewebster.com"
 
         git add memory/
         git add hermes-memory/
 
         if ! git diff --staged --quiet
         then
-          git commit -m "📊 Memory update $(date +%F)"
+
+          git commit -m \
+          "📊 Memory update $(date +%F)"
+
           git push
+
         fi
+
 
     - name: Cleanup
       if: always()
@@ -287,8 +262,5 @@ jobs:
         docker stop camofox-browser || true
         docker rm camofox-browser || true
 
-        rm -rf ~/.hermes/sessions || true
-        rm -rf ~/.hermes/checkpoints || true
-        rm -rf output/temp || true
-
-        echo "Cleanup complete"
+        rm -rf ~/.hermes/sessions
+        rm -rf ~/.hermes/checkpoints
