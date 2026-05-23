@@ -3,14 +3,12 @@ name: 🌅 Daily Shorts Creation
 on:
   schedule:
     - cron: "0 6 * * *"
-
   workflow_dispatch:
     inputs:
       debug:
         description: "Run in debug mode"
         type: boolean
         default: false
-
       skip_boost:
         description: "Skip view boosting"
         type: boolean
@@ -39,30 +37,25 @@ jobs:
     timeout-minutes: 360
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT || github.token }}
           fetch-depth: 0
 
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-
       - name: Install dependencies
         run: |
           sudo apt-get update
-
           sudo apt-get install -y \
             ffmpeg \
             yt-dlp \
@@ -79,118 +72,80 @@ jobs:
 
           npm ci || npm install
 
-
       - name: Install Ollama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-
           ollama serve > ollama.log 2>&1 &
-
           sleep 15
-
           curl http://127.0.0.1:11434/api/tags
-
 
       - name: Download Ollama models
         run: |
-
           echo "Downloading research model"
-
           ollama pull qwen3:8b
-
           echo "Downloading coder model"
-
           ollama pull qwen2.5-coder:7b
-
           ollama list
-
 
       - name: Start Camofox
         run: |
-
           docker pull ghcr.io/jo-inc/camofox-browser:latest
-
           docker run -d \
             --name camofox-browser \
             -p 9377:9377 \
             ghcr.io/jo-inc/camofox-browser:latest
 
           READY=false
-
           for i in {1..30}; do
-
-            if curl -fs http://localhost:9377/health >/dev/null
-            then
+            if curl -fs http://localhost:9377/health >/dev/null; then
               READY=true
               break
             fi
-
             sleep 5
           done
 
-          if [ "$READY" != "true" ]
-          then
+          if [ "$READY" != "true" ]; then
             docker ps -a
             docker logs camofox-browser || true
             exit 1
           fi
-
           echo "Camofox ready"
 
-
       - name: Install Hermes
-        env:
-          HERMES_LLM_PROVIDER: ollama
-          HERMES_MODEL: qwen3:8b
-          OLLAMA_HOST: http://127.0.0.1:11434
-
         run: |
-
-          curl -fsSL \
-            https://hermes-agent.nousresearch.com/install.sh \
-            | bash
+          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
           mkdir -p ~/.hermes
+          rm -f ~/.hermes/config.yaml ~/.hermes/.env ~/.hermes/auth.json
 
-          rm -f ~/.hermes/config.yaml
-          rm -f ~/.hermes/.env
-          rm -f ~/.hermes/auth.json
-
-          # Prevent provider auto-detection
-          unset OPENROUTER_API_KEY
-          unset OPENAI_API_KEY
-          unset ANTHROPIC_API_KEY
-
-          cat > ~/.hermes/.env <<EOF
+          # .env – only essentials (no LLM provider/model to avoid conflicts with config.yaml)
+          cat > ~/.hermes/.env <<'EOF'
           CAMOFOX_URL=http://localhost:9377
-          OLLAMA_HOST=http://127.0.0.1:11434
-          HERMES_LLM_PROVIDER=ollama
-          HERMES_MODEL=qwen3:8b
           HERMES_VERBOSE=1
           EOF
 
-          cat > ~/.hermes/config.yaml <<EOF
+          # Config with correct schema (still useful as fallback / fine-tuning)
+          cat > ~/.hermes/config.yaml <<'EOF'
           llm:
             provider: ollama
             model: qwen3:8b
-            endpoint: http://127.0.0.1:11434
+            api_base: http://127.0.0.1:11434
             temperature: 0.7
             max_tokens: 1000
             context_window: 4096
-
-          completion:
-            max_tokens: 800
 
           agent:
             max_turns: 4
 
           browser:
+            provider: camofox
             camofox:
+              url: http://localhost:9377
               managed_persistence: true
 
           memory:
-            memory_enabled: true
-            memory_char_limit: 2000
+            enabled: true
+            char_limit: 2000
 
           tools:
             browser: true
@@ -199,80 +154,60 @@ jobs:
             skills: true
           EOF
 
+          # Prevent any OpenRouter/OpenAI leakage
+          unset OPENROUTER_API_KEY
+          unset OPENAI_API_KEY
+          unset ANTHROPIC_API_KEY
+
+          # === THE FIX: Tell Hermes which provider & model to use ===
+          # This creates the necessary internal state so ‘hermes -z’ doesn’t fail
+          hermes model set ollama/qwen3:8b
+          # Ensure the Ollama endpoint is explicitly known (belt & suspenders)
+          hermes config set llm.api_base http://127.0.0.1:11434
 
           echo "===== CONFIG ====="
           cat ~/.hermes/config.yaml
-
-          echo "===== VERIFY MODEL EXISTS ====="
+          echo "===== VERIFY MODEL ====="
           ollama list
-
           ollama show qwen3:8b
-
           echo "===== HERMES STATUS ====="
           hermes status || true
-
           echo "===== TEST ====="
+          # Now this will work because a provider is configured
           hermes -z "Reply only OK"
-
 
       - name: Restore memory
         run: |
           mkdir -p ~/.hermes
           mkdir -p memory
-
-          cp -r hermes-memory/* \
-            ~/.hermes/ \
-            2>/dev/null || true
-
+          cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true
 
       - name: Run content pipeline
-        env:
-          HERMES_LLM_PROVIDER: ollama
-          HERMES_MODEL: qwen3:8b
-          OLLAMA_HOST: http://127.0.0.1:11434
-
         run: |
-
           unset OPENROUTER_API_KEY
           unset OPENAI_API_KEY
-
           node core/github-action-runner.js --mode daily
-
 
       - name: Save memory
         run: |
-
           mkdir -p hermes-memory
+          cp -r ~/.hermes/* hermes-memory/ || true
 
-          cp -r ~/.hermes/* \
-            hermes-memory/ || true
+          git config user.name "Mr. WorldWideWebster Bot"
+          git config user.email "bot@worldwidewebster.com"
 
-          git config user.name \
-            "Mr. WorldWideWebster Bot"
+          git add memory/ hermes-memory/
 
-          git config user.email \
-            "bot@worldwidewebster.com"
-
-          git add memory/
-          git add hermes-memory/
-
-          if ! git diff --staged --quiet
-          then
-            git commit -m \
-              "📊 Memory update $(date +%F)"
-
+          if ! git diff --staged --quiet; then
+            git commit -m "📊 Memory update $(date +%F)"
             git push
           fi
-
 
       - name: Cleanup
         if: always()
         run: |
-
           pkill ollama || true
-
           docker stop camofox-browser || true
           docker rm camofox-browser || true
-
           rm -rf ~/.hermes/sessions || true
           rm -rf ~/.hermes/checkpoints || true
