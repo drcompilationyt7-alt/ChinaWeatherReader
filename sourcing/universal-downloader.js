@@ -69,17 +69,34 @@ class UniversalDownloader {
 
     this.logger.info(`Downloading from ${platform}: ${url.substring(0, 80)}`);
 
-    // For YouTube, try to get cookies from Camofox browser first (real browser session bypasses bot detection)
+    // For platforms that require authentication or have bot detection, try to get cookies from Camofox browser first
+    // Camofox is a real browser session that bypasses bot detection
+    const platformsNeedingCookies = ['youtube', 'bilibili', 'douyin', 'tiktok', 'instagram', 'twitter', 'facebook', 'rednote'];
     let effectiveCookiesFile = cookiesFile;
-    if (platform === 'youtube' && !effectiveCookiesFile) {
+    
+    if (platformsNeedingCookies.includes(platform) && !effectiveCookiesFile) {
       try {
-        const camofoxCookies = await this._extractYouTubeCookiesFromCamofox();
-        if (camofoxCookies) {
-          effectiveCookiesFile = camofoxCookies;
-          this.logger.info(`Using Camofox cookies to bypass YouTube bot detection`);
+        const domainMap = {
+          'youtube': 'youtube.com',
+          'bilibili': 'bilibili.com',
+          'douyin': 'douyin.com',
+          'tiktok': 'tiktok.com',
+          'instagram': 'instagram.com',
+          'twitter': 'twitter.com',
+          'facebook': 'facebook.com',
+          'rednote': 'xiaohongshu.com',
+        };
+        
+        const targetDomain = domainMap[platform];
+        if (targetDomain) {
+          const camofoxCookies = await this._extractCookiesFromCamofox(targetDomain);
+          if (camofoxCookies) {
+            effectiveCookiesFile = camofoxCookies;
+            this.logger.info(`Using Camofox cookies for ${platform} to bypass bot detection`);
+          }
         }
       } catch (cookieError) {
-        this.logger.info(`Camofox cookies not available: ${cookieError.message}`);
+        this.logger.info(`Camofox cookies not available for ${platform}: ${cookieError.message}`);
       }
     }
 
@@ -157,78 +174,228 @@ class UniversalDownloader {
    * Primary method: yt-dlp (supports 1700+ sites)
    */
   /**
-   * Try to extract YouTube cookies from running Camofox browser
+   * Try to extract cookies from running Camofox browser for any platform
    * Camofox is a real Chromium instance that establishes legitimate sessions
+   * 
+   * @param {string} domain - The domain to extract cookies for (e.g., 'youtube.com', 'bilibili.com')
+   * @returns {Promise<string|null>} - Path to cookies file in Netscape format, or null
    */
-  async _extractYouTubeCookiesFromCamofox() {
+  async _extractCookiesFromCamofox(domain) {
     const camofoxUrl = process.env.CAMOFOX_URL || 'http://localhost:9377';
-    const cookiesPath = path.join(__dirname, '..', 'output', 'temp', 'youtube_cookies.txt');
+    const cookiesPath = path.join(__dirname, '..', 'output', 'temp', `${domain.replace(/\./g, '_')}_cookies.txt`);
     
     try {
-      // Camofox provides a CDP endpoint to interact with the browser
-      const response = await fetch(`${camofoxUrl}/api/cookies?domain=youtube.com`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const cookies = data.cookies || [];
+      // Method 1: Try direct HTTP API if available
+      try {
+        const response = await fetch(`${camofoxUrl}/api/cookies?domain=${domain}`, {
+          signal: AbortSignal.timeout(5000),
+        });
         
-        if (cookies.length > 0) {
-          // Convert to Netscape format (required by yt-dlp)
-          const header = '# Netscape HTTP Cookie File\n';
-          const lines = cookies.map(c => {
-            const domain = c.domain || '.youtube.com';
-            const flag = domain.startsWith('.') ? 'TRUE' : 'FALSE';
-            const path = c.path || '/';
-            const secure = c.secure ? 'TRUE' : 'FALSE';
-            const expires = Math.floor((c.expires || Date.now()/1000 + 86400));
-            const name = c.name || '';
-            const value = c.value || '';
-            return `${domain}\t${flag}\t${path}\t${secure}\t${expires}\t${name}\t${value}`;
-          }).join('\n');
+        if (response.ok) {
+          const data = await response.json();
+          const cookies = data.cookies || [];
           
-          fs.mkdirSync(path.dirname(cookiesPath), { recursive: true });
-          fs.writeFileSync(cookiesPath, header + lines);
-          this.logger.info(`✅ Extracted ${cookies.length} cookies from Camofox`);
-          return cookiesPath;
+          if (cookies.length > 0) {
+            return this._saveCookiesToFile(cookies, cookiesPath, domain);
+          }
+        }
+      } catch (apiError) {
+        this.logger.info(`Camofox HTTP API not available: ${apiError.message}`);
+      }
+      
+      // Method 2: Connect via Puppeteer using WebSocket URL from /json/version endpoint
+      let puppeteer;
+      try {
+        puppeteer = require('puppeteer');
+      } catch (requireError) {
+        this.logger.warn(`Puppeteer not available: ${requireError.message}`);
+        return null;
+      }
+      
+      // Get the WebSocket URL from Camofox - try multiple endpoints
+      let wsUrl = null;
+      const endpointsToTry = [
+        '/json/version',
+        '/json',
+        '/json/list',
+      ];
+      
+      for (const endpoint of endpointsToTry) {
+        try {
+          const versionResponse = await fetch(`${camofoxUrl}${endpoint}`, {
+            signal: AbortSignal.timeout(5000),
+          });
+          if (versionResponse.ok) {
+            const versionData = await versionResponse.json();
+            // Try different property names for WebSocket URL
+            wsUrl = versionData.webSocketDebuggerUrl || 
+                    versionData[0]?.webSocketDebuggerUrl ||
+                    null;
+            if (wsUrl) {
+              this.logger.info(`Got Camofox WebSocket URL from ${endpoint}: ${wsUrl?.substring(0, 60)}...`);
+              break;
+            }
+          }
+        } catch (versionError) {
+          this.logger.info(`Endpoint ${endpoint} failed: ${versionError.message}`);
         }
       }
       
-      // Fallback: try puppeteer connected to Camofox to get cookies
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.connect({
-        browserURL: `${camofoxUrl}/ws` // Camofox CDP endpoint
-      });
-      
-      const page = await browser.newPage();
-      await page.goto('https://www.youtube.com', { waitUntil: 'networkidle2', timeout: 15000 });
-      
-      const cookies = await page.cookies('https://www.youtube.com');
-      await page.close();
-      
-      if (cookies.length > 0) {
-        const header = '# Netscape HTTP Cookie File\n';
-        const lines = cookies.map(c => {
-          const domain = c.domain || '.youtube.com';
-          const flag = domain.startsWith('.') ? 'TRUE' : 'FALSE';
-          const path = c.path || '/';
-          const secure = c.secure ? 'TRUE' : 'FALSE';
-          const expires = Math.floor((c.expires || Date.now()/1000 + 86400));
-          return `${domain}\t${flag}\t${path}\t${secure}\t${expires}\t${c.name}\t${c.value}`;
-        }).join('\n');
-        
-        fs.mkdirSync(path.dirname(cookiesPath), { recursive: true });
-        fs.writeFileSync(cookiesPath, header + lines);
-        this.logger.info(`✅ Extracted ${cookies.length} cookies from Camofox via CDP`);
-        return cookiesPath;
+      // Fallback: construct common WebSocket endpoints
+      if (!wsUrl) {
+        wsUrl = `${camofoxUrl.replace('http', 'ws')}/devtools/browser`;
       }
       
+      // Try connecting with different URL patterns
+      const wsUrlsToTry = [
+        wsUrl,
+        `${camofoxUrl.replace('http', 'ws')}/ws`,
+        `${camofoxUrl.replace('http', 'ws')}/devtools/page`,
+        `ws://localhost:9222/devtools/browser`,
+      ].filter(Boolean);
+      
+      let browser = null;
+      for (const url of wsUrlsToTry) {
+        try {
+          this.logger.info(`Trying to connect to Camofox at: ${url.substring(0, 60)}...`);
+          browser = await puppeteer.connect({
+            browserWSEndpoint: url,
+            defaultViewport: null,
+          });
+          this.logger.success(`✅ Connected to Camofox`);
+          break;
+        } catch (connectError) {
+          this.logger.info(`Connection failed: ${connectError.message}`);
+        }
+      }
+      
+      if (!browser) {
+        throw new Error('Could not connect to Camofox browser');
+      }
+      
+      // Get all pages/tabs - use pages() or newPage() depending on API
+      let page;
+      try {
+        const pages = await browser.pages();
+        page = pages.length > 0 ? pages[0] : await browser.newPage();
+      } catch (pagesError) {
+        // Fallback: create new page directly
+        this.logger.info(`Using fallback page creation: ${pagesError.message}`);
+        page = await browser.newPage();
+      }
+      
+      // Navigate to the target domain to establish session
+      const targetUrl = `https://www.${domain}`;
+      this.logger.info(`Navigating to ${targetUrl} to establish session...`);
+      
+      try {
+        await page.goto(targetUrl, { 
+          waitUntil: 'networkidle2', 
+          timeout: 15000,
+          referer: 'https://www.google.com/'
+        });
+        await new Promise(r => setTimeout(r, 3000)); // Wait longer for cookies to be set
+      } catch (navError) {
+        this.logger.warn(`Navigation failed, but trying to extract existing cookies: ${navError.message}`);
+      }
+      
+      // Extract cookies for the domain - try multiple methods
+      let cookies = [];
+      try {
+        cookies = await page.cookies(`https://${domain}`);
+      } catch (cookieError) {
+        this.logger.info(`Domain-specific cookie extraction failed: ${cookieError.message}`);
+      }
+      
+      // Also try to get all cookies (sometimes domain filtering doesn't work)
+      if (cookies.length === 0) {
+        try {
+          const allCookies = await page.cookies();
+          const filteredCookies = allCookies.filter(c => 
+            c.domain?.includes(domain) || c.domain?.endsWith(domain) || c.domain === domain
+          );
+          if (filteredCookies.length > 0) {
+            cookies.push(...filteredCookies);
+          }
+        } catch (allCookieError) {
+          this.logger.info(`All cookies extraction failed: ${allCookieError.message}`);
+        }
+      }
+      
+      // Try alternative method: evaluate JavaScript to get document.cookie
+      if (cookies.length === 0) {
+        try {
+          const docCookies = await page.evaluate(() => document.cookie);
+          if (docCookies) {
+            const parsed = docCookies.split(';').map(pair => {
+              const [name, ...valueParts] = pair.trim().split('=');
+              return { name: name.trim(), value: valueParts.join('=').trim() };
+            }).filter(c => c.name && c.value);
+            
+            if (parsed.length > 0) {
+              cookies.push(...parsed.map(c => ({
+                name: c.name,
+                value: c.value,
+                domain: `.${domain}`,
+                path: '/',
+                secure: true,
+                httpOnly: false
+              })));
+            }
+          }
+        } catch (evalError) {
+          this.logger.info(`JavaScript cookie extraction failed: ${evalError.message}`);
+        }
+      }
+      
+      await page.close().catch(() => {});
+      await browser.disconnect();
+      
+      if (cookies.length > 0) {
+        this.logger.info(`Found ${cookies.length} cookies for ${domain}`);
+        return this._saveCookiesToFile(cookies, cookiesPath, domain);
+      }
+      
+      this.logger.warn(`No cookies found for ${domain}`);
       return null;
+      
     } catch (error) {
-      this.logger.info(`Camofox cookie extraction not available: ${error.message}`);
+      this.logger.info(`Camofox cookie extraction failed: ${error.message}`);
       return null;
     }
+  }
+  
+  /**
+   * Save cookies array to file in Netscape format (required by yt-dlp)
+   */
+  _saveCookiesToFile(cookies, filePath, domain) {
+    const header = '# Netscape HTTP Cookie File\n';
+    const lines = cookies.map(c => {
+      // Handle domain format
+      let d = c.domain || `.${domain}`;
+      if (!d.startsWith('.')) d = '.' + d;
+      
+      const flag = d.startsWith('.') ? 'TRUE' : 'FALSE';
+      const p = c.path || '/';
+      const secure = c.secure ? 'TRUE' : 'FALSE';
+      const expires = Math.floor(c.expires || (Date.now() / 1000 + 86400 * 30)); // Default 30 days
+      const name = c.name || '';
+      const value = c.value || '';
+      
+      return `${d}\t${flag}\t${p}\t${secure}\t${expires}\t${name}\t${value}`;
+    }).join('\n');
+    
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, header + lines);
+    this.logger.success(`✅ Saved ${cookies.length} cookies to: ${filePath}`);
+    return filePath;
+  }
+
+  /**
+   * Legacy wrapper for YouTube cookie extraction (for backward compatibility)
+   */
+  async _extractYouTubeCookiesFromCamofox() {
+    return this._extractCookiesFromCamofox('youtube.com');
   }
 
   async _downloadWithYtDlp(url, outputDir, maxHeight, platform, useAltFormat = false, cookiesFile = null) {
@@ -249,6 +416,25 @@ class UniversalDownloader {
       // Use android client ONLY (not web) — web often triggers bot check
       // Skip webpage/configs to reduce detection surface
       cmd += ` --extractor-args "youtube:player_client=android;player_skip=webpage,configs"`;
+    } else if (platform === 'bilibili') {
+      // Bilibili sometimes needs specific extractor args
+      cmd += ` --extractor-args "bilibili:api_type=intl"`;
+    } else if (platform === 'douyin') {
+      // Douyin needs mobile client emulation
+      cmd += ` --extractor-args "douyin:api_version=v2"`;
+    }
+    
+    // Additional cookies-from-browser option for yt-dlp 2024+ versions
+    // This allows yt-dlp to directly extract cookies from browser profiles
+    if (!cookiesFile && platform === 'youtube') {
+      // Try Chrome/Chromium cookies directly if available
+      // Use 'chromium' instead of 'chrome' since we're in Linux with chromium browser
+      cmd += ` --cookies-from-browser "chromium:profile-directory=Default"`;
+    }
+    
+    // For other platforms, also try browser cookie extraction
+    if (!cookiesFile && ['bilibili', 'douyin', 'tiktok', 'instagram'].includes(platform)) {
+      cmd += ` --cookies-from-browser "chromium"`;
     }
     
     // Format selection
