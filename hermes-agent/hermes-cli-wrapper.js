@@ -1,14 +1,12 @@
 /**
  * Mr. WorldWideWebster — Official Hermes CLI Wrapper
  *
- * Primary agent system. Uses the official `hermes` CLI from Nous Research.
- * Falls back to the built-in Hermes JS agent if CLI is not available.
+ * Uses `hermes chat -z "prompt"` (Hermes CLI v0.14.0+)
+ * The `run` command was removed in newer versions.
  *
- * The official Hermes is installed in GitHub Actions via:
- *   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+ * Install: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
  */
-const { execSync, exec } = require('child_process');
-const { promisify } = require('util');
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { Logger } = require('../core/logger');
@@ -36,23 +34,19 @@ class HermesCLIWrapper {
   }
 
   /**
-   * Run a task using the official Hermes CLI
-   * @param {string} task - What the agent should do
-   * @param {Object} options - { maxSteps, verbose, model }
-   * @returns {Promise<Object>}
+   * Run a task using the official Hermes CLI via `hermes chat -z`
+   * Hermes v0.14.0 removed the `run` command; use `chat -z` for one-shot prompts.
    */
   async run(task, options = {}) {
     if (!this.cliAvailable) {
       throw new Error('Hermes CLI not available.');
     }
 
-    const maxSteps = options.maxSteps || 15;
-    const verbose = options.verbose ?? true;
-
     this.logger.header('OFFICIAL HERMES CLI AGENT');
     this.logger.info(`Task: ${task.substring(0, 100)}`);
 
     try {
+      // Write task to temp file for reference
       const taskFile = path.join(__dirname, '..', 'output', 'temp', `hermes_task_${Date.now()}.md`);
       const taskDir = path.dirname(taskFile);
       if (!fs.existsSync(taskDir)) {
@@ -67,7 +61,7 @@ Content types: Clip (viral moments), Voiceover (translated), Explain ("What is t
 
 ## System Context
 - You are running in a GitHub Actions environment (Ubuntu Linux)
-- You have access to: yt-dlp, ffmpeg, python3, node.js, puppeteer (Chrome headless)
+- You have access to: yt-dlp, ffmpeg, python3, node.js
 - Your AI model is configured via OPENROUTER_API_KEY
 - The repo is at: /home/runner/work/mr-worldwidewebster/mr-worldwidewebster
 
@@ -77,25 +71,24 @@ ${task}
 ## Instructions
 1. Use your tools to accomplish this task step by step
 2. Search the web for trending international content
-3. Download videos, write scripts, or create content as needed
-4. Report back what was accomplished
-5. Save any important findings to the memory/ directory`;
+3. Report back what was accomplished as JSON
+4. Save any important findings to the memory/ directory`;
 
       fs.writeFileSync(taskFile, taskContent);
       this.logger.info(`Task written to: ${taskFile}`);
 
-      // Execute the task via Hermes CLI
-      // Note: hermes run does NOT accept --max-steps flag
-      const cmd = `hermes run "${taskFile}"`;
-      this.logger.info(`Executing: hermes run`);
+      // Hermes v0.14.0 uses `hermes chat -z "prompt"` (no `run` command)
+      // Use --yolo to skip confirmation prompts
+      const escapedTask = task.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+      const cmd = `hermes chat -z "${escapedTask}" --yolo 2>&1`;
+      this.logger.info(`Executing: hermes chat -z "..."`);
 
       const output = execSync(cmd, {
-        timeout: maxSteps * 60000,
+        timeout: 300000, // 5 minutes
         maxBuffer: 10 * 1024 * 1024,
         env: {
           ...process.env,
-          OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-          HERMES_MODEL: 'openrouter/owl-alpha',
+          OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
         },
       }).toString();
 
@@ -105,7 +98,7 @@ ${task}
         success: true,
         output: output.substring(0, 10000),
         fullOutput: output,
-        steps: maxSteps,
+        steps: 1,
         agent: 'hermes-cli',
       };
     } catch (error) {
@@ -115,13 +108,13 @@ ${task}
       if (error.stdout) {
         const partialOut = error.stdout.toString();
         // Only treat as partial if it looks like real output (not just help/usage text)
-        if (partialOut.length > 200 && !partialOut.includes('Usage:') && !partialOut.includes('Commands:')) {
+        if (partialOut.length > 200 && !partialOut.includes('Usage:') && !partialOut.includes('Commands:') && !partialOut.includes('hermes: error:')) {
           this.logger.info('Partial output before error captured');
           return {
             success: true,
             output: partialOut.substring(0, 10000),
             partial: true,
-            steps: maxSteps,
+            steps: 1,
             agent: 'hermes-cli',
           };
         }
@@ -143,8 +136,9 @@ ${task}
   async chat(prompt) {
     if (!this.cliAvailable) return null;
     try {
-      const output = execSync(`hermes chat "${prompt.replace(/"/g, '\\"')}"`, {
-        timeout: 60000,
+      const escaped = prompt.replace(/"/g, '\\"').replace(/\$/g, '\\$');
+      const output = execSync(`hermes chat -z "${escaped}" --yolo 2>&1`, {
+        timeout: 120000,
         maxBuffer: 5 * 1024 * 1024,
       }).toString();
       return output;
@@ -156,11 +150,10 @@ ${task}
   async getInfo() {
     if (!this.cliAvailable) return { available: false };
     try {
-      const config = execSync('hermes config list 2>&1', { timeout: 5000 }).toString();
-      const tools = execSync('hermes tools 2>&1', { timeout: 5000 }).toString();
-      return { available: true, config: config.trim(), tools: tools.trim() };
+      const version = execSync('hermes --version 2>/dev/null', { timeout: 5000 }).toString();
+      return { available: true, version: version.trim() };
     } catch {
-      return { available: true, error: 'Could not list config' };
+      return { available: true, error: 'Could not get version' };
     }
   }
 }

@@ -216,13 +216,18 @@ Respond with JSON:
       const outputFile = path.join(audioDir, `scene_${String(scene.sceneNumber).padStart(2, '0')}_${voiceType}.mp3`);
 
       try {
-        await ai.textToSpeech(scene.dialogue, outputFile, { voice });
-        audioFiles[voiceType].push({
-          scene: scene.sceneNumber,
-          file: outputFile,
-          dialogue: scene.dialogue,
-          duration: scene.duration,
-        });
+        const result = await ai.textToSpeech(scene.dialogue, outputFile, { voice });
+        // Only add if it's a real audio file (not a .txt placeholder)
+        if (result && !result.endsWith('.txt')) {
+          audioFiles[voiceType].push({
+            scene: scene.sceneNumber,
+            file: outputFile,
+            dialogue: scene.dialogue,
+            duration: scene.duration,
+          });
+        } else {
+          this.logger.info(`Scene ${scene.sceneNumber}: TTS unavailable, will use text overlay`);
+        }
       } catch (error) {
         this.logger.error(`TTS failed for scene ${scene.sceneNumber}: ${error.message}`);
       }

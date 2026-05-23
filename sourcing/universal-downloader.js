@@ -115,6 +115,16 @@ class UniversalDownloader {
       this.logger.warn(`yt-dlp alternative format failed: ${error.message}`);
     }
 
+    // Strategy 6: OneForAllDownloader.com — Puppeteer UI automation
+    // Works when yt-dlp is blocked (YouTube bot detection, etc.)
+    // Flow: paste URL → click Preview → click highest resolution → wait for download → click Download
+    try {
+      const result = await this._downloadWithOneForAll(url, outputDir, platform);
+      if (result.success) return result;
+    } catch (error) {
+      this.logger.warn(`OneForAllDownloader fallback failed: ${error.message}`);
+    }
+
     this.logger.error(`All download methods failed for: ${url}`);
     return { success: false, error: 'All download methods failed', platform, url };
   }
@@ -400,6 +410,205 @@ class UniversalDownloader {
       throw new Error('TikTok API returned no video URL');
     } catch (error) {
       throw new Error(`TikTok scraper: ${error.message}`);
+    }
+  }
+
+  /**
+   * OneForAllDownloader.com fallback — Puppeteer UI automation
+   * Used when yt-dlp is blocked (YouTube bot detection, etc.)
+   *
+   * Flow:
+   * 1. Navigate to https://oneforalldownloader.com/
+   * 2. Paste the video URL into the input field
+   * 3. Click the "Preview" button
+   * 4. Wait for results, then click the highest resolution option
+   * 5. Wait for the "Download" button to appear
+   * 6. Click "Download" and wait for the file
+   */
+  async _downloadWithOneForAll(url, outputDir, platform) {
+    const puppeteer = require('puppeteer');
+
+    this.logger.info(`Trying OneForAllDownloader.com for ${platform}...`);
+
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: { width: 1280, height: 900 },
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      );
+
+      // Step 1: Navigate to the site
+      this.logger.info('Opening oneforalldownloader.com...');
+      await page.goto('https://oneforalldownloader.com/', {
+        waitUntil: 'networkidle2',
+        timeout: 30000,
+      });
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Step 2: Find the URL input and paste our URL
+      this.logger.info('Pasting URL into input field...');
+      const inputSelector = 'input[type="text"], input[placeholder*="URL"], input[placeholder*="url"], input[name="url"], #url, .url-input';
+      await page.waitForSelector(inputSelector, { timeout: 10000 });
+      await page.click(inputSelector, { clickCount: 3 }); // Select all existing text
+      await page.type(inputSelector, url, { delay: 50 });
+      await new Promise(r => setTimeout(r, 500));
+
+      // Step 3: Click the Preview / Download / Submit button
+      this.logger.info('Clicking Preview button...');
+      const previewBtn = await page.$('button[type="submit"], input[type="submit"], button:has-text("Preview"), button:has-text("Download"), button:has-text("Submit"), .btn-primary, #download-btn, .download-btn');
+      if (previewBtn) {
+        await previewBtn.click();
+      } else {
+        // Try pressing Enter in the input field
+        await page.keyboard.press('Enter');
+      }
+
+      // Step 4: Wait for results to load (look for resolution options or download links)
+      this.logger.info('Waiting for results...');
+      await new Promise(r => setTimeout(r, 5000));
+
+      // Try to find and click the highest resolution option
+      // Common patterns: "1080p", "720p", "HD", "Best Quality", etc.
+      const resolutionClicked = await page.evaluate(() => {
+        const allButtons = Array.from(document.querySelectorAll('button, a, div, span, li'));
+        const resolutionPatterns = ['1080p', '1080P', 'Full HD', 'FHD', '720p', '720P', 'HD', 'Best', 'Highest', 'MP4 1080', 'MP4 720'];
+
+        for (const pattern of resolutionPatterns) {
+          for (const btn of allButtons) {
+            const text = btn.textContent?.trim() || '';
+            if (text.includes(pattern) && text.length < 50) {
+              btn.click();
+              return `Clicked: ${text}`;
+            }
+          }
+        }
+        return null;
+      });
+
+      if (resolutionClicked) {
+        this.logger.info(`Resolution option: ${resolutionClicked}`);
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      // Step 5: Wait for and click the Download button
+      this.logger.info('Looking for Download button...');
+
+      // Set up download interception — Puppeteer can intercept the download
+      const client = await page.target().createCDPSession();
+      await client.send('Page.setDownloadBehavior', {
+        behavior: 'allow',
+        downloadPath: outputDir,
+      });
+
+      const downloadClicked = await page.evaluate(() => {
+        const allButtons = Array.from(document.querySelectorAll('button, a, div, span'));
+        const downloadPatterns = ['Download', 'download', 'DOWNLOAD', 'Save', 'Get Video', 'Download Video', 'Download Now'];
+
+        for (const pattern of downloadPatterns) {
+          for (const btn of allButtons) {
+            const text = btn.textContent?.trim() || '';
+            if (text === pattern || text.includes(pattern)) {
+              btn.click();
+              return `Clicked: ${text}`;
+            }
+          }
+        }
+        return null;
+      });
+
+      if (downloadClicked) {
+        this.logger.info(`Download button: ${downloadClicked}`);
+      } else {
+        this.logger.warn('Could not find download button, trying direct link extraction...');
+        // Try to find a direct download link
+        const downloadLink = await page.evaluate(() => {
+          const links = Array.from(document.querySelectorAll('a[href]'));
+          for (const link of links) {
+            const href = link.href || '';
+            const text = link.textContent?.trim() || '';
+            if (href.includes('.mp4') || href.includes('.webm') || href.includes('download') ||
+                text.includes('Download') || text.includes('Save')) {
+              return href;
+            }
+          }
+          return null;
+        });
+
+        if (downloadLink) {
+          this.logger.info(`Found direct download link: ${downloadLink.substring(0, 80)}`);
+          // Download using axios
+          const safeId = Date.now();
+          const outputPath = path.join(outputDir, `oneforall_${safeId}.mp4`);
+          const writer = fs.createWriteStream(outputPath);
+          const response = await axios({
+            method: 'GET',
+            url: downloadLink,
+            responseType: 'stream',
+            timeout: 120000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': 'https://oneforalldownloader.com/',
+            },
+          });
+          response.data.pipe(writer);
+          await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+          });
+
+          if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+            this.logger.success(`✅ OneForAllDownloader downloaded via direct link`);
+            await browser.close();
+            return {
+              success: true,
+              filePath: outputPath,
+              platform,
+              method: 'oneforalldownloader',
+              title: `Video from ${platform}`,
+              url,
+            };
+          }
+        }
+      }
+
+      // Wait for file download to complete (Puppeteer CDP download behavior)
+      this.logger.info('Waiting for download to complete...');
+      await new Promise(r => setTimeout(r, 10000));
+
+      // Check for downloaded files
+      const downloadedFiles = fs.readdirSync(outputDir)
+        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
+        .map(f => ({ name: f, time: fs.statSync(path.join(outputDir, f)).mtimeMs }))
+        .sort((a, b) => b.time - a.time);
+
+      if (downloadedFiles.length > 0) {
+        const newestFile = downloadedFiles[0];
+        // Make sure it's a new file (downloaded in the last 30 seconds)
+        if (Date.now() - newestFile.time < 30000) {
+          this.logger.success(`✅ OneForAllDownloader downloaded: ${newestFile.name}`);
+          await browser.close();
+          return {
+            success: true,
+            filePath: path.join(outputDir, newestFile.name),
+            platform,
+            method: 'oneforalldownloader',
+            title: `Video from ${platform}`,
+            url,
+          };
+        }
+      }
+
+      await browser.close();
+      throw new Error('OneForAllDownloader: No file downloaded');
+    } catch (error) {
+      await browser.close().catch(() => {});
+      throw new Error(`OneForAllDownloader: ${error.message}`);
     }
   }
 }

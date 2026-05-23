@@ -47,21 +47,32 @@ class AIService {
     }
 
     // ─── Step 2: Initialize TTS ──────────────────────────────────────
+    let ttsReady = false;
     if (config.tts.provider === 'edge' || !config.tts.provider) {
-      const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
-      this.tts = new EdgeTTSProvider();
-      // Actually check if TTS is available (async)
-      await this.tts._ensureAvailable();
-      if (this.tts.isAvailable()) {
-        this.logger.info(`TTS available: ${this.tts.useSayFallback ? 'say.js (Windows)' : 'Edge-TTS'}`);
-      } else {
-        this.logger.warn('No TTS provider available — audio will be skipped');
+      try {
+        const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
+        const ttsProvider = new EdgeTTSProvider();
+        await ttsProvider._ensureAvailable();
+        if (ttsProvider.isAvailable()) {
+          this.tts = ttsProvider;
+          ttsReady = true;
+          this.logger.info(`TTS available: ${ttsProvider.useSayFallback ? 'say.js (Windows)' : 'Edge-TTS'}`);
+        } else {
+          this.logger.warn('Edge-TTS not available on this system');
+        }
+      } catch (ttsError) {
+        this.logger.warn(`Edge-TTS init failed: ${ttsError.message}`);
       }
-    } else if (this.llm?.audio?.speech) {
+    }
+    // Fallback: OpenAI TTS
+    if (!ttsReady && this.llm?.audio?.speech) {
       this.tts = this.llm;
+      ttsReady = true;
       this.logger.info('Using OpenAI TTS');
-    } else {
-      this.logger.warn('No TTS provider configured');
+    }
+    if (!ttsReady) {
+      this.tts = null;
+      this.logger.warn('No TTS provider configured — audio will be skipped');
     }
   }
 
