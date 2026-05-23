@@ -169,12 +169,13 @@ class HermesCLIWrapper {
         // This prevents Hermes from auto-selecting OpenRouter/OpenAI/Anthropic
         // and forces it to use the local Ollama config in ~/.hermes/config.yaml
         const hermesEnv = {
-          // Essential system variables
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
-          USER: process.env.USER,
+          // Essential system variables with GitHub Actions defaults
+          PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin',
+          HOME: process.env.HOME || '/home/runner',
+          USER: process.env.USER || 'runner',
           LANG: process.env.LANG || 'en_US.UTF-8',
           TERM: process.env.TERM || 'xterm',
+          PWD: process.env.PWD || process.env.HOME || '/home/runner',
 
           // Hermes-specific variables for local Ollama
           OLLAMA_HOST: process.env.OLLAMA_HOST || 'http://localhost:11434',
@@ -183,8 +184,11 @@ class HermesCLIWrapper {
           // Camofox browser URL
           CAMOFOX_URL: process.env.CAMOFOX_URL || 'http://localhost:9377',
 
-          // Hermes config path
-          HERMES_CONFIG: `${process.env.HOME}/.hermes/config.yaml`,
+          // CRITICAL: Tell Hermes where config.yaml is located
+          HERMES_CONFIG: `${process.env.HOME || '/home/runner'}/.hermes/config.yaml`,
+          
+          // Point to .env file for any additional config
+          HERMES_ENV: `${process.env.HOME || '/home/runner'}/.hermes/.env`,
 
           // Verbose mode for debugging
           HERMES_VERBOSE: '1'
