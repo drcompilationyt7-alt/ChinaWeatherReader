@@ -118,13 +118,13 @@ jobs:
           mkdir -p ~/.hermes
           rm -f ~/.hermes/config.yaml ~/.hermes/.env ~/.hermes/auth.json
 
-          # .env – only essentials (no LLM provider/model to avoid conflicts with config.yaml)
+          # .env – only essential environment (NO cloud API keys)
           cat > ~/.hermes/.env <<'EOF'
           CAMOFOX_URL=http://localhost:9377
           HERMES_VERBOSE=1
           EOF
 
-          # Config with correct schema (still useful as fallback / fine-tuning)
+          # Write a correct config.yaml
           cat > ~/.hermes/config.yaml <<'EOF'
           llm:
             provider: ollama
@@ -154,16 +154,19 @@ jobs:
             skills: true
           EOF
 
-          # Prevent any OpenRouter/OpenAI leakage
-          unset OPENROUTER_API_KEY
-          unset OPENAI_API_KEY
-          unset ANTHROPIC_API_KEY
+          # Purge any cloud API keys so Hermes can only use local Ollama
+          unset OPENROUTER_API_KEY OPENAI_API_KEY ANTHROPIC_API_KEY
 
-          # === THE FIX: Tell Hermes which provider & model to use ===
-          # This creates the necessary internal state so ‘hermes -z’ doesn’t fail
-          hermes model set ollama/qwen3:8b
-          # Ensure the Ollama endpoint is explicitly known (belt & suspenders)
-          hermes config set llm.api_base http://127.0.0.1:11434
+          # ---- Select the default provider & model (the fix) ----
+          # Try the proper CLI command first
+          if hermes model qwen3:8b --provider ollama 2>/dev/null; then
+            echo "✅ Model set via CLI"
+          else
+            echo "⚠️  Falling back to config set"
+            hermes config set llm.provider ollama
+            hermes config set llm.model qwen3:8b
+            hermes config set llm.api_base http://127.0.0.1:11434
+          fi
 
           echo "===== CONFIG ====="
           cat ~/.hermes/config.yaml
@@ -173,7 +176,7 @@ jobs:
           echo "===== HERMES STATUS ====="
           hermes status || true
           echo "===== TEST ====="
-          # Now this will work because a provider is configured
+          # This will now run without an AuthError
           hermes -z "Reply only OK"
 
       - name: Restore memory
@@ -184,8 +187,7 @@ jobs:
 
       - name: Run content pipeline
         run: |
-          unset OPENROUTER_API_KEY
-          unset OPENAI_API_KEY
+          unset OPENROUTER_API_KEY OPENAI_API_KEY
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
