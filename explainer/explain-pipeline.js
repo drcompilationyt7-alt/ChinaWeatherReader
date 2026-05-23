@@ -283,7 +283,7 @@ Respond with JSON:
       // Create video from audio using ffmpeg:
       // 1. Concat all audio files
       // 2. Add a colored background with title text
-      const cmd = `ffmpeg -y -f lavfi -i "color=c=#1a1a2e:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ${totalInputs.map((a, i) => `-i "${a.file}"`).join(' ')} -filter_complex "${totalInputs.map((a, i) => `[${i + 1}:a]`).join('')} concat=n=${totalInputs.length}:v=0:a=1[audio]" -map "0:v" -map "[audio]" -c:v libx264 -preset ultrafast -crf 28 -c:a aac -shortest "${videoFile}" 2>&1`;
+      const cmd = `ffmpeg -y -f lavfi -i "color=c=#1a1a2e:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ${totalInputs.map((a, i) => `-i "${a.file}"`).join(' ')} -filter_complex "${totalInputs.map((a, i) => `[${i + 1}:a]`).join('')} concat=n=${totalInputs.length}:v=0:a=1[audio]" -map "0:v" -map "[audio]" -c:v libx264 -preset ultrafast -crf 28 -c:a aac -shortest "${videoFile}"`;
 
       this.logger.info('Compiling video with ffmpeg...');
       execSync(cmd, { timeout: 120000, maxBuffer: 50 * 1024 * 1024 });
@@ -328,10 +328,8 @@ Respond with JSON:
 
         // Create a colored background with text overlay
         const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${sceneDuration}:r=30" ` +
-          `-vf "drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold," +
-          "drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900," +
-          "drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
-          `-c:v libx264 -preset ultrafast -crf 28 "${sceneFile}" 2>&1`;
+          `-vf "drawtext=text='${voiceLabel}':fontsize=60:fontcolor=${accentColor}:x=(w-text_w)/2:y=200:font=Arial-Bold,drawtext=text='${dialogue}':fontsize=48:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900,drawtext=text='Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
+          `-c:v libx264 -preset ultrafast -crf 28 "${sceneFile}"`;
 
         try {
           execSync(cmd, { timeout: 30000 });
@@ -347,9 +345,8 @@ Respond with JSON:
         // Ultimate fallback: single static image
         this.logger.warn('All scene creations failed — using single static video');
         const cmd = `ffmpeg -y -f lavfi -i "color=c=${bgColor}:s=1080x1920:d=${Math.max(totalDuration, 10)}:r=30" ` +
-          `-vf "drawtext=text='${safeTitle}':fontsize=56:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900," +
-          "drawtext=text='Follow Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
-          `-c:v libx264 -preset ultrafast -crf 28 "${videoFile}" 2>&1`;
+          `-vf "drawtext=text='${safeTitle}':fontsize=56:fontcolor=${textColor}:x=(w-text_w)/2:y=(h-text_h)/2:font=Arial:textw=900,drawtext=text='Follow Mr. WorldWideWebster':fontsize=36:fontcolor=#888888:x=(w-text_w)/2:y=h-150:font=Arial" ` +
+          `-c:v libx264 -preset ultrafast -crf 28 "${videoFile}"`;
         execSync(cmd, { timeout: 30000 });
       } else {
         // Concatenate all scene videos
@@ -357,7 +354,7 @@ Respond with JSON:
         const concatFile = `${basePath}_concat.txt`;
         fs.writeFileSync(concatFile, concatList);
 
-        const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c:v libx264 -preset ultrafast -crf 28 "${videoFile}" 2>&1`;
+        const cmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c:v libx264 -preset ultrafast -crf 28 "${videoFile}"`;
         execSync(cmd, { timeout: 60000 });
 
         // Cleanup scene files

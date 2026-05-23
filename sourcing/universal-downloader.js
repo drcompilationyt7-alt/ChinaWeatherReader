@@ -125,6 +125,15 @@ class UniversalDownloader {
       this.logger.warn(`OneForAllDownloader fallback failed: ${error.message}`);
     }
 
+    // Strategy 7: Hermes Agent / Puppeteer direct browser automation
+    // Navigate directly to the video page and extract/download using smart heuristics
+    try {
+      const result = await this._downloadWithHermes(url, outputDir, platform);
+      if (result.success) return result;
+    } catch (error) {
+      this.logger.warn(`Hermes fallback failed: ${error.message}`);
+    }
+
     this.logger.error(`All download methods failed for: ${url}`);
     return { success: false, error: 'All download methods failed', platform, url };
   }
@@ -461,11 +470,34 @@ class UniversalDownloader {
 
       // Step 3: Click the Preview / Download / Submit button
       this.logger.info('Clicking Preview button...');
-      const previewBtn = await page.$('button[type="submit"], input[type="submit"], button:has-text("Preview"), button:has-text("Download"), button:has-text("Submit"), .btn-primary, #download-btn, .download-btn');
-      if (previewBtn) {
-        await previewBtn.click();
-      } else {
-        // Try pressing Enter in the input field
+      
+      // Find buttons using evaluate since :has-text() is not valid CSS
+      const previewBtnClicked = await page.evaluate(() => {
+        const allButtons = Array.from(document.querySelectorAll('button, input[type="submit"], a.btn, .btn-primary'));
+        
+        // Look for buttons with text containing Preview, Download, Submit, etc.
+        const patterns = ['Preview', 'Download', 'Submit', 'Start', 'Go'];
+        
+        for (const btn of allButtons) {
+          const text = btn.textContent?.trim() || btn.value || '';
+          if (patterns.some(p => text.includes(p))) {
+            btn.click();
+            return true;
+          }
+        }
+        
+        // If no text match, try common button selectors
+        const commonBtns = document.querySelectorAll('#download-btn, .download-btn, #preview-btn, .preview-btn, button[type="submit"]');
+        if (commonBtns.length > 0) {
+          commonBtns[0].click();
+          return true;
+        }
+        
+        return false;
+      });
+      
+      if (!previewBtnClicked) {
+        // Try pressing Enter in the input field as fallback
         await page.keyboard.press('Enter');
       }
 
@@ -609,6 +641,139 @@ class UniversalDownloader {
     } catch (error) {
       await browser.close().catch(() => {});
       throw new Error(`OneForAllDownloader: ${error.message}`);
+    }
+  }
+
+  /**
+   * Final fallback: Use Hermes Agent / Puppeteer to browse and download video
+   * This leverages direct browser automation to navigate to any video hosting 
+   * site and extract/download the video when all other methods fail.
+   * 
+   * @param {string} url - Video URL to download
+   * @param {string} outputDir - Output directory
+   * @param {string} platform - Platform name
+   */
+  async _downloadWithHermes(url, outputDir, platform) {
+    const puppeteer = require('puppeteer');
+    
+    this.logger.info(`Trying Hermes Agent browser automation for ${platform}...`);
+    
+    try {
+      const browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      
+      try {
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+        
+        this.logger.info(`Navigating to: ${url.substring(0, 80)}`);
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+        await new Promise(r => setTimeout(r, 5000)); // Wait for dynamic content
+        
+        // Extract video URL using multiple strategies
+        const videoUrl = await page.evaluate(() => {
+          // Strategy 1: Direct video element
+          const video = document.querySelector('video');
+          if (video?.src && video.src.startsWith('http')) {
+            return video.src;
+          }
+          
+          // Strategy 2: Source element inside video
+          const source = document.querySelector('video source');
+          if (source?.src) {
+            return source.src;
+          }
+          
+          // Strategy 3: Data attributes
+          const dataAttrs = ['data-video-src', 'data-src', 'data-url', 'data-hls', 'data-stream'];
+          for (const attr of dataAttrs) {
+            const el = document.querySelector(`[${attr}]`);
+            if (el) {
+              const val = el.getAttribute(attr);
+              if (val && val.startsWith('http')) return val;
+            }
+          }
+          
+          // Strategy 4: Meta tags
+          const metaVideo = document.querySelector('meta[property="og:video"], meta[name="twitter:player:stream"]');
+          if (metaVideo) {
+            return metaVideo.getAttribute('content');
+          }
+          
+          // Strategy 5: JSON-LD structured data
+          const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+          for (const script of scripts) {
+            try {
+              const data = JSON.parse(script.textContent);
+              if (data?.video?.contentUrl) return data.video.contentUrl;
+              if (data?.embedUrl) return data.embedUrl;
+            } catch {}
+          }
+          
+          // Strategy 6: Check for HLS/m3u8 streams
+          const hlsLinks = Array.from(document.querySelectorAll('a[href*=".m3u8"], link[rel="alternate"][type="application/x-mpegURL"]'));
+          if (hlsLinks.length > 0) {
+            return hlsLinks[0].href;
+          }
+          
+          return null;
+        });
+        
+        if (videoUrl) {
+          this.logger.info(`Found video URL: ${videoUrl.substring(0, 80)}`);
+          
+          // Download the video
+          const safeId = Date.now();
+          const outputPath = path.join(outputDir, `hermes_${safeId}.mp4`);
+          const writer = fs.createWriteStream(outputPath);
+          
+          const response = await axios({
+            method: 'GET',
+            url: videoUrl,
+            responseType: 'stream',
+            timeout: 120000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': url,
+            },
+          });
+          
+          response.data.pipe(writer);
+          await new Promise((resolve, reject) => {
+            writer.on('finish', () => {
+              if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+                resolve();
+              } else {
+                reject(new Error('Empty download'));
+              }
+            });
+            writer.on('error', reject);
+          });
+          
+          this.logger.success(`✅ Hermes/Puppeteer downloaded: ${outputPath}`);
+          await browser.close();
+          return {
+            success: true,
+            filePath: outputPath,
+            platform,
+            method: 'hermes_puppeteer',
+            title: `Video from ${platform}`,
+            url,
+          };
+        }
+        
+        await browser.close();
+        throw new Error('No video URL found');
+        
+      } catch (puppeteerError) {
+        await browser.close().catch(() => {});
+        throw puppeteerError;
+      }
+      
+    } catch (error) {
+      throw new Error(`Hermes download failed: ${error.message}`);
     }
   }
 }
