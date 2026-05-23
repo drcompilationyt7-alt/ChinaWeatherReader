@@ -282,6 +282,7 @@ class GitHubActionsRunner {
 
     try {
       // Ask AI to recommend platform and search query based on what's trending globally
+      // Note: Hermes CLI with Ollama may produce imperfect JSON, so we add robust parsing
       const aiRecommendation = await this.agent.run(
         `Mr. WorldWideWebster needs to find a viral video RIGHT NOW for a YouTube Short.
         
@@ -295,17 +296,31 @@ class GitHubActionsRunner {
            - For lifestyle/travel/fashion: instagram
            - For specific searches: youtube
         2. What search query to use (in the language of that platform)
-        
-        Return ONLY JSON: {"platform": "tiktok", "query": "viral dance challenge 2026", "reason": "trending in Japan right now"}`,
+
+        CRITICAL: Return ONLY valid JSON in this exact format:
+        {"platform": "tiktok", "query": "viral dance challenge 2026", "reason": "trending in Japan right now"}
+
+        Do NOT include any other text, explanations, or markdown formatting.`,
         { verbose: false, maxSteps: 2 }
       );
 
-      // Parse AI recommendation
+      // Parse AI recommendation with enhanced error handling
       let parsed;
       try {
-        const jsonMatch = aiRecommendation.output?.match(/\{[\s\S]*\}/);
-        if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
-      } catch (e) {}
+        const output = aiRecommendation.output || '';
+        
+        // Try to extract JSON from the output (Hermes/Ollama may wrap it in text)
+        const jsonMatch = output.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          // Fallback: try parsing the entire output as JSON
+          parsed = JSON.parse(output);
+        }
+      } catch (parseError) {
+        this.logger.warn(`JSON parse failed: ${parseError.message}`);
+        throw new Error('AI output was not valid JSON');
+      }
 
       if (parsed && parsed.platform && parsed.query) {
         platformChoice = parsed.platform.toLowerCase();
