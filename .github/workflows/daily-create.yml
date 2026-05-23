@@ -17,7 +17,7 @@ on:
         default: false
 
 env:
-  # Keep for your Node/OpenRouter scripts
+  # Keep for Node scripts only
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -93,15 +93,15 @@ jobs:
 
         ollama serve > ollama.log 2>&1 &
 
-        sleep 15
+        sleep 20
 
-        ollama --version
+        curl http://localhost:11434/api/tags
 
 
-    - name: Download Hermes model
+    - name: Download model
       run: |
 
-        echo "Downloading model..."
+        echo "Downloading Gemma..."
 
         ollama pull gemma3:4b
 
@@ -129,7 +129,8 @@ jobs:
         | grep '^camofox-browser:' \
         | head -1)
 
-        if [ -z "$IMAGE" ]; then
+        if [ -z "$IMAGE" ]
+        then
           echo "No image built"
           exit 1
         fi
@@ -146,14 +147,14 @@ jobs:
           if curl -fs http://localhost:9377/health >/dev/null
           then
             echo "Camofox ready"
-            exit 0
+            break
           fi
 
           sleep 3
 
         done
 
-        docker logs camofox-browser
+        docker logs camofox-browser || true
 
 
     - name: Install Hermes
@@ -162,6 +163,13 @@ jobs:
         curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
         mkdir -p ~/.hermes
+
+        # IMPORTANT:
+        # Remove OpenRouter so Hermes cannot detect it
+
+        unset OPENROUTER_API_KEY
+
+        rm -f ~/.hermes/.env
 
         cat > ~/.hermes/.env <<EOF
         CAMOFOX_URL=http://localhost:9377
@@ -175,22 +183,21 @@ jobs:
         llm:
           provider: ollama
           model: gemma3:4b
-          base_url: http://localhost:11434/v1
-          max_tokens: 1200
+          base_url: http://localhost:11434
           temperature: 0.7
+          max_tokens: 1000
 
         completion:
           max_tokens: 800
 
         agent:
-          max_turns: 5
+          max_turns: 4
 
         memory:
           memory_enabled: true
           user_profile_enabled: true
-
-          memory_char_limit: 2200
-          user_char_limit: 1200
+          memory_char_limit: 2000
+          user_char_limit: 1000
 
         compression:
           enabled: true
@@ -198,9 +205,6 @@ jobs:
         tool_output:
           max_bytes: 15000
           max_lines: 300
-          max_line_length: 500
-
-        file_read_max_chars: 15000
 
         browser:
           camofox:
@@ -213,6 +217,9 @@ jobs:
           skills: true
 
         EOF
+
+        echo "===== HERMES CONFIG ====="
+        cat ~/.hermes/config.yaml
 
         hermes status || true
 
@@ -235,14 +242,10 @@ jobs:
         echo '{"videos":[]}' > memory/content-history.json
 
 
-    - name: Verify TTS
+    - name: Verify model
       run: |
 
-        python3 -m edge_tts \
-          --text "Testing voice generation" \
-          --write-media test.mp3
-
-        ls -lh test.mp3
+        ollama run gemma3:4b "hello"
 
 
     - name: Setup YouTube cookies
@@ -250,50 +253,20 @@ jobs:
 
         if [ -n "${{ secrets.YOUTUBE_COOKIES }}" ]
         then
-          echo "${{ secrets.YOUTUBE_COOKIES }}" \
-          > /tmp/youtube_cookies.txt
+          echo "${{ secrets.YOUTUBE_COOKIES }}" > /tmp/youtube_cookies.txt
         fi
 
 
     - name: Run content pipeline
       env:
+        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
         OLLAMA_URL: http://localhost:11434
         OLLAMA_MODEL: gemma3:4b
+
       run: |
 
         node core/github-action-runner.js --mode daily
-
-
-    - name: Trim memory
-      run: |
-
-        node -e "
-
-        const fs=require('fs');
-
-        for(const file of [
-          'memory/trending-log.json',
-          'memory/content-history.json'
-        ]){
-
-          if(!fs.existsSync(file))
-            continue;
-
-          let d=JSON.parse(fs.readFileSync(file));
-
-          if(d.trends)
-            d.trends=d.trends.slice(-20);
-
-          if(d.videos)
-            d.videos=d.videos.slice(-50);
-
-          fs.writeFileSync(
-            file,
-            JSON.stringify(d,null,2)
-          );
-
-        }
-        "
 
 
     - name: Save memory
