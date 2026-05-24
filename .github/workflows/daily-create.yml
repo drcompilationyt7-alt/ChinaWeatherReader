@@ -1,29 +1,19 @@
-name: 🌅 Daily Shorts Creation
+name: Daily Shorts Creation
 
 on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
-    inputs:
-      debug:
-        description: "Run in debug mode"
-        type: boolean
-        default: false
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-  YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-
   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
-
   GH_PAT: ${{ secrets.GH_PAT }}
-
   CHANNEL_NAME: "Mr. WorldWideWebster"
 
 jobs:
@@ -46,56 +36,36 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            ffmpeg \
-            yt-dlp \
-            jq \
-            curl
-
-          python3 -m pip install -U \
-            edge-tts \
-            yt-dlp \
-            playwright \
-            --break-system-packages
-
+          sudo apt-get install -y ffmpeg yt-dlp jq curl
+          python3 -m pip install -U edge-tts yt-dlp --break-system-packages
           npm ci || npm install
-          npx playwright install --with-deps chromium
+          npm install axios
 
       - name: Environment diagnostics
         run: |
-          echo "=== ENVIRONMENT DIAGNOSTICS ==="
           echo "Node: $(node --version)"
           echo "yt-dlp: $(yt-dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
-          echo "Playwright: $(npx playwright --version 2>&1)"
-          echo "OpenRouter key length: ${#OPENROUTER_API_KEY}"
 
       - name: Restore memory
         run: |
           mkdir -p memory
-          if [ -d "hermes-memory" ]; then
-            cp -r hermes-memory/* memory/ 2>/dev/null || true
-          fi
+          if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
 
       - name: Run content pipeline
-        run: |
-          node core/github-action-runner.js --mode daily
+        run: node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
           mkdir -p memory
-
           git config user.name "Mr. WorldWideWebster Bot"
           git config user.email "bot@worldwidewebster.com"
-
           git add memory/ output/
-
           if ! git diff --staged --quiet; then
-            git commit -m "📊 Memory update $(date +%F)"
+            git commit -m "Memory update $(date +%F)"
             git push
           fi
 
       - name: Cleanup
         if: always()
-        run: |
-          rm -rf output/temp 2>/dev/null || true
+        run: rm -rf output/temp 2>/dev/null || true
