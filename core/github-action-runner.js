@@ -95,13 +95,13 @@ class GitHubActionsRunner {
     } catch { return { queries: [`${c1} viral`,`${c2} food`,`${c3} dance`,`funny moments`,`streamer best`], countries: [c1, c2, c3] }; }
   }
 
-  // Step 2: Search across Bilibili, TikTok, Douyin, YouTube using finder-controller
+  // Step 2: Search across Bilibili, TikTok, Douyin, YouTube
   async _searchVideos(queries) {
     this.logger.info('Step 2: Searching Bilibili, TikTok, Douyin, YouTube...');
     return await findUrlsForQueries(queries, 5);
   }
 
-  // Step 3: Download with yt-dlp (NO -f flag, let yt-dlp auto-select best format)
+  // Step 3: Download with yt-dlp using per-platform headers to bypass bot detection
   async _downloadVideos(urls) {
     this.logger.info('Step 3: Downloading...');
     const dir = config.paths.clips;
@@ -114,18 +114,35 @@ class GitHubActionsRunner {
       const title = entry.title || `Video ${i+1}`;
       this.logger.info(`Download [${i+1}/${Math.min(urls.length,5)}] ${entry.platform}: ${url.substring(0,80)}`);
 
-      // Let yt-dlp auto-select the best format (no -f flag)
-      // This works with deno installed for YouTube, and natively for other platforms
-      const args = ['-o', path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`), url, '--no-playlist', '--max-filesize', '100M'];
+      // Build platform-specific args for yt-dlp
+      const outputTemplate = path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`);
+      const baseArgs = ['-o', outputTemplate, url, '--no-playlist', '--max-filesize', '100M'];
       
+      // Add headers based on platform to bypass bot detection
+      let extraArgs = [];
+      if (entry.platform === 'bilibili') {
+        extraArgs = ['--add-header', 'Referer:https://www.bilibili.com/', '--add-header', 'Origin:https://www.bilibili.com'];
+      } else if (entry.platform === 'youtube') {
+        // Use android player client + embed to bypass sign-in requirement
+        extraArgs = ['--extractor-args', 'youtube:player_client=android,web;skip=webpage'];
+      }
+      
+      const args = [...extraArgs, ...baseArgs];
+
       try {
         const r = spawnSync('yt-dlp', args, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
         const stderr = (r.stderr || '').trim();
         const stdout = (r.stdout || '').trim();
 
         if (r.status !== 0) {
-          this.logger.warn(`yt-dlp failed: ${(stderr||stdout).substring(0,300)}`);
-          continue;
+          // Try without extra args as fallback
+          this.logger.warn(`yt-dlp try 1 failed, trying fallback...`);
+          const r2 = spawnSync('yt-dlp', baseArgs, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+          const err2 = (r2.stderr || r2.stdout || '').trim();
+          if (r2.status !== 0) {
+            this.logger.warn(`yt-dlp failed: ${(err2).substring(0, 300)}`);
+            continue;
+          }
         }
 
         // Find downloaded file
@@ -137,7 +154,7 @@ class GitHubActionsRunner {
           downloaded.push({ path: fp, title, sourceUrl: url, platform: entry.platform });
           this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB) from ${entry.platform}`);
         } else {
-          this.logger.warn(`No output file found. stdout: ${(stdout||stderr).substring(0,200)}`);
+          this.logger.warn(`No output file. stderr: ${(stderr||stdout).substring(0,200)}`);
         }
       } catch (e) {
         this.logger.warn(`Download error: ${e.message.substring(0,100)}`);
@@ -157,16 +174,7 @@ class GitHubActionsRunner {
       this.logger.info(`Analyzing ${i+1}/${videos.length}: ${v.title.substring(0,50)}`);
       try {
         const analysis = await this.ai.chatWithVideo(
-          `Analyze this video. Return JSON with:
-- type: "meme"|"streamer"|"explainer"|"other"
-- rank: 1-10 (viral potential)
-- category: music|dance|food|comedy|reaction|trend|culture|other
-- title_en: brief English title
-- description: 1 sentence
-- has_text_needed: bool
-- explainer_text: if explainer, short text
-- best_start_time: seconds (0-10)
-- duration_needed: seconds (15-30)`,
+          `Analyze this video. Return JSON with: type: "meme"|"streamer"|"explainer"|"other", rank: 1-10 (viral potential), category: music|dance|food|comedy|reaction|trend|culture|other, title_en: brief English title, description: 1 sentence, has_text_needed: bool, explainer_text: if explainer short text, best_start_time: seconds (0-10), duration_needed: seconds (15-30)`,
           v.path, 'Rate viral potential', { useVideo: true, temperature: 0.3 }
         );
         let p;
