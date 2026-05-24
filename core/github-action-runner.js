@@ -59,29 +59,41 @@ class GitHubActionsRunner {
     this.memory[key] = data;
   }
 
-  async _uploadToYouTube(v) {
-    if (!this.youtubeBridge || !this.youtubeBridge.isAuthenticated()) return null;
+  // Generate proper YouTube description with country context
+  async _generateDescription(videoTitle, country, category) {
     try {
-      const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: `${v.title}\n\nBringing the world to you`, tags: v.tags || ['mr worldwidewebster', 'shorts'] });
-      this.logger.success(`Uploaded: ${r.url}`);
-      return r;
-    } catch (e) { this.logger.error(`Upload: ${e.message}`); return null; }
-  }
+      const desc = await this.ai.chat(
+        `You write YouTube Shorts descriptions for Mr. WorldWideWebster channel.
+Channel niche: Global viral content, culture, trends from different countries.
 
-  async _sendDiscord(type, data) {
-    try {
-      const { DiscordBridge } = require('../discord/discord-bridge');
-      const b = new DiscordBridge();
-      if (type === 'daily') await b.sendDailySummary(data);
-      await b.destroy();
-    } catch {}
+Write a short description (max 3 sentences) for this video:
+Title: ${videoTitle}
+Country: ${country}
+Category: ${category}
+
+Include:
+- What country/region this content is from
+- Brief context about what's happening
+- Call to follow
+
+Example:
+"🇳🇬 Hot from Nigeria! Watch this viral dance trend taking over Lagos right now. 
+
+🌍 Bringing the world to you - follow Mr. WorldWideWebster for daily global content!"`,
+        `Write description for ${videoTitle} (${country})`,
+        { useCheapModel: true, temperature: 0.7 }
+      );
+      return desc.trim();
+    } catch {
+      return `🌍 From ${country} / ${videoTitle}. Follow for more global content!`;
+    }
   }
 
   async _generateQueries() {
     this.logger.info('Step 1: AI generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
-    const all = ['Nigeria','Japan','Germany','Brazil','India','Mexico','UK','South Korea','Egypt','Italy','Spain','Thailand','Vietnam','France','Australia'];
+    const all = ['Nigeria','Japan','Germany','Brazil','India','Mexico','UK','South Korea','Egypt','Italy','Spain','Thailand','Vietnam','France','Australia','China','Indonesia','Turkey','Russia','Argentina'];
     const avail = all.filter(c => !used.includes(c));
     const c1 = avail.length > 0 ? avail[Math.floor(Math.random() * avail.length)] : all[Math.floor(Math.random() * all.length)];
     const c2 = all[Math.floor(Math.random() * all.length)];
@@ -104,7 +116,8 @@ class GitHubActionsRunner {
     return await downloadVideos(urls, config.paths.clips);
   }
 
-  async _analyzeAndRankVideos(videos) {
+  // Step 4: Nemotron video analysis + generate translations/descriptions
+  async _analyzeAndRankVideos(videos, countries) {
     this.logger.info('Step 4: Analyzing with Nemotron...');
     if (videos.length === 0) return { ranked: [], explainer: null, clips: [] };
     const analyses = [];
@@ -112,13 +125,31 @@ class GitHubActionsRunner {
       const v = videos[i];
       this.logger.info(`Analyzing ${i+1}/${videos.length}: ${v.title.substring(0,50)}`);
       try {
-        const analysis = await this.ai.chatWithVideo(`Analyze this video. Return JSON: type:"meme"|"streamer"|"explainer"|"other", rank:1-10, category:music|dance|food|comedy|reaction|trend|culture|other, title_en, description, has_text_needed:bool, explainer_text, best_start_time:0-10, duration_needed:15-30`,
-          v.path, 'Rate viral potential', { useVideo: true, temperature: 0.3 });
+        const analysis = await this.ai.chatWithVideo(
+          `Analyze this video. Return JSON:
+- type: "meme"|"streamer"|"explainer"|"other"
+- rank: 1-10 (viral potential)
+- category: music|dance|food|comedy|reaction|trend|culture|other
+- title_en: brief English title
+- description: 1 sentence description
+- has_dialogue: bool (is someone speaking/talking?)
+- language_detected: "english"|"other" (what language is spoken?)
+- translation_needed: bool (true if not English)
+- subtitle_text: if translation_needed, English translation of what's said
+- explainer_text: if explainer type, short "What is this?" text
+- best_start_time: seconds (0-10)
+- duration_needed: seconds (15-30)
+- audio_description: what music/sounds are in the clip`,
+          v.path, 'Analyze this video', { useVideo: true, temperature: 0.3 }
+        );
         let p;
         try { p = JSON.parse(analysis.replace(/```json?/gi,'').replace(/```/g,'').trim()); } catch { const m = analysis.match(/\{[\s\S]*\}/); p = m ? JSON.parse(m[0]) : { type:'other', rank:5 }; }
-        analyses.push({ ...v, analysis:p, index:i });
-        this.logger.info(`Rank ${p.rank||'?'}/10 | ${p.type||'?'} | ${p.title_en||''}`);
-      } catch (e) { this.logger.warn(`Analysis: ${e.message.substring(0,80)}`); analyses.push({ ...v, analysis:{type:'other',rank:5}, index:i }); }
+        analyses.push({ ...v, analysis: p, index: i });
+        this.logger.info(`Rank ${p.rank||'?'}/10 | ${p.type||'?'} | ${p.title_en||''} | Lang:${p.language_detected||'?'}`);
+      } catch (e) {
+        this.logger.warn(`Analysis: ${e.message.substring(0,80)}`);
+        analyses.push({ ...v, analysis:{type:'other',rank:5}, index:i });
+      }
     }
     analyses.sort((a,b) => (b.analysis?.rank||0)-(a.analysis?.rank||0));
     const top3 = analyses.slice(0,3);
@@ -126,23 +157,52 @@ class GitHubActionsRunner {
     return { ranked:top3, explainer, clips:top3.filter(v=>v!==explainer) };
   }
 
+  // Step 5: Edit videos - ensure shorts format, add subtitles if needed
   async _editVideos(_, explainer, clips) {
     this.logger.info('Step 5: Editing...');
     const dir = config.paths.clips;
     const edited = [];
+
     for (const c of clips) {
-      const r = await this.clipEditor.editVideo(c.path, { type: c.analysis?.type==='streamer'?'streamer':'clip', startTime: c.analysis?.best_start_time||5, duration: c.analysis?.duration_needed||20, textOverlay: (c.analysis?.has_text_needed&&c.analysis?.description)?c.analysis.description:'', outputPath: path.join(dir, `clip_${Date.now()}.mp4`) });
-      if (r) edited.push({ path:r, title:c.analysis?.title_en||c.title, type:'clip', platform:c.platform });
+      // If video has dialogue in non-English, use translated text as overlay
+      const textOverlay = c.analysis?.translation_needed && c.analysis?.subtitle_text 
+        ? c.analysis.subtitle_text 
+        : (c.analysis?.has_text_needed && c.analysis?.description ? c.analysis.description : '');
+
+      const r = await this.clipEditor.editVideo(c.path, {
+        type: c.analysis?.type==='streamer' ? 'streamer' : 'clip',
+        startTime: c.analysis?.best_start_time || 5,
+        duration: Math.min(c.analysis?.duration_needed || 20, 60), // Max 60s for shorts
+        textOverlay,
+        outputPath: path.join(dir, `clip_${Date.now()}.mp4`),
+      });
+      if (r) edited.push({ path:r, title:c.analysis?.title_en||c.title, type:'clip', platform:c.platform, analysis:c.analysis });
     }
+
     if (explainer) {
       const expText = explainer.analysis?.explainer_text || `What is this? ${explainer.analysis?.title_en||'global content'}`;
       const vDir = path.join(config.paths.assets, 'voiceovers');
       if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
       let vPath = null;
       try { vPath = await this.clipEditor.generateVoiceover(expText, path.join(vDir, `exp_${Date.now()}.mp3`)); } catch {}
-      const r = await this.clipEditor.editVideo(explainer.path, { type:'explainer', startTime:explainer.analysis?.best_start_time||3, duration:explainer.analysis?.duration_needed||25, voiceoverPath:vPath, voiceoverDuration:5, textOverlay:expText, outputPath:path.join(dir, `explain_${Date.now()}.mp4`) });
-      if (r) edited.push({ path:r, title:explainer.analysis?.title_en||explainer.title, type:'explainer', platform:explainer.platform });
+      
+      // For explainer: add subtitle text if translation needed
+      const textOverlay = explainer.analysis?.translation_needed && explainer.analysis?.subtitle_text 
+        ? explainer.analysis.subtitle_text 
+        : (explainer.analysis?.has_text_needed ? explainer.analysis?.description : '');
+
+      const r = await this.clipEditor.editVideo(explainer.path, {
+        type:'explainer',
+        startTime: explainer.analysis?.best_start_time || 3,
+        duration: Math.min(explainer.analysis?.duration_needed || 25, 60),
+        voiceoverPath: vPath,
+        voiceoverDuration: 5,
+        textOverlay,
+        outputPath: path.join(dir, `explain_${Date.now()}.mp4`),
+      });
+      if (r) edited.push({ path:r, title:explainer.analysis?.title_en||explainer.title, type:'explainer', platform:explainer.platform, analysis:explainer.analysis });
     }
+
     this.logger.success(`Edited ${edited.length} videos`);
     return edited;
   }
@@ -155,11 +215,22 @@ class GitHubActionsRunner {
     const { queries, countries } = await this._generateQueries();
     const urls = await this._searchVideos(queries);
     const downloaded = await this._downloadVideos(urls);
-    const { ranked, explainer, clips } = await this._analyzeAndRankVideos(downloaded);
+    const { ranked, explainer, clips } = await this._analyzeAndRankVideos(downloaded, countries);
     const edited = await this._editVideos(ranked, explainer, clips);
 
     for (const v of edited) {
-      const r = await this._uploadToYouTube({ videoPath: v.path, title: v.title.substring(0,100), type: v.type, tags: ['mr worldwidewebster','shorts', v.platform].filter(Boolean) });
+      // Generate proper description with country context
+      const country = countries?.[0] || 'Global';
+      const category = v.analysis?.category || 'trending';
+      const description = await this._generateDescription(v.title, country, category);
+      
+      const r = await this._uploadToYouTube({
+        videoPath: v.path,
+        title: v.title.substring(0, 100),
+        description,
+        type: v.type,
+        tags: ['mr worldwidewebster', 'shorts', country.toLowerCase(), category, v.platform].filter(Boolean),
+      });
       if (r) uploaded.push({ title: v.title, url: r.url, type: v.type, platform: v.platform });
       else errors.push(`Upload failed: ${v.title}`);
     }
@@ -182,6 +253,29 @@ class GitHubActionsRunner {
     }
     if (errors.length) errors.forEach(e => this.logger.warn(`  ${e}`));
     return { uploadedVideos: uploaded, errors };
+  }
+
+  async _uploadToYouTube(v) {
+    if (!this.youtubeBridge || !this.youtubeBridge.isAuthenticated()) return null;
+    try {
+      const r = await this.youtubeBridge.uploadVideo({
+        videoPath: v.videoPath,
+        title: v.title,
+        description: v.description || `${v.title}\n\n\ud83c\udf0d Bringing the world to you`,
+        tags: v.tags || ['mr worldwidewebster', 'shorts'],
+      });
+      this.logger.success(`Uploaded: ${r.url}`);
+      return r;
+    } catch (e) { this.logger.error(`Upload: ${e.message}`); return null; }
+  }
+
+  async _sendDiscord(type, data) {
+    try {
+      const { DiscordBridge } = require('../discord/discord-bridge');
+      const b = new DiscordBridge();
+      if (type === 'daily') await b.sendDailySummary(data);
+      await b.destroy();
+    } catch {}
   }
 
   async run() {
