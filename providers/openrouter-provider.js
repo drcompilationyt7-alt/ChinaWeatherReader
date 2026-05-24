@@ -6,9 +6,8 @@
  * - Multi-key rotation across 4 API keys (fallback if one is rate-limited)
  * - Automatic model fallback: primary → free model → next key
  * - chatWithVideo(): Send video files to vision models (Nemotron, etc.)
- * - browserSearch(): Use owl-alpha to drive Playwright browser for web search
+ * - webSearch(): Search platforms via HTTP (no Playwright/browser needed)
  * - Max token limits to avoid 402 Payment Required errors
- * - Proper error handling for credit limits, rate limits, and timeouts
  */
 const OpenAI = require('openai');
 const fs = require('fs');
@@ -31,14 +30,12 @@ class OpenRouterProvider {
     this.agentModel = config.openrouter?.agentModel || this.defaultModel;
     this.imageModel = config.openrouter?.imageModel || 'black-forest-labs/flux-schnell';
 
-    // Safety limits to avoid 402 Payment Required
     this.DEFAULT_MAX_TOKENS = 1500;
     this.SCRIPT_MAX_TOKENS = 2000;
     this.CHEAP_MAX_TOKENS = 500;
     this.VIDEO_MAX_TOKENS = 1000;
 
     this.deadKeys = new Set();
-
     this._client = this._buildClient(this.currentKeyIndex);
 
     this.logger.info(`OpenRouter initialized with ${this.apiKeys.length} key(s)`);
@@ -99,12 +96,7 @@ class OpenRouterProvider {
     const maxRetries = options.maxRetries || (this.apiKeys.length * 2) + 1;
     let lastError = null;
 
-    const tryModels = [
-      model,
-      this.fallbackModel,
-      model,
-      'openai/gpt-4o-mini',
-    ];
+    const tryModels = [model, this.fallbackModel, model, 'openai/gpt-4o-mini'];
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       if (attempt > 0 && this.apiKeys.length > 1) {
@@ -113,7 +105,6 @@ class OpenRouterProvider {
       }
 
       const currentModel = tryModels[Math.min(attempt, tryModels.length - 1)];
-
       let maxTokens = options.maxTokens || this.DEFAULT_MAX_TOKENS;
       if (options.useCheapModel) maxTokens = this.CHEAP_MAX_TOKENS;
       if (options.useScriptModel) maxTokens = this.SCRIPT_MAX_TOKENS;
@@ -128,7 +119,6 @@ class OpenRouterProvider {
           temperature: options.temperature || 0.7,
           response_format: options.responseFormat || undefined,
         });
-
         if (response.choices?.[0]?.message?.content) {
           return response.choices[0].message.content;
         }
@@ -139,7 +129,6 @@ class OpenRouterProvider {
           this.deadKeys.add(this.currentKeyIndex);
           this.logger.warn(`Key #${this.currentKeyIndex + 1} failed: ${error.message}`);
         } else {
-          this.logger.warn(`Non-retryable: ${error.message}`);
           if (attempt >= 2) throw error;
         }
       }
@@ -149,34 +138,22 @@ class OpenRouterProvider {
 
   async chat(systemPrompt, userMessage, options = {}) {
     if (!this._client) throw new Error('No OpenRouter API keys configured.');
-
     const model = options.model || 
       (options.useScriptModel ? this.scriptModel : 
-       options.useCheapModel ? this.fallbackModel : 
-       this.defaultModel);
-
+       options.useCheapModel ? this.fallbackModel : this.defaultModel);
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
     ];
-
     return await this._callWithRetry(model, messages, options);
   }
 
   async chatJSON(systemPrompt, userMessage, options = {}) {
-    const strictPrompt = systemPrompt + 
-      '\n\nRespond ONLY with valid JSON. No markdown, no explanation, no code blocks.';
-
+    const strictPrompt = systemPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no explanation, no code blocks.';
     const result = await this.chat(strictPrompt, userMessage, {
-      ...options,
-      responseFormat: { type: 'json_object' },
+      ...options, responseFormat: { type: 'json_object' },
     });
-
-    const cleaned = result
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
+    const cleaned = result.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     try {
       return JSON.parse(cleaned);
     } catch {
@@ -189,23 +166,16 @@ class OpenRouterProvider {
   /**
    * Send a video file to a vision model for analysis.
    * Uses Nemotron or any OpenRouter model that supports video input.
-   * The video file is read as base64 and sent as data URI.
    */
   async chatWithVideo(systemPrompt, videoFilePath, textPrompt, options = {}) {
     if (!this._client) throw new Error('No OpenRouter API keys configured.');
-
-    if (!fs.existsSync(videoFilePath)) {
-      throw new Error(`Video file not found: ${videoFilePath}`);
-    }
+    if (!fs.existsSync(videoFilePath)) throw new Error(`Video file not found: ${videoFilePath}`);
 
     const model = options.model || this.videoModel;
-    
-    // Read video file and convert to base64
     const ext = path.extname(videoFilePath).toLowerCase().replace('.', '');
     const mimeType = ext === 'mp4' ? 'video/mp4' : ext === 'webm' ? 'video/webm' : `video/${ext}`;
     const videoBuffer = fs.readFileSync(videoFilePath);
-    const base64Video = videoBuffer.toString('base64');
-    const dataUri = `data:${mimeType};base64,${base64Video}`;
+    const dataUri = `data:${mimeType};base64,${videoBuffer.toString('base64')}`;
 
     this.logger.info(`Sending video to ${model}: ${path.basename(videoFilePath)} (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
 
@@ -215,122 +185,75 @@ class OpenRouterProvider {
         role: 'user',
         content: [
           { type: 'text', text: textPrompt },
-          {
-            type: 'image_url',
-            image_url: {
-              url: dataUri,
-              detail: 'auto',
-            },
-          },
+          { type: 'image_url', image_url: { url: dataUri, detail: 'auto' } },
         ],
       },
     ];
-
     return await this._callWithRetry(model, messages, { ...options, useVideo: true });
   }
 
   /**
-   * Use owl-alpha (or another browser agent model) to perform a web search
-   * by controlling a Playwright browser.
-   * 
-   * This works by:
-   * 1. Playwright opens a headless browser
-   * 2. Screenshots are sent to owl-alpha (vision model)
-   * 3. owl-alpha returns coordinates/actions (click, type, scroll)
-   * 4. The loop continues until URLs are extracted
-   *
-   * For simplicity, this method performs:
-   * - Targeted searches on Bilibili, Instagram, RedNote, TikTok, YouTube
-   * - Extracts video URLs from search results
-   * - Returns up to 5 real, downloadable video URLs
+   * Search for video URLs across platforms using simple HTTP requests.
+   * NO browser needed - uses axios + HTML parsing.
+   * Supports: YouTube, Bilibili, TikTok (web search)
    */
-  async browserSearch(platforms, topicQuery, options = {}) {
-    const model = options.model || this.defaultModel;
+  async webSearch(platforms, topicQuery, options = {}) {
     const maxUrls = options.maxUrls || 5;
-    
-    this.logger.info(`Browser search: ${platforms.join(', ')} for "${topicQuery}"`);
-    
-    try {
-      const { chromium } = require('playwright');
-      
-      const browser = await chromium.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-      });
-      
-      const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        viewport: { width: 1280, height: 720 },
-        locale: 'en-US',
-      });
-      
-      const page = await context.newPage();
-      const foundUrls = [];
-      
-      for (const platform of platforms) {
-        if (foundUrls.length >= maxUrls) break;
-        
-        this.logger.info(`Searching ${platform}...`);
-        
-        try {
-          let searchUrl = '';
-          let searchSelector = '';
-          let resultSelector = '';
-          let urlExtractor = null;
-          
-          switch (platform) {
-            case 'youtube':
-              searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(topicQuery)}`;
-              resultSelector = 'a#video-title';
-              urlExtractor = (el) => `https://www.youtube.com${el.getAttribute('href')}`;
-              break;
-            case 'bilibili':
-              searchUrl = `https://search.bilibili.com/all?keyword=${encodeURIComponent(topicQuery)}`;
-              resultSelector = 'a.title';
-              urlExtractor = (el) => el.href;
-              break;
-            case 'tiktok':
-              searchUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(topicQuery)}`;
-              resultSelector = 'a[href*="/video/"]';
-              urlExtractor = (el) => `https://www.tiktok.com${el.getAttribute('href')}`;
-              break;
-            default:
-              this.logger.warn(`Unknown platform: ${platform}`);
-              continue;
-          }
-          
-          await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: 30000 });
-          await page.waitForTimeout(3000);
-          
-          const urlElements = await page.$$(resultSelector);
-          
-          for (const el of urlElements.slice(0, 3)) {
-            const url = await el.evaluate(urlExtractor);
-            if (url && url.startsWith('http') && !foundUrls.includes(url)) {
-              foundUrls.push(url);
-              this.logger.info(`  Found: ${url.substring(0, 80)}`);
+    this.logger.info(`Web search: ${platforms.join(', ')} for "${topicQuery}"`);
+
+    const axios = require('axios');
+    const foundUrls = [];
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+    };
+
+    for (const platform of platforms) {
+      if (foundUrls.length >= maxUrls) break;
+      try {
+        switch (platform) {
+          case 'youtube': {
+            // YouTube search: parse video IDs from HTML
+            const html = (await axios.get(`https://www.youtube.com/results?search_query=${encodeURIComponent(topicQuery)}`, { headers, timeout: 15000 })).data;
+            const videoIds = [...html.matchAll(/"videoId":\s*"([a-zA-Z0-9_-]{11})"/g)].map(m => m[1]);
+            for (const id of videoIds.slice(0, 3)) {
+              const url = `https://www.youtube.com/watch?v=${id}`;
+              if (!foundUrls.includes(url)) foundUrls.push(url);
             }
-            if (foundUrls.length >= maxUrls) break;
+            break;
           }
-        } catch (platformError) {
-          this.logger.warn(`  ${platform} search failed: ${platformError.message}`);
+          case 'bilibili': {
+            // Bilibili search: parse BV IDs from HTML
+            const html = (await axios.get(`https://search.bilibili.com/all?keyword=${encodeURIComponent(topicQuery)}`, { headers, timeout: 15000 })).data;
+            const bvIds = [...html.matchAll(/"bvid":\s*"(BV[a-zA-Z0-9]+)"/g)].map(m => m[1]);
+            for (const bv of bvIds.slice(0, 2)) {
+              const url = `https://www.bilibili.com/video/${bv}`;
+              if (!foundUrls.includes(url)) foundUrls.push(url);
+            }
+            break;
+          }
+          case 'tiktok': {
+            // TikTok web search
+            const html = (await axios.get(`https://www.tiktok.com/search?q=${encodeURIComponent(topicQuery)}`, { headers, timeout: 15000 })).data;
+            const urls = [...html.matchAll(/https?:\/\/[^"'\s]+tiktok[^"'\s]*\/video\/\d+/gi)].map(m => m[0]);
+            for (const url of urls.slice(0, 2)) {
+              if (!foundUrls.includes(url)) foundUrls.push(url);
+            }
+            break;
+          }
         }
+      } catch (err) {
+        this.logger.warn(`  ${platform} search error: ${err.message.substring(0, 80)}`);
       }
-      
-      await browser.close();
-      
-      this.logger.success(`Browser search found ${foundUrls.length} URLs`);
-      return foundUrls;
-      
-    } catch (error) {
-      this.logger.error(`Browser search failed: ${error.message}`);
-      return [];
     }
+
+    this.logger.success(`Web search found ${foundUrls.length} URLs: ${foundUrls.slice(0, 3).join(', ')}`);
+    return foundUrls;
   }
 
   async generateImage(prompt, outputPath, options = {}) {
     if (!this._client) throw new Error('No OpenRouter API keys configured');
-
     const maxAttempts = this.apiKeys.length + 1;
     let lastError = null;
 
@@ -339,21 +262,15 @@ class OpenRouterProvider {
         const rotated = this._rotateKey();
         if (!rotated) break;
       }
-
       try {
         const response = await this._client.images.generate({
-          model: this.imageModel,
-          prompt: prompt,
-          n: 1,
+          model: this.imageModel, prompt: prompt, n: 1,
           size: options.size || '1792x1024',
         });
-
         const imageUrl = response.data?.[0]?.url;
         if (!imageUrl) throw new Error('No image URL in response');
-
         const axios = require('axios');
         const imgResponse = await axios({ method: 'GET', url: imageUrl, responseType: 'stream' });
-
         return new Promise((resolve, reject) => {
           const writer = fs.createWriteStream(outputPath);
           imgResponse.data.pipe(writer);
@@ -365,9 +282,7 @@ class OpenRouterProvider {
         if (this._isRetryableError(error)) {
           this.deadKeys.add(this.currentKeyIndex);
           this.logger.warn(`Image gen failed on key #${this.currentKeyIndex + 1}: ${error.message}`);
-        } else {
-          throw error;
-        }
+        } else throw error;
       }
     }
     throw lastError || new Error('Image generation failed after all retries');
@@ -377,13 +292,10 @@ class OpenRouterProvider {
     try {
       const axios = require('axios');
       const response = await axios.get('https://openrouter.ai/api/v1/models', {
-        headers: { 'Authorization': `Bearer ${this.apiKeys[0] || ''}` },
-        timeout: 10000,
+        headers: { Authorization: `Bearer ${this.apiKeys[0] || ''}` }, timeout: 10000,
       });
       return response.data?.data?.slice(0, 50) || [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   }
 }
 
