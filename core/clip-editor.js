@@ -1,226 +1,174 @@
 /**
- * Mr. WorldWideWebster — Clip Editor
+ * Clip Editor - YouTube Shorts Creator
  * 
- * Handles all video editing operations:
- * - Trimming videos to short form (15-30s)
- * - Audio ducking (lower original audio during voiceover, restore after)
- * - Text overlay for translations
- * - Meme/streamer clips: minimal editing, keep original audio
- * 
- * Audio Mix Strategy:
- * - MEME: Original audio 100%, optional text overlay for translation
- * - STREAMER: Original audio 100%, no changes
- * - EXPLAINER: Voiceover segment: original ducked to 15% → voiceover plays
- *              → then original audio restored to 100%
+ * Creates proper YT Shorts (9:16, 1080x1920):
+ * [0-4s] INTRO: Blurred background of clip + text overlay
+ *   "Here we present you..."
+ *   "[Content/Channel Name]"
+ *   "From [Country] 🌍"
+ * [4-30s] FULL CLIP: Original video, original audio, optional captions
+ *
+ * For MEME: Show meme name, fit to 9:16, keep original audio
+ * For EXPLAINER: Same intro but voiceover plays during clip with ducked audio
  */
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
 const { Logger } = require('./logger');
 
-class ClipEditor {
-  constructor() {
-    this.logger = new Logger('ClipEditor');
-  }
+const logger = new Logger('ClipEditor');
 
-  /**
-   * Edit a video based on its type
-   */
-  async editVideo(videoPath, options) {
-    const type = options.type || 'clip'; // 'clip', 'streamer', 'explainer'
-    const outputPath = options.outputPath || videoPath.replace(/\.\w+$/, '_edited.mp4');
-    
-    this.logger.info(`Editing video type=${type}: ${path.basename(videoPath)}`);
-    
-    switch (type) {
-      case 'clip':
-      case 'streamer':
-        return await this._editClip(videoPath, outputPath, options);
-      case 'explainer':
-        return await this._editExplainer(videoPath, outputPath, options);
-      default:
-        return await this._editClip(videoPath, outputPath, options);
-    }
-  }
+const SHORTS_W = 1080;
+const SHORTS_H = 1920;
 
-  /**
-   * Edit a clip/meme video:
-   * - Trim to duration (default 15-30s starting from offset)
-   * - Add text overlay for translation (if provided)
-   * - Keep original audio at 100%
-   */
-  async _editClip(videoPath, outputPath, options) {
-    const startTime = options.startTime || 3;
-    const duration = options.duration || 25;
-    const textOverlay = options.textOverlay || ''; // Translation if any
+/**
+ * Create a YouTube Short from source video
+ */
+async function createShort(videoPath, options) {
+  const type = options.type || 'clip'; // 'clip', 'streamer', 'explainer'
+  const outputPath = options.outputPath || videoPath.replace(/\.\w+$/, '_shorts.mp4');
+  const tmpDir = path.dirname(outputPath);
+  
+  const introText = options.introText || 'Here we present you';
+  const titleText = options.titleText || 'This content';
+  const countryText = options.countryText ? `From ${options.countryText}` : 'Global';
+  const captionText = options.textOverlay || '';
+  
+  const startTime = options.startTime || 5;
+  const duration = Math.min(options.duration || 25, 60);
+  const voiceoverPath = options.voiceoverPath || null;
+  
+  const baseName = `short_${Date.now()}`;
+  logger.info(`Creating Short: "${titleText}" (${duration}s)`);
+  
+  try {
+    // Step 1: Extract a frame for the intro background
+    const frameFile = path.join(tmpDir, `${baseName}_frame.jpg`);
+    execSync(`ffmpeg -y -ss ${startTime} -i "${videoPath}" -vframes 1 -q:v 2 "${frameFile}" 2>/dev/null`, { timeout: 10000 });
+
+    // Step 2: Create intro video (blurred background + text)
+    const introFile = path.join(tmpDir, `${baseName}_intro.mp4`);
+    const introDuration = 4;
     
-    try {
-      if (textOverlay && textOverlay.length > 0) {
-        // Trim + text overlay
-        const textFile = outputPath + '_text.txt';
-        fs.writeFileSync(textFile, textOverlay, 'utf8');
-        
-        const cmd = `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
-          `-vf "drawtext=textfile='${textFile.replace(/\\/g, '/')}':` +
-          `fontsize=48:fontcolor=white:x=(w-text_w)/2:y=h-150:font=Arial:box=1:boxcolor=black@0.5" ` +
-          `-c:v libx264 -preset ultrafast -crf 28 -c:a aac -b:a 128k "${outputPath}"`;
-        
-        execSync(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
-        try { fs.unlinkSync(textFile); } catch {}
-      } else {
-        // Just trim with original audio
-        const cmd = `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
-          `-c:v libx264 -preset ultrafast -crf 28 -c:a aac -b:a 128k "${outputPath}"`;
-        execSync(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
+    // Create intro with ffmpeg: blurred image + text overlays
+    // Text styling: centered, bold font, nice font family
+    const introFilter = `
+      [0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},boxblur=20:5[b];
+      [b]drawtext=text='${introText.replace(/'/g, "\\'")}':
+        fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:
+        fontsize=48:fontcolor=white:
+        x=(w-text_w)/2:y=h*0.3:
+        shadowx=2:shadowy=2:shadowcolor=black@0.5,
+      drawtext=text='${titleText.replace(/'/g, "\\'")}':
+        fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:
+        fontsize=64:fontcolor=#FFD700:
+        x=(w-text_w)/2:y=h*0.45:
+        shadowx=2:shadowy=2:shadowcolor=black@0.5,
+      drawtext=text='${countryText.replace(/'/g, "\\'")}':
+        fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:
+        fontsize=36:fontcolor=white:
+        x=(w-text_w)/2:y=h*0.55:
+        shadowx=2:shadowy=2:shadowcolor=black@0.5[out]
+    `.replace(/\s+/g, ' ').trim();
+    
+    execSync(`ffmpeg -y -loop 1 -i "${frameFile}" -t ${introDuration} -vf "${introFilter}" -c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p "${introFile}" 2>/dev/null`, { timeout: 30000 });
+
+    // Step 3: Extract and fit the clip segment to 9:16
+    const clipFile = path.join(tmpDir, `${baseName}_clip.mp4`);
+    
+    if (voiceoverPath && fs.existsSync(voiceoverPath)) {
+      // EXPLAINER: clip with voiceover + ducked original audio
+      const audioMixFilter = `
+        [1:a]volume=1[a_orig];
+        [2:a]adelay=0|0[a_vo];
+        [a_orig]volume=enable='between(t,1,${introDuration + 1})':volume=0.15[a_ducked];
+        [a_ducked][a_vo]amix=inputs=2:duration=first[outa]
+      `.replace(/\s+/g, ' ').trim();
+      
+      execSync(
+        `ffmpeg -y -ss ${startTime} -i "${videoPath}" -i "${videoPath}" -i "${voiceoverPath}" -t ${duration} ` +
+        `-filter_complex "[0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}[outv]; ${audioMixFilter}" ` +
+        `-map "[outv]" -map "[outa]" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -shortest "${clipFile}" 2>/dev/null`,
+        { timeout: 120000 }
+      );
+    } else {
+      // CLIP/STREAMER: just fit and add captions if needed
+      let clipFilter = `[0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}[outv]`;
+      
+      if (captionText && captionText.length > 0) {
+        // Add subtitle/caption overlay at bottom
+        clipFilter = `[0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},` +
+          `drawtext=text='${captionText.replace(/'/g, "\\'")}':` +
+          `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:` +
+          `fontsize=42:fontcolor=white:` +
+          `x=(w-text_w)/2:y=h-text_h-80:` +
+          `box=1:boxcolor=black@0.6:boxborderw=10` +
+          `[outv]`;
       }
       
-      if (fs.existsSync(outputPath)) {
-        this.logger.success(`Clip edited: ${outputPath}`);
+      execSync(
+        `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
+        `-filter_complex "${clipFilter}" ` +
+        `-map "[outv]" -map 0:a? -c:v libx264 -preset ultrafast -crf 23 -c:a aac -shortest "${clipFile}" 2>/dev/null`,
+        { timeout: 120000 }
+      );
+    }
+
+    // Step 4: Concatenate intro + clip
+    if (fs.existsSync(introFile) && fs.existsSync(clipFile)) {
+      const concatFile = path.join(tmpDir, `${baseName}_concat.txt`);
+      fs.writeFileSync(concatFile, `file '${introFile.replace(/'/g, "'\\''")}'\nfile '${clipFile.replace(/'/g, "'\\''")}'`);
+      
+      execSync(
+        `ffmpeg -y -f concat -safe 0 -i "${concatFile}" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -movflags +faststart "${outputPath}" 2>/dev/null`,
+        { timeout: 120000 }
+      );
+
+      // Cleanup
+      try { fs.unlinkSync(frameFile); } catch {}
+      try { fs.unlinkSync(introFile); } catch {}
+      try { fs.unlinkSync(clipFile); } catch {}
+      try { fs.unlinkSync(concatFile); } catch {}
+
+      if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
+        logger.success(`Short created: ${path.basename(outputPath)} (${(fs.statSync(outputPath).size/1024/1024).toFixed(1)}MB)`);
         return outputPath;
       }
-    } catch (error) {
-      this.logger.warn(`Clip editing failed: ${error.message}`);
     }
-    return null;
-  }
 
-  /**
-   * Edit an explainer video with voiceover:
-   * - First segment (3-5s): voiceover plays, original audio ducked to 15%
-   * - Then: original audio restored to 100% for rest of clip
-   * - Total duration: 15-30s
-   * 
-   * FFmpeg audio mixing:
-   * ┬──────────────┬───────────────┬─────────────────┐
-   * │ Original │ voiceover    │ voice ends,       │
-   * │ audio    │ starts      │ orig audio back   │
-   * │ 100%     │ orig->15%   │ to 100%          │
-   * └──────────────┴───────────────┴─────────────────◘
-   *              ^-- voiceover      ^-- audio restore
-   *              lasts ~5 seconds
-   */
-  async _editExplainer(videoPath, outputPath, options) {
-    const startTime = options.startTime || 3;
-    const totalDuration = options.duration || 25;
-    const voiceoverPath = options.voiceoverPath; // Path to voiceover audio file
-    const voiceoverDuration = options.voiceoverDuration || 5; // How long the voiceover takes
-    const voiceoverText = options.textOverlay || '';
+    // Fallback: just crop to 9:16
+    logger.warn('Intro+clip failed, trying simple crop...');
+    const fallbackCmd = `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
+      `-vf "scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}" ` +
+      `-c:v libx264 -preset ultrafast -crf 28 -c:a aac -shortest "${outputPath}" 2>/dev/null`;
+    execSync(fallbackCmd, { timeout: 60000 });
     
-    try {
-      const tmpDir = path.dirname(outputPath);
-      const baseName = path.basename(outputPath, path.extname(outputPath));
-      
-      // Step 1: Trim the original video
-      const trimmedPath = path.join(tmpDir, `${baseName}_trimmed.mp4`);
-      let trimCmd = `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${totalDuration} ` +
-        `-c:v libx264 -preset ultrafast -crf 28 -c:a aac -b:a 128k "${trimmedPath}"`;
-      execSync(trimCmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
-      
-      if (!fs.existsSync(trimmedPath)) {
-        throw new Error('Trim produced no output');
-      }
-      
-      // Step 2: Extract original audio
-      const origAudioPath = path.join(tmpDir, `${baseName}_orig_audio.aac`);
-      execSync(`ffmpeg -y -i "${trimmedPath}" -vn -c:a copy "${origAudioPath}"`, 
-        { timeout: 30000, maxBuffer: 50 * 1024 * 1024 });
-      
-      if (voiceoverPath && fs.existsSync(voiceoverPath)) {
-        // Step 3: Create ducked audio
-        // We split original audio into 3 parts:
-        // - Part A: Before voiceover (full volume)
-        // - Part B: During voiceover (ducked to 15%)
-        // - Part C: After voiceover (full volume)
-        
-        const vDuration = voiceoverDuration;
-        const vStart = 1; // Voiceover starts 1 second in (brief intro silence)
-        
-        // Create the mixed audio
-        const mixedAudioPath = path.join(tmpDir, `${baseName}_mixed.aac`);
-        
-        // Use ffmpeg audio filter:
-        // Stream 0: original audio
-        // Stream 1: voiceover
-        // Mix them with volume envelope on original during voiceover segment
-        const audioFilter = 
-          `[0:a]volume=1[A];` + // Full volume original
-          `[0:a]volume=enable='between(t,${vStart},${vStart + vDuration})':volume=0.15[B];` + // Duck to 15% during voiceover
-          `[B][1:a]amix=inputs=2:duration=first:dropout_transition=2[C];` + // Mix ducked original + voiceover
-          `[A][C]acrossfade=d=0.1[out]`; // Crossfade to avoid clicks
-        
-        const mixCmd = `ffmpeg -y -i "${trimmedPath}" -i "${voiceoverPath}" ` +
-          `-filter_complex "${audioFilter}" -map "[out]" -c:a aac -b:a 128k "${mixedAudioPath}"`;
-        
-        execSync(mixCmd, { timeout: 30000, maxBuffer: 50 * 1024 * 1024 });
-        
-        // Step 4: Replace audio in video
-        if (fs.existsSync(mixedAudioPath)) {
-          execSync(`ffmpeg -y -i "${trimmedPath}" -i "${mixedAudioPath}" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest "${outputPath}"`,
-            { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
-        }
-        
-        // Cleanup mixed audio
-        try { fs.unlinkSync(mixedAudioPath); } catch {}
-      } else {
-        // No voiceover - just add text overlay if needed
-        if (voiceoverText) {
-          const textFile = outputPath + '_text.txt';
-          fs.writeFileSync(textFile, voiceoverText, 'utf8');
-          const cmd = `ffmpeg -y -i "${trimmedPath}" ` +
-            `-vf "drawtext=textfile='${textFile.replace(/\\/g, '/')}':` +
-            `fontsize=48:fontcolor=white:x=(w-text_w)/2:y=h-150:font=Arial:box=1:boxcolor=black@0.5" ` +
-            `-c:v libx264 -preset ultrafast -crf 28 -c:a aac -b:a 128k "${outputPath}"`;
-          execSync(cmd, { timeout: 60000, maxBuffer: 50 * 1024 * 1024 });
-          try { fs.unlinkSync(textFile); } catch {}
-        } else {
-          // No edits needed, just copy trimmed
-          fs.copyFileSync(trimmedPath, outputPath);
-        }
-      }
-      
-      // Cleanup temp files
-      try { fs.unlinkSync(trimmedPath); } catch {}
-      try { fs.unlinkSync(origAudioPath); } catch {}
-      
-      if (fs.existsSync(outputPath)) {
-        this.logger.success(`Explainer edited: ${outputPath}`);
-        return outputPath;
-      }
-    } catch (error) {
-      this.logger.warn(`Explainer editing failed: ${error.message}`);
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
+      logger.success(`Fallback short: ${path.basename(outputPath)}`);
+      return outputPath;
     }
-    return null;
+  } catch (error) {
+    logger.warn(`Short creation failed: ${error.message.substring(0, 100)}`);
   }
 
-  /**
-   * Generate a simple voiceover audio using edge-tts
-   */
-  async generateVoiceover(text, outputPath, voice = 'en-US-JennyNeural') {
-    try {
-      const cmd = `edge-tts --voice "${voice}" --text "${text.replace(/"/g, '\\"')}" --write-media "${outputPath}"`;
-      execSync(cmd, { timeout: 30000 });
-      if (fs.existsSync(outputPath)) {
-        this.logger.info(`Voiceover generated: ${outputPath}`);
-        return outputPath;
-      }
-    } catch (error) {
-      this.logger.warn(`Voiceover generation failed: ${error.message}`);
-    }
-    return null;
-  }
-
-  /**
-   * Get video duration in seconds using ffprobe
-   */
-  getDuration(videoPath) {
-    try {
-      const cmd = `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`;
-      const output = execSync(cmd, { timeout: 10000 }).toString().trim();
-      return parseFloat(output) || 0;
-    } catch {
-      return 0;
-    }
-  }
+  return null;
 }
 
-module.exports = { ClipEditor };
+/**
+ * Generate a simple voiceover using edge-tts
+ */
+async function generateVoiceover(text, outputPath) {
+  try {
+    const safeText = text.replace(/"/g, '\\"');
+    execSync(`edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${outputPath}" 2>/dev/null`, { timeout: 30000 });
+    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 1000) {
+      logger.info(`Voiceover: ${path.basename(outputPath)}`);
+      return outputPath;
+    }
+  } catch (error) {
+    logger.warn(`Voiceover: ${error.message.substring(0, 80)}`);
+  }
+  return null;
+}
+
+module.exports = { createShort, generateVoiceover };
