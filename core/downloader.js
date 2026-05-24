@@ -1,9 +1,8 @@
 /**
  * Downloader module
- * Uses yt-dlp with multiple strategies to bypass CI IP blocks
- * Falls back to Python + aiohttp if yt-dlp fails
+ * Uses yt-dlp with platform-specific strategies
  */
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { Logger } = require('./logger');
@@ -19,80 +18,98 @@ async function downloadVideo(entry, outputDir) {
   const outputTemplate = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Try all strategies in order
-  const strategies = [];
+  // Build strategy args for each platform
+  const strategySets = [];
 
   if (platform === 'youtube') {
-    strategies.push(
-      // Android client (best for CI)
-      `yt-dlp --extractor-args "youtube:player_client=android" -f "best[height<=720]" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-      // Web with Android UA
-      `yt-dlp --user-agent "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36" -f "best[height<=720]" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-      // Best format no filter
-      `yt-dlp --extractor-args "youtube:player_client=android" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`
-    );
+    strategySets.push([
+      ['--extractor-args', 'youtube:player_client=android'],
+      ['--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'],
+      ['-f', 'best[height<=720]'],
+    ]);
+    strategySets.push([
+      ['--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'],
+      ['-f', 'best[height<=720]'],
+    ]);
+    strategySets.push([
+      ['--extractor-args', 'youtube:player_client=android'],
+    ]);
   } else if (platform === 'bilibili') {
-    strategies.push(
-      // With proper referer
-      `yt-dlp --add-header "Referer:https://www.bilibili.com/" --add-header "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" --add-header "Origin:https://www.bilibili.com" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-      // TV app headers
-      `yt-dlp --add-header "Referer:https://www.bilibili.com/" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`
-    );
-  } else {
-    strategies.push(
-      `yt-dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`
-    );
+    strategySets.push([
+      ['--add-header', 'Referer:https://www.bilibili.com/'],
+      ['--add-header', 'Origin:https://www.bilibili.com'],
+      ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'],
+    ]);
+    strategySets.push([
+      ['--add-header', 'Referer:https://www.bilibili.com/'],
+    ]);
   }
 
-  for (let s = 0; s < strategies.length; s++) {
-    try {
-      const output = execSync(strategies[s], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+  // If no platform-specific strategies, add a default
+  if (strategySets.length === 0) strategySets.push([]);
 
-      // Find downloaded file
-      const files = fs.readdirSync(outputDir)
-        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
-        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-      
-      if (files.length > 0) {
-        const fp = path.join(outputDir, files[0]);
-        const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-        if (sizeMB > 1) {
-          logger.success(`Downloaded: ${files[0]} (${sizeMB.toFixed(1)}MB)`);
-          return { path: fp, title, platform, sourceUrl: url };
+  // Build environment with deno in PATH
+  const env = { ...process.env };
+  if (process.env.DENO_INSTALL) {
+    env.PATH = `${process.env.DENO_INSTALL}/bin:${env.PATH || ''}`;
+  }
+  // Also try common deno paths
+  const denoPaths = ['/home/runner/.deno/bin', '/root/.deno/bin', '/usr/local/bin'];
+  for (const p of denoPaths) {
+    if (fs.existsSync(p)) {
+      env.PATH = `${p}:${env.PATH || ''}`;
+    }
+  }
+
+  for (let s = 0; s < strategySets.length; s++) {
+    const extraArgs = strategySets[s];
+    const args = [
+      ...extraArgs.flat(),
+      '-o', outputTemplate,
+      url,
+      '--no-playlist',
+      '--max-filesize', '100M',
+    ];
+
+    try {
+      const r = spawnSync('yt-dlp', args, {
+        timeout: 180000,
+        maxBuffer: 50 * 1024 * 1024,
+        encoding: 'utf8',
+        env,
+      });
+
+      const stderr = (r.stderr || '').trim();
+      const stdout = (r.stdout || '').trim();
+
+      if (r.status === 0) {
+        // Find downloaded file
+        const files = fs.readdirSync(outputDir)
+          .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
+          .sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
+        
+        if (files.length > 0) {
+          const fp = path.join(outputDir, files[0]);
+          const sizeMB = fs.statSync(fp).size / 1024 / 1024;
+          if (sizeMB > 0.5) {
+            logger.success(`Downloaded: ${files[0]} (${sizeMB.toFixed(1)}MB)`);
+            return { path: fp, title, platform, sourceUrl: url };
+          }
+          logger.warn(`File too small (${sizeMB.toFixed(1)}MB), trying next`);
+          try { fs.unlinkSync(fp); } catch {}
+        } else {
+          logger.warn(`No file found. stdout: ${(stdout).substring(0,200)}`);
         }
-        // Too small, likely an error file
-        logger.warn(`File too small (${sizeMB.toFixed(1)}MB)`);
-        try { fs.unlinkSync(fp); } catch {}
+      } else {
+        const errMsg = (stderr || stdout).substring(0, 250);
+        logger.warn(`Strategy ${s+1} failed: ${errMsg}`);
       }
     } catch (e) {
-      const msg = e.message.substring(0, 150);
-      logger.warn(`Strategy ${s+1} failed: ${msg}`);
+      logger.warn(`Strategy ${s+1} error: ${e.message.substring(0,100)}`);
     }
   }
 
-  // Final fallback: try with python yt-dlp directly
-  logger.info('Trying Python yt-dlp as final fallback...');
-  try {
-    const pyOut = execSync(
-      `python3 -m yt_dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-      { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' }
-    );
-    const files = fs.readdirSync(outputDir)
-      .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
-      .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-    if (files.length > 0) {
-      const fp = path.join(outputDir, files[0]);
-      const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-      if (sizeMB > 1) {
-        logger.success(`Downloaded via Python: ${files[0]} (${sizeMB.toFixed(1)}MB)`);
-        return { path: fp, title, platform, sourceUrl: url };
-      }
-    }
-  } catch (e) {
-    logger.warn(`Python fallback failed: ${e.message.substring(0,100)}`);
-  }
-
-  logger.warn(`All download strategies failed for ${url.substring(0,60)}`);
+  logger.warn(`All failed: ${url.substring(0,60)}`);
   return null;
 }
 
