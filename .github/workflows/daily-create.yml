@@ -36,16 +36,22 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg yt-dlp jq curl unzip
-          python3 -m pip install -U edge-tts yt-dlp --break-system-packages
+          sudo apt-get install -y ffmpeg jq curl unzip
+          python3 -m pip install -U edge-tts yt-dlp yt-dlp-ejs --break-system-packages
           npm ci || npm install
           npm install axios
+          
+          # Install deno runtime
+          curl -fsSL https://deno.land/install.sh | sh
+          export DENO_INSTALL="$HOME/.deno"
+          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
 
       - name: Environment diagnostics
         run: |
           echo "Node: $(node --version)"
-          echo "yt-dlp: $(yt-dlp --version 2>&1)"
+          echo "yt-dlp: $(python3 -m yt_dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
+          echo "deno: $(deno --version 2>&1 | head -1)"
           echo "Proxy: $([ -n "$YT_PROXY" ] && echo 'SET' || echo 'NOT SET')"
 
       - name: Restore memory
@@ -54,7 +60,9 @@ jobs:
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
 
       - name: Run content pipeline
-        run: node core/github-action-runner.js --mode daily
+        run: |
+          export PATH="$HOME/.deno/bin:$PATH"
+          node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
