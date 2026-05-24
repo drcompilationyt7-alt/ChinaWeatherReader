@@ -1,7 +1,6 @@
 /**
  * Downloader module
- * Uses browser cookies from env var + yt-dlp with throttling to avoid bot detection.
- * Set YOUTUBE_COOKIES secret in GitHub with Netscape cookie format.
+ * Uses browser cookies from env var + yt-dlp.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -16,48 +15,71 @@ async function downloadVideo(entry, outputDir) {
   const platform = entry.platform || 'unknown';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   
-  const outputFile = path.join(outputDir, `vid_${Date.now()}.mp4`);
+  const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
+  const outputFinal = outputFile.replace('%(id)s.%(ext)s', 'final.mp4');
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Write cookies from env if available (set via GitHub Secret YOUTUBE_COOKIES)
-  const cookieFile = path.join(outputDir, 'yt_cookies.txt');
-  if (process.env.YOUTUBE_COOKIES) {
-    try { fs.writeFileSync(cookieFile, process.env.YOUTUBE_COOKIES); } catch {}
-  }
-
-  // Try strategies with cookies first, then without
-  const strategies = [];
-
-  // Strategy 1: cookies + throttle (most likely to work)
-  if (fs.existsSync(cookieFile) && fs.statSync(cookieFile).size > 50) {
-    strategies.push(
-      `yt-dlp --cookies "${cookieFile}" --throttled-rate 100K -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`
-    );
-  }
-
-  // Strategy 2: visitor_data approach (for YouTube)
-  if (platform === 'youtube') {
-    strategies.push(
-      `yt-dlp --extractor-args "youtube:player_client=web;player_skip=webpage,js" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" --throttled-rate 50K -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-      `yt-dlp --throttled-rate 50K -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`,
-    );
-  }
-
-  // Strategy 3: generic fallback
-  strategies.push(
-    `yt-dlp -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`
-  );
-
-  for (let s = 0; s < strategies.length; s++) {
+  // Write cookies from env
+  const cookieFile = path.join(outputDir, 'cookies.txt');
+  if (process.env.YOUTUBE_COOKIES && process.env.YOUTUBE_COOKIES.length > 50) {
     try {
-      execSync(strategies[s], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
-      if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 500000) {
-        logger.success(`Strategy ${s+1}: ${(fs.statSync(outputFile).size/1024/1024).toFixed(1)}MB`);
-        try { fs.unlinkSync(cookieFile); } catch {}
-        return { path: outputFile, title, platform, sourceUrl: url };
+      fs.writeFileSync(cookieFile, process.env.YOUTUBE_COOKIES, 'utf8');
+      logger.info(`Cookies written: ${(process.env.YOUTUBE_COOKIES.length / 1024).toFixed(1)}KB`);
+    } catch (e) {
+      logger.warn(`Failed to write cookies: ${e.message}`);
+    }
+  } else {
+    logger.warn('No YOUTUBE_COOKIES env var set');
+  }
+
+  // Build command list per platform
+  const commands = [];
+  
+  if (fs.existsSync(cookieFile) && fs.statSync(cookieFile).size > 100) {
+    commands.push(`yt-dlp --cookies "${cookieFile}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`);
+  }
+  
+  commands.push(`yt-dlp -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`);
+
+  for (let c = 0; c < commands.length; c++) {
+    try {
+      logger.info(`Trying command ${c + 1}...`);
+      const stdout = execSync(commands[c], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8', cwd: outputDir });
+      
+      // Find what was downloaded
+      const files = fs.readdirSync(outputDir)
+        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
+        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+      
+      if (files.length > 0) {
+        const fp = path.join(outputDir, files[0]);
+        const size = fs.statSync(fp).size;
+        if (size > 500000) {
+          logger.success(`Downloaded: ${files[0]} (${(size/1024/1024).toFixed(1)}MB)`);
+          try { fs.unlinkSync(cookieFile); } catch {}
+          return { path: fp, title, platform, sourceUrl: url };
+        }
+        logger.warn(`File too small (${(size/1024).toFixed(0)}KB), removing`);
+        try { fs.unlinkSync(fp); } catch {}
+      } else {
+        logger.warn(`No output file found. Stdout last 200: ${(stdout||'').slice(-200)}`);
       }
     } catch (e) {
-      logger.warn(`Strategy ${s+1}: ${e.message.substring(0,100)}`);
+      const stderr = e.stderr?.toString().trim() || e.message;
+      logger.warn(`Cmd ${c+1} failed: ${stderr.substring(0, 300)}`);
+      // Check if file was actually downloaded despite error
+      const files = fs.readdirSync(outputDir)
+        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
+        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+      if (files.length > 0) {
+        const fp = path.join(outputDir, files[0]);
+        const size = fs.statSync(fp).size;
+        if (size > 500000) {
+          logger.success(`Downloaded despite error: ${files[0]} (${(size/1024/1024).toFixed(1)}MB)`);
+          try { fs.unlinkSync(cookieFile); } catch {}
+          return { path: fp, title, platform, sourceUrl: url };
+        }
+      }
     }
   }
 
