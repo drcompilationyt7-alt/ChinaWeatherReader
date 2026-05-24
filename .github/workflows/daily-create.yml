@@ -40,15 +40,12 @@ jobs:
           npm ci || npm install
           npm install axios
 
-          # Install deno via npm (global, in PATH)
-          npm install -g deno-bin
-
       - name: Environment diagnostics
         run: |
           echo "Node: $(node --version)"
           echo "yt-dlp: $(yt-dlp --version 2>&1)"
+          echo "yt-dlp python: $(python3 -m yt_dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
-          echo "deno: $(deno --version 2>&1 | head -1)"
 
       - name: Restore memory
         run: |
@@ -57,7 +54,8 @@ jobs:
 
       - name: Run content pipeline
         run: |
-          export PATH="$(npm bin -g):$PATH"
+          # Tell yt-dlp to use Node.js as JS runtime (already installed)
+          export YTDLP_JS_RUNTIME="node"
           node core/github-action-runner.js --mode daily
 
       - name: Save memory
