@@ -1,7 +1,7 @@
 /**
  * Downloader module
- * Routes yt-dlp through Shadowsocks proxy via --proxy flag.
- * YT_PROXY env var is set by Shadowsocks step in workflow.
+ * Uses socks5h:// for DNS resolution through Shadowsocks.
+ * Tests proxy first, then downloads.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -25,32 +25,40 @@ async function downloadVideo(entry, outputDir) {
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Get proxy from env (set by Shadowsocks or YT_PROXY secret)
+  // Get proxy from env
   let proxy = process.env.YT_PROXY || '';
-  // Ensure socks5h:// prefix for DNS resolution through proxy
-  if (proxy && !proxy.startsWith('socks5') && !proxy.startsWith('http')) {
+  // Use socks5h:// for DNS through proxy (critical fix!)
+  if (proxy === 'socks5://127.0.0.1:1080') {
+    proxy = 'socks5h://127.0.0.1:1080';
+  } else if (proxy && !proxy.startsWith('socks5h') && !proxy.startsWith('http')) {
     proxy = `socks5h://${proxy}`;
   }
-  const proxyArg = proxy ? `--proxy "${proxy}"` : '';
   
-  if (proxy) logger.info(`Using proxy: ${proxy.substring(0, 30)}...`);
-  else logger.info('No proxy configured');
+  // Test proxy
+  if (proxy) {
+    try {
+      const ip = execSync(`curl -s --connect-timeout 5 --proxy "${proxy}" https://ifconfig.me 2>/dev/null`, { timeout: 10000, encoding: 'utf8' }).trim();
+      logger.info(`Proxy IP: ${ip}`);
+    } catch {
+      logger.warn('Proxy unreachable, trying without proxy');
+      proxy = '';
+    }
+  }
 
+  const proxyArg = proxy ? `--proxy "${proxy}"` : '';
   const PY = 'python3 -m yt_dlp';
   const fmt = '-f "best[height<=720]"';
   const base = `${proxyArg} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
 
-  // Strategies with proxy
   const strategies = [
     { name: 'web_embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
     { name: 'android_vr', args: '--extractor-args "youtube:player_client=android_vr"' },
-    { name: 'tv', args: '--extractor-args "youtube:player_client=tv"' },
     { name: 'default', args: '' },
   ];
 
   for (const s of strategies) {
     try {
-      logger.info(`Try: ${s.name}${proxy ? ' (via proxy)' : ' (direct)'}`);
+      logger.info(`Try: ${s.name}`);
       execSync(`${PY} ${s.args} ${fmt} ${base}`, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
       
       const files = fs.readdirSync(outputDir)
