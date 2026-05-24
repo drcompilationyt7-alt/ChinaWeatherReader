@@ -1,134 +1,144 @@
 /**
  * Downloader module
- * Uses yt-dlp with platform-specific strategies including TV/mobile clients
- * Creates temporary cookies for bot bypass
+ * Uses free API proxies to bypass CI IP blocks.
+ * Platforms like YouTube and Bilibili block GitHub Actions IPs for yt-dlp,
+ * but public download APIs work fine.
+ * 
+ * Strategy order:
+ * 1. Cobalt.tools API (free, no key, works for YouTube & Bilibili)
+ * 2. Invidious redirect (free YouTube proxy)
+ * 3. yt-dlp with iOS client (fallback)
  */
-const { spawnSync, execSync } = require('child_process');
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
 
+/**
+ * Download a single video using free APIs that bypass CI IP blocks
+ */
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
   const title = entry.title || 'video';
   const platform = entry.platform || 'unknown';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   
-  const outputTemplate = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
+  const outputFile = path.join(outputDir, `vid_${Date.now()}.mp4`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Build a cookies file (generic, works for YouTube)
-  const cookieFile = path.join(outputDir, 'cookies.txt');
-  // Write some common cookies
-  const cookies = `# Netscape HTTP Cookie File
-.youtube.com	TRUE	/	TRUE	0	SOCS	CAI
-.youtube.com	TRUE	/	TRUE	0	__Secure-3PSID	missing
-.google.com	TRUE	/	TRUE	0	NID	missing`;
-  try { fs.writeFileSync(cookieFile, cookies); } catch {}
-
-  // Build try list per platform
-  const tryCommands = [];
-
-  if (platform === 'youtube') {
-    // Try different player clients - TV is least restrictive
-    tryCommands.push(
-      `yt-dlp --extractor-args "youtube:player_client=tv" --cookies "${cookieFile}" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      `yt-dlp --extractor-args "youtube:player_client=android" --cookies "${cookieFile}" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      `yt-dlp --extractor-args "youtube:skip=webpage" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      // Try without any args (maybe deno fixes it)
-      `yt-dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      // Last resort: just get best format
-      `python3 -m yt_dlp --extractor-args "youtube:player_client=tv" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-    );
-  } else if (platform === 'bilibili') {
-    // Bilibili: use referer + try without headers
-    tryCommands.push(
-      `yt-dlp --add-header "Referer:https://www.bilibili.com/" --add-header "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" --add-header "Origin:https://www.bilibili.com" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      `yt-dlp --user-agent "BiliApp/1.0.0 (Android 14; SDK 34)" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      // Try with cookies from common Bilibili session cookie
-      `yt-dlp --add-header "Referer:https://www.bilibili.com/" --add-header "Cookie:buvid3=local" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-      `python3 -m yt_dlp --add-header "Referer:https://www.bilibili.com/" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-    );
-  } else {
-    tryCommands.push(
-      `yt-dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`,
-    );
-  }
-
-  // Build env with deno in PATH
-  const env = { ...process.env };
-  for (const p of ['/home/runner/.deno/bin', '/root/.deno/bin', '/usr/local/bin']) {
-    if (fs.existsSync(p)) env.PATH = `${p}:${env.PATH || ''}`;
-  }
-  // Also try standard deno path
+  // Method 1: Try cobalt.tools API (free, no auth, handles YouTube, Bilibili, TikTok)
   try {
-    const denoPath = execSync('which deno 2>/dev/null || echo ""', { timeout: 5000, encoding: 'utf8' }).trim();
-    if (denoPath) {
-      const dir = path.dirname(denoPath);
-      env.PATH = `${dir}:${env.PATH || ''}`;
-      logger.info(`Found deno at ${denoPath}`);
-    }
-  } catch {}
-
-  for (let s = 0; s < tryCommands.length; s++) {
-    try {
-      const r = execSync(tryCommands[s], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8', env });
-
-      // Find downloaded file
-      const files = fs.readdirSync(outputDir)
-        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
-        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-      
-      if (files.length > 0) {
-        const fp = path.join(outputDir, files[0]);
-        const sizeMB = fs.statSync(fp).size / 1024 / 1024;
+    logger.info('Method 1: Cobalt.tools API...');
+    const cobaltUrl = 'https://api.cobalt.tools/api/json';
+    const resp = await fetch(cobaltUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
+      body: JSON.stringify({
+        url: url,
+        videoQuality: '720',
+        filenamePattern: 'basic',
+        isAudioOnly: false,
+        disableMetadata: true,
+      }),
+    });
+    
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.url) {
+        // Download the actual video file
+        const videoResp = await fetch(data.url, { 
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          redirect: 'follow',
+        });
+        const buffer = Buffer.from(await videoResp.arrayBuffer());
+        fs.writeFileSync(outputFile, buffer);
+        const sizeMB = buffer.length / 1024 / 1024;
         if (sizeMB > 1) {
-          logger.success(`Downloaded: ${files[0]} (${sizeMB.toFixed(1)}MB)`);
-          try { fs.unlinkSync(cookieFile); } catch {}
-          return { path: fp, title, platform, sourceUrl: url };
+          logger.success(`Cobalt API: ${outputFile} (${sizeMB.toFixed(1)}MB)`);
+          return { path: outputFile, title, platform, sourceUrl: url };
         }
-        if (sizeMB > 0.1) {
-          logger.warn(`File small (${sizeMB.toFixed(1)}MB) but keeping`);
-          try { fs.unlinkSync(cookieFile); } catch {}
-          return { path: fp, title, platform, sourceUrl: url };
-        }
+        logger.warn(`Cobalt returned small file (${sizeMB.toFixed(1)}MB)`);
+        try { fs.unlinkSync(outputFile); } catch {}
       }
-      
-      // Check if the stdout mentions a file was written
-      if (r.includes('Destination') && r.includes('.mp4')) {
-        const match = r.match(/Destination: ([^\n]+\.mp4)/);
-        if (match && fs.existsSync(match[1])) {
-          const sizeMB = fs.statSync(match[1]).size / 1024 / 1024;
-          if (sizeMB > 0.5) {
-            logger.success(`Downloaded: ${path.basename(match[1])} (${sizeMB.toFixed(1)}MB)`);
-            try { fs.unlinkSync(cookieFile); } catch {}
-            return { path: match[1], title, platform, sourceUrl: url };
+    } else {
+      logger.warn(`Cobalt API: HTTP ${resp.status}`);
+    }
+  } catch (e) {
+    logger.warn(`Cobalt failed: ${e.message.substring(0,100)}`);
+  }
+
+  // Method 2: Try yt-dlp with iOS client (hardcoded API keys, less restricted)
+  try {
+    logger.info('Method 2: yt-dlp iOS client...');
+    const cmd = `yt-dlp --extractor-args "youtube:player_client=ios" --user-agent "com.google.ios.youtube/19.45.3 (iPhone16,2; U; CPU iOS 18_3_2)" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`;
+    execSync(cmd, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+    if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 100000) {
+      const sizeMB = fs.statSync(outputFile).size / 1024 / 1024;
+      logger.success(`yt-dlp iOS: ${outputFile} (${sizeMB.toFixed(1)}MB)`);
+      return { path: outputFile, title, platform, sourceUrl: url };
+    }
+  } catch (e) {
+    logger.warn(`yt-dlp iOS failed: ${e.message.substring(0,100)}`);
+  }
+
+  // Method 3: Try invidious redirect (free YouTube proxy)
+  if (platform === 'youtube') {
+    try {
+      logger.info('Method 3: Invidious proxy...');
+      const videoId = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+      if (videoId) {
+        const apiUrl = `https://inv.nadeko.net/api/v1/videos/${videoId[1]}`;
+        const resp = await fetch(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (resp.ok) {
+          const data = await resp.json();
+          const streams = data?.formatStreams || [];
+          const adaptive = data?.adaptiveFormats || [];
+          // Find best 720p stream
+          const best = [...streams, ...adaptive]
+            .filter(s => s.type?.startsWith('video/mp4'))
+            .sort((a, b) => (b.height || 0) - (a.height || 0))
+            .find(s => s.height <= 720) || streams[0];
+          
+          if (best?.url) {
+            logger.info(`Downloading from invidious...`);
+            const vResp = await fetch(best.url, { redirect: 'follow' });
+            const buffer = Buffer.from(await vResp.arrayBuffer());
+            fs.writeFileSync(outputFile, buffer);
+            const sizeMB = buffer.length / 1024 / 1024;
+            if (sizeMB > 0.5) {
+              logger.success(`Invidious: ${outputFile} (${sizeMB.toFixed(1)}MB)`);
+              return { path: outputFile, title, platform, sourceUrl: url };
+            }
+            try { fs.unlinkSync(outputFile); } catch {}
           }
         }
       }
     } catch (e) {
-      const msg = e.message.substring(0, 150);
-      logger.warn(`Try ${s+1} failed: ${msg}`);
-      // Check if it actually succeeded despite error (some yt-dlp errors still download)
-      const files = fs.readdirSync(outputDir)
-        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
-        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-      if (files.length > 0) {
-        const fp = path.join(outputDir, files[0]);
-        const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-        if (sizeMB > 0.1) {
-          logger.success(`Actually downloaded despite error: ${files[0]} (${sizeMB.toFixed(1)}MB)`);
-          try { fs.unlinkSync(cookieFile); } catch {}
-          return { path: fp, title, platform, sourceUrl: url };
-        }
-      }
+      logger.warn(`Invidious failed: ${e.message.substring(0,100)}`);
     }
   }
 
-  try { fs.unlinkSync(cookieFile); } catch {}
-  logger.warn(`All failed: ${url.substring(0,60)}`);
+  // Method 4: yt-dlp with plain request (last resort for YouTube/Bilibili)
+  try {
+    logger.info('Method 4: yt-dlp default...');
+    const cmd = `yt-dlp -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M 2>&1`;
+    execSync(cmd, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+    if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 100000) {
+      const sizeMB = fs.statSync(outputFile).size / 1024 / 1024;
+      logger.success(`yt-dlp default: ${outputFile} (${sizeMB.toFixed(1)}MB)`);
+      return { path: outputFile, title, platform, sourceUrl: url };
+    }
+  } catch (e) {
+    logger.warn(`yt-dlp default failed: ${e.message.substring(0,100)}`);
+  }
+
+  logger.warn(`All methods failed: ${url.substring(0,60)}`);
   return null;
 }
 
