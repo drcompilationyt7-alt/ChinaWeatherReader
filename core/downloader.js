@@ -1,6 +1,6 @@
 /**
  * Downloader module
- * Uses yt-dlp with Node.js as JS runtime + correct flags to bypass bot detection.
+ * Uses python3 yt-dlp (newer version) with Node.js as JS runtime.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -16,73 +16,64 @@ async function downloadVideo(entry, outputDir) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
+  const outputFinal = path.join(outputDir, `vid_final_${Date.now()}.mp4`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Build yt-dlp base command with Node.js as JS runtime
-  // --js-runtimes node tells yt-dlp to use Node.js for JS extraction
-  const ytBase = 'yt-dlp --js-runtimes node';
-
-  // List of strategies to try
-  const strategies = [];
+  // Use python3 yt-dlp (v2026.3.17, has --js-runtimes support)
+  const PY = 'python3 -m yt_dlp';
+  
+  const attempts = [];
 
   if (platform === 'youtube') {
-    strategies.push(
-      // Best strategy: Android client + Node.js runtime
-      `${ytBase} --extractor-args "youtube:player_client=android" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
-      // TV client (less restricted)
-      `${ytBase} --extractor-args "youtube:player_client=tv" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
-      // Web client with skip
-      `${ytBase} --extractor-args "youtube:skip=webpage,js" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
-      // Just get the best format with js runtime
-      `${ytBase} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+    attempts.push(
+      // Android client with Node.js runtime (latest yt-dlp)
+      `${PY} --js-runtimes node --extractor-args "youtube:player_client=android" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+      `${PY} --js-runtimes node --extractor-args "youtube:player_client=tv" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+      `${PY} --js-runtimes node -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+      `${PY} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
     );
   } else if (platform === 'bilibili') {
-    strategies.push(
-      `${ytBase} --add-header "Referer:https://www.bilibili.com/" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
-      `${ytBase} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+    attempts.push(
+      `${PY} --add-header "Referer:https://www.bilibili.com/" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+      `${PY} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
     );
   } else {
-    strategies.push(
-      `${ytBase} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
+    attempts.push(
+      `${PY} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M`,
     );
   }
 
-  for (let s = 0; s < strategies.length; s++) {
+  // Try each
+  for (let a = 0; a < attempts.length; a++) {
     try {
-      logger.info(`Strategy ${s+1}...`);
-      const out = execSync(strategies[s], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
-      
+      logger.info(`Attempt ${a+1}...`);
+      const stdout = execSync(attempts[a], { 
+        timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8',
+        env: { ...process.env, PATH: process.env.PATH || '' }
+      });
+
       const files = fs.readdirSync(outputDir)
-        .filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'))
+        .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(outputDir, f)).size > 500000)
         .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-      
+
       if (files.length > 0) {
         const fp = path.join(outputDir, files[0]);
-        const size = fs.statSync(fp).size;
-        if (size > 500000) {
-          logger.success(`Downloaded: ${files[0]} (${(size/1024/1024).toFixed(1)}MB)`);
-          return { path: fp, title, platform, sourceUrl: url };
-        }
-        logger.warn(`Too small (${(size/1024).toFixed(0)}KB)`);
-        try { fs.unlinkSync(fp); } catch {}
-      } else if (out.includes('[download]') && out.includes('100%')) {
-        // File may have been downloaded but with different extension check
-        setTimeout(() => {}, 500); // give filesystem time
-        const files2 = fs.readdirSync(outputDir).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-        for (const f of files2.slice(0, 3)) {
-          const fp = path.join(outputDir, f);
-          try {
-            const size = fs.statSync(fp).size;
-            if (size > 500000 && (f.endsWith('.mp4') || f.endsWith('.webm'))) {
-              logger.success(`Found: ${f} (${(size/1024/1024).toFixed(1)}MB)`);
-              return { path: fp, title, platform, sourceUrl: url };
-            }
-          } catch {}
+        logger.success(`OK: ${files[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
+        return { path: fp, title, platform, sourceUrl: url };
+      }
+      
+      // Check stdout for filename
+      if (stdout.includes('[download]') && stdout.includes('100%')) {
+        // Wait a moment and check again
+        const files2 = fs.readdirSync(outputDir).filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 100000).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+        if (files2.length > 0) {
+          logger.success(`Found: ${files2[0]} (${(fs.statSync(path.join(outputDir, files2[0])).size/1024/1024).toFixed(1)}MB)`);
+          return { path: path.join(outputDir, files2[0]), title, platform, sourceUrl: url };
         }
       }
     } catch (e) {
-      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
-      logger.warn(`S${s+1}: ${err}`);
+      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 120);
+      logger.warn(`A${a+1}: ${err}`);
     }
   }
 
