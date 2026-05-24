@@ -7,6 +7,7 @@ on:
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -14,7 +15,6 @@ env:
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   GH_PAT: ${{ secrets.GH_PAT }}
-  CHANNEL_NAME: "Mr. WorldWideWebster"
 
 jobs:
   create-shorts:
@@ -41,18 +41,12 @@ jobs:
           npm ci || npm install
           npm install axios
 
-          # Install deno runtime (required by yt-dlp for YouTube JS player extraction)
-          curl -fsSL https://deno.land/install.sh | sh
-          export DENO_INSTALL="$HOME/.deno"
-          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
-          echo "DENO_INSTALL=$HOME/.deno" >> $GITHUB_ENV
-
       - name: Environment diagnostics
         run: |
           echo "Node: $(node --version)"
           echo "yt-dlp: $(yt-dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
-          echo "deno: $(deno --version 2>&1 | head -1)"
+          echo "Cookies set: $([ -n "$YOUTUBE_COOKIES" ] && echo 'YES' || echo 'NO')"
 
       - name: Restore memory
         run: |
@@ -60,9 +54,7 @@ jobs:
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
 
       - name: Run content pipeline
-        run: |
-          export PATH="$HOME/.deno/bin:$PATH"
-          node core/github-action-runner.js --mode daily
+        run: node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
