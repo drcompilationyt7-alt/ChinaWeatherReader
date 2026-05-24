@@ -1,7 +1,6 @@
 /**
  * Downloader module
- * Uses PO Token plugins + Shadowsocks + proper clients for YouTube downloads.
- * No cookies needed - fully autonomous via bgutil + wpc plugins.
+ * Uses python3 yt-dlp v2026.3.17 with PO Token plugins.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -23,36 +22,42 @@ async function downloadVideo(entry, outputDir) {
 
   const proxy = process.env.YT_PROXY ? `--proxy "${process.env.YT_PROXY}"` : '';
   
-  // Build env with Node.js PATH
+  // Build env with Node.js in PATH
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Multiple strategies with PO Token plugins + different clients
-  const cmds = [];
+  // Find bgutil plugin location
+  let pluginDir = '';
+  try {
+    const bgPath = execSync('python3 -c "import bgutil_ytdlp_pot_provider; print(bgutil_ytdlp_pot_provider.__path__[0])"', { timeout: 5000, encoding: 'utf8' }).trim();
+    if (bgPath) pluginDir = `--plugin-dirs "${path.dirname(bgPath)}"`;
+  } catch {}
+
+  // Strategies: try multiple clients with PO Token
+  const PY = 'python3 -m yt_dlp';
   const fmt = '-f "best[height<=720]"';
-  const opts = `--download-sections "*0-${MAX_DURATION}" --force-keyframes-at-cuts -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --no-part --user-agent "${UA}" --geo-bypass`;
-  const yt = 'yt-dlp'; // Use direct yt-dlp command (not python3 -m)
+  const opts = `--download-sections "*0-${MAX_DURATION}" --force-keyframes-at-cuts -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 20 --retries 2 --user-agent "${UA}" --geo-bypass`;
   
-  // PO Token plugins auto-load when installed via pip
-  // Plugin: bgutil-ytdlp-pot-provider (po_token=web.gvs+XXX)
-  // Plugin: yt-dlp-getpot-wpc (fallback)
+  const cmds = [];
   
-  cmds.push(`${yt} ${proxy} --js-runtimes node --extractor-args "youtube:po_token=web.gvs+;player_client=web" ${fmt} ${opts}`);
-  cmds.push(`${yt} ${proxy} --js-runtimes node --extractor-args "youtube:po_token=mweb.gvs+;player_client=mweb" ${fmt} ${opts}`);
-  cmds.push(`${yt} ${proxy} --js-runtimes node --extractor-args "youtube:player_client=web_safari" ${fmt} ${opts}`);
-  cmds.push(`${yt} ${proxy} --js-runtimes node --extractor-args "youtube:player_client=tv" ${fmt} ${opts}`);
-  cmds.push(`${yt} ${proxy} --js-runtimes node ${fmt} ${opts}`);
-  cmds.push(`python3 -m yt_dlp ${proxy} --js-runtimes node --extractor-args "youtube:po_token=web.gvs+;player_client=web" ${fmt} ${opts}`);
-  cmds.push(`python3 -m yt_dlp ${proxy} --js-runtimes node ${fmt} ${opts}`);
+  // With bgutil PO Token plugin (autonomous token generation)
+  const plug = pluginDir || '';
+  
+  // Try each client with PO Token support
+  for (const client of ['web', 'mweb', 'web_safari', 'tv', 'android']) {
+    cmds.push(`${PY} ${proxy} ${plug} --js-runtimes node --extractor-args "youtube:po_token=${client}.gvs+;player_client=${client}" ${fmt} ${opts}`);
+  }
+  // Without PO Token (fallback)
+  cmds.push(`${PY} ${proxy} ${plug} --js-runtimes node --extractor-args "youtube:skip=webpage" ${fmt} ${opts}`);
+  cmds.push(`${PY} ${proxy} ${plug} --js-runtimes node ${fmt} ${opts}`);
   
   for (let i = 0; i < cmds.length; i++) {
     try {
-      const hasProxy = cmds[i].includes('--proxy');
+      const client = cmds[i].match(/player_client=(\w+)/)?.[1] || 'none';
       const hasPOToken = cmds[i].includes('po_token');
-      const using = cmds[i].startsWith('yt-dlp') ? 'binary' : 'pip';
-      logger.info(`Cmd ${i+1}: ${using}${hasPOToken?' (PO)':''}${hasProxy?' (p)':' (d)'}`);
+      logger.info(`Cmd ${i+1}: ${client}${hasPOToken ? ' (PO)' : ''}`);
       
-      execSync(cmds[i], { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+      execSync(cmds[i], { timeout: 120000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
       
       const files = fs.readdirSync(outputDir)
         .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
@@ -64,10 +69,7 @@ async function downloadVideo(entry, outputDir) {
         return { path: fp, title, platform, sourceUrl: url };
       }
     } catch (e) {
-      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
-      if (!err.includes('Sign in') && !err.includes('HTTP Error 403')) {
-        logger.warn(`Cmd ${i+1}: ${err}`);
-      }
+      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 80);
     }
   }
 
