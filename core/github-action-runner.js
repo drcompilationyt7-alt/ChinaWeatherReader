@@ -2,11 +2,11 @@
 
 const path = require('path');
 const fs = require('fs');
-const { spawnSync, execSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
 const { findUrlsForQueries } = require('../sourcing/finder-controller');
+const { downloadVideos } = require('./downloader');
 
 class GitHubActionsRunner {
   constructor() {
@@ -99,64 +99,11 @@ class GitHubActionsRunner {
     return await findUrlsForQueries(queries, 5);
   }
 
-  // Step 3: Download with yt-dlp (platform-specific workarounds)
   async _downloadVideos(urls) {
     this.logger.info('Step 3: Downloading...');
-    const dir = config.paths.clips;
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const downloaded = [];
-
-    for (let i = 0; i < Math.min(urls.length, 5); i++) {
-      const entry = urls[i];
-      const url = entry.url;
-      const title = entry.title || `Video ${i+1}`;
-      this.logger.info(`Download [${i+1}/${Math.min(urls.length,5)}] ${entry.platform}: ${url.substring(0,80)}`);
-
-      const outputTemplate = path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`);
-
-      // Build command based on platform
-      let cmd = '';
-      if (entry.platform === 'youtube') {
-        // YouTube: use --extractor-args properly with specific player client
-        cmd = `yt-dlp --extractor-args "youtube:include_dash_manifest=False;player_client=android" --user-agent "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
-      } else if (entry.platform === 'bilibili') {
-        // Bilibili: use --add-header with proper referer
-        cmd = `yt-dlp --add-header "Referer:https://www.bilibili.com/" --add-header "Origin:https://www.bilibili.com" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
-      } else {
-        // Generic
-        cmd = `yt-dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
-      }
-
-      try {
-        const r = execSync(cmd, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
-        
-        // Find the downloaded file
-        const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'));
-        const sorted = files.sort((a,b) => fs.statSync(path.join(dir,b)).mtimeMs - fs.statSync(path.join(dir,a)).mtimeMs);
-        
-        if (sorted.length > 0) {
-          const fp = path.join(dir, sorted[0]);
-          const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-          if (sizeMB > 0.5) {
-            downloaded.push({ path: fp, title, sourceUrl: url, platform: entry.platform });
-            this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB)`);
-          } else {
-            this.logger.warn(`File too small (${sizeMB}MB), removing`);
-            try { fs.unlinkSync(fp); } catch {}
-          }
-        } else {
-          this.logger.warn(`Download produced no output file`);
-        }
-      } catch (e) {
-        this.logger.warn(`Download failed: ${e.message.substring(0, 200)}`);
-      }
-    }
-    
-    this.logger.success(`Downloaded ${downloaded.length} videos`);
-    return downloaded;
+    return await downloadVideos(urls, config.paths.clips);
   }
 
-  // Step 4: Nemotron video analysis
   async _analyzeAndRankVideos(videos) {
     this.logger.info('Step 4: Analyzing with Nemotron...');
     if (videos.length === 0) return { ranked: [], explainer: null, clips: [] };
@@ -165,51 +112,36 @@ class GitHubActionsRunner {
       const v = videos[i];
       this.logger.info(`Analyzing ${i+1}/${videos.length}: ${v.title.substring(0,50)}`);
       try {
-        const analysis = await this.ai.chatWithVideo(
-          `Analyze this video. Return JSON with: type: "meme"|"streamer"|"explainer"|"other", rank: 1-10 (viral potential), category: music|dance|food|comedy|reaction|trend|culture|other, title_en: brief English title, description: 1 sentence, has_text_needed: bool, explainer_text: if explainer short text, best_start_time: seconds (0-10), duration_needed: seconds (15-30)`,
-          v.path, 'Rate viral potential', { useVideo: true, temperature: 0.3 }
-        );
+        const analysis = await this.ai.chatWithVideo(`Analyze this video. Return JSON: type:"meme"|"streamer"|"explainer"|"other", rank:1-10, category:music|dance|food|comedy|reaction|trend|culture|other, title_en, description, has_text_needed:bool, explainer_text, best_start_time:0-10, duration_needed:15-30`,
+          v.path, 'Rate viral potential', { useVideo: true, temperature: 0.3 });
         let p;
-        try { p = JSON.parse(analysis.replace(/```json?/gi,'').replace(/```/g,'').trim()); } catch { const m = analysis.match(/\{[\s\S]*\}/); p = m ? JSON.parse(m[0]) : { type: 'other', rank:5 }; }
-        analyses.push({ ...v, analysis: p, index: i });
+        try { p = JSON.parse(analysis.replace(/```json?/gi,'').replace(/```/g,'').trim()); } catch { const m = analysis.match(/\{[\s\S]*\}/); p = m ? JSON.parse(m[0]) : { type:'other', rank:5 }; }
+        analyses.push({ ...v, analysis:p, index:i });
         this.logger.info(`Rank ${p.rank||'?'}/10 | ${p.type||'?'} | ${p.title_en||''}`);
-      } catch (e) {
-        this.logger.warn(`Analysis failed: ${e.message.substring(0,80)}`);
-        analyses.push({ ...v, analysis: { type: 'other', rank:5 }, index: i });
-      }
+      } catch (e) { this.logger.warn(`Analysis: ${e.message.substring(0,80)}`); analyses.push({ ...v, analysis:{type:'other',rank:5}, index:i }); }
     }
-    analyses.sort((a,b) => (b.analysis?.rank||0) - (a.analysis?.rank||0));
+    analyses.sort((a,b) => (b.analysis?.rank||0)-(a.analysis?.rank||0));
     const top3 = analyses.slice(0,3);
-    const explainer = top3.find(v => v.analysis?.type === 'explainer') || top3.find(v => v.analysis?.type === 'other' && (v.analysis?.rank||0) >= 6) || top3[0];
-    return { ranked: top3, explainer, clips: top3.filter(v => v !== explainer) };
+    const explainer = top3.find(v=>v.analysis?.type==='explainer') || top3.find(v=>v.analysis?.type==='other'&&(v.analysis?.rank||0)>=6) || top3[0];
+    return { ranked:top3, explainer, clips:top3.filter(v=>v!==explainer) };
   }
 
-  // Step 5: Edit videos
   async _editVideos(_, explainer, clips) {
     this.logger.info('Step 5: Editing...');
     const dir = config.paths.clips;
     const edited = [];
     for (const c of clips) {
-      const r = await this.clipEditor.editVideo(c.path, {
-        type: c.analysis?.type === 'streamer' ? 'streamer' : 'clip',
-        startTime: c.analysis?.best_start_time || 5, duration: c.analysis?.duration_needed || 20,
-        textOverlay: (c.analysis?.has_text_needed && c.analysis?.description) ? c.analysis.description : '',
-        outputPath: path.join(dir, `clip_${Date.now()}.mp4`),
-      });
-      if (r) edited.push({ path: r, title: c.analysis?.title_en || c.title, type: 'clip', platform: c.platform });
+      const r = await this.clipEditor.editVideo(c.path, { type: c.analysis?.type==='streamer'?'streamer':'clip', startTime: c.analysis?.best_start_time||5, duration: c.analysis?.duration_needed||20, textOverlay: (c.analysis?.has_text_needed&&c.analysis?.description)?c.analysis.description:'', outputPath: path.join(dir, `clip_${Date.now()}.mp4`) });
+      if (r) edited.push({ path:r, title:c.analysis?.title_en||c.title, type:'clip', platform:c.platform });
     }
     if (explainer) {
-      const expText = explainer.analysis?.explainer_text || `What is this? ${explainer.analysis?.title_en || 'global content'}`;
+      const expText = explainer.analysis?.explainer_text || `What is this? ${explainer.analysis?.title_en||'global content'}`;
       const vDir = path.join(config.paths.assets, 'voiceovers');
       if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
       let vPath = null;
       try { vPath = await this.clipEditor.generateVoiceover(expText, path.join(vDir, `exp_${Date.now()}.mp3`)); } catch {}
-      const r = await this.clipEditor.editVideo(explainer.path, {
-        type: 'explainer', startTime: explainer.analysis?.best_start_time || 3, duration: explainer.analysis?.duration_needed || 25,
-        voiceoverPath: vPath, voiceoverDuration: 5, textOverlay: expText,
-        outputPath: path.join(dir, `explain_${Date.now()}.mp4`),
-      });
-      if (r) edited.push({ path: r, title: explainer.analysis?.title_en || explainer.title, type: 'explainer', platform: explainer.platform });
+      const r = await this.clipEditor.editVideo(explainer.path, { type:'explainer', startTime:explainer.analysis?.best_start_time||3, duration:explainer.analysis?.duration_needed||25, voiceoverPath:vPath, voiceoverDuration:5, textOverlay:expText, outputPath:path.join(dir, `explain_${Date.now()}.mp4`) });
+      if (r) edited.push({ path:r, title:explainer.analysis?.title_en||explainer.title, type:'explainer', platform:explainer.platform });
     }
     this.logger.success(`Edited ${edited.length} videos`);
     return edited;
