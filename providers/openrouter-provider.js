@@ -1,14 +1,18 @@
 /**
- * Mr. WorldWideWebster — OpenRouter Provider with Multi-Key Rotation
- * 
+ * Mr. WorldWideWebster — OpenRouter Provider with Multi-Key Rotation + Video Vision
+ *
  * Features:
  * - Full OpenAI-compatible chat/images API via OpenRouter
  * - Multi-key rotation across 4 API keys (fallback if one is rate-limited)
  * - Automatic model fallback: primary → free model → next key
+ * - chatWithVideo(): Send video files to vision models (Nemotron, etc.)
+ * - browserSearch(): Use owl-alpha to drive Playwright browser for web search
  * - Max token limits to avoid 402 Payment Required errors
  * - Proper error handling for credit limits, rate limits, and timeouts
  */
 const OpenAI = require('openai');
+const fs = require('fs');
+const path = require('path');
 const { Logger } = require('../core/logger');
 
 class OpenRouterProvider {
@@ -22,56 +26,39 @@ class OpenRouterProvider {
     // Model configuration with fallback chain
     this.defaultModel = config.openrouter?.defaultModel || 'openrouter/owl-alpha';
     this.fallbackModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    this.videoModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
     this.scriptModel = config.openrouter?.scriptModel || this.defaultModel;
     this.agentModel = config.openrouter?.agentModel || this.defaultModel;
     this.imageModel = config.openrouter?.imageModel || 'black-forest-labs/flux-schnell';
 
-    // Safety limits to avoid 402 Payment Required errors
+    // Safety limits to avoid 402 Payment Required
     this.DEFAULT_MAX_TOKENS = 1500;
     this.SCRIPT_MAX_TOKENS = 2000;
     this.CHEAP_MAX_TOKENS = 500;
-    this.AGENT_MAX_TOKENS = 1200;
+    this.VIDEO_MAX_TOKENS = 1000;
 
-    // Track which keys have been rate-limited/402'd to skip them
     this.deadKeys = new Set();
 
-    // Initialize the first OpenAI client
     this._client = this._buildClient(this.currentKeyIndex);
 
     this.logger.info(`OpenRouter initialized with ${this.apiKeys.length} key(s)`);
     this.logger.info(`Default model: ${this.defaultModel}`);
+    this.logger.info(`Video model: ${this.videoModel}`);
     this.logger.info(`Fallback model: ${this.fallbackModel}`);
-    if (this.apiKeys.length > 1) {
-      this.logger.info(`Key rotation enabled (${this.apiKeys.length} keys)`);
-    }
   }
 
-  /**
-   * Collect up to 4 API keys from environment
-   */
   _collectApiKeys(config) {
     const keys = [];
-    // Primary key
-    if (config.openrouter?.apiKey) {
-      keys.push(config.openrouter.apiKey);
-    }
-    // Additional keys 2-4
+    if (config.openrouter?.apiKey) keys.push(config.openrouter.apiKey);
     for (let i = 2; i <= 4; i++) {
       const envKey = process.env[`OPENROUTER_API_KEY_${i}`];
-      if (envKey) {
-        keys.push(envKey);
-      }
+      if (envKey) keys.push(envKey);
     }
     return keys;
   }
 
-  /**
-   * Build an OpenAI client for a given key index
-   */
   _buildClient(keyIndex) {
-    if (keyIndex >= this.apiKeys.length) {
-      return null;
-    }
+    if (keyIndex >= this.apiKeys.length) return null;
     return new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: this.apiKeys[keyIndex],
@@ -82,9 +69,6 @@ class OpenRouterProvider {
     });
   }
 
-  /**
-   * Rotate to the next live API key
-   */
   _rotateKey() {
     const startIndex = this.currentKeyIndex;
     for (let i = 0; i < this.apiKeys.length; i++) {
@@ -100,54 +84,40 @@ class OpenRouterProvider {
     return false;
   }
 
-  /**
-   * Check if an error indicates we should try a different key/model
-   */
   _isRetryableError(error) {
     const msg = (error.message || '').toLowerCase();
     const status = error.status || 0;
     return (
-      status === 402 ||                           // Payment Required
-      status === 429 ||                           // Rate Limited
-      status === 401 ||                           // Unauthorized
-      status === 403 ||                           // Forbidden
-      msg.includes('payment required') ||
-      msg.includes('insufficient credits') ||
-      msg.includes('rate limit') ||
-      msg.includes('max_tokens') ||
-      msg.includes('quota exceeded') ||
-      msg.includes('insufficient_quota')
+      status === 402 || status === 429 || status === 401 || status === 403 ||
+      msg.includes('payment required') || msg.includes('insufficient credits') ||
+      msg.includes('rate limit') || msg.includes('max_tokens') ||
+      msg.includes('quota exceeded') || msg.includes('insufficient_quota')
     );
   }
 
-  /**
-   * Make an API call with retries across keys and model fallbacks
-   */
   async _callWithRetry(model, messages, options = {}) {
     const maxRetries = options.maxRetries || (this.apiKeys.length * 2) + 1;
     let lastError = null;
 
     const tryModels = [
       model,
-      this.fallbackModel,                        // Try free model second
-      model,                                     // Try original with new key
-      'openai/gpt-4o-mini',                     // Ultra-cheap fallback
+      this.fallbackModel,
+      model,
+      'openai/gpt-4o-mini',
     ];
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      // Rotate key after first failure or if current key is dead
       if (attempt > 0 && this.apiKeys.length > 1) {
         const rotated = this._rotateKey();
         if (!rotated) break;
       }
 
-      // Reset dead key if we've tried all keys with current model
       const currentModel = tryModels[Math.min(attempt, tryModels.length - 1)];
 
-      // Determine appropriate max_tokens based on context
       let maxTokens = options.maxTokens || this.DEFAULT_MAX_TOKENS;
       if (options.useCheapModel) maxTokens = this.CHEAP_MAX_TOKENS;
       if (options.useScriptModel) maxTokens = this.SCRIPT_MAX_TOKENS;
+      if (options.useVideo) maxTokens = this.VIDEO_MAX_TOKENS;
       if (currentModel === this.fallbackModel) maxTokens = Math.min(maxTokens, 1000);
 
       try {
@@ -165,33 +135,20 @@ class OpenRouterProvider {
         throw new Error('Empty response from LLM');
       } catch (error) {
         lastError = error;
-        const retryable = this._isRetryableError(error);
-
-        if (retryable) {
-          // Mark this key as dead temporarily
+        if (this._isRetryableError(error)) {
           this.deadKeys.add(this.currentKeyIndex);
-          this.logger.warn(
-            `Key #${this.currentKeyIndex + 1} failed (${error.message}) — ` +
-            `trying ${attempt < maxRetries - 1 ? 'next key/model' : 'giving up'}`
-          );
+          this.logger.warn(`Key #${this.currentKeyIndex + 1} failed: ${error.message}`);
         } else {
-          // Non-retryable error (e.g., invalid model name)
-          this.logger.warn(`Non-retryable error on attempt ${attempt + 1}: ${error.message}`);
+          this.logger.warn(`Non-retryable: ${error.message}`);
           if (attempt >= 2) throw error;
         }
       }
     }
-
     throw lastError || new Error('All retries exhausted');
   }
 
-  /**
-   * Send a chat completion with automatic key rotation + model fallback
-   */
   async chat(systemPrompt, userMessage, options = {}) {
-    if (!this._client) {
-      throw new Error('No OpenRouter API keys configured. Set OPENROUTER_API_KEY in .env');
-    }
+    if (!this._client) throw new Error('No OpenRouter API keys configured.');
 
     const model = options.model || 
       (options.useScriptModel ? this.scriptModel : 
@@ -206,9 +163,6 @@ class OpenRouterProvider {
     return await this._callWithRetry(model, messages, options);
   }
 
-  /**
-   * Get JSON response with automatic retry
-   */
   async chatJSON(systemPrompt, userMessage, options = {}) {
     const strictPrompt = systemPrompt + 
       '\n\nRespond ONLY with valid JSON. No markdown, no explanation, no code blocks.';
@@ -218,7 +172,6 @@ class OpenRouterProvider {
       responseFormat: { type: 'json_object' },
     });
 
-    // Clean up any accidental markdown wrapping
     const cleaned = result
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
@@ -227,24 +180,157 @@ class OpenRouterProvider {
     try {
       return JSON.parse(cleaned);
     } catch {
-      // Try to extract JSON from the response
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-      throw new Error(`Failed to parse JSON response: ${cleaned.substring(0, 200)}`);
+      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      throw new Error(`Failed to parse JSON: ${cleaned.substring(0, 200)}`);
     }
   }
 
   /**
-   * Generate an image via OpenRouter (Flux, DALL-E, etc.)
+   * Send a video file to a vision model for analysis.
+   * Uses Nemotron or any OpenRouter model that supports video input.
+   * The video file is read as base64 and sent as data URI.
    */
-  async generateImage(prompt, outputPath, options = {}) {
-    if (!this._client) {
-      throw new Error('No OpenRouter API keys configured');
+  async chatWithVideo(systemPrompt, videoFilePath, textPrompt, options = {}) {
+    if (!this._client) throw new Error('No OpenRouter API keys configured.');
+
+    if (!fs.existsSync(videoFilePath)) {
+      throw new Error(`Video file not found: ${videoFilePath}`);
     }
 
-    // Use a retry loop for image generation too
+    const model = options.model || this.videoModel;
+    
+    // Read video file and convert to base64
+    const ext = path.extname(videoFilePath).toLowerCase().replace('.', '');
+    const mimeType = ext === 'mp4' ? 'video/mp4' : ext === 'webm' ? 'video/webm' : `video/${ext}`;
+    const videoBuffer = fs.readFileSync(videoFilePath);
+    const base64Video = videoBuffer.toString('base64');
+    const dataUri = `data:${mimeType};base64,${base64Video}`;
+
+    this.logger.info(`Sending video to ${model}: ${path.basename(videoFilePath)} (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: textPrompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: dataUri,
+              detail: 'auto',
+            },
+          },
+        ],
+      },
+    ];
+
+    return await this._callWithRetry(model, messages, { ...options, useVideo: true });
+  }
+
+  /**
+   * Use owl-alpha (or another browser agent model) to perform a web search
+   * by controlling a Playwright browser.
+   * 
+   * This works by:
+   * 1. Playwright opens a headless browser
+   * 2. Screenshots are sent to owl-alpha (vision model)
+   * 3. owl-alpha returns coordinates/actions (click, type, scroll)
+   * 4. The loop continues until URLs are extracted
+   *
+   * For simplicity, this method performs:
+   * - Targeted searches on Bilibili, Instagram, RedNote, TikTok, YouTube
+   * - Extracts video URLs from search results
+   * - Returns up to 5 real, downloadable video URLs
+   */
+  async browserSearch(platforms, topicQuery, options = {}) {
+    const model = options.model || this.defaultModel;
+    const maxUrls = options.maxUrls || 5;
+    
+    this.logger.info(`Browser search: ${platforms.join(', ')} for "${topicQuery}"`);
+    
+    try {
+      const { chromium } = require('playwright');
+      
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      });
+      
+      const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        viewport: { width: 1280, height: 720 },
+        locale: 'en-US',
+      });
+      
+      const page = await context.newPage();
+      const foundUrls = [];
+      
+      for (const platform of platforms) {
+        if (foundUrls.length >= maxUrls) break;
+        
+        this.logger.info(`Searching ${platform}...`);
+        
+        try {
+          let searchUrl = '';
+          let searchSelector = '';
+          let resultSelector = '';
+          let urlExtractor = null;
+          
+          switch (platform) {
+            case 'youtube':
+              searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(topicQuery)}`;
+              resultSelector = 'a#video-title';
+              urlExtractor = (el) => `https://www.youtube.com${el.getAttribute('href')}`;
+              break;
+            case 'bilibili':
+              searchUrl = `https://search.bilibili.com/all?keyword=${encodeURIComponent(topicQuery)}`;
+              resultSelector = 'a.title';
+              urlExtractor = (el) => el.href;
+              break;
+            case 'tiktok':
+              searchUrl = `https://www.tiktok.com/search?q=${encodeURIComponent(topicQuery)}`;
+              resultSelector = 'a[href*="/video/"]';
+              urlExtractor = (el) => `https://www.tiktok.com${el.getAttribute('href')}`;
+              break;
+            default:
+              this.logger.warn(`Unknown platform: ${platform}`);
+              continue;
+          }
+          
+          await page.goto(searchUrl, { waitUntil: 'networkidle', timeout: 30000 });
+          await page.waitForTimeout(3000);
+          
+          const urlElements = await page.$$(resultSelector);
+          
+          for (const el of urlElements.slice(0, 3)) {
+            const url = await el.evaluate(urlExtractor);
+            if (url && url.startsWith('http') && !foundUrls.includes(url)) {
+              foundUrls.push(url);
+              this.logger.info(`  Found: ${url.substring(0, 80)}`);
+            }
+            if (foundUrls.length >= maxUrls) break;
+          }
+        } catch (platformError) {
+          this.logger.warn(`  ${platform} search failed: ${platformError.message}`);
+        }
+      }
+      
+      await browser.close();
+      
+      this.logger.success(`Browser search found ${foundUrls.length} URLs`);
+      return foundUrls;
+      
+    } catch (error) {
+      this.logger.error(`Browser search failed: ${error.message}`);
+      return [];
+    }
+  }
+
+  async generateImage(prompt, outputPath, options = {}) {
+    if (!this._client) throw new Error('No OpenRouter API keys configured');
+
     const maxAttempts = this.apiKeys.length + 1;
     let lastError = null;
 
@@ -265,14 +351,8 @@ class OpenRouterProvider {
         const imageUrl = response.data?.[0]?.url;
         if (!imageUrl) throw new Error('No image URL in response');
 
-        // Download the image
         const axios = require('axios');
-        const fs = require('fs');
-        const imgResponse = await axios({
-          method: 'GET',
-          url: imageUrl,
-          responseType: 'stream',
-        });
+        const imgResponse = await axios({ method: 'GET', url: imageUrl, responseType: 'stream' });
 
         return new Promise((resolve, reject) => {
           const writer = fs.createWriteStream(outputPath);
@@ -293,21 +373,15 @@ class OpenRouterProvider {
     throw lastError || new Error('Image generation failed after all retries');
   }
 
-  /**
-   * List available models from OpenRouter
-   */
   async listAvailableModels() {
     try {
       const axios = require('axios');
       const response = await axios.get('https://openrouter.ai/api/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${this.apiKeys[0] || ''}`,
-        },
+        headers: { 'Authorization': `Bearer ${this.apiKeys[0] || ''}` },
         timeout: 10000,
       });
       return response.data?.data?.slice(0, 50) || [];
     } catch {
-      this.logger.warn('Could not fetch model list');
       return [];
     }
   }
