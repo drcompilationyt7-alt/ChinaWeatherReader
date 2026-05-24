@@ -1,113 +1,75 @@
 /**
  * Free Proxy Scraper
- * Fetches working free proxies from public proxy lists.
- * Used to route yt-dlp downloads through to bypass CI IP blocks.
- * Sources: free-proxy-list.net, sslproxies.org, etc.
+ * Fetches free proxies from public proxy lists for yt-dlp download routing.
+ * Returns proxies immediately - yt-dlp handles testing internally.
  */
 const axios = require('axios');
 const { Logger } = require('./logger');
 
 const logger = new Logger('ProxyScraper');
 
-/**
- * Fetch free proxies from multiple public sources
- */
+// Cache for fetched proxies
+let proxyCache = [];
+let cacheTime = 0;
+const CACHE_TTL = 300000; // 5 min
+
 async function getFreeProxies() {
+  const now = Date.now();
+  if (proxyCache.length > 0 && now - cacheTime < CACHE_TTL) {
+    return proxyCache;
+  }
+
   const proxies = [];
 
-  // Source 1: free-proxy-list.net
+  // Source 1: proxyscrape.com free API (fastest, just raw list)
   try {
-    const resp = await axios.get('https://free-proxy-list.net/', {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 10000,
-    });
-    const html = resp.data;
-    // Parse the proxy table
-    const rows = [...html.matchAll(/<tr><td>([\d.]+)<\/td><td>(\d+)<\/td><td>[^<]*<\/td><td[^>]*>([^<]*)<\/td>/g)];
-    for (const row of rows.slice(0, 50)) {
-      const ip = row[1];
-      const port = row[2];
-      const type = row[3].toLowerCase().includes('https') ? 'https' : 'http';
-      proxies.push({ ip, port, type, source: 'free-proxy-list' });
+    const resp = await axios.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all&ssl=all&anonymity=all', { timeout: 5000 });
+    const lines = resp.data.split('\n').filter(Boolean);
+    for (const line of lines.slice(0, 100)) {
+      const [ip, port] = line.trim().split(':');
+      if (ip && port) proxies.push({ ip, port, type: 'http', source: 'scrape' });
     }
-    logger.info(`Found ${rows.length} proxies from free-proxy-list.net`);
-  } catch (e) {
-    logger.warn(`free-proxy-list: ${e.message.substring(0, 60)}`);
-  }
+    logger.info(`proxyscrape: ${lines.length}`);
+  } catch {}
 
-  // Source 2: sslproxies.org
+  // Source 2: github raw proxy list (fast)
   try {
-    const resp = await axios.get('https://www.sslproxies.org/', {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      timeout: 10000,
-    });
-    const html = resp.data;
-    const rows = [...html.matchAll(/<tr><td>([\d.]+)<\/td><td>(\d+)<\/td><td[^>]*>([^<]*)<\/td>/g)];
-    for (const row of rows.slice(0, 50)) {
-      const ip = row[1];
-      const port = row[2];
-      const type = 'https';
-      if (!proxies.find(p => p.ip === ip && p.port === port)) {
-        proxies.push({ ip, port, type, source: 'sslproxies' });
-      }
-    }
-    logger.info(`Found ${rows.length} proxies from sslproxies.org`);
-  } catch (e) {
-    logger.warn(`sslproxies: ${e.message.substring(0, 60)}`);
-  }
-
-  // Source 3: proxyscrape.com free API
-  try {
-    const resp = await axios.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all', {
-      timeout: 10000,
-    });
+    const resp = await axios.get('https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt', { timeout: 5000 });
     const lines = resp.data.split('\n').filter(Boolean);
     for (const line of lines.slice(0, 50)) {
       const [ip, port] = line.trim().split(':');
-      if (ip && port && !proxies.find(p => p.ip === ip && p.port === port)) {
-        proxies.push({ ip, port, type: 'http', source: 'proxyscrape' });
-      }
+      if (ip && port && !proxies.find(p => p.ip === ip)) proxies.push({ ip, port, type: 'http', source: 'github' });
     }
-    logger.info(`Found ${lines.length} proxies from proxyscrape.com`);
-  } catch (e) {
-    logger.warn(`proxyscrape: ${e.message.substring(0, 60)}`);
+    logger.info(`github: ${lines.length}`);
+  } catch {}
+
+  // Deduplicate by IP
+  const unique = proxies.filter((p, i) => proxies.findIndex(x => x.ip === p.ip) === i);
+  
+  // Shuffle to randomize which proxy gets used first
+  for (let i = unique.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [unique[i], unique[j]] = [unique[j], unique[i]];
   }
 
-  // Deduplicate
-  const unique = proxies.filter((p, i) => proxies.findIndex(x => x.ip === p.ip && x.port === p.port) === i);
-  logger.success(`Total unique proxies: ${unique.length}`);
+  proxyCache = unique;
+  cacheTime = now;
+  logger.success(`Cached ${unique.length} proxies`);
   return unique;
 }
 
 /**
- * Test a single proxy by connecting to a known URL
- */
-async function testProxy(proxy, testUrl = 'https://www.google.com', timeout = 5000) {
-  try {
-    const proxyUrl = `http://${proxy.ip}:${proxy.port}`;
-    await axios.get(testUrl, {
-      proxy: { host: proxy.ip, port: parseInt(proxy.port), protocol: 'http' },
-      timeout,
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Get a working proxy for yt-dlp
- * Returns proxy URL string like "http://ip:port" or null
+ * Get a proxy - returns one immediately without testing
+ * yt-dlp will test it internally (--proxy flag)
  */
 async function getWorkingProxy() {
-  // Check if there's a cached working proxy from the env
-  if (process.env.YT_PROXY) {
-    logger.info(`Using YT_PROXY from env: ${process.env.YT_PROXY.substring(0, 30)}...`);
-    return process.env.YT_PROXY;
+  // Check env var first (user prefers this)
+  if (process.env.YT_PROXY && process.env.YT_PROXY.trim()) {
+    logger.info('Using YT_PROXY from env');
+    return process.env.YT_PROXY.trim();
   }
 
-  logger.info('Scraping free proxies...');
+  // Get from cache or scrape
   const proxies = await getFreeProxies();
   
   if (proxies.length === 0) {
@@ -115,28 +77,11 @@ async function getWorkingProxy() {
     return null;
   }
 
-  // Test a few proxies (test first 15)
-  logger.info(`Testing ${Math.min(15, proxies.length)} proxies...`);
-  const testResults = await Promise.allSettled(
-    proxies.slice(0, 15).map(async (proxy) => {
-      const working = await testProxy(proxy);
-      return { proxy, working };
-    })
-  );
-
-  const working = testResults
-    .filter(r => r.status === 'fulfilled' && r.value.working)
-    .map(r => r.value.proxy);
-
-  if (working.length > 0) {
-    const proxy = working[Math.floor(Math.random() * working.length)];
-    const proxyStr = `http://${proxy.ip}:${proxy.port}`;
-    logger.success(`Using proxy: ${proxyStr} (from ${proxy.source})`);
-    return proxyStr;
-  }
-
-  logger.warn('No working proxies found among tested ones');
-  return null;
+  // Return one immediately (shuffled, random)
+  const proxy = proxies[Math.floor(Math.random() * proxies.length)];
+  const proxyStr = `http://${proxy.ip}:${proxy.port}`;
+  logger.info(`Trying proxy: ${proxyStr} (${proxy.source})`);
+  return proxyStr;
 }
 
-module.exports = { getFreeProxies, getWorkingProxy, testProxy };
+module.exports = { getFreeProxies, getWorkingProxy };
