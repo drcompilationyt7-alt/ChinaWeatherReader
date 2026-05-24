@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { spawnSync } = require('child_process');
+const { spawnSync, execSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
@@ -77,7 +77,6 @@ class GitHubActionsRunner {
     } catch {}
   }
 
-  // Step 1: AI generates targeted search queries
   async _generateQueries() {
     this.logger.info('Step 1: AI generating queries...');
     const ch = this.memory['channel-memory'] || {};
@@ -95,13 +94,12 @@ class GitHubActionsRunner {
     } catch { return { queries: [`${c1} viral`,`${c2} food`,`${c3} dance`,`funny moments`,`streamer best`], countries: [c1, c2, c3] }; }
   }
 
-  // Step 2: Search across Bilibili, TikTok, Douyin, YouTube
   async _searchVideos(queries) {
     this.logger.info('Step 2: Searching Bilibili, TikTok, Douyin, YouTube...');
     return await findUrlsForQueries(queries, 5);
   }
 
-  // Step 3: Download using platform-specific strategies to bypass bot detection
+  // Step 3: Download with yt-dlp (platform-specific workarounds)
   async _downloadVideos(urls) {
     this.logger.info('Step 3: Downloading...');
     const dir = config.paths.clips;
@@ -115,74 +113,45 @@ class GitHubActionsRunner {
       this.logger.info(`Download [${i+1}/${Math.min(urls.length,5)}] ${entry.platform}: ${url.substring(0,80)}`);
 
       const outputTemplate = path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`);
-      const baseArgs = ['-o', outputTemplate, url, '--no-playlist', '--max-filesize', '100M'];
 
-      // Try multiple download strategies
-      const strategies = [];
-
-      if (entry.platform === 'bilibili') {
-        // Bilibili needs proper Referer + User-Agent + Cookie
-        strategies.push([
-          '--add-header', 'Referer:https://www.bilibili.com/',
-          '--add-header', 'Origin:https://www.bilibili.com',
-          '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-          ...baseArgs
-        ]);
-        // Bilibili fallback: try different UA
-        strategies.push([
-          '--user-agent', 'BiliApp/1.0.0 (Android 14; SDK 34)',
-          ...baseArgs
-        ]);
-      } else if (entry.platform === 'youtube') {
-        // YouTube: use android client to bypass sign-in requirement
-        strategies.push([
-          '--extractor-args', 'youtube:player_client=android',
-          '--user-agent', 'com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip',
-          ...baseArgs
-        ]);
-        // YouTube fallback: use web client with mobile UA
-        strategies.push([
-          '--extractor-args', 'youtube:player_client=web',
-          '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36',
-          ...baseArgs
-        ]);
+      // Build command based on platform
+      let cmd = '';
+      if (entry.platform === 'youtube') {
+        // YouTube: use --extractor-args properly with specific player client
+        cmd = `yt-dlp --extractor-args "youtube:include_dash_manifest=False;player_client=android" --user-agent "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
+      } else if (entry.platform === 'bilibili') {
+        // Bilibili: use --add-header with proper referer
+        cmd = `yt-dlp --add-header "Referer:https://www.bilibili.com/" --add-header "Origin:https://www.bilibili.com" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
       } else {
-        // Default: just try
-        strategies.push(baseArgs);
+        // Generic
+        cmd = `yt-dlp -o "${outputTemplate}" "${url}" --no-playlist --max-filesize 100M`;
       }
 
-      let downloadedAny = false;
-      for (let s = 0; s < strategies.length; s++) {
-        if (downloadedAny) break;
-        try {
-          const r = spawnSync('yt-dlp', strategies[s], { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
-          const stderr = (r.stderr || '').trim();
-          const stdout = (r.stdout || '').trim();
-
-          if (r.status === 0) {
-            // Find the file
-            const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'));
-            const sorted = files.sort((a,b) => fs.statSync(path.join(dir,b)).mtimeMs - fs.statSync(path.join(dir,a)).mtimeMs);
-            if (sorted.length > 0) {
-              const fp = path.join(dir, sorted[0]);
-              const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-              downloaded.push({ path: fp, title, sourceUrl: url, platform: entry.platform });
-              this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB) via strategy ${s+1}`);
-              downloadedAny = true;
-            }
+      try {
+        const r = execSync(cmd, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+        
+        // Find the downloaded file
+        const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'));
+        const sorted = files.sort((a,b) => fs.statSync(path.join(dir,b)).mtimeMs - fs.statSync(path.join(dir,a)).mtimeMs);
+        
+        if (sorted.length > 0) {
+          const fp = path.join(dir, sorted[0]);
+          const sizeMB = fs.statSync(fp).size / 1024 / 1024;
+          if (sizeMB > 0.5) {
+            downloaded.push({ path: fp, title, sourceUrl: url, platform: entry.platform });
+            this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB)`);
           } else {
-            const errMsg = (stderr||stdout).substring(0, 200);
-            this.logger.warn(`Strategy ${s+1} failed: ${errMsg}`);
+            this.logger.warn(`File too small (${sizeMB}MB), removing`);
+            try { fs.unlinkSync(fp); } catch {}
           }
-        } catch (e) {
-          this.logger.warn(`Strategy ${s+1} error: ${e.message.substring(0,100)}`);
+        } else {
+          this.logger.warn(`Download produced no output file`);
         }
-      }
-
-      if (!downloadedAny) {
-        this.logger.warn(`Failed: ${entry.platform} ${url.substring(0,60)}`);
+      } catch (e) {
+        this.logger.warn(`Download failed: ${e.message.substring(0, 200)}`);
       }
     }
+    
     this.logger.success(`Downloaded ${downloaded.length} videos`);
     return downloaded;
   }
