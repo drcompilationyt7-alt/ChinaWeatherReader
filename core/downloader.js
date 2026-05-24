@@ -1,5 +1,7 @@
 /**
- * Downloader module - debug mode - shows all errors
+ * Downloader module
+ * Routes yt-dlp through Shadowsocks proxy via --proxy flag.
+ * YT_PROXY env var is set by Shadowsocks step in workflow.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -19,21 +21,26 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Build env with Node.js and deno in PATH
+  // Build env with Node.js in PATH
   const env = { ...process.env };
-  try {
-    const nodeDir = path.dirname(process.execPath);
-    env.PATH = `${nodeDir}:${env.PATH || ''}`;
-  } catch {}
-  // Also try to find deno
-  for (const d of ['/home/runner/.deno/bin', '/root/.deno/bin', '/usr/local/bin']) {
-    if (fs.existsSync(d)) env.PATH = `${d}:${env.PATH || ''}`;
+  try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
+
+  // Get proxy from env (set by Shadowsocks or YT_PROXY secret)
+  let proxy = process.env.YT_PROXY || '';
+  // Ensure socks5h:// prefix for DNS resolution through proxy
+  if (proxy && !proxy.startsWith('socks5') && !proxy.startsWith('http')) {
+    proxy = `socks5h://${proxy}`;
   }
+  const proxyArg = proxy ? `--proxy "${proxy}"` : '';
+  
+  if (proxy) logger.info(`Using proxy: ${proxy.substring(0, 30)}...`);
+  else logger.info('No proxy configured');
 
   const PY = 'python3 -m yt_dlp';
   const fmt = '-f "best[height<=720]"';
-  const base = `--download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 20 --retries 2 --user-agent "${UA}" --js-runtimes node`;
+  const base = `${proxyArg} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
 
+  // Strategies with proxy
   const strategies = [
     { name: 'web_embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
     { name: 'android_vr', args: '--extractor-args "youtube:player_client=android_vr"' },
@@ -43,25 +50,20 @@ async function downloadVideo(entry, outputDir) {
 
   for (const s of strategies) {
     try {
-      logger.info(`Try: ${s.name}`);
-      const stdout = execSync(`${PY} ${s.args} ${fmt} ${base}`, { timeout: 120000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+      logger.info(`Try: ${s.name}${proxy ? ' (via proxy)' : ' (direct)'}`);
+      execSync(`${PY} ${s.args} ${fmt} ${base}`, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
       
-      // Find any downloaded file
       const files = fs.readdirSync(outputDir)
         .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
         .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
       
       if (files.length > 0) {
         const fp = path.join(outputDir, files[0]);
-        const mb = (fs.statSync(fp).size/1024/1024).toFixed(1);
-        logger.success(`OK! ${files[0]} (${mb}MB)`);
+        logger.success(`OK! ${files[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
         return { path: fp, title, platform, sourceUrl: url };
       }
-      logger.warn(`No file. stdout: ${(stdout||'').substring(0,200)}`);
     } catch (e) {
-      // Show ALL errors for debugging
-      const err = (e.stderr || e.stdout || e.message || '').toString();
-      logger.warn(`${s.name} error: ${err.substring(0, 200)}`);
+      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
     }
   }
 
