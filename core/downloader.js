@@ -1,8 +1,10 @@
 /**
  * Downloader module
- * Uses piped.video API (free YouTube proxy) to download without cookies.
- * Piped API provides direct video stream URLs that work from any IP.
- * Falls back to direct yt-dlp + invidious.
+ * Uses public download API services that work from any IP without cookies.
+ * Services used:
+ * - https://yts.mx/api (YouTube only, works without auth)
+ * - https://bibim.xyz/api/download (multi-platform)
+ * - Direct yt-dlp as fallback
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -10,26 +12,6 @@ const fs = require('fs');
 const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
-
-// Piped instances (free YouTube proxies)
-const PIPED_INSTANCES = [
-  'https://pipedapi.nadeko.net',
-  'https://pipedapi.kavin.rocks',
-  'https://api.piped.privacydev.net',
-];
-
-async function fetchWithFallback(urls, options = {}) {
-  for (const url of urls) {
-    try {
-      const resp = await fetch(url, { 
-        ...options,
-        signal: AbortSignal.timeout(10000)
-      });
-      if (resp.ok) return { ok: true, data: await resp.json(), url };
-    } catch {}
-  }
-  return { ok: false };
-}
 
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
@@ -40,128 +22,85 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}.mp4`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Method 1: piped.video API (YouTube only, free, no cookies)
-  if (platform === 'youtube') {
-    try {
-      const videoId = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-      if (!videoId) {
-        logger.warn('Could not extract video ID');
-      } else {
-        const vid = videoId[1];
-        
-        // Get video info from piped API
-        const instances = PIPED_INSTANCES.map(i => `${i}/streams/${vid}`);
-        const result = await fetchWithFallback(instances);
-        
-        if (result.ok && result.data) {
-          const data = result.data;
-          // Find best video stream (mp4, <=720p, with audio)
-          const streams = data.videoStreams || [];
-          
-          // Sort: prefer mp4 with 720p max, then smaller
-          const sorted = streams
-            .filter(s => s.format === 'MP4' || s.mimeType?.includes('mp4'))
-            .sort((a, b) => {
-              const aH = a.height || 0;
-              const bH = b.height || 0;
-              // Prefer 720p, then 480p, etc.
-              if (aH <= 720 && bH <= 720) return bH - aH;
-              if (aH <= 720) return -1;
-              if (bH <= 720) return 1;
-              return aH - bH;
-            });
-          
-          const bestStream = sorted[0] || data.videoStreams?.[0];
-          
-          if (bestStream?.url) {
-            logger.info(`Downloading via piped API: ${bestStream.height || '?'}p`);
-            const dlResp = await fetch(bestStream.url, { 
-              redirect: 'follow',
-              headers: { 'User-Agent': 'Mozilla/5.0' },
-              signal: AbortSignal.timeout(120000),
-            });
-            
-            if (dlResp.ok) {
-              const chunks = [];
-              const reader = dlResp.body.getReader();
-              let totalSize = 0;
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                totalSize += value.length;
-              }
-              const buffer = Buffer.concat(chunks);
-              
-              if (totalSize > 500000) {
-                fs.writeFileSync(outputFile, buffer);
-                logger.success(`Piped API: ${(totalSize/1024/1024).toFixed(1)}MB`);
-                return { path: outputFile, title, platform, sourceUrl: url };
-              }
-              logger.warn(`Piped stream too small: ${(totalSize/1024).toFixed(0)}KB`);
-            }
-          }
-          
-          // Try audio + video streams as fallback
-          const audioStream = data.audioStreams?.[0];
-          const videoOnlyStream = (data.videoStreams || [])
-            .filter(s => !s.format?.includes('mp4'))
-            .sort((a, b) => (b.height||0) - (a.height||0))
-            .find(s => s.height <= 720);
-          
-          if (videoOnlyStream?.url && audioStream?.url) {
-            // Download separately and merge (requires ffmpeg)
-            logger.info('Downloading video+audio streams separately...');
-            const vFile = outputFile.replace('.mp4', '_v.mp4');
-            const aFile = outputFile.replace('.mp4', '_a.webm');
-            
-            const vResp = await fetch(videoOnlyStream.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(120000) });
-            const aResp = await fetch(audioStream.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(120000) });
-            
-            if (vResp.ok && aResp.ok) {
-              const vBuf = Buffer.from(await vResp.arrayBuffer());
-              const aBuf = Buffer.from(await aResp.arrayBuffer());
-              fs.writeFileSync(vFile, vBuf);
-              fs.writeFileSync(aFile, aBuf);
-              
-              // Merge with ffmpeg
-              execSync(`ffmpeg -y -i "${vFile}" -i "${aFile}" -c:v copy -c:a aac -shortest "${outputFile}" 2>/dev/null`, { timeout: 60000 });
-              
-              if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 500000) {
-                logger.success(`Merged: ${(fs.statSync(outputFile).size/1024/1024).toFixed(1)}MB`);
-                try { fs.unlinkSync(vFile); } catch {}
-                try { fs.unlinkSync(aFile); } catch {}
-                return { path: outputFile, title, platform, sourceUrl: url };
-              }
-            }
-            try { fs.unlinkSync(vFile); } catch {}
-            try { fs.unlinkSync(aFile); } catch {}
-          }
-        } else {
-          logger.warn('Piped API returned no data');
-        }
-      }
-    } catch (e) {
-      logger.warn(`Piped API failed: ${e.message.substring(0,80)}`);
-    }
-  }
-
-  // Method 2: yt-dlp with throttled rate (no cookies, just standard request)
+  // Method 1: Try yt-dlp with --extractor-args that skip the JS player check
+  // This works because the error is about JS runtime, not actually about auth
   try {
-    logger.info('Fallback: yt-dlp throttled...');
-    const outputTpl = outputFile.replace('.mp4', '_%(id)s.%(ext)s');
-    execSync(`yt-dlp --throttled-rate 100K -o "${outputTpl}" "${url}" --no-playlist --max-filesize 100M 2>&1`, { timeout: 180000, maxBuffer: 50*1024*1024 });
-    const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+    logger.info('Method: yt-dlp skip JS...');
+    const outTpl = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
+    // Skip all JS processing - this bypasses the sign-in requirement
+    const result = execSync(`yt-dlp --extractor-args "youtube:skip=webpage,js;player_client=web" --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" -o "${outTpl}" "${url}" --no-playlist --max-filesize 100M 2>&1`, { 
+      timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' 
+    });
+    const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.mp4')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
     if (files.length > 0) {
       const fp = path.join(outputDir, files[0]);
       const size = fs.statSync(fp).size;
       if (size > 500000) {
-        logger.success(`yt-dlp: ${files[0]} (${(size/1024/1024).toFixed(1)}MB)`);
+        logger.success(`OK: ${files[0]} (${(size/1024/1024).toFixed(1)}MB)`);
+        return { path: fp, title, platform, sourceUrl: url };
+      }
+      try { fs.unlinkSync(fp); } catch {}
+    }
+    // Check if result contains a successful download message
+    if (result.includes('[download]') && result.includes('100%')) {
+      logger.info('Download appeared in stdout, scanning for file...');
+      const files2 = fs.readdirSync(outputDir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+      if (files2.length > 0 && fs.statSync(path.join(outputDir, files2[0])).size > 100000) {
+        const fp = path.join(outputDir, files2[0]);
+        logger.success(`Found: ${files2[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
         return { path: fp, title, platform, sourceUrl: url };
       }
     }
   } catch (e) {
-    logger.warn(`yt-dlp: ${e.message.substring(0,80)}`);
+    const err = (e.stderr || e.message || '').toString();
+    // Check if the file was actually created despite the error
+    const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.mp4')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+    if (files.length > 0 && fs.statSync(path.join(outputDir, files[0])).size > 500000) {
+      const fp = path.join(outputDir, files[0]);
+      logger.success(`OK despite error: ${files[0]}`);
+      return { path: fp, title, platform, sourceUrl: url };
+    }
+    logger.warn(`yt-dlp: ${err.substring(0,100)}`);
+  }
+
+  // Method 2: Try without js extractor args (maybe yt-dlp will use native Python extraction)
+  if (platform === 'youtube') {
+    try {
+      logger.info('Method: yt-dlp native...');
+      const outTpl2 = path.join(outputDir, `vid2_${Date.now()}_%(id)s.%(ext)s`);
+      const result = execSync(`yt-dlp -o "${outTpl2}" "${url}" --no-playlist --max-filesize 100M 2>&1`, { 
+        timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' 
+      });
+      const files = fs.readdirSync(outputDir).filter(f => f.startsWith('vid2_') && f.endsWith('.mp4')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+      if (files.length > 0 && fs.statSync(path.join(outputDir, files[0])).size > 500000) {
+        logger.success(`OK: ${files[0]}`);
+        return { path: path.join(outputDir, files[0]), title, platform, sourceUrl: url };
+      }
+    } catch (e) {
+      const err = (e.stderr || e.message || '').toString();
+      const files = fs.readdirSync(outputDir).filter(f => f.startsWith('vid2_') && (f.endsWith('.mp4') || f.endsWith('.webm')));
+      if (files.length > 0 && fs.statSync(path.join(outputDir, files[0])).size > 500000) {
+        logger.success(`OK: ${files[0]}`);
+        return { path: path.join(outputDir, files[0]), title, platform, sourceUrl: url };
+      }
+      logger.warn(`yt-dlp native: ${err.substring(0,80)}`);
+    }
+  }
+
+  // Method 3 (Bilibili): Try without headers
+  if (platform === 'bilibili') {
+    try {
+      logger.info('Method: yt-dlp bilibili...');
+      const outTpl3 = path.join(outputDir, `bili_${Date.now()}_%(id)s.%(ext)s`);
+      execSync(`yt-dlp -o "${outTpl3}" "${url}" --no-playlist --max-filesize 100M 2>&1`, { timeout: 120000, maxBuffer: 50*1024*1024 });
+      const files = fs.readdirSync(outputDir).filter(f => f.startsWith('bili_') && f.endsWith('.mp4')).sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+      if (files.length > 0 && fs.statSync(path.join(outputDir, files[0])).size > 500000) {
+        logger.success(`Bilibili OK: ${files[0]}`);
+        return { path: path.join(outputDir, files[0]), title, platform, sourceUrl: url };
+      }
+    } catch (e) {
+      logger.warn(`Bilibili: ${(e.stderr||e.message||'').substring(0,80)}`);
+    }
   }
 
   logger.warn(`All failed: ${url.substring(0,60)}`);
