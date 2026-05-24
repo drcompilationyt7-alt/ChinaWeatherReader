@@ -1,7 +1,6 @@
 /**
  * Downloader module
- * Uses socks5h:// for DNS resolution through Shadowsocks.
- * Tests proxy first, then downloads.
+ * Tests proxy, uses socks5h:// for DNS, shows full errors for debugging.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -10,7 +9,7 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
 const MAX_DURATION = 480;
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
@@ -21,26 +20,19 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Build env with Node.js in PATH
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Get proxy from env
-  let proxy = process.env.YT_PROXY || '';
-  // Use socks5h:// for DNS through proxy (critical fix!)
-  if (proxy === 'socks5://127.0.0.1:1080') {
-    proxy = 'socks5h://127.0.0.1:1080';
-  } else if (proxy && !proxy.startsWith('socks5h') && !proxy.startsWith('http')) {
-    proxy = `socks5h://${proxy}`;
-  }
+  // Fix: explicit socks5 -> socks5h conversion for DNS through proxy
+  let proxy = (process.env.YT_PROXY || '').replace(/^socks5:\/\//, 'socks5h://');
   
   // Test proxy
   if (proxy) {
     try {
       const ip = execSync(`curl -s --connect-timeout 5 --proxy "${proxy}" https://ifconfig.me 2>/dev/null`, { timeout: 10000, encoding: 'utf8' }).trim();
-      logger.info(`Proxy IP: ${ip}`);
+      logger.info(`Proxy IP: ${ip || 'unknown'}`);
     } catch {
-      logger.warn('Proxy unreachable, trying without proxy');
+      logger.warn('Proxy unreachable, trying without');
       proxy = '';
     }
   }
@@ -71,7 +63,14 @@ async function downloadVideo(entry, outputDir) {
         return { path: fp, title, platform, sourceUrl: url };
       }
     } catch (e) {
-      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
+      const err = (e.stderr || e.stdout || e.message || '').toString();
+      if (err.includes('Sign in')) {
+        logger.warn(`${s.name}: blocked (needs cookies/PO Token)`);
+      } else if (err.includes('HTTP Error 403')) {
+        logger.warn(`${s.name}: 403 (needs PO Token)`);
+      } else {
+        logger.warn(`${s.name}: ${err.substring(0,150)}`);
+      }
     }
   }
 
