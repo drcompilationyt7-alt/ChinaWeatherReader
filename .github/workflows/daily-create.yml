@@ -7,7 +7,6 @@ on:
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -41,12 +40,15 @@ jobs:
           npm ci || npm install
           npm install axios
 
+          # Install deno via npm (global, in PATH)
+          npm install -g deno-bin
+
       - name: Environment diagnostics
         run: |
           echo "Node: $(node --version)"
           echo "yt-dlp: $(yt-dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
-          echo "Cookies set: $([ -n "$YOUTUBE_COOKIES" ] && echo 'YES' || echo 'NO')"
+          echo "deno: $(deno --version 2>&1 | head -1)"
 
       - name: Restore memory
         run: |
@@ -54,7 +56,9 @@ jobs:
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
 
       - name: Run content pipeline
-        run: node core/github-action-runner.js --mode daily
+        run: |
+          export PATH="$(npm bin -g):$PATH"
+          node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
