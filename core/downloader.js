@@ -1,6 +1,7 @@
 /**
  * Downloader module
- * web_embedded client (no PO Token) + --js-runtimes node for JS challenges.
+ * web_embedded client works! (no bot block, only age-restricted videos fail)
+ * Added --age-limit 99 + YOUTUBE_COOKIES fallback for age-restricted.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -24,22 +25,31 @@ async function downloadVideo(entry, outputDir) {
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
+  // Write cookies from env if available
+  const cookieFile = path.join(outputDir, 'cookies.txt');
+  if (process.env.YOUTUBE_COOKIES && process.env.YOUTUBE_COOKIES.length > 100) {
+    try { fs.writeFileSync(cookieFile, process.env.YOUTUBE_COOKIES); } catch {}
+  }
+
   const PY = 'python3 -m yt_dlp';
   const fmt = '-f "best[height<=720]"';
-  const opts = `--download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 20 --retries 2 --user-agent "${UA}" --js-runtimes node`;
-
-  // web_embedded: per yt-dlp v2026 docs - PO Token NOT required, only embeddable videos
-  // tv: PO Token NOT required, formats may be DRM'd
-  const cmds = [
-    `${PY} --extractor-args "youtube:player_client=web_embedded" ${fmt} ${opts}`,
-    `${PY} --extractor-args "youtube:player_client=android_vr" ${fmt} ${opts}`,
-    `${PY} --extractor-args "youtube:player_client=tv" ${fmt} ${opts}`,
-    `${PY} ${fmt} ${opts}`,
-  ];
+  const base = `--download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 20 --retries 2 --user-agent "${UA}" --js-runtimes node --age-limit 99`;
+  
+  const cmds = [];
+  
+  // With cookies (best - handles everything)
+  if (fs.existsSync(cookieFile) && fs.statSync(cookieFile).size > 100) {
+    cmds.push(`${PY} --cookies "${cookieFile}" ${fmt} ${base}`);
+  }
+  
+  // web_embedded: WORKS for non-age-restricted videos! No bot block.
+  cmds.push(`${PY} --extractor-args "youtube:player_client=web_embedded" ${fmt} ${base}`);
+  cmds.push(`${PY} --extractor-args "youtube:player_client=android_vr" ${fmt} ${base}`);
+  cmds.push(`${PY} ${fmt} ${base}`);
 
   for (let i = 0; i < cmds.length; i++) {
     try {
-      const client = cmds[i].match(/player_client=(\w+)/)?.[1] || 'default';
+      const client = cmds[i].match(/player_client=(\w+)/)?.[1] || cmds[i].includes('--cookies') ? 'cookies' : 'default';
       logger.info(`Try ${i+1}: ${client}`);
       
       execSync(cmds[i], { timeout: 120000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
@@ -50,20 +60,16 @@ async function downloadVideo(entry, outputDir) {
       
       if (files.length > 0) {
         const fp = path.join(outputDir, files[0]);
-        const sizeMB = (fs.statSync(fp).size/1024/1024).toFixed(1);
-        logger.success(`OK: ${files[0]} (${sizeMB}MB)`);
+        logger.success(`OK! ${files[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
+        try { fs.unlinkSync(cookieFile); } catch {}
         return { path: fp, title, platform, sourceUrl: url };
       }
     } catch (e) {
       const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
-      if (err.includes('Sign in') || err.includes('embed') || err.includes('403')) {
-        // Known failures - don't clutter logs
-      } else {
-        logger.warn(`Try ${i+1}: ${err}`);
-      }
     }
   }
 
+  try { fs.unlinkSync(cookieFile); } catch {}
   logger.warn(`Failed: ${url.substring(0,60)}`);
   return null;
 }
