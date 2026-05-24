@@ -1,13 +1,7 @@
 /**
  * Finder Controller
- * Priority order (user request):
- * 1. Bilibili (best API)
- * 2. RedNote (Xiaohongshu)
- * 3. Douyin
- * 4. TikTok
- * 5. YouTube (last resort)
+ * BILIBILI ONLY - Most reliable platform for content sourcing
  */
-const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
 
 const logger = new Logger('FinderController');
@@ -22,38 +16,9 @@ async function searchBilibili(query, maxResults) {
   }
 }
 
-async function searchRedNote(query, maxResults) {
-  try {
-    const { findVideos } = require('./rednote-finder');
-    return await findVideos(query, maxResults);
-  } catch (e) {
-    logger.warn(`RedNote: ${e.message.substring(0, 80)}`);
-    return [];
-  }
-}
-
-async function searchDouyin(query, maxResults) {
-  try {
-    const { findVideos } = require('./douyin-finder');
-    return await findVideos(query, maxResults);
-  } catch (e) {
-    logger.warn(`Douyin: ${e.message.substring(0, 80)}`);
-    return [];
-  }
-}
-
-async function searchTikTok(query, maxResults) {
-  try {
-    const { findVideos } = require('./tiktok-finder');
-    return await findVideos(query, maxResults);
-  } catch (e) {
-    logger.warn(`TikTok: ${e.message.substring(0, 80)}`);
-    return [];
-  }
-}
-
 async function searchYouTube(query, maxResults) {
   try {
+    const { execSync } = require('child_process');
     const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${query}" 2>/dev/null`;
     const out = execSync(cmd, { timeout: 30000, maxBuffer: 5*1024*1024 }).toString().trim();
     if (!out) return [];
@@ -63,7 +28,7 @@ async function searchYouTube(query, maxResults) {
         return { url: `https://www.youtube.com/watch?v=${p.id}`, title: p.title || 'YouTube', platform: 'youtube' };
       } catch { return null; }
     }).filter(Boolean);
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -85,12 +50,12 @@ async function searchAll(query, maxTotal = 5) {
     }
   }
 
-  // Priority: Bilibili > RedNote > Douyin > TikTok > YouTube
-  await addFrom(searchBilibili(query, 2));
-  await addFrom(searchRedNote(query, 2));
-  await addFrom(searchDouyin(query, 2));
-  await addFrom(searchTikTok(query, 2));
-  await addFrom(searchYouTube(query, 2));
+  // ONLY Bilibili
+  await addFrom(searchBilibili(query, 3));
+  // YouTube as backup only (for search, not download)
+  if (results.length < 3) {
+    await addFrom(searchYouTube(query, 3 - results.length));
+  }
 
   return results;
 }
