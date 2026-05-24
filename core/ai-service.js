@@ -6,7 +6,8 @@
  * 2. OpenAI (fallback) — if no OpenRouter key is set
  * 3. Edge-TTS — completely free voiceover (Windows)
  * 
- * The system auto-selects the best available provider.
+ * NEW: chatWithVideo() sends video files to vision models (Nemotron)
+ * NEW: browserSearch() controls Playwright via AI (owl-alpha)
  */
 const config = require('./config');
 const { Logger } = require('./logger');
@@ -14,28 +15,21 @@ const { Logger } = require('./logger');
 class AIService {
   constructor() {
     this.logger = new Logger('AIService');
-    this.llm = null;      // Language model provider
-    this.tts = null;      // Text-to-speech provider
-    this.imageGen = null; // Image generation provider
+    this.llm = null;
+    this.tts = null;
+    this.imageGen = null;
     this._initPromise = this._initialize();
   }
 
-  /**
-   * Wait for initialization to complete before using the service.
-   * Call this after construction when in async context.
-   */
   async waitForInit() {
-    if (this._initPromise) {
-      await this._initPromise;
-    }
+    if (this._initPromise) await this._initPromise;
   }
 
   async _initialize() {
-    // ─── Step 1: Initialize LLM ───────────────────────────────────────
     if (config.openrouter?.apiKey) {
       const { OpenRouterProvider } = require('../providers/openrouter-provider');
       this.llm = new OpenRouterProvider(config);
-      this.imageGen = this.llm; // OpenRouter also handles images
+      this.imageGen = this.llm;
       this.logger.info('Using OpenRouter provider (200+ models)');
     } else if (config.openai?.apiKey) {
       const OpenAI = require('openai');
@@ -46,7 +40,7 @@ class AIService {
       this.logger.warn('No AI API keys found — set OPENROUTER_API_KEY or OPENAI_API_KEY');
     }
 
-    // ─── Step 2: Initialize TTS (always try edge-tts first — it's free, no API key) ──
+    // Initialize TTS
     let ttsReady = false;
     try {
       const { EdgeTTSProvider } = require('../providers/edge-tts-provider');
@@ -56,73 +50,44 @@ class AIService {
         this.tts = ttsProvider;
         ttsReady = true;
         this.logger.info('TTS: using Edge-TTS (free, no API key)');
-      } else {
-        this.logger.warn('Edge-TTS not available on this system');
       }
     } catch (ttsError) {
-      this.logger.warn(`Edge-TTS init failed: ${ttsError.message}`);
+      this.logger.warn(`Edge-TTS init: ${ttsError.message}`);
     }
-    // Fallback: OpenAI TTS (only if edge-tts is unavailable AND OpenAI key is valid)
     if (!ttsReady && this.llm?.audio?.speech) {
       this.tts = this.llm;
       ttsReady = true;
       this.logger.info('TTS: using OpenAI TTS');
     }
-    if (!ttsReady) {
-      this.tts = null;
-      this.logger.warn('No TTS provider configured — audio will be skipped');
-    }
+    if (!ttsReady) this.logger.warn('No TTS provider configured');
   }
 
-  isAvailable() {
-    return !!this.llm;
-  }
+  isAvailable() { return !!this.llm; }
 
-  // ═══════════════════════════════════════════════════════
+  // ════════════════════════════════════════
   //  LLM Methods
-  // ═══════════════════════════════════════════════════════
+  // ════════════════════════════════════════
 
-  /**
-   * Send a chat completion
-   */
   async chat(systemPrompt, userMessage, options = {}) {
-    if (!this.llm) {
-      throw new Error('No AI provider configured. Set OPENROUTER_API_KEY in .env');
-    }
-
+    if (!this.llm) throw new Error('No AI provider configured.');
     if (this.llm.constructor.name === 'OpenRouterProvider') {
       return await this.llm.chat(systemPrompt, userMessage, options);
     }
-
-    // OpenAI fallback
     const response = await this.llm.chat.completions.create({
       model: options.useScriptModel ? config.openai.scriptModel : config.openai.model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
       max_tokens: options.maxTokens || 2000,
       temperature: options.temperature || 0.7,
     });
     return response.choices[0].message.content;
   }
 
-  /**
-   * Get JSON response
-   */
   async chatJSON(systemPrompt, userMessage, options = {}) {
-    if (!this.llm) {
-      throw new Error('No AI provider configured. Set OPENROUTER_API_KEY in .env');
-    }
-
     if (this.llm.constructor.name === 'OpenRouterProvider') {
       return await this.llm.chatJSON(systemPrompt, userMessage, options);
     }
-
-    // OpenAI fallback
     const response = await this.chat(
-      systemPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no explanation.',
-      userMessage,
+      systemPrompt + '\n\nRespond ONLY with valid JSON.', userMessage,
       { ...options, responseFormat: { type: 'json_object' } }
     );
     const cleaned = response.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -130,65 +95,65 @@ class AIService {
   }
 
   /**
-   * Translate text
+   * Send a video file to a vision model for analysis (e.g. Nemotron)
+   * Uses the OpenRouter provider's chatWithVideo method.
    */
+  async chatWithVideo(systemPrompt, videoFilePath, textPrompt, options = {}) {
+    if (!this.llm) throw new Error('No AI provider configured.');
+    if (this.llm.constructor.name === 'OpenRouterProvider') {
+      return await this.llm.chatWithVideo(systemPrompt, videoFilePath, textPrompt, options);
+    }
+    throw new Error('chatWithVideo requires OpenRouter provider');
+  }
+
+  /**
+   * Use browser-based search via Playwright + AI (owl-alpha)
+   * Searches specified platforms for video content matching a topic.
+   */
+  async browserSearch(platforms, topicQuery, options = {}) {
+    if (this.llm.constructor.name === 'OpenRouterProvider') {
+      return await this.llm.browserSearch(platforms, topicQuery, options);
+    }
+    throw new Error('browserSearch requires OpenRouter provider');
+  }
+
   async translate(text, sourceLanguage = 'auto') {
     if (!this.llm) return text;
-
-    const systemPrompt = `You are a professional translator for Mr. WorldWideWebster.
+    return await this.chat(
+      `You are a professional translator for Mr. WorldWideWebster.
 Rules:
 - Translate to natural, fluent English
 - Preserve slang, humor, and cultural context — add brief [explanations] in brackets if needed
-- Keep the tone and energy of the original`;
-
-    return await this.chat(systemPrompt, text, { 
-      temperature: 0.3,
-      useCheapModel: true, 
-    });
+- Keep the tone and energy of the original`,
+      text, { temperature: 0.3, useCheapModel: true }
+    );
   }
 
-  // ═══════════════════════════════════════════════════════
+  // ════════════════════════════════════════
   //  TTS Methods
-  // ═══════════════════════════════════════════════════════
+  // ════════════════════════════════════════
 
-  /**
-   * Generate speech from text
-   */
   async textToSpeech(text, outputPath, options = {}) {
-    // Try EdgeTTS provider (check by duck-typing, not constructor name)
     if (this.tts && typeof this.tts.textToSpeech === 'function') {
-      try {
-        return await this.tts.textToSpeech(text, outputPath, options);
-      } catch (ttsError) {
-        this.logger.warn(`Edge-TTS failed: ${ttsError.message}`);
-        // Fall through to OpenAI fallback
-      }
+      try { return await this.tts.textToSpeech(text, outputPath, options); }
+      catch (e) { this.logger.warn(`TTS failed: ${e.message}`); }
     }
-    // OpenAI TTS fallback
     if (this.tts?.audio?.speech) {
       const response = await this.tts.audio.speech.create({
-        model: 'tts-1-hd',
-        voice: options.voice || 'nova',
-        input: text,
+        model: 'tts-1-hd', voice: options.voice || 'nova', input: text,
       });
       const buffer = Buffer.from(await response.arrayBuffer());
       require('fs').writeFileSync(outputPath, buffer);
       return outputPath;
     }
-    // Last resort: write text to file so the pipeline can still proceed
-    this.logger.warn('No TTS available — writing text placeholder instead');
     require('fs').writeFileSync(outputPath + '.txt', text);
     return outputPath + '.txt';
   }
 
-  /**
-   * Generate two-voice dialog (for "What is this?" format)
-   */
   async generateDialogAudio(scenes, outputDir) {
     if (this.tts?.constructor?.name === 'EdgeTTSProvider') {
       return await this.tts.generateDialogAudio(scenes, outputDir);
     }
-    // Fallback to single voice
     const files = [];
     for (const scene of scenes) {
       const outputFile = require('path').join(outputDir, `scene_${scene.sceneNumber}.mp3`);
@@ -198,55 +163,25 @@ Rules:
     return files;
   }
 
-  // ═══════════════════════════════════════════════════════
-  //  Image Generation
-  // ═══════════════════════════════════════════════════════
+  // ════════════════════════════════════════
+  //  Image Generation / Transcription
+  // ════════════════════════════════════════
 
-  /**
-   * Generate an image
-   */
   async generateImage(prompt, outputPath, options = {}) {
-    if (!this.imageGen) {
-      throw new Error('No image generation provider available');
-    }
-    if (this.imageGen.constructor.name === 'OpenRouterProvider') {
-      return await this.imageGen.generateImage(prompt, outputPath, options);
-    }
-    // DALL-E fallback
-    const response = await this.imageGen.images.generate({
-      model: 'dall-e-3',
-      prompt: prompt,
-      n: 1,
-      size: options.size || '1792x1024',
-    });
-    const axios = require('axios');
-    const fs = require('fs');
-    const imgResponse = await axios({ method: 'GET', url: response.data[0].url, responseType: 'stream' });
-    const writer = fs.createWriteStream(outputPath);
-    imgResponse.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-      writer.on('finish', () => resolve(outputPath));
-      writer.on('error', reject);
-    });
+    if (!this.imageGen) throw new Error('No image generation provider');
+    return await this.imageGen.generateImage(prompt, outputPath, options);
   }
 
-  /**
-   * Transcribe audio (only OpenAI Whisper supported)
-   */
   async transcribe(audioFilePath, language = null) {
-    if (!config.openai?.apiKey) {
-      throw new Error('Whisper transcription requires OPENAI_API_KEY');
-    }
+    if (!config.openai?.apiKey) throw new Error('Whisper requires OPENAI_API_KEY');
     const OpenAI = require('openai');
     const openai = new OpenAI({ apiKey: config.openai.apiKey });
-    const options = { model: 'whisper-1', file: require('fs').createReadStream(audioFilePath), response_format: 'verbose_json' };
-    if (language) options.language = language;
-    return await openai.audio.transcriptions.create(options);
+    return await openai.audio.transcriptions.create({
+      model: 'whisper-1', file: require('fs').createReadStream(audioFilePath),
+      response_format: 'verbose_json', language,
+    });
   }
 
-  /**
-   * List models from provider
-   */
   async listAvailableModels() {
     if (this.llm?.constructor?.name === 'OpenRouterProvider') {
       return await this.llm.listAvailableModels();
