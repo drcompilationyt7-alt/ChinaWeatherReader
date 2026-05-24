@@ -8,6 +8,8 @@ on:
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
   YT_PROXY: ${{ secrets.YT_PROXY }}
+  HIDE_ME_USERNAME: ${{ secrets.HIDE_ME_USERNAME }}
+  HIDE_ME_PASSWORD: ${{ secrets.HIDE_ME_PASSWORD }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -36,22 +38,33 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg jq curl unzip
+          sudo apt-get install -y ffmpeg jq curl unzip openvpn
           python3 -m pip install -U edge-tts yt-dlp yt-dlp-ejs --break-system-packages
           npm ci || npm install
           npm install axios
+
+      - name: Setup WireGuard VPN (hide.me free)
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y wireguard resolvconf
           
-          # Install deno runtime
-          curl -fsSL https://deno.land/install.sh | sh
-          export DENO_INSTALL="$HOME/.deno"
-          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+          # Try hide.me free VPN via OpenVPN
+          if [ -n "$HIDE_ME_USERNAME" ] && [ -n "$HIDE_ME_PASSWORD" ]; then
+            curl -s -o /tmp/hide.me.ovpn "https://backend.nlayerm-2048.com/openvpn-config/?server=nl.free.hide.me&openvpnUsername=${HIDE_ME_USERNAME}&openvpnPassword=${HIDE_ME_PASSWORD}"
+            sudo openvpn --config /tmp/hide.me.ovpn --daemon --writepid /tmp/vpn.pid
+            sleep 5
+            echo "VPN connected"
+          else
+            echo "No VPN credentials - will use proxies only"
+          fi
 
       - name: Environment diagnostics
         run: |
           echo "Node: $(node --version)"
           echo "yt-dlp: $(python3 -m yt_dlp --version 2>&1)"
           echo "ffmpeg: $(ffmpeg -version 2>&1 | head -1)"
-          echo "deno: $(deno --version 2>&1 | head -1)"
+          echo "VPN: $(curl -s ifconfig.me 2>/dev/null || echo 'disconnected')"
+          echo "Public IP: $(curl -s ifconfig.me 2>/dev/null)"
           echo "Proxy: $([ -n "$YT_PROXY" ] && echo 'SET' || echo 'NOT SET')"
 
       - name: Restore memory
@@ -60,9 +73,7 @@ jobs:
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
 
       - name: Run content pipeline
-        run: |
-          export PATH="$HOME/.deno/bin:$PATH"
-          node core/github-action-runner.js --mode daily
+        run: node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
@@ -70,11 +81,14 @@ jobs:
           git config user.name "Mr. WorldWideWebster Bot"
           git config user.email "bot@worldwidewebster.com"
           git add memory/ output/
-          if ! git diff --staged --quiet; then
-            git commit -m "Memory update $(date +%F)"
-            git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Memory update $(date +%F)" && git push || echo "Push skipped (conflict)"
           fi
 
       - name: Cleanup
         if: always()
-        run: rm -rf output/temp 2>/dev/null || true
+        run: |
+          if [ -f /tmp/vpn.pid ]; then sudo kill $(cat /tmp/vpn.pid) 2>/dev/null || true; fi
+          rm -rf output/temp 2>/dev/null || true
