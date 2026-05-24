@@ -1,7 +1,9 @@
 /**
  * Finder Controller
- * BILIBILI ONLY - Most reliable platform for content sourcing
+ * Bilibili: ONLY for Chinese content (China viral, Chinese meme, etc.)
+ * YouTube: for ALL other countries
  */
+const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
 
 const logger = new Logger('FinderController');
@@ -9,16 +11,25 @@ const logger = new Logger('FinderController');
 async function searchBilibili(query, maxResults) {
   try {
     const { findVideos } = require('./bilibili-finder');
-    return await findVideos(query, maxResults);
+    const results = await findVideos(query, maxResults);
+    // Only use Bilibili results if query is about China
+    const isChina = query.toLowerCase().includes('china') || 
+                    query.toLowerCase().includes('chinese') ||
+                    query.toLowerCase().includes('bilibili') ||
+                    query.includes('\u4e2d\u56fd') ||
+                    query.includes('\u4e2d\u6587');
+    if (!isChina && results.length > 0) {
+      logger.warn(`Bilibili returned ${results.length} results but query isn't Chinese - filtering out`);
+      return [];
+    }
+    return results;
   } catch (e) {
-    logger.warn(`Bilibili: ${e.message.substring(0, 80)}`);
     return [];
   }
 }
 
 async function searchYouTube(query, maxResults) {
   try {
-    const { execSync } = require('child_process');
     const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${query}" 2>/dev/null`;
     const out = execSync(cmd, { timeout: 30000, maxBuffer: 5*1024*1024 }).toString().trim();
     if (!out) return [];
@@ -50,11 +61,15 @@ async function searchAll(query, maxTotal = 5) {
     }
   }
 
-  // ONLY Bilibili
-  await addFrom(searchBilibili(query, 3));
-  // YouTube as backup only (for search, not download)
-  if (results.length < 3) {
-    await addFrom(searchYouTube(query, 3 - results.length));
+  const isChina = query.toLowerCase().includes('china') || query.toLowerCase().includes('chinese');
+  
+  if (isChina) {
+    // For Chinese content: Bilibili first, YouTube fallback
+    await addFrom(searchBilibili(query, 3));
+    if (results.length < 3) await addFrom(searchYouTube(query, 3));
+  } else {
+    // For everything else: YouTube only
+    await addFrom(searchYouTube(query, 5));
   }
 
   return results;
