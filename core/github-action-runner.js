@@ -3,232 +3,86 @@
 /**
  * Mr. WorldWideWebster — GitHub Actions Runner
  *
- * Entry point for GitHub Actions workflows. Handles:
- * - Loading/storing persistent memory via git commits
- * - Running Hermes Agent for web scraping (no APIs needed)
- * - Creating daily shorts (download+trim clips, explainers, landscapes)
- * - Creating weekly long-form videos
- * - Uploading created videos to YouTube
- * - Boosting views with Puppeteer headless browser
- * - Sending Discord notifications (daily summary, weekly report, alerts)
- * - Midnight self-improvement review
- *
- * Usage:
- *   node core/github-action-runner.js --mode daily        # 6 AM: 3 shorts
- *   node core/github-action-runner.js --mode weekly       # Sat: long-form
- *   node core/github-action-runner.js --mode review       # Midnight: improve
- *   node core/github-action-runner.js --mode weekly --topic "Street Food"
- *
- * Environment variables (from GitHub Secrets):
- *   OPENROUTER_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET,
- *   YOUTUBE_REFRESH_TOKEN, DISCORD_BOT_TOKEN, GH_PAT,
- *   BOOST_ENABLED, BOOST_MAX_VIEWS
+ * REVISED PIPELINE (v3):
+ * Step 1: OpenRouter AI generates TARGETED search queries for your brand
+ * Step 2: Playwright searches YouTube, Bilibili, TikTok for real URLs
+ * Step 3: yt-dlp downloads the videos
+ * Step 4: Nemotron (vision model) watches & ranks videos, picks explainer candidate
+ * Step 5: ClipEditor edits based on type (meme/streamer/explainer)
+ * Step 6: Upload to YouTube
  */
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
-const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper');
 const { Logger } = require('./logger');
 
 class GitHubActionsRunner {
   constructor() {
     this.logger = new Logger('GHAction');
     this.ai = null;
-    this.agent = null;
     this.memory = {};
     this.memoryPath = path.join(__dirname, '..', 'memory');
     this.youtubeBridge = null;
-    this.boostEngine = null;
     this.discordBridge = null;
-  }
-
-  /**
-   * Validate that required API keys are present and not placeholders
-   */
-  _validateKeys() {
-    const openrouterKey = process.env.OPENROUTER_API_KEY || '';
-    const openaiKey = process.env.OPENAI_API_KEY || '';
-
-    if (!openrouterKey && !openaiKey) {
-      this.logger.warn('No API keys found — AI features will fail');
-      this.logger.warn('Set OPENROUTER_API_KEY in GitHub Secrets');
-      return;
-    }
-
-    // Check for placeholder keys
-    const placeholders = ['sk-your-', 'your-', 'placeholder', 'sk-or-your'];
-    for (const key of [openrouterKey, openaiKey]) {
-      if (!key) continue;
-      for (const placeholder of placeholders) {
-        if (key.includes(placeholder)) {
-          this.logger.warn(`⚠️  Placeholder API key detected (contains "${placeholder}")`);
-          this.logger.warn('  Replace with a real key in GitHub Secrets');
-          break;
-        }
-      }
-    }
-
-    this.logger.info(`OpenRouter key length: ${openrouterKey.length} chars`);
-    this.logger.info(`OpenAI key present: ${openaiKey.length > 0}`);
-  }
-
-  /**
-   * Run a quick Hermes smoke test to verify the CLI actually produces output
-   */
-  async _smokeTestHermes() {
-    if (!this.agent || !this.agent.isAvailable || !this.agent.isAvailable()) {
-      this.logger.warn('Hermes not available for smoke test');
-      return false;
-    }
-
-    this.logger.info('Running Hermes smoke test...');
-    try {
-      const result = await this.agent.run(
-        'Reply ONLY with the word: hello',
-        { verbose: false, maxSteps: 1 }
-      );
-
-      const output = (result.output || '').trim();
-      const hasOutput = output.length > 0;
-      
-      // Check for critical errors that indicate failure
-      const hasCriticalError = 
-        output.toLowerCase().includes('traceback') ||
-        output.includes('AuthError') ||
-        output.toLowerCase().includes('error:') ||
-        output.includes('No inference provider configured');
-
-      if (hasOutput && !hasCriticalError) {
-        this.logger.info(`✅ Hermes smoke test passed: "${output.substring(0, 50)}"`);
-        return true;
-      } else if (hasCriticalError) {
-        this.logger.error('⚠️  Hermes smoke test failed with critical error');
-        this.logger.error(`  Error in output: ${output.substring(0, 300)}`);
-        return false;
-      } else {
-        this.logger.warn('⚠️  Hermes smoke test returned empty output');
-        this.logger.warn('  Hermes will still be used, but may produce no results');
-        return false;
-      }
-
-    } catch (error) {
-      this.logger.warn(`Hermes smoke test failed: ${error.message}`);
-      return false;
-    }
-  }
-
-
-  /**
-   * Extract URLs from text using a broad regex
-   * Catches URLs with or without protocol, various formats
-   * Filters out obvious placeholder/fake URLs
-   */
-  _extractUrls(text) {
-    if (!text) return [];
-    // Broad URL regex: http(s)://anything-not-whitespace-not-quote
-    const urlRegex = /https?:\/\/[^\s"'<>(){}[\]\\^`|]+/gi;
-    const matches = text.match(urlRegex);
-    
-    if (!matches) return [];
-    
-    // Filter out placeholder/fake URLs that Hermes might generate when it fails
-    const validUrls = matches.filter(url => {
-      // Skip URLs with obvious placeholder patterns
-      if (url.includes('xxx')) return false;
-      if (url.includes('abcdefg')) return false;
-      if (url.includes('BV1xxx')) return false;
-      
-      // Skip YouTube URLs with invalid video ID patterns (must be 11 chars)
-      const youtubeMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/i);
-      if (youtubeMatch) {
-        const videoId = youtubeMatch[1];
-        if (videoId.length !== 11) return false;
-        if (/^(.)\1+$/.test(videoId)) return false;
-      }
-      
-      // Skip Bilibili URLs with placeholder BV numbers
-      const bilibiliMatch = url.match(/bilibili\.com\/video\/(BV[a-zA-Z0-9]+)/i);
-      if (bilibiliMatch) {
-        const bvId = bilibiliMatch[1];
-        if (bvId.length < 10) return false;
-        if (bvId.toLowerCase().includes('xxx')) return false;
-      }
-      
-      return true;
-    });
-    
-    return validUrls;
+    this.clipEditor = null;
   }
 
   async initialize() {
-    this.logger.header('🤖 Mr. WorldWideWebster — GitHub Actions');
+    this.logger.header('🤖 Mr. WorldWideWebster — Pipeline v3');
 
-    this._validateKeys();
+    const openrouterKey = process.env.OPENROUTER_API_KEY || '';
+    if (!openrouterKey) {
+      this.logger.warn('No OPENROUTER_API_KEY found — AI features will fail');
+    } else {
+      this.logger.info(`OpenRouter key: ${openrouterKey.length} chars`);
+    }
 
+    // Initialize OpenRouter AI service
     this.ai = new AIService();
     await this.ai.waitForInit();
 
-    // PRIMARY: Official Hermes CLI from Nous Research
-    const hermesCLI = new HermesCLIWrapper();
-    if (hermesCLI.isAvailable()) {
-      this.agent = hermesCLI;
-      this.logger.success('✅ Using official Hermes CLI as primary agent');
-      await this._smokeTestHermes();
-    } else {
-      this.logger.info('Falling back to built-in Hermes JS agent...');
-      const { HermesAgentWithScraping } = require('../hermes-agent/agent-tools');
-      this.agent = new HermesAgentWithScraping(this.ai);
-      this.logger.info('Using built-in Hermes JS agent (custom code)');
-    }
+    // Initialize ClipEditor
+    const { ClipEditor } = require('./clip-editor');
+    this.clipEditor = new ClipEditor();
 
+    // Load memory
     this._loadMemory();
 
+    // YouTube bridge
     try {
       const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
       this.youtubeBridge = new YouTubeBridge();
       await this.youtubeBridge.initialize();
     } catch (error) {
-      this.logger.warn(`YouTube bridge not available: ${error.message}`);
-      this.logger.warn('Videos will be saved locally but not uploaded');
+      this.logger.warn(`YouTube bridge: ${error.message}`);
     }
 
-    this.logger.success('GitHub Actions runner initialized');
+    this.logger.success('Pipeline initialized');
   }
 
   _loadMemory() {
     if (!fs.existsSync(this.memoryPath)) {
       fs.mkdirSync(this.memoryPath, { recursive: true });
     }
-
     const memoryFiles = {
       'channel-memory.json': {
         channelName: 'Mr. WorldWideWebster',
-        tagline: 'Bringing the world to you',
         totalVideosPosted: 0,
         lastCountryUsed: '',
-        lastContentType: '',
         countriesUsedThisWeek: [],
-        bestPerformingFormats: [],
-        titleFormulas: [],
-        postingSchedule: { hour: 6, minute: 0 },
+        usedTopics: [],
         createdAt: new Date().toISOString(),
       },
-      'trending-log.json': {
-        lastUpdated: new Date().toISOString(),
-        trends: [],
-      },
-      'content-history.json': {
-        videos: [],
-      },
+      'trending-log.json': { lastUpdated: new Date().toISOString(), trends: [] },
+      'content-history.json': { videos: [] },
     };
-
     for (const [file, defaults] of Object.entries(memoryFiles)) {
       const filePath = path.join(this.memoryPath, file);
       if (fs.existsSync(filePath)) {
         try {
           this.memory[file.replace('.json', '')] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          this.logger.info(`Loaded: ${file}`);
         } catch {
           this.memory[file.replace('.json', '')] = defaults;
           fs.writeFileSync(filePath, JSON.stringify(defaults, null, 2));
@@ -236,19 +90,11 @@ class GitHubActionsRunner {
       } else {
         this.memory[file.replace('.json', '')] = defaults;
         fs.writeFileSync(filePath, JSON.stringify(defaults, null, 2));
-        this.logger.info(`Created: ${file}`);
       }
     }
   }
 
   _saveMemory(key, data) {
-    if (!key) {
-      for (const [k, v] of Object.entries(this.memory)) {
-        const filePath = path.join(this.memoryPath, `${k}.json`);
-        fs.writeFileSync(filePath, JSON.stringify(v, null, 2));
-      }
-      return;
-    }
     const filePath = path.join(this.memoryPath, `${key}.json`);
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     this.memory[key] = data;
@@ -257,47 +103,28 @@ class GitHubActionsRunner {
   async _uploadToYouTube(videoData) {
     if (!this.youtubeBridge || !this.youtubeBridge.isAuthenticated()) {
       this.logger.warn('YouTube not authenticated — skipping upload');
-      this.logger.warn('Run "node youtube-automation/setup-youtube.js" locally first');
       return null;
     }
-
-    this.logger.info(`Uploading to YouTube: "${videoData.title}"`);
-
+    this.logger.info(`Uploading: "${videoData.title}"`);
     try {
       const result = await this.youtubeBridge.uploadVideo({
         videoPath: videoData.videoPath,
         title: videoData.title,
-        description: videoData.description ||
-          `${videoData.title}\n\n🌍 Bringing the world to you\n\nFollow Mr. WorldWideWebster for more global content!`,
-        tags: videoData.tags || ['mr worldwidewebster', 'global', 'culture', 'international', 'shorts'],
+        description: videoData.description || `${videoData.title}\n\n🌍 Bringing the world to you`,
+        tags: videoData.tags || ['mr worldwidewebster', 'shorts'],
         thumbnailPath: videoData.thumbnailPath,
       });
-
       this.logger.success(`✅ Uploaded: ${result.url}`);
-
+      
       const contentHistory = this.memory['content-history'];
       if (contentHistory) {
         contentHistory.videos.push({
-          title: videoData.title,
-          type: videoData.type || 'shorts',
-          url: result.url,
-          videoId: result.videoId,
-          country: videoData.country || 'Global',
-          uploadedAt: result.publishedAt,
+          title: videoData.title, type: videoData.type || 'shorts',
+          url: result.url, videoId: result.videoId,
         });
-
-        if (contentHistory.videos.length > 200) {
-          contentHistory.videos = contentHistory.videos.slice(-200);
-        }
+        if (contentHistory.videos.length > 200) contentHistory.videos = contentHistory.videos.slice(-200);
         this._saveMemory('content-history', contentHistory);
       }
-
-      const channelMemory = this.memory['channel-memory'];
-      if (channelMemory) {
-        channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + 1;
-        this._saveMemory('channel-memory', channelMemory);
-      }
-
       return result;
     } catch (error) {
       this.logger.error(`Upload failed: ${error.message}`);
@@ -305,647 +132,496 @@ class GitHubActionsRunner {
     }
   }
 
-  async _boostVideo(videoUrl, customViews) {
-    if (!config.boost.enabled) {
-      this.logger.info('Boost disabled via BOOST_ENABLED config');
-      return;
-    }
-
-    this.logger.info(`🚀 Boosting video: ${videoUrl}`);
-
-    try {
-      const { BoostEngine } = require('../boost/boost-engine');
-      const engine = new BoostEngine();
-
-      const result = await engine.run({
-        url: videoUrl,
-        views: customViews || config.boost.maxViews,
-      });
-
-      if (result.success) {
-        this.logger.success(`✅ Boost complete: ${result.views} views simulated`);
-      } else {
-        this.logger.warn(`Boost had issues: ${result.error || 'partial completion'}`);
-      }
-    } catch (error) {
-      this.logger.warn(`Boost engine failed: ${error.message}`);
-      this.logger.warn('This is expected if puppeteer is not installed or Chrome is not available');
-    }
-  }
-
   async _sendDiscordNotification(type, data) {
     try {
       const { DiscordBridge } = require('../discord/discord-bridge');
       const bridge = new DiscordBridge();
-
       let ok = false;
       switch (type) {
-        case 'daily':
-          ok = await bridge.sendDailySummary(data);
-          break;
-        case 'weekly':
-          ok = await bridge.sendWeeklyReport(data);
-          break;
-        case 'alert':
-          ok = await bridge.sendAlert(data.title || 'Pipeline Alert', data.message || '');
-          break;
-        default:
-          ok = await bridge.sendMessage(data);
+        case 'daily': ok = await bridge.sendDailySummary(data); break;
+        case 'alert': ok = await bridge.sendAlert(data.title, data.message); break;
+        default: ok = await bridge.sendMessage(data);
       }
-
       await bridge.destroy();
-
-      if (ok) {
-        this.logger.success('Discord notification sent');
-      } else {
-        this.logger.warn('Discord notification skipped (not configured?)');
-      }
     } catch (error) {
-      this.logger.warn(`Discord notification failed: ${error.message}`);
+      this.logger.warn(`Discord: ${error.message}`);
     }
   }
 
   /**
-   * PRIMARY: Search YouTube using yt-dlp directly (always works, no browser needed)
+   * STEP 1: AI generates targeted search queries for your channel niche
    */
-  async _searchYouTubeWithYtDlp(query, maxResults = 5) {
-    const { execSync } = require('child_process');
-    this.logger.info(`Searching YouTube with yt-dlp: "${query}"`);
-
-    try {
-      const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${query}" 2>/dev/null`;
-      const output = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
-      
-      if (!output) {
-        this.logger.warn('yt-dlp search returned no results');
-        return [];
-      }
-
-      const results = output.split('\n').filter(Boolean).map(line => {
-        try {
-          const parsed = JSON.parse(line);
-          return {
-            url: `https://www.youtube.com/watch?v=${parsed.id}`,
-            title: parsed.title || 'YouTube video',
-            platform: 'youtube',
-            country: 'Global',
-          };
-        } catch {
-          return null;
-        }
-      }).filter(Boolean);
-
-      this.logger.success(`yt-dlp found ${results.length} videos`);
-      return results;
-    } catch (error) {
-      this.logger.warn(`yt-dlp search failed: ${error.message}`);
-      return [];
-    }
-  }
-
-  /**
-   * Download a YouTube video by URL using yt-dlp, trim to short
-   */
-  async _downloadAndTrimYoutubeVideo(videoUrl, videoTitle) {
-    const { execSync } = require('child_process');
-    
-    this.logger.info(`Downloading YouTube video: ${videoUrl}`);
-    
-    const outputDir = config.paths.clips;
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-    
-    const outputTemplate = path.join(outputDir, `yt_${Date.now()}_%(id)s.%(ext)s`);
-    
-    try {
-      const dlCmd = `yt-dlp -f "best[height<=720][ext=mp4]/best[height<=720]" -o "${outputTemplate}" "${videoUrl}" --no-playlist --max-filesize 50M 2>&1`;
-      const dlOutput = execSync(dlCmd, { timeout: 120000, maxBuffer: 10 * 1024 * 1024 }).toString();
-      
-      // Find the downloaded file
-      const files = fs.readdirSync(outputDir).filter(f => f.startsWith('yt_') && f.endsWith('.mp4'));
-      const downloadedFile = files.sort((a, b) => 
-        fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs
-      )[0];
-      
-      if (!downloadedFile) {
-        this.logger.warn('yt-dlp download produced no output file');
-        return null;
-      }
-      
-      const fullPath = path.join(outputDir, downloadedFile);
-      this.logger.success(`✅ Downloaded: ${fullPath}`);
-      
-      // Trim to short (30 seconds starting at 3s)
-      const shortPath = path.join(outputDir, `short_${Date.now()}.mp4`);
-      const clipPipeline = require('../clipping/clip-pipeline');
-      
-      const trimmedPath = await clipPipeline.trimToShort({
-        videoPath: fullPath,
-        startTime: 3,
-        duration: 30,
-        outputPath: shortPath,
-      });
-      
-      if (!trimmedPath || !fs.existsSync(trimmedPath)) {
-        this.logger.warn('Trim produced no output');
-        return null;
-      }
-      
-      this.logger.success(`✅ Trimmed to short: ${trimmedPath}`);
-      
-      return {
-        trimmedPath,
-        title: (videoTitle || 'Trending video').substring(0, 100),
-      };
-    } catch (error) {
-      this.logger.warn(`Download/trim failed: ${error.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Batch search multiple trending topics concurrently using yt-dlp
-   */
-  async _batchSearchTrendingTopics() {
-    const topics = [
-      'viral dance 2026',
-      'street food around the world',
-      'satisfying video',
-      'beautiful nature moments',
-      'funny animal',
-      'travel moments',
-      'amazing talent',
-      'cooking delicious food',
-      'sports highlights',
-      'music performance',
-    ];
+  async _generateQueries() {
+    this.logger.info('Step 1: AI generating targeted search queries...');
     
     const channelMemory = this.memory['channel-memory'] || {};
-    const usedTopics = channelMemory.usedTopics || [];
-    const available = topics.filter(t => !usedTopics.includes(t));
-    
-    const selected = available.length >= 3 
-      ? available.sort(() => Math.random() - 0.5).slice(0, 3)
-      : topics.sort(() => Math.random() - 0.5).slice(0, 3);
-    
-    this.logger.info(`Batch searching ${selected.length} topics: ${selected.join(', ')}`);
-    
-    const allResults = [];
-    for (const topic of selected) {
-      try {
-        const results = await this._searchYouTubeWithYtDlp(topic, 3);
-        for (const r of results) {
-          allResults.push({ ...r, searchTopic: topic });
-        }
-      } catch (err) {
-        this.logger.warn(`Search "${topic}" failed: ${err.message}`);
-      }
-    }
-    
-    if (!channelMemory.usedTopics) channelMemory.usedTopics = [];
-    for (const topic of selected) {
-      if (!channelMemory.usedTopics.includes(topic)) {
-        channelMemory.usedTopics.push(topic);
-      }
-    }
-    if (channelMemory.usedTopics.length > 20) {
-      channelMemory.usedTopics = channelMemory.usedTopics.slice(-20);
-    }
-    this.memory['channel-memory'] = channelMemory;
-    
-    this.logger.success(`Batch search found ${allResults.length} total videos`);
-    return allResults;
-  }
-
-  /**
-   * MODE: daily — Create content using yt-dlp as primary source
-   */
-  async runDaily() {
-    this.logger.header('🌅 DAILY: Content Creation + Upload + Boost');
-
-    const errors = [];
-    const uploadedVideos = [];
-
-    // Step 1: Batch search trending topics via yt-dlp (PRIMARY)
-    this.logger.info('Step 1: Searching trending content via yt-dlp...');
-    
-    const trendingResults = await this._batchSearchTrendingTopics();
-    const foundUrls = trendingResults.map(r => ({
-      url: r.url,
-      title: r.title,
-      topic: r.searchTopic,
-    }));
-    
-    this.memory['trending-urls'] = foundUrls.map(u => u.url);
-    
-    if (foundUrls.length > 0) {
-      this.logger.success(`✅ Found ${foundUrls.length} trending URLs via yt-dlp`);
-    } else {
-      this.logger.warn('No trending URLs found via yt-dlp');
-    }
-    
-    // Also try Hermes for content IDEAS (non-blocking)
-    if (this.agent && this.agent.isAvailable && this.agent.isAvailable()) {
-      try {
-        this.logger.info('Asking Hermes for content ideas (non-blocking)...');
-        const trendsResult = await this.agent.run(
-          `Give me 3 video content ideas for Mr. WorldWideWebster channel.
-          Focus on countries: Japan, Nigeria, Brazil, India, Mexico.
-          Just list 3 ideas, no URLs needed.`,
-          { verbose: false, maxSteps: 2, timeout: 120000 }
-        );
-        if (trendsResult && trendsResult.output) {
-          this.logger.info(`Hermes ideas: ${trendsResult.output.substring(0, 200)}`);
-        }
-      } catch (err) {
-        this.logger.info(`Hermes research skipped: ${err.message}`);
-      }
-    }
-
-    // Step 2: Download + upload a trending clip
-    this.logger.info('Step 2: Creating trending clip short...');
-    
-    let clipResult = null;
-    for (const video of foundUrls) {
-      if (clipResult) break;
-      
-      this.logger.info(`Downloading: ${video.title.substring(0, 60)}...`);
-      const downloadResult = await this._downloadAndTrimYoutubeVideo(video.url, video.title);
-      
-      if (downloadResult) {
-        const uploadResult = await this._uploadToYouTube({
-          videoPath: downloadResult.trimmedPath,
-          title: downloadResult.title,
-          description: `🔥 ${downloadResult.title}\n\n🌍 Bringing the world to you`,
-          type: 'shorts',
-          tags: ['mr worldwidewebster', 'shorts', 'trending', 'viral', 'youtube'],
-        });
-        
-        if (uploadResult) {
-          clipResult = { title: downloadResult.title, url: uploadResult.url, type: 'clip', platform: 'youtube' };
-          await this._boostVideo(uploadResult.url, 50);
-        }
-      }
-    }
-    
-    if (clipResult) {
-      uploadedVideos.push(clipResult);
-      this.logger.success(`✅ Clip uploaded: ${clipResult.title}`);
-    } else {
-      errors.push('Clip: No video could be downloaded/uploaded');
-    }
-
-    // Step 3: Create explainer video
-    this.logger.info('Step 3: Creating explainer video...');
-
-    const channelMemory = this.memory['channel-memory'];
     const usedCountries = channelMemory.countriesUsedThisWeek || [];
-
+    
     const allCountries = [
       'Nigeria', 'Japan', 'Germany', 'Australia', 'France', 'Brazil',
       'Thailand', 'India', 'Mexico', 'UK', 'South Korea', 'Egypt',
       'Italy', 'Spain', 'South Africa', 'Argentina', 'Turkey', 'Vietnam'
     ];
-
-    const availableCountries = allCountries.filter(c => !usedCountries.includes(c));
-    const country = availableCountries[Math.floor(Math.random() * availableCountries.length)] || 
-                    allCountries[Math.floor(Math.random() * allCountries.length)];
-
-    const explainFormats = [
-      { category: 'food', prompt: 'What is this food?' },
-      { category: 'music', prompt: 'What is this music genre?' },
-      { category: 'dance', prompt: 'What is this dance?' },
-      { category: 'trend', prompt: 'What is this trend?' },
-      { category: 'culture', prompt: 'What is this tradition?' },
-    ];
-
-    const format = explainFormats[Math.floor(Math.random() * explainFormats.length)];
+    const available = allCountries.filter(c => !usedCountries.includes(c));
+    const country1 = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : allCountries[Math.floor(Math.random() * allCountries.length)];
+    const country2 = allCountries[Math.floor(Math.random() * allCountries.length)];
+    const country3 = allCountries[Math.floor(Math.random() * allCountries.length)];
     
-    this.logger.info(`Searching YouTube for ${format.category} content from ${country}...`);
-    
-    let foundContentUrl = null;
-    let foundContentPlatform = 'web';
-    
-    // Use yt-dlp as primary for explainer content too
     try {
-      const ytResults = await this._searchYouTubeWithYtDlp(`${country} ${format.category}`, 3);
-      if (ytResults.length > 0) {
-        foundContentUrl = ytResults[0].url;
-        foundContentPlatform = 'youtube';
-        this.logger.info(`Found YouTube video for explainer: ${foundContentUrl}`);
-      }
-    } catch (err) {
-      this.logger.warn(`Search for explainer failed: ${err.message}`);
-    }
-    
-    // Optional: try Hermes for non-YouTube platforms
-    if (!foundContentUrl && this.agent && this.agent.isAvailable && this.agent.isAvailable()) {
-      try {
-        this.logger.info('Asking Hermes for non-YouTube URL...');
-        const hermesResult = await this.agent.run(
-          `Find ONE viral video URL about ${format.category} from ${country}.
-          Search TikTok, Bilibili, Douyin, or Instagram.
-          Return ONLY the raw URL.`,
-          { verbose: false, maxSteps: 1, timeout: 60000 }
-        );
-        if (hermesResult && hermesResult.output) {
-          const urls = this._extractUrls(hermesResult.output);
-          if (urls.length > 0) {
-            foundContentUrl = urls[0];
-            foundContentPlatform = urls[0].includes('bilibili') ? 'bilibili' : 
-                                  urls[0].includes('tiktok') ? 'tiktok' : 'web';
-            this.logger.info(`Hermes found URL: ${foundContentUrl}`);
-          }
-        }
-      } catch (err) {
-        this.logger.info(`Hermes search skipped: ${err.message}`);
-      }
-    }
-    
-    const explainTopic = {
-      country, format,
-      title: `${format.prompt} (${country} edition) 🌍`,
-      hermesContent: foundContentUrl ? { platform: foundContentPlatform, url: foundContentUrl, query: `${country} ${format.category}` } : null
-    };
+      const prompt = `You are a content researcher for "Mr. WorldWideWebster" - a channel that shows global viral content.
 
-    this.logger.info(`Creating explainer: "${explainTopic.title}"`);
+Generate 5 search queries to find trending videos from these 3 countries: ${country1}, ${country2}, ${country3}.
 
-    const explainPipeline = require('../explainer/explain-pipeline');
-    let explainResult;
-    try {
-      explainResult = await explainPipeline.processExplain({
-        sourceContent: {
-          title: explainTopic.title,
-          platform: foundContentPlatform,
-          url: foundContentUrl || null,
-          description: `Exploring ${explainTopic.country} ${explainTopic.format.category}`,
-          duration: 60, hasSpeech: true, isVisual: true, languageDetected: 'english',
-        },
-        explainThing: `${explainTopic.country} ${explainTopic.format.category}`,
-        explainCategory: explainTopic.format.category,
-        decision: { path: 'explain', confidence: 90, reasoning: `Popular ${explainTopic.format.category} from ${explainTopic.country}` },
-        outputDir: config.paths.explainers,
-        ai: this.ai, config: config,
-        hermesAgent: this.agent,
-      });
+Focus on finding:
+- MEME videos (funny/relatable moments, text overlay only)
+- STREAMER moments (reaction clips, live stream highlights)
+- Explainer candidates ("What is this?" - music genres, dances, food, trends)
 
-      this.logger.success(`✅ Explainer created: ${explainResult.title}`);
+Prioritize:
+- Videos with decent engagement (views, comments)
+- New and fast-growing content
+- Authentic cultural moments
 
-      const uploadVideoPath = explainResult.videoFile;
-      if (uploadVideoPath && fs.existsSync(uploadVideoPath)) {
-        const uploadResult = await this._uploadToYouTube({
-          videoPath: uploadVideoPath,
-          title: explainResult.title,
-          description: `${explainResult.title}\n\n🌍 Bringing the world to you\n\n#${explainTopic.country} #${explainTopic.format.category} #shorts #worldwidewebster`,
-          type: 'shorts', country: explainTopic.country,
-          tags: ['mr worldwidewebster', 'shorts', explainTopic.country.toLowerCase(), explainTopic.format.category],
-        });
-
-        if (uploadResult) {
-          uploadedVideos.push({ title: explainResult.title, url: uploadResult.url, videoId: uploadResult.videoId, type: 'explainer', country: explainTopic.country });
-          await this._boostVideo(uploadResult.url, 75);
-        }
-      } else {
-        this.logger.warn('No output video file found — skipping explainer upload');
-      }
+Return ONLY a JSON array of 5 strings, each being a search query.
+Example: ["Nigeria viral dance challenge", "Tokyo street food trend", "UK drill reaction"]`;
+      
+      const result = await this.ai.chatJSON(
+        prompt,
+        `Generate 5 trending search queries for ${country1}, ${country2}, ${country3}.`,
+        { useScriptModel: true, temperature: 0.8 }
+      );
+      
+      const queries = Array.isArray(result) ? result.slice(0, 5) : 
+                      result.queries ? result.queries.slice(0, 5) :
+                      [`${country1} viral trend`, `${country2} viral video`, `${country3} trending`, `global meme compilation`, `streamer funny moments`];
+      
+      this.logger.success(`Generated ${queries.length} targeted queries: ${queries.join(' | ')}`);
+      return { queries, countries: [country1, country2, country3] };
     } catch (error) {
-      this.logger.error(`Explainer pipeline failed: ${error.message}`);
-      errors.push(`Explainer: ${error.message}`);
+      this.logger.warn(`Query generation failed: ${error.message}, using defaults`);
+      return {
+        queries: [
+          `${country1} viral dance`, `${country2} street food`, `${country3} music trend`,
+          `funny moments compilation`, `streamer best moments`
+        ],
+        countries: [country1, country2, country3]
+      };
     }
+  }
 
-    // Step 4: Update memory
+  /**
+   * STEP 2: Browser search using Playwright across platforms
+   */
+  async _searchVideos(queries) {
+    this.logger.info('Step 2: Browser search for real video URLs...');
+    
+    const allUrls = [];
+    
+    // Try Playwright browser search (most reliable for non-YouTube)
+    if (this.ai && this.ai.browserSearch) {
+      try {
+        for (const query of queries.slice(0, 3)) {
+          this.logger.info(`Browser searching: "${query}"`);
+          const urls = await this.ai.browserSearch(
+            ['youtube', 'bilibili', 'tiktok'],
+            query,
+            { maxUrls: 2 }
+          );
+          for (const url of urls) {
+            if (!allUrls.includes(url)) allUrls.push(url);
+          }
+          if (allUrls.length >= 5) break;
+        }
+      } catch (error) {
+        this.logger.warn(`Playwright search failed: ${error.message}`);
+      }
+    }
+    
+    // Fallback: yt-dlp YouTube search with anti-block flags
+    if (allUrls.length < 3) {
+      for (const query of queries) {
+        if (allUrls.length >= 5) break;
+        try {
+          // Use player_client=android to bypass bot blocks
+          const cmd = `yt-dlp --extractor-args "youtube:player_client=android" --flat-playlist --dump-json "ytsearch3:${query}" 2>/dev/null`;
+          const output = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
+          if (output) {
+            const lines = output.split('\n').filter(Boolean);
+            for (const line of lines) {
+              try {
+                const parsed = JSON.parse(line);
+                const url = `https://www.youtube.com/watch?v=${parsed.id}`;
+                if (!allUrls.includes(url)) {
+                  allUrls.push({ url, title: parsed.title || 'YouTube video', source: 'yt-dlp' });
+                }
+              } catch {}
+            }
+          }
+        } catch (err) {
+          this.logger.warn(`yt-dlp search "${query}" failed: ${err.message}`);
+        }
+      }
+    }
+    
+    this.logger.success(`Found ${allUrls.length} video URLs total`);
+    return allUrls;
+  }
+
+  /**
+   * STEP 3: Download videos using yt-dlp
+   */
+  async _downloadVideos(urls) {
+    this.logger.info('Step 3: Downloading videos...');
+    
+    const outputDir = config.paths.clips;
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    
+    const downloadedVideos = [];
+    
+    for (let i = 0; i < Math.min(urls.length, 5); i++) {
+      const entry = typeof urls[i] === 'string' ? { url: urls[i], title: `Video ${i + 1}` } : urls[i];
+      
+      this.logger.info(`Downloading [${i + 1}/${Math.min(urls.length, 5)}]: ${entry.url.substring(0, 80)}`);
+      
+      const outputTemplate = path.join(outputDir, `vid_${i}_${Date.now()}_%(id)s.%(ext)s`);
+      
+      try {
+        // Use player_client=android + limit to 720p mp4
+        const dlCmd = `yt-dlp --extractor-args "youtube:player_client=android" -f "best[height<=720][ext=mp4]/best[height<=720]" -o "${outputTemplate}" "${entry.url}" --no-playlist --max-filesize 100M 2>&1`;
+        execSync(dlCmd, { timeout: 180000, maxBuffer: 10 * 1024 * 1024 });
+        
+        // Find the downloaded file
+        const files = fs.readdirSync(outputDir)
+          .filter(f => f.startsWith(`vid_${i}_`) && (f.endsWith('.mp4') || f.endsWith('.webm')))
+          .sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
+        
+        if (files.length > 0) {
+          const filePath = path.join(outputDir, files[0]);
+          downloadedVideos.push({
+            path: filePath,
+            title: entry.title || `Video ${i + 1}`,
+            sourceUrl: entry.url,
+          });
+          this.logger.success(`  ✅ Downloaded: ${files[0]}`);
+        }
+      } catch (error) {
+        this.logger.warn(`  ❌ Download failed: ${error.message}`);
+      }
+    }
+    
+    this.logger.success(`Downloaded ${downloadedVideos.length} videos`);
+    return downloadedVideos;
+  }
+
+  /**
+   * STEP 4: Analyze videos with Nemotron, rank them, pick explainer candidate
+   */
+  async _analyzeAndRankVideos(videos) {
+    this.logger.info('Step 4: Nemotron analyzing & ranking videos...');
+    
+    if (videos.length === 0) return { ranked: [], explainer: null, clips: [] };
+    
+    const videoAnalyses = [];
+    
+    for (let i = 0; i < videos.length; i++) {
+      const video = videos[i];
+      this.logger.info(`Analyzing video ${i + 1}/${videos.length}: ${video.title.substring(0, 50)}...`);
+      
+      try {
+        // Send video to Nemotron vision model for analysis
+        const analysis = await this.ai.chatWithVideo(
+          `You are a content curator for a channel that shows global viral content.
+Analyze this video and return JSON with:
+- type: "meme" | "streamer" | "explainer" | "other"
+- rank: 1-10 (viral potential)
+- category: "music" | "dance" | "food" | "comedy" | "reaction" | "trend" | "culture" | "other"
+- title_en: Brief English title
+- description: 1 sentence what this video is about
+- has_text_needed: true/false (would a translation text overlay help?)
+- explainer_text: If type is explainer, short "What is this? This is..." text
+- best_start_time: Best starting timestamp in seconds for a short (0-10)
+- duration_needed: How many seconds needed for the short (15-30)
+- audio_description: brief desc of the audio/music in the clip`,
+          video.path,
+          `What is this video? Rate its viral potential for a global audience channel.`,
+          { useVideo: true, temperature: 0.3 }
+        );
+        
+        let parsed;
+        try {
+          const cleaned = analysis.replace(/```json/g, '').replace(/```/g, '').trim();
+          parsed = JSON.parse(cleaned);
+        } catch {
+          const jsonMatch = analysis.match(/\{[\s\S]*\}/);
+          parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { type: 'other', rank: 5 };
+        }
+        
+        videoAnalyses.push({
+          ...video,
+          analysis: parsed,
+          index: i,
+        });
+        
+        this.logger.info(`  Rank ${parsed.rank || '?'}/10 | Type: ${parsed.type || 'other'} | ${parsed.title_en || ''}`);
+      } catch (error) {
+        this.logger.warn(`  Analysis failed: ${error.message}`);
+        videoAnalyses.push({ ...video, analysis: { type: 'other', rank: 5 }, index: i });
+      }
+    }
+    
+    // Sort by rank descending
+    videoAnalyses.sort((a, b) => (b.analysis?.rank || 0) - (a.analysis?.rank || 0));
+    
+    // Pick top 3
+    const top3 = videoAnalyses.slice(0, 3);
+    
+    // Find best explainer candidate
+    const explainer = top3.find(v => v.analysis?.type === 'explainer') || 
+                      top3.find(v => v.analysis?.type === 'other' && v.analysis?.rank >= 6) ||
+                      top3[0];
+    
+    // Remaining are clip candidates
+    const clips = top3.filter(v => v !== explainer);
+    
+    this.logger.success('Ranking complete:');
+    top3.forEach((v, i) => {
+      this.logger.info(`  #${i + 1}: [${v.analysis?.type}] ${v.analysis?.title_en || v.title} (rank: ${v.analysis?.rank})`);
+    });
+    
+    return { ranked: top3, explainer, clips };
+  }
+
+  /**
+   * STEP 5: Edit videos using ClipEditor
+   */
+  async _editVideos(ranked, explainer, clips) {
+    this.logger.info('Step 5: Editing videos...');
+    
+    const outputDir = config.paths.clips;
+    const editedVideos = [];
+    
+    // Edit top clip videos (meme/streamer)
+    for (const clip of clips) {
+      const type = clip.analysis?.type === 'streamer' ? 'streamer' : 'clip';
+      const startTime = clip.analysis?.best_start_time || 5;
+      const duration = clip.analysis?.duration_needed || 20;
+      const textOverlay = clip.analysis?.has_text_needed && clip.analysis?.description 
+        ? clip.analysis.description : '';
+      
+      const outputPath = path.join(outputDir, `edited_clip_${Date.now()}_${clip.index}.mp4`);
+      
+      const result = await this.clipEditor.editVideo(clip.path, {
+        type,
+        startTime,
+        duration,
+        textOverlay,
+        outputPath,
+      });
+      
+      if (result) {
+        editedVideos.push({
+          path: result,
+          title: clip.analysis?.title_en || clip.title,
+          type: type,
+          tags: ['mr worldwidewebster', 'shorts', clip.analysis?.category || 'trending'].filter(Boolean),
+        });
+      }
+    }
+    
+    // Edit explainer video
+    if (explainer) {
+      const startTime = explainer.analysis?.best_start_time || 3;
+      const duration = explainer.analysis?.duration_needed || 25;
+      const explainerText = explainer.analysis?.explainer_text || `What is this? This is ${explainer.analysis?.title_en || 'global content'}`;
+      
+      // Generate voiceover for explainer
+      const voiceoverDir = path.join(config.paths.assets, 'voiceovers');
+      if (!fs.existsSync(voiceoverDir)) fs.mkdirSync(voiceoverDir, { recursive: true });
+      const voiceoverPath = path.join(voiceoverDir, `explainer_${Date.now()}.mp3`);
+      
+      let voiceoverResult = null;
+      try {
+        voiceoverResult = await this.clipEditor.generateVoiceover(explainerText, voiceoverPath);
+      } catch {
+        this.logger.warn('Voiceover generation failed, using text-only explainer');
+      }
+      
+      const outputPath = path.join(outputDir, `edited_explain_${Date.now()}.mp4`);
+      
+      const result = await this.clipEditor.editVideo(explainer.path, {
+        type: 'explainer',
+        startTime,
+        duration,
+        voiceoverPath: voiceoverResult,
+        voiceoverDuration: 5,
+        textOverlay: explainerText,
+        outputPath,
+      });
+      
+      if (result) {
+        editedVideos.push({
+          path: result,
+          title: explainer.analysis?.title_en || explainer.title,
+          type: 'explainer',
+          tags: ['mr worldwidewebster', 'shorts', 'explainer', explainer.analysis?.category || 'trending'].filter(Boolean),
+          description: `${explainerText}\n\n🌍 Bringing the world to you`,
+        });
+      }
+    }
+    
+    this.logger.success(`Edited ${editedVideos.length} videos`);
+    return editedVideos;
+  }
+
+  /**
+   * Main daily pipeline
+   */
+  async runDaily() {
+    this.logger.header('🌅 DAILY PIPELINE v3: AI Search → Download → Analyze → Edit → Upload');
+    
+    const errors = [];
+    const uploadedVideos = [];
+
+    // STEP 1: Generate targeted search queries
+    const { queries, countries } = await this._generateQueries();
+    
+    // STEP 2: Search for real URLs via Playwright + yt-dlp
+    const urls = await this._searchVideos(queries);
+    
+    // STEP 3: Download videos
+    const downloadedVideos = await this._downloadVideos(urls);
+    
+    // STEP 4: Analyze with Nemotron, rank, pick explainer
+    const { ranked, explainer, clips } = await this._analyzeAndRankVideos(downloadedVideos);
+    
+    // STEP 5: Edit videos
+    const editedVideos = await this._editVideos(ranked, explainer, clips);
+    
+    // STEP 6: Upload to YouTube
+    for (const video of editedVideos) {
+      const uploadResult = await this._uploadToYouTube({
+        videoPath: video.path,
+        title: video.title.substring(0, 100),
+        description: video.description || `🔥 ${video.title}\n\n🌍 Bringing the world to you`,
+        type: video.type,
+        tags: video.tags,
+      });
+      if (uploadResult) {
+        uploadedVideos.push({ title: video.title, url: uploadResult.url, type: video.type });
+      }
+    }
+    
+    // Update memory
+    const channelMemory = this.memory['channel-memory'];
     channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + uploadedVideos.length;
-    channelMemory.lastCountryUsed = explainTopic?.country || 'Global';
-    channelMemory.lastContentType = uploadedVideos.length > 0 ? uploadedVideos[0].type : 'none';
-
-    if (!channelMemory.countriesUsedThisWeek) channelMemory.countriesUsedThisWeek = [];
-    if (explainTopic?.country && !channelMemory.countriesUsedThisWeek.includes(explainTopic.country)) {
-      channelMemory.countriesUsedThisWeek.push(explainTopic.country);
+    if (countries && countries.length > 0) {
+      if (!channelMemory.countriesUsedThisWeek) channelMemory.countriesUsedThisWeek = [];
+      for (const c of countries) {
+        if (!channelMemory.countriesUsedThisWeek.includes(c)) {
+          channelMemory.countriesUsedThisWeek.push(c);
+        }
+      }
+      if (channelMemory.countriesUsedThisWeek.length > 14) {
+        channelMemory.countriesUsedThisWeek = channelMemory.countriesUsedThisWeek.slice(-14);
+      }
     }
-    if (channelMemory.countriesUsedThisWeek.length > 14) {
-      channelMemory.countriesUsedThisWeek = channelMemory.countriesUsedThisWeek.slice(-14);
+    if (queries && queries.length > 0) {
+      if (!channelMemory.usedTopics) channelMemory.usedTopics = [];
+      for (const q of queries) {
+        if (!channelMemory.usedTopics.includes(q)) {
+          channelMemory.usedTopics.push(q);
+        }
+      }
+      if (channelMemory.usedTopics.length > 30) {
+        channelMemory.usedTopics = channelMemory.usedTopics.slice(-30);
+      }
     }
-
-    const trendingLog = this.memory['trending-log'];
-    trendingLog.lastUpdated = new Date().toISOString();
-    trendingLog.trends = [
-      ...trendingResults.slice(0, 10).map(r => ({ country: 'Global', trend: r.title.substring(0, 200), timestamp: new Date().toISOString() })),
-      ...trendingLog.trends.slice(0, 50),
-    ];
-
     this._saveMemory('channel-memory', channelMemory);
-    this._saveMemory('trending-log', trendingLog);
-    this._saveMemory('content-history', {
-      videos: [
-        ...(this.memory['content-history']?.videos || []),
-        ...uploadedVideos.map(v => ({ title: v.title, type: v.type || 'shorts', country: v.country || 'Global', url: v.url, createdAt: new Date().toISOString() })),
-      ].slice(-100),
-    });
-
+    
+    // Discord notification
     await this._sendDiscordNotification('daily', {
-      videos: uploadedVideos, countries: channelMemory.countriesUsedThisWeek,
-      totalVideos: channelMemory.totalVideosPosted, errors: errors,
+      videos: uploadedVideos,
+      countries: channelMemory.countriesUsedThisWeek,
+      totalVideos: channelMemory.totalVideosPosted,
+      errors,
     });
-
+    
+    // Summary
     this.logger.header('DAILY SUMMARY');
-    this.logger.info(`Videos uploaded: ${uploadedVideos.length}`);
-    if (uploadedVideos.length > 0) {
-      uploadedVideos.forEach(v => this.logger.info(`  📺 [${v.type}] ${v.title} → ${v.url}`));
-    }
-    if (errors.length > 0) {
-      errors.forEach(e => this.logger.warn(`  ❌ ${e}`));
-    }
-
-    return { explainResult, uploadedVideos, errors };
+    this.logger.info(`Search queries: ${queries.length}`);
+    this.logger.info(`URLs found: ${urls.length}`);
+    this.logger.info(`Downloaded: ${downloadedVideos.length}`);
+    this.logger.info(`Edited: ${editedVideos.length}`);
+    this.logger.info(`Uploaded: ${uploadedVideos.length}`);
+    if (errors.length > 0) errors.forEach(e => this.logger.warn(`  ❌ ${e}`));
+    
+    return { uploadedVideos, errors };
   }
 
   async runWeekly(customTopic) {
-    this.logger.header('🎬 WEEKLY: Landscape Compilation Videos');
-
+    this.logger.header('🎬 WEEKLY: Landscape Compilation');
     try {
       const { WeeklyRunner } = require('../landscape/weekly-runner');
       const runner = new WeeklyRunner();
-
-      const options = { count: '2', type: 'auto', 'skip-research': 'false' };
-
-      if (customTopic) {
-        options.type = 'compilation';
-        process.env.MWW_CUSTOM_TOPIC = customTopic;
-        this.logger.info(`Custom topic: ${customTopic}`);
-      }
-
+      const options = { count: '2', type: customTopic ? 'compilation' : 'auto', 'skip-research': 'false' };
+      if (customTopic) process.env.MWW_CUSTOM_TOPIC = customTopic;
       const result = await runner.run(options);
-
       const uploadedVideos = [];
-      if (result.results && result.results.length > 0) {
-        for (const videoResult of result.results) {
-          if (videoResult.videoPath && fs.existsSync(videoResult.videoPath)) {
-            const uploadResult = await this._uploadToYouTube({
-              videoPath: videoResult.videoPath,
-              title: videoResult.title || customTopic || 'Weekly Landscape Video',
-              description: `${videoResult.title}\n\n🌍 Bringing the world to you.\n\n#global #travel #culture #landscape`,
-              type: 'landscape',
-              tags: ['mr worldwidewebster', 'global', 'travel', 'culture', 'landscape'],
-            });
-            if (uploadResult) {
-              uploadedVideos.push({ title: videoResult.title, url: uploadResult.url, type: 'landscape' });
-            }
+      if (result.results) {
+        for (const v of result.results) {
+          if (v.videoPath && fs.existsSync(v.videoPath)) {
+            const r = await this._uploadToYouTube({ videoPath: v.videoPath, title: v.title || 'Weekly Video', type: 'landscape' });
+            if (r) uploadedVideos.push({ title: v.title, url: r.url, type: 'landscape' });
           }
         }
       }
-
-      const channelMemory = this.memory['channel-memory'];
-      channelMemory.totalVideosPosted = (channelMemory.totalVideosPosted || 0) + uploadedVideos.length;
-      this._saveMemory('channel-memory', channelMemory);
-
-      await this._sendDiscordNotification('weekly', {
-        weekRange: `Week of ${new Date().toLocaleDateString()}`,
-        videos: uploadedVideos.map(v => ({ title: v.title, views: 'New' })),
-        countries: channelMemory.countriesUsedThisWeek || [],
-        stats: { 'Total Videos': channelMemory.totalVideosPosted, 'Countries Covered': (channelMemory.countriesUsedThisWeek || []).length, 'Videos Created': result.succeeded || 0 },
-      });
-
-      this.logger.success(`✅ Weekly landscape pipeline finished: ${result.succeeded} videos`);
-      return { topic: customTopic || 'auto-generated', videos: uploadedVideos, result };
+      const m = this.memory['channel-memory'];
+      m.totalVideosPosted = (m.totalVideosPosted || 0) + uploadedVideos.length;
+      this._saveMemory('channel-memory', m);
+      this.logger.success(`Weekly done: ${result.succeeded} videos`);
+      return { videos: uploadedVideos, result };
     } catch (error) {
-      this.logger.error(`Weekly pipeline failed: ${error.message}`);
-      const topic = customTopic || this._pickWeeklyTopic();
-      const scriptsDir = config.paths.scripts;
-      if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir, { recursive: true });
-      const scriptPath = path.join(scriptsDir, `weekly_${Date.now()}_script.txt`);
-      fs.writeFileSync(scriptPath, `Weekly topic: ${topic}\nLandscape pipeline was unavailable.`);
-      return { topic, scriptPath, error: error.message };
+      this.logger.error(`Weekly failed: ${error.message}`);
     }
   }
 
   _pickWeeklyTopic() {
-    const weeklyTopics = [
-      'Street Food from Every Continent — What Each Country Eats',
-      'How 10 Different Countries React to the Same Music',
-      'US English vs UK English vs Australian English',
-      'Internet Censorship Differences Around the World',
-      'How Different Countries Celebrate the Same Holiday',
-      'School Lunch Around the World',
-      'Public Transportation in Tokyo vs London vs NYC',
-      'The Most Popular Social Media App in Every Country',
-      'How Different Countries Handle Weather Disasters',
-      'Viral Dances from Around the World',
-      'What Dating Looks Like in 10 Different Countries',
-      'Most Expensive and Cheapest Countries to Live In',
-      'How Different Countries Use AI in Daily Life',
-      'The Biggest Stadiums Around the World',
-      'National Animals and What They Say About Each Country',
+    const topics = [
+      'Street Food from Every Continent', 'How Different Countries React to Music',
+      'US vs UK vs Australian English', 'Internet Censorship Around the World',
+      'How Different Countries Celebrate Holidays', 'School Lunch Around the World',
+      'Public Transport: Tokyo vs London vs NYC', 'Most Popular Social Media by Country',
     ];
-    return weeklyTopics[Math.floor(Math.random() * weeklyTopics.length)];
-  }
-
-  async runReview() {
-    this.logger.header('🌙 MIDNIGHT: Self-Improvement Review');
-
-    const channelMemory = this.memory['channel-memory'];
-    const trendingLog = this.memory['trending-log'];
-    const { CodeEvolver } = require('../hermes-agent/code-evolver');
-    const evolver = new CodeEvolver({ repoRoot: path.resolve(__dirname, '..') });
-
-    const stats = {
-      totalVideosPosted: channelMemory.totalVideosPosted || 0,
-      countriesUsedThisWeek: channelMemory.countriesUsedThisWeek || [],
-      bestPerformingFormats: channelMemory.bestPerformingFormats || [],
-      trendsFound: trendingLog.trends?.length || 0,
-    };
-
-    this.logger.info(`Current stats: ${JSON.stringify(stats)}`);
-
-    this.logger.header('STEP 1: Performance Analysis');
-    this.logger.info(`Total videos: ${stats.totalVideosPosted}, Countries this week: ${stats.countriesUsedThisWeek.length}`);
-
-    let perfData = { totalVideosTracked: 0, recommendations: ['No performance data yet'] };
-    try {
-      const perfPath = path.join(this.memoryPath, 'performance-metrics.json');
-      if (fs.existsSync(perfPath)) {
-        perfData = JSON.parse(fs.readFileSync(perfPath, 'utf8'));
-      }
-    } catch {
-      this.logger.warn('Could not read performance metrics');
-    }
-
-    this.logger.header('STEP 2: Hermes Agent Strategy Design');
-    const brandGuidelines = evolver.brandGuardian.getGuidelines();
-
-    const result = await this.agent.run(
-      `You are the SELF-IMPROVEMENT module for Mr. WorldWideWebster YouTube channel.
-
-CHANNEL IDENTITY: "Mr. WorldWideWebster" — shows people what's trending around the world.
-
-CURRENT STATE:
-- Total videos posted: ${stats.totalVideosPosted}
-- Countries covered this week: ${JSON.stringify(stats.countriesUsedThisWeek)}
-- Best performing formats: ${JSON.stringify(stats.bestPerformingFormats)}
-- Trends tracked: ${stats.trendsFound}
-
-BRAND GUIDELINES:
-- Allowed content types: ${brandGuidelines.allowedContentTypes.join(', ')}
-- Preferred title formulas: ${JSON.stringify(brandGuidelines.titleRules.preferredFormulas)}
-- Max title length: ${brandGuidelines.titleRules.maxLength} chars
-- Must avoid: ${JSON.stringify(brandGuidelines.titleRules.forbiddenPatterns)}
-- Voice tone: ${brandGuidelines.voice.tone}
-
-YOUR WORKFLOW:
-PHASE 1: ANALYZE - Call analyze_performance, get_brand_guidelines, read memory files
-PHASE 2: IMPROVE CODE - Call edit_source_code (dryRun:true first!)
-PHASE 3: CREATE TEST VIDEO - Call create_and_post_video with new strategy
-PHASE 4: COMMIT - Call commit_improvements with descriptive message`,
-      { verbose: true, maxSteps: 15 }
-    );
-
-    this.logger.success(`✅ Hermes agent completed: ${result.stepsCount} steps`);
-
-    const changeLog = evolver.getChangeLog();
-    if (changeLog.length > 0) {
-      this.logger.info(`Committing ${changeLog.length} changes...`);
-      evolver.commitChanges('🌙 Midnight self-improvements');
-    }
-
-    channelMemory.countriesUsedThisWeek = [];
-    this._saveMemory('channel-memory', channelMemory);
-
-    return { ...result, codeChanges: changeLog, evolverLog: changeLog };
+    return topics[Math.floor(Math.random() * topics.length)];
   }
 
   async run() {
     await this.initialize();
-
     const args = process.argv.slice(2);
     const modeIndex = args.indexOf('--mode');
     const mode = modeIndex !== -1 ? args[modeIndex + 1] : 'daily';
-
     const topicIndex = args.indexOf('--topic');
     const customTopic = topicIndex !== -1 ? args.slice(topicIndex + 1).join(' ') : null;
 
     switch (mode) {
       case 'daily': await this.runDaily(); break;
       case 'weekly': await this.runWeekly(customTopic); break;
-      case 'review': await this.runReview(); break;
       default:
-        console.log(`Unknown mode: ${mode}. Use: daily, weekly, or review`);
+        console.log(`Unknown mode: ${mode}`);
         process.exit(1);
     }
-
-    this.logger.success(`🎉 ${mode.toUpperCase()} pipeline completed successfully`);
+    this.logger.success(`🎉 ${mode.toUpperCase()} pipeline completed`);
   }
 }
 
 process.on('uncaughtException', (error) => {
-  console.error(`⚠️ [Global] Uncaught exception: ${error.message}`);
+  console.error(`⚠️ Uncaught: ${error.message}`);
 });
-
 process.on('unhandledRejection', (reason) => {
-  console.error(`⚠️ [Global] Unhandled rejection: ${reason?.message || reason}`);
+  console.error(`⚠️ Rejection: ${reason?.message || reason}`);
 });
 
-const runner = new GitHubActionsRunner();
-runner.run().catch(error => {
-  console.error(`\n❌ Fatal error: ${error.message}`);
+new GitHubActionsRunner().run().catch(error => {
+  console.error(`\n❌ Fatal: ${error.message}`);
   process.exit(1);
 });
