@@ -1,7 +1,9 @@
 /**
  * Downloader module
- * Uses yt-dlp with rotating proxies from Proxifly (tested proxies).
- * Tries multiple proxies per video.
+ * Uses yt-dlp with proper clients to avoid PO Token requirement:
+ * - web_safari: Provides HLS formats (no PO Token needed)
+ * - tv: No PO Token required
+ * Uses deno for EJS challenge solving + Proxifly tested proxies.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -20,46 +22,55 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Gather multiple proxy candidates
+  // Get proxy candidates (env var first, then scraped)
   const proxies = [];
-  
-  // Env proxy first (user's paid proxy, preferred)
   if (process.env.YT_PROXY && process.env.YT_PROXY.trim()) {
     proxies.push(process.env.YT_PROXY.trim());
   }
-  
-  // Scrape free proxies (Proxifly returns tested ones)
   for (let i = 0; i < 3; i++) {
     try {
-      const proxy = await getWorkingProxy();
-      if (proxy && !proxies.includes(proxy)) proxies.push(proxy);
+      const p = await getWorkingProxy();
+      if (p) proxies.push(p);
     } catch {}
   }
+  proxies.push(null); // direct connection fallback
 
-  // Try each proxy + direct connection
-  const cmdTemplates = [];
+  // Build command templates per platform
+  const commands = [];
   
-  // With each proxy
-  for (const proxy of proxies) {
-    if (platform === 'youtube') {
-      cmdTemplates.push(`yt-dlp --proxy "${proxy}" --extractor-args "youtube:player_client=android" -f "best[height<=480]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 10 --retries 1`);
-      cmdTemplates.push(`yt-dlp --proxy "${proxy}" -f "best[height<=480]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 10 --retries 1`);
-    } else {
-      cmdTemplates.push(`yt-dlp --proxy "${proxy}" --add-header "Referer:https://www.bilibili.com/" -f "best" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 10 --retries 1`);
+  if (platform === 'youtube') {
+    for (const proxy of proxies) {
+      const proxyArg = proxy ? `--proxy "${proxy}"` : '';
+      
+      // web_safari client: provides HLS formats (no PO Token needed)
+      commands.push(`python3 -m yt_dlp ${proxyArg} --js-runtimes deno --extractor-args "youtube:player_client=web_safari" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
+      
+      // tv client: no PO Token required
+      commands.push(`python3 -m yt_dlp ${proxyArg} --js-runtimes deno --extractor-args "youtube:player_client=tv" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
+      
+      // mweb client with PO Token fallback
+      commands.push(`python3 -m yt_dlp ${proxyArg} --js-runtimes deno --extractor-args "youtube:player_client=mweb" -f "best[height<=720]" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
+      
+      // No format filter (yt-dlp auto-selects)
+      commands.push(`python3 -m yt_dlp ${proxyArg} --js-runtimes deno -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
+    }
+  } else {
+    // Bilibili/other
+    for (const proxy of proxies) {
+      const proxyArg = proxy ? `--proxy "${proxy}"` : '';
+      commands.push(`python3 -m yt_dlp ${proxyArg} --add-header "Referer:https://www.bilibili.com/" -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
+      commands.push(`python3 -m yt_dlp ${proxyArg} -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 15 --retries 2`);
     }
   }
-  
-  // Direct connection (will fail for YouTube but try for others)
-  if (platform !== 'youtube') {
-    cmdTemplates.push(`yt-dlp -o "${outputFile}" "${url}" --no-playlist --max-filesize 100M --socket-timeout 5`);
-  }
 
-  for (let i = 0; i < cmdTemplates.length; i++) {
+  for (let i = 0; i < commands.length; i++) {
     try {
-      const hasProxy = cmdTemplates[i].includes('--proxy');
-      logger.info(`Try ${i+1}/${cmdTemplates.length}${hasProxy ? ' (proxy)' : ' (direct)'}...`);
+      const hasProxy = commands[i].includes('--proxy');
+      const clientMatch = commands[i].match(/player_client=(\w+)/);
+      const client = clientMatch ? clientMatch[1] : 'default';
+      logger.info(`Try ${i+1}: ${client}${hasProxy ? ' (proxy)' : ' (direct)'}`);
       
-      const out = execSync(cmdTemplates[i], { timeout: 60000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+      execSync(commands[i], { timeout: 120000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
       
       const files = fs.readdirSync(outputDir)
         .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 100000)
@@ -72,7 +83,11 @@ async function downloadVideo(entry, outputDir) {
       }
     } catch (e) {
       const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 80);
-      logger.warn(`Try ${i+1}: ${err}`);
+      if (err.includes('Sign in') || err.includes('bot')) {
+        logger.warn(`Try ${i+1}: bot blocked (expected without proxy)`);
+      } else {
+        logger.warn(`Try ${i+1}: ${err}`);
+      }
     }
   }
 
