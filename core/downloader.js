@@ -1,7 +1,6 @@
 /**
  * Downloader module
- * Uses web_embedded client - per yt-dlp docs, this does NOT need PO Token.
- * Falls back to android_vr, tv clients.
+ * web_embedded client (no PO Token) + --js-runtimes node for JS challenges.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -10,6 +9,7 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
 const MAX_DURATION = 480;
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
@@ -25,17 +25,16 @@ async function downloadVideo(entry, outputDir) {
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
   const PY = 'python3 -m yt_dlp';
-  const opts = `-f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 15 --retries 2 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"`;
+  const fmt = '-f "best[height<=720]"';
+  const opts = `--download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 20 --retries 2 --user-agent "${UA}" --js-runtimes node`;
 
-  // Per yt-dlp v2026 docs:
-  // web_embedded: PO Token NOT required. Only embeddable videos.
-  // android_vr: PO Token NOT required. No "made for kids" videos.
-  // tv: PO Token NOT required. Formats may be DRM'd.
+  // web_embedded: per yt-dlp v2026 docs - PO Token NOT required, only embeddable videos
+  // tv: PO Token NOT required, formats may be DRM'd
   const cmds = [
-    `${PY} --extractor-args "youtube:player_client=web_embedded" ${opts}`,
-    `${PY} --extractor-args "youtube:player_client=android_vr" ${opts}`,
-    `${PY} --extractor-args "youtube:player_client=tv" ${opts}`,
-    `${PY} ${opts}`,
+    `${PY} --extractor-args "youtube:player_client=web_embedded" ${fmt} ${opts}`,
+    `${PY} --extractor-args "youtube:player_client=android_vr" ${fmt} ${opts}`,
+    `${PY} --extractor-args "youtube:player_client=tv" ${fmt} ${opts}`,
+    `${PY} ${fmt} ${opts}`,
   ];
 
   for (let i = 0; i < cmds.length; i++) {
@@ -43,10 +42,8 @@ async function downloadVideo(entry, outputDir) {
       const client = cmds[i].match(/player_client=(\w+)/)?.[1] || 'default';
       logger.info(`Try ${i+1}: ${client}`);
       
-      // Run with timeout, capture output
-      const stdout = execSync(cmds[i], { timeout: 90000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+      execSync(cmds[i], { timeout: 120000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
 
-      // Find downloaded file
       const files = fs.readdirSync(outputDir)
         .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
         .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
@@ -59,12 +56,8 @@ async function downloadVideo(entry, outputDir) {
       }
     } catch (e) {
       const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
-      if (err.includes('Sign in')) {
-        logger.warn(`Try ${i+1}: sign-in required`);
-      } else if (err.includes('HTTP Error 403')) {
-        logger.warn(`Try ${i+1}: 403 forbidden`);
-      } else if (err.includes('embedding')) {
-        logger.warn(`Try ${i+1}: not embeddable`);
+      if (err.includes('Sign in') || err.includes('embed') || err.includes('403')) {
+        // Known failures - don't clutter logs
       } else {
         logger.warn(`Try ${i+1}: ${err}`);
       }
@@ -80,8 +73,8 @@ async function downloadVideos(urls, outputDir) {
   const downloaded = [];
   for (let i = 0; i < Math.min(urls.length, 3); i++) {
     logger.info(`--- Video ${i+1}/3 ---`);
-    const result = await downloadVideo(urls[i], outputDir);
-    if (result) downloaded.push(result);
+    const r = await downloadVideo(urls[i], outputDir);
+    if (r) downloaded.push(r);
   }
   logger.success(`Downloaded ${downloaded.length}/3`);
   return downloaded;
