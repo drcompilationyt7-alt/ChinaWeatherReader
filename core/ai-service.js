@@ -1,13 +1,14 @@
 /**
  * Mr. WorldWideWebster — Universal AI Service
- * 
- * Supports multiple backends automatically:
- * 1. OpenRouter (primary) — 200+ models, cheap, no download needed
- * 2. OpenAI (fallback) — if no OpenRouter key is set
- * 3. Edge-TTS — completely free voiceover (Windows)
- * 
- * NEW: chatWithVideo() sends video files to vision models (Nemotron)
- * NEW: browserSearch() controls Playwright via AI (owl-alpha)
+ *
+ * Supports:
+ * 1. OpenRouter (primary)
+ * 2. OpenAI (fallback)
+ * 3. Edge-TTS (free voiceover)
+ *
+ * Features:
+ * - chatWithVideo(): Send video files to vision models (Nemotron)
+ * - webSearch(): Search platforms via HTTP (no browser needed)
  */
 const config = require('./config');
 const { Logger } = require('./logger');
@@ -37,7 +38,7 @@ class AIService {
       this.imageGen = this.llm;
       this.logger.info('Using OpenAI provider');
     } else {
-      this.logger.warn('No AI API keys found — set OPENROUTER_API_KEY or OPENAI_API_KEY');
+      this.logger.warn('No AI API keys found — set OPENROUTER_API_KEY');
     }
 
     // Initialize TTS
@@ -57,19 +58,14 @@ class AIService {
     if (!ttsReady && this.llm?.audio?.speech) {
       this.tts = this.llm;
       ttsReady = true;
-      this.logger.info('TTS: using OpenAI TTS');
     }
     if (!ttsReady) this.logger.warn('No TTS provider configured');
   }
 
   isAvailable() { return !!this.llm; }
 
-  // ════════════════════════════════════════
-  //  LLM Methods
-  // ════════════════════════════════════════
-
   async chat(systemPrompt, userMessage, options = {}) {
-    if (!this.llm) throw new Error('No AI provider configured.');
+    if (!this.llm) throw new Error('No AI provider.');
     if (this.llm.constructor.name === 'OpenRouterProvider') {
       return await this.llm.chat(systemPrompt, userMessage, options);
     }
@@ -86,86 +82,55 @@ class AIService {
     if (this.llm.constructor.name === 'OpenRouterProvider') {
       return await this.llm.chatJSON(systemPrompt, userMessage, options);
     }
-    const response = await this.chat(
+    const result = await this.chat(
       systemPrompt + '\n\nRespond ONLY with valid JSON.', userMessage,
       { ...options, responseFormat: { type: 'json_object' } }
     );
-    const cleaned = response.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleaned);
+    return JSON.parse(result.replace(/```json/g, '').replace(/```/g, '').trim());
   }
 
   /**
-   * Send a video file to a vision model for analysis (e.g. Nemotron)
-   * Uses the OpenRouter provider's chatWithVideo method.
+   * Send a video to a vision model (Nemotron) via OpenRouter
    */
   async chatWithVideo(systemPrompt, videoFilePath, textPrompt, options = {}) {
-    if (!this.llm) throw new Error('No AI provider configured.');
+    if (!this.llm) throw new Error('No AI provider.');
     if (this.llm.constructor.name === 'OpenRouterProvider') {
       return await this.llm.chatWithVideo(systemPrompt, videoFilePath, textPrompt, options);
     }
-    throw new Error('chatWithVideo requires OpenRouter provider');
+    throw new Error('chatWithVideo requires OpenRouter');
   }
 
   /**
-   * Use browser-based search via Playwright + AI (owl-alpha)
-   * Searches specified platforms for video content matching a topic.
+   * Search for video URLs across platforms via HTTP (no browser)
    */
-  async browserSearch(platforms, topicQuery, options = {}) {
+  async webSearch(platforms, topicQuery, options = {}) {
     if (this.llm.constructor.name === 'OpenRouterProvider') {
-      return await this.llm.browserSearch(platforms, topicQuery, options);
+      return await this.llm.webSearch(platforms, topicQuery, options);
     }
-    throw new Error('browserSearch requires OpenRouter provider');
+    return [];
   }
 
-  async translate(text, sourceLanguage = 'auto') {
+  async translate(text) {
     if (!this.llm) return text;
     return await this.chat(
-      `You are a professional translator for Mr. WorldWideWebster.
-Rules:
-- Translate to natural, fluent English
-- Preserve slang, humor, and cultural context — add brief [explanations] in brackets if needed
-- Keep the tone and energy of the original`,
+      `Translate to natural English. Preserve slang, humor, and cultural context.`,
       text, { temperature: 0.3, useCheapModel: true }
     );
   }
 
-  // ════════════════════════════════════════
-  //  TTS Methods
-  // ════════════════════════════════════════
-
   async textToSpeech(text, outputPath, options = {}) {
     if (this.tts && typeof this.tts.textToSpeech === 'function') {
-      try { return await this.tts.textToSpeech(text, outputPath, options); }
-      catch (e) { this.logger.warn(`TTS failed: ${e.message}`); }
+      try { return await this.tts.textToSpeech(text, outputPath, options); } catch {}
     }
     if (this.tts?.audio?.speech) {
       const response = await this.tts.audio.speech.create({
         model: 'tts-1-hd', voice: options.voice || 'nova', input: text,
       });
-      const buffer = Buffer.from(await response.arrayBuffer());
-      require('fs').writeFileSync(outputPath, buffer);
+      fs.writeFileSync(outputPath, Buffer.from(await response.arrayBuffer()));
       return outputPath;
     }
-    require('fs').writeFileSync(outputPath + '.txt', text);
-    return outputPath + '.txt';
+    return null;
   }
-
-  async generateDialogAudio(scenes, outputDir) {
-    if (this.tts?.constructor?.name === 'EdgeTTSProvider') {
-      return await this.tts.generateDialogAudio(scenes, outputDir);
-    }
-    const files = [];
-    for (const scene of scenes) {
-      const outputFile = require('path').join(outputDir, `scene_${scene.sceneNumber}.mp3`);
-      await this.textToSpeech(scene.dialogue, outputFile, { voice: 'nova' });
-      files.push({ scene: scene.sceneNumber, file: outputFile, dialogue: scene.dialogue });
-    }
-    return files;
-  }
-
-  // ════════════════════════════════════════
-  //  Image Generation / Transcription
-  // ════════════════════════════════════════
 
   async generateImage(prompt, outputPath, options = {}) {
     if (!this.imageGen) throw new Error('No image generation provider');
@@ -180,13 +145,6 @@ Rules:
       model: 'whisper-1', file: require('fs').createReadStream(audioFilePath),
       response_format: 'verbose_json', language,
     });
-  }
-
-  async listAvailableModels() {
-    if (this.llm?.constructor?.name === 'OpenRouterProvider') {
-      return await this.llm.listAvailableModels();
-    }
-    return [];
   }
 }
 
