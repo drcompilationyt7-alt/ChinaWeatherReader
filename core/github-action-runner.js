@@ -2,10 +2,11 @@
 
 const path = require('path');
 const fs = require('fs');
-const { execSync, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
+const { findUrlsForQueries } = require('../sourcing/finder-controller');
 
 class GitHubActionsRunner {
   constructor() {
@@ -87,46 +88,20 @@ class GitHubActionsRunner {
     const c2 = all[Math.floor(Math.random() * all.length)];
     const c3 = all[Math.floor(Math.random() * all.length)];
     try {
-      const r = await this.ai.chatJSON(`Generate 5 YouTube search queries to find trending MEME, STREAMER, and EXPLAINER videos from ${c1}, ${c2}, ${c3}. Return ONLY a JSON array of 5 strings.`, `5 queries for ${c1}, ${c2}, ${c3}`, { useScriptModel: true, temperature: 0.8 });
+      const r = await this.ai.chatJSON(`Generate 5 search queries for trending MEME, STREAMER, and EXPLAINER videos from ${c1}, ${c2}, ${c3}. Return ONLY a JSON array of 5 strings.`, `5 queries for ${c1}, ${c2}, ${c3}`, { useScriptModel: true, temperature: 0.8 });
       const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : [`${c1} viral`,`${c2} trend`,`${c3} dance`,`funny moments`,`streamer highlights`]);
       this.logger.success(`Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
     } catch { return { queries: [`${c1} viral`,`${c2} food`,`${c3} dance`,`funny moments`,`streamer best`], countries: [c1, c2, c3] }; }
   }
 
-  // Step 2: Search via HTTP (no Playwright)
+  // Step 2: Search across Bilibili, TikTok, Douyin, YouTube using finder-controller
   async _searchVideos(queries) {
-    this.logger.info('Step 2: Searching for URLs...');
-    const allUrls = [];
-    if (this.ai && this.ai.webSearch) {
-      for (const q of queries.slice(0,3)) {
-        try {
-          const urls = await this.ai.webSearch(['youtube','bilibili','tiktok'], q, { maxUrls: 2 });
-          for (const u of urls) { if (!allUrls.includes(u)) allUrls.push(u); }
-        } catch {}
-        if (allUrls.length >= 5) break;
-      }
-    }
-    // Fallback: yt-dlp search
-    if (allUrls.length < 3) {
-      for (const q of queries) {
-        if (allUrls.length >= 5) break;
-        try {
-          const out = execSync(`yt-dlp --flat-playlist --dump-json "ytsearch3:${q}" 2>/dev/null`, { timeout: 30000, maxBuffer: 5*1024*1024 }).toString().trim();
-          if (out) {
-            for (const line of out.split('\n').filter(Boolean)) {
-              try { const p = JSON.parse(line); const u = `https://www.youtube.com/watch?v=${p.id}`; if (!allUrls.includes(u)) allUrls.push(u); } catch {}
-            }
-          }
-        } catch {}
-      }
-    }
-    const unique = allUrls.filter((u,i) => allUrls.indexOf(u) === i).slice(0,5);
-    this.logger.success(`Found ${unique.length} URLs`);
-    return unique;
+    this.logger.info('Step 2: Searching Bilibili, TikTok, Douyin, YouTube...');
+    return await findUrlsForQueries(queries, 5);
   }
 
-  // Step 3: Download with yt-dlp, try multiple formats
+  // Step 3: Download with yt-dlp (NO -f flag, let yt-dlp auto-select best format)
   async _downloadVideos(urls) {
     this.logger.info('Step 3: Downloading...');
     const dir = config.paths.clips;
@@ -134,45 +109,39 @@ class GitHubActionsRunner {
     const downloaded = [];
 
     for (let i = 0; i < Math.min(urls.length, 5); i++) {
-      const url = typeof urls[i] === 'string' ? urls[i] : urls[i].url;
-      const title = typeof urls[i] === 'string' ? `Video ${i+1}` : (urls[i].title || `Video ${i+1}`);
-      this.logger.info(`Download [${i+1}/${Math.min(urls.length,5)}]: ${url.substring(0,80)}`);
+      const entry = urls[i];
+      const url = entry.url;
+      const title = entry.title || `Video ${i+1}`;
+      this.logger.info(`Download [${i+1}/${Math.min(urls.length,5)}] ${entry.platform}: ${url.substring(0,80)}`);
 
-      // Try different format options
-      const fmts = [
-        ['-f', 'best[height<=720][ext=mp4]/best[height<=720]'],
-        ['-f', 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]'],
-        ['-f', 'best'],
-      ];
+      // Let yt-dlp auto-select the best format (no -f flag)
+      // This works with deno installed for YouTube, and natively for other platforms
+      const args = ['-o', path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`), url, '--no-playlist', '--max-filesize', '100M'];
+      
+      try {
+        const r = spawnSync('yt-dlp', args, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
+        const stderr = (r.stderr || '').trim();
+        const stdout = (r.stdout || '').trim();
 
-      let ok = false;
-      for (const fmt of fmts) {
-        if (ok) break;
-        try {
-          const args = [...fmt, '-o', path.join(dir, `vid_${Date.now()}_%(id)s.%(ext)s`), url, '--no-playlist', '--max-filesize', '100M'];
-          const r = spawnSync('yt-dlp', args, { timeout: 180000, maxBuffer: 50*1024*1024, encoding: 'utf8' });
-          const stderr = (r.stderr || '').trim();
-          const stdout = (r.stdout || '').trim();
-
-          if (r.status === 0) {
-            // Find the downloaded file
-            const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm'));
-            const sorted = files.sort((a,b) => fs.statSync(path.join(dir,b)).mtimeMs - fs.statSync(path.join(dir,a)).mtimeMs);
-            if (sorted.length > 0) {
-              const fp = path.join(dir, sorted[0]);
-              const sizeMB = fs.statSync(fp).size / 1024 / 1024;
-              downloaded.push({ path: fp, title, sourceUrl: url });
-              this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB)`);
-              ok = true;
-            }
-          } else {
-            this.logger.warn(`Format failed: ${(stderr||stdout).substring(0,200)}`);
-          }
-        } catch (e) {
-          this.logger.warn(`Format error: ${e.message.substring(0,100)}`);
+        if (r.status !== 0) {
+          this.logger.warn(`yt-dlp failed: ${(stderr||stdout).substring(0,300)}`);
+          continue;
         }
+
+        // Find downloaded file
+        const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv'));
+        const sorted = files.sort((a,b) => fs.statSync(path.join(dir,b)).mtimeMs - fs.statSync(path.join(dir,a)).mtimeMs);
+        if (sorted.length > 0) {
+          const fp = path.join(dir, sorted[0]);
+          const sizeMB = fs.statSync(fp).size / 1024 / 1024;
+          downloaded.push({ path: fp, title, sourceUrl: url, platform: entry.platform });
+          this.logger.success(`Downloaded: ${sorted[0]} (${sizeMB.toFixed(1)}MB) from ${entry.platform}`);
+        } else {
+          this.logger.warn(`No output file found. stdout: ${(stdout||stderr).substring(0,200)}`);
+        }
+      } catch (e) {
+        this.logger.warn(`Download error: ${e.message.substring(0,100)}`);
       }
-      if (!ok) this.logger.warn(`Failed to download: ${url.substring(0,60)}`);
     }
     this.logger.success(`Downloaded ${downloaded.length} videos`);
     return downloaded;
@@ -227,7 +196,7 @@ class GitHubActionsRunner {
         textOverlay: (c.analysis?.has_text_needed && c.analysis?.description) ? c.analysis.description : '',
         outputPath: path.join(dir, `clip_${Date.now()}.mp4`),
       });
-      if (r) edited.push({ path: r, title: c.analysis?.title_en || c.title, type: 'clip' });
+      if (r) edited.push({ path: r, title: c.analysis?.title_en || c.title, type: 'clip', platform: c.platform });
     }
     if (explainer) {
       const expText = explainer.analysis?.explainer_text || `What is this? ${explainer.analysis?.title_en || 'global content'}`;
@@ -240,7 +209,7 @@ class GitHubActionsRunner {
         voiceoverPath: vPath, voiceoverDuration: 5, textOverlay: expText,
         outputPath: path.join(dir, `explain_${Date.now()}.mp4`),
       });
-      if (r) edited.push({ path: r, title: explainer.analysis?.title_en || explainer.title, type: 'explainer' });
+      if (r) edited.push({ path: r, title: explainer.analysis?.title_en || explainer.title, type: 'explainer', platform: explainer.platform });
     }
     this.logger.success(`Edited ${edited.length} videos`);
     return edited;
@@ -258,8 +227,8 @@ class GitHubActionsRunner {
     const edited = await this._editVideos(ranked, explainer, clips);
 
     for (const v of edited) {
-      const r = await this._uploadToYouTube({ videoPath: v.path, title: v.title.substring(0,100), type: v.type, tags: ['mr worldwidewebster','shorts'] });
-      if (r) uploaded.push({ title: v.title, url: r.url, type: v.type });
+      const r = await this._uploadToYouTube({ videoPath: v.path, title: v.title.substring(0,100), type: v.type, tags: ['mr worldwidewebster','shorts', v.platform].filter(Boolean) });
+      if (r) uploaded.push({ title: v.title, url: r.url, type: v.type, platform: v.platform });
       else errors.push(`Upload failed: ${v.title}`);
     }
 
@@ -275,6 +244,10 @@ class GitHubActionsRunner {
 
     this.logger.header('SUMMARY');
     this.logger.info(`URLs: ${urls.length} | Downloaded: ${downloaded.length} | Edited: ${edited.length} | Uploaded: ${uploaded.length}`);
+    if (urls.length > 0) {
+      const platforms = [...new Set(urls.map(u => u.platform))].join(', ');
+      this.logger.info(`Platforms: ${platforms}`);
+    }
     if (errors.length) errors.forEach(e => this.logger.warn(`  ${e}`));
     return { uploadedVideos: uploaded, errors };
   }
