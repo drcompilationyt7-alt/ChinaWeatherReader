@@ -1,11 +1,11 @@
 /**
  * Finder Controller
- * Orchestrates multi-platform video search with priority order:
- * 1. Bilibili (API, most reliable for Chinese/Asian content)
- * 2. TikTok (web search, global trends)
- * 3. Douyin (Chinese TikTok)
- * 4. RedNote (lifestyle/fashion)
- * 5. YouTube (via yt-dlp, global fallback)
+ * Priority order (user request):
+ * 1. Bilibili (best API)
+ * 2. RedNote (Xiaohongshu)
+ * 3. Douyin
+ * 4. TikTok
+ * 5. YouTube (last resort)
  */
 const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
@@ -22,12 +22,12 @@ async function searchBilibili(query, maxResults) {
   }
 }
 
-async function searchTikTok(query, maxResults) {
+async function searchRedNote(query, maxResults) {
   try {
-    const { findVideos } = require('./tiktok-finder');
+    const { findVideos } = require('./rednote-finder');
     return await findVideos(query, maxResults);
   } catch (e) {
-    logger.warn(`TikTok: ${e.message.substring(0, 80)}`);
+    logger.warn(`RedNote: ${e.message.substring(0, 80)}`);
     return [];
   }
 }
@@ -42,12 +42,12 @@ async function searchDouyin(query, maxResults) {
   }
 }
 
-async function searchRedNote(query, maxResults) {
+async function searchTikTok(query, maxResults) {
   try {
-    const { findVideos } = require('./rednote-finder');
+    const { findVideos } = require('./tiktok-finder');
     return await findVideos(query, maxResults);
   } catch (e) {
-    logger.warn(`RedNote: ${e.message.substring(0, 80)}`);
+    logger.warn(`TikTok: ${e.message.substring(0, 80)}`);
     return [];
   }
 }
@@ -64,56 +64,44 @@ async function searchYouTube(query, maxResults) {
       } catch { return null; }
     }).filter(Boolean);
   } catch (e) {
-    logger.warn(`YouTube: ${e.message.substring(0, 80)}`);
     return [];
   }
 }
 
-/**
- * Search all platforms for a query, with priority ordering.
- * Bilibili is tried first since it has the most reliable free API.
- */
 async function searchAll(query, maxTotal = 5) {
   const results = [];
   const addedUrls = new Set();
 
-  async function addFrom(source) {
+  async function addFrom(promise) {
     if (results.length >= maxTotal) return;
-    const videos = await source; 
+    const videos = await promise;
     for (const v of videos) {
       if (results.length >= maxTotal) break;
       if (!addedUrls.has(v.url)) {
         addedUrls.add(v.url);
         results.push(v);
-        logger.info(`  [${v.platform}] ${v.title.substring(0, 50)}`);
+        logger.info(`  [${v.platform}] ${(v.title||'').substring(0, 50)}`);
       }
     }
   }
 
-  // Bilibili first (most reliable API)
+  // Priority: Bilibili > RedNote > Douyin > TikTok > YouTube
   await addFrom(searchBilibili(query, 2));
-  // Then TikTok
-  await addFrom(searchTikTok(query, 2));
-  // Then Douyin
-  await addFrom(searchDouyin(query, 2));
-  // Then RedNote
   await addFrom(searchRedNote(query, 2));
-  // YouTube last (yt-dlp fallback)
+  await addFrom(searchDouyin(query, 2));
+  await addFrom(searchTikTok(query, 2));
   await addFrom(searchYouTube(query, 2));
 
   return results;
 }
 
-/**
- * Search multiple queries across platforms, deduplicate, return best URLs
- */
 async function findUrlsForQueries(queries, maxTotal = 5) {
   const allResults = [];
   const seen = new Set();
 
   for (const query of queries) {
     if (allResults.length >= maxTotal) break;
-    logger.info(`Searching: "${query}"`);
+    logger.info(`Search: "${query}"`);
     const results = await searchAll(query, maxTotal - allResults.length);
     for (const r of results) {
       if (!seen.has(r.url)) {
@@ -123,7 +111,8 @@ async function findUrlsForQueries(queries, maxTotal = 5) {
     }
   }
 
-  logger.success(`Found ${allResults.length} URLs total (from ${[...new Set(allResults.map(r => r.platform))].join(', ')})`);
+  const platforms = [...new Set(allResults.map(r => r.platform))].join(', ');
+  logger.success(`Found ${allResults.length} URLs from ${platforms}`);
   return allResults;
 }
 
