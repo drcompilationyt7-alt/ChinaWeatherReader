@@ -1,4 +1,3 @@
-```
 # Dependencies
 node_modules/
 
@@ -67,4 +66,13 @@ htmlcov/
 .venv/
 venv/
 .env/
-```
+
+# Memory cache and state files (cleared bi-weekly)
+memory/models_dev_cache.json
+memory/state.db
+memory/state.db-shm
+memory/state.db-wal
+memory/performance-metrics.json
+memory/trending-log.json
+memory/sessions/
+memory/skills/

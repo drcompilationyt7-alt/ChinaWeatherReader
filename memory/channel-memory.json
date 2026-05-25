@@ -2,25 +2,10 @@
   "channelName": "Mr. WorldWideWebster",
   "tagline": "Bringing the world to you",
   "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
-  "createdAt": "2025-01-01T00:00:00.000Z",
-  "totalVideosPosted": 20,
-  "lastCountryUsed": "Spain",
-  "countriesUsedThisWeek": [
-    "Indonesia",
-    "UK",
-    "Australia",
-    "Nigeria",
-    "India",
-    "Brazil",
-    "South Korea",
-    "Mexico",
-    "Egypt",
-    "Italy",
-    "Spain",
-    "China",
-    "Japan",
-    "France"
-  ],
+  "createdAt": "2026-05-25T00:00:00.000Z",
+  "totalVideosPosted": 0,
+  "lastCountryUsed": "",
+  "countriesUsedThisWeek": [],
   "bestPerformingFormats": [],
   "titleFormulas": [
     "What is this [thing]? ([country] edition)",
@@ -35,13 +20,7 @@
     "timezone": "UTC"
   },
   "skills": [],
-  "lastUpdated": "2025-01-01T00:00:00.000Z",
-  "lastContentType": "explainer",
-  "usedTopics": [
-    "South Korea viral meme videos",
-    "Vietnam street food trend Egypt reaction",
-    "K-pop dance challenge Egypt",
-    "Vietnam streamer funny moments",
-    "South Korea live stream reaction"
-  ]
+  "lastUpdated": "2026-05-25T00:00:00.000Z",
+  "lastContentType": "",
+  "usedTopics": []
 }
