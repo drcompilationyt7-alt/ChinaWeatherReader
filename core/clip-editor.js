@@ -4,6 +4,10 @@
  * Adds Twemoji flag overlay at start for country context.
  * Downloads flag PNG from Twemoji CDN and overlays it via ffmpeg.
  * Falls back to no overlay if download fails.
+ * 
+ * v2 - FIXED: Smart resolution scaling for small videos.
+ * Previously used scale='min(1080,iw)' which kept small videos tiny.
+ * Now probes dimensions and upscales to fill 1080x1920 frame properly.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -34,6 +38,67 @@ function countryToFlagFile(country) {
   return `${cp1.toString(16)}-${cp2.toString(16)}.png`;
 }
 
+/**
+ * Probe video dimensions using ffprobe.
+ * Returns { width, height } or null.
+ */
+function probeVideoDimensions(videoPath) {
+  try {
+    const probeOut = execSync(
+      `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}" 2>/dev/null`,
+      { timeout: 10000, encoding: 'utf8' }
+    ).trim();
+    const parts = probeOut.split(',').map(s => parseInt(s.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return { width: parts[0], height: parts[1] };
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Build a smart scale+crop filter for YouTube Shorts (9:16 portrait, 1080x1920).
+ * 
+ * Strategy:
+ * - Portrait video (taller than wide): scale width to 1080, height proportional, center crop 1080x1920
+ * - Landscape video (wider than tall): scale so height fills 1920, width proportional, center crop 1080x1920
+ * - Small videos (< 1080px either dimension): upscale with lanczos to fill the frame
+ */
+function buildShortsScaleFilter(srcW, srcH) {
+  const TARGET_W = SHORTS_W;
+  const TARGET_H = SHORTS_H;
+  const targetRatio = TARGET_W / TARGET_H; // 0.5625 (9/16)
+  const srcRatio = srcW / srcH;
+
+  // Ensure even dimensions (ffmpeg requirement)
+  const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
+
+  let scaleW, scaleH, cropW, cropH, cropX, cropY;
+
+  if (srcRatio >= targetRatio) {
+    // Source is wider than 9:16 (landscape or wider)
+    // Scale so height = TARGET_H, then crop width to TARGET_W
+    scaleH = TARGET_H;
+    scaleW = even(scaleH * srcRatio);
+    cropW = TARGET_W;
+    cropH = TARGET_H;
+    cropX = even((scaleW - TARGET_W) / 2);
+    cropY = 0;
+  } else {
+    // Source is taller than 9:16 (portrait or taller)
+    // Scale so width = TARGET_W, then crop height to TARGET_H
+    scaleW = TARGET_W;
+    scaleH = even(scaleW / srcRatio);
+    cropW = TARGET_W;
+    cropH = TARGET_H;
+    cropX = 0;
+    cropY = even((scaleH - TARGET_H) / 2);
+  }
+
+  // Build filter: scale then crop
+  return `scale=${scaleW}:${scaleH}:flags=lanczos,crop=${cropW}:${cropH}:${cropX}:${cropY}`;
+}
+
 async function createShort(videoPath, options) {
   const outputPath = options.outputPath || videoPath.replace(/\.\w+$/, '_shorts.mp4');
   const tmpDir = path.dirname(outputPath);
@@ -45,6 +110,20 @@ async function createShort(videoPath, options) {
   logger.info(`Creating short for ${country} (${duration}s)`);
 
   try {
+    // Probe source video dimensions for smart scaling
+    const dims = probeVideoDimensions(videoPath);
+    if (dims) {
+      logger.info(`Source dimensions: ${dims.width}x${dims.height}`);
+    } else {
+      logger.warn('Could not probe dimensions, assuming 720x1280');
+    }
+    const srcW = dims ? dims.width : 720;
+    const srcH = dims ? dims.height : 1280;
+
+    // Build the smart scale filter
+    const smartScale = buildShortsScaleFilter(srcW, srcH);
+    logger.info(`Scale filter: ${smartScale}`);
+
     // Download Twemoji flag PNG if available
     const flagFile = path.join(tmpDir, `flag_${Date.now()}.png`);
     const flagFilename = countryToFlagFile(country);
@@ -70,8 +149,6 @@ async function createShort(videoPath, options) {
       }
     }
 
-    const padFilter = `scale='min(${SHORTS_W},iw)':'min(${SHORTS_H},ih)':force_original_aspect_ratio=decrease,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black`;
-
     if (voiceoverPath && fs.existsSync(voiceoverPath)) {
       // Voiceover duration measurement
       let voDur = 4;
@@ -84,18 +161,17 @@ async function createShort(videoPath, options) {
       } catch {}
       voDur = Math.min(voDur, 8);
 
-      // Build filter: pad + flag overlay for first 3s + voiceover mix
+      // Build filter: smart scale + flag overlay for first 2.5s + voiceover mix
       let filterComplex;
       if (hasFlag) {
-        flagFile.replace(/\\/g, '\\\\');
-        filterComplex = `[0:v]${padFilter}[bg];` +
+        filterComplex = `[0:v]${smartScale}[bg];` +
           `[2:v]scale=120:-1[flag];` +
           `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
       } else {
-        filterComplex = `[0:v]${padFilter}[v];` +
+        filterComplex = `[0:v]${smartScale}[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
@@ -112,11 +188,11 @@ async function createShort(videoPath, options) {
       // No voiceover
       let filterComplex;
       if (hasFlag) {
-        filterComplex = `[0:v]${padFilter}[bg];` +
+        filterComplex = `[0:v]${smartScale}[bg];` +
           `[1:v]scale=120:-1[flag];` +
           `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v]`;
       } else {
-        filterComplex = padFilter;
+        filterComplex = smartScale;
       }
 
       execSync(
@@ -131,12 +207,12 @@ async function createShort(videoPath, options) {
     try { if (fs.existsSync(flagFile)) fs.unlinkSync(flagFile); } catch {}
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
-      logger.success(`Short: ${(fs.statSync(outputPath).size/1024/1024).toFixed(1)}MB`);
+      logger.success(`Short: ${(fs.statSync(outputPath).size/1024/1024).toFixed(1)}MB at ${SHORTS_W}x${SHORTS_H}`);
       return outputPath;
     }
 
     // Fallback: trim only
-    logger.warn('Pad/overlay failed, trying trim-only...');
+    logger.warn('Scale/overlay failed, trying trim-only...');
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -c copy "${outputPath}"`,
       { timeout: 60000 }

@@ -19,10 +19,51 @@ class GitHubActionsRunner {
     this.youtubeBridge = null;
     this.queries = [];
     this.countries = [];
+
+    // Bad words that should block upload
+    this.bannedWords = [
+      'fuck', 'shit', 'bitch', 'asshole', 'motherfucker', 'dick', 'cunt',
+      'pussy', 'bastard', 'whore', 'slut', 'damn', 'cock', 'nigger', 'nigga',
+      'faggot', 'retard', 'chink', 'spic', 'kike', 'gook', 'raghead',
+      'cracker', 'tranny', 'dyke', 'twat'
+    ];
+  }
+
+  /**
+   * Check if text contains banned profanity.
+   * Returns the first banned word found, or null if clean.
+   */
+  _hasProfanity(text) {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    // Use word boundary matching to avoid false positives (e.g. "ass" in "class")
+    for (const word of this.bannedWords) {
+      const regex = new RegExp(`\\b${word}\\b`, 'i');
+      if (regex.test(lower)) {
+        return word;
+      }
+    }
+    // Also check for common variants like "fck", "sh1t", "b1tch"
+    const leetPatterns = [
+      /\bf[u4]ck\b/i, /\bf[u4]cking\b/i, /\bsh[i1!]t\b/i,
+      /\bb[i1!]tch\b/i, /\bb[a4]st[a4]rd\b/i, /\bwh[o0]re\b/i,
+      /\bn[i1!]gg[a4e3]\b/i, /\bc[u4]nt\b/i
+    ];
+    for (const pattern of leetPatterns) {
+      if (pattern.test(lower)) {
+        return lower.match(pattern)[0];
+      }
+    }
+    return null;
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster Pipeline v4');
+    this.logger.header('Mr. WorldWideWebster Pipeline v5');
+    
+    // Pass any extra OpenRouter keys as env vars to config
+    // Keys 2-4 are loaded from env by OpenRouterProvider._collectApiKeys()
+    this.logger.info(`OpenRouter keys in env: KEY=${!!process.env.OPENROUTER_API_KEY} KEY_2=${!!process.env.OPENROUTER_API_KEY_2} KEY_3=${!!process.env.OPENROUTER_API_KEY_3} KEY_4=${!!process.env.OPENROUTER_API_KEY_4}`);
+
     this.ai = new AIService();
     await this.ai.waitForInit();
     this._loadMemory();
@@ -208,6 +249,17 @@ print(text[:1000] if text else '')
 
       try { transcript = await this._transcribeAudio(v.path); } catch {}
 
+      // PROFANITY FILTER: Skip upload if transcript contains bad words
+      if (transcript) {
+        const badWord = this._hasProfanity(transcript);
+        if (badWord) {
+          this.logger.warn(`⛔ PROFANITY DETECTED in transcript: "${badWord}" — SKIPPING upload for ${country}`);
+          this.logger.warn(`Transcript snippet: "${transcript.substring(0, 150)}..."`);
+          errors.push(`Profanity blocked (${badWord}) for ${country} video`);
+          continue; // Skip this video entirely
+        }
+      }
+
       try {
         let contextPrompt = transcript
           ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
@@ -218,6 +270,12 @@ print(text[:1000] if text else '')
           voiceoverText = await Promise.race([vPromise, tPromise]);
           if (!voiceoverText || voiceoverText.length < 5) voiceoverText = `Check out this clip from ${country}`;
           voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
+
+          // Also check the AI-generated voiceover text for profanity
+          if (this._hasProfanity(voiceoverText)) {
+            this.logger.warn(`AI generated profanity in voiceover, using safe fallback`);
+            voiceoverText = `Check out this clip from ${country}`;
+          }
         } catch { voiceoverText = `Check out this clip from ${country}`; }
 
         const vDir = path.join(config.paths.assets, 'voiceovers');
@@ -256,13 +314,27 @@ print(text[:1000] if text else '')
         const td = await this.ai.chatJSON(titlePrompt, `Title for ${country}`, { useCheapModel: true, temperature: 0.7 });
         const title = (td.title || `${country} clip`).substring(0, 100);
         const description = td.description || `From ${country}. Follow Mr. WorldWideWebster for more!`;
-        const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
-        if (uploadResult) {
-          uploaded.push({ title, url: uploadResult.url, country });
-          // Boost this new video
-          await this._boostVideo(uploadResult.url);
+
+        // Final profanity check on title/description before upload
+        if (this._hasProfanity(title) || this._hasProfanity(description)) {
+          this.logger.warn(`⛔ Profanity in title/description for ${country}, using safe fallback`);
+          const safeTitle = `${country} Clip #shorts`;
+          const safeDesc = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
+          const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title: safeTitle, description: safeDesc, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
+          if (uploadResult) {
+            uploaded.push({ title: safeTitle, url: uploadResult.url, country });
+            await this._boostVideo(uploadResult.url);
+          } else {
+            errors.push(`Upload failed: ${safeTitle}`);
+          }
         } else {
-          errors.push(`Upload failed: ${title}`);
+          const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
+          if (uploadResult) {
+            uploaded.push({ title, url: uploadResult.url, country });
+            await this._boostVideo(uploadResult.url);
+          } else {
+            errors.push(`Upload failed: ${title}`);
+          }
         }
       } catch (e) {
         this.logger.error(`Upload step error: ${e.message}`);
