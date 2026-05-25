@@ -6,8 +6,6 @@
   "totalVideosPosted": 12,
   "lastCountryUsed": "Spain",
   "countriesUsedThisWeek": [
-    "China",
-    "Italy",
     "Thailand",
     "France",
     "Japan",
@@ -19,7 +17,9 @@
     "Nigeria",
     "Brazil",
     "Egypt",
-    "South Korea"
+    "South Korea",
+    "Mexico",
+    "Spain"
   ],
   "bestPerformingFormats": [],
   "titleFormulas": [
