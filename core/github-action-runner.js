@@ -28,7 +28,6 @@ class GitHubActionsRunner {
       'cracker', 'tranny', 'dyke', 'twat'
     ];
 
-    // Country -> expected language code mapping
     this.countryLanguages = {
       'Japan': ['ja','jpn'], 'China': ['zh','zho','cmn','yue','wuu'],
       'South Korea': ['ko','kor'], 'Thailand': ['th','tha'],
@@ -55,10 +54,6 @@ class GitHubActionsRunner {
     return null;
   }
 
-  /**
-   * Hermes quality check — NO JSON. Uses plain text parsing.
-   * Prompt asks for format: "PASS 85 Great hook" or "FAIL 30 Too boring"
-   */
   async _hermesCheck(contentType, content, context) {
     if (!this.hermes || !this.hermes.isAvailable()) {
       return { passed: true, score: 70, feedback: 'Hermes unavailable' };
@@ -93,7 +88,6 @@ Too generic, doesn't grab attention`;
         const passed = out.toUpperCase().startsWith('PASS');
         const scoreMatch = out.match(/\b(\d{1,3})\b/);
         const score = scoreMatch ? parseInt(scoreMatch[1]) : 50;
-        // Feedback is everything after the score line
         const lines = out.split('\n').filter(l => l.trim());
         const feedback = lines.length > 2 ? lines.slice(2).join(' ').substring(0, 200) : 'No details';
         return { passed, score: Math.min(100, Math.max(0, score)), feedback };
@@ -105,56 +99,53 @@ Too generic, doesn't grab attention`;
     }
   }
 
-  /**
-   * Verify a video actually matches the expected country.
-   * Uses: transcript language, yt-dlp title analysis, Hermes cross-check.
-   */
-  async _verifyCountryMatch(videoUrl, expectedCountry, transcript, title) {
+  async _verifyCountryMatch(videoUrl, expectedCountry, transcript, title, sourceUrl) {
     let confidence = 50;
     let reasons = [];
+    let channelName = '';
 
-    // 1. Transcript language check
+    // 1. Transcript language
     if (transcript?.language) {
       const expectedLangs = this.countryLanguages[expectedCountry] || [];
       if (expectedLangs.length > 0) {
         if (expectedLangs.includes(transcript.language)) {
           confidence += 25;
-          reasons.push(`Audio language ${transcript.language} matches ${expectedCountry}`);
+          reasons.push(`Audio: ${transcript.language} matches ${expectedCountry}`);
         } else if (transcript.language === 'en' && !expectedLangs.includes('en')) {
           confidence -= 15;
-          reasons.push(`Audio is English but ${expectedCountry} expected non-English`);
+          reasons.push(`Audio is English but expected ${expectedCountry} non-English`);
         }
       }
     }
 
-    // 2. Try yt-dlp for declared language + channel metadata
+    // 2. yt-dlp metadata
     try {
-      const meta = execSync(`yt-dlp --dump-json --no-download "${videoUrl}" 2>/dev/null`, { timeout: 15000, encoding: 'utf8', maxBuffer: 2*1024*1024 }).trim();
-      if (meta) {
-        const p = JSON.parse(meta.split('\n')[0]);
-        if (p.language) {
-          const expectedLangs = this.countryLanguages[expectedCountry] || [];
-          if (expectedLangs.includes(p.language)) confidence += 15;
-          else confidence -= 10;
-          reasons.push(`YouTube declared language: ${p.language}`);
-        }
-        if (p.channel) {
-          // Channel name often hints at origin
-          reasons.push(`Channel: ${p.channel.substring(0, 50)}`);
+      const url = sourceUrl || videoUrl;
+      if (url) {
+        const meta = execSync(`yt-dlp --dump-json --no-download "${url}" 2>/dev/null`, { timeout: 15000, encoding: 'utf8', maxBuffer: 2*1024*1024 }).trim();
+        if (meta) {
+          const p = JSON.parse(meta.split('\n')[0]);
+          if (p.language) {
+            const expectedLangs = this.countryLanguages[expectedCountry] || [];
+            if (expectedLangs.includes(p.language)) { confidence += 15; reasons.push(`YT lang: ${p.language}`); }
+            else { confidence -= 10; reasons.push(`YT lang ${p.language} != ${expectedCountry}`); }
+          }
+          if (p.channel) { channelName = p.channel; reasons.push(`Channel: ${p.channel.substring(0, 50)}`); }
+          if (p.channel_follower_count) reasons.push(`Followers: ${p.channel_follower_count}`);
+          if (p.categories) reasons.push(`Category: ${p.categories.join(',')}`);
         }
       }
     } catch {}
 
-    // 3. Hermes final cross-check (local model, free)
+    // 3. Hermes cross-check with rich context
     if (this.hermes && this.hermes.isAvailable()) {
       try {
-        const check = await this.hermes.chat(
-          `Does this video match ${expectedCountry}? Answer only YES or NO.
+        const hermesInput = `Does this video match ${expectedCountry}? Answer YES or NO.
 Title: "${(title || '').substring(0, 200)}"
+Channel: ${channelName || 'unknown'}
 Audio language: ${transcript?.language || 'unknown'}
-Transcript start: "${(transcript?.text || '').substring(0, 200)}"`,
-          { timeout: 20000 }
-        );
+Transcript: "${(transcript?.text || '').substring(0, 250)}"`;
+        const check = await this.hermes.chat(hermesInput, { timeout: 20000 });
         if (check.success && check.output) {
           if (check.output.toUpperCase().includes('YES')) confidence += 20;
           else if (check.output.toUpperCase().includes('NO')) confidence -= 25;
@@ -163,8 +154,51 @@ Transcript start: "${(transcript?.text || '').substring(0, 200)}"`,
     }
 
     const match = confidence >= 50;
-    this.logger.info(`Country match for ${expectedCountry}: ${match ? '✅' : '⛔'} (${confidence}%) — ${reasons.join('; ') || 'No data'}`);
+    this.logger.info(`Country ${expectedCountry}: ${match ? '✅' : '⛔'} ${confidence}% — ${reasons.join('; ')}`);
     return { match, confidence, reasons };
+  }
+
+  /**
+   * Burn subtitles onto a video using ffmpeg drawtext.
+   * Handles proper escaping for ffmpeg filter syntax.
+   */
+  _burnSubtitles(videoPath, outputPath, text) {
+    if (!text) return false;
+    try {
+      // Word-wrap to max 35 chars per line, max 3 lines
+      const lines = [];
+      let cur = '';
+      for (const w of text.split(' ')) {
+        if ((cur + ' ' + w).length > 35) { lines.push(cur); cur = w; }
+        else { cur = cur ? cur + ' ' + w : w; }
+      }
+      if (cur) lines.push(cur);
+      const displayText = lines.slice(0, 3).join('\\n'); // \\n for ffmpeg newline
+
+      // Escape for drawtext filter: single quotes, colons, commas, backslashes
+      const escaped = displayText
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "'\\\\''")
+        .replace(/:/g, '\\\\:')
+        .replace(/,/g, '\\,');
+
+      const cmd = `ffmpeg -y -i "${videoPath}" ` +
+        `-vf "drawtext=text='${escaped}':` +
+        `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:` +
+        `fontsize=28:fontcolor=white:` +
+        `box=1:boxcolor=black@0.6:boxborderw=10:` +
+        `x=(w-text_w)/2:y=h-text_h-100" ` +
+        `-c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`;
+
+      execSync(cmd, { timeout: 60000, maxBuffer: 50*1024*1024 });
+
+      const exists = fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
+      if (exists) this.logger.success(`Subtitles burned on: ${path.basename(outputPath)}`);
+      return exists;
+    } catch (e) {
+      this.logger.warn(`Subtitle burn failed: ${e.message.substring(0, 100)}`);
+      return false;
+    }
   }
 
   async initialize() {
@@ -185,7 +219,7 @@ Transcript start: "${(transcript?.text || '').substring(0, 200)}"`,
       const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper');
       this.hermes = new HermesCLIWrapper();
       if (this.hermes.isAvailable()) {
-        this.logger.success('Hermes CLI quality checker ready');
+        this.logger.success('Hermes CLI ready');
       } else {
         this.logger.info('Hermes CLI not available');
       }
@@ -258,20 +292,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     } catch { try { fs.unlinkSync(audioPath); } catch {} return null; }
   }
 
-  _burnSubtitles(videoPath, outputPath, text) {
-    if (!text) return false;
-    try {
-      const lines = [];
-      let cur = '';
-      for (const w of text.split(' ')) {
-        if ((cur + ' ' + w).length > 35) { lines.push(cur); cur = w; } else { cur = cur ? cur + ' ' + w : w; }
-      }
-      if (cur) lines.push(cur);
-      execSync(`ffmpeg -y -i "${videoPath}" -vf "drawtext=text='${lines.slice(0, 3).join('\\\\N')}':fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:fontsize=28:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=8:x=(w-text_w)/2:y=h-text_h-80" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`, { timeout: 60000 });
-      return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
-    } catch { return false; }
-  }
-
   async runDaily() {
     this.logger.header('DAILY: OpenRouter works, Hermes quality-checks');
     const errors = [];
@@ -287,7 +307,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const fallbackQ = countries.map(c => ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'].includes(c) ? `${c} douyin` : c);
     let queries = fallbackQ;
     try {
-      const r = await Promise.race([this.ai.chatJSON(`Generate 5 YouTube search queries for SHORT videos from ${countries[0]}, ${countries[1]}, ${countries[2]}. Asian countries: use "douyin". Return JSON array.`, 'queries', { useCheapModel: true, temperature: 0.8 }), new Promise((_, rj) => setTimeout(() => rj(new Error('timeout')), 12000))]);
+      const r = await Promise.race([this.ai.chatJSON(`Generate 5 YouTube search queries for SHORT videos from ${countries[0]}, ${countries[1]}, ${countries[2]}. Asian: "douyin". Return JSON array.`, 'queries', { useCheapModel: true, temperature: 0.8 }), new Promise((_, rj) => setTimeout(() => rj(new Error('timeout')), 12000))]);
       queries = Array.isArray(r) ? r.slice(0, 5) : fallbackQ;
     } catch {}
     this.logger.success(`Queries: ${queries.join(' | ')}`);
@@ -328,27 +348,28 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         if (badWord) { this.logger.warn(`⛛ PROFANITY "${badWord}" — skip ${country}`); errors.push(`Profanity ${country}`); continue; }
       }
 
-      // Country matching — verify video actually matches expected country
-      const countryMatch = await this._verifyCountryMatch(sourceUrl, country, transcript, originalTitle);
+      // Country matching with full metadata context for Hermes
+      const countryMatch = await this._verifyCountryMatch(sourceUrl, country, transcript, originalTitle, sourceUrl);
       if (!countryMatch.match) {
-        this.logger.warn(`⛔ Country mismatch for ${country} — skipping (confidence ${countryMatch.confidence}%)`);
+        this.logger.warn(`⛔ Country mismatch for ${country} — skipping`);
         errors.push(`Country mismatch ${country}: ${countryMatch.reasons.join('; ')}`);
         continue;
       }
 
-      // Hermes quick check
-      const check = await this._hermesCheck('video', originalTitle, `Country: ${country}`);
+      // Hermes check with rich context (title + channel + transcript + view count)
+      const hermesContext = `Country: ${country}. Title: "${originalTitle.substring(0, 100)}". ${transcript?.text ? `Transcript: "${transcript.text.substring(0, 200)}".` : ''} Audio lang: ${transcript?.language || 'unknown'}`;
+      const check = await this._hermesCheck('video', originalTitle, hermesContext);
       if (!check.passed) {
-        this.logger.warn(`Hermes rejected: ${check.feedback} — skip`);
+        this.logger.warn(`Hermes rejected: ${check.feedback}`);
         errors.push(`Hermes rejected ${country}: ${check.feedback}`);
         continue;
       }
 
-      // OpenRouter: generate voiceover
+      // OpenRouter: generate voiceover with full transcript
       let voiceoverText = '';
       try {
         const ctx = transcript?.text
-          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.text.substring(0, 300)}". Write ONE sentence (8-15 words). Return ONLY the sentence.`
+          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.text.substring(0, 500)}". Write ONE sentence (8-15 words). Return ONLY sentence.`
           : `Write ONE sentence for a video from ${country}.`;
         voiceoverText = await Promise.race([this.ai.chat(ctx, { useCheapModel: true, temperature: 0.7 }), new Promise(r => setTimeout(() => r(''), 8000))]);
         if (!voiceoverText?.length > 5) voiceoverText = `Check out this clip from ${country}`;
@@ -356,8 +377,8 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         if (this._hasProfanity(voiceoverText)) voiceoverText = `Check out this clip from ${country}`;
       } catch { voiceoverText = `Check out this clip from ${country}`; }
 
-      // Hermes: check voiceover quality
-      const voCheck = await this._hermesCheck('voiceover text', voiceoverText, `Country: ${country}, transcript: ${(transcript?.text || '').substring(0, 200)}`);
+      // Hermes: check voiceover
+      const voCheck = await this._hermesCheck('voiceover text', voiceoverText, `Country: ${country}, transcript: ${(transcript?.text || '').substring(0, 300)}`);
       if (!voCheck.passed) {
         this.logger.warn(`Hermes rejected voiceover: ${voCheck.feedback} — regenerating`);
         try {
@@ -376,11 +397,11 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
       } catch {}
 
-      // OpenRouter: translate if non-English
+      // OpenRouter: translate if non-English (for subtitle overlay)
       let englishSubtitle = null;
       if (transcript?.isNonEnglish) {
         try {
-          englishSubtitle = await this.ai.chat(`Translate to natural English. Return ONLY translation.`, transcript.text, { useCheapModel: true, temperature: 0.3 });
+          englishSubtitle = await this.ai.chat(`Translate this to natural English. Return ONLY the translation, no explanation.`, transcript.text, { useCheapModel: true, temperature: 0.3 });
           if (englishSubtitle?.length > 3) englishSubtitle = englishSubtitle.replace(/["']/g, '').trim().substring(0, 200);
         } catch {}
       }
@@ -397,14 +418,19 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         const result = await createShort(v.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
         if (result) {
           let finalPath = result;
+          // Burn English subtitles onto the video if we have a translation
           if (englishSubtitle) {
+            this.logger.info(`Burning subtitles: "${englishSubtitle.substring(0, 80)}..."`);
             const subbedPath = result.replace('.mp4', '_captioned.mp4');
             if (this._burnSubtitles(result, subbedPath, englishSubtitle)) {
               try { fs.unlinkSync(result); } catch {}
               finalPath = subbedPath;
+              this.logger.success(`Captioned version saved`);
+            } else {
+              this.logger.warn('Subtitle burn failed, using original');
             }
           }
-          shorts.push({ path: finalPath, country, voiceoverText, transcript: transcript?.text, originalTitle, sourceUrl });
+          shorts.push({ path: finalPath, country, voiceoverText, transcript: transcript?.text, originalTitle, sourceUrl, hasCaptions: !!englishSubtitle });
         }
       } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
     }
@@ -418,48 +444,44 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         const originalTitle = s.originalTitle || `${country} Clip`;
         let title = originalTitle;
         let description = '';
+        const captionNote = s.hasCaptions ? ' (with English captions)' : '';
 
-        // Try OpenRouter first for title + full description
+        // OpenRouter generates with transcript context
         try {
           const td = await this.ai.chatJSON(
-            `Generate YouTube Shorts title+description. Country: ${country}
-${s.transcript ? `Transcript: "${s.transcript.substring(0, 400)}"` : ''}
+            `Generate YouTube Shorts title+description. Country: ${country}${captionNote}
+${s.transcript ? `Transcript: "${s.transcript.substring(0, 500)}"` : ''}
 Title: catchy, max 70 chars.
-Description: 3-4 sentences explaining what's interesting about this video. Include hashtags.
+Description: 3-4 sentences about what the video shows, why it's interesting, and CTA. Include hashtags.
 Return JSON: {"title":"...","description":"..."}`,
             `Title for ${country}`, { useCheapModel: true, temperature: 0.7 }
           );
           title = (td.title || originalTitle).substring(0, 100);
-          description = td.description || `Amazing content from ${country}. 🇨🇮 Follow for more global shorts! #shorts #${country.toLowerCase()} #worldwide`;
+          description = td.description || `Amazing content from ${country}! Follow Mr. WorldWideWebster for more global shorts! #shorts #${country.toLowerCase()} #worldwide`;
           this.logger.success(`OpenRouter title: "${title}"`);
         } catch {
-          // OpenRouter failed — try Hermes with local model
-          this.logger.warn(`OpenRouter failed for title — trying Hermes`);
+          // OpenRouter failed — Hermes generates with title prompt
+          this.logger.warn(`OpenRouter failed for title — Hermes generating`);
           try {
             const hResult = await this.hermes.chat(
-              `Generate a YouTube Shorts title (max 70 chars) for a video from ${country}. Transcript: "${(s.transcript || '').substring(0, 300)}". Return ONLY the title.`,
+              `Generate a YouTube Shorts title (max 70 chars) for a video from ${country}. ${s.transcript ? `Content: "${s.transcript.substring(0, 300)}"` : ''} Return ONLY the title.`,
               { timeout: 30000 }
             );
             if (hResult.success && hResult.output) {
               title = hResult.output.trim().replace(/["']/g, '').substring(0, 100);
+              if (!title || title.length < 5) title = originalTitle.substring(0, 100);
             }
           } catch {}
-          description = `Amazing content from ${country}! 🇨🇮 Follow Mr. WorldWideWebster for more global shorts! #shorts #${country.toLowerCase()} #worldwide`;
+          description = `Amazing content from ${country}! ${s.hasCaptions ? 'English captions included. ' : ''}Follow Mr. WorldWideWebster for more! #shorts #${country.toLowerCase()} #worldwide`;
         }
 
-        // Hermes checks title + description quality
+        // Hermes checks title + description
         const titleCheck = await this._hermesCheck('YouTube title', title, `Country: ${country}`);
         if (!titleCheck.passed && titleCheck.score < 40) {
           this.logger.warn(`Hermes rejected title (${titleCheck.score}): ${titleCheck.feedback} — using original`);
           title = originalTitle.substring(0, 100);
         }
 
-        const descCheck = await this._hermesCheck('YouTube description', description, `Country: ${country}`);
-        if (!descCheck.passed) {
-          this.logger.warn(`Hermes suggests improving description: ${descCheck.feedback}`);
-        }
-
-        // Final profanity check
         if (this._hasProfanity(title) || this._hasProfanity(description)) {
           title = `${country} Clip #shorts`;
           description = `Amazing content from ${country}. Follow Mr. WorldWideWebster! #shorts`;
@@ -500,16 +522,16 @@ Return JSON: {"title":"...","description":"..."}`,
     const result = await this.hermes.chat(
       `NIGHTLY INVESTIGATION for Mr. WorldWideWebster.
 
-Current:
+Current state:
 - Videos: ${cm.totalVideosPosted || 0}
 - Countries used: ${(cm.countriesUsedThisWeek || []).join(', ')}
 
 Tasks:
 1. Suggest 5 NEW countries to try tomorrow
-2. Suggest 10 search queries for tomorrow
-3. What content formats are winning?
+2. Suggest 10 search queries for tomorrow (include #shorts)
+3. What content formats are winning in short-form?
 
-Respond with format:
+Respond:
 NEW COUNTRIES: ...
 QUERIES: ...
 FORMATS: ...
@@ -517,7 +539,7 @@ STRATEGY: ...`,
       { timeout: 300000 }
     );
 
-    this.logger.success(`Investigation complete`);
+    this.logger.success(`Investigation: ${result.success ? '✅' : '❌'}`);
     if (result.output) this.logger.info(`Hermes: ${result.output.substring(0, 500)}`);
     await this._sendDiscord('daily', { videos: [], investigation: result.output?.substring(0, 1000), countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, errors: [] });
     return result;
