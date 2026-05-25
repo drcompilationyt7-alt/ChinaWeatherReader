@@ -21,7 +21,6 @@ const COOKIE_FILE = '/tmp/yt_cookies.txt';
 function getProxyArg() {
   const proxy = process.env.YT_PROXY || '';
   if (proxy) {
-    logger.info(`Using proxy: ${proxy}`);
     return `--proxy "${proxy}"`;
   }
   return '';
