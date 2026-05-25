@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
-  pull_request:
-    branches: [ main ]
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -39,6 +37,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip
+          # Install Deno for yt-dlp EJS challenge solving (n-challenge fix)
+          curl -fsSL https://deno.land/install.sh | sh
+          export DENO_INSTALL="$HOME/.deno"
+          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+          # Install Python deps
           python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs faster-whisper --break-system-packages
           npm ci || npm install
           npm install axios
@@ -49,7 +52,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "${{ secrets.SHADOWSOCKS_SERVER }}" ]; then echo "no ss"; exit 0; fi
-          sudo apt-get install -y shadowsocks-libev
+          sudo apt-get install -y shadowsocks-libev 2>/dev/null
           sudo systemctl disable shadowsocks-libev --now || true
           sudo tee /etc/shadowsocks-libev/oracle.json > /dev/null <<'EOF'
           {"server":"${{ secrets.SHADOWSOCKS_SERVER }}","server_port":8388,"local_address":"127.0.0.1","local_port":1080,"password":"${{ secrets.SHADOWSOCKS_PASSWORD }}","timeout":300,"method":"chacha20-ietf-poly1305"}

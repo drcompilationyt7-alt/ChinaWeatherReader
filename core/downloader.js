@@ -1,12 +1,11 @@
 /**
  * Downloader module
- * Uses YouTube cookies for auth (no proxy needed).
+ * Uses YouTube cookies for auth + Deno for JS challenge solving.
  * Cookies from YOUTUBE_COOKIES secret -> /tmp/yt_cookies.txt
  *
  * FIX: Always download audio+video together using bestvideo+bestaudio merge.
- * Previous 'best[height<=720]' could select video-only streams with no audio.
- *
  * PROXY: Uses YT_PROXY env var for shadowsocks/any SOCKS5 proxy.
+ * EJS: Uses yt-dlp-ejs with Deno runtime for n-challenge solving.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -27,7 +26,7 @@ function getProxyArg() {
 }
 
 async function downloadVideo(entry, outputDir) {
-  const url = entry.url;
+  const url = entry.shortsUrl || entry.url;
   const title = entry.title || 'video';
   const platform = entry.platform || 'unknown';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
@@ -35,32 +34,36 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
-  // Build env with Node.js in PATH for JS runtime
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Check for cookies
   const hasCookies = fs.existsSync(COOKIE_FILE) && fs.statSync(COOKIE_FILE).size > 100;
   const cookieArg = hasCookies ? `--cookies "${COOKIE_FILE}"` : '';
   const proxyArg = getProxyArg();
+  // Use Deno for JS challenge solving (yt-dlp-ejs)
+  const ejsArg = '--js-runtimes deno';
 
   if (hasCookies) logger.info('Using YouTube cookies');
-  else logger.warn('No cookies found! Set YOUTUBE_COOKIES secret');
+  else logger.warn('No cookies found!');
 
-  // Try both yt-dlp binary and python module
   const executables = ['yt-dlp', 'python3 -m yt_dlp'];
 
   for (const exe of executables) {
     const strategies = [
       {
         name: 'web',
-        args: '--extractor-args "youtube:player_client=web"',
+        args: `${ejsArg} --extractor-args "youtube:player_client=web"`,
         format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
       },
       {
         name: 'default',
-        args: '',
+        args: ejsArg,
         format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
+      },
+      {
+        name: 'android',
+        args: `${ejsArg} --extractor-args "youtube:player_client=android"`,
+        format: '-f "best[height<=720]"'
       },
     ];
 
