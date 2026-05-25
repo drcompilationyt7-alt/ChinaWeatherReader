@@ -67,38 +67,67 @@ class GitHubActionsRunner {
   }
 
   /**
-   * Extract audio from video and transcribe using Whisper
-   * Returns the transcript text to understand what the video is about
+   * Transcribe audio using local faster-whisper (FREE, no API key needed)
+   * Install: pip install faster-whisper
    */
   async _transcribeAudio(videoPath) {
     const audioDir = path.join(config.paths.assets, 'audio');
     if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-    
+
     const audioPath = path.join(audioDir, `audio_${Date.now()}.mp3`);
-    
+
     try {
-      // Extract first 60 seconds of audio for transcription (enough for shorts)
-      this.logger.info('Extracting audio for transcription...');
+      // Extract first 60 seconds of audio
+      this.logger.info('Extracting audio for free local transcription...');
       execSync(
         `ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`,
         { timeout: 30000 }
       );
-      
+
       if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) {
         this.logger.warn('Audio extraction produced empty file');
         return null;
       }
-      
-      this.logger.info('Transcribing with Whisper...');
-      const transcript = await this.ai.transcribe(audioPath);
-      
-      // Clean up audio file
-      try { fs.unlinkSync(audioPath); } catch {}
-      
-      if (transcript && transcript.text && transcript.text.trim().length > 0) {
-        this.logger.success(`Transcription: "${transcript.text.substring(0, 100)}..."`);
-        return transcript.text.trim();
+
+      // Use faster-whisper (local, free, no API key)
+      this.logger.info('Transcribing with faster-whisper (free, local)...');
+      const pythonScript = `
+import sys
+sys.path.insert(0, '.')
+try:
+    from faster_whisper import WhisperModel
+    model = WhisperModel("base", device="cpu", compute_type="int8")
+    segments, info = model.transcribe("${audioPath.replace(/\\/g, '\\\\')}", language="en")
+    text = " ".join(seg.text for seg in segments)
+    print(text[:1000] if text else "")
+except Exception as e:
+    print(f"WHISPER_ERROR: {e}")
+    sys.exit(1)
+`;
+      const tmpScript = path.join(audioDir, `whisper_${Date.now()}.py`);
+      fs.writeFileSync(tmpScript, pythonScript);
+
+      let transcript = '';
+      try {
+        const output = execSync(`python3 "${tmpScript}" 2>/dev/null`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
+        if (output && !output.startsWith('WHISPER_ERROR')) {
+          transcript = output;
+        } else {
+          this.logger.warn(`Local whisper error: ${output}`);
+        }
+      } catch (whisperError) {
+        this.logger.warn(`Local whisper failed: ${whisperError.message.substring(0, 80)}`);
       }
+
+      // Cleanup
+      try { fs.unlinkSync(tmpScript); } catch {}
+      try { fs.unlinkSync(audioPath); } catch {}
+
+      if (transcript && transcript.length > 0) {
+        this.logger.success(`Transcription: "${transcript.substring(0, 100)}..."`);
+        return transcript.trim();
+      }
+      this.logger.info('No transcript generated (video may have no speech)');
       return null;
     } catch (error) {
       this.logger.warn(`Transcription failed: ${error.message.substring(0, 80)}`);
@@ -108,12 +137,10 @@ class GitHubActionsRunner {
   }
 
   async _generateQueries() {
-    this.logger.info('Step 1: AI generating queries...');
+    this.logger.info('Step 1: Generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
-    
-    // Asian countries: use "douyin short" query suffix
-    // Other countries: use "short" query suffix
+
     const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
     const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
     const all = [...nonAsianCountries, ...asianCountries];
@@ -129,7 +156,6 @@ class GitHubActionsRunner {
       return `${country} short`;
     };
 
-    // BUILD FALLBACK QUERIES IMMEDIATELY (don't wait for AI)
     const fallbackQueries = [
       getSuffix(c1),
       getSuffix(c2),
@@ -138,25 +164,23 @@ class GitHubActionsRunner {
       `${c2} trending short`
     ];
 
-    // Try AI with a SHORT timeout - if it takes >12s, use fallback
     try {
       const aiPromise = this.ai.chatJSON(
         `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
 Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short viral", "Brazil short comedy"]`,
         `5 queries`, { useCheapModel: true, temperature: 0.8 }
       );
-      
-      const timeoutPromise = new Promise((_, reject) => 
+
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('AI query generation timed out')), 12000)
       );
-      
+
       const r = await Promise.race([aiPromise, timeoutPromise]);
       const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : fallbackQueries);
       this.queries = qs; this.countries = [c1, c2, c3];
       this.logger.success(`Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
     } catch {
-      // Use fast fallback - no AI required
       this.queries = fallbackQueries;
       this.countries = [c1, c2, c3];
       this.logger.success(`Fallback Queries: ${fallbackQueries.join(' | ')}`);
@@ -169,10 +193,8 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
     const errors = [];
     const uploaded = [];
 
-    // Step 1: Generate queries (fast - 12s timeout, instant fallback)
     const { queries, countries } = await this._generateQueries();
 
-    // Step 2: Search 10 URLs with metadata
     this.logger.info('Step 2: Searching 10 URLs with metadata...');
     const allUrls = await findUrlsForQueries(queries, 10);
 
@@ -181,12 +203,10 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       return { uploadedVideos: [], errors: ['No URLs found'] };
     }
 
-    // Log view counts
     allUrls.forEach((u, i) => {
       this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}`);
     });
 
-    // Step 3: AI ranks URLs
     this.logger.info('Step 3: AI ranking URLs...');
     const { top3, explainer } = await rankVideos(allUrls, queries[0] || '', this.ai);
 
@@ -197,16 +217,14 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
 
     top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}`));
 
-    // Step 4: Download top 3 videos
     this.logger.info('Step 4: Downloading top 3 ranked videos...');
     const downloaded = await downloadVideos(top3, config.paths.clips);
 
     if (downloaded.length === 0) {
-      this.logger.warn('No videos downloaded - upload failure expected');
+      this.logger.warn('No videos downloaded');
     }
 
-    // Step 5: Create Shorts with AI voiceover generated from audio transcription
-    this.logger.info('Step 5: Creating Shorts with AI voiceover (transcribed audio -> LLM -> TTS)...');
+    this.logger.info('Step 5: Creating Shorts with local whisper transcription + AI voiceover...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
@@ -217,12 +235,12 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       const country = countries[i] || countries[0] || 'Global';
 
       this.logger.info(`=== Processing short #${i+1}: ${country} ===`);
-      
+
       let voiceoverPath = null;
       let voiceoverText = '';
       let transcript = null;
-      
-      // Step 5a: Transcribe the audio to understand what the video is about
+
+      // Step 5a: Transcribe with local free whisper
       try {
         transcript = await this._transcribeAudio(v.path);
         if (transcript) {
@@ -232,58 +250,45 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
         this.logger.warn(`Transcription error: ${txError.message}`);
       }
 
-      // Step 5b: Use transcript + LLM to generate better content-aware voiceover
+      // Step 5b: Generate voiceover from transcript + LLM
       try {
         let contextPrompt;
-        
+
         if (transcript) {
-          // AI generates intro based on actual video content
-          contextPrompt = `You are a narrator for "Mr. WorldWideWebster". 
-This is a video from ${country}. Here's what's happening in the video (transcribed audio):
+          contextPrompt = `You are a narrator for "Mr. WorldWideWebster".
+This is a video from ${country}. Here's what's happening (transcribed):
 "${transcript}"
 
-Write ONE short sentence (8-15 words) that naturally introduces this video. Examples:
+Write ONE short sentence (8-15 words) naturally introducing this video. Examples:
 - "Watch this hilarious moment from ${country}"
-- "Check out this viral street food clip from ${country}"
-- "This ${country} short is absolutely insane"
-- "You won't believe what happened in ${country}"
+- "Check out this viral clip from ${country}"
+- "This ${country} short is going viral"
 
-Match the tone of the video content. Return ONLY the sentence.`;
+Match the tone of the content. Return ONLY the sentence.`;
         } else {
-          // No transcript, use generic approach
-          contextPrompt = `You are a narrator for "Mr. WorldWideWebster". Write ONE short sentence (8-15 words) introducing a video from ${country}.
-Examples:
-- "This is a funny meme from ${country}"
-- "Check out this viral moment from ${country}"
-- "Here's a trending short from ${country}"
-
-Return ONLY the sentence.`;
+          contextPrompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}.""This is a funny meme from ${country}""Return ONLY the sentence.`;
         }
-        
+
         try {
           const voiceoverPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Voiceover AI timed out')), 8000)
           );
           voiceoverText = await Promise.race([voiceoverPromise, timeoutPromise]);
-          
+
           if (!voiceoverText || voiceoverText.length < 5) {
-            voiceoverText = transcript 
-              ? `Check out this clip from ${country}`
-              : `This is a funny clip from ${country}`;
+            voiceoverText = `Check out this clip from ${country}`;
           }
           voiceoverText = voiceoverText.replace(/["']/g, '').trim();
           if (voiceoverText.length > 120) voiceoverText = voiceoverText.substring(0, 117) + '...';
         } catch {
-          voiceoverText = transcript 
-            ? `Check out this clip from ${country}`
-            : `This is a funny clip from ${country}`;
+          voiceoverText = `Check out this clip from ${country}`;
         }
 
-        // Generate TTS audio for the voiceover
+        // TTS
         const vDir = path.join(config.paths.assets, 'voiceovers');
         if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
-        
+
         try {
           const safeText = voiceoverText.replace(/"/g, '\\"');
           const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
@@ -297,10 +302,9 @@ Return ONLY the sentence.`;
           this.logger.warn(`TTS failed for #${i+1}: ${ttsError.message}`);
         }
       } catch (aiError) {
-        this.logger.warn(`AI context generation failed for #${i+1}: ${aiError.message}`);
+        this.logger.warn(`AI voiceover failed for #${i+1}: ${aiError.message}`);
       }
 
-      // Detect smart start time
       let startTime = 5;
       try {
         const info = execSync(
@@ -323,26 +327,24 @@ Return ONLY the sentence.`;
       });
 
       if (result) {
-        shorts.push({ 
-          path: result, 
-          query, 
-          country, 
+        shorts.push({
+          path: result,
+          query,
+          country,
           hasVoiceover: !!voiceoverPath,
           voiceoverText,
           transcript,
-          sourceUrl: v.sourceUrl 
+          sourceUrl: v.sourceUrl
         });
       }
     }
 
     this.logger.success(`Created ${shorts.length} Shorts with ${shorts.filter(s => s.hasVoiceover).length} voiceovers`);
 
-    // Step 6: Upload with AI-generated titles/descriptions (using transcription!)
     for (const s of shorts) {
       const query = s.query || '';
       const country = s.country;
       try {
-        // Generate descriptive title+description using transcription if available
         const titlePrompt = s.transcript
           ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
@@ -350,13 +352,13 @@ Query: "${query}"
 Video content (transcribed): "${s.transcript.substring(0, 300)}"
 
 Title: Catchy, max 70 chars, with ${country} flag emoji at start.
-Description: 3-4 descriptive sentences explaining what the video shows. Mention the country, the type of content (meme/funny/viral), and a call to follow Mr. WorldWideWebster.
+Description: 3-4 descriptive sentences. Mention the country, type of content, and call to follow.
 Return JSON: {"title":"...","description":"..."}`
           : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
 Query: "${query}"
 
-Title: catch, max 70 chars, with ${country} flag emoji. Description: 2-3 sentences.
+Title: catchy, max 70 chars, with ${country} flag emoji. Description: 2-3 sentences.
 Return JSON: {"title":"...","description":"..."}`;
 
         const td = await this.ai.chatJSON(
@@ -379,7 +381,6 @@ Return JSON: {"title":"...","description":"..."}`;
       } catch {}
     }
 
-    // Update memory
     const cm = this.memory['channel-memory'];
     cm.totalVideosPosted = (cm.totalVideosPosted||0) + uploaded.length;
     if (countries) {
