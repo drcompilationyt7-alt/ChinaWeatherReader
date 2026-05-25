@@ -1,13 +1,13 @@
-# 🌙 Mr. WorldWideWebster — Midnight Hermes Investigation
-# Runs at midnight: Hermes Agent reviews performance, learns,
-# creates new strategies, and saves memory for next daily run.
-# Both daily and nightly runs share Hermes memory/skills.
+# 🌙 Midnight — Hermes CLI Investigation
+# Runs at midnight: Hermes CLI (local Ollama model) autonomously browses
+# the web, analyzes trends, and saves strategy to shared memory.
+# Connected to daily morning run via hermes-memory/.
 
 name: 🌙 Midnight Hermes Investigation
 
 on:
   schedule:
-    - cron: '0 0 * * *'          # Midnight daily
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 env:
@@ -18,7 +18,6 @@ env:
   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
-  CHANNEL_NAME: Mr. WorldWideWebster
   GH_PAT: ${{ secrets.GH_PAT }}
 
 jobs:
@@ -42,27 +41,59 @@ jobs:
           sudo apt-get install -y -qq ffmpeg jq curl
           npm ci || npm install
 
-      - name: Load memory
+      - name: Install Ollama + pull local model
         run: |
-          mkdir -p memory
-          echo "📂 Memory loaded"
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve > ollama.log 2>&1 &
+          sleep 10
+          ollama pull llama3.2:3b
+          echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
 
-      - name: Run Hermes investigation
+      - name: Install Hermes CLI
+        run: |
+          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+          mkdir -p ~/.hermes
+          cat > ~/.hermes/config.yaml <<'EOF'
+          model:
+            provider: custom
+            default: llama3.2:3b
+            base_url: http://localhost:11434/v1
+            api_key: ollama
+            api_mode: chat_completions
+            ollama_compatible: true
+            context_length: 65536
+          agent:
+            max_turns: 4
+          toolsets:
+            - web
+            - terminal
+            - skills
+          memory:
+            enabled: true
+            char_limit: 2000
+          EOF
+          hermes status || true
+          echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
+
+      - name: Restore Hermes memory from previous runs
+        run: |
+          mkdir -p ~/.hermes
+          if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
+
+      - name: Run Hermes CLI investigation
         run: node core/github-action-runner.js --mode nightly
 
-      - name: Save memory & improvements
+      - name: Save memory
         run: |
+          cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
           git config user.name "Hermes Agent"
           git config user.email "hermes@worldwidewebster.com"
-          git add memory/ hermes-agent/skills/ output/scripts/ 2>/dev/null || true
+          git add memory/ hermes-memory/ 2>/dev/null || true
           if ! git diff --staged --quiet; then
             git commit -m "🌙 Hermes nightly: $(date +%Y-%m-%d)"
             git push
-            echo "✅ Hermes memory saved to repo"
-          else
-            echo "ℹ️ No changes"
           fi
 
       - name: Cleanup
         if: always()
-        run: rm -rf output/temp 2>/dev/null || true
+        run: pkill ollama 2>/dev/null || true

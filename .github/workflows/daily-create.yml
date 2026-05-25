@@ -52,26 +52,62 @@ jobs:
       - name: Pre-download whisper model
         run: python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
 
+      - name: Install Ollama + pull local model
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve > ollama.log 2>&1 &
+          sleep 10
+          ollama pull llama3.2:3b
+          echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
+
+      - name: Install Hermes CLI
+        run: |
+          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+          mkdir -p ~/.hermes
+          cat > ~/.hermes/config.yaml <<'EOF'
+          model:
+            provider: custom
+            default: llama3.2:3b
+            base_url: http://localhost:11434/v1
+            api_key: ollama
+            api_mode: chat_completions
+            ollama_compatible: true
+            context_length: 65536
+          agent:
+            max_turns: 4
+          toolsets:
+            - web
+            - terminal
+            - skills
+          memory:
+            enabled: true
+            char_limit: 2000
+          EOF
+          hermes status || true
+          echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
+
       - name: Write cookies file
         run: |
           if [ -n "$YOUTUBE_COOKIES" ]; then
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
-            echo "Cookies file created: $(wc -l < /tmp/yt_cookies.txt) lines"
           fi
 
-      - name: Restore memory
+      - name: Restore Hermes memory
         run: |
-          mkdir -p memory
-          if [ -d "hermes-memory" ]; then cp -r hermes-memory/* memory/ 2>/dev/null || true; fi
+          mkdir -p memory hermes-memory ~/.hermes
+          if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
 
       - name: Run pipeline
-        run: node core/github-action-runner.js --mode daily
+        run: |
+          # Pipeline uses Hermes CLI via hermes-cli-wrapper.js for evaluation + memory
+          node core/github-action-runner.js --mode daily
 
       - name: Save memory
         run: |
+          cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/ output/ && git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+          git add memory/ hermes-memory/ output/ && git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
 
       - name: Cleanup
         if: always()
-        run: echo "Done"
+        run: pkill ollama 2>/dev/null || true
