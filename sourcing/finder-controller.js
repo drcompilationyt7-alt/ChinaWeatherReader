@@ -70,9 +70,8 @@ function parseResults(out, query) {
 
 function scoreByViewCount(viewCount) {
   if (!viewCount) return 0;
-  // Prefer 50k-500k views (viral but not massive)
   if (viewCount >= 50000 && viewCount <= 500000) return 10;
-  if (viewCount > 500000) return 5;  // Still good, but less preferred
+  if (viewCount > 500000) return 5;
   if (viewCount >= 10000) return 3;
   return 0;
 }
@@ -88,10 +87,6 @@ function scoreByRecency(uploadDate) {
   } catch { return 0; }
 }
 
-/**
- * Check if a channel is "famous" by looking up subscriber count via yt-dlp.
- * Skips channels with > 500k subscribers.
- */
 function isTooFamous(videoUrl) {
   try {
     const meta = execSync(`yt-dlp --dump-json --no-download "${videoUrl}" 2>/dev/null`, { timeout: 10000, encoding: 'utf8', maxBuffer: 1024*1024 }).trim();
@@ -127,7 +122,6 @@ async function findUrlsForQueries(queries, maxTotal = 12) {
     } catch {}
   }
 
-  // Score and sort
   allResults.sort((a, b) => {
     const shortA = a.isShort ? 10 : 0;
     const shortB = b.isShort ? 10 : 0;
@@ -135,8 +129,7 @@ async function findUrlsForQueries(queries, maxTotal = 12) {
            (shortA + scoreByViewCount(a.view_count) + scoreByRecency(a.upload_date));
   });
 
-  // Filter out famous channels
-  this.logger.info(`Checking ${Math.min(allResults.length, 15)} videos for famous channels...`);
+  logger.info(`Checking ${Math.min(allResults.length, 15)} videos for famous channels...`);
   const filtered = [];
   for (const r of allResults) {
     if (filtered.length >= maxTotal) break;
