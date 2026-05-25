@@ -3,9 +3,8 @@
  * Uses YouTube cookies for auth + Deno for JS challenge solving.
  * Cookies from YOUTUBE_COOKIES secret -> /tmp/yt_cookies.txt
  *
- * FIX: Always download audio+video together using bestvideo+bestaudio merge.
- * PROXY: Uses YT_PROXY env var for shadowsocks/any SOCKS5 proxy.
- * EJS: Uses yt-dlp-ejs with Deno runtime for n-challenge solving.
+ * FIX: yt-dlp execSync can hang. Each strategy gets max 180s via execSync timeout.
+ * If all strategies fail, we still move on — never freeze the pipeline.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -14,15 +13,14 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
 const MAX_DURATION = 480;
+const STRATEGY_TIMEOUT = 180000; // 3 min per strategy
+const MAX_STRATEGIES = 6; // 3 strategies x 2 executables
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 const COOKIE_FILE = '/tmp/yt_cookies.txt';
 
 function getProxyArg() {
   const proxy = process.env.YT_PROXY || '';
-  if (proxy) {
-    return `--proxy "${proxy}"`;
-  }
-  return '';
+  return proxy ? `--proxy "${proxy}"` : '';
 }
 
 async function downloadVideo(entry, outputDir) {
@@ -40,7 +38,6 @@ async function downloadVideo(entry, outputDir) {
   const hasCookies = fs.existsSync(COOKIE_FILE) && fs.statSync(COOKIE_FILE).size > 100;
   const cookieArg = hasCookies ? `--cookies "${COOKIE_FILE}"` : '';
   const proxyArg = getProxyArg();
-  // Use Deno for JS challenge solving (yt-dlp-ejs)
   const ejsArg = '--js-runtimes deno';
 
   if (hasCookies) logger.info('Using YouTube cookies');
@@ -72,7 +69,9 @@ async function downloadVideo(entry, outputDir) {
         const cmd = `${exe} ${proxyArg} ${cookieArg} ${s.args} ${s.format} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4`;
 
         logger.info(`Try: ${exe} ${s.name}`);
-        execSync(cmd, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+        
+        // execSync with timeout — if yt-dlp hangs, this kills the process
+        execSync(cmd, { timeout: STRATEGY_TIMEOUT, maxBuffer: 200*1024*1024, encoding: 'utf8', env, killSignal: 'SIGKILL' });
 
         const files = fs.readdirSync(outputDir)
           .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
@@ -85,11 +84,16 @@ async function downloadVideo(entry, outputDir) {
         }
       } catch (e) {
         const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 60);
+        // Timeout errors are expected — just move to next strategy
+        if (e.signal === 'SIGKILL' || e.killed) {
+          logger.warn(`yt-dlp ${s.name}: TIMED OUT after ${STRATEGY_TIMEOUT/1000}s — skipping`);
+        }
       }
     }
   }
 
-  logger.warn(`Failed: ${url.substring(0,60)}`);
+  // If all strategies failed, log and return null — don't hang, move on
+  logger.warn(`All download strategies failed for ${url.substring(0,60)} — moving on`);
   return null;
 }
 
