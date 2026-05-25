@@ -97,7 +97,8 @@ class GitHubActionsRunner {
     for (const c of countries) {
       const trendsList = (allTrends[c] || []).join(', ');
       if (!trendsList) continue;
-      const prompt = `Generate 2 YouTube Shorts search queries in ENGLISH for ${c} using these trends: ${trendsList}. Mix creative variations. Return JSON array.`;
+      // Queries can be in ANY language — native language works better for finding local content
+      const prompt = `Generate 2 YouTube Shorts search queries for ${c} using these trends: ${trendsList}. Use native language keywords where appropriate. Mix creative variations. Return JSON array.`;
       try {
         const r = await Promise.race([
           this.ai.chatJSON(prompt, 'queries', { useCheapModel: true, temperature: 0.9 }),
@@ -111,7 +112,7 @@ class GitHubActionsRunner {
         }
       } catch {
         const result = await this._ollamaGenerate(
-          `Generate 2 YouTube search queries in ENGLISH for ${c} trends: ${trendsList}. Format: query1, query2`,
+          `Generate 2 YouTube search queries for ${c} trends: ${trendsList}. Use native language keywords. Format: query1, query2`,
           { temperature: 0.9 }
         );
         if (result) {
@@ -226,7 +227,7 @@ class GitHubActionsRunner {
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — Everything in ENGLISH');
+    this.logger.header('Mr. WorldWideWebster — Search any lang, Publish English');
     this.logger.info(`OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
     try { const http = require('http'); await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => r(true)).on('error', () => r(false)); }); this.logger.info('Ollama: OK'); } catch {}
     this.ai = new AIService(); await this.ai.waitForInit(); this._loadMemory();
@@ -289,14 +290,14 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
   async _translateText(text) {
     if (!text) return null;
-    try { const r = await this.ai.chat(`Translate to natural ENGLISH. Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 }); if (r?.length > 3) return r.replace(/["']/g, '').trim().substring(0, 200); } catch {}
-    const result = await this._ollamaGenerate(`Translate this to ENGLISH. Return ONLY translation:\n${text.substring(0, 300)}`, { temperature: 0.3, maxTokens: 300 });
+    try { const r = await this.ai.chat(`Translate to natural English. Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 }); if (r?.length > 3) return r.replace(/["']/g, '').trim().substring(0, 200); } catch {}
+    const result = await this._ollamaGenerate(`Translate this to English. Return ONLY translation:\n${text.substring(0, 300)}`, { temperature: 0.3, maxTokens: 300 });
     if (result?.length > 3 && !result.includes('Translate this')) return result.replace(/["']/g, '').trim().substring(0, 200);
     return null;
   }
 
   async runDaily() {
-    this.logger.header('DAILY: All content in ENGLISH');
+    this.logger.header('DAILY: Search native → Publish English');
     const errors = []; const uploaded = [];
 
     const ch = this.memory['channel-memory'] || {};
@@ -308,7 +309,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       this.allC[Math.floor(Math.random()*this.allC.length)]
     ];
 
-    this.logger.info('Step 1: Generating ENGLISH queries...');
+    this.logger.info('Step 1: Generating queries (any language)...');
     let queries = this._getTrendingQueriesForCountries(countries);
     if (Math.random() > 0.5) {
       const allTrends = ch.trendingKeywords || {};
@@ -317,7 +318,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     }
     this.logger.success(`Queries: ${queries.join(' | ')}`);
 
-    // Search, rank, download
     const allUrls = await findUrlsForQueries(queries, 12);
     if (!allUrls.length) return { uploadedVideos: [], errors: ['No URLs'] };
 
@@ -334,7 +334,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     }
     this.logger.info(`Downloaded ${downloaded.length}`);
 
-    // Process each
     const { createShort } = require('./clip-editor');
     const shorts = [];
 
@@ -431,7 +430,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     this.logger.info(`Total: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}`);
 
     const result = await this.hermes.chat(
-      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics per country\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries for tomorrow (ENGLISH only)\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Japan: keyword1, keyword2\nQUERIES: query1, query2\nFORMATS: ...\nSTRATEGY: ...`,
+      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics per country\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries for tomorrow\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Japan: keyword1, keyword2\nQUERIES: query1, query2\nSTRATEGY: ...`,
       { timeout: 300000 }
     );
 
