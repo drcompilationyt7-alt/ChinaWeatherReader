@@ -1,6 +1,7 @@
 /**
  * Downloader module
- * Tests proxy, uses socks5h:// for DNS, shows full errors for debugging.
+ * Uses Shadowsocks + bgutil PO Token plugin for autonomous YouTube downloads.
+ * Tests proxy, shows IP, retries across multiple clients.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -23,7 +24,7 @@ async function downloadVideo(entry, outputDir) {
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Fix: explicit socks5 -> socks5h conversion for DNS through proxy
+  // Fix socks5 -> socks5h for DNS through proxy
   let proxy = (process.env.YT_PROXY || '').replace(/^socks5:\/\//, 'socks5h://');
   
   // Test proxy
@@ -38,20 +39,28 @@ async function downloadVideo(entry, outputDir) {
   }
 
   const proxyArg = proxy ? `--proxy "${proxy}"` : '';
-  const PY = 'python3 -m yt_dlp';
-  const fmt = '-f "best[height<=720]"';
-  const base = `${proxyArg} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
-
+  
+  // Try each client with bgutil PO Token plugin + without
   const strategies = [
-    { name: 'web_embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
+    // With PO Token plugin + web client (bgutil auto-generates tokens)
+    { name: 'web+PO', args: `--extractor-args "youtube:po_token=web.gvs+;player_client=web"` },
+    // With PO Token + mweb client
+    { name: 'mweb+PO', args: `--extractor-args "youtube:po_token=mweb.gvs+;player_client=mweb"` },
+    // web_embedded (historically no PO needed)
+    { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
+    // android_vr
     { name: 'android_vr', args: '--extractor-args "youtube:player_client=android_vr"' },
+    // Default
     { name: 'default', args: '' },
   ];
+
+  const PY = 'python3 -m yt_dlp';
+  const base = `${proxyArg} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
 
   for (const s of strategies) {
     try {
       logger.info(`Try: ${s.name}`);
-      execSync(`${PY} ${s.args} ${fmt} ${base}`, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+      execSync(`${PY} ${s.args} ${base}`, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
       
       const files = fs.readdirSync(outputDir)
         .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
@@ -63,14 +72,7 @@ async function downloadVideo(entry, outputDir) {
         return { path: fp, title, platform, sourceUrl: url };
       }
     } catch (e) {
-      const err = (e.stderr || e.stdout || e.message || '').toString();
-      if (err.includes('Sign in')) {
-        logger.warn(`${s.name}: blocked (needs cookies/PO Token)`);
-      } else if (err.includes('HTTP Error 403')) {
-        logger.warn(`${s.name}: 403 (needs PO Token)`);
-      } else {
-        logger.warn(`${s.name}: ${err.substring(0,150)}`);
-      }
+      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
     }
   }
 
