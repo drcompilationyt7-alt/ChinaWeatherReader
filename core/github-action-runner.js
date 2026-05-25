@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
@@ -65,22 +66,126 @@ class GitHubActionsRunner {
     } catch {}
   }
 
+  /**
+   * Transcribe audio using local faster-whisper (FREE, no API key needed)
+   * Install: pip install faster-whisper
+   */
+  async _transcribeAudio(videoPath) {
+    const audioDir = path.join(config.paths.assets, 'audio');
+    if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
+
+    const audioPath = path.join(audioDir, `audio_${Date.now()}.mp3`);
+
+    try {
+      // Extract first 60 seconds of audio
+      this.logger.info('Extracting audio for free local transcription...');
+      execSync(
+        `ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`,
+        { timeout: 30000 }
+      );
+
+      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) {
+        this.logger.warn('Audio extraction produced empty file');
+        return null;
+      }
+
+      // Use faster-whisper (local, free, no API key)
+      this.logger.info('Transcribing with faster-whisper (free, local)...');
+      const pythonScript = `
+import sys
+sys.path.insert(0, '.')
+try:
+    from faster_whisper import WhisperModel
+    model = WhisperModel("base", device="cpu", compute_type="int8")
+    segments, info = model.transcribe("${audioPath.replace(/\\/g, '\\\\')}", language="en")
+    text = " ".join(seg.text for seg in segments)
+    print(text[:1000] if text else "")
+except Exception as e:
+    print(f"WHISPER_ERROR: {e}")
+    sys.exit(1)
+`;
+      const tmpScript = path.join(audioDir, `whisper_${Date.now()}.py`);
+      fs.writeFileSync(tmpScript, pythonScript);
+
+      let transcript = '';
+      try {
+        const output = execSync(`python3 "${tmpScript}" 2>/dev/null`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
+        if (output && !output.startsWith('WHISPER_ERROR')) {
+          transcript = output;
+        } else {
+          this.logger.warn(`Local whisper error: ${output}`);
+        }
+      } catch (whisperError) {
+        this.logger.warn(`Local whisper failed: ${whisperError.message.substring(0, 80)}`);
+      }
+
+      // Cleanup
+      try { fs.unlinkSync(tmpScript); } catch {}
+      try { fs.unlinkSync(audioPath); } catch {}
+
+      if (transcript && transcript.length > 0) {
+        this.logger.success(`Transcription: "${transcript.substring(0, 100)}..."`);
+        return transcript.trim();
+      }
+      this.logger.info('No transcript generated (video may have no speech)');
+      return null;
+    } catch (error) {
+      this.logger.warn(`Transcription failed: ${error.message.substring(0, 80)}`);
+      try { fs.unlinkSync(audioPath); } catch {}
+      return null;
+    }
+  }
+
   async _generateQueries() {
-    this.logger.info('Step 1: AI generating queries...');
+    this.logger.info('Step 1: Generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
-    const all = ['Nigeria','Japan','Germany','Brazil','India','Mexico','UK','South Korea','Egypt','Italy','Spain','Thailand','Vietnam','France','Australia','China','Indonesia'];
+
+    const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
+    const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
+    const all = [...nonAsianCountries, ...asianCountries];
     const avail = all.filter(c => !used.includes(c));
     const c1 = avail.length > 0 ? avail[Math.floor(Math.random()*avail.length)] : all[Math.floor(Math.random()*all.length)];
     const c2 = all[Math.floor(Math.random()*all.length)];
     const c3 = all[Math.floor(Math.random()*all.length)];
+
+    const getSuffix = (country) => {
+      if (asianCountries.includes(country)) {
+        return `${country} douyin short`;
+      }
+      return `${country} short`;
+    };
+
+    const fallbackQueries = [
+      getSuffix(c1),
+      getSuffix(c2),
+      getSuffix(c3),
+      `${c1} viral short`,
+      `${c2} trending short`
+    ];
+
     try {
-      const r = await this.ai.chatJSON(`Generate 5 YouTube search queries for MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Return JSON array.`, `5 queries`, { useScriptModel:true, temperature:0.8 });
-      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : [`${c1} viral`,`${c2} trend`]);
+      const aiPromise = this.ai.chatJSON(
+        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
+Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short viral", "Brazil short comedy"]`,
+        `5 queries`, { useCheapModel: true, temperature: 0.8 }
+      );
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('AI query generation timed out')), 12000)
+      );
+
+      const r = await Promise.race([aiPromise, timeoutPromise]);
+      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : fallbackQueries);
       this.queries = qs; this.countries = [c1, c2, c3];
       this.logger.success(`Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
-    } catch { this.queries = [`${c1} meme`,`${c2} viral`,`${c3} trend`]; this.countries = [c1, c2, c3]; return { queries: this.queries, countries: this.countries }; }
+    } catch {
+      this.queries = fallbackQueries;
+      this.countries = [c1, c2, c3];
+      this.logger.success(`Fallback Queries: ${fallbackQueries.join(' | ')}`);
+      return { queries: fallbackQueries, countries: [c1, c2, c3] };
+    }
   }
 
   async runDaily() {
@@ -88,80 +193,121 @@ class GitHubActionsRunner {
     const errors = [];
     const uploaded = [];
 
-    // Step 1: Generate queries
     const { queries, countries } = await this._generateQueries();
 
-    // Step 2: Search 10 URLs with metadata
     this.logger.info('Step 2: Searching 10 URLs with metadata...');
     const allUrls = await findUrlsForQueries(queries, 10);
-    
+
     if (allUrls.length === 0) {
       this.logger.error('No URLs found');
       return { uploadedVideos: [], errors: ['No URLs found'] };
     }
-    
-    // Step 3: AI ranks URLs (no download needed)
+
+    allUrls.forEach((u, i) => {
+      this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}`);
+    });
+
     this.logger.info('Step 3: AI ranking URLs...');
     const { top3, explainer } = await rankVideos(allUrls, queries[0] || '', this.ai);
-    
+
     if (top3.length === 0) {
       this.logger.warn('AI ranking failed, using first 3');
       top3.push(...allUrls.slice(0, 3));
     }
-    
-    // Log why each was chosen
-    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)}`));
 
-    // Step 4: Download top 3 videos
+    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}`));
+
     this.logger.info('Step 4: Downloading top 3 ranked videos...');
     const downloaded = await downloadVideos(top3, config.paths.clips);
 
     if (downloaded.length === 0) {
-      this.logger.warn('No videos downloaded - upload failure expected');
+      this.logger.warn('No videos downloaded');
     }
 
-    // Step 5: Create Shorts (NO Nemotron - use AI ranking + smart timing)
-    this.logger.info('Step 5: Creating Shorts...');
-    const { createShort, generateVoiceover } = require('./clip-editor');
+    this.logger.info('Step 5: Creating Shorts with local whisper transcription + AI voiceover...');
+    const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
 
     for (let i = 0; i < downloaded.length; i++) {
       const v = downloaded[i];
       const query = queries[i] || queries[0] || '';
-      const country = countries[0] || 'Global';
-      
-      // Check if this is the explainer candidate
-      const isExplainer = explainer && v.sourceUrl === explainer.url;
-      
-      // Generate voiceover for explainer
+      const country = countries[i] || countries[0] || 'Global';
+
+      this.logger.info(`=== Processing short #${i+1}: ${country} ===`);
+
       let voiceoverPath = null;
-      let explainerText = '';
-      if (isExplainer) {
-        this.logger.info(`Generating explainer for #${i+1}...`);
-        try {
-          const expContent = await generateExplainerContent(v, this.ai);
-          explainerText = expContent.explainer_text || `What is this? ${expContent.content_name || v.title || 'global content'}`;
-          
-          // Generate voiceover
-          const vDir = path.join(config.paths.assets, 'voiceovers');
-          if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
-          try {
-            // Use edge-tts for voiceover
-            const safeText = explainerText.replace(/"/g, '\\"');
-            const vPath = path.join(vDir, `exp_${Date.now()}.mp3`);
-            const cmd = `edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${vPath}" 2>/dev/null`;
-            require('child_process').execSync(cmd, { timeout: 30000 });
-            if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
-          } catch {}
-        } catch {}
+      let voiceoverText = '';
+      let transcript = null;
+
+      // Step 5a: Transcribe with local free whisper
+      try {
+        transcript = await this._transcribeAudio(v.path);
+        if (transcript) {
+          this.logger.success(`Transcript: ${transcript.substring(0, 120)}`);
+        }
+      } catch (txError) {
+        this.logger.warn(`Transcription error: ${txError.message}`);
       }
 
-      // Detect smart start time by finding where audio starts
-      let startTime = 5; // default
+      // Step 5b: Generate voiceover from transcript + LLM
       try {
-        // Use ffprobe to detect first audio activity
-        const info = require('child_process').execSync(
+        let contextPrompt;
+
+        if (transcript) {
+          contextPrompt = `You are a narrator for "Mr. WorldWideWebster".
+This is a video from ${country}. Here's what's happening (transcribed):
+"${transcript}"
+
+Write ONE short sentence (8-15 words) naturally introducing this video. Examples:
+- "Watch this hilarious moment from ${country}"
+- "Check out this viral clip from ${country}"
+- "This ${country} short is going viral"
+
+Match the tone of the content. Return ONLY the sentence.`;
+        } else {
+          contextPrompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}.""This is a funny meme from ${country}""Return ONLY the sentence.`;
+        }
+
+        try {
+          const voiceoverPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Voiceover AI timed out')), 8000)
+          );
+          voiceoverText = await Promise.race([voiceoverPromise, timeoutPromise]);
+
+          if (!voiceoverText || voiceoverText.length < 5) {
+            voiceoverText = `Check out this clip from ${country}`;
+          }
+          voiceoverText = voiceoverText.replace(/["']/g, '').trim();
+          if (voiceoverText.length > 120) voiceoverText = voiceoverText.substring(0, 117) + '...';
+        } catch {
+          voiceoverText = `Check out this clip from ${country}`;
+        }
+
+        // TTS
+        const vDir = path.join(config.paths.assets, 'voiceovers');
+        if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
+
+        try {
+          const safeText = voiceoverText.replace(/"/g, '\\"');
+          const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
+          const cmd = `edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${vPath}" 2>/dev/null`;
+          execSync(cmd, { timeout: 30000 });
+          if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) {
+            voiceoverPath = vPath;
+            this.logger.success(`Voiceover for #${i+1}: "${voiceoverText}"`);
+          }
+        } catch (ttsError) {
+          this.logger.warn(`TTS failed for #${i+1}: ${ttsError.message}`);
+        }
+      } catch (aiError) {
+        this.logger.warn(`AI voiceover failed for #${i+1}: ${aiError.message}`);
+      }
+
+      let startTime = 5;
+      try {
+        const info = execSync(
           `ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`,
           { timeout: 5000, encoding: 'utf8' }
         ).trim();
@@ -170,55 +316,71 @@ class GitHubActionsRunner {
 
       const outputPath = path.join(dir, `short_${Date.now()}.mp4`);
       const result = await createShort(v.path, {
-        type: isExplainer ? 'explainer' : 'clip',
+        type: 'clip_with_voiceover',
         startTime,
         duration: 30,
         query,
         countryText: country,
         voiceoverPath,
-        explainerText,
+        explainerText: voiceoverText,
         outputPath,
       });
 
       if (result) {
-        shorts.push({ path: result, query, country, isExplainer, sourceUrl: v.sourceUrl });
+        shorts.push({
+          path: result,
+          query,
+          country,
+          hasVoiceover: !!voiceoverPath,
+          voiceoverText,
+          transcript,
+          sourceUrl: v.sourceUrl
+        });
       }
     }
 
-    this.logger.success(`Created ${shorts.length} Shorts`);
+    this.logger.success(`Created ${shorts.length} Shorts with ${shorts.filter(s => s.hasVoiceover).length} voiceovers`);
 
-    // Step 6: Upload with AI-generated titles/descriptions
     for (const s of shorts) {
       const query = s.query || '';
       const country = s.country;
       try {
-        const td = await this.ai.chatJSON(
-          `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+desc.
-Query: "${query}"
+        const titlePrompt = s.transcript
+          ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
-Is Explainer: ${s.isExplainer}
+Query: "${query}"
+Video content (transcribed): "${s.transcript.substring(0, 300)}"
 
-Title: catchy, max 70 chars, with flag emoji. Description: 2-3 sentences.
-Return JSON: {"title":"...","description":"..."}`,
-          `Title for ${query}`,
-          { useCheapModel: true, temperature: 0.8 }
+Title: Catchy, max 70 chars, with ${country} flag emoji at start.
+Description: 3-4 descriptive sentences. Mention the country, type of content, and call to follow.
+Return JSON: {"title":"...","description":"..."}`
+          : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
+Country: ${country}
+Query: "${query}"
+
+Title: catchy, max 70 chars, with ${country} flag emoji. Description: 2-3 sentences.
+Return JSON: {"title":"...","description":"..."}`;
+
+        const td = await this.ai.chatJSON(
+          titlePrompt,
+          `Title for ${country} short`,
+          { useCheapModel: true, temperature: 0.7 }
         );
-        
+
         const title = (td.title || `\ud83c\udf0d ${query}`).substring(0, 100);
-        const description = td.description || `\ud83c\udf0d From ${country}. Follow for more global content!`;
-        
+        const description = td.description || `\ud83c\udf0d From ${country}. Follow Mr. WorldWideWebster for more global content!`;
+
         const r = await this._uploadToYouTube({
           videoPath: s.path,
           title,
           description,
           tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()].filter(Boolean),
         });
-        if (r) uploaded.push({ title, url: r.url, type: s.isExplainer ? 'explainer' : 'clip' });
+        if (r) uploaded.push({ title, url: r.url, type: 'clip_with_voiceover' });
         else errors.push(`Upload failed: ${title}`);
       } catch {}
     }
 
-    // Update memory
     const cm = this.memory['channel-memory'];
     cm.totalVideosPosted = (cm.totalVideosPosted||0) + uploaded.length;
     if (countries) {
@@ -230,7 +392,7 @@ Return JSON: {"title":"...","description":"..."}`,
     await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, errors });
 
     this.logger.header('SUMMARY');
-    this.logger.info(`URLs: ${allUrls.length} | Ranked & Downloaded: ${downloaded.length} | Shorts: ${shorts.length} | Uploaded: ${uploaded.length}`);
+    this.logger.info(`URLs: ${allUrls.length} | Ranked & Downloaded: ${downloaded.length} | Shorts: ${shorts.length} (${shorts.filter(s => s.hasVoiceover).length} with voiceover) | Uploaded: ${uploaded.length}`);
     if (errors.length) errors.forEach(e => this.logger.warn(`  ${e}`));
     return { uploadedVideos: uploaded, errors };
   }

@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 env:
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -37,17 +39,30 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip
-          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs --break-system-packages
+          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs faster-whisper --break-system-packages
           npm ci || npm install
           npm install axios
+
+      - name: Setup Shadowsocks
+        id: ss
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SHADOWSOCKS_SERVER }}" ]; then echo "no ss"; exit 0; fi
+          sudo apt-get install -y shadowsocks-libev
+          sudo systemctl disable shadowsocks-libev --now || true
+          sudo tee /etc/shadowsocks-libev/oracle.json > /dev/null <<'EOF'
+          {"server":"${{ secrets.SHADOWSOCKS_SERVER }}","server_port":8388,"local_address":"127.0.0.1","local_port":1080,"password":"${{ secrets.SHADOWSOCKS_PASSWORD }}","timeout":300,"method":"chacha20-ietf-poly1305"}
+          EOF
+          sudo systemctl enable shadowsocks-libev-local@oracle --now
+          sleep 3
+          sudo systemctl is-active shadowsocks-libev-local@oracle && echo "YT_PROXY=socks5://127.0.0.1:1080" >> $GITHUB_ENV || true
 
       - name: Write cookies file
         run: |
           if [ -n "$YOUTUBE_COOKIES" ]; then
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
-            echo "Cookies: $(wc -l < /tmp/yt_cookies.txt) lines"
-          else
-            echo "WARNING: No YOUTUBE_COOKIES secret set"
+            echo "Cookies file created: $(wc -l < /tmp/yt_cookies.txt) lines"
           fi
 
       - name: Restore memory
@@ -65,4 +80,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -rf output/temp 2>/dev/null || true
+        run: sudo systemctl stop shadowsocks-libev-local@oracle 2>/dev/null || true
