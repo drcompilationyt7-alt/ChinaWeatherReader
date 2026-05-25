@@ -1,7 +1,7 @@
 /**
  * Downloader module
- * Uses Shadowsocks proxy + bgutil PO Token plugin.
- * Correct PO syntax: po_token=CLIENT.TYPE+PROVIDER
+ * Uses yt-dlp binary directly (has EJS scripts bundled) + Shadowsocks.
+ * Tries pip version as fallback.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -40,35 +40,36 @@ async function downloadVideo(entry, outputDir) {
 
   const proxyArg = proxy ? `--proxy "${proxy}"` : '';
   
-  // Strategies with correct PO token syntax for bgutil
-  // po_token=CLIENT.TYPE+PROVIDER where PROVIDER=bgutil (plugin name)
-  const PY = 'python3 -m yt_dlp';
-  const base = `${proxyArg} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
+  // Try yt-dlp binary (PyInstaller - has EJS bundled, can handle JS challenges)
+  // then python3 -m yt_dlp as fallback
+  const executables = ['yt-dlp', 'python3 -m yt_dlp'];
   
-  const strategies = [
-    { name: 'web+bgutil', args: '--extractor-args "youtube:po_token=web.gvs+bgutil;player_client=web"' },
-    { name: 'mweb+bgutil', args: '--extractor-args "youtube:po_token=mweb.gvs+bgutil;player_client=mweb"' },
-    { name: 'web_safari+bgutil', args: '--extractor-args "youtube:po_token=web_safari.gvs+bgutil;player_client=web_safari"' },
-    { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
-    { name: 'default', args: '' },
-  ];
-
-  for (const s of strategies) {
-    try {
-      logger.info(`Try: ${s.name}`);
-      execSync(`${PY} ${s.args} ${base}`, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
-      
-      const files = fs.readdirSync(outputDir)
-        .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
-        .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
-      
-      if (files.length > 0) {
-        const fp = path.join(outputDir, files[0]);
-        logger.success(`OK! ${files[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
-        return { path: fp, title, platform, sourceUrl: url };
+  for (const exe of executables) {
+    // Try each strategy
+    const strategies = [
+      { name: 'default', args: '' },
+      { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
+    ];
+    
+    for (const s of strategies) {
+      try {
+        const cmd = `${exe} ${proxyArg} ${s.args} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 2 --user-agent "${UA}" --force-ipv4`;
+        
+        logger.info(`Try: ${exe} ${s.name}`);
+        execSync(cmd, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
+        
+        const files = fs.readdirSync(outputDir)
+          .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
+          .sort((a,b) => fs.statSync(path.join(outputDir,b)).mtimeMs - fs.statSync(path.join(outputDir,a)).mtimeMs);
+        
+        if (files.length > 0) {
+          const fp = path.join(outputDir, files[0]);
+          logger.success(`OK! ${files[0]} (${(fs.statSync(fp).size/1024/1024).toFixed(1)}MB)`);
+          return { path: fp, title, platform, sourceUrl: url };
+        }
+      } catch (e) {
+        const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
       }
-    } catch (e) {
-      const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
     }
   }
 
