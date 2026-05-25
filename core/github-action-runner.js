@@ -14,6 +14,7 @@ class GitHubActionsRunner {
   constructor() {
     this.logger = new Logger('GHAction');
     this.ai = null;
+    this.hermes = null;
     this.memory = {};
     this.memoryPath = path.join(__dirname, '..', 'memory');
     this.youtubeBridge = null;
@@ -49,23 +50,36 @@ class GitHubActionsRunner {
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster Pipeline v6');
+    this.logger.header('Mr. WorldWideWebster Pipeline v7 — Hermes Brain');
     this.logger.info(`OpenRouter keys: KEY=${!!process.env.OPENROUTER_API_KEY} KEY_2=${!!process.env.OPENROUTER_API_KEY_2} KEY_3=${!!process.env.OPENROUTER_API_KEY_3} KEY_4=${!!process.env.OPENROUTER_API_KEY_4}`);
+
     this.ai = new AIService();
     await this.ai.waitForInit();
     this._loadMemory();
+
+    // Initialize YouTube bridge
     try {
       const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
       this.youtubeBridge = new YouTubeBridge();
       await this.youtubeBridge.initialize();
     } catch (e) { this.logger.warn(`YouTube bridge: ${e.message}`); }
+
+    // Initialize Hermes Agent for brain/memory/decision making
+    try {
+      const { HermesAgent } = require('../hermes-agent/agent-core');
+      this.hermes = new HermesAgent(this.ai);
+      this.logger.success('Hermes Agent loaded — brain ready');
+    } catch (e) {
+      this.logger.warn(`Hermes Agent not available: ${e.message}`);
+    }
+
     this.logger.success('Initialized');
   }
 
   _loadMemory() {
     if (!fs.existsSync(this.memoryPath)) fs.mkdirSync(this.memoryPath, { recursive: true });
     const defs = {
-      'channel-memory.json': { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], usedTopics: [] },
+      'channel-memory.json': { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], usedTopics: [], hermesNotes: [] },
       'content-history.json': { videos: [] },
     };
     for (const [f, d] of Object.entries(defs)) {
@@ -99,18 +113,9 @@ class GitHubActionsRunner {
       this.logger.info(`Boosting: ${videoUrl}`);
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
-      // Call run with a dedicated argument object - BoostEngine.run() reads params
-      // before _parseConfig() so programmatic calls work correctly
-      const result = await engine.run({
-        url: videoUrl,
-        views: parseInt(process.env.BOOST_MAX_VIEWS) || 75,
-      });
-      if (result.success) {
-        this.logger.success(`Boosted ${result.views} views`);
-      }
-    } catch (e) {
-      this.logger.warn(`Boost failed: ${e.message}`);
-    }
+      const result = await engine.run({ url: videoUrl, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
+      if (result.success) this.logger.success(`Boosted ${result.views} views`);
+    } catch (e) { this.logger.warn(`Boost failed: ${e.message}`); }
   }
 
   async _boostOldVideos() {
@@ -123,11 +128,7 @@ class GitHubActionsRunner {
       return uploaded < oneWeekAgo && uploaded > 0;
     });
     this.logger.info(`Found ${oldVideos.length} videos older than 1 week to boost`);
-    for (const v of oldVideos) {
-      if (v.url) {
-        await this._boostVideo(v.url);
-      }
-    }
+    for (const v of oldVideos) { if (v.url) await this._boostVideo(v.url); }
   }
 
   async _sendDiscord(type, data) {
@@ -140,8 +141,7 @@ class GitHubActionsRunner {
   }
 
   /**
-   * Transcribe audio with language detection.
-   * Returns { text, language, isNonEnglish } or null.
+   * Transcribe audio with language detection via faster-whisper.
    */
   async _transcribeAudio(videoPath) {
     const audioDir = path.join(config.paths.assets, 'audio');
@@ -151,9 +151,9 @@ class GitHubActionsRunner {
       this.logger.info('Extracting audio for transcription...');
       execSync(`ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`, { timeout: 30000 });
       if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) return null;
-      this.logger.info('Transcribing with faster-whisper (with language detection)...');
+
+      this.logger.info('Transcribing with faster-whisper (auto language)...');
       const pyPath = audioPath.replace(/\\/g, '\\\\');
-      // Use no language param to auto-detect, return both text and detected language
       const pyCmd = `python3 -c "
 from faster_whisper import WhisperModel
 import json
@@ -165,6 +165,7 @@ print(json.dumps(result))
 " 2>&1`;
       const output = execSync(pyCmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
       try { fs.unlinkSync(audioPath); } catch {}
+
       if (output && !output.includes('Error') && !output.includes('Traceback')) {
         try {
           const parsed = JSON.parse(output);
@@ -174,7 +175,6 @@ print(json.dumps(result))
           this.logger.success(`Transcript (${lang}): "${text.substring(0, 80)}..."`);
           return { text, language: lang, isNonEnglish };
         } catch {
-          // Fallback if JSON parse fails
           this.logger.success(`Transcript: "${output.substring(0, 100)}..."`);
           return { text: output, language: 'en', isNonEnglish: false };
         }
@@ -189,15 +189,12 @@ print(json.dumps(result))
 
   /**
    * Burn English subtitles at the bottom of a shorts video using ffmpeg drawtext.
-   * Handles multi-line text properly for 1080x1920 shorts.
    */
   _burnSubtitles(videoPath, outputPath, subtitleText) {
     if (!subtitleText) return false;
     try {
       this.logger.info('Burning English subtitles onto video...');
-      // Escape single quotes for ffmpeg filter
       const safeText = subtitleText.replace(/'/g, "'\\\\''").replace(/[:\\]/g, '\\\\$&');
-      // Split into lines of ~25 chars for readability
       const words = subtitleText.split(' ');
       const lines = [];
       let currentLine = '';
@@ -210,11 +207,8 @@ print(json.dumps(result))
         }
       }
       if (currentLine) lines.push(currentLine);
-      // Max 3 lines for shorts
       const displayLines = lines.slice(0, 3).join('\\\\N');
-      
-      // Draw text at bottom of frame with semi-transparent background
-      // For 1080x1920 shorts: position at y=1750 (near bottom, above action area)
+
       const drawtextFilter =
         `drawtext=text='${displayLines}':` +
         `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:` +
@@ -224,17 +218,77 @@ print(json.dumps(result))
         `enable='between(t,0,30)'`;
 
       execSync(
-        `ffmpeg -y -i "${videoPath}" ` +
-        `-vf "${drawtextFilter}" ` +
-        `-c:v libx264 -preset ultrafast -crf 23 ` +
-        `-c:a copy ` +
-        `"${outputPath}" 2>/dev/null`,
+        `ffmpeg -y -i "${videoPath}" -vf "${drawtextFilter}" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`,
         { timeout: 60000, maxBuffer: 50*1024*1024 }
       );
       return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
     } catch (error) {
       this.logger.warn(`Subtitle burn failed: ${error.message.substring(0, 80)}`);
       return false;
+    }
+  }
+
+  /**
+   * Have Hermes evaluate downloaded videos using transcript + yt-dlp metadata.
+   * Returns ranked list with scores and notes.
+   */
+  async _hermesEvaluateVideos(downloaded, transcripts) {
+    if (!this.hermes || downloaded.length === 0) {
+      return downloaded.map((v, i) => ({ index: i, score: 50, notes: 'No Hermes available', path: v.path, sourceUrl: v.sourceUrl }));
+    }
+
+    try {
+      this.logger.info('Hermes is analyzing transcripts + metadata to rank videos...');
+
+      const videoData = downloaded.map((v, i) => ({
+        index: i,
+        title: v.title || 'unknown',
+        url: v.sourceUrl || v.path,
+        path: v.path,
+        view_count: v.view_count || '?',
+        duration: v.duration || '?',
+        isShort: v.isShort || false,
+        transcript: transcripts[i] || null,
+      }));
+
+      const result = await this.hermes.run(
+        `EVALUATE VIDEOS for Mr. WorldWideWebster channel.
+
+We downloaded these ${downloaded.length} videos for today's shorts. For each one, analyze the metadata and transcript and decide:
+1. Is this video engaging enough for YouTube Shorts? (0-100 score)
+2. Is the content understandable without watching the original (good for foreign content)?
+3. Does the transcript contain anything problematic?
+4. What's the best ordering (1st, 2nd, 3rd)?
+5. What hook sentence would work best for this video?
+
+Videos:
+${JSON.stringify(videoData, null, 2)}
+
+Return a JSON array: [{ "index": 0, "score": 85, "order": 1, "issues": [], "hook": "sentence", "notes": "why" }, ...]
+Sort by score descending.`, 
+        { maxSteps: 3, verbose: false }
+      );
+
+      // Parse the result - agent-core.js puts result in the result field
+      let evaluation;
+      try {
+        const jsonMatch = result.result.match(/\[[\s\S]*\]/);
+        if (jsonMatch) evaluation = JSON.parse(jsonMatch[0]);
+      } catch {}
+
+      if (evaluation && Array.isArray(evaluation)) {
+        this.logger.success(`Hermes evaluated: ${evaluation.map(e => `#${e.index}=${e.score}pts`).join(', ')}`);
+        return evaluation;
+      }
+
+      // Fallback: default ranking
+      this.logger.warn('Hermes evaluation unparseable, using default order');
+      return downloaded.map((v, i) => ({ 
+        index: i, score: 50, order: i + 1, issues: [], hook: `Check out this clip`, notes: 'Default order'
+      }));
+    } catch (error) {
+      this.logger.warn(`Hermes evaluation failed: ${error.message}`);
+      return downloaded.map((v, i) => ({ index: i, score: 50, order: i + 1, issues: [], hook: `Check out this clip`, notes: 'Fallback' }));
     }
   }
 
@@ -270,10 +324,11 @@ print(json.dumps(result))
   }
 
   async runDaily() {
-    this.logger.header('DAILY: 10 URLs -> AI Rank -> Download Top 3 -> Shorts -> Upload + Boost');
+    this.logger.header('DAILY: Hermes Brain → Find → Evaluate → Create → Upload + Store Memory');
     const errors = [];
     const uploaded = [];
 
+    // Step 1-4: Queries → Search → Rank → Download
     const { queries, countries } = await this._generateQueries();
     this.logger.info('Step 2: Searching 10 URLs...');
     const allUrls = await findUrlsForQueries(queries, 10);
@@ -287,74 +342,102 @@ print(json.dumps(result))
     const downloaded = await downloadVideos(top3, config.paths.clips);
     if (downloaded.length === 0) this.logger.warn('No videos downloaded');
 
-    this.logger.info('Step 5: Creating Shorts with whisper + AI voiceover + Twemoji flag + captions...');
+    // Step 5: Transcribe all downloads for Hermes evaluation
+    this.logger.info('Step 5: Transcribing for Hermes evaluation...');
+    const transcripts = [];
+    const downloadsWithMeta = [];
+    for (let i = 0; i < downloaded.length; i++) {
+      const v = downloaded[i];
+      try {
+        const t = await this._transcribeAudio(v.path);
+        transcripts.push(t);
+        downloadsWithMeta.push({
+          ...v,
+          transcript: t?.text || null,
+          language: t?.language || 'unknown',
+          isNonEnglish: t?.isNonEnglish || false,
+        });
+      } catch {
+        transcripts.push(null);
+        downloadsWithMeta.push({ ...v, transcript: null, language: 'unknown', isNonEnglish: false });
+      }
+    }
+
+    // Step 6: Hermes evaluates ALL downloaded videos using transcripts + metadata
+    this.logger.info('Step 6: Hermes brain evaluating video quality...');
+    const evaluations = await this._hermesEvaluateVideos(downloadsWithMeta, transcripts);
+
+    // Log Hermes evaluation
+    for (const ev of evaluations) {
+      const v = downloadsWithMeta[ev.index];
+      const country = countries[ev.index] || countries[0] || 'Global';
+      this.logger.info(`  Hermes #${ev.order || '?'} (${ev.score}/100): ${country} — ${ev.notes?.substring(0, 60) || ''}`);
+    }
+
+    // Reorder based on Hermes scores (optimistic: sort by score desc)
+    const sortedEvals = [...evaluations].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    // Step 7: Create Shorts
+    this.logger.info('Step 7: Creating Shorts with Hermes-recommended hooks...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
 
-    for (let i = 0; i < downloaded.length; i++) {
-      const v = downloaded[i];
-      const query = queries[i] || queries[0] || '';
-      const country = countries[i] || countries[0] || 'Global';
+    for (let i = 0; i < downloadsWithMeta.length; i++) {
+      // Use Hermes evaluation to pick the best hook/ordering
+      const ev = sortedEvals[i] || evaluations[i] || { index: i, score: 50, hook: '' };
+      const v = downloadsWithMeta[ev.index];
+      const query = queries[ev.index] || queries[0] || '';
+      const country = countries[ev.index] || countries[0] || 'Global';
       const originalTitle = v.sourceUrl?.title || v.title || '';
 
-      this.logger.info(`=== Short #${i+1}: ${country} ===`);
+      this.logger.info(`=== Short #${i+1}: ${country} (Hermes score: ${ev.score}) ===`);
       let voiceoverPath = null;
       let voiceoverText = '';
-      let transcript = null;
-      let isNonEnglish = false;
+      let isNonEnglish = v.isNonEnglish;
       let englishSubtitle = null;
 
-      // Transcribe with language detection
-      try { transcript = await this._transcribeAudio(v.path); } catch {}
-
-      if (transcript) {
-        isNonEnglish = transcript.isNonEnglish;
-        // Profanity filter on original text
-        const badWord = this._hasProfanity(transcript.text);
+      // Profanity filter
+      if (v.transcript) {
+        const badWord = this._hasProfanity(v.transcript);
         if (badWord) {
           this.logger.warn(`⛔ PROFANITY "${badWord}" — SKIPPING ${country}`);
-          this.logger.warn(`Transcript: "${transcript.text.substring(0, 150)}..."`);
           errors.push(`Profanity (${badWord}) for ${country}`);
           continue;
         }
 
-        // If non-English, get an English translation for subtitles
+        // If non-English, translate for captions
         if (isNonEnglish) {
-          this.logger.info(`Detected language: ${transcript.language} — translating to English for captions`);
+          this.logger.info(`Detected ${v.language} — translating to English for captions`);
           try {
             englishSubtitle = await this.ai.chat(
-              `Translate the following ${transcript.language} text to natural English. Return ONLY the translation, no explanation.`,
-              transcript.text,
+              `Translate the following ${v.language} text to natural English. Return ONLY the translation, no explanation.`,
+              v.transcript,
               { useCheapModel: true, temperature: 0.3 }
             );
-            if (englishSubtitle && englishSubtitle.length > 3) {
+            if (englishSubtitle?.length > 3) {
               englishSubtitle = englishSubtitle.replace(/["']/g, '').trim().substring(0, 200);
-              this.logger.success(`Translation: "${englishSubtitle.substring(0, 80)}..."`);
-            } else {
-              englishSubtitle = null;
-            }
-          } catch {
-            this.logger.warn('Translation failed, skipping captions');
-          }
+            } else { englishSubtitle = null; }
+          } catch { englishSubtitle = null; }
         }
       }
 
-      // Generate voiceover text (always in English)
+      // Use Hermes-recommended hook, or generate one
       try {
-        let contextPrompt = transcript?.text
-          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.text.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
-          : `Write ONE sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence.`;
-        try {
-          const vPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
-          const tPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('VO timed out')), 8000));
-          voiceoverText = await Promise.race([vPromise, tPromise]);
-          if (!voiceoverText || voiceoverText.length < 5) voiceoverText = `Check out this clip from ${country}`;
-          voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
-          if (this._hasProfanity(voiceoverText)) {
-            voiceoverText = `Check out this clip from ${country}`;
-          }
-        } catch { voiceoverText = `Check out this clip from ${country}`; }
+        voiceoverText = ev.hook || '';
+        if (!voiceoverText || voiceoverText.length < 5) {
+          const contextPrompt = v.transcript
+            ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${v.transcript.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
+            : `Write ONE sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence.`;
+          try {
+            const vPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
+            const tPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('VO timed out')), 8000));
+            voiceoverText = await Promise.race([vPromise, tPromise]);
+            if (!voiceoverText?.length > 5) voiceoverText = `Check out this clip from ${country}`;
+            voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
+            if (this._hasProfanity(voiceoverText)) voiceoverText = `Check out this clip from ${country}`;
+          } catch { voiceoverText = `Check out this clip from ${country}`; }
+        }
 
         const vDir = path.join(config.paths.assets, 'voiceovers');
         if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
@@ -376,26 +459,23 @@ print(json.dumps(result))
       try {
         const result = await createShort(v.path, { startTime, duration: 30, query, countryText: country, voiceoverPath, explainerText: voiceoverText, outputPath });
         if (result) {
-          // If non-English, burn translated subtitles onto the output
+          let finalPath = result;
           if (isNonEnglish && englishSubtitle) {
             const subbedPath = result.replace('.mp4', '_captioned.mp4');
             const burned = this._burnSubtitles(result, subbedPath, englishSubtitle);
             if (burned) {
-              // Replace result with captioned version
               try { fs.unlinkSync(result); } catch {}
-              shorts.push({ path: subbedPath, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish, englishSubtitle });
-            } else {
-              shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish });
+              finalPath = subbedPath;
             }
-          } else {
-            shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish });
           }
+          shorts.push({ path: finalPath, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: v.transcript, sourceUrl: v.sourceUrl, originalTitle, hermesScore: ev.score });
         }
       } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
     }
 
-    this.logger.success(`Created ${shorts.length} Shorts (${shorts.filter(s => s.hasVoiceover).length} with voiceover)`);
+    this.logger.success(`Created ${shorts.length} Shorts (Hermes sorted)`);
 
+    // Step 8: Upload + Boost
     for (const s of shorts) {
       try {
         const country = s.country;
@@ -422,7 +502,7 @@ print(json.dumps(result))
 
         const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
         if (uploadResult) {
-          uploaded.push({ title, url: uploadResult.url, country });
+          uploaded.push({ title, url: uploadResult.url, country, hermesScore: s.hermesScore });
           await this._boostVideo(uploadResult.url);
         } else {
           errors.push(`Upload failed: ${title}`);
@@ -433,9 +513,38 @@ print(json.dumps(result))
       }
     }
 
-    this.logger.info('Step 7: Boosting older videos...');
+    // Step 9: Boost old videos
+    this.logger.info('Step 9: Boosting older videos...');
     await this._boostOldVideos();
 
+    // Step 10: Hermes stores learnings
+    if (this.hermes && uploaded.length > 0) {
+      try {
+        this.logger.info('Hermes saving daily learnings to memory...');
+        await this.hermes.run(
+          `STORE MEMORY for Mr. WorldWideWebster.
+
+Today we uploaded ${uploaded.length} shorts:
+${JSON.stringify(uploaded.map(u => ({ title: u.title, country: u.country, url: u.url, hermesScore: u.hermesScore })), null, 2)}
+
+Countries used: ${JSON.stringify(countries)}
+
+Tasks:
+1. Save this as a skill called "daily_shorts_${new Date().toISOString().split('T')[0]}"
+2. Update memory files with what we learned today
+3. Write a brief note about what worked and what didn't
+4. Suggest which countries/topics to try next time
+
+Use the write_file tool to update memory/channel-memory.json with an updated hermesNotes array.`,
+          { maxSteps: 5, verbose: false }
+        );
+        this.logger.success('Hermes memory stored');
+      } catch (e) {
+        this.logger.warn(`Hermes memory save: ${e.message}`);
+      }
+    }
+
+    // Save basic memory
     const cm = this.memory['channel-memory'];
     cm.totalVideosPosted = (cm.totalVideosPosted||0) + uploaded.length;
     if (countries) {
@@ -452,13 +561,75 @@ print(json.dumps(result))
     return { uploadedVideos: uploaded, errors };
   }
 
+  /**
+   * Midnight investigation: Hermes reviews performance, improves strategy.
+   */
+  async runNightly() {
+    this.logger.header('🌙 NIGHTLY: Hermes Self-Improvement Investigation');
+
+    if (!this.hermes) {
+      this.logger.error('Hermes Agent required for nightly mode');
+      return;
+    }
+
+    const history = this.memory['content-history'] || { videos: [] };
+    const channelMem = this.memory['channel-memory'] || {};
+
+    this.logger.info(`Total videos posted: ${channelMem.totalVideosPosted || 0}`);
+    this.logger.info(`Countries used this week: ${(channelMem.countriesUsedThisWeek || []).join(', ')}`);
+
+    // Hermes runs autonomous investigation
+    const result = await this.hermes.run(
+      `NIGHTLY INVESTIGATION for Mr. WorldWideWebster.
+
+Current state:
+- Total videos: ${channelMem.totalVideosPosted || 0}
+- Countries used this week: ${(channelMem.countriesUsedThisWeek || []).join(', ')}
+- Hermes notes from previous runs: ${JSON.stringify(channelMem.hermesNotes || [])}
+
+INVESTIGATION TASKS:
+1. Read memory/channel-memory.json and memory/content-history.json to understand our channel
+2. Browse the web to find trending content formats and countries that are performing well
+3. Analyze what types of content (douyin, meme, streamer, explainer) work best for short-form
+4. Generate 10 NEW search queries for tomorrow's daily run — recommend new countries
+5. Create/update a reusable skill called "content_strategy" with our learnings
+6. Write an updated channel-memory.json with hermesNotes containing analysis and recommendations
+7. Suggest any code improvements that would make tomorrow's run better
+
+Focus on: identifying untapped countries, fresh content formats, and avoiding content that didn't work.`,
+      { maxSteps: 12, verbose: true }
+    );
+
+    this.logger.success(`Nightly investigation complete: ${result.stepsCount} steps`);
+    this.logger.info(`Hermes result: ${result.result?.substring(0, 300)}`);
+
+    // Send Discord summary
+    await this._sendDiscord('daily', {
+      videos: [],
+      investigation: result.result?.substring(0, 1000),
+      countries: channelMem.countriesUsedThisWeek,
+      totalVideos: channelMem.totalVideosPosted,
+      errors: [],
+    });
+
+    return result;
+  }
+
   async run() {
     await this.initialize();
     const args = process.argv.slice(2);
     const mi = args.indexOf('--mode');
     const mode = mi !== -1 ? args[mi+1] : 'daily';
-    if (mode === 'daily') await this.runDaily();
-    else { console.log(`Unknown: ${mode}`); process.exit(1); }
+
+    if (mode === 'daily') {
+      await this.runDaily();
+    } else if (mode === 'nightly' || mode === 'review') {
+      await this.runNightly();
+    } else {
+      console.log(`Unknown mode: ${mode}. Use --mode daily or --mode nightly`);
+      process.exit(1);
+    }
+
     this.logger.success('Done');
   }
 }
