@@ -335,15 +335,18 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   async runDaily() {
     this.logger.header('DAILY: 3 Trend + 1 Special');
     const errors = []; const uploaded = [];
+    // Track ALL countries attempted (even failed uploads) for Discord display
+    const attemptedCountries = [];
 
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
     const avail = this.allC.filter(c => !used.includes(c));
 
-    // Pick 3 unique countries for the 3 trend shorts (no duplicates)
+    // Pick 3 unique countries for the 3 trend shorts
     const pool = avail.length >= 3 ? avail : this.allC;
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const countries = [shuffled[0], shuffled[1], shuffled[2]];
+    countries.forEach(c => { if (!attemptedCountries.includes(c)) attemptedCountries.push(c); });
     this.logger.info(`Countries for today: ${countries.join(', ')}`);
 
     this.logger.info('Generating trend queries...');
@@ -419,12 +422,14 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.success(`Created ${shorts.length} trend Shorts`);
 
-    // Special short gets a 4th unique country (different from the 3 trend countries)
+    // Special short gets a 4th unique country
     const remaining = this.allC.filter(c => !countries.includes(c));
     const specialCountry = remaining.length > 0 ? remaining[Math.floor(Math.random() * remaining.length)] : countries[Math.floor(Math.random() * countries.length)];
+    attemptedCountries.push(specialCountry);
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
     const special = await this._createSpecialShort(specialCountry);
     if (special) { shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true }); this.logger.success(`Special location short for ${specialCountry} created`); }
+    else { this.logger.warn(`Special short for ${specialCountry} failed — skipping`); }
 
     if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
 
@@ -460,11 +465,15 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     if (cm.countriesUsedThisWeek.length > 14) cm.countriesUsedThisWeek = cm.countriesUsedThisWeek.slice(-14);
     this.memory['channel-memory'] = cm; this._saveMemory();
 
-    await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, totalViews: totalViewsToday, errors });
+    // Pass attempted countries (not just uploaded) to Discord so the field is never blank
+    const discordCountries = cm.countriesUsedThisWeek.length > 0 ? cm.countriesUsedThisWeek : attemptedCountries;
+
+    await this._sendDiscord('daily', { videos: uploaded, countries: discordCountries, totalVideos: cm.totalVideosPosted, totalViews: totalViewsToday, errors });
 
     this.logger.header('SUMMARY');
     this.logger.success(`✅ ${uploaded.length} posted (${uploaded.filter(u => u.special).length} special)`);
     this.logger.success(`👁️ Total views: ${totalViewsToday.toLocaleString()}`);
+    this.logger.info(`🌍 Countries today: ${discordCountries.join(', ')}`);
     const sorted = [...uploaded].sort((a, b) => (b.views || 0) - (a.views || 0));
     this.logger.success('🏆 Top 3:');
     sorted.slice(0, 3).forEach((u, i) => this.logger.success(`   #${i+1}: ${u.title} — 👁️ ${u.views} views → ${u.url}`));
@@ -527,10 +536,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     }
     this.logger.success('Done');
 
-    // Force exit after completion to prevent hanging on:
-    // 1. Discord WebSocket not fully closing
-    // 2. Puppeteer/orphaned browser processes
-    // 3. Any other open handles keeping the event loop alive
     setTimeout(() => { process.exit(0); }, 3000).unref();
     process.exit(0);
   }
