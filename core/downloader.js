@@ -2,6 +2,9 @@
  * Downloader module
  * Uses YouTube cookies for auth (no proxy needed).
  * Cookies from YOUTUBE_COOKIES secret -> /tmp/yt_cookies.txt
+ *
+ * FIX: Always download audio+video together using bestvideo+bestaudio merge.
+ * Previous 'best[height<=720]' could select video-only streams with no audio.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -18,7 +21,7 @@ async function downloadVideo(entry, outputDir) {
   const title = entry.title || 'video';
   const platform = entry.platform || 'unknown';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-  
+
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
@@ -38,13 +41,22 @@ async function downloadVideo(entry, outputDir) {
 
   for (const exe of executables) {
     const strategies = [
-      { name: 'web', args: '--extractor-args "youtube:player_client=web"' },
-      { name: 'default', args: '' },
+      {
+        name: 'web',
+        args: '--extractor-args "youtube:player_client=web"',
+        // KEY FIX: Use bestvideo+bestaudio to guarantee audio is included
+        format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
+      },
+      {
+        name: 'default',
+        args: '',
+        format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
+      },
     ];
 
     for (const s of strategies) {
       try {
-        const cmd = `${exe} ${cookieArg} ${s.args} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4`;
+        const cmd = `${exe} ${cookieArg} ${s.args} ${s.format} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4`;
 
         logger.info(`Try: ${exe} ${s.name}`);
         execSync(cmd, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });

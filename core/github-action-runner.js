@@ -69,18 +69,52 @@ class GitHubActionsRunner {
     this.logger.info('Step 1: AI generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
-    const all = ['Nigeria','Japan','Germany','Brazil','India','Mexico','UK','South Korea','Egypt','Italy','Spain','Thailand','Vietnam','France','Australia','China','Indonesia'];
+    // Asian countries: use "douyin short" query suffix
+    // Other countries: use "short" query suffix
+    // This ensures we find YouTube Shorts and Douyin-style content
+    const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
+    const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
+    const all = [...nonAsianCountries, ...asianCountries];
     const avail = all.filter(c => !used.includes(c));
     const c1 = avail.length > 0 ? avail[Math.floor(Math.random()*avail.length)] : all[Math.floor(Math.random()*all.length)];
     const c2 = all[Math.floor(Math.random()*all.length)];
     const c3 = all[Math.floor(Math.random()*all.length)];
+
+    // Build query suffix based on country type
+    const getSuffix = (country) => {
+      if (asianCountries.includes(country)) {
+        return `${country} douyin short`;
+      }
+      return `${country} short`;
+    };
+
     try {
-      const r = await this.ai.chatJSON(`Generate 5 YouTube search queries for MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Return JSON array.`, `5 queries`, { useScriptModel:true, temperature:0.8 });
-      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : [`${c1} viral`,`${c2} trend`]);
+      const r = await this.ai.chatJSON(
+        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
+Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short viral", "Brazil short comedy"]`,
+        `5 queries`, { useScriptModel:true, temperature:0.8 }
+      );
+      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : [
+        getSuffix(c1),
+        getSuffix(c2),
+        getSuffix(c3),
+        `${c1} viral short`,
+        `${c2} trending short`
+      ]);
       this.queries = qs; this.countries = [c1, c2, c3];
       this.logger.success(`Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
-    } catch { this.queries = [`${c1} meme`,`${c2} viral`,`${c3} trend`]; this.countries = [c1, c2, c3]; return { queries: this.queries, countries: this.countries }; }
+    } catch {
+      this.queries = [
+        getSuffix(c1),
+        getSuffix(c2),
+        getSuffix(c3),
+        `${c1} viral short`,
+        `${c2} trending short`
+      ];
+      this.countries = [c1, c2, c3];
+      return { queries: this.queries, countries: this.countries };
+    }
   }
 
   async runDaily() {
@@ -94,23 +128,28 @@ class GitHubActionsRunner {
     // Step 2: Search 10 URLs with metadata
     this.logger.info('Step 2: Searching 10 URLs with metadata...');
     const allUrls = await findUrlsForQueries(queries, 10);
-    
+
     if (allUrls.length === 0) {
       this.logger.error('No URLs found');
       return { uploadedVideos: [], errors: ['No URLs found'] };
     }
-    
+
+    // Log view counts for debugging
+    allUrls.forEach((u, i) => {
+      this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}`);
+    });
+
     // Step 3: AI ranks URLs (no download needed)
     this.logger.info('Step 3: AI ranking URLs...');
     const { top3, explainer } = await rankVideos(allUrls, queries[0] || '', this.ai);
-    
+
     if (top3.length === 0) {
       this.logger.warn('AI ranking failed, using first 3');
       top3.push(...allUrls.slice(0, 3));
     }
-    
+
     // Log why each was chosen
-    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)}`));
+    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}`));
 
     // Step 4: Download top 3 videos
     this.logger.info('Step 4: Downloading top 3 ranked videos...');
@@ -122,7 +161,7 @@ class GitHubActionsRunner {
 
     // Step 5: Create Shorts (NO Nemotron - use AI ranking + smart timing)
     this.logger.info('Step 5: Creating Shorts...');
-    const { createShort, generateVoiceover } = require('./clip-editor');
+    const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
 
@@ -130,10 +169,10 @@ class GitHubActionsRunner {
       const v = downloaded[i];
       const query = queries[i] || queries[0] || '';
       const country = countries[0] || 'Global';
-      
+
       // Check if this is the explainer candidate
       const isExplainer = explainer && v.sourceUrl === explainer.url;
-      
+
       // Generate voiceover for explainer
       let voiceoverPath = null;
       let explainerText = '';
@@ -142,7 +181,7 @@ class GitHubActionsRunner {
         try {
           const expContent = await generateExplainerContent(v, this.ai);
           explainerText = expContent.explainer_text || `What is this? ${expContent.content_name || v.title || 'global content'}`;
-          
+
           // Generate voiceover
           const vDir = path.join(config.paths.assets, 'voiceovers');
           if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
@@ -203,10 +242,10 @@ Return JSON: {"title":"...","description":"..."}`,
           `Title for ${query}`,
           { useCheapModel: true, temperature: 0.8 }
         );
-        
+
         const title = (td.title || `\ud83c\udf0d ${query}`).substring(0, 100);
         const description = td.description || `\ud83c\udf0d From ${country}. Follow for more global content!`;
-        
+
         const r = await this._uploadToYouTube({
           videoPath: s.path,
           title,

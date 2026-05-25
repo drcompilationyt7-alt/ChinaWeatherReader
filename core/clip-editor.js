@@ -6,6 +6,7 @@
  * - Original audio preserved completely in clips
  * - Explainer: voiceover layered on top, original audio reduced during vo
  * - Concatenation preserves audio properly
+ * - FIXED: Intro now has silent audio track so concat with clip audio works properly
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -40,6 +41,9 @@ async function createShort(videoPath, options) {
   if (query.toLowerCase().includes('meme')) introLine = `Meme from ${country}`;
   else if (query.toLowerCase().includes('streamer')) introLine = `Streamer from ${country}`;
   else if (options.explainerText || query.toLowerCase().includes('explain')) introLine = `What is this?`;
+  // Check for douyin/shorts
+  if (query.toLowerCase().includes('douyin')) introLine = `Douyin from ${country}`;
+  else if (query.toLowerCase().includes('short')) introLine = `Short from ${country}`;
 
   const baseName = `short_${Date.now()}`;
   logger.info(`Creating: "${introLine}" (${duration}s)`);
@@ -55,8 +59,6 @@ async function createShort(videoPath, options) {
     } catch {}
 
     // Smart pad to 9:16 (maintains original frame completely, adds black bars if needed)
-    // If source is landscape, pad top+bottom. If portrait, pad left+right.
-    // This preserves ALL content without cropping anything.
     const padFilter = `scale='min(${SHORTS_W},iw)':'min(${SHORTS_H},ih)':force_original_aspect_ratio=decrease,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black`;
 
     // Extract a frame for the intro background
@@ -64,29 +66,28 @@ async function createShort(videoPath, options) {
     execSync(`ffmpeg -y -ss ${startTime} -i "${videoPath}" -vframes 1 -q:v 2 "${frameFile}" 2>/dev/null`, { timeout: 10000 });
 
     // Create intro (3s): blurred background image + flag + text
+    // FIXED: Added anullsrc to generate silent audio so concat works properly with audio streams
     const introFile = path.join(tmpDir, `${baseName}_intro.mp4`);
     const font = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
     const safeText = introLine.replace(/'/g, "'\\''");
 
-    // Blurred + scaled to full 9:16 + text overlay
+    // Blurred + scaled to full 9:16 + text overlay + silent audio track
     execSync(
-      `ffmpeg -y -loop 1 -i "${frameFile}" -t 3 -vf ` +
-      `"scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},boxblur=25:5[b];` +
+      `ffmpeg -y -loop 1 -i "${frameFile}" -t 3 -f lavfi -i anullsrc=r=44100:cl=mono ` +
+      `-filter_complex ` +
+      `"[0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},boxblur=25:5[b];` +
       `[b]drawtext=text='${flag}':fontfile=${font}:fontsize=110:fontcolor=white:x=(w-text_w)/2:y=h*0.28:shadowx=3:shadowy=3:shadowcolor=black@0.6,` +
-      `drawtext=text='${safeText}':fontfile=${font}:fontsize=52:fontcolor=white:x=(w-text_w)/2:y=h*0.45:shadowx=2:shadowy=2:shadowcolor=black@0.5" ` +
-      `-c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p -an "${introFile}" 2>/dev/null`,
+      `drawtext=text='${safeText}':fontfile=${font}:fontsize=52:fontcolor=white:x=(w-text_w)/2:y=h*0.45:shadowx=2:shadowy=2:shadowcolor=black@0.5[outv]" ` +
+      `-map "[outv]" -map "1:a" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -pix_fmt yuv420p -shortest "${introFile}" 2>/dev/null`,
       { timeout: 30000 }
     );
 
-    // Create clip segment (properly padded to 9:16, NO cropping)
+    // Create clip segment (properly padded to 9:16, NO cropping, audio preserved)
     const clipFile = path.join(tmpDir, `${baseName}_clip.mp4`);
 
     if (voiceoverPath && fs.existsSync(voiceoverPath)) {
       // EXPLAINER: clip with voiceover + lowered original audio
-      // Voiceover: 3-6 seconds into the clip
       const voDur = 4; // voiceover duration in seconds
-      // Audio filter: reduce original volume during voiceover, restore after
-      // [0:a] - original audio, [1:a] - voiceover
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${videoPath}" -i "${voiceoverPath}" -t ${duration} ` +
         `-filter_complex ` +
@@ -99,11 +100,11 @@ async function createShort(videoPath, options) {
         { timeout: 120000 }
       );
     } else {
-      // CLIP/STREAMER: just pad to 9:16, keep original audio
+      // CLIP/STREAMER: just pad to 9:16, keep original audio (FIXED: added -c:a aac copy to ensure audio preserved)
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
         `-vf "${padFilter}" ` +
-        `-c:v libx264 -preset ultrafast -crf 23 -c:a aac -shortest "${clipFile}" 2>/dev/null`,
+        `-c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k -shortest "${clipFile}" 2>/dev/null`,
         { timeout: 120000 }
       );
     }
@@ -111,13 +112,12 @@ async function createShort(videoPath, options) {
     // Concatenate intro + clip with proper audio handling
     if (fs.existsSync(introFile) && fs.existsSync(clipFile)) {
       const listFile = path.join(tmpDir, `${baseName}_list.txt`);
-      // Use ffmpeg concat demuxer
       fs.writeFileSync(listFile, `file '${introFile.replace(/'/g, "'\\''")}'\nfile '${clipFile.replace(/'/g, "'\\''")}'`);
 
-      // First try concat with audio (intro has no audio -an, clip has audio)
+      // Both files now have audio tracks, concat works properly
       execSync(
         `ffmpeg -y -f concat -safe 0 -i "${listFile}" ` +
-        `-c:v libx264 -preset ultrafast -crf 23 -c:a aac -movflags +faststart "${outputPath}" 2>/dev/null`,
+        `-c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k -movflags +faststart "${outputPath}" 2>/dev/null`,
         { timeout: 120000 }
       );
 
