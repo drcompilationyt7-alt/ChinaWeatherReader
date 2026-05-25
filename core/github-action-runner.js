@@ -203,11 +203,11 @@ class GitHubActionsRunner {
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — Clean Memory + Discord Views');
+    this.logger.header('Mr. WorldWideWebster — Only Uploads Count');
     this.logger.info(`TTS: ${TTS_VOICE}, OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
     try { const http = require('http'); await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => r(true)).on('error', () => r(false)); }); this.logger.info('Ollama: OK'); } catch {}
     this.ai = new AIService(); await this.ai.waitForInit();
-    this._loadMemory(); // Always clean
+    this._loadMemory();
     try { const { YouTubeBridge } = require('../youtube-automation/youtube-bridge'); this.youtubeBridge = new YouTubeBridge(); await this.youtubeBridge.initialize(); } catch (e) { this.logger.warn(`YouTube: ${e.message}`); }
     try { const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper'); this.hermes = new HermesCLIWrapper(); if (this.hermes.isAvailable()) this.logger.success('Hermes: ready'); } catch {}
     this.logger.success('Initialized');
@@ -266,7 +266,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   }
 
   async runDaily() {
-    this.logger.header('DAILY: 3 Trend + 1 Special — Discord shows views');
+    this.logger.header('DAILY: 3 Trend + 1 Special');
     const errors = []; const uploaded = [];
 
     const ch = this.memory['channel-memory'] || {};
@@ -377,10 +377,15 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       } catch (e) { errors.push(`Upload: ${e.message}`); }
     }
 
+    // Only update memory from successfully UPLOADED videos
     const cm = this.memory['channel-memory'] || {};
     cm.totalVideosPosted = (cm.totalVideosPosted || 0) + uploaded.length;
     if (!cm.countriesUsedThisWeek) cm.countriesUsedThisWeek = [];
-    for (const u of uploaded) { if (u.country && !cm.countriesUsedThisWeek.includes(u.country)) cm.countriesUsedThisWeek.push(u.country); }
+    for (const u of uploaded) {
+      if (u.country && !cm.countriesUsedThisWeek.includes(u.country)) {
+        cm.countriesUsedThisWeek.push(u.country);
+      }
+    }
     if (cm.countriesUsedThisWeek.length > 14) cm.countriesUsedThisWeek = cm.countriesUsedThisWeek.slice(-14);
     this.memory['channel-memory'] = cm; this._saveMemory();
 
@@ -388,7 +393,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.header('SUMMARY');
     this.logger.success(`✅ ${uploaded.length} posted (${uploaded.filter(u => u.special).length} special)`);
-    this.logger.success(`👁️ Total views today: ${totalViewsToday.toLocaleString()}`);
+    this.logger.success(`👁️ Total views: ${totalViewsToday.toLocaleString()}`);
     const sorted = [...uploaded].sort((a, b) => (b.views || 0) - (a.views || 0));
     this.logger.success('🏆 Top 3:');
     sorted.slice(0, 3).forEach((u, i) => this.logger.success(`   #${i+1}: ${u.title} — 👁️ ${u.views} views → ${u.url}`));
@@ -403,7 +408,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     this.logger.info(`Total: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}`);
 
     const result = await this.hermes.chat(
-      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics — include song/audio names\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries\n4. Suggest cool locations/skylines/landmarks per country\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Vietnam: Ai Đưa Em Về\nQUERIES: query1, query2\nLOCATIONS: France: Paris Eiffel Tower | Japan: Shibuya skyline\nSTRATEGY: ...`,
+      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics — include song/audio names\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries\n4. Suggest cool locations for the "special short"\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Vietnam: Ai Đưa Em Về\nQUERIES: query1, query2\nLOCATIONS: France: Paris Eiffel Tower | Japan: Shibuya skyline\nSTRATEGY: ...`,
       { timeout: 300000 }
     );
 
