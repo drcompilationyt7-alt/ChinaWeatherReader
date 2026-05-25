@@ -379,3 +379,159 @@
 2026-05-25 17:45:59,977 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):140631372461760 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
 2026-05-25 17:45:59,978 WARNING [20260525_174558_340f04] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):140631485015744 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
 2026-05-25 17:45:59,993 ERROR [20260525_174558_340f04] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:16,063 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:16,065 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:16,066 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:16,069 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:16,071 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:16,072 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:16,075 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:16,120 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:16,122 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:16,125 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:16,127 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:16,128 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:16,133 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:16,135 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:16,136 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:16,138 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:16,141 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:16,421 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:17,556 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:18,749 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:139918289508160 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:18,956 INFO [20260525_175417_1e4a7d] agent.conversation_loop: conversation turn: session=20260525_175417_1e4a7d model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='Does this video match Japan? Answer only YES or NO. Title: "【抖音】Best of Douyin /...'
+2026-05-25 17:54:19,054 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):139918175246016 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:19,431 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:19,432 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):139918175246016 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:19,433 WARNING [20260525_175417_1e4a7d] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):139918223513280 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:19,450 ERROR [20260525_175417_1e4a7d] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:20,365 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:20,366 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:20,367 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:20,367 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:20,368 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:20,368 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:20,368 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:20,407 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:20,408 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:20,408 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:20,409 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:20,409 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:20,410 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:20,411 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:20,411 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:20,412 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:20,412 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:20,490 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:21,108 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:21,841 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:139857936672576 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:21,969 INFO [20260525_175420_3bbeb7] agent.conversation_loop: conversation turn: session=20260525_175420_3bbeb7 model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='You are a quality checker for Mr. WorldWideWebster YouTube channel. Check this v...'
+2026-05-25 17:54:22,008 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):139857758254784 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:22,301 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:22,302 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):139857758254784 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:22,303 WARNING [20260525_175420_3bbeb7] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):139857871673024 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:22,318 ERROR [20260525_175420_3bbeb7] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:27,348 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:27,349 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:27,349 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:27,350 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:27,350 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:27,350 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:27,351 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:27,388 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:27,388 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:27,389 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:27,390 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:27,390 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:27,391 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:27,392 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:27,392 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:27,393 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:27,393 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:27,470 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:28,081 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:28,794 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:140494713554752 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:28,907 INFO [20260525_175427_05612f] agent.conversation_loop: conversation turn: session=20260525_175427_05612f model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='Does this video match Japan? Answer only YES or NO. Title: "Beautiful Chinese Ko...'
+2026-05-25 17:54:28,945 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):140494534379200 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:29,245 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:29,245 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):140494534379200 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:29,246 WARNING [20260525_175427_05612f] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):140494647944896 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:29,262 ERROR [20260525_175427_05612f] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:30,069 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:30,070 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:30,070 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:30,071 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:30,071 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:30,072 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:30,072 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:30,109 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:30,110 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:30,110 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:30,111 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:30,111 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:30,112 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:30,113 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:30,113 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:30,114 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:30,114 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:30,192 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:30,808 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:31,533 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:140648076994368 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:31,657 INFO [20260525_175430_773f44] agent.conversation_loop: conversation turn: session=20260525_175430_773f44 model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='You are a quality checker for Mr. WorldWideWebster YouTube channel. Check this v...'
+2026-05-25 17:54:31,695 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):140647898019520 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:31,987 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:31,988 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):140647898019520 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:31,989 WARNING [20260525_175430_773f44] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):140648011622080 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:32,004 ERROR [20260525_175430_773f44] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:38,248 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:38,249 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:38,249 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:38,250 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:38,250 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:38,250 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:38,251 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:38,287 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:38,287 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:38,288 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:38,288 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:38,289 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:38,290 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:38,290 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:38,291 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:38,291 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:38,292 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:38,369 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:38,945 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:39,685 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:140259624544064 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:39,807 INFO [20260525_175438_ef9aee] agent.conversation_loop: conversation turn: session=20260525_175438_ef9aee model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='Does this video match China? Answer only YES or NO. Title: "#asia #china #douyin...'
+2026-05-25 17:54:39,845 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):140259446818496 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:40,156 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:40,156 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):140259446818496 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:40,158 WARNING [20260525_175438_ef9aee] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):140259559302848 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:40,173 ERROR [20260525_175438_ef9aee] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:41,011 INFO hermes_cli.plugins: Plugin 'browser-browser-use' registered browser provider: browser-use
+2026-05-25 17:54:41,011 INFO hermes_cli.plugins: Plugin 'browser-browserbase' registered browser provider: browserbase
+2026-05-25 17:54:41,012 INFO hermes_cli.plugins: Plugin 'browser-firecrawl' registered browser provider: firecrawl
+2026-05-25 17:54:41,013 INFO hermes_cli.plugins: Plugin 'fal' registered image_gen provider: fal
+2026-05-25 17:54:41,013 INFO hermes_cli.plugins: Plugin 'openai' registered image_gen provider: openai
+2026-05-25 17:54:41,013 INFO hermes_cli.plugins: Plugin 'openai-codex' registered image_gen provider: openai-codex
+2026-05-25 17:54:41,014 INFO hermes_cli.plugins: Plugin 'xai' registered image_gen provider: xai
+2026-05-25 17:54:41,051 INFO hermes_cli.plugins: Plugin 'fal' registered video_gen provider: fal
+2026-05-25 17:54:41,051 INFO hermes_cli.plugins: Plugin 'xai' registered video_gen provider: xai
+2026-05-25 17:54:41,052 INFO hermes_cli.plugins: Plugin 'web-brave-free' registered web provider: brave-free
+2026-05-25 17:54:41,053 INFO hermes_cli.plugins: Plugin 'web-ddgs' registered web provider: ddgs
+2026-05-25 17:54:41,053 INFO hermes_cli.plugins: Plugin 'web-exa' registered web provider: exa
+2026-05-25 17:54:41,054 INFO hermes_cli.plugins: Plugin 'web-firecrawl' registered web provider: firecrawl
+2026-05-25 17:54:41,055 INFO hermes_cli.plugins: Plugin 'web-parallel' registered web provider: parallel
+2026-05-25 17:54:41,055 INFO hermes_cli.plugins: Plugin 'web-searxng' registered web provider: searxng
+2026-05-25 17:54:41,055 INFO hermes_cli.plugins: Plugin 'web-tavily' registered web provider: tavily
+2026-05-25 17:54:41,056 INFO hermes_cli.plugins: Plugin 'web-xai' registered web provider: xai
+2026-05-25 17:54:41,133 INFO hermes_cli.plugins: Plugin discovery complete: 30 found, 26 enabled
+2026-05-25 17:54:41,716 INFO run_agent: Loaded environment variables from /home/runner/.hermes/.env
+2026-05-25 17:54:42,452 INFO run_agent: OpenAI client created (agent_init, shared=True) thread=MainThread:139815026837312 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:42,571 INFO [20260525_175441_d37585] agent.conversation_loop: conversation turn: session=20260525_175441_d37585 model=anthropic/claude-opus-4.6 provider=openrouter platform=cli history=0 msg='You are a quality checker for Mr. WorldWideWebster YouTube channel. Check this v...'
+2026-05-25 17:54:42,608 INFO run_agent: OpenAI client created (chat_completion_stream_request, shared=False) thread=Thread-3 (_call):139814848497344 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:42,888 INFO agent.chat_completion_helpers: Streaming failed before delivery: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
+2026-05-25 17:54:42,888 INFO run_agent: OpenAI client closed (stream_request_complete, shared=False, tcp_force_closed=1) thread=Thread-3 (_call):139814848497344 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6
+2026-05-25 17:54:42,890 WARNING [20260525_175441_d37585] agent.conversation_loop: API call failed (attempt 1/3) error_type=APIStatusError thread=Thread-2 (run_agent):139814961845952 provider=openrouter base_url=https://openrouter.ai/api/v1 model=anthropic/claude-opus-4.6 summary=HTTP 402: This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account
+2026-05-25 17:54:42,906 ERROR [20260525_175441_d37585] agent.conversation_loop: Non-retryable client error: Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 1575. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'provider_name': None}}, 'user_id': 'user_2tlT8RweCkgF9lYtpxdQf3Uzb4C'}
