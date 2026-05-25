@@ -10,6 +10,8 @@ const { findUrlsForQueries } = require('../sourcing/finder-controller');
 const { downloadVideos } = require('./downloader');
 const { rankVideos } = require('./url-ranker');
 
+const TTS_VOICE = 'en-US-AvaMultilingualNeural';
+
 const BASE_TREND_KEYWORDS = {
   'China': ['chinese trend', 'beautiful Chinese girl', 'Chinese love story', 'colour wheel trend', 'douyin', '抖音', '舞蹈'],
   'Japan': ['japanese trend', 'japanese fashion', 'japanese street', 'kawaii', 'japan vlog', '日本ダンス'],
@@ -177,88 +179,55 @@ class GitHubActionsRunner {
     return { country, changed: country !== expected };
   }
 
-  /**
-   * Generate a 4th "special" short: a location/skyline/cool place.
-   * 1. OpenRouter generates a script about a famous place in the country
-   * 2. YouTube search for that place
-   * 3. Voiceover is the script, not just 1 sentence
-   * 4. Subtitle is the script text as well
-   */
   async _createSpecialShort(country) {
     this.logger.info(`=== SPECIAL SHORT: ${country} location ===`);
-
-    // Step 1: Generate script about a cool place
-    let locationScript = '';
-    let placeQuery = '';
+    let locationScript = ''; let placeQuery = '';
     try {
       const sd = await this.ai.chatJSON(
-        `Generate a YouTube Shorts script about a FAMOUS LOCATION in ${country}.
-It can be a skyline view, famous street, restaurant, landmark, or cool neighborhood.
-Script: 3 sentences max, descriptive, engaging. End with "Follow Mr. WorldWideWebster!"
-Return JSON: {"place":"Name of place + city", "query":"search keywords like 'toronto downtown view'", "script":"3 sentence script"}`,
+        `Generate a YouTube Shorts script about a FAMOUS LOCATION in ${country}.\nIt can be a skyline view, famous street, restaurant, landmark, or cool neighborhood.\nScript: 3 sentences max, descriptive, engaging. End with CTA.\nReturn JSON: {"place":"Name + city", "query":"search keywords", "script":"3 sentence script"}`,
         `Location script for ${country}`, { useCheapModel: true, temperature: 0.8 }
       );
-      if (sd?.place && sd?.script) {
-        locationScript = sd.script;
-        placeQuery = `${sd.query} #shorts`;
-        this.logger.success(`Special: ${sd.place} — "${sd.script.substring(0, 60)}..."`);
-      }
+      if (sd?.place && sd?.script) { locationScript = sd.script; placeQuery = `${sd.query} #shorts`; this.logger.success(`Special: ${sd.place}`); }
     } catch {}
-
-    // Fallback: Ollama
     if (!locationScript) {
-      const result = await this._ollamaGenerate(`Generate a 3-sentence YouTube Shorts script about a famous location in ${country} (skyline, landmark, street). End with CTA. Format: PLACE: ... | SCRIPT: ...`, { temperature: 0.8, maxTokens: 200 });
-      if (result) {
-        const parts = result.split('|').map(s => s.trim());
-        placeQuery = `${country.toLowerCase()} skyline #shorts`;
-        locationScript = parts[1] || `Check out this amazing location in ${country}! Follow Mr. WorldWideWebster!`;
-      }
+      const result = await this._ollamaGenerate(`Generate a 3-sentence Shorts script about a famous location in ${country}. Format: PLACE: ... | SCRIPT: ...`, { temperature: 0.8, maxTokens: 200 });
+      if (result) { const parts = result.split('|').map(s => s.trim()); placeQuery = `${country.toLowerCase()} skyline #shorts`; locationScript = parts[1] || `Check out ${country}! Follow Mr. WorldWideWebster!`; }
     }
+    if (!locationScript) { this.logger.warn('No location script'); return null; }
 
-    if (!locationScript) {
-      this.logger.warn('Could not generate location script');
-      return null;
-    }
-
-    // Step 2: Search for the place on YouTube
     const allUrls = await findUrlsForQueries([placeQuery || `${country.toLowerCase()} skyline #shorts`, `${country.toLowerCase()} downtown #shorts`, `${country.toLowerCase()} view #shorts`], 3);
-    if (!allUrls.length) { this.logger.warn(`No location videos found for ${country}`); return null; }
-
-    // Step 3: Download top result
+    if (!allUrls.length) { this.logger.warn('No location videos'); return null; }
     const downloaded = await downloadVideos([allUrls[0]], config.paths.clips);
-    if (!downloaded.length) { this.logger.warn('Download failed for location'); return null; }
+    if (!downloaded.length) { this.logger.warn('Download failed'); return null; }
     const v = downloaded[0];
 
-    // Step 4: TTS the script as voiceover (longer than usual)
     let voiceoverPath = null;
     try {
       const vDir = path.join(config.paths.assets, 'voiceovers');
       if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
       const vPath = path.join(vDir, `vo_special_${Date.now()}.mp3`);
-      execSync(`edge-tts --voice "en-US-JennyNeural" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
+      execSync(`edge-tts --voice "${TTS_VOICE}" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
       if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
     } catch {}
 
-    // Step 5: Trim + create short
-    const { createShort } = require('./clip-editor');
     let startTime = 5;
     try {
       const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim();
       if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info);
     } catch {}
 
+    const { createShort } = require('./clip-editor');
     const outputPath = path.join(config.paths.clips, `short_special_${Date.now()}.mp4`);
     try {
       const result = await createShort(v.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
-      if (result) {
-        return { path: result, country, script: locationScript, voiceoverText: locationScript, originalTitle: v.sourceUrl?.title || v.title || `${country} Location`, placeQuery };
-      }
-    } catch (e) { this.logger.warn(`Special short failed: ${e.message}`); }
+      if (result) return { path: result, country, script: locationScript, voiceoverText: locationScript, originalTitle: v.sourceUrl?.title || v.title || `${country} Location`, placeQuery };
+    } catch (e) { this.logger.warn(`Special failed: ${e.message}`); }
     return null;
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — 3 Trend Shorts + 1 Location Short');
+    this.logger.header('Mr. WorldWideWebster — Ava TTS Voice');
+    this.logger.info(`TTS: ${TTS_VOICE}`);
     this.logger.info(`OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
     try { const http = require('http'); await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => r(true)).on('error', () => r(false)); }); this.logger.info('Ollama: OK'); } catch {}
     this.ai = new AIService(); await this.ai.waitForInit(); this._loadMemory();
@@ -326,7 +295,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   }
 
   async runDaily() {
-    this.logger.header('DAILY: 3 Trend Shorts + 1 Special Location Short');
+    this.logger.header('DAILY: 3 Trend + 1 Special (Ava voice)');
     const errors = []; const uploaded = [];
 
     const ch = this.memory['channel-memory'] || {};
@@ -338,15 +307,11 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       this.allC[Math.floor(Math.random()*this.allC.length)]
     ];
 
-    // ── 3 TREND SHORTS ──
+    // 3 TREND SHORTS
     this.logger.info('Generating trend queries...');
     let queries = this._getTrendingQueriesForCountries(countries);
-    if (Math.random() > 0.5) {
-      const allTrends = ch.trendingKeywords || {};
-      const llmQ = await this._generateLLMQueries(countries, { ...BASE_TREND_KEYWORDS, ...allTrends });
-      queries = [...queries, ...llmQ];
-    }
-    this.logger.success(`Trend queries: ${queries.join(' | ')}`);
+    if (Math.random() > 0.5) { const allTrends = ch.trendingKeywords || {}; const llmQ = await this._generateLLMQueries(countries, { ...BASE_TREND_KEYWORDS, ...allTrends }); queries = [...queries, ...llmQ]; }
+    this.logger.success(`Queries: ${queries.join(' | ')}`);
 
     const allUrls = await findUrlsForQueries(queries, 12);
     if (!allUrls.length) return { uploadedVideos: [], errors: ['No URLs'] };
@@ -362,7 +327,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       const more = await downloadVideos([extra[0]], config.paths.clips);
       downloaded.push(...more);
     }
-    this.logger.info(`Downloaded ${downloaded.length} trend videos`);
+    this.logger.info(`Downloaded ${downloaded.length}`);
 
     const { createShort } = require('./clip-editor');
     const shorts = [];
@@ -388,7 +353,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         const vDir = path.join(config.paths.assets, 'voiceovers');
         if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
         const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
-        execSync(`edge-tts --voice "en-US-JennyNeural" --text "${voiceoverText.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
+        execSync(`edge-tts --voice "${TTS_VOICE}" --text "${voiceoverText.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
         if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
       } catch {}
 
@@ -419,20 +384,16 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.success(`Created ${shorts.length} trend Shorts`);
 
-    // ── 4TH SPECIAL: LOCATION SHORT ──
+    // 4TH SPECIAL
     const specialCountry = countries[Math.floor(Math.random() * countries.length)];
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
     const special = await this._createSpecialShort(specialCountry);
-    if (special) {
-      shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true });
-      this.logger.success(`Special location short for ${specialCountry} created`);
-    } else {
-      this.logger.warn('Could not create special location short');
-    }
+    if (special) { shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true }); this.logger.success(`Special location short for ${specialCountry} created`); }
+    else { this.logger.warn('Could not create special location short'); }
 
     if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
 
-    // ── UPLOAD ALL ──
+    // UPLOAD ALL
     for (const s of shorts) {
       try {
         const targetTitle = await this._generateTitle(s.country, s.voiceoverText, s.originalTitle);

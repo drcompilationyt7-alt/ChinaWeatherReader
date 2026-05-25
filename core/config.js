@@ -5,6 +5,8 @@
  * 
  * Multi-Key Support: Set OPENROUTER_API_KEY_2 through OPENROUTER_API_KEY_8
  * as GitHub Secrets for automatic key rotation when one hits rate/credit limits.
+ * 
+ * TTS: Default voice is en-US-AvaMultilingualNeural (cute, soft, human-like).
  */
 require('dotenv').config();
 const path = require('path');
@@ -17,8 +19,6 @@ const config = {
   openrouter: {
     apiKey: process.env.OPENROUTER_API_KEY,
     // Additional API keys for multi-key rotation (keys 2-8)
-    // Set these as GitHub Secrets:
-    //   OPENROUTER_API_KEY_2 through OPENROUTER_API_KEY_8
     defaultModel: process.env.OPENROUTER_DEFAULT_MODEL || 'openrouter/owl-alpha',
     scriptModel: process.env.OPENROUTER_SCRIPT_MODEL || 'openrouter/owl-alpha',
     agentModel: process.env.OPENROUTER_AGENT_MODEL || 'openrouter/owl-alpha',
@@ -39,7 +39,7 @@ const config = {
 
   tts: {
     provider: process.env.TTS_PROVIDER || 'edge',
-    edgeVoiceCurious: process.env.EDGE_TTS_VOICE_CURIOUS || 'en-US-JennyNeural',
+    edgeVoiceCurious: process.env.EDGE_TTS_VOICE_CURIOUS || 'en-US-AvaMultilingualNeural',
     edgeVoiceExplainer: process.env.EDGE_TTS_VOICE_EXPLAINER || 'en-US-GuyNeural',
     edgeVoiceNews: process.env.EDGE_TTS_VOICE_NEWS || 'en-GB-SoniaNeural',
     elevenLabsKey: process.env.ELEVENLABS_API_KEY,
