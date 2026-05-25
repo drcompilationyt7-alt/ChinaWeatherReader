@@ -3,10 +3,10 @@
  * Searches YouTube for 10 URLs with metadata for AI ranking.
  * FIXES:
  * - Now searches specifically for REAL YouTube Shorts (/shorts/ URLs)
- * - Uses '#shorts' hashtag search to find actual Shorts content
- * - Added view count filtering to prefer videos around 1k views (small creators)
+ * - Uses '#shorts' hashtag for ALL countries (including douyin-style)
+ * - Added view count filtering to prefer videos around 1k views
  * - Prioritizes recent uploads
- * - Filters results to only include Shorts-eligible videos (duration < 60s, vertical?)
+ * - Limits to Shorts-eligible videos (duration < 60s)
  */
 const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
@@ -20,22 +20,21 @@ const IDEAL_VIEWS = 1000;
 
 /**
  * Enrich queries to find REAL YouTube Shorts.
- * Uses #shorts tag + country keywords.
- * For Asian country queries, use "douyin" to find Douyin-style shorts.
+ * Uses #shorts tag for ALL countries.
+ * For Asian countries, includes "douyin" style descriptor too.
  */
 function enrichQuery(query) {
   const asianKeywords = ['japan', 'japanese', 'korea', 'korean', 'china', 'chinese',
     'thailand', 'thai', 'vietnam', 'vietnamese', 'india', 'indonesia', 'taiwan'];
   const lowerQuery = query.toLowerCase();
 
-  // Already well-formed
-  if (lowerQuery.includes('shorts') || lowerQuery.includes('#shorts')) return query;
+  // Already has #shorts
+  if (lowerQuery.includes('#shorts')) return query;
 
-  // Check if it's an Asian country - use "douyin" tag
+  // Check if it's an Asian country - add douyin style + #shorts
   const isAsian = asianKeywords.some(k => lowerQuery.includes(k));
   if (isAsian) {
-    // Search for shorts tagged with country + douyin style
-    return `${query} douyin`;
+    return `${query} douyin #shorts`;
   }
 
   // Default: use #shorts tag to find actual Shorts
@@ -44,28 +43,22 @@ function enrichQuery(query) {
 
 /**
  * Check if a video is likely a YouTube Short based on metadata.
- * Shorts are typically < 60 seconds and vertical aspect ratio.
+ * Shorts are typically < 60 seconds.
  */
 function isLikelyShort(video) {
-  // Duration less than 60 seconds is a strong indicator of Shorts
   if (video.duration && video.duration < 60) return true;
-  // Check if title contains #shorts
   if (video.title && /#shorts/i.test(video.title)) return true;
-  // Check description for #shorts
   if (video.description && /#shorts/i.test(video.description)) return true;
   return false;
 }
 
 async function searchYouTube(query, maxResults) {
-  // Enrich query with #shorts for Shorts content
   const enrichedQuery = enrichQuery(query);
   let retries = 0;
   const maxRetries = 2;
 
   while (retries <= maxRetries) {
     try {
-      // Use yt-dlp with dump-json to get full metadata
-      // Search for #shorts content specifically
       const searchQuery = retries === 0 ? enrichedQuery : query;
       const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${searchQuery}" 2>/dev/null`;
       const out = execSync(cmd, { timeout: 30000, maxBuffer: 5*1024*1024 }).toString().trim();
@@ -100,13 +93,12 @@ function parseResults(out, query) {
         view_count: p.view_count || 0,
         upload_date: p.upload_date || '',
         searchQuery: query,
-        // Flag if it's likely a Short
         isShort: isLikelyShort({ duration: p.duration, title: p.title, description: p.description }),
       };
     } catch { return null; }
   }).filter(Boolean);
 
-  // Sort: actual Shorts first, then longer videos
+  // Sort: actual Shorts first
   results.sort((a, b) => {
     if (a.isShort && !b.isShort) return -1;
     if (!a.isShort && b.isShort) return 1;
@@ -145,7 +137,7 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
       const results = await searchYouTube(query, perQuery + 8);
       for (const r of results) {
         if (!seen.has(r.url) && allResults.length < maxTotal) {
-          // Skip videos > 2 min (not Shorts)
+          // Skip videos > 2 min
           if (r.duration && r.duration > 120) continue;
           seen.add(r.url);
           allResults.push(r);
@@ -154,7 +146,7 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
     } catch {}
   }
 
-  // Score and sort: prefer Shorts first, then by views ~1k + recency
+  // Score and sort: prefer Shorts, then by views ~1k + recency
   allResults.sort((a, b) => {
     const shortBonusA = a.isShort ? 10 : 0;
     const shortBonusB = b.isShort ? 10 : 0;
@@ -163,11 +155,10 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
     return scoreB - scoreA;
   });
 
-  // Log view count distribution
+  // Log
   logger.info(`URLs found: ${allResults.map(r => `${r.view_count || '?'}${r.isShort ? '📱' : ''}`).join(', ')}`);
   logger.info(`Shorts detected: ${allResults.filter(r => r.isShort).length}/${allResults.length}`);
 
-  // Prefer results with views in our target range (~1k), then Shorts, then others
   const idealResults = allResults.filter(r => r.view_count >= MIN_VIEWS && r.view_count <= MAX_VIEWS);
   const shortResults = allResults.filter(r => !idealResults.includes(r) && r.isShort);
   const otherResults = allResults.filter(r => !idealResults.includes(r) && !shortResults.includes(r));
