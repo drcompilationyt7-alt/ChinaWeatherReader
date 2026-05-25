@@ -229,9 +229,11 @@ class GitHubActionsRunner {
   }
 
   /**
-   * Boost video views with fallback logic:
-   * - If URL is null/empty, try to find the LAST uploaded video from content-history (within 1 week)
-   * - Max 5 minutes total for the boost
+   * Boost video views with fallback logic.
+   * - If url is provided, boost it directly (with 5-min timeout)
+   * - If url is null/empty, try to find the last uploaded video from content-history (within 1 week)
+   * - If both are empty, just continue gracefully (no crash, just a warning)
+   * - Never blocks more than 5 minutes total
    */
   async _boostVideo(url) {
     try {
@@ -242,8 +244,8 @@ class GitHubActionsRunner {
         this.logger.warn('No URL from current run — looking for last uploaded video');
         videoUrl = this._findLastVideoUrl();
         if (!videoUrl) {
-          this.logger.warn('No previous video found — skipping boost');
-          return;
+          this.logger.warn('No previous video found — skipping boost and continuing');
+          return; // Just continue, no crash
         }
         this.logger.info(`Fallback: boosting last video: ${videoUrl}`);
       }
