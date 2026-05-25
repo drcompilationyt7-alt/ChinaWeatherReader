@@ -339,11 +339,12 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
     const avail = this.allC.filter(c => !used.includes(c));
-    const countries = [
-      avail.length ? avail[Math.floor(Math.random()*avail.length)] : this.allC[Math.floor(Math.random()*this.allC.length)],
-      this.allC[Math.floor(Math.random()*this.allC.length)],
-      this.allC[Math.floor(Math.random()*this.allC.length)]
-    ];
+
+    // Pick 3 unique countries for the 3 trend shorts (no duplicates)
+    const pool = avail.length >= 3 ? avail : this.allC;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const countries = [shuffled[0], shuffled[1], shuffled[2]];
+    this.logger.info(`Countries for today: ${countries.join(', ')}`);
 
     this.logger.info('Generating trend queries...');
     let queries = this._getTrendingQueriesForCountries(countries);
@@ -418,7 +419,9 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.success(`Created ${shorts.length} trend Shorts`);
 
-    const specialCountry = countries[Math.floor(Math.random() * countries.length)];
+    // Special short gets a 4th unique country (different from the 3 trend countries)
+    const remaining = this.allC.filter(c => !countries.includes(c));
+    const specialCountry = remaining.length > 0 ? remaining[Math.floor(Math.random() * remaining.length)] : countries[Math.floor(Math.random() * countries.length)];
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
     const special = await this._createSpecialShort(specialCountry);
     if (special) { shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true }); this.logger.success(`Special location short for ${specialCountry} created`); }
