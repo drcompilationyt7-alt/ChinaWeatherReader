@@ -7,7 +7,7 @@ const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
 const { findUrlsForQueries } = require('../sourcing/finder-controller');
-const { downloadVideos } = require('./downloader');
+const { downloadVideos, downloadVideo } = require('./downloader');
 const { rankVideos } = require('./url-ranker');
 
 const TTS_VOICE = 'en-US-AvaMultilingualNeural';
@@ -162,26 +162,103 @@ class GitHubActionsRunner {
     return { country, changed: country !== expected };
   }
 
+  async _hasDialogue(videoPath) {
+    // Use whisper to detect if video has spoken dialogue
+    // Returns true if significant speech detected (words > short utterance)
+    try {
+      const dir = path.join(config.paths.assets, 'audio');
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      const audioPath = path.join(dir, `dialogue_check_${Date.now()}.mp3`);
+      execSync(`ffmpeg -y -i "${videoPath}" -t 30 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`, { timeout: 30000 });
+      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) return false;
+      const pyPath = audioPath.replace(/\\/g, '\\\\');
+      const output = execSync(`python3 -c "
+from faster_whisper import WhisperModel
+import json
+model = WhisperModel('base', device='cpu', compute_type='int8')
+segments, info = model.transcribe('${pyPath}')
+words = 0
+for seg in segments:
+    words += len(seg.text.split())
+print(json.dumps({'word_count': words}))
+" 2>&1`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
+      try { fs.unlinkSync(audioPath); } catch {}
+      if (output && !output.includes('Error') && !output.includes('Traceback')) {
+        const p = JSON.parse(output);
+        const wordCount = p.word_count || 0;
+        this.logger.info(`Dialogue check: ${wordCount} words detected`);
+        // If more than 5 words, it's dialogue (not just music/noise)
+        return wordCount > 5;
+      }
+      return false;
+    } catch { return false; }
+  }
+
   async _createSpecialShort(country) {
     this.logger.info(`=== SPECIAL SHORT: ${country} ===`);
     let locationScript = ''; let placeQuery = '';
+    
+    // Step 1: Generate script FIRST (narrows video search)
     try {
       const sd = await this.ai.chatJSON(`Generate a YouTube Shorts script about a FAMOUS LOCATION in ${country}.\nScript: 3 sentences, descriptive, engaging. End with CTA.\nReturn JSON: {"place":"Name + city", "query":"search keywords", "script":"3 sentence script"}`, `Location for ${country}`, { useCheapModel: true, temperature: 0.8 });
-      if (sd?.place && sd?.script) { locationScript = sd.script; placeQuery = `${sd.query} #shorts`; this.logger.success(`Special: ${sd.place}`); }
+      if (sd?.place && sd?.script) { locationScript = sd.script; placeQuery = `${sd.query} landscape #shorts`; this.logger.success(`Special: ${sd.place}`); }
     } catch {}
     if (!locationScript) {
       const r = await this._ollamaGenerate(`Generate a 3-sentence Shorts script about a famous location in ${country}. Format: PLACE: ... | SCRIPT: ...`, { temperature: 0.8, maxTokens: 200 });
-      if (r) { const parts = r.split('|').map(s => s.trim()); placeQuery = `${country.toLowerCase()} skyline #shorts`; locationScript = parts[1] || `Check out ${country}!`; }
+      if (r) { const parts = r.split('|').map(s => s.trim()); placeQuery = `${country.toLowerCase()} scenic views #shorts`; locationScript = parts[1] || `Check out ${country}!`; }
     }
     if (!locationScript) return null;
 
-    const allUrls = await findUrlsForQueries([placeQuery || `${country.toLowerCase()} view #shorts`], 3);
+    // Step 2: Search for 5-10 videos
+    this.logger.info(`Searching for videos: "${placeQuery}"`);
+    const allUrls = await findUrlsForQueries([placeQuery || `${country.toLowerCase()} scenic #shorts`], 10);
     if (!allUrls.length) return null;
-    const downloaded = await downloadVideos([allUrls[0]], config.paths.clips);
-    if (!downloaded.length) return null;
-    const v = downloaded[0];
+    this.logger.info(`Found ${allUrls.length} candidate videos`);
 
-    // Generate TTS voiceover for the location description
+    // Step 3: Download up to 5 videos for dialogue check
+    const candidates = [];
+    for (let i = 0; i < Math.min(allUrls.length, 5); i++) {
+      this.logger.info(`Downloading candidate ${i+1}/${Math.min(allUrls.length, 5)}...`);
+      const entry = allUrls[i];
+      if (typeof entry === 'string') {
+        const result = await downloadVideo({ url: entry, title: '', platform: 'youtube' }, config.paths.clips);
+        if (result) candidates.push(result);
+      } else {
+        const result = await downloadVideo(entry, config.paths.clips);
+        if (result) candidates.push(result);
+      }
+    }
+
+    if (candidates.length === 0) {
+      this.logger.warn('No videos downloaded for special short');
+      return null;
+    }
+    this.logger.info(`Downloaded ${candidates.length} candidates for dialogue check`);
+
+    // Step 4: Whisper each video — skip ones with dialogue
+    let bestVideo = null;
+    for (const c of candidates) {
+      this.logger.info(`Checking dialogue for: ${c.path.split('/').pop()}`);
+      const hasDialogue = await this._hasDialogue(c.path);
+      if (!hasDialogue) {
+        this.logger.success(`Found music-only video: ${c.path.split('/').pop()}`);
+        bestVideo = c;
+        break; // Pick the first clean one
+      } else {
+        this.logger.info(`Skipping — has dialogue`);
+      }
+    }
+
+    // Fallback: if all have dialogue, use the first one anyway
+    if (!bestVideo && candidates.length > 0) {
+      this.logger.warn('All candidates have dialogue — using first as fallback');
+      bestVideo = candidates[0];
+    }
+
+    if (!bestVideo) return null;
+    const v = bestVideo;
+
+    // Step 5: Generate TTS voiceover
     let voiceoverPath = null;
     try {
       const vDir = path.join(config.paths.assets, 'voiceovers');
@@ -190,7 +267,7 @@ class GitHubActionsRunner {
       execSync(`edge-tts --voice "${TTS_VOICE}" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
       if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
     } catch {}
-    // clip-editor.js will mix: original audio at 10% volume (background music) + TTS voiceover at full volume
+    // clip-editor.js will mix: original audio at 10% + TTS at 100%
 
     let startTime = 5;
     try { const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim(); if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info); } catch {}
@@ -342,7 +419,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const used = ch.countriesUsedThisWeek || [];
     const avail = this.allC.filter(c => !used.includes(c));
 
-    // Pick 3 unique countries for the 3 trend shorts
     const pool = avail.length >= 3 ? avail : this.allC;
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const countries = [shuffled[0], shuffled[1], shuffled[2]];
@@ -421,7 +497,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.success(`Created ${shorts.length} trend Shorts`);
 
-    // Special short gets a 4th unique country
     const remaining = this.allC.filter(c => !countries.includes(c));
     const specialCountry = remaining.length > 0 ? remaining[Math.floor(Math.random() * remaining.length)] : countries[Math.floor(Math.random() * countries.length)];
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
