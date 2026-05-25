@@ -163,7 +163,7 @@ class GitHubActionsRunner {
   }
 
   async _createSpecialShort(country) {
-    this.logger.info(`=== SPECIAL SHORT: ${country} ===`);
+    this.logger.info(`=== SPECIAL SHORT (music only): ${country} ===`);
     let locationScript = ''; let placeQuery = '';
     try {
       const sd = await this.ai.chatJSON(`Generate a YouTube Shorts script about a FAMOUS LOCATION in ${country}.\nScript: 3 sentences, descriptive, engaging. End with CTA.\nReturn JSON: {"place":"Name + city", "query":"search keywords", "script":"3 sentence script"}`, `Location for ${country}`, { useCheapModel: true, temperature: 0.8 });
@@ -181,14 +181,8 @@ class GitHubActionsRunner {
     if (!downloaded.length) return null;
     const v = downloaded[0];
 
-    let voiceoverPath = null;
-    try {
-      const vDir = path.join(config.paths.assets, 'voiceovers');
-      if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
-      const vPath = path.join(vDir, `vo_special_${Date.now()}.mp3`);
-      execSync(`edge-tts --voice "${TTS_VOICE}" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
-      if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
-    } catch {}
+    // No voiceover for special short — keep original video audio (music) only
+    const voiceoverPath = null;
 
     let startTime = 5;
     try { const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim(); if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info); } catch {}
@@ -335,8 +329,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   async runDaily() {
     this.logger.header('DAILY: 3 Trend + 1 Special');
     const errors = []; const uploaded = [];
-    // Track ALL countries attempted (even failed uploads) for Discord display
-    const attemptedCountries = [];
 
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
@@ -346,7 +338,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const pool = avail.length >= 3 ? avail : this.allC;
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const countries = [shuffled[0], shuffled[1], shuffled[2]];
-    countries.forEach(c => { if (!attemptedCountries.includes(c)) attemptedCountries.push(c); });
     this.logger.info(`Countries for today: ${countries.join(', ')}`);
 
     this.logger.info('Generating trend queries...');
@@ -425,7 +416,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     // Special short gets a 4th unique country
     const remaining = this.allC.filter(c => !countries.includes(c));
     const specialCountry = remaining.length > 0 ? remaining[Math.floor(Math.random() * remaining.length)] : countries[Math.floor(Math.random() * countries.length)];
-    attemptedCountries.push(specialCountry);
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
     const special = await this._createSpecialShort(specialCountry);
     if (special) { shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true }); this.logger.success(`Special location short for ${specialCountry} created`); }
@@ -465,15 +455,12 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     if (cm.countriesUsedThisWeek.length > 14) cm.countriesUsedThisWeek = cm.countriesUsedThisWeek.slice(-14);
     this.memory['channel-memory'] = cm; this._saveMemory();
 
-    // Pass attempted countries (not just uploaded) to Discord so the field is never blank
-    const discordCountries = cm.countriesUsedThisWeek.length > 0 ? cm.countriesUsedThisWeek : attemptedCountries;
-
-    await this._sendDiscord('daily', { videos: uploaded, countries: discordCountries, totalVideos: cm.totalVideosPosted, totalViews: totalViewsToday, errors });
+    await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, totalViews: totalViewsToday, errors });
 
     this.logger.header('SUMMARY');
     this.logger.success(`✅ ${uploaded.length} posted (${uploaded.filter(u => u.special).length} special)`);
     this.logger.success(`👁️ Total views: ${totalViewsToday.toLocaleString()}`);
-    this.logger.info(`🌍 Countries today: ${discordCountries.join(', ')}`);
+    this.logger.info(`🌍 Countries today: ${countries.join(', ')}${specialCountry ? ', ' + specialCountry : ''}`);
     const sorted = [...uploaded].sort((a, b) => (b.views || 0) - (a.views || 0));
     this.logger.success('🏆 Top 3:');
     sorted.slice(0, 3).forEach((u, i) => this.logger.success(`   #${i+1}: ${u.title} — 👁️ ${u.views} views → ${u.url}`));
