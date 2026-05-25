@@ -218,8 +218,8 @@ class GitHubActionsRunner {
     const fp = path.join(this.memoryPath, 'channel-memory.json');
     this.memory['channel-memory'] = { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], hermesNotes: [], trendingKeywords: {} };
     fs.writeFileSync(fp, JSON.stringify(this.memory['channel-memory'], null, 2));
-    try { fs.unlinkSync(path.join(this.memoryPath, 'content-history.json')); } catch {}
-    this.logger.info('Memory reset to clean state');
+    // Keep content-history.json for boost fallback to find old videos
+    this.logger.info('Memory loaded');
   }
   _saveMemory() { fs.writeFileSync(path.join(this.memoryPath, 'channel-memory.json'), JSON.stringify(this.memory['channel-memory'], null, 2)); }
 
