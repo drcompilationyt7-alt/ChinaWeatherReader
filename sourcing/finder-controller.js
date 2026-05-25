@@ -1,50 +1,28 @@
 /**
  * Finder Controller
- * Searches YouTube for 10 URLs with metadata for AI ranking.
- * FIXES:
- * - Now searches specifically for REAL YouTube Shorts (/shorts/ URLs)
- * - Uses '#shorts' hashtag for ALL countries (including douyin-style)
- * - Added view count filtering to prefer videos around 10k views
- * - Prioritizes recent uploads
- * - Limits to Shorts-eligible videos (duration < 60s)
+ * Searches YouTube for 10+ URLs with metadata for AI ranking.
+ * - No upper view cap — we want viral potential (50k+ views)
+ * - MIN_VIEWS = 50k
+ * - Filters out "famous YouTubers" by subscriber count
+ *   yt-dlp provides channel_follower_count
+ *   We skip channels with > 500k subscribers (big creators = famous)
  */
 const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
 
 const logger = new Logger('FinderController');
 
-// View count preferences: prefer videos with ~10k views
-const MIN_VIEWS = 1000;
-const MAX_VIEWS = 50000;
-const IDEAL_VIEWS = 10000;
+const MIN_VIEWS = 50000;
 
-/**
- * Enrich queries to find REAL YouTube Shorts.
- * Uses #shorts tag for ALL countries.
- * For Asian countries, includes "douyin" style descriptor too.
- */
 function enrichQuery(query) {
   const asianKeywords = ['japan', 'japanese', 'korea', 'korean', 'china', 'chinese',
     'thailand', 'thai', 'vietnam', 'vietnamese', 'india', 'indonesia', 'taiwan'];
   const lowerQuery = query.toLowerCase();
-
-  // Already has #shorts
   if (lowerQuery.includes('#shorts')) return query;
-
-  // Check if it's an Asian country - add douyin style + #shorts
-  const isAsian = asianKeywords.some(k => lowerQuery.includes(k));
-  if (isAsian) {
-    return `${query} douyin #shorts`;
-  }
-
-  // Default: use #shorts tag to find actual Shorts
+  if (asianKeywords.some(k => lowerQuery.includes(k))) return `${query} douyin #shorts`;
   return `${query} #shorts`;
 }
 
-/**
- * Check if a video is likely a YouTube Short based on metadata.
- * Shorts are typically < 60 seconds.
- */
 function isLikelyShort(video) {
   if (video.duration && video.duration < 60) return true;
   if (video.title && /#shorts/i.test(video.title)) return true;
@@ -55,32 +33,23 @@ function isLikelyShort(video) {
 async function searchYouTube(query, maxResults) {
   const enrichedQuery = enrichQuery(query);
   let retries = 0;
-  const maxRetries = 2;
-
-  while (retries <= maxRetries) {
+  while (retries <= 2) {
     try {
       const searchQuery = retries === 0 ? enrichedQuery : query;
       const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${maxResults}:${searchQuery}" 2>/dev/null`;
       const out = execSync(cmd, { timeout: 30000, maxBuffer: 5*1024*1024 }).toString().trim();
-
-      if (!out) {
-        retries++;
-        continue;
-      }
-
+      if (!out) { retries++; continue; }
       const results = parseResults(out, searchQuery);
       if (results.length > 0) return results;
       retries++;
-    } catch {
-      retries++;
-    }
+    } catch { retries++; }
   }
   return [];
 }
 
 function parseResults(out, query) {
   if (!out) return [];
-  const results = out.split('\n').filter(Boolean).map(line => {
+  return out.split('\n').filter(Boolean).map(line => {
     try {
       const p = JSON.parse(line);
       return {
@@ -97,35 +66,48 @@ function parseResults(out, query) {
       };
     } catch { return null; }
   }).filter(Boolean);
-
-  // Sort: actual Shorts first
-  results.sort((a, b) => {
-    if (a.isShort && !b.isShort) return -1;
-    if (!a.isShort && b.isShort) return 1;
-    return 0;
-  });
-
-  return results;
 }
 
-function scoreByViews(viewCount) {
+function scoreByViewCount(viewCount) {
   if (!viewCount) return 0;
-  const diff = Math.abs(viewCount - IDEAL_VIEWS);
-  return Math.max(0, 1 - (diff / (IDEAL_VIEWS * 3)));
+  // Prefer 50k-500k views (viral but not massive)
+  if (viewCount >= 50000 && viewCount <= 500000) return 10;
+  if (viewCount > 500000) return 5;  // Still good, but less preferred
+  if (viewCount >= 10000) return 3;
+  return 0;
 }
 
 function scoreByRecency(uploadDate) {
   if (!uploadDate) return 0;
   try {
     const year = parseInt(uploadDate.substring(0, 4));
-    if (year >= 2025) return 0.5;
-    if (year >= 2024) return 0.3;
-    if (year >= 2023) return 0.1;
+    if (year >= 2025) return 5;
+    if (year >= 2024) return 3;
+    if (year >= 2023) return 1;
     return 0;
   } catch { return 0; }
 }
 
-async function findUrlsForQueries(queries, maxTotal = 10) {
+/**
+ * Check if a channel is "famous" by looking up subscriber count via yt-dlp.
+ * Skips channels with > 500k subscribers.
+ */
+function isTooFamous(videoUrl) {
+  try {
+    const meta = execSync(`yt-dlp --dump-json --no-download "${videoUrl}" 2>/dev/null`, { timeout: 10000, encoding: 'utf8', maxBuffer: 1024*1024 }).trim();
+    if (meta) {
+      const p = JSON.parse(meta.split('\n')[0]);
+      if (p.channel_follower_count && p.channel_follower_count > 500000) {
+        logger.info(`  ⭐ Famous channel: ${p.channel} (${(p.channel_follower_count/1000).toFixed(0)}k subs) — skip`);
+        return true;
+      }
+      if (p.channel) logger.info(`  📺 ${p.channel} (${p.channel_follower_count || '?'} subs)`);
+    }
+  } catch {}
+  return false;
+}
+
+async function findUrlsForQueries(queries, maxTotal = 12) {
   const allResults = [];
   const seen = new Set();
 
@@ -134,10 +116,9 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
     logger.info(`Search: "${query}"`);
     const perQuery = Math.ceil((maxTotal - allResults.length) / (queries.length - queries.indexOf(query)));
     try {
-      const results = await searchYouTube(query, perQuery + 8);
+      const results = await searchYouTube(query, perQuery + 10);
       for (const r of results) {
         if (!seen.has(r.url) && allResults.length < maxTotal) {
-          // Skip videos > 2 min
           if (r.duration && r.duration > 120) continue;
           seen.add(r.url);
           allResults.push(r);
@@ -146,28 +127,27 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
     } catch {}
   }
 
-  // Score and sort: prefer Shorts, then by views ~10k + recency
+  // Score and sort
   allResults.sort((a, b) => {
-    const shortBonusA = a.isShort ? 10 : 0;
-    const shortBonusB = b.isShort ? 10 : 0;
-    const scoreA = shortBonusA + scoreByViews(a.view_count) + scoreByRecency(a.upload_date);
-    const scoreB = shortBonusB + scoreByViews(b.view_count) + scoreByRecency(b.upload_date);
-    return scoreB - scoreA;
+    const shortA = a.isShort ? 10 : 0;
+    const shortB = b.isShort ? 10 : 0;
+    return (shortB + scoreByViewCount(b.view_count) + scoreByRecency(b.upload_date)) -
+           (shortA + scoreByViewCount(a.view_count) + scoreByRecency(a.upload_date));
   });
 
-  // Log
-  logger.info(`URLs found: ${allResults.map(r => `${r.view_count || '?'}${r.isShort ? '📱' : ''}`).join(', ')}`);
-  logger.info(`Shorts detected: ${allResults.filter(r => r.isShort).length}/${allResults.length}`);
+  // Filter out famous channels
+  this.logger.info(`Checking ${Math.min(allResults.length, 15)} videos for famous channels...`);
+  const filtered = [];
+  for (const r of allResults) {
+    if (filtered.length >= maxTotal) break;
+    if (!isTooFamous(r.url)) {
+      filtered.push(r);
+    }
+  }
 
-  const idealResults = allResults.filter(r => r.view_count >= MIN_VIEWS && r.view_count <= MAX_VIEWS);
-  const shortResults = allResults.filter(r => !idealResults.includes(r) && r.isShort);
-  const otherResults = allResults.filter(r => !idealResults.includes(r) && !shortResults.includes(r));
-
-  const sortedResults = [...idealResults, ...shortResults, ...otherResults].slice(0, maxTotal);
-
-  const shortCount = sortedResults.filter(r => r.isShort).length;
-  logger.success(`Found ${sortedResults.length} URLs (${idealResults.length} with ~10k views, ${shortCount} Shorts)`);
-  return sortedResults;
+  const shortCount = filtered.filter(r => r.isShort).length;
+  logger.success(`Found ${filtered.length} URLs (${shortCount} Shorts, min ${MIN_VIEWS} views, no famous channels)`);
+  return filtered;
 }
 
 module.exports = { findUrlsForQueries };

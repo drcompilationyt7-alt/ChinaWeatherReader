@@ -10,11 +10,6 @@ const { findUrlsForQueries } = require('../sourcing/finder-controller');
 const { downloadVideos } = require('./downloader');
 const { rankVideos } = require('./url-ranker');
 
-/**
- * Country trend keywords — curated base trends per country.
- * Hermes updates these nightly by browsing Shorts.
- * Daily runner blends base + trending keywords for queries.
- */
 const BASE_TREND_KEYWORDS = {
   'China': ['chinese trend', 'beautiful Chinese girl', 'Chinese love story', 'colour wheel trend', 'douyin'],
   'Japan': ['japanese trend', 'japanese fashion', 'japanese street', 'kawaii', 'japan vlog'],
@@ -80,33 +75,73 @@ class GitHubActionsRunner {
   }
 
   /**
-   * Get trend-mixed query set for a country.
-   * Blends: base nativeKeywords + learned trendingKeywords from memory + random from BASE_TREND_KEYWORDS.
+   * Generate trending queries for countries. Mix of:
+   * - Direct trend keywords (BASE_TREND_KEYWORDS + learned)
+   * - LLM-generated queries using trends as reference
    */
   _getTrendingQueriesForCountries(countries) {
     const ch = this.memory['channel-memory'] || {};
-    const trending = ch.trendingKeywords || {};  // Learned from nightly Hermes
-
+    const trending = ch.trendingKeywords || {};
     const queries = [];
+
     for (const c of countries) {
       const base = BASE_TREND_KEYWORDS[c] || [c];
       const learned = trending[c] || [];
+      const allTrends = [...base, ...learned];
 
-      // Pick 2 from base + 1 from learned + 1 native keyword
-      const picks = [
-        ...base.slice(0, 2),
-        ...(learned.length > 0 ? [learned[Math.floor(Math.random() * learned.length)]] : []),
-        c.toLowerCase()
-      ];
-
-      // Shuffle and add #shorts
-      for (const p of picks.sort(() => Math.random() - 0.5).slice(0, 3)) {
-        const q = `${p} #shorts`;
+      // Pick 2-3 random trends directly
+      const shuffled = [...allTrends].sort(() => Math.random() - 0.5);
+      for (const t of shuffled.slice(0, 2)) {
+        const q = `${t} #shorts`;
         if (!queries.includes(q)) queries.push(q);
       }
+
+      // Also add native keyword
+      const native = `${c.toLowerCase()} #shorts`;
+      if (!queries.includes(native)) queries.push(native);
     }
 
     return queries.slice(0, 6);
+  }
+
+  /**
+   * Use OpenRouter (or Ollama) to generate creative queries from trends.
+   * Called once per country, returns 1-2 queries each.
+   */
+  async _generateLLMQueries(countries, allTrends) {
+    const queries = [];
+
+    for (const c of countries) {
+      const trendsList = (allTrends[c] || []).join(', ');
+      if (!trendsList) continue;
+
+      const prompt = `Generate 2 YouTube Shorts search queries for ${c} using these trends: ${trendsList}. Mix creative variations. Return JSON array.`;
+      try {
+        const r = await Promise.race([
+          this.ai.chatJSON(prompt, 'queries', { useCheapModel: true, temperature: 0.9 }),
+          new Promise((_, rj) => setTimeout(() => rj(new Error('timeout')), 10000))
+        ]);
+        if (Array.isArray(r)) {
+          for (const q of r.slice(0, 2)) {
+            const full = `${q.replace(/[#]/g, '').trim()} #shorts`;
+            if (!queries.includes(full)) queries.push(full);
+          }
+        }
+      } catch {
+        // Try Ollama
+        const result = await this._ollamaGenerate(
+          `Generate 2 YouTube search queries for ${c} trends: ${trendsList}. Format: query1, query2`,
+          { temperature: 0.9 }
+        );
+        if (result) {
+          const parts = result.split(',').map(s => `${s.trim().replace(/[#]/g, '')} #shorts`);
+          for (const q of parts.slice(0, 2)) {
+            if (!queries.includes(q)) queries.push(q);
+          }
+        }
+      }
+    }
+    return queries;
   }
 
   async _ollamaGenerate(prompt, options = {}) {
@@ -114,8 +149,7 @@ class GitHubActionsRunner {
       const http = require('http');
       const data = JSON.stringify({
         model: process.env.OLLAMA_MODEL || 'qwen2.5:7b',
-        prompt: prompt,
-        stream: false,
+        prompt, stream: false,
         options: { temperature: options.temperature || 0.7, num_predict: options.maxTokens || 200 }
       });
       return new Promise((resolve) => {
@@ -127,21 +161,15 @@ class GitHubActionsRunner {
           let body = '';
           res.on('data', chunk => body += chunk);
           res.on('end', () => {
-            try {
-              const parsed = JSON.parse(body);
-              const result = (parsed.response || '').trim();
-              if (result) { this.logger.success(`Ollama: "${result.substring(0, 120)}..."`); return resolve(result); }
-            } catch {}
-            this.logger.warn(`Ollama raw: ${body.substring(0, 200)}`);
+            try { const p = JSON.parse(body); const r = (p.response || '').trim(); if (r) { this.logger.success(`Ollama: "${r.substring(0, 100)}..."`); return resolve(r); } } catch {}
             resolve(null);
           });
         });
-        req.on('error', (e) => { this.logger.warn(`Ollama: ${e.message}`); resolve(null); });
+        req.on('error', () => resolve(null));
         req.on('timeout', () => { req.destroy(); resolve(null); });
-        req.write(data);
-        req.end();
+        req.write(data); req.end();
       });
-    } catch (e) { this.logger.warn(`Ollama: ${e.message}`); return null; }
+    } catch { return null; }
   }
 
   async _generateVoiceover(country, transcriptText) {
@@ -152,7 +180,6 @@ class GitHubActionsRunner {
       const r = await Promise.race([this.ai.chat(ctx, { useCheapModel: true, temperature: 0.7 }), new Promise(r => setTimeout(() => r(''), 8000))]);
       if (r?.length > 5) { const c = r.replace(/["']/g, '').trim().substring(0, 120); if (!this._hasProfanity(c)) return c; }
     } catch {}
-    this.logger.info('OpenRouter failed — Ollama voiceover...');
     const result = await this._ollamaGenerate(`Write ONE short sentence (8-15 words) introducing a video from ${country}.`, { temperature: 0.8, maxTokens: 100 });
     if (result?.length > 5 && !this._hasProfanity(result)) return result.replace(/["']/g, '').trim().substring(0, 120);
     return `Check out this clip from ${country}`;
@@ -166,7 +193,6 @@ class GitHubActionsRunner {
       );
       if (td?.title?.length > 3) return { title: td.title.substring(0, 100), description: td.description || '' };
     } catch {}
-    this.logger.info('OpenRouter failed — Ollama title...');
     const prompt = `Generate a YouTube Shorts title (max 70 chars) for a video from ${country}. ${transcriptText ? `Content: "${transcriptText.substring(0, 200)}"` : ''}`;
     const result = await this._ollamaGenerate(prompt, { temperature: 0.8, maxTokens: 100 });
     if (result?.length > 5 && result.length < 100) {
@@ -180,36 +206,32 @@ class GitHubActionsRunner {
   _burnSubtitles(videoPath, outputPath, text) {
     if (!text) return false;
     try {
-      const lines = [];
-      let cur = '';
+      const lines = []; let cur = '';
       for (const w of text.split(' ')) { if ((cur + ' ' + w).length > 30) { lines.push(cur); cur = w; } else { cur = cur ? cur + ' ' + w : w; } }
       if (cur) lines.push(cur);
       const displayLines = lines.slice(0, 3);
       const srtPath = videoPath.replace('.mp4', '_caption.srt');
       fs.writeFileSync(srtPath, `1\n00:00:00,000 --> 00:00:30,000\n${displayLines.join('\n')}\n`, 'utf8');
-      execSync(`ffmpeg -y -i "${videoPath}" -vf "subtitles='${srtPath.replace(/'/g, "'\\\\''")}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV=80,Alignment=2'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`, { timeout: 60000, maxBuffer: 50*1024*1024 });
+      execSync(`ffmpeg -y -i "${videoPath}" -vf "subtitles='${srtPath.replace(/'/g, "'\\\\''")}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV=80,Alignment=2'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`, { timeout: 60000 });
       try { fs.unlinkSync(srtPath); } catch {}
       const exists = fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
-      if (exists) this.logger.success(`Captions burned: "${text.substring(0, 60)}..."`);
+      if (exists) this.logger.success(`Captions on: ${path.basename(outputPath)}`);
       return exists;
-    } catch (e) { this.logger.warn(`Caption failed: ${e.message.substring(0, 100)}`); return false; }
+    } catch (e) { this.logger.warn(`Caption: ${e.message.substring(0, 100)}`); return false; }
   }
 
   async _detectCountry(transcript, title, expected, sourceUrl) {
-    let country = expected;
-    let confidence = 50;
-    let reasons = [];
-
+    let country = expected; let confidence = 50; let reasons = [];
     if (title) {
       for (const c of this.allC) {
         if (new RegExp(`\\b${c.toLowerCase()}\\b`).test(title.toLowerCase()) || /[🇦🇺🇧🇷🇨🇳🇯🇵🇰🇷🇹🇭🇮🇳🇩🇪🇫🇷🇪🇬🇲🇽🇳🇬]/.test(title)) {
-          if (c !== expected) { this.logger.info(`🇨🇮 Title "${c}" → ${expected}→${c}`); return { country: c, confidence: 85, changed: true, reasons: [`Title: ${c}`] }; }
+          if (c !== expected) { return { country: c, confidence: 85, changed: true, reasons: [`Title: ${c}`] }; }
         }
       }
     }
     if (transcript?.language) {
       for (const [c, langs] of Object.entries(this.countryLanguages)) {
-        if (langs.includes(transcript.language)) { country = c; confidence = 75; reasons.push(`Audio ${transcript.language} = ${c}`); break; }
+        if (langs.includes(transcript.language)) { country = c; confidence = 75; reasons.push(`Audio=${c}`); break; }
       }
     }
     try {
@@ -222,132 +244,46 @@ class GitHubActionsRunner {
         }
       }
     } catch {}
-    const changed = country !== expected;
-    this.logger.info(`🇨🇮 ${changed ? 'CORRECTED' : 'OK'}: ${country} (${confidence}%)${reasons.length ? ' — ' + reasons.join('; ') : ''}`);
-    return { country, confidence, changed, reasons };
-  }
-
-  /**
-   * Hermes learns trending keywords by browsing Shorts.
-   * Saves to channel-memory.trendingKeywords for daily use.
-   */
-  async _hermesLearnTrends(countries) {
-    if (!this.hermes || !this.hermes.isAvailable()) return;
-    this.logger.info('Hermes browsing Shorts for trending keywords...');
-
-    for (const country of countries) {
-      try {
-        const result = await this.hermes.chat(
-          `BROWSE YouTube Shorts trending for ${country}. Find 3-5 CURRENT trending keywords/topics (specific: "colour wheel trend", "fendi", "kpop", not generic like "dance"). Return ONLY comma-separated keywords: keyword1, keyword2, keyword3`,
-          { timeout: 120000 }
-        );
-
-        if (result.success && result.output) {
-          this.logger.info(`Hermes trends for ${country}: ${result.output.substring(0, 150)}`);
-          // Parse comma-separated keywords
-          const keywords = result.output.split(',').map(k => k.trim().replace(/^[\s"']+|[\s"']+$/g, '')).filter(k => k.length > 2);
-
-          if (keywords.length > 0) {
-            const cm = this.memory['channel-memory'] || {};
-            if (!cm.trendingKeywords) cm.trendingKeywords = {};
-            if (!cm.trendingKeywords[country]) cm.trendingKeywords[country] = [];
-
-            // Merge with existing, dedup, keep max 10 per country
-            const existing = cm.trendingKeywords[country];
-            const merged = [...new Set([...keywords, ...existing])].slice(0, 10);
-            cm.trendingKeywords[country] = merged;
-            this.memory['channel-memory'] = cm;
-            this._saveMemory();
-            this.logger.success(`Saved ${keywords.length} trends for ${country}`);
-          }
-        }
-      } catch (e) {
-        this.logger.warn(`Hermes browse ${country}: ${e.message}`);
-      }
-    }
+    return { country, confidence, changed: country !== expected, reasons };
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — Trend-Driven Pipeline');
+    this.logger.header('Mr. WorldWideWebster — LLM Trends + Direct Trends + 50k Views');
     this.logger.info(`OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
-
-    try {
-      const http = require('http');
-      await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => { r(true); }).on('error', () => r(false)); });
-      this.logger.info('Ollama: OK');
-    } catch { this.logger.info('Ollama: unreachable'); }
-
-    this.ai = new AIService();
-    await this.ai.waitForInit();
-    this._loadMemory();
-
-    try {
-      const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
-      this.youtubeBridge = new YouTubeBridge();
-      await this.youtubeBridge.initialize();
-    } catch (e) { this.logger.warn(`YouTube: ${e.message}`); }
-
-    try {
-      const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper');
-      this.hermes = new HermesCLIWrapper();
-      if (this.hermes.isAvailable()) this.logger.success('Hermes: ready — trend learning + detection');
-      else this.logger.info('Hermes: not available');
-    } catch (e) { this.logger.info('Hermes: not installed'); }
-
-    // Log current learned trends
+    try { const http = require('http'); await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => r(true)).on('error', () => r(false)); }); this.logger.info('Ollama: OK'); } catch {}
+    this.ai = new AIService(); await this.ai.waitForInit(); this._loadMemory();
+    try { const { YouTubeBridge } = require('../youtube-automation/youtube-bridge'); this.youtubeBridge = new YouTubeBridge(); await this.youtubeBridge.initialize(); } catch (e) { this.logger.warn(`YouTube: ${e.message}`); }
+    try { const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper'); this.hermes = new HermesCLIWrapper(); if (this.hermes.isAvailable()) this.logger.success('Hermes: ready'); } catch {}
     const ch = this.memory['channel-memory'] || {};
-    if (ch.trendingKeywords) {
-      const total = Object.values(ch.trendingKeywords).flat().length;
-      this.logger.info(`Loaded ${total} learned trend keywords from memory`);
-    }
-
+    if (ch.trendingKeywords) this.logger.info(`Loaded ${Object.values(ch.trendingKeywords).flat().length} learned trends`);
     this.logger.success('Initialized');
   }
 
   _loadMemory() {
     if (!fs.existsSync(this.memoryPath)) fs.mkdirSync(this.memoryPath, { recursive: true });
-    const defaultMem = { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], hermesNotes: [], trendingKeywords: {} };
+    const def = { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], hermesNotes: [], trendingKeywords: {} };
     const fp = path.join(this.memoryPath, 'channel-memory.json');
     if (fs.existsSync(fp)) {
       try {
-        const existing = JSON.parse(fs.readFileSync(fp, 'utf8'));
-        this.memory['channel-memory'] = {
-          channelName: existing.channelName || 'Mr. WorldWideWebster',
-          totalVideosPosted: existing.totalVideosPosted || 0,
-          countriesUsedThisWeek: existing.countriesUsedThisWeek || [],
-          hermesNotes: (existing.hermesNotes || []).slice(-20),
-          trendingKeywords: existing.trendingKeywords || {}
-        };
-        const old = path.join(this.memoryPath, 'content-history.json');
-        if (fs.existsSync(old)) fs.unlinkSync(old);
-      } catch { this.memory['channel-memory'] = defaultMem; fs.writeFileSync(fp, JSON.stringify(defaultMem, null, 2)); }
-    } else { this.memory['channel-memory'] = defaultMem; fs.writeFileSync(fp, JSON.stringify(defaultMem, null, 2)); }
+        const e = JSON.parse(fs.readFileSync(fp, 'utf8'));
+        this.memory['channel-memory'] = { channelName: e.channelName || 'Mr. WorldWideWebster', totalVideosPosted: e.totalVideosPosted || 0, countriesUsedThisWeek: e.countriesUsedThisWeek || [], hermesNotes: (e.hermesNotes || []).slice(-20), trendingKeywords: e.trendingKeywords || {} };
+        try { fs.unlinkSync(path.join(this.memoryPath, 'content-history.json')); } catch {}
+      } catch { this.memory['channel-memory'] = def; fs.writeFileSync(fp, JSON.stringify(def, null, 2)); }
+    } else { this.memory['channel-memory'] = def; fs.writeFileSync(fp, JSON.stringify(def, null, 2)); }
   }
   _saveMemory() { fs.writeFileSync(path.join(this.memoryPath, 'channel-memory.json'), JSON.stringify(this.memory['channel-memory'], null, 2)); }
 
   async _uploadToYouTube(v) {
     if (!this.youtubeBridge?.isAuthenticated()) return null;
-    try {
-      const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] });
-      this.logger.success(`Uploaded: ${r.url}`);
-      return r;
-    } catch (e) { this.logger.error(`Upload FAILED: ${e.message}`); return null; }
+    try { const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] }); this.logger.success(`Uploaded: ${r.url}`); return r; }
+    catch (e) { this.logger.error(`Upload FAILED: ${e.message}`); return null; }
   }
 
   async _boostVideo(url) {
     if (!url) return;
-    try {
-      this.logger.info('Waiting 5 min...');
-      await new Promise(r => setTimeout(r, 300000));
-      this.logger.info(`Boosting: ${url}`);
-      const r = await new (require('../boost/boost-engine').BoostEngine)().run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
-      if (r.success) this.logger.success(`Boosted ${r.views} views`);
-    } catch (e) { this.logger.warn(`Boost: ${e.message}`); }
+    try { this.logger.info('Waiting 5 min...'); await new Promise(r => setTimeout(r, 300000)); this.logger.info(`Boosting: ${url}`); const r = await new (require('../boost/boost-engine').BoostEngine)().run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 }); if (r.success) this.logger.success(`Boosted ${r.views}`); } catch (e) { this.logger.warn(`Boost: ${e.message}`); }
   }
-
-  async _sendDiscord(type, data) {
-    try { const b = new (require('../discord/discord-bridge').DiscordBridge)(); if (type === 'daily') await b.sendDailySummary(data); await b.destroy(); } catch {}
-  }
+  async _sendDiscord(type, data) { try { const b = new (require('../discord/discord-bridge').DiscordBridge)(); if (type === 'daily') await b.sendDailySummary(data); await b.destroy(); } catch {} }
 
   async _transcribeAudio(videoPath) {
     const dir = path.join(config.paths.assets, 'audio');
@@ -367,8 +303,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 " 2>&1`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
       try { fs.unlinkSync(audioPath); } catch {}
       if (output && !output.includes('Error') && !output.includes('Traceback')) {
-        try { const p = JSON.parse(output); return { text: p.text || '', language: p.language || 'en', isNonEnglish: p.language !== 'en' && p.language !== 'english' }; }
-        catch { return { text: output, language: 'en', isNonEnglish: false }; }
+        try { const p = JSON.parse(output); return { text: p.text || '', language: p.language || 'en', isNonEnglish: p.language !== 'en' && p.language !== 'english' }; } catch { return { text: output, language: 'en', isNonEnglish: false }; }
       }
       return null;
     } catch { try { fs.unlinkSync(audioPath); } catch {} return null; }
@@ -376,23 +311,18 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
   async _translateText(text) {
     if (!text) return null;
-    try {
-      const r = await this.ai.chat(`Translate to natural English: "${text.substring(0, 300)}" Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 });
-      if (r?.length > 3) return r.replace(/["']/g, '').trim().substring(0, 200);
-    } catch {}
-    this.logger.info('OpenRouter failed — Ollama translating...');
+    try { const r = await this.ai.chat(`Translate to natural English: "${text.substring(0, 300)}" Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 }); if (r?.length > 3) return r.replace(/["']/g, '').trim().substring(0, 200); } catch {}
     const result = await this._ollamaGenerate(`Translate this to English. Return ONLY translation:\n${text.substring(0, 300)}`, { temperature: 0.3, maxTokens: 300 });
     if (result?.length > 3 && !result.includes('Translate this')) return result.replace(/["']/g, '').trim().substring(0, 200);
     return null;
   }
 
   async runDaily() {
-    this.logger.header('DAILY: Trends → Find → Detect → Create → Upload + Boost');
+    this.logger.header('DAILY: Trends + LLM Queries → Find → Detect → Create → Upload');
     const errors = [];
     const uploaded = [];
 
-    // Step 1: Pick countries + generate trend-driven queries
-    this.logger.info('Step 1: Trend-driven queries...');
+    // Step 1: Pick countries
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
     const avail = this.allC.filter(c => !used.includes(c));
@@ -402,26 +332,33 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       this.allC[Math.floor(Math.random()*this.allC.length)]
     ];
 
-    // Blend base trends + learned trends + native keywords
+    // Step 2: Generate queries TWO ways
+    this.logger.info('Step 1: Generating queries (direct trends + LLM-generated)...');
+
+    // A) Direct trend keywords
     let queries = this._getTrendingQueriesForCountries(countries);
 
-    // Log what trends we're using
-    const trending = ch.trendingKeywords || {};
-    for (const c of countries) {
-      const learned = trending[c] || [];
-      if (learned.length > 0) {
-        this.logger.info(`   ${c} trends: ${learned.join(', ')}`);
-      }
+    // B) LLM-generated queries from trends (50% of the time)
+    if (Math.random() > 0.5) {
+      this.logger.info('Also generating LLM queries from trends...');
+      const allTrends = ch.trendingKeywords || {};
+      const llmQueries = await this._generateLLMQueries(countries, { ...BASE_TREND_KEYWORDS, ...allTrends });
+      queries = [...queries, ...llmQueries];
     }
 
-    this.logger.success(`Queries: ${queries.join(' | ')}`);
+    // Log trends being used
+    const trending = ch.trendingKeywords || {};
+    for (const c of countries) {
+      const t = trending[c] || [];
+      if (t.length) this.logger.info(`   ${c} learned: ${t.join(', ')}`);
+    }
+    this.logger.success(`Queries (${queries.length}): ${queries.join(' | ')}`);
 
-    // Step 2-5: Search, rank, download
-    this.logger.info('Step 2: Searching...');
-    const allUrls = await findUrlsForQueries(queries, 10);
+    // Step 3-5: Search, rank, download
+    const allUrls = await findUrlsForQueries(queries, 12);
     if (!allUrls.length) return { uploadedVideos: [], errors: ['No URLs'] };
 
-    this.logger.info('Step 3: Ranking...');
+    this.logger.info('Ranking...');
     const { top3 } = await rankVideos(allUrls, queries[0] || '', this.ai);
     if (!top3.length) top3.push(...allUrls.slice(0, 3));
 
@@ -432,7 +369,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       const more = await downloadVideos([extra[0]], config.paths.clips);
       downloaded.push(...more);
     }
-    this.logger.info(`Downloaded ${downloaded.length} videos`);
+    this.logger.info(`Downloaded ${downloaded.length}`);
 
     // Step 6: Process each
     const { createShort } = require('./clip-editor');
@@ -447,7 +384,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
       let transcript = null;
       try { transcript = await this._transcribeAudio(v.path); } catch {}
-
       if (transcript && this._hasProfanity(transcript.text)) { this.logger.warn(`PROFANITY — skip`); errors.push(`Profanity`); continue; }
 
       const detected = await this._detectCountry(transcript, originalTitle, originalCountry, sourceUrl);
@@ -488,29 +424,27 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
           }
           shorts.push({ path: finalPath, country, voiceoverText, transcript: transcript?.text, originalTitle, hasCaptions: !!englishSubtitle && !englishSubtitle.startsWith('Query:') });
         }
-      } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
+      } catch (e) { this.logger.warn(`Short failed: ${e.message}`); }
     }
 
     this.logger.success(`Created ${shorts.length} Shorts`);
     if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
 
     // Step 7: Upload
-    for (let i = 0; i < shorts.length; i++) {
-      const s = shorts[i];
+    for (const s of shorts) {
       try {
         const targetTitle = await this._generateTitle(s.country, s.transcript, s.originalTitle);
         if (this._hasProfanity(targetTitle.title) || this._hasProfanity(targetTitle.description)) {
           targetTitle.title = `${s.country} Clip #shorts`;
-          targetTitle.description = `Amazing content from ${s.country}. Follow Mr. WorldWideWebster!`;
+          targetTitle.description = `Amazing content from ${s.country}!`;
         }
         this.logger.success(`Title: "${targetTitle.title}"`);
-        const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title: targetTitle.title, description: targetTitle.description, tags: ['mr worldwidewebster', 'shorts', s.country.toLowerCase()] });
-        if (uploadResult) { uploaded.push({ title: targetTitle.title, url: uploadResult.url, country: s.country, captions: s.hasCaptions }); await this._boostVideo(uploadResult.url); }
+        const r = await this._uploadToYouTube({ videoPath: s.path, title: targetTitle.title, description: targetTitle.description, tags: ['mr worldwidewebster', 'shorts', s.country.toLowerCase()] });
+        if (r) { uploaded.push({ title: targetTitle.title, url: r.url, country: s.country, captions: s.hasCaptions }); await this._boostVideo(r.url); }
         else { errors.push(`Upload failed: ${targetTitle.title}`); }
-      } catch (e) { errors.push(`Upload error: ${e.message}`); }
+      } catch (e) { errors.push(`Upload: ${e.message}`); }
     }
 
-    // Save memory
     const cm = this.memory['channel-memory'] || {};
     cm.totalVideosPosted = (cm.totalVideosPosted || 0) + uploaded.length;
     if (!cm.countriesUsedThisWeek) cm.countriesUsedThisWeek = [];
@@ -533,47 +467,37 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const cm = this.memory['channel-memory'] || {};
     this.logger.info(`Total: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}`);
 
-    // Hermes investigates AND learns trending keywords
     const result = await this.hermes.chat(
-      `NIGHTLY INVESTIGATION for Mr. WorldWideWebster channel.\n\nCurrent state: Videos: ${cm.totalVideosPosted || 0} | Countries this week: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts to find CURRENT trending topics in these countries\n   - For each country, list 3-5 specific trending keywords (like "colour wheel trend", "fendi", "kpop")\n2. Suggest 10 fresh search queries for tomorrow (mix English + native language + trends)\n3. What formats are winning in short-form right now?\n\nRESPOND FORMAT:\nCOUNTRIES: [5 new country suggestions]\nTRENDS: China: keyword1, keyword2, keyword3 | Japan: keyword1, keyword2 | ...\nQUERIES: query1, query2, query3, ...\nFORMATS: format1, format2, format3\nSTRATEGY: brief strategy\n\nIMPORTANT: Trends must be SPECIFIC. "beautiful Chinese girl" yes. "dance" NO.`,
+      `NIGHTLY INVESTIGATION for Mr. WorldWideWebster.\n\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics per country\n2. List 3-5 specific keywords per country (like "colour wheel trend", "fendi")\n3. Suggest 10 fresh queries for tomorrow\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Japan: keyword1, keyword2 | Italy: fendi, prada\nQUERIES: query1, query2, query3\nFORMATS: ...\nSTRATEGY: ...`,
       { timeout: 300000 }
     );
 
-    // Parse and save trends from Hermes output
     if (result.success && result.output) {
-      // Save raw output to hermesNotes
       if (!cm.hermesNotes) cm.hermesNotes = [];
       cm.hermesNotes.push({ date: new Date().toISOString().split('T')[0], insight: result.output.substring(0, 500) });
       if (cm.hermesNotes.length > 20) cm.hermesNotes = cm.hermesNotes.slice(-20);
 
-      // Parse trends: "China: keyword1, keyword2 | Japan: keyword1"
-      const trendsSection = result.output.match(/TRENDS:[\s\S]*?(?=QUERIES:|$)/i);
+      // Parse TRENDS section
+      const trendsSection = result.output.match(/TRENDS:[\s\S]*?(?=QUERIES:|FORMATS:|$)/i);
       if (trendsSection) {
-        this.logger.info('Parsing trends from Hermes output...');
         if (!cm.trendingKeywords) cm.trendingKeywords = {};
-
-        // Split by country (pipe separator or newline)
         const parts = trendsSection[0].split(/[|\n]/).map(s => s.trim()).filter(s => s && !s.toUpperCase().startsWith('TRENDS'));
         for (const part of parts) {
-          const colonIndex = part.indexOf(':');
-          if (colonIndex > 0) {
-            const countryName = part.substring(0, colonIndex).trim();
-            const keywords = part.substring(colonIndex + 1).split(',').map(k => k.trim().replace(/^[\s"']+|[\s"']+$/g, '')).filter(k => k.length > 2 && !k.includes(':'));
-
-            // Match country name to our list
-            const matchedCountry = this.allC.find(c => c.toLowerCase() === countryName.toLowerCase() || countryName.toLowerCase().includes(c.toLowerCase()));
-            if (matchedCountry && keywords.length > 0) {
-              if (!cm.trendingKeywords[matchedCountry]) cm.trendingKeywords[matchedCountry] = [];
-              const merged = [...new Set([...keywords, ...cm.trendingKeywords[matchedCountry]])].slice(0, 10);
-              cm.trendingKeywords[matchedCountry] = merged;
-              this.logger.success(`🌋 Learned ${keywords.length} trends for ${matchedCountry}: ${keywords.join(', ')}`);
+          const ci = part.indexOf(':');
+          if (ci > 0) {
+            const name = part.substring(0, ci).trim();
+            const kws = part.substring(ci + 1).split(',').map(k => k.trim().replace(/^[\s"']+|[\s"']+$/g, '')).filter(k => k.length > 2);
+            const match = this.allC.find(c => c.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(c.toLowerCase()));
+            if (match && kws.length) {
+              if (!cm.trendingKeywords[match]) cm.trendingKeywords[match] = [];
+              const merged = [...new Set([...kws, ...cm.trendingKeywords[match]])].slice(0, 10);
+              cm.trendingKeywords[match] = merged;
+              this.logger.success(`🌋 ${match}: ${kws.join(', ')}`);
             }
           }
         }
       }
-
-      this.memory['channel-memory'] = cm;
-      this._saveMemory();
+      this.memory['channel-memory'] = cm; this._saveMemory();
     }
 
     this.logger.success(`Nightly: ${result.success ? '✅' : '❌'}`);
