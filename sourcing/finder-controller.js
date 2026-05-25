@@ -4,7 +4,7 @@
  * FIXES:
  * - Now searches specifically for REAL YouTube Shorts (/shorts/ URLs)
  * - Uses '#shorts' hashtag for ALL countries (including douyin-style)
- * - Added view count filtering to prefer videos around 1k views
+ * - Added view count filtering to prefer videos around 10k views
  * - Prioritizes recent uploads
  * - Limits to Shorts-eligible videos (duration < 60s)
  */
@@ -13,10 +13,10 @@ const { Logger } = require('../core/logger');
 
 const logger = new Logger('FinderController');
 
-// View count preferences: prefer smaller creators with ~1k views
-const MIN_VIEWS = 50;
-const MAX_VIEWS = 5000;
-const IDEAL_VIEWS = 1000;
+// View count preferences: prefer videos with ~10k views
+const MIN_VIEWS = 1000;
+const MAX_VIEWS = 50000;
+const IDEAL_VIEWS = 10000;
 
 /**
  * Enrich queries to find REAL YouTube Shorts.
@@ -146,7 +146,7 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
     } catch {}
   }
 
-  // Score and sort: prefer Shorts, then by views ~1k + recency
+  // Score and sort: prefer Shorts, then by views ~10k + recency
   allResults.sort((a, b) => {
     const shortBonusA = a.isShort ? 10 : 0;
     const shortBonusB = b.isShort ? 10 : 0;
@@ -166,7 +166,7 @@ async function findUrlsForQueries(queries, maxTotal = 10) {
   const sortedResults = [...idealResults, ...shortResults, ...otherResults].slice(0, maxTotal);
 
   const shortCount = sortedResults.filter(r => r.isShort).length;
-  logger.success(`Found ${sortedResults.length} URLs (${idealResults.length} with ~1k views, ${shortCount} Shorts)`);
+  logger.success(`Found ${sortedResults.length} URLs (${idealResults.length} with ~10k views, ${shortCount} Shorts)`);
   return sortedResults;
 }
 

@@ -29,18 +29,12 @@ class GitHubActionsRunner {
     ];
   }
 
-  /**
-   * Check if text contains banned profanity.
-   * Returns the first banned word found, or null if clean.
-   */
   _hasProfanity(text) {
     if (!text) return null;
     const lower = text.toLowerCase();
     for (const word of this.bannedWords) {
       const regex = new RegExp(`\\b${word}\\b`, 'i');
-      if (regex.test(lower)) {
-        return word;
-      }
+      if (regex.test(lower)) return word;
     }
     const leetPatterns = [
       /\bf[u4]ck\b/i, /\bf[u4]cking\b/i, /\bsh[i1!]t\b/i,
@@ -48,17 +42,15 @@ class GitHubActionsRunner {
       /\bn[i1!]gg[a4e3]\b/i, /\bc[u4]nt\b/i
     ];
     for (const pattern of leetPatterns) {
-      if (pattern.test(lower)) {
-        return lower.match(pattern)[0];
-      }
+      const m = lower.match(pattern);
+      if (m) return m[0];
     }
     return null;
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster Pipeline v5');
-    this.logger.info(`OpenRouter keys in env: KEY=${!!process.env.OPENROUTER_API_KEY} KEY_2=${!!process.env.OPENROUTER_API_KEY_2} KEY_3=${!!process.env.OPENROUTER_API_KEY_3} KEY_4=${!!process.env.OPENROUTER_API_KEY_4}`);
-
+    this.logger.header('Mr. WorldWideWebster Pipeline v6');
+    this.logger.info(`OpenRouter keys: KEY=${!!process.env.OPENROUTER_API_KEY} KEY_2=${!!process.env.OPENROUTER_API_KEY_2} KEY_3=${!!process.env.OPENROUTER_API_KEY_3} KEY_4=${!!process.env.OPENROUTER_API_KEY_4}`);
     this.ai = new AIService();
     await this.ai.waitForInit();
     this._loadMemory();
@@ -107,6 +99,8 @@ class GitHubActionsRunner {
       this.logger.info(`Boosting: ${videoUrl}`);
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
+      // Call run with a dedicated argument object - BoostEngine.run() reads params
+      // before _parseConfig() so programmatic calls work correctly
       const result = await engine.run({
         url: videoUrl,
         views: parseInt(process.env.BOOST_MAX_VIEWS) || 75,
@@ -145,6 +139,10 @@ class GitHubActionsRunner {
     } catch {}
   }
 
+  /**
+   * Transcribe audio with language detection.
+   * Returns { text, language, isNonEnglish } or null.
+   */
   async _transcribeAudio(videoPath) {
     const audioDir = path.join(config.paths.assets, 'audio');
     if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
@@ -153,26 +151,90 @@ class GitHubActionsRunner {
       this.logger.info('Extracting audio for transcription...');
       execSync(`ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`, { timeout: 30000 });
       if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) return null;
-      this.logger.info('Transcribing with faster-whisper...');
+      this.logger.info('Transcribing with faster-whisper (with language detection)...');
       const pyPath = audioPath.replace(/\\/g, '\\\\');
+      // Use no language param to auto-detect, return both text and detected language
       const pyCmd = `python3 -c "
 from faster_whisper import WhisperModel
+import json
 model = WhisperModel('base', device='cpu', compute_type='int8')
-segments, info = model.transcribe('${pyPath}', language='en')
+segments, info = model.transcribe('${pyPath}')
 text = ' '.join(seg.text for seg in segments)
-print(text[:1000] if text else '')
+result = {'text': text[:1000], 'language': info.language, 'probability': info.language_probability}
+print(json.dumps(result))
 " 2>&1`;
       const output = execSync(pyCmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
       try { fs.unlinkSync(audioPath); } catch {}
       if (output && !output.includes('Error') && !output.includes('Traceback')) {
-        this.logger.success(`Transcript: "${output.substring(0, 100)}..."`);
-        return output.trim();
+        try {
+          const parsed = JSON.parse(output);
+          const text = parsed.text || '';
+          const lang = parsed.language || 'en';
+          const isNonEnglish = lang !== 'en' && lang !== 'english';
+          this.logger.success(`Transcript (${lang}): "${text.substring(0, 80)}..."`);
+          return { text, language: lang, isNonEnglish };
+        } catch {
+          // Fallback if JSON parse fails
+          this.logger.success(`Transcript: "${output.substring(0, 100)}..."`);
+          return { text: output, language: 'en', isNonEnglish: false };
+        }
       }
       return null;
     } catch (error) {
       this.logger.warn(`Transcription failed: ${error.message.substring(0, 100)}`);
       try { fs.unlinkSync(audioPath); } catch {}
       return null;
+    }
+  }
+
+  /**
+   * Burn English subtitles at the bottom of a shorts video using ffmpeg drawtext.
+   * Handles multi-line text properly for 1080x1920 shorts.
+   */
+  _burnSubtitles(videoPath, outputPath, subtitleText) {
+    if (!subtitleText) return false;
+    try {
+      this.logger.info('Burning English subtitles onto video...');
+      // Escape single quotes for ffmpeg filter
+      const safeText = subtitleText.replace(/'/g, "'\\\\''").replace(/[:\\]/g, '\\\\$&');
+      // Split into lines of ~25 chars for readability
+      const words = subtitleText.split(' ');
+      const lines = [];
+      let currentLine = '';
+      for (const word of words) {
+        if ((currentLine + ' ' + word).length > 35) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = currentLine ? currentLine + ' ' + word : word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      // Max 3 lines for shorts
+      const displayLines = lines.slice(0, 3).join('\\\\N');
+      
+      // Draw text at bottom of frame with semi-transparent background
+      // For 1080x1920 shorts: position at y=1750 (near bottom, above action area)
+      const drawtextFilter =
+        `drawtext=text='${displayLines}':` +
+        `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:` +
+        `fontsize=28:fontcolor=white:` +
+        `box=1:boxcolor=black@0.6:boxborderw=8:` +
+        `x=(w-text_w)/2:y=h-text_h-80:` +
+        `enable='between(t,0,30)'`;
+
+      execSync(
+        `ffmpeg -y -i "${videoPath}" ` +
+        `-vf "${drawtextFilter}" ` +
+        `-c:v libx264 -preset ultrafast -crf 23 ` +
+        `-c:a copy ` +
+        `"${outputPath}" 2>/dev/null`,
+        { timeout: 60000, maxBuffer: 50*1024*1024 }
+      );
+      return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
+    } catch (error) {
+      this.logger.warn(`Subtitle burn failed: ${error.message.substring(0, 80)}`);
+      return false;
     }
   }
 
@@ -212,22 +274,20 @@ print(text[:1000] if text else '')
     const errors = [];
     const uploaded = [];
 
-    // Step 1-3: Search, rank, download
     const { queries, countries } = await this._generateQueries();
     this.logger.info('Step 2: Searching 10 URLs...');
     const allUrls = await findUrlsForQueries(queries, 10);
     if (allUrls.length === 0) return { uploadedVideos: [], errors: ['No URLs found'] };
-    allUrls.forEach((u, i) => this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0,50)} | views: ${u.view_count || '?'}${u.isShort ? ' 📱' : ''}`));
+    allUrls.forEach((u, i) => this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0,50)} | ${u.view_count || '?'} views${u.isShort ? ' 📱' : ''}`));
     this.logger.info('Step 3: AI ranking...');
     const { top3 } = await rankVideos(allUrls, queries[0] || '', this.ai);
     if (top3.length === 0) top3.push(...allUrls.slice(0, 3));
-    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0,60)} | views: ${v.view_count || '?'}${v.isShort ? ' 📱' : ''}`));
+    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0,60)} | ${v.view_count || '?'} views${v.isShort ? ' 📱' : ''}`));
     this.logger.info('Step 4: Downloading...');
     const downloaded = await downloadVideos(top3, config.paths.clips);
     if (downloaded.length === 0) this.logger.warn('No videos downloaded');
 
-    // Step 5: Create Shorts
-    this.logger.info('Step 5: Creating Shorts with free whisper + AI voiceover + Twemoji flag...');
+    this.logger.info('Step 5: Creating Shorts with whisper + AI voiceover + Twemoji flag + captions...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
@@ -242,23 +302,48 @@ print(text[:1000] if text else '')
       let voiceoverPath = null;
       let voiceoverText = '';
       let transcript = null;
+      let isNonEnglish = false;
+      let englishSubtitle = null;
 
+      // Transcribe with language detection
       try { transcript = await this._transcribeAudio(v.path); } catch {}
 
-      // PROFANITY FILTER: Skip upload if transcript contains bad words
       if (transcript) {
-        const badWord = this._hasProfanity(transcript);
+        isNonEnglish = transcript.isNonEnglish;
+        // Profanity filter on original text
+        const badWord = this._hasProfanity(transcript.text);
         if (badWord) {
-          this.logger.warn(`⛔ PROFANITY DETECTED in transcript: "${badWord}" — SKIPPING upload for ${country}`);
-          this.logger.warn(`Transcript snippet: "${transcript.substring(0, 150)}..."`);
-          errors.push(`Profanity blocked (${badWord}) for ${country} video`);
+          this.logger.warn(`⛔ PROFANITY "${badWord}" — SKIPPING ${country}`);
+          this.logger.warn(`Transcript: "${transcript.text.substring(0, 150)}..."`);
+          errors.push(`Profanity (${badWord}) for ${country}`);
           continue;
+        }
+
+        // If non-English, get an English translation for subtitles
+        if (isNonEnglish) {
+          this.logger.info(`Detected language: ${transcript.language} — translating to English for captions`);
+          try {
+            englishSubtitle = await this.ai.chat(
+              `Translate the following ${transcript.language} text to natural English. Return ONLY the translation, no explanation.`,
+              transcript.text,
+              { useCheapModel: true, temperature: 0.3 }
+            );
+            if (englishSubtitle && englishSubtitle.length > 3) {
+              englishSubtitle = englishSubtitle.replace(/["']/g, '').trim().substring(0, 200);
+              this.logger.success(`Translation: "${englishSubtitle.substring(0, 80)}..."`);
+            } else {
+              englishSubtitle = null;
+            }
+          } catch {
+            this.logger.warn('Translation failed, skipping captions');
+          }
         }
       }
 
+      // Generate voiceover text (always in English)
       try {
-        let contextPrompt = transcript
-          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
+        let contextPrompt = transcript?.text
+          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.text.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
           : `Write ONE sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence.`;
         try {
           const vPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
@@ -266,9 +351,7 @@ print(text[:1000] if text else '')
           voiceoverText = await Promise.race([vPromise, tPromise]);
           if (!voiceoverText || voiceoverText.length < 5) voiceoverText = `Check out this clip from ${country}`;
           voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
-
           if (this._hasProfanity(voiceoverText)) {
-            this.logger.warn(`AI generated profanity in voiceover, using safe fallback`);
             voiceoverText = `Check out this clip from ${country}`;
           }
         } catch { voiceoverText = `Check out this clip from ${country}`; }
@@ -292,20 +375,31 @@ print(text[:1000] if text else '')
       const outputPath = path.join(dir, `short_${Date.now()}.mp4`);
       try {
         const result = await createShort(v.path, { startTime, duration: 30, query, countryText: country, voiceoverPath, explainerText: voiceoverText, outputPath });
-        if (result) shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript, sourceUrl: v.sourceUrl, originalTitle });
+        if (result) {
+          // If non-English, burn translated subtitles onto the output
+          if (isNonEnglish && englishSubtitle) {
+            const subbedPath = result.replace('.mp4', '_captioned.mp4');
+            const burned = this._burnSubtitles(result, subbedPath, englishSubtitle);
+            if (burned) {
+              // Replace result with captioned version
+              try { fs.unlinkSync(result); } catch {}
+              shorts.push({ path: subbedPath, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish, englishSubtitle });
+            } else {
+              shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish });
+            }
+          } else {
+            shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript: transcript?.text, sourceUrl: v.sourceUrl, originalTitle, isNonEnglish });
+          }
+        }
       } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
     }
 
     this.logger.success(`Created ${shorts.length} Shorts (${shorts.filter(s => s.hasVoiceover).length} with voiceover)`);
 
-    // Step 6: Upload + Boost
     for (const s of shorts) {
       try {
-        const query = s.query || '';
         const country = s.country;
         const originalTitle = s.originalTitle || `${country} Clip`;
-
-        // Try AI for title/description, fallback to original title on failure
         let title = '';
         let description = '';
         try {
@@ -316,15 +410,12 @@ print(text[:1000] if text else '')
           title = (td.title || originalTitle).substring(0, 100);
           description = td.description || `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
         } catch {
-          // LLM FAILED - use original title
-          this.logger.warn(`LLM failed for title/description, using original title: "${originalTitle.substring(0, 60)}"`);
+          this.logger.warn(`LLM failed for title, using original: "${originalTitle.substring(0, 60)}"`);
           title = originalTitle.substring(0, 100);
           description = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
         }
 
-        // Final profanity check on title/description before upload
         if (this._hasProfanity(title) || this._hasProfanity(description)) {
-          this.logger.warn(`⛔ Profanity in title/description for ${country}, using safe fallback`);
           title = `${country} Clip #shorts`;
           description = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
         }
@@ -337,16 +428,14 @@ print(text[:1000] if text else '')
           errors.push(`Upload failed: ${title}`);
         }
       } catch (e) {
-        this.logger.error(`Upload step error: ${e.message}`);
+        this.logger.error(`Upload error: ${e.message}`);
         errors.push(`Upload error: ${e.message}`);
       }
     }
 
-    // Step 7: Boost old videos (1 week+)
     this.logger.info('Step 7: Boosting older videos...');
     await this._boostOldVideos();
 
-    // Save memory
     const cm = this.memory['channel-memory'];
     cm.totalVideosPosted = (cm.totalVideosPosted||0) + uploaded.length;
     if (countries) {
