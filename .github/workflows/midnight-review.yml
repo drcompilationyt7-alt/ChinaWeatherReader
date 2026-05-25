@@ -1,7 +1,4 @@
-# 🌙 Midnight — Hermes CLI Investigation
-# Runs at midnight: Hermes CLI (local Ollama model) autonomously browses
-# the web, analyzes trends, and saves strategy to shared memory.
-# Connected to daily morning run via hermes-memory/.
+# 🌙 Midnight — Hermes CLI Investigation (Qwen3 8B)
 
 name: 🌙 Midnight Hermes Investigation
 
@@ -41,13 +38,14 @@ jobs:
           sudo apt-get install -y -qq ffmpeg jq curl
           npm ci || npm install
 
-      - name: Install Ollama + pull local model
+      - name: Install Ollama + pull Qwen3 8B
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > ollama.log 2>&1 &
           sleep 10
-          ollama pull llama3.2:3b
+          ollama pull qwen2.5:7b
           echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
+          echo "OLLAMA_MODEL=qwen2.5:7b" >> $GITHUB_ENV
 
       - name: Install Hermes CLI
         run: |
@@ -56,7 +54,7 @@ jobs:
           cat > ~/.hermes/config.yaml <<'EOF'
           model:
             provider: custom
-            default: llama3.2:3b
+            default: qwen2.5:7b
             base_url: http://localhost:11434/v1
             api_key: ollama
             api_mode: chat_completions
@@ -75,7 +73,7 @@ jobs:
           hermes status || true
           echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
 
-      - name: Restore Hermes memory from previous runs
+      - name: Restore Hermes memory
         run: |
           mkdir -p ~/.hermes
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
@@ -85,7 +83,7 @@ jobs:
 
       - name: Save memory
         run: |
-          cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
+          cp -r ~/.hermes/config.yaml ~/.hermes/.env hermes-memory/ 2>/dev/null || true
           git config user.name "Hermes Agent"
           git config user.email "hermes@worldwidewebster.com"
           git add memory/ hermes-memory/ 2>/dev/null || true

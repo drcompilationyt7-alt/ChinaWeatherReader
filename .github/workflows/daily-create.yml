@@ -38,6 +38,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Clean old test data
+        run: |
+          rm -rf output/ memory/hermes-memory/
+          mkdir -p output/clips output/assets/voiceovers output/assets/audio memory
+
       - name: Install deps
         run: |
           sudo apt-get update
@@ -52,13 +57,15 @@ jobs:
       - name: Pre-download whisper model
         run: python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
 
-      - name: Install Ollama + pull local model
+      - name: Install Ollama + pull Qwen3 8B
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > ollama.log 2>&1 &
           sleep 10
-          ollama pull llama3.2:3b
+          # Qwen2.5 7B is much more capable than llama3.2:3b for country detection + generation
+          ollama pull qwen2.5:7b
           echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
+          echo "OLLAMA_MODEL=qwen2.5:7b" >> $GITHUB_ENV
 
       - name: Install Hermes CLI
         run: |
@@ -67,7 +74,7 @@ jobs:
           cat > ~/.hermes/config.yaml <<'EOF'
           model:
             provider: custom
-            default: llama3.2:3b
+            default: qwen2.5:7b
             base_url: http://localhost:11434/v1
             api_key: ollama
             api_mode: chat_completions
@@ -83,6 +90,8 @@ jobs:
             enabled: true
             char_limit: 2000
           EOF
+          # Remove old memory from test runs
+          rm -rf ~/.hermes/sessions ~/.hermes/checkpoints 2>/dev/null || true
           hermes status || true
           echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
 
@@ -92,21 +101,30 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Restore Hermes memory
+      - name: Restore Hermes memory (keep evolving)
         run: |
-          mkdir -p memory hermes-memory ~/.hermes
+          mkdir -p ~/.hermes
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
 
       - name: Run pipeline
-        run: |
-          # Pipeline uses Hermes CLI via hermes-cli-wrapper.js for evaluation + memory
-          node core/github-action-runner.js --mode daily
+        run: node core/github-action-runner.js --mode daily
 
-      - name: Save memory
+      - name: Save Hermes memory only (not test outputs)
         run: |
-          cp -r ~/.hermes/* hermes-memory/ 2>/dev/null || true
+          cp -r ~/.hermes/config.yaml ~/.hermes/.env hermes-memory/ 2>/dev/null || true
+          # Only save memory/channel-memory.json, skip output/ (large files)
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/ hermes-memory/ output/ && git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+          git add memory/channel-memory.json hermes-memory/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+
+      - name: Weekly cleanup of output (every Sunday)
+        if: github.event_name == 'schedule'
+        run: |
+          DOW=$(date +%u)
+          if [ "$DOW" = "7" ]; then
+            rm -rf output/clips/* output/assets/voiceovers/* output/assets/audio/* 2>/dev/null || true
+            echo "Weekly output cleanup done"
+          fi
 
       - name: Cleanup
         if: always()
