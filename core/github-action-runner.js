@@ -10,24 +10,29 @@ const { findUrlsForQueries } = require('../sourcing/finder-controller');
 const { downloadVideos } = require('./downloader');
 const { rankVideos } = require('./url-ranker');
 
+/**
+ * Trend keywords per country — manually curated + Hermes-learned.
+ * Hermes updates these nightly. You can also edit manually.
+ * Include: viral song names, audio trends, hashtags, content formats.
+ */
 const BASE_TREND_KEYWORDS = {
-  'China': ['chinese trend', 'beautiful Chinese girl', 'Chinese love story', 'colour wheel trend', 'douyin'],
-  'Japan': ['japanese trend', 'japanese fashion', 'japanese street', 'kawaii', 'japan vlog'],
-  'South Korea': ['kpop', 'blackpink', 'bts', 'korean fashion', 'korean makeup', 'seoul'],
-  'Thailand': ['thai trend', 'thai street food', 'bangkok', 'thai girl'],
-  'Vietnam': ['vietnam trend', 'hanoi', 'saigon', 'vietnam street'],
-  'India': ['indian trend', 'bollywood', 'mumbai', 'delhi', 'indian wedding'],
-  'Indonesia': ['indonesian trend', 'jakarta', 'bali', 'indonesia viral'],
-  'Brazil': ['brazil trend', 'funk', 'rio', 'brazil dance', 'samba'],
-  'Mexico': ['mexico trend', 'mexico dance', 'latin', 'ciudad de mexico'],
-  'France': ['france trend', 'paris', 'french fashion', 'fendi'],
-  'Italy': ['italy trend', 'italian fashion', 'fendi', 'milan', 'rome', 'prada'],
-  'Germany': ['germany trend', 'berlin', 'german', 'munich'],
-  'Spain': ['spain trend', 'barcelona', 'madrid', 'spanish dance'],
-  'UK': ['uk trend', 'london', 'british', 'uk viral'],
-  'Egypt': ['egypt trend', 'cairo', 'arabic', 'egypt viral'],
-  'Nigeria': ['nigeria trend', 'lagos', 'afrobeat', 'nigeria dance', 'naija'],
-  'Australia': ['australia trend', 'sydney', 'melbourne', 'aussie']
+  'China': ['chinese trend', 'beautiful Chinese girl', 'Chinese love story', 'colour wheel trend', 'douyin', '抖音', '舞蹈'],
+  'Japan': ['japanese trend', 'japanese fashion', 'japanese street', 'kawaii', 'japan vlog', '日本ダンス'],
+  'South Korea': ['kpop', 'blackpink', 'bts', 'korean fashion', 'korean makeup', 'seoul', 'kpop dance', 'korean street'],
+  'Thailand': ['thai trend', 'thai street food', 'bangkok', 'thai girl', 'thai dance', 'thai tiktok'],
+  'Vietnam': ['vietnam trend', 'hanoi', 'saigon', 'vietnam street', 'Ai Đưa Em Về', 'nhạc hot tik tok', 'vietnam dance'],
+  'India': ['indian trend', 'bollywood', 'mumbai', 'delhi', 'indian wedding', 'indian dance', 'bhojpuri'],
+  'Indonesia': ['indonesian trend', 'jakarta', 'bali', 'indonesia viral', 'indonesia dance', 'tiktok indonesia'],
+  'Brazil': ['brazil trend', 'funk', 'rio', 'brazil dance', 'samba', 'funk brasileiro', 'tiktok brasil'],
+  'Mexico': ['mexico trend', 'mexico dance', 'latin', 'ciudad de mexico', 'corridos', 'regional mexicano'],
+  'France': ['france trend', 'paris', 'french fashion', 'fendi', 'french tiktok', 'musique française'],
+  'Italy': ['italy trend', 'italian fashion', 'fendi', 'milan', 'rome', 'prada', 'italian tiktok', 'musica italiana'],
+  'Germany': ['germany trend', 'berlin', 'german', 'munich', 'german tiktok', 'deutsche musik'],
+  'Spain': ['spain trend', 'barcelona', 'madrid', 'spanish dance', 'españa tiktok', 'música española'],
+  'UK': ['uk trend', 'london', 'british', 'uk viral', 'uk tiktok', 'uk rap', 'TikTok Viral Trend'],
+  'Egypt': ['egypt trend', 'cairo', 'arabic', 'egypt viral', 'egypt tiktok', 'arabic music'],
+  'Nigeria': ['nigeria trend', 'lagos', 'afrobeat', 'nigeria dance', 'naija', 'afrobeats', 'nigeria tiktok'],
+  'Australia': ['australia trend', 'sydney', 'melbourne', 'aussie', 'australian tiktok']
 };
 
 class GitHubActionsRunner {
@@ -82,14 +87,14 @@ class GitHubActionsRunner {
       const base = BASE_TREND_KEYWORDS[c] || [c];
       const learned = trending[c] || [];
       const allTrends = [...base, ...learned].sort(() => Math.random() - 0.5);
-      for (const t of allTrends.slice(0, 2)) {
+      for (const t of allTrends.slice(0, 3)) {
         const q = `${t} #shorts`;
         if (!queries.includes(q)) queries.push(q);
       }
       const native = `${c.toLowerCase()} #shorts`;
       if (!queries.includes(native)) queries.push(native);
     }
-    return queries.slice(0, 6);
+    return queries.slice(0, 8);
   }
 
   async _generateLLMQueries(countries, allTrends) {
@@ -97,27 +102,26 @@ class GitHubActionsRunner {
     for (const c of countries) {
       const trendsList = (allTrends[c] || []).join(', ');
       if (!trendsList) continue;
-      // Queries can be in ANY language — native language works better for finding local content
-      const prompt = `Generate 2 YouTube Shorts search queries for ${c} using these trends: ${trendsList}. Use native language keywords where appropriate. Mix creative variations. Return JSON array.`;
+      const prompt = `Generate 3 YouTube Shorts search queries for ${c} using these trends: ${trendsList}. Include song/audio names if mentioned. Use native language. Return JSON array.`;
       try {
         const r = await Promise.race([
           this.ai.chatJSON(prompt, 'queries', { useCheapModel: true, temperature: 0.9 }),
           new Promise((_, rj) => setTimeout(() => rj(new Error('timeout')), 10000))
         ]);
         if (Array.isArray(r)) {
-          for (const q of r.slice(0, 2)) {
+          for (const q of r.slice(0, 3)) {
             const full = `${q.replace(/[#]/g, '').trim()} #shorts`;
             if (!queries.includes(full)) queries.push(full);
           }
         }
       } catch {
         const result = await this._ollamaGenerate(
-          `Generate 2 YouTube search queries for ${c} trends: ${trendsList}. Use native language keywords. Format: query1, query2`,
-          { temperature: 0.9 }
+          `Generate 3 YouTube search queries for ${c} trends: ${trendsList}. Include song/audio names. Format: query1, query2, query3`,
+          { temperature: 0.9, maxTokens: 100 }
         );
         if (result) {
           const parts = result.split(',').map(s => `${s.trim().replace(/[#]/g, '')} #shorts`);
-          for (const q of parts.slice(0, 2)) {
+          for (const q of parts.slice(0, 3)) {
             if (!queries.includes(q)) queries.push(q);
           }
         }
@@ -227,12 +231,12 @@ class GitHubActionsRunner {
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — Search any lang, Publish English');
+    this.logger.header('Mr. WorldWideWebster — Song trends + Audio trends');
     this.logger.info(`OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
     try { const http = require('http'); await new Promise(r => { http.get('http://127.0.0.1:11434/api/tags', () => r(true)).on('error', () => r(false)); }); this.logger.info('Ollama: OK'); } catch {}
     this.ai = new AIService(); await this.ai.waitForInit(); this._loadMemory();
     try { const { YouTubeBridge } = require('../youtube-automation/youtube-bridge'); this.youtubeBridge = new YouTubeBridge(); await this.youtubeBridge.initialize(); } catch (e) { this.logger.warn(`YouTube: ${e.message}`); }
-    try { const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper'); this.hermes = new HermesCLIWrapper(); if (this.hermes.isAvailable()) this.logger.success('Hermes: ready'); } catch {}
+    try { const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper'); this.hermes = new HermesCLIWrapper(); if (this.hermes.isAvailable()) this.logger.success('Hermes: ready — trend maintenance'); } catch {}
     const ch = this.memory['channel-memory'] || {};
     if (ch.trendingKeywords) this.logger.info(`Loaded ${Object.values(ch.trendingKeywords).flat().length} learned trends`);
     this.logger.success('Initialized');
@@ -297,7 +301,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   }
 
   async runDaily() {
-    this.logger.header('DAILY: Search native → Publish English');
+    this.logger.header('DAILY: Song/audio trends + native search → English publish');
     const errors = []; const uploaded = [];
 
     const ch = this.memory['channel-memory'] || {};
@@ -309,7 +313,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       this.allC[Math.floor(Math.random()*this.allC.length)]
     ];
 
-    this.logger.info('Step 1: Generating queries (any language)...');
+    this.logger.info('Generating queries (trends include song/audio names)...');
     let queries = this._getTrendingQueriesForCountries(countries);
     if (Math.random() > 0.5) {
       const allTrends = ch.trendingKeywords || {};
@@ -392,7 +396,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     this.logger.success(`Created ${shorts.length} Shorts`);
     if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
 
-    // Upload with ENGLISH titles + descriptions
     for (const s of shorts) {
       try {
         const targetTitle = await this._generateTitle(s.country, s.transcript, s.originalTitle);
@@ -424,13 +427,13 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   }
 
   async runNightly() {
-    this.logger.header('🌙 NIGHTLY: Hermes discovers trends');
+    this.logger.header('🌙 NIGHTLY: Hermes maintains + discovers trends');
     if (!this.hermes || !this.hermes.isAvailable()) { this.logger.warn('Hermes not available'); return; }
     const cm = this.memory['channel-memory'] || {};
     this.logger.info(`Total: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}`);
 
     const result = await this.hermes.chat(
-      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics per country\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries for tomorrow\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Japan: keyword1, keyword2\nQUERIES: query1, query2\nSTRATEGY: ...`,
+      `NIGHTLY for Mr. WorldWideWebster.\nVideos: ${cm.totalVideosPosted || 0} | Countries: ${(cm.countriesUsedThisWeek || []).join(', ')}\n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics (include song/audio names!)\n2. List 3-5 specific keywords per country — include viral songs like "Ai Đưa Em Về"\n3. Suggest 10 fresh queries for tomorrow\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 (include song names) | Vietnam: trend1, Ai Đưa Em Về\nQUERIES: query1, query2\nSTRATEGY: ...`,
       { timeout: 300000 }
     );
 
