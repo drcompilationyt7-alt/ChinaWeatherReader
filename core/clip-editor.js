@@ -4,9 +4,10 @@
  * FIXES:
  * - Smart padding (adds black bars) instead of cropping - preserves full content
  * - Original audio preserved completely in clips
- * - Explainer: voiceover layered on top, original audio reduced during vo
+ * - Voiceover: layered on top, original audio reduced during vo
  * - Concatenation preserves audio properly
  * - FIXED: Intro now has silent audio track so concat with clip audio works properly
+ * - FIXED: Intro text is JUST the flag emoji (no text), voiceover provides context
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -36,17 +37,11 @@ async function createShort(videoPath, options) {
   const startTime = Math.min(options.startTime || 5, 30);
   const duration = Math.min(options.duration || 28, 60);
 
-  // Determine intro text
-  let introLine = `Clip from ${country}`;
-  if (query.toLowerCase().includes('meme')) introLine = `Meme from ${country}`;
-  else if (query.toLowerCase().includes('streamer')) introLine = `Streamer from ${country}`;
-  else if (options.explainerText || query.toLowerCase().includes('explain')) introLine = `What is this?`;
-  // Check for douyin/shorts
-  if (query.toLowerCase().includes('douyin')) introLine = `Douyin from ${country}`;
-  else if (query.toLowerCase().includes('short')) introLine = `Short from ${country}`;
+  // Intro is JUST the flag emoji - no text. Voiceover provides context.
+  const safeFlag = flag;
 
   const baseName = `short_${Date.now()}`;
-  logger.info(`Creating: "${introLine}" (${duration}s)`);
+  logger.info(`Creating short for ${country} ${flag} (${duration}s)`);
 
   try {
     // Get video dimensions first
@@ -65,42 +60,57 @@ async function createShort(videoPath, options) {
     const frameFile = path.join(tmpDir, `${baseName}_frame.jpg`);
     execSync(`ffmpeg -y -ss ${startTime} -i "${videoPath}" -vframes 1 -q:v 2 "${frameFile}" 2>/dev/null`, { timeout: 10000 });
 
-    // Create intro (3s): blurred background image + flag + text
-    // FIXED: Added anullsrc to generate silent audio so concat works properly with audio streams
+    // Create intro (3s): blurred background image + JUST the flag emoji (big, centered)
+    // Uses anullsrc for silent audio track so concat works properly
     const introFile = path.join(tmpDir, `${baseName}_intro.mp4`);
     const font = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
-    const safeText = introLine.replace(/'/g, "'\\''");
 
-    // Blurred + scaled to full 9:16 + text overlay + silent audio track
+    // Blurred + scaled to full 9:16 + BIG flag emoji centered + silent audio
     execSync(
       `ffmpeg -y -loop 1 -i "${frameFile}" -t 3 -f lavfi -i anullsrc=r=44100:cl=mono ` +
       `-filter_complex ` +
       `"[0:v]scale=${SHORTS_W}:${SHORTS_H}:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},boxblur=25:5[b];` +
-      `[b]drawtext=text='${flag}':fontfile=${font}:fontsize=110:fontcolor=white:x=(w-text_w)/2:y=h*0.28:shadowx=3:shadowy=3:shadowcolor=black@0.6,` +
-      `drawtext=text='${safeText}':fontfile=${font}:fontsize=52:fontcolor=white:x=(w-text_w)/2:y=h*0.45:shadowx=2:shadowy=2:shadowcolor=black@0.5[outv]" ` +
+      `[b]drawtext=text='${safeFlag}':fontfile=${font}:fontsize=160:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2:shadowx=3:shadowy=3:shadowcolor=black@0.6[outv]" ` +
       `-map "[outv]" -map "1:a" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -pix_fmt yuv420p -shortest "${introFile}" 2>/dev/null`,
       { timeout: 30000 }
     );
 
-    // Create clip segment (properly padded to 9:16, NO cropping, audio preserved)
+    // Create clip segment (properly padded to 9:16, NO cropping)
     const clipFile = path.join(tmpDir, `${baseName}_clip.mp4`);
 
     if (voiceoverPath && fs.existsSync(voiceoverPath)) {
-      // EXPLAINER: clip with voiceover + lowered original audio
-      const voDur = 4; // voiceover duration in seconds
+      // CLIP WITH VOICEOVER: clip with voiceover + lowered original audio
+      // Voiceover plays over the clip at the beginning to give context
+      // We need to measure voiceover duration from the file
+      let voDur = 4; // default voiceover duration
+      try {
+        const probeOut = execSync(
+          `ffprobe -i "${voiceoverPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`,
+          { timeout: 5000, encoding: 'utf8' }
+        ).trim();
+        if (probeOut) {
+          voDur = Math.ceil(parseFloat(probeOut));
+        }
+      } catch {}
+      
+      // Clamp duration
+      voDur = Math.min(voDur, duration - 2);
+      
+      // Audio filter: play voiceover first (delayed 1s into clip), 
+      // duck original audio during voiceover, restore after
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${videoPath}" -i "${voiceoverPath}" -t ${duration} ` +
         `-filter_complex ` +
         `"[0:v]${padFilter}[outv];` +
         `[0:a]asplit=2[a_orig][a_bg];` +
-        `[a_bg]volume=enable='between(t,2,${2+voDur})':volume=0.15[a_duck];` +
-        `[1:a]adelay=2000|2000[a_vo];` +
+        `[a_bg]volume=enable='between(t,1,${1+voDur})':volume=0.1[a_duck];` +
+        `[1:a]adelay=1000|1000[a_vo];` +
         `[a_duck][a_vo]amix=inputs=2:duration=first:dropout_transition=2[outa]" ` +
         `-map "[outv]" -map "[outa]" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -shortest "${clipFile}" 2>/dev/null`,
         { timeout: 120000 }
       );
     } else {
-      // CLIP/STREAMER: just pad to 9:16, keep original audio (FIXED: added -c:a aac copy to ensure audio preserved)
+      // PLAIN CLIP: just pad to 9:16, keep original audio
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
         `-vf "${padFilter}" ` +
