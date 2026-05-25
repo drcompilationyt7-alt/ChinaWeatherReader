@@ -75,96 +75,111 @@ class GitHubActionsRunner {
   }
 
   /**
-   * Use Hermes (local Qwen3 8B) to generate content when OpenRouter is exhausted.
+   * Call local Ollama API directly (Qwen2.5 7B) — much cleaner than Hermes CLI for generation.
+   * Returns the model's output text or null.
    */
-  async _hermesGenerate(prompt, timeout = 60000) {
-    if (!this.hermes || !this.hermes.isAvailable()) return null;
+  async _ollamaGenerate(prompt, options = {}) {
     try {
-      const result = await this.hermes.chat(prompt, { timeout });
-      if (result.success && result.output) {
-        return result.output.trim();
-      }
+      const http = require('http');
+      const data = JSON.stringify({
+        model: process.env.OLLAMA_MODEL || 'qwen2.5:7b',
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: options.temperature || 0.7,
+          num_predict: options.maxTokens || 200,
+        }
+      });
+
+      return new Promise((resolve) => {
+        const req = http.request({
+          hostname: '127.0.0.1',
+          port: 11434,
+          path: '/api/generate',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+          timeout: options.timeout || 60000
+        }, (res) => {
+          let body = '';
+          res.on('data', chunk => body += chunk);
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(body);
+              const result = (parsed.response || '').trim();
+              if (result) {
+                this.logger.success(`Ollama: "${result.substring(0, 120)}..."`);
+                return resolve(result);
+              }
+            } catch {}
+            this.logger.warn(`Ollama raw: ${body.substring(0, 200)}`);
+            resolve(null);
+          });
+        });
+        req.on('error', (e) => { this.logger.warn(`Ollama API: ${e.message}`); resolve(null); });
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+        req.write(data);
+        req.end();
+      });
+    } catch (e) {
+      this.logger.warn(`Ollama: ${e.message}`);
       return null;
-    } catch { return null; }
+    }
   }
 
   /**
-   * Generate voiceover: try OpenRouter first, fallback to Hermes.
+   * Generate voiceover: OpenRouter → Ollama direct → default
    */
   async _generateVoiceover(country, transcriptText) {
-    // Try OpenRouter
+    // OpenRouter
     try {
       const ctx = transcriptText
         ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcriptText.substring(0, 500)}". Write ONE sentence (8-15 words). Return ONLY sentence.`
         : `Write ONE sentence for a video from ${country}.`;
-      const result = await Promise.race([
-        this.ai.chat(ctx, { useCheapModel: true, temperature: 0.7 }),
-        new Promise(r => setTimeout(() => r(''), 8000))
-      ]);
-      if (result?.length > 5) {
-        const cleaned = result.replace(/["']/g, '').trim().substring(0, 120);
-        if (!this._hasProfanity(cleaned)) return cleaned;
-      }
+      const r = await Promise.race([this.ai.chat(ctx, { useCheapModel: true, temperature: 0.7 }), new Promise(r => setTimeout(() => r(''), 8000))]);
+      if (r?.length > 5) { const c = r.replace(/["']/g, '').trim().substring(0, 120); if (!this._hasProfanity(c)) return c; }
     } catch {}
 
-    // Fallback: Hermes local model
-    this.logger.info('OpenRouter failed for voiceover — Hermes generating...');
-    const hermesResult = await this._hermesGenerate(
-      `Write ONE short sentence (8-15 words) introducing a video from ${country} for Mr. WorldWideWebster channel. Example: "Watch this amazing dance from Japan!" Return ONLY the sentence.`,
-      30000
-    );
-    if (hermesResult?.length > 5) {
-      const cleaned = hermesResult.replace(/["']/g, '').trim().substring(0, 120);
-      if (!this._hasProfanity(cleaned)) return cleaned;
+    // Ollama direct
+    this.logger.info('OpenRouter failed — Ollama Qwen generating voiceover...');
+    const prompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}. Example: "Watch this amazing dance from Japan!"`;
+    const result = await this._ollamaGenerate(prompt, { temperature: 0.8, maxTokens: 100 });
+    if (result && result.length > 5 && !this._hasProfanity(result)) {
+      return result.replace(/["']/g, '').trim().substring(0, 120);
     }
-
     return `Check out this clip from ${country}`;
   }
 
   /**
-   * Generate title: try OpenRouter first, fallback to Hermes, then original.
+   * Generate title: OpenRouter → Ollama direct → original
    */
   async _generateTitle(country, transcriptText, originalTitle) {
-    // Try OpenRouter
+    // OpenRouter
     try {
       const td = await this.ai.chatJSON(
         `Generate YouTube Shorts title+description. Country: ${country}\n${transcriptText ? `Transcript: "${transcriptText.substring(0, 500)}"` : ''}\nTitle: catchy, max 70 chars. Description: 3-4 sentences. Hashtags. Return JSON.`,
         `Title for ${country}`, { useCheapModel: true, temperature: 0.7 }
       );
-      if (td?.title?.length > 3) {
-        return { title: td.title.substring(0, 100), description: td.description || '' };
-      }
+      if (td?.title?.length > 3) return { title: td.title.substring(0, 100), description: td.description || '' };
     } catch {}
 
-    // Fallback: Hermes title
-    this.logger.info('OpenRouter failed for title — Hermes generating...');
-    try {
-      const hTitle = await this._hermesGenerate(
-        `Generate a YouTube Shorts title (max 70 chars) for a video from ${country}. ${transcriptText ? `Content starts with: "${transcriptText.substring(0, 200)}"` : ''} Return ONLY the title. Example: "🔥 Amazing Dance From Japan #shorts"`,
-        30000
-      );
-      if (hTitle?.length > 3 && hTitle.length < 100) {
-        const cleaned = hTitle.replace(/["']/g, '').trim().substring(0, 100);
-        if (!this._hasProfanity(cleaned)) {
-          return { title: cleaned, description: `Amazing content from ${country}! Follow Mr. WorldWideWebster for more! #shorts #${country.toLowerCase()} #worldwide` };
-        }
+    // Ollama direct
+    this.logger.info('OpenRouter failed — Ollama Qwen generating title...');
+    const prompt = `Generate a YouTube Shorts title (max 70 chars) for a video from ${country}. ${transcriptText ? `Content: "${transcriptText.substring(0, 200)}"` : ''} Title only.`;
+    const result = await this._ollamaGenerate(prompt, { temperature: 0.8, maxTokens: 100 });
+    if (result && result.length > 5 && result.length < 100) {
+      const cleaned = result.replace(/["']/g, '').trim().substring(0, 100);
+      if (!this._hasProfanity(cleaned)) {
+        return { title: cleaned, description: `Amazing content from ${country}! Follow Mr. WorldWideWebster for more! #shorts #${country.toLowerCase()} #worldwide` };
       }
-    } catch {}
+    }
 
-    // Ultimate fallback: original title
     this.logger.warn('All title generators failed — using original');
     return { title: originalTitle.substring(0, 100), description: `Amazing content from ${country}! Follow Mr. WorldWideWebster! #shorts #${country.toLowerCase()} #worldwide` };
   }
 
-  /**
-   * Burn subtitles using SRT file + ffmpeg subtitles filter.
-   * Much more reliable than drawtext — handles all special chars correctly.
-   * Positioned at bottom center for Shorts.
-   */
   _burnSubtitles(videoPath, outputPath, text) {
     if (!text) return false;
     try {
-      // Word-wrap to max 30 chars per line, max 3 lines for shorts
       const lines = [];
       let cur = '';
       for (const w of text.split(' ')) {
@@ -174,20 +189,16 @@ class GitHubActionsRunner {
       if (cur) lines.push(cur);
       const displayLines = lines.slice(0, 3);
 
-      // Write .srt file (no escaping issues — SRT is plain text)
       const srtPath = videoPath.replace('.mp4', '_caption.srt');
       const srtContent = `1\n00:00:00,000 --> 00:00:30,000\n${displayLines.join('\n')}\n`;
       fs.writeFileSync(srtPath, srtContent, 'utf8');
 
-      // Use ffmpeg subtitles filter — reliable with all chars
       const cmd = `ffmpeg -y -i "${videoPath}" -vf "subtitles='${srtPath.replace(/'/g, "'\\\\''")}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV=80,Alignment=2'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`;
       execSync(cmd, { timeout: 60000, maxBuffer: 50*1024*1024 });
 
-      // Cleanup srt
       try { fs.unlinkSync(srtPath); } catch {}
-
       const exists = fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
-      if (exists) this.logger.success(`Captions burned (SRT): ${path.basename(outputPath)}`);
+      if (exists) this.logger.success(`Captions: ${path.basename(outputPath)} — "${text.substring(0, 60)}..."`);
       return exists;
     } catch (e) {
       this.logger.warn(`Caption burn failed: ${e.message.substring(0, 100)}`);
@@ -195,85 +206,53 @@ class GitHubActionsRunner {
     }
   }
 
-  /**
-   * Detect country from content. Uses guarantee hints:
-   * - Title explicitly mentions country name
-   * - Channel name (from yt-dlp) has country-specific words
-   * - Audio language detected by whisper
-   * Never rejects — always returns a country.
-   */
   async _detectCountry(transcript, title, expected, sourceUrl) {
     let country = expected;
     let confidence = 50;
     let reasons = [];
-    let channelName = '';
 
-    // 1. Guarantee hint: title explicitly mentions another country?
+    // 1. Title hint: explicit country name or flag emoji
     if (title) {
+      const lowerTitle = title.toLowerCase();
       for (const c of this.allC) {
-        const lowerTitle = title.toLowerCase();
-        const lowerCountry = c.toLowerCase();
-        // Check if title contains country name (word boundary)
-        if (new RegExp(`\\b${lowerCountry}\\b`, 'i').test(lowerTitle) ||
+        if (new RegExp(`\\b${c.toLowerCase()}\\b`).test(lowerTitle) ||
             title.includes('🇦🇺') || title.includes('🇧🇷') || title.includes('🇨🇳') ||
             title.includes('🇯🇵') || title.includes('🇰🇷') || title.includes('🇹🇭') ||
             title.includes('🇮🇳') || title.includes('🇩🇪') || title.includes('🇫🇷') ||
             title.includes('🇪🇬') || title.includes('🇲🇽') || title.includes('🇳🇬')) {
-          const flagMap = {'🇦🇺':'Australia','🇧🇷':'Brazil','🇨🇳':'China','🇯🇵':'Japan','🇰🇷':'South Korea','🇹🇭':'Thailand','🇮🇳':'India','🇩🇪':'Germany','🇫🇷':'France','🇪🇬':'Egypt','🇲🇽':'Mexico','🇳🇬':'Nigeria'};
-          const titleMatch = this.allC.find(cc => lowerTitle.includes(cc.toLowerCase())) ||
-            Object.entries(flagMap).find(([f]) => title.includes(f))?.[1];
-          if (titleMatch && titleMatch !== expected) {
-            country = titleMatch;
-            confidence = 85;
-            reasons.push(`Title mentions "${titleMatch}"`);
-            this.logger.info(`🇨🇮 Title HINT: "${titleMatch}" in title → correcting ${expected} → ${country}`);
-            return { country, confidence, changed: true, reasons };
+          if (c !== expected) {
+            this.logger.info(`🇨🇮 Title hint "${c}" — correcting ${expected} → ${c}`);
+            return { country: c, confidence: 85, changed: true, reasons: [`Title mentions ${c}`] };
           }
         }
       }
     }
 
-    // 2. Audio language from whisper
+    // 2. Audio language
     if (transcript?.language) {
       for (const [c, langs] of Object.entries(this.countryLanguages)) {
         if (langs.includes(transcript.language)) {
-          if (c !== expected) {
-            country = c;
-            confidence = 80;
-            reasons.push(`Audio language "${transcript.language}" matches ${c}`);
-          } else {
-            confidence = 75;
-            reasons.push(`Audio language "${transcript.language}" confirms ${c}`);
-          }
+          countries = c; confidence = 75; reasons.push(`Audio "${transcript.language}" = ${c}`);
           break;
         }
       }
     }
 
-    // 3. yt-dlp metadata for channel name
+    // 3. yt-dlp channel
     try {
-      const url = sourceUrl || '';
-      if (url) {
-        const meta = execSync(`yt-dlp --dump-json --no-download "${url}" 2>/dev/null`, { timeout: 10000, encoding: 'utf8', maxBuffer: 1024*1024 }).trim();
+      if (sourceUrl) {
+        const meta = execSync(`yt-dlp --dump-json --no-download "${sourceUrl}" 2>/dev/null`, { timeout: 10000, encoding: 'utf8', maxBuffer: 1024*1024 }).trim();
         if (meta) {
           const p = JSON.parse(meta.split('\n')[0]);
-          if (p.channel) channelName = p.channel;
           if (p.language) {
             for (const [c, langs] of Object.entries(this.countryLanguages)) {
-              if (langs.includes(p.language)) {
-                reasons.push(`YT meta lang "${p.language}" ${c}`);
-                if (c !== country) { country = c; confidence = 75; }
-                break;
-              }
+              if (langs.includes(p.language)) { if (c !== country) { country = c; } confidence = 75; reasons.push(`YT lang "${p.language}" = ${c}`); break; }
             }
           }
-          // Check channel name for country hints
-          if (channelName) {
+          if (p.channel) {
             for (const c of this.allC) {
-              if (channelName.toLowerCase().includes(c.toLowerCase()) && c !== country) {
-                country = c;
-                confidence = 80;
-                reasons.push(`Channel "${channelName.substring(0, 30)}" suggests ${c}`);
+              if (p.channel.toLowerCase().includes(c.toLowerCase()) && c !== country) {
+                country = c; confidence = 80; reasons.push(`Channel "${p.channel.substring(0, 20)}" hints ${c}`);
                 break;
               }
             }
@@ -282,32 +261,25 @@ class GitHubActionsRunner {
       }
     } catch {}
 
-    // 4. Hermes final cross-check
-    if (this.hermes && this.hermes.isAvailable() && confidence < 70) {
-      try {
-        const input = `What country? Title: "${(title || '').substring(0, 150)}"\nAudio: ${transcript?.language || '?'}\nTranscript: "${(transcript?.text || '').substring(0, 200)}"\nExpected: ${expected}\nIf unsure say: ${expected}`;
-        const c = await this.hermes.chat(input, { timeout: 15000 });
-        if (c.success && c.output) {
-          for (const cc of this.allC) {
-            if (c.output.toUpperCase().includes(cc.toUpperCase()) && cc !== country) {
-              country = cc;
-              reasons.push(`Hermes suggests ${cc}`);
-              confidence = 65;
-              break;
-            }
-          }
-        }
-      } catch {}
-    }
-
     const changed = country !== expected;
-    this.logger.info(`🇨🇮 ${changed ? 'CORRECTED' : 'CONFIRMED'}: ${country} (was ${expected}) — ${confidence}%${reasons.length ? ` — ${reasons.join('; ')}` : ''}`);
+    this.logger.info(`🇨🇮 ${changed ? 'CORRECTED' : 'CONFIRMED'}: ${country} (${confidence}%)${reasons.length ? ' — ' + reasons.join('; ') : ''}`);
     return { country, confidence, changed, reasons };
   }
 
   async initialize() {
-    this.logger.header('Mr. WorldWideWebster — OpenRouter + Hermes Fallback + SRT Captions');
+    this.logger.header('Mr. WorldWideWebster — OpenRouter + Ollama Fallback + SRT Captions');
     this.logger.info(`OpenRouter keys: ${['', '_2', '_3', '_4'].map(s => process.env['OPENROUTER_API_KEY' + s] ? '✅' : '❌').join(' ')}`);
+
+    // Test Ollama connectivity
+    try {
+      const http = require('http');
+      const result = await new Promise(r => {
+        http.get('http://127.0.0.1:11434/api/tags', (res) => {
+          let b = ''; res.on('data', c => b += c); res.on('end', () => r(true));
+        }).on('error', () => r(false));
+      });
+      this.logger.info(result ? 'Ollama API reachable at localhost:11434' : 'Ollama not reachable');
+    } catch { this.logger.info('Ollama not available'); }
 
     this.ai = new AIService();
     await this.ai.waitForInit();
@@ -322,7 +294,7 @@ class GitHubActionsRunner {
     try {
       const { HermesCLIWrapper } = require('../hermes-agent/hermes-cli-wrapper');
       this.hermes = new HermesCLIWrapper();
-      if (this.hermes.isAvailable()) this.logger.success('Hermes CLI ready — fallback + country detection');
+      if (this.hermes.isAvailable()) this.logger.success('Hermes CLI ready — country detection');
       else this.logger.info('Hermes CLI not available');
     } catch (e) { this.logger.info('Hermes CLI not installed'); }
     this.logger.success('Initialized');
@@ -330,12 +302,11 @@ class GitHubActionsRunner {
 
   _loadMemory() {
     if (!fs.existsSync(this.memoryPath)) fs.mkdirSync(this.memoryPath, { recursive: true });
-    // Minimal memory: only what Hermes needs to evolve
     const defaultMem = {
       channelName: 'Mr. WorldWideWebster',
       totalVideosPosted: 0,
       countriesUsedThisWeek: [],
-      hermesNotes: []  // Key insights only, kept short
+      hermesNotes: []
     };
     const fp = path.join(this.memoryPath, 'channel-memory.json');
     if (fs.existsSync(fp)) {
@@ -345,17 +316,15 @@ class GitHubActionsRunner {
           channelName: existing.channelName || defaultMem.channelName,
           totalVideosPosted: existing.totalVideosPosted || 0,
           countriesUsedThisWeek: existing.countriesUsedThisWeek || [],
-          hermesNotes: (existing.hermesNotes || []).slice(-20)  // Keep last 20 notes max
+          hermesNotes: (existing.hermesNotes || []).slice(-20)
         };
-        // Remove old content-history
         const oldHistory = path.join(this.memoryPath, 'content-history.json');
         if (fs.existsSync(oldHistory)) fs.unlinkSync(oldHistory);
       } catch { this.memory['channel-memory'] = defaultMem; fs.writeFileSync(fp, JSON.stringify(defaultMem, null, 2)); }
     } else { this.memory['channel-memory'] = defaultMem; fs.writeFileSync(fp, JSON.stringify(defaultMem, null, 2)); }
   }
   _saveMemory() {
-    const fp = path.join(this.memoryPath, 'channel-memory.json');
-    fs.writeFileSync(fp, JSON.stringify(this.memory['channel-memory'], null, 2));
+    fs.writeFileSync(path.join(this.memoryPath, 'channel-memory.json'), JSON.stringify(this.memory['channel-memory'], null, 2));
   }
 
   async _uploadToYouTube(v) {
@@ -370,7 +339,6 @@ class GitHubActionsRunner {
   async _boostVideo(url) {
     if (!url) return;
     try {
-      // Wait 5 minutes for YouTube to process the upload
       this.logger.info('Waiting 5 min for YouTube processing...');
       await new Promise(r => setTimeout(r, 300000));
       this.logger.info(`Boosting: ${url}`);
@@ -410,15 +378,19 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
   async _translateText(text) {
     if (!text) return null;
-    // Try OpenRouter first
+    // OpenRouter
     try {
-      const result = await this.ai.chat(`Translate to natural English. Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 });
-      if (result?.length > 3) return result.replace(/["']/g, '').trim().substring(0, 200);
+      const r = await this.ai.chat(`Translate to natural English: "${text.substring(0, 300)}" Return ONLY translation.`, text, { useCheapModel: true, temperature: 0.3 });
+      if (r?.length > 3) return r.replace(/["']/g, '').trim().substring(0, 200);
     } catch {}
-    // Fallback to Hermes
-    this.logger.info('OpenRouter translation failed — Hermes translating...');
-    const hResult = await this._hermesGenerate(`Translate this to English: "${text.substring(0, 300)}"`, 30000);
-    if (hResult?.length > 3) return hResult.replace(/["']/g, '').trim().substring(0, 200);
+    // Ollama direct
+    this.logger.info('OpenRouter failed — Ollama Qwen translating...');
+    const prompt = `Translate this to English. Return ONLY the translation:\n${text.substring(0, 300)}`;
+    const result = await this._ollamaGenerate(prompt, { temperature: 0.3, maxTokens: 300 });
+    if (result && result.length > 3 && !result.includes('Translate this to English')) {
+      return result.replace(/["']/g, '').trim().substring(0, 200);
+    }
+    this.logger.warn(`Translation failed, raw: "${(result || '').substring(0, 100)}"`);
     return null;
   }
 
@@ -452,7 +424,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     } catch {}
     this.logger.success(`Queries: ${queries.join(' | ')}`);
 
-    // Step 2-4: Search, rank, download (10 → top 3 → download)
+    // Step 2-4: Search, rank, download
     this.logger.info('Step 2: Searching...');
     const allUrls = await findUrlsForQueries(queries, 10);
     if (!allUrls.length) return { uploadedVideos: [], errors: ['No URLs'] };
@@ -461,16 +433,14 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const { top3 } = await rankVideos(allUrls, queries[0] || '', this.ai);
     if (!top3.length) top3.push(...allUrls.slice(0, 3));
 
-    // If we downloaded less than 3, we'll search more to always get 3
     let downloaded = await downloadVideos(top3, config.paths.clips);
     while (downloaded.length < 3 && downloaded.length < allUrls.length) {
-      const extraRank = allUrls.filter(u => !top3.includes(u));
-      if (!extraRank.length) break;
-      const extra = await downloadVideos([extraRank[0]], config.paths.clips);
-      downloaded.push(...extra);
+      const extra = allUrls.filter(u => !top3.includes(u));
+      if (!extra.length) break;
+      const more = await downloadVideos([extra[0]], config.paths.clips);
+      downloaded.push(...more);
     }
-
-    this.logger.info(`Downloaded ${downloaded.length} videos (target: 3)`);
+    this.logger.info(`Downloaded ${downloaded.length} videos`);
 
     // Step 5: Process each
     const { createShort } = require('./clip-editor');
@@ -483,25 +453,20 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       const sourceUrl = v.sourceUrl || '';
       this.logger.info(`=== Video ${i+1}: expected ${originalCountry} ===`);
 
-      // Transcribe
       let transcript = null;
       try { transcript = await this._transcribeAudio(v.path); } catch {}
 
-      // Profanity check
       if (transcript && this._hasProfanity(transcript.text)) {
         this.logger.warn(`PROFANITY — skip`);
         errors.push(`Profanity`);
         continue;
       }
 
-      // Detect country (corrects, never rejects)
       const detected = await this._detectCountry(transcript, originalTitle, originalCountry, sourceUrl);
       const country = detected.country;
 
-      // Generate voiceover (OpenRouter → Hermes fallback)
       const voiceoverText = await this._generateVoiceover(country, transcript?.text);
 
-      // TTS for voiceover
       let voiceoverPath = null;
       try {
         const vDir = path.join(config.paths.assets, 'voiceovers');
@@ -511,19 +476,14 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
       } catch {}
 
-      // Translate if non-English (OpenRouter → Hermes fallback)
+      // Translate if non-English and has actual speech (> 10 chars)
       let englishSubtitle = null;
-      if (transcript?.isNonEnglish) {
+      if (transcript?.isNonEnglish && transcript.text && transcript.text.length > 10) {
         englishSubtitle = await this._translateText(transcript.text);
+      } else if (transcript?.isNonEnglish) {
+        this.logger.info('Short/no speech — skip translation');
       }
 
-      // Skip non-English translation for music-only videos (whisper returns "nn" or very short text)
-      if (transcript?.isNonEnglish && (!transcript.text || transcript.text.length < 10)) {
-        this.logger.info('Music/no speech detected — no translation needed');
-        englishSubtitle = null;
-      }
-
-      // Trim + scale + cap bitrate for low-res sources to avoid huge files
       let startTime = 5;
       try {
         const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim();
@@ -532,37 +492,30 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
       const outputPath = path.join(config.paths.clips, `short_${Date.now()}.mp4`);
       try {
-        const result = await createShort(v.path, {
-          startTime,
-          duration: 30,
-          countryText: country,
-          voiceoverPath,
-          outputPath
-        });
+        const result = await createShort(v.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
         if (result) {
           let finalPath = result;
-          if (englishSubtitle) {
-            this.logger.info(`Adding English captions: "${englishSubtitle.substring(0, 80)}..."`);
+          if (englishSubtitle && englishSubtitle.length > 5 && !englishSubtitle.startsWith('Query:')) {
+            this.logger.info(`Adding captions: "${englishSubtitle.substring(0, 80)}..."`);
             const subbedPath = result.replace('.mp4', '_captioned.mp4');
             if (this._burnSubtitles(result, subbedPath, englishSubtitle)) {
               try { fs.unlinkSync(result); } catch {}
               finalPath = subbedPath;
             }
           }
-          shorts.push({ path: finalPath, country, voiceoverText, transcript: transcript?.text, originalTitle, url: '', hasCaptions: !!englishSubtitle });
+          shorts.push({ path: finalPath, country, voiceoverText, transcript: transcript?.text, originalTitle, url: '', hasCaptions: !!englishSubtitle && !englishSubtitle.startsWith('Query:') });
         }
       } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
     }
 
     this.logger.success(`Created ${shorts.length} Shorts`);
 
-    // If not enough shorts, pad with what we have
     if (shorts.length === 0) {
-      this.logger.warn('No shorts created — nothing to upload');
-      return { uploadedVideos: [], errors: ['No shorts created'] };
+      this.logger.warn('No shorts created');
+      return { uploadedVideos: [], errors: ['No shorts'] };
     }
 
-    // Step 6: Generate titles + upload + boost (with 5 min delay)
+    // Step 6: Generate titles + upload
     for (let i = 0; i < shorts.length; i++) {
       const s = shorts[i];
       try {
@@ -573,23 +526,24 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
           targetTitle.description = `Amazing content from ${s.country}. Follow Mr. WorldWideWebster!`;
         }
 
+        this.logger.success(`Title: "${targetTitle.title}"`);
+        this.logger.info(`Desc: ${targetTitle.description.substring(0, 100)}...`);
+
         const uploadResult = await this._uploadToYouTube({
-          videoPath: s.path,
-          title: targetTitle.title,
-          description: targetTitle.description,
+          videoPath: s.path, title: targetTitle.title, description: targetTitle.description,
           tags: ['mr worldwidewebster', 'shorts', s.country.toLowerCase()]
         });
 
         if (uploadResult) {
           uploaded.push({ title: targetTitle.title, url: uploadResult.url, country: s.country, captions: s.hasCaptions });
-          await this._boostVideo(uploadResult.url);  // Has 5 min sleep inside
+          await this._boostVideo(uploadResult.url);
         } else {
           errors.push(`Upload failed: ${targetTitle.title}`);
         }
       } catch (e) { errors.push(`Upload error: ${e.message}`); }
     }
 
-    // Save minimal memory
+    // Save memory
     const cm = this.memory['channel-memory'] || {};
     cm.totalVideosPosted = (cm.totalVideosPosted || 0) + uploaded.length;
     if (!cm.countriesUsedThisWeek) cm.countriesUsedThisWeek = [];
@@ -602,7 +556,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, errors });
 
-    // Summary with URLs
     this.logger.header('SUMMARY');
     this.logger.success(`✅ Posted ${uploaded.length} shorts:`);
     for (const u of uploaded) {
@@ -623,7 +576,8 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       { timeout: 300000 }
     );
 
-    // Save Hermes insights to memory
+    this.logger.info(`Hermes raw output (first 300): ${(result.output || '').substring(0, 300)}`);
+
     if (result.success && result.output) {
       if (!cm.hermesNotes) cm.hermesNotes = [];
       cm.hermesNotes.push({ date: new Date().toISOString().split('T')[0], insight: result.output.substring(0, 500) });
