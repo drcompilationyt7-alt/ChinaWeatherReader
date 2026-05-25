@@ -163,7 +163,7 @@ class GitHubActionsRunner {
   }
 
   async _createSpecialShort(country) {
-    this.logger.info(`=== SPECIAL SHORT (music only): ${country} ===`);
+    this.logger.info(`=== SPECIAL SHORT: ${country} ===`);
     let locationScript = ''; let placeQuery = '';
     try {
       const sd = await this.ai.chatJSON(`Generate a YouTube Shorts script about a FAMOUS LOCATION in ${country}.\nScript: 3 sentences, descriptive, engaging. End with CTA.\nReturn JSON: {"place":"Name + city", "query":"search keywords", "script":"3 sentence script"}`, `Location for ${country}`, { useCheapModel: true, temperature: 0.8 });
@@ -181,8 +181,16 @@ class GitHubActionsRunner {
     if (!downloaded.length) return null;
     const v = downloaded[0];
 
-    // No voiceover for special short — keep original video audio (music) only
-    const voiceoverPath = null;
+    // Generate TTS voiceover for the location description
+    let voiceoverPath = null;
+    try {
+      const vDir = path.join(config.paths.assets, 'voiceovers');
+      if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
+      const vPath = path.join(vDir, `vo_special_${Date.now()}.mp3`);
+      execSync(`edge-tts --voice "${TTS_VOICE}" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
+      if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
+    } catch {}
+    // clip-editor.js will mix: original audio at 10% volume (background music) + TTS voiceover at full volume
 
     let startTime = 5;
     try { const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim(); if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info); } catch {}
