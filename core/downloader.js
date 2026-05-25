@@ -1,7 +1,7 @@
 /**
  * Downloader module
- * Uses yt-dlp binary directly (has EJS scripts bundled) + Shadowsocks.
- * Tries pip version as fallback.
+ * Uses cookies + Shadowsocks proxy for YouTube downloads.
+ * Cookies written by workflow from YOUTUBE_COOKIES secret.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -10,7 +10,8 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Downloader');
 const MAX_DURATION = 480;
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+const COOKIE_FILE = '/tmp/yt_cookies.txt';
 
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
@@ -21,39 +22,39 @@ async function downloadVideo(entry, outputDir) {
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
+  // Build env with Node.js in PATH
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
   // socks5 -> socks5h for DNS through proxy
   let proxy = (process.env.YT_PROXY || '').replace(/^socks5:\/\//, 'socks5h://');
-  
-  // Test proxy
-  if (proxy) {
-    try {
-      const ip = execSync(`curl -s --connect-timeout 5 --proxy "${proxy}" https://ifconfig.me 2>/dev/null`, { timeout: 10000, encoding: 'utf8' }).trim();
-      logger.info(`Proxy IP: ${ip || 'unknown'}`);
-    } catch {
-      logger.warn('Proxy unreachable, trying without');
-      proxy = '';
-    }
-  }
-
   const proxyArg = proxy ? `--proxy "${proxy}"` : '';
   
-  // Try yt-dlp binary (PyInstaller - has EJS bundled, can handle JS challenges)
-  // then python3 -m yt_dlp as fallback
+  // Check cookies
+  const hasCookies = fs.existsSync(COOKIE_FILE) && fs.statSync(COOKIE_FILE).size > 100;
+  const cookieArg = hasCookies ? `--cookies "${COOKIE_FILE}"` : '';
+  
+  if (hasCookies) logger.info('Using YouTube cookies from YOUTUBE_COOKIES secret');
+  else logger.warn('No YouTube cookies found - download may fail');
+
+  // Try pybundled yt-dlp first, then python3 -m
   const executables = ['yt-dlp', 'python3 -m yt_dlp'];
   
   for (const exe of executables) {
-    // Try each strategy
     const strategies = [
-      { name: 'default', args: '' },
-      { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
+      // With cookies + proxy (best chance)
+      { name: 'cookies+proxy', args: `${cookieArg} ${proxyArg} --extractor-args "youtube:player_client=web"` },
+      // Cookies only
+      { name: 'cookies', args: `${cookieArg} --extractor-args "youtube:player_client=web"` },
+      // Cookies + embedded client
+      { name: 'cookies+embed', args: `${cookieArg} --extractor-args "youtube:player_client=web_embedded"` },
+      // No cookies with proxy
+      { name: 'proxy', args: `${proxyArg}` },
     ];
     
     for (const s of strategies) {
       try {
-        const cmd = `${exe} ${proxyArg} ${s.args} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 2 --user-agent "${UA}" --force-ipv4`;
+        const cmd = `${exe} ${s.args} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4 --throttled-rate 200K 2>&1 | tail -3`;
         
         logger.info(`Try: ${exe} ${s.name}`);
         execSync(cmd, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
@@ -68,7 +69,7 @@ async function downloadVideo(entry, outputDir) {
           return { path: fp, title, platform, sourceUrl: url };
         }
       } catch (e) {
-        const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 100);
+        const err = (e.stderr || e.stdout || e.message || '').toString().substring(0, 80);
       }
     }
   }
