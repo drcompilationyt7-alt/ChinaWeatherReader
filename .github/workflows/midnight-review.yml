@@ -1,5 +1,3 @@
-# 🌙 Midnight — Hermes CLI Investigation (Qwen3 8B)
-
 name: 🌙 Midnight Hermes Investigation
 
 on:
@@ -12,6 +10,10 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
   OPENROUTER_API_KEY_4: ${{ secrets.OPENROUTER_API_KEY_4 }}
+  OPENROUTER_API_KEY_5: ${{ secrets.OPENROUTER_API_KEY_5 }}
+  OPENROUTER_API_KEY_6: ${{ secrets.OPENROUTER_API_KEY_6 }}
+  OPENROUTER_API_KEY_7: ${{ secrets.OPENROUTER_API_KEY_7 }}
+  OPENROUTER_API_KEY_8: ${{ secrets.OPENROUTER_API_KEY_8 }}
   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}

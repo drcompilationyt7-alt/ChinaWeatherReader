@@ -12,6 +12,10 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
   OPENROUTER_API_KEY_4: ${{ secrets.OPENROUTER_API_KEY_4 }}
+  OPENROUTER_API_KEY_5: ${{ secrets.OPENROUTER_API_KEY_5 }}
+  OPENROUTER_API_KEY_6: ${{ secrets.OPENROUTER_API_KEY_6 }}
+  OPENROUTER_API_KEY_7: ${{ secrets.OPENROUTER_API_KEY_7 }}
+  OPENROUTER_API_KEY_8: ${{ secrets.OPENROUTER_API_KEY_8 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
@@ -62,7 +66,6 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve > ollama.log 2>&1 &
           sleep 10
-          # Qwen2.5 7B is much more capable than llama3.2:3b for country detection + generation
           ollama pull qwen2.5:7b
           echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
           echo "OLLAMA_MODEL=qwen2.5:7b" >> $GITHUB_ENV
@@ -90,7 +93,6 @@ jobs:
             enabled: true
             char_limit: 2000
           EOF
-          # Remove old memory from test runs
           rm -rf ~/.hermes/sessions ~/.hermes/checkpoints 2>/dev/null || true
           hermes status || true
           echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
@@ -101,7 +103,7 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Restore Hermes memory (keep evolving)
+      - name: Restore Hermes memory
         run: |
           mkdir -p ~/.hermes
           if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
@@ -109,21 +111,19 @@ jobs:
       - name: Run pipeline
         run: node core/github-action-runner.js --mode daily
 
-      - name: Save Hermes memory only (not test outputs)
+      - name: Save Hermes memory only
         run: |
           cp -r ~/.hermes/config.yaml ~/.hermes/.env hermes-memory/ 2>/dev/null || true
-          # Only save memory/channel-memory.json, skip output/ (large files)
           git config user.name "Bot" && git config user.email "bot@bot.com"
           git add memory/channel-memory.json hermes-memory/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
 
-      - name: Weekly cleanup of output (every Sunday)
+      - name: Weekly cleanup of output
         if: github.event_name == 'schedule'
         run: |
           DOW=$(date +%u)
           if [ "$DOW" = "7" ]; then
             rm -rf output/clips/* output/assets/voiceovers/* output/assets/audio/* 2>/dev/null || true
-            echo "Weekly output cleanup done"
           fi
 
       - name: Cleanup

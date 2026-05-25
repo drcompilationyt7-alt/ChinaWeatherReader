@@ -3,25 +3,22 @@
  * Loads environment variables and provides typed access to config
  * Supports OpenRouter (primary), OpenAI (fallback), and Gemini
  * 
- * Multi-Key Support: Set OPENROUTER_API_KEY_2, OPENROUTER_API_KEY_3, OPENROUTER_API_KEY_4
+ * Multi-Key Support: Set OPENROUTER_API_KEY_2 through OPENROUTER_API_KEY_8
  * as GitHub Secrets for automatic key rotation when one hits rate/credit limits.
  */
 require('dotenv').config();
 const path = require('path');
 
 const config = {
-  // --- AI Provider ---
   provider: {
-    name: process.env.AI_PROVIDER || 'openrouter',  // openrouter, openai, gemini
+    name: process.env.AI_PROVIDER || 'openrouter',
   },
 
-  // --- OpenRouter Settings (Multi-Key Supported) ---
   openrouter: {
     apiKey: process.env.OPENROUTER_API_KEY,
-    // Additional API keys for multi-key rotation (keys 2-4)
+    // Additional API keys for multi-key rotation (keys 2-8)
     // Set these as GitHub Secrets:
-    //   OPENROUTER_API_KEY_2, OPENROUTER_API_KEY_3, OPENROUTER_API_KEY_4
-    // The provider auto-rotates through keys when one hits rate/credit limits (402/429)
+    //   OPENROUTER_API_KEY_2 through OPENROUTER_API_KEY_8
     defaultModel: process.env.OPENROUTER_DEFAULT_MODEL || 'openrouter/owl-alpha',
     scriptModel: process.env.OPENROUTER_SCRIPT_MODEL || 'openrouter/owl-alpha',
     agentModel: process.env.OPENROUTER_AGENT_MODEL || 'openrouter/owl-alpha',
@@ -29,22 +26,19 @@ const config = {
     freeModel: process.env.OPENROUTER_FREE_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
   },
 
-  // --- OpenAI Settings (Fallback) ---
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     scriptModel: process.env.OPENAI_SCRIPT_MODEL || 'gpt-4o',
   },
 
-  // --- Gemini Settings (Fallback) ---
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   },
 
-  // --- TTS Settings ---
   tts: {
-    provider: process.env.TTS_PROVIDER || 'edge',  // edge (free), openai, elevenlabs
+    provider: process.env.TTS_PROVIDER || 'edge',
     edgeVoiceCurious: process.env.EDGE_TTS_VOICE_CURIOUS || 'en-US-JennyNeural',
     edgeVoiceExplainer: process.env.EDGE_TTS_VOICE_EXPLAINER || 'en-US-GuyNeural',
     edgeVoiceNews: process.env.EDGE_TTS_VOICE_NEWS || 'en-GB-SoniaNeural',
@@ -53,14 +47,12 @@ const config = {
     elevenLabsVoiceExplainer: process.env.ELEVENLABS_VOICE_EXPLAINER || 'TxGEqnHWrfWFTfGW9XjX',
   },
 
-  // --- Discord Settings ---
   discord: {
     botToken: process.env.DISCORD_BOT_TOKEN,
     channelId: process.env.DISCORD_CHANNEL_ID,
     userId: process.env.DISCORD_USER_ID,
   },
 
-  // --- Boost (View Bot) Settings ---
   boost: {
     enabled: process.env.BOOST_ENABLED === 'true',
     maxViews: parseInt(process.env.BOOST_MAX_VIEWS) || 100,
@@ -71,7 +63,6 @@ const config = {
     spreadMaxMinutes: parseInt(process.env.BOOST_SPREAD_MAX) || 45,
   },
 
-  // --- YouTube Settings ---
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY,
     clientId: process.env.YOUTUBE_CLIENT_ID,
@@ -81,20 +72,17 @@ const config = {
     maxUploadsPerDay: parseInt(process.env.MAX_UPLOADS_PER_DAY) || 5,
   },
 
-  // --- Channel Info ---
   channel: {
     name: process.env.CHANNEL_NAME || 'Mr. WorldWideWebster',
     tagline: process.env.CHANNEL_TAGLINE || 'Bringing the world to you',
     targetAudience: process.env.TARGET_AUDIENCE || 'Global culture enthusiasts, travelers, people curious about international trends',
   },
 
-  // --- Content Sourcing ---
   sourcing: {
     enabledSources: (process.env.ENABLED_SOURCES || 'bilibili,tiktok,news').split(',').map(s => s.trim()),
     schedule: process.env.SOURCE_SCHEDULE || '0 */6 * * *',
   },
 
-  // --- Paths ---
   paths: {
     root: path.resolve(__dirname, '..'),
     output: path.resolve(__dirname, '..', process.env.OUTPUT_DIR || 'output'),

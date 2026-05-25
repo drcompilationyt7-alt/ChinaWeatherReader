@@ -1,13 +1,8 @@
-# 📺 Mr. WorldWideWebster — Weekly Long-Form Video
-# Runs Saturday at 6 AM: Creates 1 long-form video (5-15 min)
-# Uploads to YouTube, boosts views, sends Discord report
-# Replaces the daily shorts creation on Saturdays
-
 name: 📺 Weekly Long-Form Creation
 
 on:
   schedule:
-    - cron: '0 6 * * 6'          # Saturday 6 AM
+    - cron: '0 6 * * 6'
   workflow_dispatch:
     inputs:
       topic:
@@ -24,6 +19,10 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
   OPENROUTER_API_KEY_4: ${{ secrets.OPENROUTER_API_KEY_4 }}
+  OPENROUTER_API_KEY_5: ${{ secrets.OPENROUTER_API_KEY_5 }}
+  OPENROUTER_API_KEY_6: ${{ secrets.OPENROUTER_API_KEY_6 }}
+  OPENROUTER_API_KEY_7: ${{ secrets.OPENROUTER_API_KEY_7 }}
+  OPENROUTER_API_KEY_8: ${{ secrets.OPENROUTER_API_KEY_8 }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -50,8 +49,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: mr-worldwidewebster/package-lock.json
 
       - name: Install system deps
         run: |
@@ -75,14 +72,11 @@ jobs:
       - name: Create long-form video
         run: |
           cd mr-worldwidewebster
-          
           if [ -n "${{ github.event.inputs.topic }}" ]; then
             node core/github-action-runner.js --mode weekly --topic "${{ github.event.inputs.topic }}"
           else
             node core/github-action-runner.js --mode weekly
           fi
-          
-          echo "✅ Long-form video pipeline finished"
 
       - name: Save memory
         run: |
