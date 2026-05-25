@@ -36,14 +36,12 @@ class GitHubActionsRunner {
   _hasProfanity(text) {
     if (!text) return null;
     const lower = text.toLowerCase();
-    // Use word boundary matching to avoid false positives (e.g. "ass" in "class")
     for (const word of this.bannedWords) {
       const regex = new RegExp(`\\b${word}\\b`, 'i');
       if (regex.test(lower)) {
         return word;
       }
     }
-    // Also check for common variants like "fck", "sh1t", "b1tch"
     const leetPatterns = [
       /\bf[u4]ck\b/i, /\bf[u4]cking\b/i, /\bsh[i1!]t\b/i,
       /\bb[i1!]tch\b/i, /\bb[a4]st[a4]rd\b/i, /\bwh[o0]re\b/i,
@@ -59,9 +57,6 @@ class GitHubActionsRunner {
 
   async initialize() {
     this.logger.header('Mr. WorldWideWebster Pipeline v5');
-    
-    // Pass any extra OpenRouter keys as env vars to config
-    // Keys 2-4 are loaded from env by OpenRouterProvider._collectApiKeys()
     this.logger.info(`OpenRouter keys in env: KEY=${!!process.env.OPENROUTER_API_KEY} KEY_2=${!!process.env.OPENROUTER_API_KEY_2} KEY_3=${!!process.env.OPENROUTER_API_KEY_3} KEY_4=${!!process.env.OPENROUTER_API_KEY_4}`);
 
     this.ai = new AIService();
@@ -241,6 +236,7 @@ print(text[:1000] if text else '')
       const v = downloaded[i];
       const query = queries[i] || queries[0] || '';
       const country = countries[i] || countries[0] || 'Global';
+      const originalTitle = v.sourceUrl?.title || v.title || '';
 
       this.logger.info(`=== Short #${i+1}: ${country} ===`);
       let voiceoverPath = null;
@@ -256,7 +252,7 @@ print(text[:1000] if text else '')
           this.logger.warn(`⛔ PROFANITY DETECTED in transcript: "${badWord}" — SKIPPING upload for ${country}`);
           this.logger.warn(`Transcript snippet: "${transcript.substring(0, 150)}..."`);
           errors.push(`Profanity blocked (${badWord}) for ${country} video`);
-          continue; // Skip this video entirely
+          continue;
         }
       }
 
@@ -271,7 +267,6 @@ print(text[:1000] if text else '')
           if (!voiceoverText || voiceoverText.length < 5) voiceoverText = `Check out this clip from ${country}`;
           voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
 
-          // Also check the AI-generated voiceover text for profanity
           if (this._hasProfanity(voiceoverText)) {
             this.logger.warn(`AI generated profanity in voiceover, using safe fallback`);
             voiceoverText = `Check out this clip from ${country}`;
@@ -297,7 +292,7 @@ print(text[:1000] if text else '')
       const outputPath = path.join(dir, `short_${Date.now()}.mp4`);
       try {
         const result = await createShort(v.path, { startTime, duration: 30, query, countryText: country, voiceoverPath, explainerText: voiceoverText, outputPath });
-        if (result) shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript, sourceUrl: v.sourceUrl });
+        if (result) shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript, sourceUrl: v.sourceUrl, originalTitle });
       } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
     }
 
@@ -308,33 +303,38 @@ print(text[:1000] if text else '')
       try {
         const query = s.query || '';
         const country = s.country;
-        const titlePrompt = s.transcript
-          ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nContent: "${s.transcript.substring(0, 300)}"\nTitle: catchy, max 70 chars. Description: 3-4 sentences. Return JSON: {"title":"...","description":"..."}`
-          : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nTitle: catchy, max 70 chars. Description: 2-3 sentences. Return JSON.`;
-        const td = await this.ai.chatJSON(titlePrompt, `Title for ${country}`, { useCheapModel: true, temperature: 0.7 });
-        const title = (td.title || `${country} clip`).substring(0, 100);
-        const description = td.description || `From ${country}. Follow Mr. WorldWideWebster for more!`;
+        const originalTitle = s.originalTitle || `${country} Clip`;
+
+        // Try AI for title/description, fallback to original title on failure
+        let title = '';
+        let description = '';
+        try {
+          const titlePrompt = s.transcript
+            ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nContent: "${s.transcript.substring(0, 300)}"\nTitle: catchy, max 70 chars. Description: 3-4 sentences. Return JSON: {"title":"...","description":"..."}`
+            : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nTitle: catchy, max 70 chars. Description: 2-3 sentences. Return JSON.`;
+          const td = await this.ai.chatJSON(titlePrompt, `Title for ${country}`, { useCheapModel: true, temperature: 0.7 });
+          title = (td.title || originalTitle).substring(0, 100);
+          description = td.description || `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
+        } catch {
+          // LLM FAILED - use original title
+          this.logger.warn(`LLM failed for title/description, using original title: "${originalTitle.substring(0, 60)}"`);
+          title = originalTitle.substring(0, 100);
+          description = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
+        }
 
         // Final profanity check on title/description before upload
         if (this._hasProfanity(title) || this._hasProfanity(description)) {
           this.logger.warn(`⛔ Profanity in title/description for ${country}, using safe fallback`);
-          const safeTitle = `${country} Clip #shorts`;
-          const safeDesc = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
-          const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title: safeTitle, description: safeDesc, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
-          if (uploadResult) {
-            uploaded.push({ title: safeTitle, url: uploadResult.url, country });
-            await this._boostVideo(uploadResult.url);
-          } else {
-            errors.push(`Upload failed: ${safeTitle}`);
-          }
+          title = `${country} Clip #shorts`;
+          description = `Amazing content from ${country}. Follow Mr. WorldWideWebster for more!`;
+        }
+
+        const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
+        if (uploadResult) {
+          uploaded.push({ title, url: uploadResult.url, country });
+          await this._boostVideo(uploadResult.url);
         } else {
-          const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
-          if (uploadResult) {
-            uploaded.push({ title, url: uploadResult.url, country });
-            await this._boostVideo(uploadResult.url);
-          } else {
-            errors.push(`Upload failed: ${title}`);
-          }
+          errors.push(`Upload failed: ${title}`);
         }
       } catch (e) {
         this.logger.error(`Upload step error: ${e.message}`);

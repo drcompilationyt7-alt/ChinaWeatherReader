@@ -44,19 +44,24 @@ class BoostEngine {
 
   /**
    * Parse CLI arguments and environment config
+   * Only reads from argv if not already set via params
    */
   _parseConfig() {
     const args = process.argv.slice(2);
 
-    // URL
-    const urlIndex = args.indexOf('--url');
-    this.videoUrl = urlIndex !== -1 ? args[urlIndex + 1] : null;
+    // URL - only from argv if not set via params
+    if (!this.videoUrl) {
+      const urlIndex = args.indexOf('--url');
+      this.videoUrl = urlIndex !== -1 ? args[urlIndex + 1] : null;
+    }
 
-    // Target views
-    const viewsIndex = args.indexOf('--views');
-    const viewsFromArgs = viewsIndex !== -1 ? parseInt(args[viewsIndex + 1]) : null;
-    const viewsFromEnv = process.env.BOOST_MAX_VIEWS ? parseInt(process.env.BOOST_MAX_VIEWS) : null;
-    this.targetViews = viewsFromArgs || viewsFromEnv || 75;
+    // Target views - only from argv if not set via params
+    if (!this._viewsSetViaParams) {
+      const viewsIndex = args.indexOf('--views');
+      const viewsFromArgs = viewsIndex !== -1 ? parseInt(args[viewsIndex + 1]) : null;
+      const viewsFromEnv = process.env.BOOST_MAX_VIEWS ? parseInt(process.env.BOOST_MAX_VIEWS) : null;
+      this.targetViews = viewsFromArgs || viewsFromEnv || 75;
+    }
 
     // Clamp to safe max
     this.targetViews = Math.min(Math.max(this.targetViews, 10), 200);
@@ -88,7 +93,7 @@ class BoostEngine {
   async run(params = {}) {
     // Merge params with args/env
     if (params.url) this.videoUrl = params.url;
-    if (params.views) this.targetViews = params.views;
+    if (params.views) { this.targetViews = params.views; this._viewsSetViaParams = true; }
 
     this._parseConfig();
 

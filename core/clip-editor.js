@@ -5,9 +5,9 @@
  * Downloads flag PNG from Twemoji CDN and overlays it via ffmpeg.
  * Falls back to no overlay if download fails.
  * 
- * v3 - FIXED: If source is already 9:16 portrait (shorts format) or very
- * close, just pad to exactly 1080x1920 without cropping. Only apply smart
- * scale+crop for landscape or weird aspect ratios.
+ * v4 - Videos are ALREADY shorts (9:16 portrait). No scaling/padding.
+ * We just trim to duration and optionally add flag overlay + voiceover.
+ * Using stream copy (-c copy) when no overlay needed for speed.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -16,10 +16,6 @@ const axios = require('axios');
 const { Logger } = require('./logger');
 
 const logger = new Logger('ClipEditor');
-const SHORTS_W = 1080;
-const SHORTS_H = 1920;
-const TARGET_RATIO = SHORTS_W / SHORTS_H; // 0.5625 (9/16)
-const TOLERANCE = 0.05; // 5% tolerance: treat ratios within 5% of 9:16 as already-shorts
 
 // Country code -> Unicode regional indicator hex codes so we can map to Twemoji filenames
 function countryToFlagFile(country) {
@@ -40,73 +36,6 @@ function countryToFlagFile(country) {
   return `${cp1.toString(16)}-${cp2.toString(16)}.png`;
 }
 
-/**
- * Probe video dimensions using ffprobe.
- * Returns { width, height } or null.
- */
-function probeVideoDimensions(videoPath) {
-  try {
-    const probeOut = execSync(
-      `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}" 2>/dev/null`,
-      { timeout: 10000, encoding: 'utf8' }
-    ).trim();
-    const parts = probeOut.split(',').map(s => parseInt(s.trim()));
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      return { width: parts[0], height: parts[1] };
-    }
-  } catch {}
-  return null;
-}
-
-/**
- * Build the appropriate ffmpeg video filter for YouTube Shorts.
- * 
- * - ALREADY SHORTS (ratio within 5% of 9:16): Just pad to 1080x1920.
- *   Does NOT crop or rescale content - adds black bars minimally if needed.
- * - LANDSCAPE or OTHER: Smart scale then center crop to fill 1080x1920.
- */
-function buildShortsFilter(srcW, srcH) {
-  const srcRatio = srcW / srcH;
-  const ratioDiff = Math.abs(srcRatio - TARGET_RATIO);
-
-  // Ensure even dimensions (ffmpeg requirement)
-  const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
-
-  // If already close to 9:16 (shorts format), just pad to exact target dimensions
-  if (ratioDiff <= TOLERANCE) {
-    logger.info(`Source is ~9:16 (${srcW}x${srcH}) - padding to ${SHORTS_W}x${SHORTS_H} without cropping`);
-    return `scale='min(${SHORTS_W},iw)':'min(${SHORTS_H},ih)':force_original_aspect_ratio=decrease,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black`;
-  }
-
-  // Non-shorts: smart scale then center crop to fill frame
-  logger.info(`Source ratio ${srcRatio.toFixed(3)} != 9:16 (${TARGET_RATIO}) - scaling to fill ${SHORTS_W}x${SHORTS_H}`);
-
-  let scaleW, scaleH, cropW, cropH, cropX, cropY;
-
-  if (srcRatio >= TARGET_RATIO) {
-    // Source is wider than 9:16 (landscape or wider)
-    // Scale so height = TARGET_H, then crop width to TARGET_W
-    scaleH = SHORTS_H;
-    scaleW = even(scaleH * srcRatio);
-    cropW = SHORTS_W;
-    cropH = SHORTS_H;
-    cropX = even((scaleW - SHORTS_W) / 2);
-    cropY = 0;
-  } else {
-    // Source is taller than 9:16 (very tall portrait)
-    // Scale so width = TARGET_W, then crop height to TARGET_H
-    scaleW = SHORTS_W;
-    scaleH = even(scaleW / srcRatio);
-    cropW = SHORTS_W;
-    cropH = SHORTS_H;
-    cropX = 0;
-    cropY = even((scaleH - SHORTS_H) / 2);
-  }
-
-  // Build filter: scale then crop
-  return `scale=${scaleW}:${scaleH}:flags=lanczos,crop=${cropW}:${cropH}:${cropX}:${cropY}`;
-}
-
 async function createShort(videoPath, options) {
   const outputPath = options.outputPath || videoPath.replace(/\.\w+$/, '_shorts.mp4');
   const tmpDir = path.dirname(outputPath);
@@ -118,20 +47,6 @@ async function createShort(videoPath, options) {
   logger.info(`Creating short for ${country} (${duration}s)`);
 
   try {
-    // Probe source video dimensions for smart scaling
-    const dims = probeVideoDimensions(videoPath);
-    if (dims) {
-      logger.info(`Source dimensions: ${dims.width}x${dims.height} (ratio: ${(dims.width/dims.height).toFixed(3)})`);
-    } else {
-      logger.warn('Could not probe dimensions, assuming shorts 720x1280');
-    }
-    const srcW = dims ? dims.width : 720;
-    const srcH = dims ? dims.height : 1280;
-
-    // Build the appropriate filter
-    const vf = buildShortsFilter(srcW, srcH);
-    logger.info(`Video filter: ${vf}`);
-
     // Download Twemoji flag PNG if available
     const flagFile = path.join(tmpDir, `flag_${Date.now()}.png`);
     const flagFilename = countryToFlagFile(country);
@@ -169,17 +84,17 @@ async function createShort(videoPath, options) {
       } catch {}
       voDur = Math.min(voDur, 8);
 
-      // Build filter: scale/pad + flag overlay for first 2.5s + voiceover mix
+      // Build filter: pass-through video + flag overlay + voiceover mix
       let filterComplex;
       if (hasFlag) {
-        filterComplex = `[0:v]${vf}[bg];` +
+        filterComplex = `[0:v]null[bg];` +
           `[2:v]scale=120:-1[flag];` +
           `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
       } else {
-        filterComplex = `[0:v]${vf}[v];` +
+        filterComplex = `[0:v]null[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
@@ -192,22 +107,19 @@ async function createShort(videoPath, options) {
         `-map "[v]" -map "[a]" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -shortest "${outputPath}"`,
         { timeout: 120000, maxBuffer: 50*1024*1024, encoding: 'utf8' }
       );
-    } else {
-      // No voiceover
-      let filterComplex;
-      if (hasFlag) {
-        filterComplex = `[0:v]${vf}[bg];` +
-          `[1:v]scale=120:-1[flag];` +
-          `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v]`;
-      } else {
-        filterComplex = vf;
-      }
-
+    } else if (hasFlag) {
+      // No voiceover, just flag overlay
       execSync(
-        `ffmpeg -y -ss ${startTime} -i "${videoPath}"${hasFlag ? ` -i "${flagFile}"` : ''} -t ${duration} ` +
-        `-filter_complex "${filterComplex}" ` +
+        `ffmpeg -y -ss ${startTime} -i "${videoPath}" -i "${flagFile}" -t ${duration} ` +
+        `-filter_complex "[0:v]null[bg];[1:v]scale=120:-1[flag];[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v]" ` +
         `-map "[v]" -map "[0:a]" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k -shortest "${outputPath}"`,
         { timeout: 120000, maxBuffer: 50*1024*1024, encoding: 'utf8' }
+      );
+    } else {
+      // No flag, no voiceover - just trim with stream copy (fastest)
+      execSync(
+        `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -c copy "${outputPath}"`,
+        { timeout: 60000 }
       );
     }
 
@@ -215,12 +127,12 @@ async function createShort(videoPath, options) {
     try { if (fs.existsSync(flagFile)) fs.unlinkSync(flagFile); } catch {}
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
-      logger.success(`Short: ${(fs.statSync(outputPath).size/1024/1024).toFixed(1)}MB at ${SHORTS_W}x${SHORTS_H}`);
+      logger.success(`Short: ${(fs.statSync(outputPath).size/1024/1024).toFixed(1)}MB`);
       return outputPath;
     }
 
     // Fallback: trim only
-    logger.warn('Scale/overlay failed, trying trim-only...');
+    logger.warn('Overlay failed, trying trim-only...');
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -c copy "${outputPath}"`,
       { timeout: 60000 }
