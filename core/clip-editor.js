@@ -5,9 +5,9 @@
  * Downloads flag PNG from Twemoji CDN and overlays it via ffmpeg.
  * Falls back to no overlay if download fails.
  * 
- * v2 - FIXED: Smart resolution scaling for small videos.
- * Previously used scale='min(1080,iw)' which kept small videos tiny.
- * Now probes dimensions and upscales to fill 1080x1920 frame properly.
+ * v3 - FIXED: If source is already 9:16 portrait (shorts format) or very
+ * close, just pad to exactly 1080x1920 without cropping. Only apply smart
+ * scale+crop for landscape or weird aspect ratios.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -18,6 +18,8 @@ const { Logger } = require('./logger');
 const logger = new Logger('ClipEditor');
 const SHORTS_W = 1080;
 const SHORTS_H = 1920;
+const TARGET_RATIO = SHORTS_W / SHORTS_H; // 0.5625 (9/16)
+const TOLERANCE = 0.05; // 5% tolerance: treat ratios within 5% of 9:16 as already-shorts
 
 // Country code -> Unicode regional indicator hex codes so we can map to Twemoji filenames
 function countryToFlagFile(country) {
@@ -57,42 +59,48 @@ function probeVideoDimensions(videoPath) {
 }
 
 /**
- * Build a smart scale+crop filter for YouTube Shorts (9:16 portrait, 1080x1920).
+ * Build the appropriate ffmpeg video filter for YouTube Shorts.
  * 
- * Strategy:
- * - Portrait video (taller than wide): scale width to 1080, height proportional, center crop 1080x1920
- * - Landscape video (wider than tall): scale so height fills 1920, width proportional, center crop 1080x1920
- * - Small videos (< 1080px either dimension): upscale with lanczos to fill the frame
+ * - ALREADY SHORTS (ratio within 5% of 9:16): Just pad to 1080x1920.
+ *   Does NOT crop or rescale content - adds black bars minimally if needed.
+ * - LANDSCAPE or OTHER: Smart scale then center crop to fill 1080x1920.
  */
-function buildShortsScaleFilter(srcW, srcH) {
-  const TARGET_W = SHORTS_W;
-  const TARGET_H = SHORTS_H;
-  const targetRatio = TARGET_W / TARGET_H; // 0.5625 (9/16)
+function buildShortsFilter(srcW, srcH) {
   const srcRatio = srcW / srcH;
+  const ratioDiff = Math.abs(srcRatio - TARGET_RATIO);
 
   // Ensure even dimensions (ffmpeg requirement)
   const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
 
+  // If already close to 9:16 (shorts format), just pad to exact target dimensions
+  if (ratioDiff <= TOLERANCE) {
+    logger.info(`Source is ~9:16 (${srcW}x${srcH}) - padding to ${SHORTS_W}x${SHORTS_H} without cropping`);
+    return `scale='min(${SHORTS_W},iw)':'min(${SHORTS_H},ih)':force_original_aspect_ratio=decrease,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black`;
+  }
+
+  // Non-shorts: smart scale then center crop to fill frame
+  logger.info(`Source ratio ${srcRatio.toFixed(3)} != 9:16 (${TARGET_RATIO}) - scaling to fill ${SHORTS_W}x${SHORTS_H}`);
+
   let scaleW, scaleH, cropW, cropH, cropX, cropY;
 
-  if (srcRatio >= targetRatio) {
+  if (srcRatio >= TARGET_RATIO) {
     // Source is wider than 9:16 (landscape or wider)
     // Scale so height = TARGET_H, then crop width to TARGET_W
-    scaleH = TARGET_H;
+    scaleH = SHORTS_H;
     scaleW = even(scaleH * srcRatio);
-    cropW = TARGET_W;
-    cropH = TARGET_H;
-    cropX = even((scaleW - TARGET_W) / 2);
+    cropW = SHORTS_W;
+    cropH = SHORTS_H;
+    cropX = even((scaleW - SHORTS_W) / 2);
     cropY = 0;
   } else {
-    // Source is taller than 9:16 (portrait or taller)
+    // Source is taller than 9:16 (very tall portrait)
     // Scale so width = TARGET_W, then crop height to TARGET_H
-    scaleW = TARGET_W;
+    scaleW = SHORTS_W;
     scaleH = even(scaleW / srcRatio);
-    cropW = TARGET_W;
-    cropH = TARGET_H;
+    cropW = SHORTS_W;
+    cropH = SHORTS_H;
     cropX = 0;
-    cropY = even((scaleH - TARGET_H) / 2);
+    cropY = even((scaleH - SHORTS_H) / 2);
   }
 
   // Build filter: scale then crop
@@ -113,16 +121,16 @@ async function createShort(videoPath, options) {
     // Probe source video dimensions for smart scaling
     const dims = probeVideoDimensions(videoPath);
     if (dims) {
-      logger.info(`Source dimensions: ${dims.width}x${dims.height}`);
+      logger.info(`Source dimensions: ${dims.width}x${dims.height} (ratio: ${(dims.width/dims.height).toFixed(3)})`);
     } else {
-      logger.warn('Could not probe dimensions, assuming 720x1280');
+      logger.warn('Could not probe dimensions, assuming shorts 720x1280');
     }
     const srcW = dims ? dims.width : 720;
     const srcH = dims ? dims.height : 1280;
 
-    // Build the smart scale filter
-    const smartScale = buildShortsScaleFilter(srcW, srcH);
-    logger.info(`Scale filter: ${smartScale}`);
+    // Build the appropriate filter
+    const vf = buildShortsFilter(srcW, srcH);
+    logger.info(`Video filter: ${vf}`);
 
     // Download Twemoji flag PNG if available
     const flagFile = path.join(tmpDir, `flag_${Date.now()}.png`);
@@ -161,17 +169,17 @@ async function createShort(videoPath, options) {
       } catch {}
       voDur = Math.min(voDur, 8);
 
-      // Build filter: smart scale + flag overlay for first 2.5s + voiceover mix
+      // Build filter: scale/pad + flag overlay for first 2.5s + voiceover mix
       let filterComplex;
       if (hasFlag) {
-        filterComplex = `[0:v]${smartScale}[bg];` +
+        filterComplex = `[0:v]${vf}[bg];` +
           `[2:v]scale=120:-1[flag];` +
           `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
       } else {
-        filterComplex = `[0:v]${smartScale}[v];` +
+        filterComplex = `[0:v]${vf}[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];` +
           `[1:a]adelay=1000[av];` +
           `[ad][av]amix=inputs=2:duration=first[a]`;
@@ -188,11 +196,11 @@ async function createShort(videoPath, options) {
       // No voiceover
       let filterComplex;
       if (hasFlag) {
-        filterComplex = `[0:v]${smartScale}[bg];` +
+        filterComplex = `[0:v]${vf}[bg];` +
           `[1:v]scale=120:-1[flag];` +
           `[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v]`;
       } else {
-        filterComplex = smartScale;
+        filterComplex = vf;
       }
 
       execSync(
