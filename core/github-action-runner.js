@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const config = require('./config');
 const { AIService } = require('./ai-service');
 const { Logger } = require('./logger');
@@ -65,6 +66,47 @@ class GitHubActionsRunner {
     } catch {}
   }
 
+  /**
+   * Extract audio from video and transcribe using Whisper
+   * Returns the transcript text to understand what the video is about
+   */
+  async _transcribeAudio(videoPath) {
+    const audioDir = path.join(config.paths.assets, 'audio');
+    if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
+    
+    const audioPath = path.join(audioDir, `audio_${Date.now()}.mp3`);
+    
+    try {
+      // Extract first 60 seconds of audio for transcription (enough for shorts)
+      this.logger.info('Extracting audio for transcription...');
+      execSync(
+        `ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`,
+        { timeout: 30000 }
+      );
+      
+      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) {
+        this.logger.warn('Audio extraction produced empty file');
+        return null;
+      }
+      
+      this.logger.info('Transcribing with Whisper...');
+      const transcript = await this.ai.transcribe(audioPath);
+      
+      // Clean up audio file
+      try { fs.unlinkSync(audioPath); } catch {}
+      
+      if (transcript && transcript.text && transcript.text.trim().length > 0) {
+        this.logger.success(`Transcription: "${transcript.text.substring(0, 100)}..."`);
+        return transcript.text.trim();
+      }
+      return null;
+    } catch (error) {
+      this.logger.warn(`Transcription failed: ${error.message.substring(0, 80)}`);
+      try { fs.unlinkSync(audioPath); } catch {}
+      return null;
+    }
+  }
+
   async _generateQueries() {
     this.logger.info('Step 1: AI generating queries...');
     const ch = this.memory['channel-memory'] || {};
@@ -96,7 +138,7 @@ class GitHubActionsRunner {
       `${c2} trending short`
     ];
 
-    // Try AI with a SHORT timeout - if it takes >10s, use fallback
+    // Try AI with a SHORT timeout - if it takes >12s, use fallback
     try {
       const aiPromise = this.ai.chatJSON(
         `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
@@ -104,7 +146,6 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
         `5 queries`, { useCheapModel: true, temperature: 0.8 }
       );
       
-      // Race the AI against a 12-second timeout
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('AI query generation timed out')), 12000)
       );
@@ -112,11 +153,10 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       const r = await Promise.race([aiPromise, timeoutPromise]);
       const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : fallbackQueries);
       this.queries = qs; this.countries = [c1, c2, c3];
-      this.logger.success(`AI Queries: ${qs.join(' | ')}`);
+      this.logger.success(`Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
     } catch {
       // Use fast fallback - no AI required
-      this.logger.info('Using fast fallback queries (no AI wait)');
       this.queries = fallbackQueries;
       this.countries = [c1, c2, c3];
       this.logger.success(`Fallback Queries: ${fallbackQueries.join(' | ')}`);
@@ -141,12 +181,12 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       return { uploadedVideos: [], errors: ['No URLs found'] };
     }
 
-    // Log view counts for debugging
+    // Log view counts
     allUrls.forEach((u, i) => {
       this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}`);
     });
 
-    // Step 3: AI ranks URLs (no download needed)
+    // Step 3: AI ranks URLs
     this.logger.info('Step 3: AI ranking URLs...');
     const { top3, explainer } = await rankVideos(allUrls, queries[0] || '', this.ai);
 
@@ -155,7 +195,6 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       top3.push(...allUrls.slice(0, 3));
     }
 
-    // Log why each was chosen
     top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}`));
 
     // Step 4: Download top 3 videos
@@ -166,8 +205,8 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       this.logger.warn('No videos downloaded - upload failure expected');
     }
 
-    // Step 5: Create Shorts with AI voiceover for ALL shorts
-    this.logger.info('Step 5: Creating Shorts with AI voiceover...');
+    // Step 5: Create Shorts with AI voiceover generated from audio transcription
+    this.logger.info('Step 5: Creating Shorts with AI voiceover (transcribed audio -> LLM -> TTS)...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
@@ -175,29 +214,53 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
     for (let i = 0; i < downloaded.length; i++) {
       const v = downloaded[i];
       const query = queries[i] || queries[0] || '';
-      // Assign each downloaded video to its corresponding country
       const country = countries[i] || countries[0] || 'Global';
 
-      // Generate AI voiceover for EVERY short
-      this.logger.info(`Generating voiceover for #${i+1}: ${(v.title||'').substring(0, 50)}`);
+      this.logger.info(`=== Processing short #${i+1}: ${country} ===`);
       
       let voiceoverPath = null;
       let voiceoverText = '';
+      let transcript = null;
       
+      // Step 5a: Transcribe the audio to understand what the video is about
       try {
-        const contextPrompt = `You are a narrator for "Mr. WorldWideWebster". Write ONE short sentence (8-15 words) introducing a video from ${country}. 
+        transcript = await this._transcribeAudio(v.path);
+        if (transcript) {
+          this.logger.success(`Transcript: ${transcript.substring(0, 120)}`);
+        }
+      } catch (txError) {
+        this.logger.warn(`Transcription error: ${txError.message}`);
+      }
+
+      // Step 5b: Use transcript + LLM to generate better content-aware voiceover
+      try {
+        let contextPrompt;
+        
+        if (transcript) {
+          // AI generates intro based on actual video content
+          contextPrompt = `You are a narrator for "Mr. WorldWideWebster". 
+This is a video from ${country}. Here's what's happening in the video (transcribed audio):
+"${transcript}"
+
+Write ONE short sentence (8-15 words) that naturally introduces this video. Examples:
+- "Watch this hilarious moment from ${country}"
+- "Check out this viral street food clip from ${country}"
+- "This ${country} short is absolutely insane"
+- "You won't believe what happened in ${country}"
+
+Match the tone of the video content. Return ONLY the sentence.`;
+        } else {
+          // No transcript, use generic approach
+          contextPrompt = `You are a narrator for "Mr. WorldWideWebster". Write ONE short sentence (8-15 words) introducing a video from ${country}.
 Examples:
 - "This is a funny meme from ${country}"
 - "Check out this viral moment from ${country}"
 - "Here's a trending short from ${country}"
-- "This clip from ${country} is going viral"
 
-Video title: "${v.title || 'Unknown'}"
-
-Return ONLY the sentence, no quotes, no JSON.`;
+Return ONLY the sentence.`;
+        }
         
         try {
-          // Race AI against 8s timeout for each voiceover
           const voiceoverPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
           const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Voiceover AI timed out')), 8000)
@@ -205,12 +268,16 @@ Return ONLY the sentence, no quotes, no JSON.`;
           voiceoverText = await Promise.race([voiceoverPromise, timeoutPromise]);
           
           if (!voiceoverText || voiceoverText.length < 5) {
-            voiceoverText = `This is a funny clip from ${country}`;
+            voiceoverText = transcript 
+              ? `Check out this clip from ${country}`
+              : `This is a funny clip from ${country}`;
           }
           voiceoverText = voiceoverText.replace(/["']/g, '').trim();
           if (voiceoverText.length > 120) voiceoverText = voiceoverText.substring(0, 117) + '...';
         } catch {
-          voiceoverText = `This is a funny clip from ${country}`;
+          voiceoverText = transcript 
+            ? `Check out this clip from ${country}`
+            : `This is a funny clip from ${country}`;
         }
 
         // Generate TTS audio for the voiceover
@@ -221,7 +288,7 @@ Return ONLY the sentence, no quotes, no JSON.`;
           const safeText = voiceoverText.replace(/"/g, '\\"');
           const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
           const cmd = `edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${vPath}" 2>/dev/null`;
-          require('child_process').execSync(cmd, { timeout: 30000 });
+          execSync(cmd, { timeout: 30000 });
           if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) {
             voiceoverPath = vPath;
             this.logger.success(`Voiceover for #${i+1}: "${voiceoverText}"`);
@@ -234,9 +301,9 @@ Return ONLY the sentence, no quotes, no JSON.`;
       }
 
       // Detect smart start time
-      let startTime = 5; // default
+      let startTime = 5;
       try {
-        const info = require('child_process').execSync(
+        const info = execSync(
           `ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`,
           { timeout: 5000, encoding: 'utf8' }
         ).trim();
@@ -262,6 +329,7 @@ Return ONLY the sentence, no quotes, no JSON.`;
           country, 
           hasVoiceover: !!voiceoverPath,
           voiceoverText,
+          transcript,
           sourceUrl: v.sourceUrl 
         });
       }
@@ -269,24 +337,36 @@ Return ONLY the sentence, no quotes, no JSON.`;
 
     this.logger.success(`Created ${shorts.length} Shorts with ${shorts.filter(s => s.hasVoiceover).length} voiceovers`);
 
-    // Step 6: Upload with AI-generated titles/descriptions
+    // Step 6: Upload with AI-generated titles/descriptions (using transcription!)
     for (const s of shorts) {
       const query = s.query || '';
       const country = s.country;
       try {
-        const td = await this.ai.chatJSON(
-          `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+desc.
-Query: "${query}"
+        // Generate descriptive title+description using transcription if available
+        const titlePrompt = s.transcript
+          ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
+Query: "${query}"
+Video content (transcribed): "${s.transcript.substring(0, 300)}"
 
-Title: catchy, max 70 chars, with flag emoji. Description: 2-3 sentences.
-Return JSON: {"title":"...","description":"..."}`,
-          `Title for ${query}`,
-          { useCheapModel: true, temperature: 0.8 }
+Title: Catchy, max 70 chars, with ${country} flag emoji at start.
+Description: 3-4 descriptive sentences explaining what the video shows. Mention the country, the type of content (meme/funny/viral), and a call to follow Mr. WorldWideWebster.
+Return JSON: {"title":"...","description":"..."}`
+          : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
+Country: ${country}
+Query: "${query}"
+
+Title: catch, max 70 chars, with ${country} flag emoji. Description: 2-3 sentences.
+Return JSON: {"title":"...","description":"..."}`;
+
+        const td = await this.ai.chatJSON(
+          titlePrompt,
+          `Title for ${country} short`,
+          { useCheapModel: true, temperature: 0.7 }
         );
 
         const title = (td.title || `\ud83c\udf0d ${query}`).substring(0, 100);
-        const description = td.description || `\ud83c\udf0d From ${country}. Follow for more global content!`;
+        const description = td.description || `\ud83c\udf0d From ${country}. Follow Mr. WorldWideWebster for more global content!`;
 
         const r = await this._uploadToYouTube({
           videoPath: s.path,
