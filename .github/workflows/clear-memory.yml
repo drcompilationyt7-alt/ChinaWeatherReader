@@ -2,7 +2,6 @@ name: Bi-Weekly Memory & Output Cleanup
 
 on:
   schedule:
-    # Runs every two weeks on Sunday at 00:00 UTC
     - cron: '0 0 */14 * *'
   workflow_dispatch:
 
@@ -18,38 +17,37 @@ jobs:
 
       - name: Reset channel-memory.json
         run: |
-          cat > memory/channel-memory.json << 'JSONEOF'
-{
-  "channelName": "Mr. WorldWideWebster",
-  "tagline": "Bringing the world to you",
-  "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
-  "createdAt": "$(date -u +%Y-%m-%dT00:00:00.000Z)",
-  "totalVideosPosted": 0,
-  "lastCountryUsed": "",
-  "countriesUsedThisWeek": [],
-  "bestPerformingFormats": [],
-  "titleFormulas": [
-    "What is this [thing]? ([country] edition)",
-    "[country]'s favorite [category] right now",
-    "Americans don't understand [country] [thing]",
-    "[country] vs [country]: Who does it better?",
-    "This [category] from [country] is going viral"
-  ],
-  "postingSchedule": {
-    "hour": 6,
-    "minute": 0,
-    "timezone": "UTC"
-  },
-  "skills": [],
-  "lastUpdated": "$(date -u +%Y-%m-%dT00:00:00.000Z)",
-  "lastContentType": "",
-  "usedTopics": []
-}
-JSONEOF
+          node -e "
+            const fs = require('fs');
+            const mem = {
+              channelName: 'Mr. WorldWideWebster',
+              tagline: 'Bringing the world to you',
+              targetAudience: 'Global culture enthusiasts, travelers, people curious about international trends',
+              createdAt: new Date().toISOString(),
+              totalVideosPosted: 0,
+              lastCountryUsed: '',
+              countriesUsedThisWeek: [],
+              bestPerformingFormats: [],
+              titleFormulas: [
+                'What is this [thing]? ([country] edition)',
+                "[country]'s favorite [category] right now",
+                "Americans don't understand [country] [thing]",
+                '[country] vs [country]: Who does it better?',
+                'This [category] from [country] is going viral'
+              ],
+              postingSchedule: { hour: 6, minute: 0, timezone: 'UTC' },
+              skills: [],
+              lastUpdated: new Date().toISOString(),
+              lastContentType: '',
+              usedTopics: []
+            };
+            fs.writeFileSync('memory/channel-memory.json', JSON.stringify(mem, null, 2));
+            console.log('channel-memory.json reset');
+          "
 
       - name: Reset content-history.json
         run: |
-          echo '{"videos":[]}' > memory/content-history.json
+          node -e "const fs=require('fs');fs.writeFileSync('memory/content-history.json','{\\"videos\\":[]}');console.log('content-history.json reset')"
 
       - name: Remove cache dump files
         run: |
@@ -63,12 +61,12 @@ JSONEOF
         run: |
           rm -rf output/clips/* output/assets/* output/temp/* 2>/dev/null || true
           rm -rf output/scripts/* output/long-form/* 2>/dev/null || true
-          echo "✅ Output folder cleaned"
+          echo 'Output folder cleaned'
 
       - name: Commit and push changes
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add -A
-          git diff --quiet && git diff --staged --quiet || git commit -m "chore: bi-weekly memory & output cleanup [skip ci]"
+          git diff --quiet && git diff --staged --quiet || git commit -m 'chore: bi-weekly memory and output cleanup [skip ci]'
           git push
