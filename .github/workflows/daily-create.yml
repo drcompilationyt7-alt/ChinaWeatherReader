@@ -99,8 +99,6 @@ SSEOF
           python3 -c "import yt_dlp; print(f'yt-dlp: {yt_dlp.version.__version__}')" 2>/dev/null || echo "yt-dlp: not found"
           python3 -c "import yt_dlp_getpot_wpc" 2>/dev/null && echo "  wpc: installed" || echo "  wpc: not found"
           echo "Proxy test: $(curl -s --connect-timeout 5 --proxy "${YT_PROXY:-}" https://ifconfig.me 2>/dev/null || echo 'unreachable')"
-        env:
-          YT_PROXY: ${{ env.YT_PROXY }}
 
       - name: Restore memory
         run: |
@@ -109,8 +107,6 @@ SSEOF
 
       - name: Run pipeline
         run: node core/github-action-runner.js --mode daily
-        env:
-          YT_PROXY: ${{ env.YT_PROXY }}
 
       - name: Save memory
         run: |
