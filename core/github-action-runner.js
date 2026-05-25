@@ -218,14 +218,29 @@ class GitHubActionsRunner {
     const fp = path.join(this.memoryPath, 'channel-memory.json');
     this.memory['channel-memory'] = { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [], hermesNotes: [], trendingKeywords: {} };
     fs.writeFileSync(fp, JSON.stringify(this.memory['channel-memory'], null, 2));
-    // Keep content-history.json for boost fallback to find old videos
     this.logger.info('Memory loaded');
   }
   _saveMemory() { fs.writeFileSync(path.join(this.memoryPath, 'channel-memory.json'), JSON.stringify(this.memory['channel-memory'], null, 2)); }
 
   async _uploadToYouTube(v) {
-    if (!this.youtubeBridge?.isAuthenticated()) return null;
-    try { const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] }); this.logger.success(`Uploaded: ${r.url}`); return r; } catch (e) { this.logger.error(`Upload FAILED: ${e.message}`); return null; }
+    // Debug: check auth status before attempting upload
+    const isAuth = this.youtubeBridge?.isAuthenticated();
+    this.logger.info(`YouTube Bridge authenticated: ${isAuth}`);
+    this.logger.info(`Upload target: ${v.title || 'unknown'}, size: ${v.videoPath ? (fs.existsSync(v.videoPath) ? (fs.statSync(v.videoPath).size / 1024 / 1024).toFixed(1) + 'MB' : 'file missing') : 'no path'}`);
+
+    if (!isAuth) {
+      this.logger.error('YouTube NOT authenticated — check YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN secrets');
+      return null;
+    }
+    try {
+      const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] });
+      this.logger.success(`Uploaded: ${r.url}`);
+      return r;
+    } catch (e) {
+      this.logger.error(`Upload FAILED: ${e.message}`);
+      this.logger.error(`Stack: ${e.stack ? e.stack.substring(0, 500) : 'no stack'}`);
+      return null;
+    }
   }
 
   /**
@@ -239,70 +254,54 @@ class GitHubActionsRunner {
     try {
       let videoUrl = url;
 
-      // If no URL from current upload, fallback to 1-week-old video from content-history
       if (!videoUrl) {
-        this.logger.warn('No URL from current run — looking for last uploaded video');
+        this.logger.warn('No URL from current run — searching content-history for fallback');
         videoUrl = this._findLastVideoUrl();
         if (!videoUrl) {
-          this.logger.warn('No previous video found — skipping boost and continuing');
-          return; // Just continue, no crash
+          this.logger.warn('Both current and history empty — skipping boost, continuing pipeline');
+          return;
         }
         this.logger.info(`Fallback: boosting last video: ${videoUrl}`);
       }
 
-      this.logger.info('Waiting up to 5 min for boost...');
-      await new Promise(r => setTimeout(r, 30000)); // 30s initial settle
+      this.logger.info('Waiting 30s settle before boost...');
+      await new Promise(r => setTimeout(r, 30000));
 
       this.logger.info(`Boosting: ${videoUrl}`);
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
-
-      // Use a 5-minute total timeout (handled inside BoostEngine)
       const result = await engine.run({ url: videoUrl, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
 
       if (result.success) {
         this.logger.success(`Boosted ${result.views} views${result.timedOut ? ' (timed out)' : ''}`);
       } else {
-        this.logger.warn(`Boost returned: ${result.error || 'no views'}`);
+        this.logger.warn(`Boost result: ${result.error || 'no views'}`);
       }
     } catch (e) {
       this.logger.warn(`Boost error: ${e.message}`);
     }
   }
 
-  /**
-   * Find the most recent video URL from content-history.json (within 1-week window).
-   */
   _findLastVideoUrl() {
     try {
       const historyPath = path.join(this.memoryPath, 'content-history.json');
-      if (!fs.existsSync(historyPath)) return null;
+      if (!fs.existsSync(historyPath)) { this.logger.info('content-history.json not found'); return null; }
 
       const raw = fs.readFileSync(historyPath, 'utf8');
       const history = JSON.parse(raw);
       const videos = history.videos || [];
 
-      if (videos.length === 0) return null;
+      if (videos.length === 0) { this.logger.info('content-history.json has 0 videos'); return null; }
 
       const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const sorted = videos.filter(v => { const ts = v.uploadedAt || v.createdAt; return ts && new Date(ts).getTime() > oneWeekAgo; }).sort((a, b) => { const ta = new Date(a.uploadedAt || a.createdAt || 0).getTime(); const tb = new Date(b.uploadedAt || b.createdAt || 0).getTime(); return tb - ta; });
 
-      // Sort by date descending, find newest within 1 week
-      const sorted = videos
-        .filter(v => {
-          const ts = v.uploadedAt || v.createdAt;
-          return ts && new Date(ts).getTime() > oneWeekAgo;
-        })
-        .sort((a, b) => {
-          const ta = new Date(a.uploadedAt || a.createdAt || 0).getTime();
-          const tb = new Date(b.uploadedAt || b.createdAt || 0).getTime();
-          return tb - ta;
-        });
+      if (sorted.length === 0) { this.logger.info('No videos within 1 week window'); return null; }
 
-      if (sorted.length === 0) return null;
-
+      this.logger.info(`Found fallback video from ${sorted[0].uploadedAt || sorted[0].createdAt}: ${sorted[0].url}`);
       return sorted[0].url || null;
     } catch (e) {
-      this.logger.warn(`Fallback URL lookup failed: ${e.message}`);
+      this.logger.warn(`Fallback URL lookup: ${e.message}`);
       return null;
     }
   }
@@ -455,7 +454,6 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
       } catch (e) { errors.push(`Upload: ${e.message}`); }
     }
 
-    // Only update memory from successfully UPLOADED videos
     const cm = this.memory['channel-memory'] || {};
     cm.totalVideosPosted = (cm.totalVideosPosted || 0) + uploaded.length;
     if (!cm.countriesUsedThisWeek) cm.countriesUsedThisWeek = [];
