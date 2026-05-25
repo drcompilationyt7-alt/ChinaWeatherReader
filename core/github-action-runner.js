@@ -223,7 +223,6 @@ class GitHubActionsRunner {
   _saveMemory() { fs.writeFileSync(path.join(this.memoryPath, 'channel-memory.json'), JSON.stringify(this.memory['channel-memory'], null, 2)); }
 
   async _uploadToYouTube(v) {
-    // Debug: check auth status before attempting upload
     const isAuth = this.youtubeBridge?.isAuthenticated();
     this.logger.info(`YouTube Bridge authenticated: ${isAuth}`);
     this.logger.info(`Upload target: ${v.title || 'unknown'}, size: ${v.videoPath ? (fs.existsSync(v.videoPath) ? (fs.statSync(v.videoPath).size / 1024 / 1024).toFixed(1) + 'MB' : 'file missing') : 'no path'}`);
@@ -243,13 +242,6 @@ class GitHubActionsRunner {
     }
   }
 
-  /**
-   * Boost video views with fallback logic.
-   * - If url is provided, boost it directly (with 5-min timeout)
-   * - If url is null/empty, try to find the last uploaded video from content-history (within 1 week)
-   * - If both are empty, just continue gracefully (no crash, just a warning)
-   * - Never blocks more than 5 minutes total
-   */
   async _boostVideo(url) {
     try {
       let videoUrl = url;
@@ -306,7 +298,7 @@ class GitHubActionsRunner {
     }
   }
 
-  async _sendDiscord(type, data) { try { const b = new (require('../discord/discord-bridge').DiscordBridge)(); if (type === 'daily') await b.sendDailySummary(data); await b.destroy(); } catch {} }
+  async _sendDiscord(type, data) { try { const b = new (require('../discord/discord-bridge').DiscordBridge)(); if (type === 'daily') await b.sendDailySummary(data); try { await b.destroy(); } catch {} } catch {} }
 
   async _transcribeAudio(videoPath) {
     const dir = path.join(config.paths.assets, 'audio');
@@ -523,13 +515,24 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     await this.initialize();
     const args = process.argv.slice(2);
     const mode = args.indexOf('--mode') !== -1 ? args[args.indexOf('--mode') + 1] : 'daily';
-    if (mode === 'daily') await this.runDaily();
-    else if (mode === 'nightly' || mode === 'review') await this.runNightly();
-    else { console.log(`Unknown: ${mode}`); process.exit(1); }
+    try {
+      if (mode === 'daily') await this.runDaily();
+      else if (mode === 'nightly' || mode === 'review') await this.runNightly();
+      else { console.log(`Unknown: ${mode}`); process.exit(1); }
+    } catch (e) {
+      this.logger.error(`Runner error: ${e.message}`);
+    }
     this.logger.success('Done');
+
+    // Force exit after completion to prevent hanging on:
+    // 1. Discord WebSocket not fully closing
+    // 2. Puppeteer/orphaned browser processes
+    // 3. Any other open handles keeping the event loop alive
+    setTimeout(() => { process.exit(0); }, 3000).unref();
+    process.exit(0);
   }
 }
 
 process.on('uncaughtException', e => console.error(e.message));
 process.on('unhandledRejection', r => console.error(r?.message || r));
-new GitHubActionsRunner().run().catch(e => { console.error(`Fatal: ${e.message}`); process.exit(1); });
+new GitHubActionsRunner().run().catch(e => { console.error(`Fatal: ${e.message}`); setTimeout(() => process.exit(1), 1000); });
