@@ -6,14 +6,16 @@
  * Headless Puppeteer-based view booster that runs inside GitHub Actions
  * after a video is uploaded. Simulates organic view behavior.
  *
- * FIXED v2: When called programmatically via engine.run({url,views}),
- * the url param is stored BEFORE _parseConfig() runs so argv doesn't override it.
+ * FIXED v3: Added 5-minute global timeout so the engine never hangs.
+ * When timeout fires, returns partial results instead of blocking forever.
  *
  * Usage:
  *   node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" [options]
  */
 const puppeteer = require('puppeteer');
 const { Logger } = require('../core/logger');
+
+const MAX_TOTAL_DURATION_MS = 5 * 60 * 1000; // 5 minutes hard limit
 
 class BoostEngine {
   constructor() {
@@ -24,6 +26,8 @@ class BoostEngine {
     this.isDryRun = false;
     this._urlSetViaParam = false;
     this._viewsSetViaParam = false;
+    this._timedOut = false;
+    this._startedAt = null;
   }
 
   /**
@@ -54,6 +58,7 @@ class BoostEngine {
     this.logger.info(`Target Views: ${this.targetViews}`);
     this.logger.info(`Spread: ${this.spreadMinMinutes}-${this.spreadMaxMinutes} min`);
     this.logger.info(`Watch Time: ${this.minViewSec}-${this.maxViewSec}s per session`);
+    this.logger.info(`Max Total Duration: ${MAX_TOTAL_DURATION_MS / 1000}s`);
 
     if (this.isDryRun) {
       this.logger.info('🔍 DRY RUN — No views will be simulated');
@@ -64,8 +69,18 @@ class BoostEngine {
       return { success: false, views: 0, error: 'Browser launch failed' };
     }
 
+    this._startedAt = Date.now();
+
     try {
-      await this._executeViews();
+      // Wrap the execute in a global timeout so it never hangs past MAX_TOTAL_DURATION_MS
+      await Promise.race([
+        this._executeViews(),
+        (async () => {
+          await this._sleep(MAX_TOTAL_DURATION_MS);
+          this._timedOut = true;
+          this.logger.warn(`⏰ Global timeout (${MAX_TOTAL_DURATION_MS / 1000}s) reached — stopping`);
+        })()
+      ]);
     } catch (error) {
       this.logger.error(`Boost failed: ${error.message}`);
     } finally {
@@ -76,12 +91,14 @@ class BoostEngine {
     this.logger.info(`Video: ${this.videoUrl}`);
     this.logger.info(`Total View Sessions: ${this.totalViews}`);
     this.logger.info(`Target: ${this.targetViews}`);
+    if (this._timedOut) this.logger.warn('⏰ Timed out — partial results');
 
     return { 
       success: this.totalViews > 0, 
       views: this.totalViews,
       targetViews: this.targetViews,
       reachedTarget: this.totalViews >= this.targetViews,
+      timedOut: this._timedOut,
     };
   }
 
@@ -155,6 +172,12 @@ class BoostEngine {
     this.logger.info(`Will run ${batches} batches of ${viewsPerBatch} views each`);
 
     for (let batch = 0; batch < batches; batch++) {
+      // Check global timeout before each batch
+      if (this._timedOut || (Date.now() - this._startedAt) > MAX_TOTAL_DURATION_MS * 0.8) {
+        this.logger.warn('Approaching time limit — stopping early');
+        break;
+      }
+
       const viewsThisBatch = Math.min(viewsPerBatch, this.targetViews - this.totalViews);
       if (viewsThisBatch <= 0) break;
       this.logger.info(`\n📦 Batch ${batch + 1}/${batches} — ${viewsThisBatch} views`);
@@ -255,9 +278,9 @@ Options:
     process.exit(0);
   }
   engine.run().then(r => {
-    if (r.success) { console.log(`\n✅ ${r.views} views`); process.exit(0); }
+    if (r.success) { console.log(`\n✅ ${r.views} views${r.timedOut ? ' (partial - timed out)' : ''}`); process.exit(0); }
     else { console.error(`\n❌ Failed`); process.exit(1); }
   }).catch(e => { console.error(e.message); process.exit(1); });
 }
 
-module.exports = { BoostEngine };
+module.exports = { BoostEngine, MAX_TOTAL_DURATION_MS };

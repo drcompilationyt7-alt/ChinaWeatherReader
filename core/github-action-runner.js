@@ -227,10 +227,84 @@ class GitHubActionsRunner {
     if (!this.youtubeBridge?.isAuthenticated()) return null;
     try { const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] }); this.logger.success(`Uploaded: ${r.url}`); return r; } catch (e) { this.logger.error(`Upload FAILED: ${e.message}`); return null; }
   }
+
+  /**
+   * Boost video views with fallback logic:
+   * - If URL is null/empty, try to find the LAST uploaded video from content-history (within 1 week)
+   * - Max 5 minutes total for the boost
+   */
   async _boostVideo(url) {
-    if (!url) return;
-    try { this.logger.info('Waiting 5 min...'); await new Promise(r => setTimeout(r, 300000)); this.logger.info(`Boosting: ${url}`); const r = await new (require('../boost/boost-engine').BoostEngine)().run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 }); if (r.success) this.logger.success(`Boosted ${r.views}`); } catch (e) { this.logger.warn(`Boost: ${e.message}`); }
+    try {
+      let videoUrl = url;
+
+      // If no URL from current upload, fallback to 1-week-old video from content-history
+      if (!videoUrl) {
+        this.logger.warn('No URL from current run — looking for last uploaded video');
+        videoUrl = this._findLastVideoUrl();
+        if (!videoUrl) {
+          this.logger.warn('No previous video found — skipping boost');
+          return;
+        }
+        this.logger.info(`Fallback: boosting last video: ${videoUrl}`);
+      }
+
+      this.logger.info('Waiting up to 5 min for boost...');
+      await new Promise(r => setTimeout(r, 30000)); // 30s initial settle
+
+      this.logger.info(`Boosting: ${videoUrl}`);
+      const { BoostEngine } = require('../boost/boost-engine');
+      const engine = new BoostEngine();
+
+      // Use a 5-minute total timeout (handled inside BoostEngine)
+      const result = await engine.run({ url: videoUrl, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
+
+      if (result.success) {
+        this.logger.success(`Boosted ${result.views} views${result.timedOut ? ' (timed out)' : ''}`);
+      } else {
+        this.logger.warn(`Boost returned: ${result.error || 'no views'}`);
+      }
+    } catch (e) {
+      this.logger.warn(`Boost error: ${e.message}`);
+    }
   }
+
+  /**
+   * Find the most recent video URL from content-history.json (within 1-week window).
+   */
+  _findLastVideoUrl() {
+    try {
+      const historyPath = path.join(this.memoryPath, 'content-history.json');
+      if (!fs.existsSync(historyPath)) return null;
+
+      const raw = fs.readFileSync(historyPath, 'utf8');
+      const history = JSON.parse(raw);
+      const videos = history.videos || [];
+
+      if (videos.length === 0) return null;
+
+      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+      // Sort by date descending, find newest within 1 week
+      const sorted = videos
+        .filter(v => {
+          const ts = v.uploadedAt || v.createdAt;
+          return ts && new Date(ts).getTime() > oneWeekAgo;
+        })
+        .sort((a, b) => {
+          const ta = new Date(a.uploadedAt || a.createdAt || 0).getTime();
+          const tb = new Date(b.uploadedAt || b.createdAt || 0).getTime();
+          return tb - ta;
+        });
+
+      if (sorted.length === 0) return null;
+
+      return sorted[0].url || null;
+    } catch (e) {
+      this.logger.warn(`Fallback URL lookup failed: ${e.message}`);
+      return null;
+    }
+  }
+
   async _sendDiscord(type, data) { try { const b = new (require('../discord/discord-bridge').DiscordBridge)(); if (type === 'daily') await b.sendDailySummary(data); await b.destroy(); } catch {} }
 
   async _transcribeAudio(videoPath) {
@@ -373,7 +447,9 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
           totalViewsToday += estViews;
           uploaded.push({ title: targetTitle.title, url: r.url, country: s.country, special: !!s.isSpecial, views: estViews });
           await this._boostVideo(r.url);
-        } else { errors.push(`Upload failed: ${targetTitle.title}`); }
+        } else {
+          errors.push(`Upload failed: ${targetTitle.title}`);
+        }
       } catch (e) { errors.push(`Upload: ${e.message}`); }
     }
 
