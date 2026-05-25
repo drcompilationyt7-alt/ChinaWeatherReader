@@ -17,37 +17,11 @@ jobs:
 
       - name: Reset channel-memory.json
         run: |
-          node -e "
-            const fs = require('fs');
-            const mem = {
-              channelName: 'Mr. WorldWideWebster',
-              tagline: 'Bringing the world to you',
-              targetAudience: 'Global culture enthusiasts, travelers, people curious about international trends',
-              createdAt: new Date().toISOString(),
-              totalVideosPosted: 0,
-              lastCountryUsed: '',
-              countriesUsedThisWeek: [],
-              bestPerformingFormats: [],
-              titleFormulas: [
-                'What is this [thing]? ([country] edition)',
-                "[country]'s favorite [category] right now",
-                "Americans don't understand [country] [thing]",
-                '[country] vs [country]: Who does it better?',
-                'This [category] from [country] is going viral'
-              ],
-              postingSchedule: { hour: 6, minute: 0, timezone: 'UTC' },
-              skills: [],
-              lastUpdated: new Date().toISOString(),
-              lastContentType: '',
-              usedTopics: []
-            };
-            fs.writeFileSync('memory/channel-memory.json', JSON.stringify(mem, null, 2));
-            console.log('channel-memory.json reset');
-          "
+          node -e 'const fs=require("fs");const m={channelName:"Mr. WorldWideWebster",tagline:"Bringing the world to you",targetAudience:"Global culture enthusiasts, travelers, people curious about international trends",createdAt:new Date().toISOString(),totalVideosPosted:0,lastCountryUsed:"",countriesUsedThisWeek:[],bestPerformingFormats:[],titleFormulas:["What is this [thing]? ([country] edition)","[country]s favorite [category] right now","Americans dont understand [country] [thing]","[country] vs [country]: Who does it better?","This [category] from [country] is going viral"],postingSchedule:{hour:6,minute:0,timezone:"UTC"},skills:[],lastUpdated:new Date().toISOString(),lastContentType:"",usedTopics:[]};fs.writeFileSync("memory/channel-memory.json",JSON.stringify(m,null,2));console.log("done")'
 
       - name: Reset content-history.json
         run: |
-          node -e "const fs=require('fs');fs.writeFileSync('memory/content-history.json','{\\"videos\\":[]}');console.log('content-history.json reset')"
+          printf '{"videos":[]}\n' > memory/content-history.json
 
       - name: Remove cache dump files
         run: |
