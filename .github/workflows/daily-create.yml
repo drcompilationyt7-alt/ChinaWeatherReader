@@ -17,6 +17,8 @@ env:
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   GH_PAT: ${{ secrets.GH_PAT }}
+  SHADOWSOCKS_SERVER: ${{ secrets.SHADOWSOCKS_SERVER }}
+  SHADOWSOCKS_KEY: ${{ secrets.SHADOWSOCKS_KEY }}
 
 jobs:
   create-shorts:
@@ -52,6 +54,54 @@ jobs:
             echo "WARNING: No YOUTUBE_COOKIES secret set"
           fi
 
+      - name: Setup Shadowsocks proxy
+        run: |
+          if [ -z "$SHADOWSOCKS_SERVER" ] || [ -z "$SHADOWSOCKS_KEY" ]; then
+            echo "No Shadowsocks credentials"
+            echo "proxy_ready=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Installing shadowsocks-libev..."
+          sudo apt-get install -y shadowsocks-libev 2>/dev/null
+          sudo systemctl disable shadowsocks-libev --now || true
+
+          # Write config from secrets
+          sudo tee /etc/shadowsocks-libev/oracle.json > /dev/null <<SSEOF
+          {
+            "server": "${SHADOWSOCKS_SERVER}",
+            "server_port": 443,
+            "method": "chacha20-ietf-poly1305",
+            "password": "${SHADOWSOCKS_KEY}",
+            "local_address": "127.0.0.1",
+            "local_port": 1080,
+            "mode": "tcp_and_udp"
+          }
+SSEOF
+
+          sudo systemctl enable shadowsocks-libev-local@oracle --now
+          sleep 3
+
+          if sudo systemctl is-active shadowsocks-libev-local@oracle; then
+            echo "Shadowsocks proxy running on 127.0.0.1:1080"
+            echo "proxy_ready=true" >> $GITHUB_OUTPUT
+            echo "YT_PROXY=socks5://127.0.0.1:1080" >> $GITHUB_ENV
+          else
+            echo "Shadowsocks failed"
+            echo "proxy_ready=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Environment diagnostics
+        run: |
+          echo "Node: $(node --version)"
+          echo "Python: $(python3 --version)"
+          echo "FFmpeg: $(ffmpeg -version 2>&1 | head -1)"
+          python3 -c "import yt_dlp; print(f'yt-dlp: {yt_dlp.version.__version__}')" 2>/dev/null || echo "yt-dlp: not found"
+          python3 -c "import yt_dlp_getpot_wpc" 2>/dev/null && echo "  wpc: installed" || echo "  wpc: not found"
+          echo "Proxy test: $(curl -s --connect-timeout 5 --proxy "${YT_PROXY:-}" https://ifconfig.me 2>/dev/null || echo 'unreachable')"
+        env:
+          YT_PROXY: ${{ env.YT_PROXY }}
+
       - name: Restore memory
         run: |
           mkdir -p memory
@@ -59,6 +109,8 @@ jobs:
 
       - name: Run pipeline
         run: node core/github-action-runner.js --mode daily
+        env:
+          YT_PROXY: ${{ env.YT_PROXY }}
 
       - name: Save memory
         run: |
@@ -67,4 +119,6 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -rf output/temp 2>/dev/null || true
+        run: |
+          sudo systemctl stop shadowsocks-libev-local@oracle 2>/dev/null || true
+          rm -rf output/temp 2>/dev/null || true

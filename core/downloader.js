@@ -5,6 +5,8 @@
  *
  * FIX: Always download audio+video together using bestvideo+bestaudio merge.
  * Previous 'best[height<=720]' could select video-only streams with no audio.
+ *
+ * PROXY: Uses YT_PROXY env var for shadowsocks/any SOCKS5 proxy.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -15,6 +17,15 @@ const logger = new Logger('Downloader');
 const MAX_DURATION = 480;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 const COOKIE_FILE = '/tmp/yt_cookies.txt';
+
+function getProxyArg() {
+  const proxy = process.env.YT_PROXY || '';
+  if (proxy) {
+    logger.info(`Using proxy: ${proxy}`);
+    return `--proxy "${proxy}"`;
+  }
+  return '';
+}
 
 async function downloadVideo(entry, outputDir) {
   const url = entry.url;
@@ -32,6 +43,7 @@ async function downloadVideo(entry, outputDir) {
   // Check for cookies
   const hasCookies = fs.existsSync(COOKIE_FILE) && fs.statSync(COOKIE_FILE).size > 100;
   const cookieArg = hasCookies ? `--cookies "${COOKIE_FILE}"` : '';
+  const proxyArg = getProxyArg();
 
   if (hasCookies) logger.info('Using YouTube cookies');
   else logger.warn('No cookies found! Set YOUTUBE_COOKIES secret');
@@ -44,7 +56,6 @@ async function downloadVideo(entry, outputDir) {
       {
         name: 'web',
         args: '--extractor-args "youtube:player_client=web"',
-        // KEY FIX: Use bestvideo+bestaudio to guarantee audio is included
         format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
       },
       {
@@ -56,7 +67,7 @@ async function downloadVideo(entry, outputDir) {
 
     for (const s of strategies) {
       try {
-        const cmd = `${exe} ${cookieArg} ${s.args} ${s.format} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4`;
+        const cmd = `${exe} ${proxyArg} ${cookieArg} ${s.args} ${s.format} --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --force-ipv4`;
 
         logger.info(`Try: ${exe} ${s.name}`);
         execSync(cmd, { timeout: 180000, maxBuffer: 200*1024*1024, encoding: 'utf8', env });
