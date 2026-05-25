@@ -42,9 +42,20 @@ jobs:
           export DENO_INSTALL="$HOME/.deno"
           echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
           # Install Python deps
-          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs faster-whisper --break-system-packages
+          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs --break-system-packages
           npm ci || npm install
           npm install axios
+
+      - name: Install & test faster-whisper
+        run: |
+          python3 -m pip install faster-whisper --break-system-packages 2>&1 | tail -5
+          # Pre-download the model so it's cached for the pipeline
+          echo "Downloading faster-whisper base model..."
+          python3 -c "
+from faster_whisper import WhisperModel
+model = WhisperModel('base', device='cpu', compute_type='int8')
+print('faster-whisper base model loaded successfully!')
+" 2>&1
 
       - name: Setup Shadowsocks
         id: ss

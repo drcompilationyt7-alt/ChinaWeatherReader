@@ -68,7 +68,7 @@ class GitHubActionsRunner {
 
   /**
    * Transcribe audio using local faster-whisper (FREE, no API key needed)
-   * Install: pip install faster-whisper
+   * Uses python3 -c command directly (no temp scripts) for reliability
    */
   async _transcribeAudio(videoPath) {
     const audioDir = path.join(config.paths.assets, 'audio');
@@ -77,8 +77,7 @@ class GitHubActionsRunner {
     const audioPath = path.join(audioDir, `audio_${Date.now()}.mp3`);
 
     try {
-      // Extract first 60 seconds of audio
-      this.logger.info('Extracting audio for free local transcription...');
+      this.logger.info('Extracting audio for transcription...');
       execSync(
         `ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`,
         { timeout: 30000 }
@@ -89,49 +88,36 @@ class GitHubActionsRunner {
         return null;
       }
 
-      // Use faster-whisper (local, free, no API key)
       this.logger.info('Transcribing with faster-whisper (free, local)...');
-      const pythonScript = `
-import sys
-sys.path.insert(0, '.')
-try:
-    from faster_whisper import WhisperModel
-    model = WhisperModel("base", device="cpu", compute_type="int8")
-    segments, info = model.transcribe("${audioPath.replace(/\\/g, '\\\\')}", language="en")
-    text = " ".join(seg.text for seg in segments)
-    print(text[:1000] if text else "")
-except Exception as e:
-    print(f"WHISPER_ERROR: {e}")
-    sys.exit(1)
-`;
-      const tmpScript = path.join(audioDir, `whisper_${Date.now()}.py`);
-      fs.writeFileSync(tmpScript, pythonScript);
 
-      let transcript = '';
-      try {
-        const output = execSync(`python3 "${tmpScript}" 2>/dev/null`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
-        if (output && !output.startsWith('WHISPER_ERROR')) {
-          transcript = output;
-        } else {
-          this.logger.warn(`Local whisper error: ${output}`);
-        }
-      } catch (whisperError) {
-        this.logger.warn(`Local whisper failed: ${whisperError.message.substring(0, 80)}`);
-      }
+      // Use python3 -c directly instead of writing temp scripts
+      // Audio path needs proper escaping for Python
+      const pyPath = audioPath.replace(/\\/g, '\\\\');
+      const pyCmd = `python3 -c "
+from faster_whisper import WhisperModel
+model = WhisperModel('base', device='cpu', compute_type='int8')
+segments, info = model.transcribe('${pyPath}', language='en')
+text = ' '.join(seg.text for seg in segments)
+print(text[:1000] if text else '')
+" 2>&1`;
 
-      // Cleanup
-      try { fs.unlinkSync(tmpScript); } catch {}
+      const output = execSync(pyCmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
+
+      // Cleanup audio file
       try { fs.unlinkSync(audioPath); } catch {}
 
-      if (transcript && transcript.length > 0) {
-        this.logger.success(`Transcription: "${transcript.substring(0, 100)}..."`);
-        return transcript.trim();
+      if (output && !output.includes('Error') && !output.includes('Traceback')) {
+        this.logger.success(`Transcription: "${output.substring(0, 100)}..."`);
+        return output.trim();
       }
-      this.logger.info('No transcript generated (video may have no speech)');
+
+      this.logger.warn(`Whisper returned no text: ${output.substring(0, 100)}`);
       return null;
+
     } catch (error) {
-      this.logger.warn(`Transcription failed: ${error.message.substring(0, 80)}`);
+      this.logger.warn(`Transcription failed: ${error.message.substring(0, 100)}`);
       try { fs.unlinkSync(audioPath); } catch {}
+      // Don't fail pipeline - just skip transcription
       return null;
     }
   }
@@ -141,6 +127,7 @@ except Exception as e:
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
 
+    // NOTE: The finder-controller.js will add #shorts suffix automatically!
     const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
     const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
     const all = [...nonAsianCountries, ...asianCountries];
@@ -150,24 +137,28 @@ except Exception as e:
     const c3 = all[Math.floor(Math.random()*all.length)];
 
     const getSuffix = (country) => {
+      // finder-controller's enrichQuery() adds #shorts to ALL queries
+      // For Asian: "Japan douyin #shorts" after enrichQuery
+      // For non-Asian: "Germany #shorts" after enrichQuery
       if (asianCountries.includes(country)) {
-        return `${country} douyin short`;
+        return `${country} douyin`;
       }
-      return `${country} short`;
+      return `${country}`;
     };
 
     const fallbackQueries = [
       getSuffix(c1),
       getSuffix(c2),
       getSuffix(c3),
-      `${c1} viral short`,
-      `${c2} trending short`
+      `${c1} viral`,
+      `${c2} trending`
     ];
 
     try {
       const aiPromise = this.ai.chatJSON(
-        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
-Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short viral", "Brazil short comedy"]`,
+        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. 
+For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin" style. For others keep simple but trending.
+Return JSON array of strings like: ["Japan douyin", "Nigeria", "Brazil"]`,
         `5 queries`, { useCheapModel: true, temperature: 0.8 }
       );
 
@@ -204,7 +195,7 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
     }
 
     allUrls.forEach((u, i) => {
-      this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}`);
+      this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}${u.isShort ? ' 📱' : ''}`);
     });
 
     this.logger.info('Step 3: AI ranking URLs...');
@@ -215,7 +206,7 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       top3.push(...allUrls.slice(0, 3));
     }
 
-    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}`));
+    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}${v.isShort ? ' 📱' : ''}`));
 
     this.logger.info('Step 4: Downloading top 3 ranked videos...');
     const downloaded = await downloadVideos(top3, config.paths.clips);
@@ -224,7 +215,7 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       this.logger.warn('No videos downloaded');
     }
 
-    this.logger.info('Step 5: Creating Shorts with local whisper transcription + AI voiceover...');
+    this.logger.info('Step 5: Creating Shorts with free local whisper transcription + AI voiceover...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
@@ -266,7 +257,7 @@ Write ONE short sentence (8-15 words) naturally introducing this video. Examples
 
 Match the tone of the content. Return ONLY the sentence.`;
         } else {
-          contextPrompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}.""This is a funny meme from ${country}""Return ONLY the sentence.`;
+          contextPrompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence. Example: "Check out this funny clip from ${country}"`;
         }
 
         try {
@@ -349,10 +340,10 @@ Match the tone of the content. Return ONLY the sentence.`;
           ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
 Query: "${query}"
-Video content (transcribed): "${s.transcript.substring(0, 300)}"
+Video content: "${s.transcript.substring(0, 300)}"
 
 Title: Catchy, max 70 chars, with ${country} flag emoji at start.
-Description: 3-4 descriptive sentences. Mention the country, type of content, and call to follow.
+Description: 3-4 descriptive sentences about the content. Call to follow.
 Return JSON: {"title":"...","description":"..."}`
           : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
 Country: ${country}
@@ -368,7 +359,7 @@ Return JSON: {"title":"...","description":"..."}`;
         );
 
         const title = (td.title || `\ud83c\udf0d ${query}`).substring(0, 100);
-        const description = td.description || `\ud83c\udf0d From ${country}. Follow Mr. WorldWideWebster for more global content!`;
+        const description = td.description || `\ud83c\udf0d From ${country}. Follow Mr. WorldWideWebster for more!`;
 
         const r = await this._uploadToYouTube({
           videoPath: s.path,
@@ -392,7 +383,7 @@ Return JSON: {"title":"...","description":"..."}`;
     await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, errors });
 
     this.logger.header('SUMMARY');
-    this.logger.info(`URLs: ${allUrls.length} | Ranked & Downloaded: ${downloaded.length} | Shorts: ${shorts.length} (${shorts.filter(s => s.hasVoiceover).length} with voiceover) | Uploaded: ${uploaded.length}`);
+    this.logger.info(`URLs: ${allUrls.length} | Downloaded: ${downloaded.length} | Shorts: ${shorts.length} (${shorts.filter(s => s.hasVoiceover).length} with voiceover) | Uploaded: ${uploaded.length}`);
     if (errors.length) errors.forEach(e => this.logger.warn(`  ${e}`));
     return { uploadedVideos: uploaded, errors };
   }
