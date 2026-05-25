@@ -50,13 +50,56 @@ class GitHubActionsRunner {
   _saveMemory(k, d) { fs.writeFileSync(path.join(this.memoryPath, `${k}.json`), JSON.stringify(d, null, 2)); this.memory[k] = d; }
 
   async _uploadToYouTube(v) {
-    if (!this.youtubeBridge?.isAuthenticated()) return null;
+    if (!this.youtubeBridge?.isAuthenticated()) {
+      this.logger.warn('YouTube not authenticated - skipping upload');
+      return null;
+    }
     try {
       const r = await this.youtubeBridge.uploadVideo({ videoPath: v.videoPath, title: v.title, description: v.description, tags: v.tags || ['mr worldwidewebster', 'shorts'] });
       this.logger.success(`Uploaded: ${r.url}`);
       return r;
-    } catch (e) { this.logger.error(`Upload: ${e.message}`); return null; }
+    } catch (e) {
+      this.logger.error(`Upload FAILED: ${e.message}`);
+      if (e.stack) this.logger.error(`Stack: ${e.stack.substring(0, 300)}`);
+      return null;
+    }
   }
+
+  async _boostVideo(videoUrl) {
+    if (!videoUrl) return;
+    try {
+      this.logger.info(`Boosting: ${videoUrl}`);
+      const { BoostEngine } = require('../boost/boost-engine');
+      const engine = new BoostEngine();
+      const result = await engine.run({
+        url: videoUrl,
+        views: parseInt(process.env.BOOST_MAX_VIEWS) || 75,
+      });
+      if (result.success) {
+        this.logger.success(`Boosted ${result.views} views`);
+      }
+    } catch (e) {
+      this.logger.warn(`Boost failed: ${e.message}`);
+    }
+  }
+
+  async _boostOldVideos() {
+    const history = this.memory['content-history'];
+    if (!history?.videos) return;
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const oldVideos = history.videos.filter(v => {
+      if (v.type !== 'shorts' && v.type !== 'explainer') return false;
+      const uploaded = new Date(v.uploadedAt || v.createdAt || 0).getTime();
+      return uploaded < oneWeekAgo && uploaded > 0;
+    });
+    this.logger.info(`Found ${oldVideos.length} videos older than 1 week to boost`);
+    for (const v of oldVideos) {
+      if (v.url) {
+        await this._boostVideo(v.url);
+      }
+    }
+  }
+
   async _sendDiscord(type, data) {
     try {
       const { DiscordBridge } = require('../discord/discord-bridge');
@@ -66,32 +109,15 @@ class GitHubActionsRunner {
     } catch {}
   }
 
-  /**
-   * Transcribe audio using local faster-whisper (FREE, no API key needed)
-   * Uses python3 -c command directly (no temp scripts) for reliability
-   */
   async _transcribeAudio(videoPath) {
     const audioDir = path.join(config.paths.assets, 'audio');
     if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-
     const audioPath = path.join(audioDir, `audio_${Date.now()}.mp3`);
-
     try {
       this.logger.info('Extracting audio for transcription...');
-      execSync(
-        `ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`,
-        { timeout: 30000 }
-      );
-
-      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) {
-        this.logger.warn('Audio extraction produced empty file');
-        return null;
-      }
-
-      this.logger.info('Transcribing with faster-whisper (free, local)...');
-
-      // Use python3 -c directly instead of writing temp scripts
-      // Audio path needs proper escaping for Python
+      execSync(`ffmpeg -y -i "${videoPath}" -t 60 -vn -acodec libmp3lame -ab 64k "${audioPath}" 2>/dev/null`, { timeout: 30000 });
+      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 1000) return null;
+      this.logger.info('Transcribing with faster-whisper...');
       const pyPath = audioPath.replace(/\\/g, '\\\\');
       const pyCmd = `python3 -c "
 from faster_whisper import WhisperModel
@@ -100,24 +126,16 @@ segments, info = model.transcribe('${pyPath}', language='en')
 text = ' '.join(seg.text for seg in segments)
 print(text[:1000] if text else '')
 " 2>&1`;
-
       const output = execSync(pyCmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
-
-      // Cleanup audio file
       try { fs.unlinkSync(audioPath); } catch {}
-
       if (output && !output.includes('Error') && !output.includes('Traceback')) {
-        this.logger.success(`Transcription: "${output.substring(0, 100)}..."`);
+        this.logger.success(`Transcript: "${output.substring(0, 100)}..."`);
         return output.trim();
       }
-
-      this.logger.warn(`Whisper returned no text: ${output.substring(0, 100)}`);
       return null;
-
     } catch (error) {
       this.logger.warn(`Transcription failed: ${error.message.substring(0, 100)}`);
       try { fs.unlinkSync(audioPath); } catch {}
-      // Don't fail pipeline - just skip transcription
       return null;
     }
   }
@@ -126,8 +144,6 @@ print(text[:1000] if text else '')
     this.logger.info('Step 1: Generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
-
-    // NOTE: The finder-controller.js will add #shorts suffix automatically!
     const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
     const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
     const all = [...nonAsianCountries, ...asianCountries];
@@ -135,37 +151,14 @@ print(text[:1000] if text else '')
     const c1 = avail.length > 0 ? avail[Math.floor(Math.random()*avail.length)] : all[Math.floor(Math.random()*all.length)];
     const c2 = all[Math.floor(Math.random()*all.length)];
     const c3 = all[Math.floor(Math.random()*all.length)];
-
-    const getSuffix = (country) => {
-      // finder-controller's enrichQuery() adds #shorts to ALL queries
-      // For Asian: "Japan douyin #shorts" after enrichQuery
-      // For non-Asian: "Germany #shorts" after enrichQuery
-      if (asianCountries.includes(country)) {
-        return `${country} douyin`;
-      }
-      return `${country}`;
-    };
-
-    const fallbackQueries = [
-      getSuffix(c1),
-      getSuffix(c2),
-      getSuffix(c3),
-      `${c1} viral`,
-      `${c2} trending`
-    ];
-
+    const getSuffix = (country) => asianCountries.includes(country) ? `${country} douyin` : `${country}`;
+    const fallbackQueries = [getSuffix(c1), getSuffix(c2), getSuffix(c3), `${c1} viral`, `${c2} trending`];
     try {
       const aiPromise = this.ai.chatJSON(
-        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. 
-For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin" style. For others keep simple but trending.
-Return JSON array of strings like: ["Japan douyin", "Nigeria", "Brazil"]`,
+        `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. For Asian countries use "douyin" style. For others keep simple but trending. Return JSON array of strings`,
         `5 queries`, { useCheapModel: true, temperature: 0.8 }
       );
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('AI query generation timed out')), 12000)
-      );
-
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('AI timed out')), 12000));
       const r = await Promise.race([aiPromise, timeoutPromise]);
       const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : fallbackQueries);
       this.queries = qs; this.countries = [c1, c2, c3];
@@ -174,48 +167,31 @@ Return JSON array of strings like: ["Japan douyin", "Nigeria", "Brazil"]`,
     } catch {
       this.queries = fallbackQueries;
       this.countries = [c1, c2, c3];
-      this.logger.success(`Fallback Queries: ${fallbackQueries.join(' | ')}`);
       return { queries: fallbackQueries, countries: [c1, c2, c3] };
     }
   }
 
   async runDaily() {
-    this.logger.header('DAILY: 10 URLs -> AI Rank -> Download Top 3 -> Shorts -> Upload');
+    this.logger.header('DAILY: 10 URLs -> AI Rank -> Download Top 3 -> Shorts -> Upload + Boost');
     const errors = [];
     const uploaded = [];
 
+    // Step 1-3: Search, rank, download
     const { queries, countries } = await this._generateQueries();
-
-    this.logger.info('Step 2: Searching 10 URLs with metadata...');
+    this.logger.info('Step 2: Searching 10 URLs...');
     const allUrls = await findUrlsForQueries(queries, 10);
-
-    if (allUrls.length === 0) {
-      this.logger.error('No URLs found');
-      return { uploadedVideos: [], errors: ['No URLs found'] };
-    }
-
-    allUrls.forEach((u, i) => {
-      this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0, 50)} | views: ${u.view_count || '?'}${u.isShort ? ' 📱' : ''}`);
-    });
-
-    this.logger.info('Step 3: AI ranking URLs...');
-    const { top3, explainer } = await rankVideos(allUrls, queries[0] || '', this.ai);
-
-    if (top3.length === 0) {
-      this.logger.warn('AI ranking failed, using first 3');
-      top3.push(...allUrls.slice(0, 3));
-    }
-
-    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0, 60)} | views: ${v.view_count || '?'}${v.isShort ? ' 📱' : ''}`));
-
-    this.logger.info('Step 4: Downloading top 3 ranked videos...');
+    if (allUrls.length === 0) return { uploadedVideos: [], errors: ['No URLs found'] };
+    allUrls.forEach((u, i) => this.logger.info(`  URL ${i+1}: ${(u.title||'').substring(0,50)} | views: ${u.view_count || '?'}${u.isShort ? ' 📱' : ''}`));
+    this.logger.info('Step 3: AI ranking...');
+    const { top3 } = await rankVideos(allUrls, queries[0] || '', this.ai);
+    if (top3.length === 0) top3.push(...allUrls.slice(0, 3));
+    top3.forEach((v, i) => this.logger.info(`  #${i+1}: ${(v.title||'').substring(0,60)} | views: ${v.view_count || '?'}${v.isShort ? ' 📱' : ''}`));
+    this.logger.info('Step 4: Downloading...');
     const downloaded = await downloadVideos(top3, config.paths.clips);
+    if (downloaded.length === 0) this.logger.warn('No videos downloaded');
 
-    if (downloaded.length === 0) {
-      this.logger.warn('No videos downloaded');
-    }
-
-    this.logger.info('Step 5: Creating Shorts with free local whisper transcription + AI voiceover...');
+    // Step 5: Create Shorts
+    this.logger.info('Step 5: Creating Shorts with free whisper + AI voiceover + Twemoji flag...');
     const { createShort } = require('./clip-editor');
     const dir = config.paths.clips;
     const shorts = [];
@@ -225,153 +201,80 @@ Return JSON array of strings like: ["Japan douyin", "Nigeria", "Brazil"]`,
       const query = queries[i] || queries[0] || '';
       const country = countries[i] || countries[0] || 'Global';
 
-      this.logger.info(`=== Processing short #${i+1}: ${country} ===`);
-
+      this.logger.info(`=== Short #${i+1}: ${country} ===`);
       let voiceoverPath = null;
       let voiceoverText = '';
       let transcript = null;
 
-      // Step 5a: Transcribe with local free whisper
+      try { transcript = await this._transcribeAudio(v.path); } catch {}
+
       try {
-        transcript = await this._transcribeAudio(v.path);
-        if (transcript) {
-          this.logger.success(`Transcript: ${transcript.substring(0, 120)}`);
-        }
-      } catch (txError) {
-        this.logger.warn(`Transcription error: ${txError.message}`);
-      }
-
-      // Step 5b: Generate voiceover from transcript + LLM
-      try {
-        let contextPrompt;
-
-        if (transcript) {
-          contextPrompt = `You are a narrator for "Mr. WorldWideWebster".
-This is a video from ${country}. Here's what's happening (transcribed):
-"${transcript}"
-
-Write ONE short sentence (8-15 words) naturally introducing this video. Examples:
-- "Watch this hilarious moment from ${country}"
-- "Check out this viral clip from ${country}"
-- "This ${country} short is going viral"
-
-Match the tone of the content. Return ONLY the sentence.`;
-        } else {
-          contextPrompt = `Write ONE short sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence. Example: "Check out this funny clip from ${country}"`;
-        }
-
+        let contextPrompt = transcript
+          ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcript.substring(0, 300)}". Write ONE sentence (8-15 words) introducing it. Return ONLY the sentence.`
+          : `Write ONE sentence (8-15 words) introducing a video from ${country}. Return ONLY the sentence.`;
         try {
-          const voiceoverPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Voiceover AI timed out')), 8000)
-          );
-          voiceoverText = await Promise.race([voiceoverPromise, timeoutPromise]);
+          const vPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
+          const tPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('VO timed out')), 8000));
+          voiceoverText = await Promise.race([vPromise, tPromise]);
+          if (!voiceoverText || voiceoverText.length < 5) voiceoverText = `Check out this clip from ${country}`;
+          voiceoverText = voiceoverText.replace(/["']/g, '').trim().substring(0, 120);
+        } catch { voiceoverText = `Check out this clip from ${country}`; }
 
-          if (!voiceoverText || voiceoverText.length < 5) {
-            voiceoverText = `Check out this clip from ${country}`;
-          }
-          voiceoverText = voiceoverText.replace(/["']/g, '').trim();
-          if (voiceoverText.length > 120) voiceoverText = voiceoverText.substring(0, 117) + '...';
-        } catch {
-          voiceoverText = `Check out this clip from ${country}`;
-        }
-
-        // TTS
         const vDir = path.join(config.paths.assets, 'voiceovers');
         if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
-
+        const safeText = voiceoverText.replace(/"/g, '\\"');
+        const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
         try {
-          const safeText = voiceoverText.replace(/"/g, '\\"');
-          const vPath = path.join(vDir, `vo_${Date.now()}_${i}.mp3`);
-          const cmd = `edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${vPath}" 2>/dev/null`;
-          execSync(cmd, { timeout: 30000 });
-          if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) {
-            voiceoverPath = vPath;
-            this.logger.success(`Voiceover for #${i+1}: "${voiceoverText}"`);
-          }
-        } catch (ttsError) {
-          this.logger.warn(`TTS failed for #${i+1}: ${ttsError.message}`);
-        }
-      } catch (aiError) {
-        this.logger.warn(`AI voiceover failed for #${i+1}: ${aiError.message}`);
-      }
+          execSync(`edge-tts --voice "en-US-JennyNeural" --text "${safeText}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
+          if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
+        } catch {}
+      } catch {}
 
       let startTime = 5;
       try {
-        const info = execSync(
-          `ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`,
-          { timeout: 5000, encoding: 'utf8' }
-        ).trim();
+        const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim();
         if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info);
       } catch {}
 
       const outputPath = path.join(dir, `short_${Date.now()}.mp4`);
-      const result = await createShort(v.path, {
-        type: 'clip_with_voiceover',
-        startTime,
-        duration: 30,
-        query,
-        countryText: country,
-        voiceoverPath,
-        explainerText: voiceoverText,
-        outputPath,
-      });
+      try {
+        const result = await createShort(v.path, { startTime, duration: 30, query, countryText: country, voiceoverPath, explainerText: voiceoverText, outputPath });
+        if (result) shorts.push({ path: result, query, country, hasVoiceover: !!voiceoverPath, voiceoverText, transcript, sourceUrl: v.sourceUrl });
+      } catch (e) { this.logger.warn(`Create short failed: ${e.message}`); }
+    }
 
-      if (result) {
-        shorts.push({
-          path: result,
-          query,
-          country,
-          hasVoiceover: !!voiceoverPath,
-          voiceoverText,
-          transcript,
-          sourceUrl: v.sourceUrl
-        });
+    this.logger.success(`Created ${shorts.length} Shorts (${shorts.filter(s => s.hasVoiceover).length} with voiceover)`);
+
+    // Step 6: Upload + Boost
+    for (const s of shorts) {
+      try {
+        const query = s.query || '';
+        const country = s.country;
+        const titlePrompt = s.transcript
+          ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nContent: "${s.transcript.substring(0, 300)}"\nTitle: catchy, max 70 chars. Description: 3-4 sentences. Return JSON: {"title":"...","description":"..."}`
+          : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.\nCountry: ${country}\nTitle: catchy, max 70 chars. Description: 2-3 sentences. Return JSON.`;
+        const td = await this.ai.chatJSON(titlePrompt, `Title for ${country}`, { useCheapModel: true, temperature: 0.7 });
+        const title = (td.title || `${country} clip`).substring(0, 100);
+        const description = td.description || `From ${country}. Follow Mr. WorldWideWebster for more!`;
+        const uploadResult = await this._uploadToYouTube({ videoPath: s.path, title, description, tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()] });
+        if (uploadResult) {
+          uploaded.push({ title, url: uploadResult.url, country });
+          // Boost this new video
+          await this._boostVideo(uploadResult.url);
+        } else {
+          errors.push(`Upload failed: ${title}`);
+        }
+      } catch (e) {
+        this.logger.error(`Upload step error: ${e.message}`);
+        errors.push(`Upload error: ${e.message}`);
       }
     }
 
-    this.logger.success(`Created ${shorts.length} Shorts with ${shorts.filter(s => s.hasVoiceover).length} voiceovers`);
+    // Step 7: Boost old videos (1 week+)
+    this.logger.info('Step 7: Boosting older videos...');
+    await this._boostOldVideos();
 
-    for (const s of shorts) {
-      const query = s.query || '';
-      const country = s.country;
-      try {
-        const titlePrompt = s.transcript
-          ? `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
-Country: ${country}
-Query: "${query}"
-Video content: "${s.transcript.substring(0, 300)}"
-
-Title: Catchy, max 70 chars, with ${country} flag emoji at start.
-Description: 3-4 descriptive sentences about the content. Call to follow.
-Return JSON: {"title":"...","description":"..."}`
-          : `You write for Mr. WorldWideWebster. Generate YouTube Shorts title+description.
-Country: ${country}
-Query: "${query}"
-
-Title: catchy, max 70 chars, with ${country} flag emoji. Description: 2-3 sentences.
-Return JSON: {"title":"...","description":"..."}`;
-
-        const td = await this.ai.chatJSON(
-          titlePrompt,
-          `Title for ${country} short`,
-          { useCheapModel: true, temperature: 0.7 }
-        );
-
-        const title = (td.title || `\ud83c\udf0d ${query}`).substring(0, 100);
-        const description = td.description || `\ud83c\udf0d From ${country}. Follow Mr. WorldWideWebster for more!`;
-
-        const r = await this._uploadToYouTube({
-          videoPath: s.path,
-          title,
-          description,
-          tags: ['mr worldwidewebster', 'shorts', country.toLowerCase()].filter(Boolean),
-        });
-        if (r) uploaded.push({ title, url: r.url, type: 'clip_with_voiceover' });
-        else errors.push(`Upload failed: ${title}`);
-      } catch {}
-    }
-
+    // Save memory
     const cm = this.memory['channel-memory'];
     cm.totalVideosPosted = (cm.totalVideosPosted||0) + uploaded.length;
     if (countries) {
@@ -383,7 +286,7 @@ Return JSON: {"title":"...","description":"..."}`;
     await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, errors });
 
     this.logger.header('SUMMARY');
-    this.logger.info(`URLs: ${allUrls.length} | Downloaded: ${downloaded.length} | Shorts: ${shorts.length} (${shorts.filter(s => s.hasVoiceover).length} with voiceover) | Uploaded: ${uploaded.length}`);
+    this.logger.info(`URLs: ${allUrls.length} | Downloaded: ${downloaded.length} | Shorts: ${shorts.length} | Uploaded: ${uploaded.length}`);
     if (errors.length) errors.forEach(e => this.logger.warn(`  ${e}`));
     return { uploadedVideos: uploaded, errors };
   }
