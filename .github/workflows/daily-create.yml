@@ -37,25 +37,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip
-          # Install Deno for yt-dlp EJS challenge solving (n-challenge fix)
           curl -fsSL https://deno.land/install.sh | sh
           export DENO_INSTALL="$HOME/.deno"
           echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
-          # Install Python deps
-          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs --break-system-packages
+          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs faster-whisper --break-system-packages
           npm ci || npm install
           npm install axios
 
-      - name: Install & test faster-whisper
-        run: |
-          python3 -m pip install faster-whisper --break-system-packages 2>&1 | tail -5
-          # Pre-download the model so it's cached for the pipeline
-          echo "Downloading faster-whisper base model..."
-          python3 -c "
-from faster_whisper import WhisperModel
-model = WhisperModel('base', device='cpu', compute_type='int8')
-print('faster-whisper base model loaded successfully!')
-" 2>&1
+      - name: Pre-download whisper model
+        run: python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
 
       - name: Setup Shadowsocks
         id: ss
