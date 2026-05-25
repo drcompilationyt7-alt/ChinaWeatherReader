@@ -4,8 +4,7 @@
  * - No upper view cap — we want viral potential (50k+ views)
  * - MIN_VIEWS = 50k
  * - Filters out "famous YouTubers" by subscriber count
- *   yt-dlp provides channel_follower_count
- *   We skip channels with > 500k subscribers (big creators = famous)
+ * - Filters out YouTube Live streams (only pre-recorded content)
  */
 const { execSync } = require('child_process');
 const { Logger } = require('../core/logger');
@@ -52,6 +51,8 @@ function parseResults(out, query) {
   return out.split('\n').filter(Boolean).map(line => {
     try {
       const p = JSON.parse(line);
+      // Skip YouTube Live streams (is_live = true)
+      if (p.is_live) return null;
       return {
         url: `https://www.youtube.com/watch?v=${p.id}`,
         shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
@@ -87,13 +88,20 @@ function scoreByRecency(uploadDate) {
   } catch { return 0; }
 }
 
+/**
+ * Check if a channel is "famous" by looking up subscriber count via yt-dlp.
+ */
 function isTooFamous(videoUrl) {
   try {
     const meta = execSync(`yt-dlp --dump-json --no-download "${videoUrl}" 2>/dev/null`, { timeout: 10000, encoding: 'utf8', maxBuffer: 1024*1024 }).trim();
     if (meta) {
       const p = JSON.parse(meta.split('\n')[0]);
+      if (p.is_live) {
+        logger.info(`  📡 Live stream — skip`);
+        return true;
+      }
       if (p.channel_follower_count && p.channel_follower_count > 500000) {
-        logger.info(`  ⭐ Famous channel: ${p.channel} (${(p.channel_follower_count/1000).toFixed(0)}k subs) — skip`);
+        logger.info(`  ⭐ Famous: ${p.channel} (${(p.channel_follower_count/1000).toFixed(0)}k subs) — skip`);
         return true;
       }
       if (p.channel) logger.info(`  📺 ${p.channel} (${p.channel_follower_count || '?'} subs)`);
@@ -139,7 +147,7 @@ async function findUrlsForQueries(queries, maxTotal = 12) {
   }
 
   const shortCount = filtered.filter(r => r.isShort).length;
-  logger.success(`Found ${filtered.length} URLs (${shortCount} Shorts, min ${MIN_VIEWS} views, no famous channels)`);
+  logger.success(`Found ${filtered.length} URLs (${shortCount} Shorts, min ${MIN_VIEWS} views, no live, no famous)`);
   return filtered;
 }
 
