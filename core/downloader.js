@@ -1,7 +1,7 @@
 /**
  * Downloader module
- * Uses Shadowsocks + bgutil PO Token plugin for autonomous YouTube downloads.
- * Tests proxy, shows IP, retries across multiple clients.
+ * Uses Shadowsocks proxy + bgutil PO Token plugin.
+ * Correct PO syntax: po_token=CLIENT.TYPE+PROVIDER
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -24,7 +24,7 @@ async function downloadVideo(entry, outputDir) {
   const env = { ...process.env };
   try { env.PATH = `${path.dirname(process.execPath)}:${env.PATH || ''}`; } catch {}
 
-  // Fix socks5 -> socks5h for DNS through proxy
+  // socks5 -> socks5h for DNS through proxy
   let proxy = (process.env.YT_PROXY || '').replace(/^socks5:\/\//, 'socks5h://');
   
   // Test proxy
@@ -40,22 +40,18 @@ async function downloadVideo(entry, outputDir) {
 
   const proxyArg = proxy ? `--proxy "${proxy}"` : '';
   
-  // Try each client with bgutil PO Token plugin + without
-  const strategies = [
-    // With PO Token plugin + web client (bgutil auto-generates tokens)
-    { name: 'web+PO', args: `--extractor-args "youtube:po_token=web.gvs+;player_client=web"` },
-    // With PO Token + mweb client
-    { name: 'mweb+PO', args: `--extractor-args "youtube:po_token=mweb.gvs+;player_client=mweb"` },
-    // web_embedded (historically no PO needed)
-    { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
-    // android_vr
-    { name: 'android_vr', args: '--extractor-args "youtube:player_client=android_vr"' },
-    // Default
-    { name: 'default', args: '' },
-  ];
-
+  // Strategies with correct PO token syntax for bgutil
+  // po_token=CLIENT.TYPE+PROVIDER where PROVIDER=bgutil (plugin name)
   const PY = 'python3 -m yt_dlp';
   const base = `${proxyArg} -f "best[height<=720]" --download-sections "*0-${MAX_DURATION}" -o "${outputFile}" "${url}" --no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --user-agent "${UA}" --js-runtimes node --force-ipv4`;
+  
+  const strategies = [
+    { name: 'web+bgutil', args: '--extractor-args "youtube:po_token=web.gvs+bgutil;player_client=web"' },
+    { name: 'mweb+bgutil', args: '--extractor-args "youtube:po_token=mweb.gvs+bgutil;player_client=mweb"' },
+    { name: 'web_safari+bgutil', args: '--extractor-args "youtube:po_token=web_safari.gvs+bgutil;player_client=web_safari"' },
+    { name: 'embedded', args: '--extractor-args "youtube:player_client=web_embedded"' },
+    { name: 'default', args: '' },
+  ];
 
   for (const s of strategies) {
     try {
