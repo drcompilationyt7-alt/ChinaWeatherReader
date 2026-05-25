@@ -69,9 +69,9 @@ class GitHubActionsRunner {
     this.logger.info('Step 1: AI generating queries...');
     const ch = this.memory['channel-memory'] || {};
     const used = ch.countriesUsedThisWeek || [];
+    
     // Asian countries: use "douyin short" query suffix
     // Other countries: use "short" query suffix
-    // This ensures we find YouTube Shorts and Douyin-style content
     const asianCountries = ['Japan','South Korea','China','Thailand','Vietnam','India','Indonesia'];
     const nonAsianCountries = ['Nigeria','Germany','Brazil','Mexico','UK','Egypt','Italy','Spain','France','Australia'];
     const all = [...nonAsianCountries, ...asianCountries];
@@ -80,7 +80,6 @@ class GitHubActionsRunner {
     const c2 = all[Math.floor(Math.random()*all.length)];
     const c3 = all[Math.floor(Math.random()*all.length)];
 
-    // Build query suffix based on country type
     const getSuffix = (country) => {
       if (asianCountries.includes(country)) {
         return `${country} douyin short`;
@@ -88,32 +87,40 @@ class GitHubActionsRunner {
       return `${country} short`;
     };
 
+    // BUILD FALLBACK QUERIES IMMEDIATELY (don't wait for AI)
+    const fallbackQueries = [
+      getSuffix(c1),
+      getSuffix(c2),
+      getSuffix(c3),
+      `${c1} viral short`,
+      `${c2} trending short`
+    ];
+
+    // Try AI with a SHORT timeout - if it takes >10s, use fallback
     try {
-      const r = await this.ai.chatJSON(
+      const aiPromise = this.ai.chatJSON(
         `Generate 5 YouTube search queries for SHORT/DOUYIN-STYLE MEME/STREAMER/EXPLAINER videos from ${c1}, ${c2}, ${c3}. Each query must include the country name and the word "short". For Asian countries (Japan, Korea, China, India, Thailand, Vietnam, Indonesia), use "douyin short" as suffix. For others use "short" suffix.
 Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short viral", "Brazil short comedy"]`,
-        `5 queries`, { useScriptModel:true, temperature:0.8 }
+        `5 queries`, { useCheapModel: true, temperature: 0.8 }
       );
-      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : [
-        getSuffix(c1),
-        getSuffix(c2),
-        getSuffix(c3),
-        `${c1} viral short`,
-        `${c2} trending short`
-      ]);
+      
+      // Race the AI against a 12-second timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('AI query generation timed out')), 12000)
+      );
+      
+      const r = await Promise.race([aiPromise, timeoutPromise]);
+      const qs = Array.isArray(r) ? r.slice(0,5) : (r.queries ? r.queries.slice(0,5) : fallbackQueries);
       this.queries = qs; this.countries = [c1, c2, c3];
-      this.logger.success(`Queries: ${qs.join(' | ')}`);
+      this.logger.success(`AI Queries: ${qs.join(' | ')}`);
       return { queries: qs, countries: [c1, c2, c3] };
     } catch {
-      this.queries = [
-        getSuffix(c1),
-        getSuffix(c2),
-        getSuffix(c3),
-        `${c1} viral short`,
-        `${c2} trending short`
-      ];
+      // Use fast fallback - no AI required
+      this.logger.info('Using fast fallback queries (no AI wait)');
+      this.queries = fallbackQueries;
       this.countries = [c1, c2, c3];
-      return { queries: this.queries, countries: this.countries };
+      this.logger.success(`Fallback Queries: ${fallbackQueries.join(' | ')}`);
+      return { queries: fallbackQueries, countries: [c1, c2, c3] };
     }
   }
 
@@ -122,7 +129,7 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
     const errors = [];
     const uploaded = [];
 
-    // Step 1: Generate queries
+    // Step 1: Generate queries (fast - 12s timeout, instant fallback)
     const { queries, countries } = await this._generateQueries();
 
     // Step 2: Search 10 URLs with metadata
@@ -171,15 +178,13 @@ Return JSON array of strings like: ["Japan douyin short funny", "Nigeria short v
       // Assign each downloaded video to its corresponding country
       const country = countries[i] || countries[0] || 'Global';
 
-      // Generate AI voiceover for EVERY short (not just explainer)
-      // Voiceover gives brief context like "This is a funny meme from [country]"
+      // Generate AI voiceover for EVERY short
       this.logger.info(`Generating voiceover for #${i+1}: ${(v.title||'').substring(0, 50)}`);
       
       let voiceoverPath = null;
       let voiceoverText = '';
       
       try {
-        // Use AI to generate a brief descriptive text for this video
         const contextPrompt = `You are a narrator for "Mr. WorldWideWebster". Write ONE short sentence (8-15 words) introducing a video from ${country}. 
 Examples:
 - "This is a funny meme from ${country}"
@@ -192,11 +197,16 @@ Video title: "${v.title || 'Unknown'}"
 Return ONLY the sentence, no quotes, no JSON.`;
         
         try {
-          voiceoverText = await this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
+          // Race AI against 8s timeout for each voiceover
+          const voiceoverPromise = this.ai.chat(contextPrompt, { useCheapModel: true, temperature: 0.7 });
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Voiceover AI timed out')), 8000)
+          );
+          voiceoverText = await Promise.race([voiceoverPromise, timeoutPromise]);
+          
           if (!voiceoverText || voiceoverText.length < 5) {
             voiceoverText = `This is a funny clip from ${country}`;
           }
-          // Clean up: remove quotes, trim
           voiceoverText = voiceoverText.replace(/["']/g, '').trim();
           if (voiceoverText.length > 120) voiceoverText = voiceoverText.substring(0, 117) + '...';
         } catch {
@@ -223,7 +233,7 @@ Return ONLY the sentence, no quotes, no JSON.`;
         this.logger.warn(`AI context generation failed for #${i+1}: ${aiError.message}`);
       }
 
-      // Detect smart start time by finding where audio starts
+      // Detect smart start time
       let startTime = 5; // default
       try {
         const info = require('child_process').execSync(
