@@ -1,4 +1,4 @@
-name: Bi-Weekly Memory Cleanup
+name: Bi-Weekly Memory & Output Cleanup
 
 on:
   schedule:
@@ -57,12 +57,18 @@ JSONEOF
           rm -f memory/state.db memory/state.db-shm memory/state.db-wal
           rm -f memory/performance-metrics.json
           rm -f memory/trending-log.json
-          rm -rf memory/sessions memory/skills
+          rm -rf memory/sessions
+
+      - name: Clean output folder (bi-weekly)
+        run: |
+          rm -rf output/clips/* output/assets/* output/temp/* 2>/dev/null || true
+          rm -rf output/scripts/* output/long-form/* 2>/dev/null || true
+          echo "✅ Output folder cleaned"
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --quiet && git diff --staged --quiet || git commit -m "chore: bi-weekly memory cleanup [skip ci]"
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: bi-weekly memory & output cleanup [skip ci]"
           git push
