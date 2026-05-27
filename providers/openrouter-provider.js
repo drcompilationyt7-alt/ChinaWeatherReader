@@ -14,7 +14,7 @@ class OpenRouterProvider {
     this.currentKeyIndex = 0;
 
     this.defaultModel = config.openrouter?.defaultModel || 'openrouter/owl-alpha';
-    this.fallbackModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    this.fallbackModel = 'openrouter/owl-alpha';
     this.videoModel = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
     this.scriptModel = config.openrouter?.scriptModel || this.defaultModel;
     this.agentModel = config.openrouter?.agentModel || this.defaultModel;

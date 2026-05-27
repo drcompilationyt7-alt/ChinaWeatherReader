@@ -23,7 +23,7 @@ const config = {
     scriptModel: process.env.OPENROUTER_SCRIPT_MODEL || 'openrouter/owl-alpha',
     agentModel: process.env.OPENROUTER_AGENT_MODEL || 'openrouter/owl-alpha',
     imageModel: process.env.OPENROUTER_IMAGE_MODEL || 'black-forest-labs/flux-schnell',
-    freeModel: process.env.OPENROUTER_FREE_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+    freeModel: process.env.OPENROUTER_FREE_MODEL || 'openrouter/owl-alpha',
   },
 
   openai: {
