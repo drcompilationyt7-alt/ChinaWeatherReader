@@ -108,13 +108,7 @@ class GitHubActionsRunner {
   }
 
   async _generateVoiceover(country, transcriptText) {
-    try {
-      const ctx = transcriptText ? `You narrate for Mr. WorldWideWebster. Video from ${country}. Content: "${transcriptText.substring(0, 500)}". Write ONE sentence in ENGLISH (8-15 words). Return ONLY sentence.` : `Write ONE sentence in ENGLISH for a video from ${country}.`;
-      const r = await Promise.race([this.ai.chat(ctx, { useCheapModel: true, temperature: 0.7 }), new Promise(r => setTimeout(() => r(''), 8000))]);
-      if (r?.length > 5) { const c = r.replace(/["']/g, '').trim().substring(0, 120); if (!this._hasProfanity(c)) return c; }
-    } catch {}
-    const result = await this._ollamaGenerate(`Write ONE short sentence in ENGLISH (8-15 words) introducing a video from ${country}.`, { temperature: 0.8, maxTokens: 100 });
-    if (result?.length > 5 && !this._hasProfanity(result)) return result.replace(/["']/g, '').trim().substring(0, 120);
+    // Always use short fixed template — no AI generation needed for non-special clips
     return `Check out this clip from ${country}`;
   }
 
@@ -132,17 +126,93 @@ class GitHubActionsRunner {
     return { title: originalTitle.substring(0, 100), description: `Amazing content from ${country}! Follow Mr. WorldWideWebster! #shorts #${country.toLowerCase()} #worldwide` };
   }
 
-  _burnSubtitles(videoPath, outputPath, text) {
+  /**
+   * Generate TikTok-style ASS subtitles from a text string.
+   * Splits into 1-2 word blocks with proper timing.
+   * @param {string} text - The translated text to subtitle
+   * @param {number} totalDuration - Total duration in seconds to spread subtitles across
+   * @returns {string} - ASS subtitle file content
+   */
+  _generateAssSubs(text, totalDuration) {
+    if (!text) return null;
+    
+    // Split into words
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) return null;
+    
+    // Group into 1-2 word blocks
+    const blocks = [];
+    let i = 0;
+    while (i < words.length) {
+      // Usually 1 word, sometimes 2 if short
+      if (i + 1 < words.length && words[i].length + words[i+1].length < 12) {
+        blocks.push(words[i] + ' ' + words[i+1]);
+        i += 2;
+      } else {
+        blocks.push(words[i]);
+        i += 1;
+      }
+    }
+    
+    // Calculate time per block
+    const timePerBlock = totalDuration / blocks.length;
+    
+    // Build ASS content
+    let assContent = `[Script Info]
+ScriptType: v4.00+
+Collisions: Normal
+PlayResX: 1080
+PlayResY: 1920
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BorderStyle, Outline, Shadow, Alignment, MarginV, MarginL, MarginR
+Style: Default,Arial,16,&H00FFFFFF,&H00000000,1,2,0,2,40,30,30
+
+[Events]
+Format: Layer, Start, End, Style, Text
+`;
+    
+    let blockStart = 0;
+    for (const block of blocks) {
+      const blockEnd = Math.min(totalDuration, blockStart + timePerBlock);
+      const startStr = this._formatAssTime(blockStart);
+      const endStr = this._formatAssTime(blockEnd);
+      assContent += `Dialogue: 0,${startStr},${endStr},Default,${block.replace(/"/g, '\\"')}\n`;
+      blockStart = blockEnd;
+    }
+    
+    return assContent;
+  }
+
+  _formatAssTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const cs = Math.floor((s - Math.floor(s)) * 100);
+    return `${h}:${String(m).padStart(2,'0')}:${String(Math.floor(s)).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+  }
+
+  _burnSubtitles(videoPath, outputPath, text, totalDuration) {
     if (!text) return false;
     try {
-      const lines = []; let cur = '';
-      for (const w of text.split(' ')) { if ((cur + ' ' + w).length > 30) { lines.push(cur); cur = w; } else { cur = cur ? cur + ' ' + w : w; } }
-      if (cur) lines.push(cur);
-      const srtPath = videoPath.replace('.mp4', '_caption.srt');
-      fs.writeFileSync(srtPath, `1\n00:00:00,000 --> 00:00:30,000\n${lines.slice(0, 3).join('\n')}\n`, 'utf8');
-      execSync(`ffmpeg -y -i "${videoPath}" -vf "subtitles='${srtPath.replace(/'/g, "'\\\\''")}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV=80,Alignment=2'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`, { timeout: 60000 });
-      try { fs.unlinkSync(srtPath); } catch {} return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
-    } catch (e) { this.logger.warn(`Caption: ${e.message.substring(0, 100)}`); return false; }
+      // Generate ASS subtitles with 1-2 word blocks
+      const duration = totalDuration || 30;
+      const assContent = this._generateAssSubs(text, duration);
+      if (!assContent) return false;
+      
+      const assPath = videoPath.replace('.mp4', '_caption.ass');
+      fs.writeFileSync(assPath, assContent, 'utf8');
+      
+      execSync(
+        `ffmpeg -y -i "${videoPath}" -vf "ass='${assPath.replace(/'/g, "'\\\\''")}'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" 2>/dev/null`,
+        { timeout: 60000 }
+      );
+      try { fs.unlinkSync(assPath); } catch {}
+      return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000;
+    } catch (e) {
+      this.logger.warn(`Caption: ${e.message.substring(0, 100)}`);
+      return false;
+    }
   }
 
   async _detectCountry(transcript, title, expected, sourceUrl) {
@@ -260,12 +330,20 @@ print(json.dumps({'word_count': words}))
 
     // Step 5: Generate TTS voiceover
     let voiceoverPath = null;
+    let voDuration = 4;
     try {
       const vDir = path.join(config.paths.assets, 'voiceovers');
       if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
       const vPath = path.join(vDir, `vo_special_${Date.now()}.mp3`);
       execSync(`edge-tts --voice "${TTS_VOICE}" --text "${locationScript.replace(/"/g, '\\"')}" --write-media "${vPath}" 2>/dev/null`, { timeout: 30000 });
-      if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
+      if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) {
+        voiceoverPath = vPath;
+        // Get actual voiceover duration
+        try {
+          const probeOut = execSync(`ffprobe -i "${vPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`, { timeout: 5000, encoding: 'utf8' }).trim();
+          if (probeOut) voDuration = Math.ceil(parseFloat(probeOut));
+        } catch {}
+      }
     } catch {}
     // clip-editor.js will mix: original audio at 10% + TTS at 100%
 
@@ -276,7 +354,22 @@ print(json.dumps({'word_count': words}))
     const outputPath = path.join(config.paths.clips, `short_special_${Date.now()}.mp4`);
     try {
       const result = await createShort(v.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
-      if (result) return { path: result, country, script: locationScript, voiceoverText: locationScript, originalTitle: v.sourceUrl?.title || v.title || `${country} Location` };
+      if (result) {
+        // Generate ASS subtitles from the voiceover script for the special short
+        const subbedPath = result.replace('.mp4', '_captioned.mp4');
+        if (this._burnSubtitles(result, subbedPath, locationScript, voDuration)) {
+          try { fs.unlinkSync(result); } catch {}
+          return {
+            path: subbedPath,
+            country,
+            script: locationScript,
+            voiceoverText: locationScript,
+            originalTitle: v.sourceUrl?.title || v.title || `${country} Location`,
+            hasSubtitles: true
+          };
+        }
+        return { path: result, country, script: locationScript, voiceoverText: locationScript, originalTitle: v.sourceUrl?.title || v.title || `${country} Location` };
+      }
     } catch {}
     return null;
   }
@@ -391,13 +484,21 @@ print(json.dumps({'word_count': words}))
 from faster_whisper import WhisperModel
 import json
 model = WhisperModel('base', device='cpu', compute_type='int8')
-segments, info = model.transcribe('${pyPath}')
+segments, info = model.transcribe('${pyPath}', word_timestamps=True)
 text = ' '.join(seg.text for seg in segments)
-print(json.dumps({'text': text[:1000], 'language': info.language}))
+words = []
+for seg in segments:
+    if seg.words:
+        for w in seg.words:
+            words.append({'word': w.word, 'start': w.start, 'end': w.end})
+print(json.dumps({'text': text[:1000], 'language': info.language, 'words': words}))
 " 2>&1`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10*1024*1024 }).toString().trim();
       try { fs.unlinkSync(audioPath); } catch {}
       if (output && !output.includes('Error') && !output.includes('Traceback')) {
-        try { const p = JSON.parse(output); return { text: p.text || '', language: p.language || 'en', isNonEnglish: p.language !== 'en' && p.language !== 'english' }; } catch { return { text: output, language: 'en', isNonEnglish: false }; }
+        try {
+          const p = JSON.parse(output);
+          return { text: p.text || '', language: p.language || 'en', isNonEnglish: p.language !== 'en' && p.language !== 'english', words: p.words || [] };
+        } catch { return { text: output, language: 'en', isNonEnglish: false, words: [] }; }
       }
       return null;
     } catch { try { fs.unlinkSync(audioPath); } catch {} return null; }
@@ -412,7 +513,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
   }
 
   async runDaily() {
-    this.logger.header('DAILY: 3 Trend + 1 Special');
+    this.logger.header('DAILY: AI-Screened 3 Trend + 1 Special');
     const errors = []; const uploaded = [];
 
     const ch = this.memory['channel-memory'] || {};
@@ -424,45 +525,144 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     const countries = [shuffled[0], shuffled[1], shuffled[2]];
     this.logger.info(`Countries for today: ${countries.join(', ')}`);
 
-    this.logger.info('Generating trend queries...');
-    let queries = this._getTrendingQueriesForCountries(countries);
-    if (Math.random() > 0.5) { const allTrends = ch.trendingKeywords || {}; const llmQ = await this._generateLLMQueries(countries, { ...BASE_TREND_KEYWORDS, ...allTrends }); queries = [...queries, ...llmQ]; }
-    this.logger.success(`Queries: ${queries.join(' | ')}`);
-
-    const allUrls = await findUrlsForQueries(queries, 12);
-    if (!allUrls.length) return { uploadedVideos: [], errors: ['No URLs'] };
-
-    this.logger.info('Ranking...');
-    const { top3 } = await rankVideos(allUrls, queries[0] || '', this.ai);
-    if (!top3.length) top3.push(...allUrls.slice(0, 3));
-
-    let downloaded = await downloadVideos(top3, config.paths.clips);
-    while (downloaded.length < 3 && downloaded.length < allUrls.length) {
-      const extra = allUrls.filter(u => !top3.includes(u));
-      if (!extra.length) break;
-      const more = await downloadVideos([extra[0]], config.paths.clips);
-      downloaded.push(...more);
+    // Step 1: Generate queries per country — ensures each country has its own query set
+    this.logger.info('Generating trend queries per country...');
+    const countryQueries = {};
+    for (const c of countries) {
+      const baseQ = this._getTrendingQueriesForCountries([c]);
+      const extraQ = await this._generateLLMQueries([c], { ...BASE_TREND_KEYWORDS, ...(ch.trendingKeywords || {}) });
+      countryQueries[c] = [...new Set([...baseQ, ...extraQ])].slice(0, 6);
     }
-    this.logger.info(`Downloaded ${downloaded.length}`);
+    this.logger.success(`Queries: ${Object.entries(countryQueries).map(([c, q]) => `${c}:${q.length}`).join(' | ')}`);
 
+    // Step 2: Find and download 4-5 videos per country (parallel per country)
+    const allDownloads = {};
+    for (const c of countries) {
+      const urls = await findUrlsForQueries(countryQueries[c], 9);
+      if (urls.length > 0) {
+        const downloaded = await downloadVideos(urls, config.paths.clips, 4);
+        if (downloaded.length > 0) allDownloads[c] = downloaded;
+      }
+    }
+    this.logger.info(`Downloaded: ${Object.values(allDownloads).flat().length} total videos`);
+
+    if (Object.keys(allDownloads).length === 0) return { uploadedVideos: [], errors: ['No downloads'] };
+
+    // Step 3: Transcribe + screen all videos in parallel with AI
+    const allScreened = {}; // { country: [{ video, screening }, ...] }
+
+    for (const c of countries) {
+      const videos = allDownloads[c] || [];
+      if (videos.length === 0) continue;
+
+      // Transcribe all videos for this country in parallel
+      const transcriptPromises = videos.map(v => this._transcribeAudio(v.path).catch(() => null));
+      const transcripts = await Promise.all(transcriptPromises);
+
+      // Filter profanity
+      const cleanPairs = [];
+      for (let i = 0; i < videos.length; i++) {
+        if (transcripts[i] && this._hasProfanity(transcripts[i].text)) {
+          this.logger.warn(`PROFANITY in ${path.basename(videos[i].path)} — skip`);
+          continue;
+        }
+        cleanPairs.push({ video: videos[i], transcript: transcripts[i]?.text || null, wordData: transcripts[i]?.words || [] });
+      }
+
+      if (cleanPairs.length === 0) {
+        this.logger.warn(`No clean videos for ${c}`);
+        continue;
+      }
+
+      // Screen all clean videos in parallel for this country
+      this.logger.info(`Screening ${cleanPairs.length} videos for ${c}...`);
+      const screenerPromises = cleanPairs.map(p =>
+        require('./video-screener').screenVideo(p.video, c, p.transcript)
+      );
+      const screenResults = await Promise.all(screenerPromises);
+
+      // Pair videos with their screening results
+      allScreened[c] = cleanPairs.map((p, i) => ({
+        video: p.video,
+        transcript: p.transcript,
+        wordData: p.wordData,
+        screening: screenResults[i]
+      }));
+
+      // Sort by score descending
+      allScreened[c].sort((a, b) => (b.screening?.score || 0) - (a.screening?.score || 0));
+    }
+
+    // Step 4: Re-categorize and pick best video per slot
+    const allCandidates = [];
+    for (const [origCountry, items] of Object.entries(allScreened)) {
+      for (const item of items) {
+        const detectedCountry = item.screening?.detectedCountry || origCountry;
+        allCandidates.push({
+          video: item.video,
+          transcript: item.transcript,
+          wordData: item.wordData,
+          detectedCountry,
+          originalCountry: origCountry,
+          countryCorrected: item.screening?.countryCorrected || false,
+          score: item.screening?.score || 5,
+          reasoning: item.screening?.reasoning || '',
+        });
+      }
+    }
+
+    // Log what we found
+    this.logger.info('Screen results:');
+    for (const c of allCandidates) {
+      this.logger.info(`  ${c.originalCountry}→${c.detectedCountry} | Score: ${c.score}/10 | ${c.reasoning.substring(0, 60)}`);
+    }
+
+    // Step 5: Pick best video for each country slot
+    const chosenVideos = [];
+    const usedDetectedCountries = new Set();
+
+    // First pass: pick best per target country slot
+    for (const targetCountry of countries) {
+      const candidatesForSlot = allCandidates.filter(c =>
+        !chosenVideos.includes(c) && c.detectedCountry === targetCountry
+      );
+      if (candidatesForSlot.length > 0) {
+        chosenVideos.push(candidatesForSlot[0]);
+        usedDetectedCountries.add(targetCountry);
+      }
+    }
+
+    // Second pass: fill remaining slots
+    const remainingSlots = countries.filter(c => !usedDetectedCountries.has(c));
+    for (const targetCountry of remainingSlots) {
+      const remaining = allCandidates.filter(c => !chosenVideos.includes(c));
+      const match = remaining.find(c => c.detectedCountry === targetCountry) || remaining[0];
+      if (match) {
+        chosenVideos.push(match);
+        usedDetectedCountries.add(match.detectedCountry);
+      }
+    }
+
+    // If still < 3, take highest scoring remaining
+    while (chosenVideos.length < 3) {
+      const remaining = allCandidates.filter(c => !chosenVideos.includes(c));
+      if (remaining.length === 0) break;
+      chosenVideos.push(remaining[0]);
+    }
+
+    this.logger.success(`Selected ${chosenVideos.length} trend videos for short creation`);
+
+    // Step 6: Create shorts from chosen videos
     const { createShort } = require('./clip-editor');
     const shorts = [];
 
-    for (let i = 0; i < downloaded.length; i++) {
-      const v = downloaded[i];
-      const originalCountry = countries[i] || countries[0] || 'Global';
-      const originalTitle = v.sourceUrl?.title || v.title || `${originalCountry} Clip`;
-      const sourceUrl = v.sourceUrl || '';
-      this.logger.info(`=== Trend ${i+1}: ${originalCountry} ===`);
+    for (let i = 0; i < chosenVideos.length; i++) {
+      const v = chosenVideos[i];
+      const country = v.detectedCountry || countries[i] || 'Global';
+      const originalTitle = v.video.sourceUrl?.title || v.video.title || `${country} Clip`;
+      this.logger.info(`=== Trend ${i+1}: ${v.originalCountry}→${country} (score: ${v.score}) ===`);
 
-      let transcript = null;
-      try { transcript = await this._transcribeAudio(v.path); } catch {}
-      if (transcript && this._hasProfanity(transcript.text)) { this.logger.warn(`PROFANITY — skip`); errors.push(`Profanity`); continue; }
-
-      const detected = await this._detectCountry(transcript, originalTitle, originalCountry, sourceUrl);
-      const country = detected.country;
-
-      const voiceoverText = await this._generateVoiceover(country, transcript?.text);
+      const voiceoverText = await this._generateVoiceover(country, v.transcript);
 
       let voiceoverPath = null;
       try {
@@ -473,22 +673,41 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
         if (fs.existsSync(vPath) && fs.statSync(vPath).size > 1000) voiceoverPath = vPath;
       } catch {}
 
+      // Check if video needs subtitle translation
       let englishSubtitle = null;
-      if (transcript?.isNonEnglish && transcript.text?.length > 10) {
-        englishSubtitle = await this._translateText(transcript.text);
+      let videoDuration = 30;
+      if (v.transcript) {
+        // Check if non-english
+        const isNonEnglish = /[^\x00-\x7F]/.test(v.transcript);
+        if (isNonEnglish && v.transcript.length > 10) {
+          englishSubtitle = await this._translateText(v.transcript);
+        }
       }
 
+      // Get video duration for subtitle timing
+      try {
+        const durOut = execSync(`ffprobe -i "${v.video.path}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`, { timeout: 5000, encoding: 'utf8' }).trim();
+        if (durOut) videoDuration = parseFloat(durOut);
+      } catch {}
+
       let startTime = 5;
-      try { const info = execSync(`ffprobe -i "${v.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim(); if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info); } catch {}
+      try {
+        const info = execSync(`ffprobe -i "${v.video.path}" -show_entries stream=start_time -of csv=p=0 2>/dev/null | head -1`, { timeout: 5000, encoding: 'utf8' }).trim();
+        if (info && parseFloat(info) > 0 && parseFloat(info) < 30) startTime = parseFloat(info);
+      } catch {}
 
       const outputPath = path.join(config.paths.clips, `short_${Date.now()}.mp4`);
       try {
-        const result = await createShort(v.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
+        const result = await createShort(v.video.path, { startTime, duration: 30, countryText: country, voiceoverPath, outputPath });
         if (result) {
           let finalPath = result;
+          // If we have a translated subtitle, burn it with ASS format
           if (englishSubtitle && englishSubtitle.length > 5 && !englishSubtitle.startsWith('Query:')) {
             const subbedPath = result.replace('.mp4', '_captioned.mp4');
-            if (this._burnSubtitles(result, subbedPath, englishSubtitle)) { try { fs.unlinkSync(result); } catch {}; finalPath = subbedPath; }
+            if (this._burnSubtitles(result, subbedPath, englishSubtitle, videoDuration)) {
+              try { fs.unlinkSync(result); } catch {}
+              finalPath = subbedPath;
+            }
           }
           shorts.push({ path: finalPath, country, voiceoverText, originalTitle, hasCaptions: !!englishSubtitle && !englishSubtitle.startsWith('Query:') });
         }
@@ -497,15 +716,28 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
 
     this.logger.success(`Created ${shorts.length} trend Shorts`);
 
+    // Step 7: Special short
     const remaining = this.allC.filter(c => !countries.includes(c));
     const specialCountry = remaining.length > 0 ? remaining[Math.floor(Math.random() * remaining.length)] : countries[Math.floor(Math.random() * countries.length)];
     this.logger.info('=== GENERATING 4TH SPECIAL LOCATION SHORT ===');
     const special = await this._createSpecialShort(specialCountry);
-    if (special) { shorts.push({ path: special.path, country: special.country, voiceoverText: special.script, originalTitle: special.originalTitle, hasCaptions: false, isSpecial: true }); this.logger.success(`Special location short for ${specialCountry} created`); }
-    else { this.logger.warn(`Special short for ${specialCountry} failed — skipping`); }
+    if (special) {
+      shorts.push({
+        path: special.path,
+        country: special.country,
+        voiceoverText: special.script,
+        originalTitle: special.originalTitle,
+        hasCaptions: special.hasSubtitles || false,
+        isSpecial: true
+      });
+      this.logger.success(`Special location short for ${specialCountry} created`);
+    } else {
+      this.logger.warn(`Special short for ${specialCountry} failed — skipping`);
+    }
 
     if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
 
+    // Step 8: Upload all shorts
     let totalViewsToday = 0;
     for (const s of shorts) {
       try {
@@ -515,7 +747,12 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
           targetTitle.description = `Amazing content from ${s.country}! Follow Mr. WorldWideWebster!`;
         }
         this.logger.success(`${s.isSpecial ? '📍 SPECIAL' : '📱 Trend'}: "${targetTitle.title}"`);
-        const r = await this._uploadToYouTube({ videoPath: s.path, title: targetTitle.title, description: targetTitle.description, tags: ['mr worldwidewebster', 'shorts', s.country.toLowerCase()] });
+        const r = await this._uploadToYouTube({
+          videoPath: s.path,
+          title: targetTitle.title,
+          description: targetTitle.description,
+          tags: ['mr worldwidewebster', 'shorts', s.country.toLowerCase()]
+        });
         if (r) {
           const estViews = Math.floor(Math.random() * 500) + 50;
           totalViewsToday += estViews;
@@ -538,12 +775,19 @@ print(json.dumps({'text': text[:1000], 'language': info.language}))
     if (cm.countriesUsedThisWeek.length > 14) cm.countriesUsedThisWeek = cm.countriesUsedThisWeek.slice(-14);
     this.memory['channel-memory'] = cm; this._saveMemory();
 
-    await this._sendDiscord('daily', { videos: uploaded, countries: cm.countriesUsedThisWeek, totalVideos: cm.totalVideosPosted, totalViews: totalViewsToday, errors });
+    await this._sendDiscord('daily', {
+      videos: uploaded,
+      countries: cm.countriesUsedThisWeek,
+      totalVideos: cm.totalVideosPosted,
+      totalViews: totalViewsToday,
+      errors
+    });
 
     this.logger.header('SUMMARY');
     this.logger.success(`✅ ${uploaded.length} posted (${uploaded.filter(u => u.special).length} special)`);
-    this.logger.success(`👁️ Total views: ${totalViewsToday.toLocaleString()}`);
-    this.logger.info(`🌍 Countries today: ${countries.join(', ')}${specialCountry ? ', ' + specialCountry : ''}`);
+    this.logger.success(`👁️ Estimated views: ${totalViewsToday.toLocaleString()}`);
+    this.logger.info(`🌍 Detected countries in trend shorts: ${chosenVideos.map(c => c.detectedCountry).join(', ')}`);
+    if (special) this.logger.info(`📍 Special: ${specialCountry}`);
     const sorted = [...uploaded].sort((a, b) => (b.views || 0) - (a.views || 0));
     this.logger.success('🏆 Top 3:');
     sorted.slice(0, 3).forEach((u, i) => this.logger.success(`   #${i+1}: ${u.title} — 👁️ ${u.views} views → ${u.url}`));

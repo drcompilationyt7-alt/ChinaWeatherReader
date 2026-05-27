@@ -63,6 +63,14 @@ function buildShortsFilter(srcW, srcH) {
   }
 }
 
+function probeVideoDuration(videoPath) {
+  try {
+    const out = execSync(`ffprobe -i "${videoPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`, { timeout: 10000, encoding: 'utf8' }).trim();
+    if (out) return parseFloat(out);
+  } catch {}
+  return null;
+}
+
 async function createShort(videoPath, options) {
   const outputPath = options.outputPath || videoPath.replace(/\.\w+$/, '_shorts.mp4');
   const tmpDir = path.dirname(outputPath);
@@ -96,12 +104,51 @@ async function createShort(videoPath, options) {
       } catch {}
     }
 
-    // CRF based on source resolution to avoid 16MB files from low-res ups Scalen
-    // Lower res = higher CRF (more compression)
+    // CRF for quality — lowered values for better output
     const pixelCount = srcW * srcH;
-    const crf = pixelCount < 100000 ? 28 : pixelCount < 300000 ? 25 : 23;
+    const crf = pixelCount < 100000 ? 22 : pixelCount < 300000 ? 20 : 18;
 
+    // Run upscaler if needed (only if source < 1080p)
+    let processedVideo = videoPath;
+    let upscaled = false;
+    if (srcH < 1080) {
+      try {
+        const { upscaleTo1080p } = require('./upscaler');
+        const upscaledPath = outputPath.replace('.mp4', '_upscaled_temp.mp4');
+        const result = await upscaleTo1080p(videoPath, upscaledPath);
+        if (result && fs.existsSync(result) && fs.statSync(result).size > 100000) {
+          processedVideo = result;
+          upscaled = true;
+          logger.info('Using upscaled video');
+        }
+      } catch (e) {
+        logger.warn(`Upscale integration error: ${e.message.substring(0, 80)}`);
+      }
+    }
+
+    // Re-probe dimensions after upscale
+    const finalDims = upscaled ? probeVideoDimensions(processedVideo) : null;
+    const finalW = finalDims ? finalDims.width : srcW;
+    const finalH = finalDims ? finalDims.height : srcH;
+    const finalVf = upscaled ? buildShortsFilter(finalW, finalH) : vf;
+
+    // Check if video would be shorter than voiceover + 1s delay
+    let skipVoiceover = false;
     if (voiceoverPath && fs.existsSync(voiceoverPath)) {
+      let voDur = 4;
+      try {
+        const probeOut = execSync(`ffprobe -i "${voiceoverPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`, { timeout: 5000, encoding: 'utf8' }).trim();
+        if (probeOut) voDur = Math.ceil(parseFloat(probeOut));
+      } catch {}
+      voDur = Math.min(voDur, 8);
+      // If voiceover + 1s delay > trimmed video duration, skip voiceover but keep flag
+      if (voDur + 1 > duration) {
+        logger.info(`Voiceover (${voDur}s) + 1s delay exceeds video duration (${duration}s) — skipping voiceover, keeping flag`);
+        skipVoiceover = true;
+      }
+    }
+
+    if (voiceoverPath && fs.existsSync(voiceoverPath) && !skipVoiceover) {
       let voDur = 4;
       try {
         const probeOut = execSync(`ffprobe -i "${voiceoverPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`, { timeout: 5000, encoding: 'utf8' }).trim();
@@ -111,17 +158,17 @@ async function createShort(videoPath, options) {
 
       let filterComplex;
       if (hasFlag) {
-        filterComplex = `[0:v]${vf}[bg];[2:v]scale=120:-1[flag];[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v];` +
+        filterComplex = `[0:v]${finalVf}[bg];[2:v]scale=100:-1[flag];[bg][flag]overlay=(W-w)/2:160:enable='between(t,0,2.5)'[v];` +
           `[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];[1:a]adelay=1000[av];[ad][av]amix=inputs=2:duration=first[a]`;
       } else {
-        filterComplex = `[0:v]${vf}[v];[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];[1:a]adelay=1000[av];[ad][av]amix=inputs=2:duration=first[a]`;
+        filterComplex = `[0:v]${finalVf}[v];[0:a]volume=enable='between(t,1,${1+voDur})':volume=0.1[ad];[1:a]adelay=1000[av];[ad][av]amix=inputs=2:duration=first[a]`;
       }
-      const inputs = hasFlag ? `-i "${videoPath}" -i "${voiceoverPath}" -i "${flagFile}"` : `-i "${videoPath}" -i "${voiceoverPath}"`;
+      const inputs = hasFlag ? `-i "${processedVideo}" -i "${voiceoverPath}" -i "${flagFile}"` : `-i "${processedVideo}" -i "${voiceoverPath}"`;
       execSync(`ffmpeg -y -ss ${startTime} ${inputs} -t ${duration} -filter_complex "${filterComplex}" -map "[v]" -map "[a]" -c:v libx264 -preset ultrafast -crf ${crf} -c:a aac -shortest "${outputPath}"`, { timeout: 120000, maxBuffer: 50*1024*1024 });
     } else if (hasFlag) {
-      execSync(`ffmpeg -y -ss ${startTime} -i "${videoPath}" -i "${flagFile}" -t ${duration} -filter_complex "[0:v]${vf}[bg];[1:v]scale=120:-1[flag];[bg][flag]overlay=(W-w)/2:180:enable='between(t,0,2.5)'[v]" -map "[v]" -map "[0:a]" -c:v libx264 -preset ultrafast -crf ${crf} -c:a aac -shortest "${outputPath}"`, { timeout: 120000 });
+      execSync(`ffmpeg -y -ss ${startTime} -i "${processedVideo}" -i "${flagFile}" -t ${duration} -filter_complex "[0:v]${finalVf}[bg];[1:v]scale=100:-1[flag];[bg][flag]overlay=(W-w)/2:160:enable='between(t,0,2.5)'[v]" -map "[v]" -map "[0:a]" -c:v libx264 -preset ultrafast -crf ${crf} -c:a aac -shortest "${outputPath}"`, { timeout: 120000 });
     } else {
-      execSync(`ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -vf "${vf}" -c:v libx264 -preset ultrafast -crf ${crf} -c:a aac -shortest "${outputPath}"`, { timeout: 120000 });
+      execSync(`ffmpeg -y -ss ${startTime} -i "${processedVideo}" -t ${duration} -vf "${finalVf}" -c:v libx264 -preset ultrafast -crf ${crf} -c:a aac -shortest "${outputPath}"`, { timeout: 120000 });
     }
 
     try { if (fs.existsSync(flagFile)) fs.unlinkSync(flagFile); } catch {}

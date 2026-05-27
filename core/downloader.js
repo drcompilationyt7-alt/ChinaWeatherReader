@@ -29,6 +29,12 @@ async function downloadVideo(entry, outputDir) {
   const platform = entry.platform || 'unknown';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
+  // Only download shorts URLs
+  if (!url.toLowerCase().includes('short') && !url.toLowerCase().includes('/shorts/')) {
+    logger.warn(`Skipping non-shorts URL: ${url.substring(0, 80)}`);
+    return null;
+  }
+
   const outputFile = path.join(outputDir, `vid_${Date.now()}_%(id)s.%(ext)s`);
   logger.info(`Downloading ${platform}: ${url.substring(0,80)}`);
 
@@ -50,17 +56,17 @@ async function downloadVideo(entry, outputDir) {
       {
         name: 'web',
         args: `${ejsArg} --extractor-args "youtube:player_client=web"`,
-        format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
+        format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4'
       },
       {
         name: 'default',
         args: ejsArg,
-        format: '-f "bestvideo[height<=720]+bestaudio/best[height<=720]" --merge-output-format mp4'
+        format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4'
       },
       {
         name: 'android',
         args: `${ejsArg} --extractor-args "youtube:player_client=android"`,
-        format: '-f "best[height<=720]"'
+        format: '-f "best"'
       },
     ];
 
@@ -97,15 +103,16 @@ async function downloadVideo(entry, outputDir) {
   return null;
 }
 
-async function downloadVideos(urls, outputDir) {
+async function downloadVideos(urls, outputDir, targetCount = 3) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   const downloaded = [];
-  for (let i = 0; i < Math.min(urls.length, 3); i++) {
-    logger.info(`--- Video ${i+1}/3 ---`);
+  for (let i = 0; i < Math.min(urls.length, targetCount + 2); i++) {
+    logger.info(`--- Video ${i+1}/${Math.min(urls.length, targetCount + 2)} ---`);
     const r = await downloadVideo(urls[i], outputDir);
     if (r) downloaded.push(r);
+    if (downloaded.length >= targetCount) break;
   }
-  logger.success(`Downloaded ${downloaded.length}/3`);
+  logger.success(`Downloaded ${downloaded.length}/${targetCount} (attempted ${Math.min(urls.length, targetCount + 2)})`);
   return downloaded;
 }
 

@@ -37,7 +37,8 @@ class OpenRouterProvider {
   _collectApiKeys(config) {
     const keys = [];
     if (config.openrouter?.apiKey) keys.push(config.openrouter.apiKey);
-    for (let i = 2; i <= 8; i++) {
+    // Use highest keys first (8,7,6...) since lower keys are shared across projects
+    for (let i = 8; i >= 2; i--) {
       const envKey = process.env[`OPENROUTER_API_KEY_${i}`];
       if (envKey) keys.push(envKey);
     }
@@ -63,7 +64,9 @@ class OpenRouterProvider {
       if (!this.deadKeys.has(nextIndex)) {
         this.currentKeyIndex = nextIndex;
         this._client = this._buildClient(nextIndex);
-        this.logger.info(`Rotated to API key #${nextIndex + 1}`);
+        // Map internal index to original env key number for logging
+        const keyNum = nextIndex === 0 ? 1 : (8 - nextIndex + 2);
+        this.logger.info(`Rotated to API key #${keyNum}`);
         return true;
       }
     }

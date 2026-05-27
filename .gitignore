@@ -67,6 +67,9 @@ htmlcov/
 venv/
 .env/
 
+# Output directory — temporary build artifacts, not tracked
+output/
+
 # Memory cache and state files (cleared bi-weekly)
 memory/models_dev_cache.json
 memory/state.db
