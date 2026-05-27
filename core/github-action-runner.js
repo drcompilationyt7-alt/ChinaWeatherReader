@@ -735,10 +735,16 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'words': words
       this.logger.warn(`Special short for ${specialCountry} failed — skipping`);
     }
 
-    if (shorts.length === 0) return { uploadedVideos: [], errors: ['No shorts'] };
+    if (shorts.length === 0) {
+      this.logger.header('SUMMARY');
+      this.logger.error('❌ 0 shorts created — pipeline failed to produce any videos');
+      errors.forEach(e => this.logger.warn(`  ⚠ ${e}`));
+      return { uploadedVideos: [], errors: errors.length > 0 ? errors : ['No shorts created'] };
+    }
 
-    // Step 8: Upload all shorts
+    // Step 8: Upload all shorts (collect URLs for boost later)
     let totalViewsToday = 0;
+    const uploadedUrls = [];
     for (const s of shorts) {
       try {
         const targetTitle = await this._generateTitle(s.country, s.voiceoverText, s.originalTitle);
@@ -757,13 +763,14 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'words': words
           const estViews = Math.floor(Math.random() * 500) + 50;
           totalViewsToday += estViews;
           uploaded.push({ title: targetTitle.title, url: r.url, country: s.country, special: !!s.isSpecial, views: estViews });
-          await this._boostVideo(r.url);
+          uploadedUrls.push(r.url);
         } else {
           errors.push(`Upload failed: ${targetTitle.title}`);
         }
       } catch (e) { errors.push(`Upload: ${e.message}`); }
     }
 
+    // Print summary BEFORE boost
     const cm = this.memory['channel-memory'] || {};
     cm.totalVideosPosted = (cm.totalVideosPosted || 0) + uploaded.length;
     if (!cm.countriesUsedThisWeek) cm.countriesUsedThisWeek = [];
@@ -792,6 +799,16 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'words': words
     this.logger.success('🏆 Top 3:');
     sorted.slice(0, 3).forEach((u, i) => this.logger.success(`   #${i+1}: ${u.title} — 👁️ ${u.views} views → ${u.url}`));
     errors.forEach(e => this.logger.warn(`  ⚠ ${e}`));
+
+    // Boost all uploaded videos AFTER summary
+    if (uploadedUrls.length > 0) {
+      this.logger.info('--- Boosting uploaded videos ---');
+      for (const url of uploadedUrls) {
+        await this._boostVideo(url);
+      }
+    }
+
+    // Return result (caller checks uploaded length for exit code)
     return { uploadedVideos: uploaded, errors };
   }
 
@@ -841,17 +858,31 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'words': words
     await this.initialize();
     const args = process.argv.slice(2);
     const mode = args.indexOf('--mode') !== -1 ? args[args.indexOf('--mode') + 1] : 'daily';
+    let exitCode = 0;
     try {
-      if (mode === 'daily') await this.runDaily();
-      else if (mode === 'nightly' || mode === 'review') await this.runNightly();
-      else { console.log(`Unknown: ${mode}`); process.exit(1); }
+      if (mode === 'daily') {
+        const result = await this.runDaily();
+        const uploaded = result?.uploadedVideos?.length || 0;
+        if (uploaded === 0) {
+          this.logger.error(`❌ CI should fail — 0 shorts uploaded`);
+          exitCode = 1;
+        } else {
+          this.logger.success(`✅ CI success — ${uploaded} shorts uploaded`);
+        }
+      } else if (mode === 'nightly' || mode === 'review') {
+        await this.runNightly();
+      } else {
+        console.log(`Unknown: ${mode}`);
+        exitCode = 1;
+      }
     } catch (e) {
       this.logger.error(`Runner error: ${e.message}`);
+      exitCode = 1;
     }
     this.logger.success('Done');
 
-    setTimeout(() => { process.exit(0); }, 3000).unref();
-    process.exit(0);
+    setTimeout(() => { process.exit(exitCode); }, 3000).unref();
+    process.exit(exitCode);
   }
 }
 
