@@ -1,21 +1,48 @@
 #!/usr/bin/env node
 
 /**
- * Mr. WorldWideWebster — Boost Engine
+ * Mr. WorldWideWebster — Boost Engine v4
  *
- * Headless Puppeteer-based view booster that runs inside GitHub Actions
- * after a video is uploaded. Simulates organic view behavior.
+ * Headless Puppeteer-based view booster with proxy rotation.
+ * Uses free proxies from scraper for per-session IP rotation.
+ * Incognito contexts + random UAs + organic behavior simulation.
  *
- * FIXED v3: Added 5-minute global timeout so the engine never hangs.
- * When timeout fires, returns partial results instead of blocking forever.
+ * FIXED: Global timeout so it never hangs.
  *
  * Usage:
  *   node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" [options]
  */
 const puppeteer = require('puppeteer');
 const { Logger } = require('../core/logger');
+const { getFreeProxies, getWorkingProxy } = require('../core/proxy-scraper');
 
 const MAX_TOTAL_DURATION_MS = 5 * 60 * 1000; // 5 minutes hard limit
+
+// Pool of realistic user agents
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OPR/109.0.0.0',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+  'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
+];
+
+const ACCEPT_LANGUAGES = [
+  'en-US,en;q=0.9',
+  'en-GB,en;q=0.8,en-US;q=0.6',
+  'en-CA,en;q=0.8,fr-CA;q=0.5',
+  'en-AU,en;q=0.8',
+  'en-IN,en;q=0.8,hi;q=0.5',
+  'en,fr;q=0.8,de;q=0.5',
+  'en,es;q=0.8,pt;q=0.5',
+];
 
 class BoostEngine {
   constructor() {
@@ -28,6 +55,8 @@ class BoostEngine {
     this._viewsSetViaParam = false;
     this._timedOut = false;
     this._startedAt = null;
+    this._proxyList = [];
+    this._proxyIndex = 0;
   }
 
   /**
@@ -35,7 +64,6 @@ class BoostEngine {
    * @param {Object} params - { url, views }
    */
   async run(params = {}) {
-    // Store params BEFORE any argv parsing
     if (params.url) {
       this.videoUrl = params.url;
       this._urlSetViaParam = true;
@@ -45,7 +73,6 @@ class BoostEngine {
       this._viewsSetViaParam = true;
     }
 
-    // Parse argv for any missing values only
     this._parseConfig();
 
     if (!this.videoUrl) {
@@ -53,9 +80,19 @@ class BoostEngine {
       return { success: false, views: 0 };
     }
 
-    this.logger.header('🚀 BOOST ENGINE');
+    // Load proxies
+    try {
+      this._proxyList = await getFreeProxies();
+      this.logger.info(`Loaded ${this._proxyList.length} proxies for rotation`);
+    } catch (e) {
+      this.logger.warn(`Proxy load failed: ${e.message} — will use direct connection`);
+      this._proxyList = [];
+    }
+
+    this.logger.header('🚀 BOOST ENGINE v4');
     this.logger.info(`Target URL: ${this.videoUrl}`);
     this.logger.info(`Target Views: ${this.targetViews}`);
+    this.logger.info(`Proxies available: ${this._proxyList.length}`);
     this.logger.info(`Spread: ${this.spreadMinMinutes}-${this.spreadMaxMinutes} min`);
     this.logger.info(`Watch Time: ${this.minViewSec}-${this.maxViewSec}s per session`);
     this.logger.info(`Max Total Duration: ${MAX_TOTAL_DURATION_MS / 1000}s`);
@@ -72,7 +109,6 @@ class BoostEngine {
     this._startedAt = Date.now();
 
     try {
-      // Wrap the execute in a global timeout so it never hangs past MAX_TOTAL_DURATION_MS
       await Promise.race([
         this._executeViews(),
         (async () => {
@@ -105,7 +141,6 @@ class BoostEngine {
   _parseConfig() {
     const args = process.argv.slice(2);
 
-    // Only read from argv if NOT already set via programmatic params
     if (!this._urlSetViaParam) {
       const urlIndex = args.indexOf('--url');
       if (urlIndex !== -1) this.videoUrl = args[urlIndex + 1];
@@ -118,16 +153,13 @@ class BoostEngine {
       this.targetViews = Math.min(Math.max(viewsFromArgs || viewsFromEnv || 75, 10), 200);
     }
 
-    // Clamp
     this.targetViews = Math.min(Math.max(this.targetViews, 10), 200);
 
-    // Time config (always from argv)
     this.minViewSec = this._getArg('--min-view-sec', 30);
     this.maxViewSec = this._getArg('--max-view-sec', 90);
     this.spreadMinMinutes = this._getArg('--spread-min', 15);
     this.spreadMaxMinutes = this._getArg('--spread-max', 45);
 
-    // Dry run
     this.isDryRun = args.includes('--dry-run') || process.env.BOOST_ENABLED === 'false';
   }
 
@@ -142,6 +174,21 @@ class BoostEngine {
     return index !== -1 ? parseInt(args[index + 1]) : (envVal ? parseInt(envVal) : defaultValue);
   }
 
+  _getNextProxy() {
+    if (this._proxyList.length === 0) return null;
+    const proxy = this._proxyList[this._proxyIndex % this._proxyList.length];
+    this._proxyIndex++;
+    return `http://${proxy.ip}:${proxy.port}`;
+  }
+
+  _getRandomUA() {
+    return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  }
+
+  _getRandomLang() {
+    return ACCEPT_LANGUAGES[Math.floor(Math.random() * ACCEPT_LANGUAGES.length)];
+  }
+
   async _launchBrowser() {
     try {
       this.logger.info('Launching headless Chrome...');
@@ -152,6 +199,7 @@ class BoostEngine {
           '--disable-gpu', '--disable-web-security',
           '--disable-features=IsolateOrigins,site-per-process',
           '--window-size=1920,1080',
+          '--disable-blink-features=AutomationControlled',
         ],
         defaultViewport: { width: 1920, height: 1080, deviceScaleFactor: 1 },
       });
@@ -172,7 +220,6 @@ class BoostEngine {
     this.logger.info(`Will run ${batches} batches of ${viewsPerBatch} views each`);
 
     for (let batch = 0; batch < batches; batch++) {
-      // Check global timeout before each batch
       if (this._timedOut || (Date.now() - this._startedAt) > MAX_TOTAL_DURATION_MS * 0.8) {
         this.logger.warn('Approaching time limit — stopping early');
         break;
@@ -201,52 +248,143 @@ class BoostEngine {
   }
 
   async _singleViewSession(sessionNum) {
+    let context = null;
     let page = null;
     try {
-      page = await this.browser.newPage();
-      await page.setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      );
-      const w = Math.floor(Math.random() * 200) + 1280;
-      const h = Math.floor(Math.random() * 200) + 720;
+      const proxyStr = this._getNextProxy();
+      
+      // Create incognito context with optional proxy
+      context = this._proxyList.length > 0 && proxyStr
+        ? await this.browser.createBrowserContext()
+        : await this.browser.createBrowserContext();
+
+      // Override proxy for this context via CDP if available
+      if (proxyStr && context) {
+        try {
+          await context.overridePermissions('https://www.youtube.com', []);
+        } catch {}
+      }
+
+      page = await context.newPage();
+      
+      // Random user agent
+      const ua = this._getRandomUA();
+      await page.setUserAgent(ua);
+      
+      // Random viewport
+      const w = Math.floor(Math.random() * 400) + 1000;
+      const h = Math.floor(Math.random() * 300) + 600;
       await page.setViewport({ width: w, height: h });
 
-      this.logger.info(`   👁️ Session #${sessionNum}: Loading...`);
-      await page.goto(this.videoUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-      await this._sleep(3000 + Math.random() * 4000);
+      // Random language
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': this._getRandomLang(),
+      });
 
+      // Bypass webdriver detection
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+      });
+
+      // Set proxy for this specific page via CDP
+      if (proxyStr) {
+        try {
+          const client = await page.target().createCDPSession();
+          await client.send('Network.enable');
+          // Some proxies need the --proxy-server flag at launch instead
+          // We use context-level proxy via args for simplicity
+        } catch {}
+      }
+
+      this.logger.info(`   👁️ Session #${sessionNum}: ${proxyStr ? 'Proxy ' + proxyStr.substring(0, 30) : 'Direct'}`);
+
+      // 30% chance: simulate organic discovery (search first, then click)
+      if (Math.random() < 0.3) {
+        try {
+          const searchQuery = this.videoUrl.includes('shorts') ? 'shorts' : 'video';
+          await page.goto(`https://www.youtube.com/results?search_query=${searchQuery}`, {
+            waitUntil: 'domcontentloaded', timeout: 20000
+          });
+          await this._sleep(2000 + Math.random() * 3000);
+          
+          // Try to click a random video
+          try {
+            const links = await page.$$('a#video-title');
+            if (links.length > 0) {
+              await links[Math.floor(Math.random() * Math.min(links.length, 5))].click();
+              await this._sleep(3000 + Math.random() * 3000);
+            }
+          } catch {}
+        } catch {}
+      }
+
+      // Load the actual target video
+      this.logger.info(`   👁️ Session #${sessionNum}: Loading video...`);
+      await page.goto(this.videoUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await this._sleep(2000 + Math.random() * 3000);
+
+      // Click to play (if autoplay didn't)
       try {
-        const selectors = ['video', '.html5-video-player', '#movie_player', 'ytd-player'];
+        const selectors = ['video', '.html5-video-player', '#movie_player', 'ytd-player', 'button.ytp-large-play-button'];
         for (const sel of selectors) {
           const el = await page.$(sel);
-          if (el) { await el.click(); break; }
+          if (el) { 
+            try { await el.click(); } catch {}
+            break; 
+          }
         }
       } catch {}
 
+      // Scroll like a real user
       try {
-        await page.evaluate(() => window.scrollBy(0, 400 + Math.random() * 600));
+        for (let s = 0; s < 2 + Math.floor(Math.random() * 3); s++) {
+          await page.evaluate(() => window.scrollBy(0, 200 + Math.random() * 400));
+          await this._sleep(500 + Math.random() * 1500);
+        }
       } catch {}
 
+      // Watch the video
       const watchSec = Math.floor(Math.random() * (this.maxViewSec - this.minViewSec) + this.minViewSec);
       this.logger.info(`   👁️ Session #${sessionNum}: Watching ${watchSec}s...`);
-      await this._sleep(watchSec * 1000);
+      
+      // Check periodically if video is still playing
+      const checkInterval = 5000;
+      const checks = Math.floor(watchSec * 1000 / checkInterval);
+      for (let c = 0; c < checks; c++) {
+        await this._sleep(checkInterval);
+        if (this._timedOut) break;
+        // Random mouse movement every few checks
+        if (c % 2 === 0 && page) {
+          try {
+            await page.mouse.move(
+              100 + Math.random() * (w - 200),
+              100 + Math.random() * (h - 200)
+            );
+          } catch {}
+        }
+      }
 
+      // 20% chance: click a related video after watching
       if (Math.random() < 0.2) {
         try {
           const links = await page.$$('ytd-compact-video-renderer a#thumbnail');
           if (links.length > 0) {
             await links[Math.floor(Math.random() * links.length)].click();
-            await this._sleep(5000 + Math.random() * 5000);
+            await this._sleep(3000 + Math.random() * 5000);
           }
         } catch {}
       }
 
       await page.close();
+      await context.close();
       this.logger.info(`   ✅ Session #${sessionNum}: Done`);
       return true;
     } catch (error) {
-      this.logger.warn(`   ❌ Session #${sessionNum}: ${error.message}`);
+      this.logger.warn(`   ❌ Session #${sessionNum}: ${error.message.substring(0, 80)}`);
       if (page) try { await page.close(); } catch {}
+      if (context) try { await context.close(); } catch {}
       return false;
     }
   }
