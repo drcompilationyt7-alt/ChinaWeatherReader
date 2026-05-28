@@ -108,10 +108,10 @@ async function createShort(videoPath, options) {
     const pixelCount = srcW * srcH;
     const crf = pixelCount < 100000 ? 22 : pixelCount < 300000 ? 20 : 18;
 
-    // Run upscaler if needed (only if source < 1080p)
+    // Run upscaler if needed (only if source < 480p — truly bad quality)
     let processedVideo = videoPath;
     let upscaled = false;
-    if (srcH < 1080) {
+    if (srcH < 480) {
       try {
         const { upscaleTo1080p } = require('./upscaler');
         const upscaledPath = outputPath.replace('.mp4', '_upscaled_temp.mp4');

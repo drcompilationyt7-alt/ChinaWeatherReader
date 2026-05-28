@@ -1,7 +1,8 @@
 /**
  * Real-ESRGAN Upscaler
- * Only upscales if input video height < 1080p.
- * Pipeline: extract frames → Real-ESRGAN → rebuild 1080p video
+ * Only upscales if input video height < 480p (truly bad quality).
+ * Limited to 30 frames max, with timeout.
+ * If upscale fails, returns null — pipeline continues with original video.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -9,6 +10,9 @@ const fs = require('fs');
 const { Logger } = require('./logger');
 
 const logger = new Logger('Upscaler');
+const MAX_FRAMES = 30;
+const MAX_DURATION = 180; // only upscale first 3 minutes max
+const UPSCALE_TIMEOUT = 180000; // 3 min timeout for Real-ESRGAN
 
 function probeVideoDimensions(videoPath) {
   try {
@@ -25,7 +29,7 @@ function probeVideoDimensions(videoPath) {
 }
 
 async function upscaleTo1080p(inputPath, outputPath) {
-  // Step 1: Check if already >= 1080p
+  // Step 1: Check if already >= 480p — only upscale truly bad quality
   const dims = probeVideoDimensions(inputPath);
   if (!dims) {
     logger.warn('Could not probe input dimensions, skipping upscale');
@@ -34,8 +38,8 @@ async function upscaleTo1080p(inputPath, outputPath) {
 
   logger.info(`Input: ${dims.width}x${dims.height}`);
 
-  if (dims.height >= 1080 && dims.width >= 1080) {
-    logger.success('Already >= 1080p — no upscale needed');
+  if (dims.height >= 480 || dims.width >= 480) {
+    logger.success('Already >= 480p — no upscale needed');
     return null;
   }
 
@@ -55,45 +59,36 @@ async function upscaleTo1080p(inputPath, outputPath) {
   fs.mkdirSync(upscaledDir, { recursive: true });
 
   try {
-    // Step 3: Extract frames at original framerate
-    logger.info('Extracting frames...');
-    const probeFps = execSync(
-      `ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "${inputPath}" 2>/dev/null`,
-      { timeout: 10000, encoding: 'utf8' }
-    ).trim();
-    
-    // Parse frame rate (may be "30000/1001" style fraction)
-    let fps = 30;
-    if (probeFps) {
-      const parts = probeFps.split('/');
-      if (parts.length === 2) {
-        const num = parseFloat(parts[0]);
-        const den = parseFloat(parts[1]);
-        if (num && den) fps = num / den;
-      } else {
-        fps = parseFloat(probeFps) || 30;
-      }
-    }
-    logger.info(`Detected framerate: ${fps.toFixed(2)} fps`);
+    // Step 3: Get video duration and extract frames at 1 fps (max 30 frames)
+    let duration = 30;
+    try {
+      const durOut = execSync(
+        `ffprobe -v error -show_entries format=duration -of csv=p=0 "${inputPath}" 2>/dev/null`,
+        { timeout: 10000, encoding: 'utf8' }
+      ).trim();
+      if (durOut) duration = Math.min(parseFloat(durOut), MAX_DURATION);
+    } catch {}
+
+    const fps = Math.max(1, duration / MAX_FRAMES);
+    logger.info(`Extracting ~${Math.min(Math.floor(duration/fps), MAX_FRAMES)} frames (1 per ${fps.toFixed(1)}s)`);
 
     execSync(
-      `ffmpeg -y -i "${inputPath}" -qscale:v 1 -qmin 1 -qmax 1 -pix_fmt rgb24 "${path.join(framesDir, 'frame_%06d.png')}" 2>/dev/null`,
-      { timeout: 300000 }
+      `ffmpeg -y -i "${inputPath}" -vf "fps=${fps}" -qscale:v 2 -pix_fmt rgb24 "${path.join(framesDir, 'frame_%06d.png')}" 2>/dev/null`,
+      { timeout: 120000 }
     );
+    
     const frameFiles = fs.readdirSync(framesDir).filter(f => f.startsWith('frame_') && f.endsWith('.png'));
-    logger.success(`Extracted ${frameFiles.length} frames`);
+    logger.success(`Extracted ${frameFiles.length} frames (max ${MAX_FRAMES})`);
 
     if (frameFiles.length === 0) {
       throw new Error('No frames extracted');
     }
 
-    // Step 4: Upscale frames with Real-ESRGAN
+    // Step 4: Upscale frames with Real-ESRGAN (with timeout)
     logger.info('Upscaling frames with Real-ESRGAN (x4)...');
-    const modelName = dims.height * 4 >= 1080 ? 'RealESRGAN_x4plus' : 'RealESRGAN_x4plus';
-    
     execSync(
-      `cd "${realesrganPath}" && python3 inference_realesrgan.py -n ${modelName} -i "${framesDir}" -o "${upscaledDir}" --outscale 4 --fp32 2>&1`,
-      { timeout: 600000 }
+      `cd "${realesrganPath}" && python3 inference_realesrgan.py -n RealESRGAN_x4plus -i "${framesDir}" -o "${upscaledDir}" --outscale 4 --fp32 2>&1`,
+      { timeout: UPSCALE_TIMEOUT }
     );
 
     const upscaledFiles = fs.readdirSync(upscaledDir).filter(f => f.startsWith('frame_') && (f.endsWith('.png') || f.endsWith('.jpg')));
@@ -103,39 +98,39 @@ async function upscaleTo1080p(inputPath, outputPath) {
       throw new Error('No frames upscaled');
     }
 
-    // Step 5: Rebuild video at 1080p
-    logger.info('Rebuilding video at 1080p...');
+    // Step 5: Rebuild video at 720p (480p upscaled x4 = 1920p, but we just need decent)
+    logger.info('Rebuilding video...');
+    const fpsStr = fps.toFixed(4);
+    
+    // Try common output naming patterns
+    const outPattern = path.join(upscaledDir, 'frame_%06d_out.png');
+    const globPattern = path.join(upscaledDir, '*.png');
+    
     execSync(
-      `ffmpeg -y -framerate ${fps.toFixed(4)} -i "${path.join(upscaledDir, 'frame_%06d_out.png')}" -i "${inputPath}" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -vf "scale=1080:1920:flags=lanczos:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black" "${outputPath}" 2>/dev/null`,
+      `ffmpeg -y -framerate ${fpsStr} -i "${outPattern}" -i "${inputPath}" -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest "${outputPath}" 2>/dev/null`,
       { timeout: 300000 }
     );
 
     if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size < 100000) {
-      // Try alternate output naming (some Real-ESRGAN versions use different output names)
+      // Try glob pattern
       execSync(
-        `ffmpeg -y -framerate ${fps.toFixed(4)} -pattern_type glob -i "${upscaledDir}/*.png" -i "${inputPath}" -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -vf "scale=1080:1920:flags=lanczos:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black" "${outputPath}" 2>/dev/null`,
+        `ffmpeg -y -framerate ${fpsStr} -pattern_type glob -i "${globPattern}" -i "${inputPath}" -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest "${outputPath}" 2>/dev/null`,
         { timeout: 300000 }
       );
     }
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
       const sizeMB = (fs.statSync(outputPath).size / 1024 / 1024).toFixed(1);
-      logger.success(`Upscaled to 1080p: ${sizeMB}MB`);
+      logger.success(`Upscaled video: ${sizeMB}MB`);
       return outputPath;
     }
 
-    // Step 6: Fallback — copy input if upscale failed
-    logger.warn('Upscale rebuild failed, copying input as-is');
-    fs.copyFileSync(inputPath, outputPath);
-    return outputPath;
+    // Fallback: return null — pipeline will use original
+    logger.warn('Upscale rebuild produced no output — skipping');
+    return null;
 
   } catch (e) {
-    logger.warn(`Upscale error: ${e.message.substring(0, 100)}`);
-    // Fallback: copy input
-    try {
-      fs.copyFileSync(inputPath, outputPath);
-      return outputPath;
-    } catch {}
+    logger.warn(`Upscale error: ${e.message.substring(0, 100)} — skipping, using original`);
     return null;
   } finally {
     // Cleanup temp files
