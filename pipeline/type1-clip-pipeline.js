@@ -352,8 +352,8 @@ async function rankVideos(candidates, country, gemini, curatorSkill) {
       logger.warn('  All keys exhausted — moving to next video');
     }
 
-    // 15s delay between videos
-    await new Promise(r => setTimeout(r, 15000));
+    // 45s delay between videos to avoid rate limits
+    await new Promise(r => setTimeout(r, 45000));
   }
 
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);

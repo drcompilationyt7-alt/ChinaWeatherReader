@@ -15,7 +15,7 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-const MIN_DELAY = 3000;
+const MIN_DELAY = 10000;
 
 class GeminiService {
   constructor() {
