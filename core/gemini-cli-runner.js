@@ -86,12 +86,12 @@ class GeminiCLIRunner {
           const existingImages = options.images.filter(f => fs.existsSync(f));
           if (existingImages.length > 0) {
             const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} ${imageArgs} 2>&1`;
+            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} -m gemini-3.5-flash ${imageArgs} 2>&1`;
           } else {
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
+            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} -m gemini-3.5-flash 2>&1`;
           }
         } else {
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
+          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} -m gemini-3.5-flash 2>&1`;
         }
 
         logger.info(`CLI run (attempt ${attempt + 1})`);

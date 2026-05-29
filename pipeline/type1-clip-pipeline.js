@@ -103,6 +103,9 @@ async function generateQueries(country, gemini, trendBank) {
     logger.info(`Method 2 (LLM): ${llmQueries.length} queries`);
   }
 
+  // Pacing gap to avoid 429 rate limit
+  await new Promise(r => setTimeout(r, 3000));
+
   // Method 3: LLM + trend bank hybrid
   const hybridQueries = await gemini.generateQueries(country, trendBank.keywords, 3);
   if (Array.isArray(hybridQueries)) {
@@ -155,8 +158,8 @@ async function searchYouTube(queries, targetCount = 15) {
         // Fetch flat playlist with dense batch + quality filters
         const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
           `--dateafter ${dateStr} ` +
-          `--match-filter "!is_live & !upcoming & duration < 60 & availability = 'public'" ` +
-          `"ytsearch${batchStart}-${batchStart + batchSize}:${query}" 2>/dev/null`;
+          `--match-filter "!is_live & !upcoming & duration < 60 & availability = public" ` +
+          `"ytsearch${batchStart}-${batchStart + batchSize}:${query}" 2>&1`;
 
         const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
         if (!out) {
@@ -230,7 +233,7 @@ async function searchYouTube(queries, targetCount = 15) {
           } catch {}
         }
       } catch (e) {
-        logger.warn(`Search batch failed for "${query}": ${e.message.substring(0, 60)}`);
+        logger.warn(`Search batch failed for "${query}": ${(e.message || '').substring(0, 200)}`);
       }
 
       batchStart += batchSize + 1;
