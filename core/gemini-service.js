@@ -3,10 +3,11 @@
  * Uses Google AI Studio (free tier) with 8-key rotation.
  * Free tier: 15 RPM, 1M tokens/day per key, 8 keys = 120 RPM
  * 
- * Supports Gemini File API for video uploads (actually watches videos).
+ * Supports:
+ * - YouTube URL video analysis (file_data.file_uri)
+ * - Video File API upload for fallback
  */
 const axios = require('axios');
-const { execSync } = require('child_process');
 const { Logger } = require('./logger');
 const path = require('path');
 const fs = require('fs');
@@ -14,8 +15,7 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-
-const MIN_DELAY = 3000; // Base delay ms for retries
+const MIN_DELAY = 3000;
 
 class GeminiService {
   constructor() {
@@ -64,11 +64,11 @@ class GeminiService {
           body.systemInstruction = { parts: [{ text: options.systemInstruction }] };
         }
 
-        const resp = await axios.post(
-          `${GEMINI_BASE}/models/${this.model}:generateContent?key=${key}`,
-          body,
-          { headers: { 'Content-Type': 'application/json' }, timeout: options.timeout || 60000 }
-        );
+        const url = `${GEMINI_BASE}/models/${this.model}:generateContent?key=${key}`;
+        const resp = await axios.post(url, body, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: options.timeout || 120000,
+        });
 
         this.requestCount++;
         const candidates = resp.data?.candidates;
@@ -77,8 +77,7 @@ class GeminiService {
           const blockReason = resp.data?.promptFeedback?.blockReason;
           logger.warn(`Gemini empty candidates (block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
           this._rotateKey();
-          const backoff = MIN_DELAY * (attempt + 1);
-          await new Promise(r => setTimeout(r, backoff));
+          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
 
@@ -89,21 +88,26 @@ class GeminiService {
         lastError = error;
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
-        const backoff = MIN_DELAY * (attempt + 1);
+        const respBody = JSON.stringify(error.response?.data || {}).substring(0, 200);
+
+        if (status === 400) {
+          const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
+          logger.warn(`Gemini 400 error (${field}): ${respBody}`);
+        }
 
         if (status === 429 || status === 403 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${backoff}ms`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${MIN_DELAY * (attempt + 1)}ms`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, backoff));
+          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
         if (errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating, waiting ${backoff}ms`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, backoff));
+          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
-        logger.error(`Gemini API error: ${errText?.substring(0, 120)}`);
+        logger.error(`Gemini API error (${status}): ${errText?.substring(0, 150)}`);
         return null;
       }
     }
@@ -118,30 +122,74 @@ class GeminiService {
   async chatJSON(systemPrompt, userMessage, opts = {}) {
     const r = await this.chat(systemPrompt + '\n\nIMPORTANT: Respond ONLY with valid JSON.', userMessage, opts);
     if (!r) return null;
-    return this._extractJSON(r);
+    try {
+      const m = r.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+      const a = r.match(/\[[\s\S]*\]/);
+      if (a) return JSON.parse(a[0]);
+    } catch (e) { logger.warn(`JSON parse: ${e.message.substring(0, 60)}`); }
+    return null;
   }
 
-  _extractJSON(text) {
+  /**
+   * PRIMARY: Rank a YouTube video by URL.
+   * Gemini watches the video natively via file_data (no download needed).
+   * Uses snake_case for REST API compatibility.
+   */
+  async rankVideo(url, country, curatorSkill) {
+    const prompt = `WATCH this YouTube video and rank it for reposting on "Mr. WorldWideWebster" channel.
+
+Target country: ${country}
+
+Carefully evaluate the actual video content:
+1. 3-Second Hook — does it grab attention in the first 3 seconds?
+2. Language independence — can it be understood without translation?
+3. Visual quality and entertainment value
+4. Watermark presence — can it be cropped out?
+5. Does the content match country ${country}?
+6. Would this perform well as a YouTube Short?
+
+Respond ONLY with valid JSON (no markdown):
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation of visual quality and hook"}`;
+
+    // REST API uses snake_case: file_data.file_uri
+    const contents = [{
+      role: 'user',
+      parts: [
+        { file_data: { file_uri: url } },
+        { text: prompt }
+      ]
+    }];
+
+    const response = await this._callAPI(contents, {
+      systemInstruction: curatorSkill,
+      temperature: 0.3,
+      maxTokens: 1024,
+      timeout: 120000,
+    });
+
+    if (!response) {
+      logger.warn(`rankVideo: null for "${url.substring(0, 50)}"`);
+      return null;
+    }
+
     try {
-      const m = text.match(/\{[\s\S]*\}/);
-      if (m) return JSON.parse(m[0]);
-      const a = text.match(/\[[\s\S]*\]/);
-      if (a) return JSON.parse(a[0]);
+      const m = response.match(/\{[\s\S]*\}/);
+      if (m) {
+        const p = JSON.parse(m[0]);
+        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+        return p;
+      }
     } catch (e) {
-      logger.warn(`JSON parse: ${e.message.substring(0, 60)}`);
-      logger.warn(`Raw: ${text.substring(0, 200)}`);
+      logger.warn(`rankVideo JSON: ${e.message.substring(0, 80)}`);
+      logger.warn(`Raw: ${response.substring(0, 200)}`);
     }
     return null;
   }
 
   /**
-   * Upload a video file to Gemini File API, then rank it visually.
-   * This is the REAL "Gemini watches the video" method.
-   * 
-   * @param {string} videoPath - Path to local video file
-   * @param {string} country - Expected country
-   * @param {string} curatorSkill - Skill prompt for ranking
-   * @returns {Object|null} - { score, verdict, reasoning, ... }
+   * FALLBACK: Upload a video file to Gemini File API, then rank visually.
+   * Used when URL-based ranking fails (private videos, rate limits, etc.)
    */
   async rankVideoFile(videoPath, country, curatorSkill) {
     if (!fs.existsSync(videoPath)) {
@@ -153,13 +201,11 @@ class GeminiService {
     const fileName = path.basename(videoPath);
     logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
 
-    // Upload to Gemini File API
     const key = this._getKey();
     if (!key) { logger.warn('No API keys for upload'); return null; }
 
     let uploadedFile;
     try {
-      // Read the file as binary and upload
       const fileBuffer = fs.readFileSync(videoPath);
       const uploadResp = await axios.post(
         `${GEMINI_UPLOAD}/files?key=${key}`,
@@ -172,7 +218,7 @@ class GeminiService {
             'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
             'X-Goog-Upload-Header-Content-Type': 'video/mp4',
           },
-          timeout: 300000, // 5 min for upload
+          timeout: 300000,
           maxContentLength: 100 * 1024 * 1024,
         }
       );
@@ -188,49 +234,39 @@ class GeminiService {
       let waitCount = 0;
       while (uploadedFile.state === 'PROCESSING' || uploadedFile.state === 'UPLOADING' || uploadedFile.state === 'QUEUED') {
         waitCount++;
-        if (waitCount > 60) { // 5 min max wait
-          logger.warn('File processing timed out');
-          break;
-        }
+        if (waitCount > 60) { logger.warn('File processing timed out'); break; }
         await new Promise(r => setTimeout(r, 5000));
         try {
-          const statusResp = await axios.get(
-            `${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`,
-            { timeout: 15000 }
-          );
+          const statusResp = await axios.get(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 15000 });
           uploadedFile = statusResp.data?.file || statusResp.data;
-        } catch {
-          logger.warn('File status check failed');
-          break;
-        }
+        } catch { logger.warn('File status check failed'); break; }
       }
 
       if (uploadedFile.state === 'FAILED') {
         logger.warn(`File processing failed: ${uploadedFile.error?.message || ''}`);
         return null;
       }
-
       logger.success(`File ready: ${uploadedFile.name} (${uploadedFile.state})`);
-
     } catch (e) {
-      logger.warn(`File upload/processing error: ${e.message.substring(0, 100)}`);
+      logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
+      // Log detailed response body
+      if (e.response?.data) logger.warn(`Upload response: ${JSON.stringify(e.response.data).substring(0, 200)}`);
       return null;
     }
 
     if (!uploadedFile || !uploadedFile.name) return null;
 
-    // Now analyze with the uploaded video
-    const prompt = `Rank this video for reposting on "Mr. WorldWideWebster".
+    const prompt = `WATCH this video and rank it for reposting on "Mr. WorldWideWebster".
 
 Target country: ${country}
 
 WATCH the video carefully and evaluate:
-1. 3-Second Hook — does it grab attention immediately?
-2. Language independence — can it be understood without translation?
-3. Visual quality and entertainment value
-4. Watermark presence and removal feasibility
-5. Does the content match the country ${country}?
-6. Would this perform well as a YouTube Short?
+1. 3-Second Hook
+2. Language independence
+3. Visual quality
+4. Watermark presence
+5. Country match: ${country}?
+6. YouTube Shorts potential?
 
 Respond ONLY with valid JSON:
 {"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation"}`;
@@ -238,7 +274,7 @@ Respond ONLY with valid JSON:
     const contents = [{
       role: 'user',
       parts: [
-        { fileData: { mimeType: 'video/mp4', fileUri: uploadedFile.uri || uploadedFile.name } },
+        { file_data: { mimeType: 'video/mp4', file_uri: uploadedFile.uri || uploadedFile.name } },
         { text: prompt }
       ]
     }];
@@ -251,15 +287,9 @@ Respond ONLY with valid JSON:
     });
 
     // Cleanup uploaded file
-    try {
-      await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 10000 });
-      logger.info('Cleaned up uploaded file');
-    } catch {}
+    try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 10000 }); } catch {}
 
-    if (!response) {
-      logger.warn('rankVideoFile: Gemini returned null after watching video');
-      return null;
-    }
+    if (!response) { logger.warn('rankVideoFile: returned null'); return null; }
 
     try {
       const m = response.match(/\{[\s\S]*\}/);
@@ -268,36 +298,7 @@ Respond ONLY with valid JSON:
         p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
         return p;
       }
-    } catch (e) {
-      logger.warn(`rankVideoFile JSON: ${e.message.substring(0, 80)}`);
-      logger.warn(`Raw: ${response.substring(0, 200)}`);
-    }
-    return null;
-  }
-
-  async rankVideo(url, country, curatorSkill) {
-    const msg = `Rank this YouTube video for reposting on "Mr. WorldWideWebster".
-
-Video URL: ${url}
-Target country: ${country}
-
-Evaluate:
-1. 3-Second Hook
-2. Language independence
-3. Visual quality
-4. Watermark presence
-5. Country match: ${country}?
-6. YouTube Shorts potential?
-
-Respond ONLY with valid JSON:
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "verdict": "APPROVED/REJECTED", "reasoning": "brief"}`;
-
-    const resp = await this.chat(curatorSkill || '', msg, { temperature: 0.3, maxTokens: 1024 });
-    if (!resp) { logger.warn(`rankVideo: null for "${url.substring(0, 50)}"`); return null; }
-    try {
-      const m = resp.match(/\{[\s\S]*\}/);
-      if (m) { const p = JSON.parse(m[0]); p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'; return p; }
-    } catch (e) { logger.warn(`rankVideo JSON: ${e.message.substring(0, 80)}`); logger.warn(`Raw: ${resp.substring(0, 200)}`); }
+    } catch (e) { logger.warn(`rankVideoFile JSON: ${e.message.substring(0, 80)}`); }
     return null;
   }
 

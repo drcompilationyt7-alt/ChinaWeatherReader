@@ -257,9 +257,9 @@ function filterCandidates(candidates) {
 }
 
 /**
- * Rank videos using Gemini File API (downloads MP4, uploads, watches video)
- * This is the REAL "Gemini watches the video" approach.
- * URL-based ranking does NOT work for actual video analysis.
+ * Rank videos using Gemini YouTube URL analysis (PRIMARY) + File API (FALLBACK).
+ * URL method: Gemini watches the video natively via file_data.file_uri — no download needed.
+ * File API: Download MP4 → upload → Gemini watches (used when URL fails).
  */
 async function rankVideos(candidates, country, gemini, curatorSkill, tmpDir) {
   const ranked = [];
@@ -270,20 +270,22 @@ async function rankVideos(candidates, country, gemini, curatorSkill, tmpDir) {
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
 
-    // Download the video first
-    logger.info(`Downloading for visual analysis...`);
-    const dlPath = await downloadBestVideo(candidate, tmpDir);
-    if (!dlPath) {
-      logger.warn('Download failed for this candidate — skipping');
-      continue;
+    // ─── Method 1: URL-based (fast, no download) ─────────────────────
+    logger.info(`Trying URL-based analysis...`);
+    let result = await gemini.rankVideo(candidate.url, country, curatorSkill);
+
+    // ─── Method 2: File API fallback (if URL fails) ──────────────────
+    if (!result) {
+      logger.info(`URL failed — trying File API download+upload...`);
+      const dlPath = await downloadBestVideo(candidate, tmpDir);
+      if (dlPath) {
+        result = await gemini.rankVideoFile(dlPath, country, curatorSkill);
+        try { fs.unlinkSync(dlPath); } catch {}
+      } else {
+        logger.warn('Download failed for this candidate — skipping');
+        continue;
+      }
     }
-
-    // Upload to Gemini File API — Gemini WATCHES the video
-    logger.info(`Uploading to Gemini File API for actual video analysis...`);
-    const result = await gemini.rankVideoFile(dlPath, country, curatorSkill);
-
-    // Cleanup
-    try { fs.unlinkSync(dlPath); } catch {}
 
     if (result && result.verdict === 'APPROVED' && result.score >= 6) {
       ranked.push({
@@ -294,11 +296,11 @@ async function rankVideos(candidates, country, gemini, curatorSkill, tmpDir) {
         watermarkType: result.watermark_type,
         reasoning: result.reasoning || '',
       });
-      logger.success(`  ✅ File API Score: ${result.score}/10 — ${result.reasoning?.substring(0, 60)}`);
+      logger.success(`  ✅ Score: ${result.score}/10 — ${result.reasoning?.substring(0, 60)}`);
     } else if (result) {
       logger.info(`  ❌ Rejected (score: ${result.score || '?'}) — ${result.reasoning?.substring(0, 60) || ''}`);
     } else {
-      logger.warn('  File API returned null');
+      logger.warn('  Both URL and File API returned null');
     }
 
     // 40s delay between calls
@@ -306,11 +308,11 @@ async function rankVideos(candidates, country, gemini, curatorSkill, tmpDir) {
   }
 
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
-  logger.success(`File API ranked: ${ranked.length} approved videos`);
+  logger.success(`Ranked: ${ranked.length} approved videos`);
 
-  // If File API ranking returned nothing, fallback to highest views
+  // Ultimate fallback: highest view count
   if (ranked.length === 0) {
-    logger.warn('No videos approved by File API — using highest-view as fallback');
+    logger.warn('No videos approved — using highest-view as fallback');
     const shorts = sorted.filter(c => c.duration <= 60 && c.duration > 0);
     if (shorts.length > 0) {
       ranked.push({ ...shorts[0], geminiScore: 5, hookScore: 5, geminiCountry: country });
