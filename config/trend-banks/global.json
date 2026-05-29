@@ -1,0 +1,40 @@
+{
+  "country": "Global",
+  "lastUpdated": "2026-05-29",
+  "querySuffix": "#shorts #tiktok #reels",
+  "keywords": [
+    {
+      "term": "viral trend",
+      "added": "2026-05-29",
+      "status": "active"
+    },
+    {
+      "term": "trending now",
+      "added": "2026-05-29",
+      "status": "active"
+    },
+    {
+      "term": "world viral",
+      "added": "2026-05-29",
+      "status": "active"
+    },
+    {
+      "term": "internet culture",
+      "added": "2026-05-29",
+      "status": "active"
+    },
+    {
+      "term": "global meme",
+      "added": "2026-05-29",
+      "status": "active"
+    },
+    {
+      "term": "trend alert",
+      "added": "2026-05-29",
+      "status": "active"
+    }
+  ],
+  "trendingSongs": [],
+  "blockedKeywords": [],
+  "notes": "Generic global queries when no specific country is targeted"
+}

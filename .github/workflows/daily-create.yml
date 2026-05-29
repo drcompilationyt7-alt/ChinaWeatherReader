@@ -1,19 +1,23 @@
-name: Daily Shorts Creation
+name: Daily Shorts Creation (Gemini-First)
 
 on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      country:
+        description: 'Override country (optional)'
+        required: false
 
 env:
-  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
-  OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
-  OPENROUTER_API_KEY_4: ${{ secrets.OPENROUTER_API_KEY_4 }}
-  OPENROUTER_API_KEY_5: ${{ secrets.OPENROUTER_API_KEY_5 }}
-  OPENROUTER_API_KEY_6: ${{ secrets.OPENROUTER_API_KEY_6 }}
-  OPENROUTER_API_KEY_7: ${{ secrets.OPENROUTER_API_KEY_7 }}
-  OPENROUTER_API_KEY_8: ${{ secrets.OPENROUTER_API_KEY_8 }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
+  GEMINI_API_KEY_6: ${{ secrets.GEMINI_API_KEY_6 }}
+  GEMINI_API_KEY_7: ${{ secrets.GEMINI_API_KEY_7 }}
+  GEMINI_API_KEY_8: ${{ secrets.GEMINI_API_KEY_8 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
@@ -45,65 +49,27 @@ jobs:
           rm -rf output/ memory/hermes-memory/
           mkdir -p output/clips output/assets/voiceovers output/assets/audio memory
 
-      - name: Install deps
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
-          curl -fsSL https://deno.land/install.sh | sh
-          export DENO_INSTALL="$HOME/.deno"
-          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
-          python3 -m pip install -U pip edge-tts yt-dlp yt-dlp-ejs faster-whisper paddleocr paddlepaddle --break-system-packages
-          npm ci || npm install
-          npm install axios
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install edge-tts yt-dlp faster-whisper opencv-python-headless --break-system-packages
+
+      - name: Install Node.js dependencies
+        run: npm ci || npm install
+
+      - name: Install Gemini CLI
+        run: |
+          curl -fsSL https://google.github.io/gemini-cli/install.sh | bash || echo "Gemini CLI install failed — will use API fallback"
+          echo "$HOME/.gemini/bin" >> $GITHUB_PATH || true
 
       - name: Pre-download whisper model
-        run: python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
-
-      - name: Install Real-ESRGAN
         run: |
-          git clone https://github.com/xinntao/Real-ESRGAN.git /opt/Real-ESRGAN 2>/dev/null || true
-          cd /opt/Real-ESRGAN
-          pip install -r requirements.txt --break-system-packages
-          python3 setup.py develop --no-deps 2>/dev/null || python3 setup.py install 2>/dev/null || true
-          echo "REALESRGAN_PATH=/opt/Real-ESRGAN" >> $GITHUB_ENV
-
-      - name: Install Ollama + pull Qwen3 8B + Qwen2.5-VL
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve > ollama.log 2>&1 &
-          sleep 10
-          ollama pull qwen2.5:7b
-          ollama pull qwen2.5-vl:7b 2>/dev/null || true
-          echo "OLLAMA_HOST=http://localhost:11434" >> $GITHUB_ENV
-          echo "OLLAMA_MODEL=qwen2.5:7b" >> $GITHUB_ENV
-          echo "VISION_FALLBACK=qwen2.5-vl:7b" >> $GITHUB_ENV
-
-      - name: Install Hermes CLI
-        run: |
-          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-          mkdir -p ~/.hermes
-          cat > ~/.hermes/config.yaml <<'EOF'
-          model:
-            provider: custom
-            default: qwen2.5:7b
-            base_url: http://localhost:11434/v1
-            api_key: ollama
-            api_mode: chat_completions
-            ollama_compatible: true
-            context_length: 65536
-          agent:
-            max_turns: 4
-          toolsets:
-            - web
-            - terminal
-            - skills
-          memory:
-            enabled: true
-            char_limit: 2000
-          EOF
-          rm -rf ~/.hermes/sessions ~/.hermes/checkpoints 2>/dev/null || true
-          hermes status || true
-          echo "HERMES_CONFIG=$HOME/.hermes/config.yaml" >> $GITHUB_ENV
+          python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
 
       - name: Write cookies file
         run: |
@@ -111,19 +77,18 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Restore Hermes memory
+      - name: Run daily pipeline
         run: |
-          mkdir -p ~/.hermes
-          if [ -d "hermes-memory" ]; then cp -r hermes-memory/* ~/.hermes/ 2>/dev/null || true; fi
+          COUNTRY_ARG=""
+          if [ -n "${{ github.event.inputs.country }}" ]; then
+            COUNTRY_ARG="--country ${{ github.event.inputs.country }}"
+          fi
+          node core/github-action-runner.js --mode daily $COUNTRY_ARG
 
-      - name: Run pipeline
-        run: node core/github-action-runner.js --mode daily
-
-      - name: Save Hermes memory only
+      - name: Save memory
         run: |
-          cp -r ~/.hermes/config.yaml ~/.hermes/.env hermes-memory/ 2>/dev/null || true
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/channel-memory.json hermes-memory/ 2>/dev/null || true
+          git add memory/channel-memory.json config/trend-banks/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
 
       - name: Weekly cleanup of output
@@ -136,4 +101,5 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: pkill ollama 2>/dev/null || true
+        run: |
+          rm -rf /tmp/yt_cookies.txt 2>/dev/null || true

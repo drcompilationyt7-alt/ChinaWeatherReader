@@ -13,28 +13,34 @@ const path = require('path');
 
 const config = {
   provider: {
-    name: process.env.AI_PROVIDER || 'openrouter',
+    name: process.env.AI_PROVIDER || 'gemini',
   },
 
+  // ─── Gemini (Primary AI Brain — FREE) ──────────────────────────────
+  gemini: {
+    // Up to 8 API keys for rotation (all free from Google AI Studio)
+    apiKeys: [
+      process.env.GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY_2,
+      process.env.GEMINI_API_KEY_3,
+      process.env.GEMINI_API_KEY_4,
+      process.env.GEMINI_API_KEY_5,
+      process.env.GEMINI_API_KEY_6,
+      process.env.GEMINI_API_KEY_7,
+      process.env.GEMINI_API_KEY_8,
+    ].filter(Boolean),
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  },
+
+  // ─── Legacy providers (kept for backward compatibility) ────────────
   openrouter: {
     apiKey: process.env.OPENROUTER_API_KEY,
-    // Additional API keys for multi-key rotation (keys 2-8)
     defaultModel: process.env.OPENROUTER_DEFAULT_MODEL || 'openrouter/owl-alpha',
-    scriptModel: process.env.OPENROUTER_SCRIPT_MODEL || 'openrouter/owl-alpha',
-    agentModel: process.env.OPENROUTER_AGENT_MODEL || 'openrouter/owl-alpha',
-    imageModel: process.env.OPENROUTER_IMAGE_MODEL || 'black-forest-labs/flux-schnell',
-    freeModel: process.env.OPENROUTER_FREE_MODEL || 'openrouter/owl-alpha',
   },
 
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    scriptModel: process.env.OPENAI_SCRIPT_MODEL || 'gpt-4o',
-  },
-
-  gemini: {
-    apiKey: process.env.GEMINI_API_KEY,
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   },
 
   tts: {
@@ -83,6 +89,27 @@ const config = {
     schedule: process.env.SOURCE_SCHEDULE || '0 */6 * * *',
   },
 
+  // ─── Country rotation ─────────────────────────────────────────────
+  countries: [
+    'China', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
+    'India', 'Indonesia', 'Brazil', 'Mexico', 'France',
+    'Germany', 'Italy', 'Spain', 'UK', 'Egypt',
+    'Nigeria', 'Australia', 'Global'
+  ],
+
+  // ─── Pipeline settings ────────────────────────────────────────────
+  pipeline: {
+    // Type 1: Meme/trend/clip shorts
+    type1: {
+      videosPerQuery: 4,
+      maxCandidates: 15,
+      minViews: 500000,
+      maxSubscribers: 500000,
+      minGeminiScore: 7,
+      shortsPerDay: 1,
+    },
+  },
+
   paths: {
     root: path.resolve(__dirname, '..'),
     output: path.resolve(__dirname, '..', process.env.OUTPUT_DIR || 'output'),
@@ -95,7 +122,8 @@ const config = {
     temp: path.resolve(__dirname, '..', 'output', 'temp'),
     audio: path.resolve(__dirname, '..', 'output', 'audio'),
     scripts: path.resolve(__dirname, '..', 'output', 'scripts'),
-    skills: path.resolve(__dirname, '..', 'hermes-agent', 'skills'),
+    skills: path.resolve(__dirname, '..', 'skills'),
+    trendBanks: path.resolve(__dirname, '..', 'config', 'trend-banks'),
   },
 };
 

@@ -1,0 +1,363 @@
+#!/usr/bin/env node
+
+/**
+ * Mr. WorldWideWebster — Gemini-First Daily Runner
+ * 
+ * The main CI/CD entry point. Replaces the old OpenRouter-based pipeline.
+ * 
+ * Flow:
+ * 1. Pick 1 country for today (rotation, avoid repeats)
+ * 2. Run Type 1 pipeline (meme/trend/clip short)
+ * 3. Upload to YouTube
+ * 4. Update memory + trend banks
+ * 5. Discord notification
+ * 
+ * Usage:
+ *   node core/github-action-runner.js --mode daily
+ *   node core/github-action-runner.js --mode nightly
+ *   node core/github-action-runner.js --country Japan
+ */
+
+const path = require('path');
+const fs = require('fs');
+const { execSync } = require('child_process');
+const config = require('./config');
+const { Logger } = require('./logger');
+const { getGeminiService } = require('./gemini-service');
+const { getGeminiCLI } = require('./gemini-cli-runner');
+
+const logger = new Logger('GHRunner');
+
+const ALL_COUNTRIES = config.countries || [
+  'China', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
+  'India', 'Indonesia', 'Brazil', 'Mexico', 'France',
+  'Germany', 'Italy', 'Spain', 'UK', 'Egypt',
+  'Nigeria', 'Australia', 'Global'
+];
+
+class DailyRunner {
+  constructor() {
+    this.memory = {};
+    this.memoryPath = path.join(__dirname, '..', 'memory');
+    this.youtubeBridge = null;
+    this.gemini = null;
+  }
+
+  async initialize() {
+    logger.header('MR. WORLDWIDEWEBSTER — Gemini-First Pipeline v2.0');
+
+    // Initialize Gemini service
+    this.gemini = getGeminiService();
+    const stats = this.gemini.getStats();
+    logger.info(`Gemini: ${stats.keysLoaded} API keys loaded`);
+
+    // Initialize Gemini CLI
+    const cli = getGeminiCLI();
+    logger.info(`Gemini CLI: ${cli.isAvailable() ? '✅ available' : '❌ not available'}`);
+
+    // Load memory
+    this._loadMemory();
+
+    // Initialize YouTube bridge
+    try {
+      const { YouTubeBridge } = require('../youtube-automation/youtube-bridge');
+      this.youtubeBridge = new YouTubeBridge();
+      await this.youtubeBridge.initialize();
+      logger.info(`YouTube Bridge: ${this.youtubeBridge.isAuthenticated() ? '✅ authenticated' : '❌ not authenticated'}`);
+    } catch (e) {
+      logger.warn(`YouTube Bridge: ${e.message}`);
+    }
+
+    logger.success('Initialized');
+  }
+
+  _loadMemory() {
+    if (!fs.existsSync(this.memoryPath)) fs.mkdirSync(this.memoryPath, { recursive: true });
+    const fp = path.join(this.memoryPath, 'channel-memory.json');
+
+    try {
+      if (fs.existsSync(fp)) {
+        this.memory = JSON.parse(fs.readFileSync(fp, 'utf8'));
+        logger.info(`Memory loaded: ${this.memory.totalVideosPosted || 0} videos posted`);
+        return;
+      }
+    } catch {}
+
+    // Default memory
+    this.memory = {
+      channelName: 'Mr. WorldWideWebster',
+      totalVideosPosted: 0,
+      countriesUsedThisWeek: [],
+      countriesUsedThisMonth: [],
+      trendingKeywords: {},
+      lastRunDate: null,
+    };
+    this._saveMemory();
+  }
+
+  _saveMemory() {
+    const fp = path.join(this.memoryPath, 'channel-memory.json');
+    fs.writeFileSync(fp, JSON.stringify(this.memory, null, 2));
+  }
+
+  /**
+   * Pick 1 country for today, avoiding recently used ones
+   */
+  _pickCountry(overrideCountry) {
+    if (overrideCountry) return overrideCountry;
+
+    const used = this.memory.countriesUsedThisWeek || [];
+    const available = ALL_COUNTRIES.filter(c => !used.includes(c));
+
+    // If all countries used this week, reset
+    const pool = available.length > 0 ? available : ALL_COUNTRIES;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+    return shuffled[0];
+  }
+
+  /**
+   * Upload to YouTube
+   */
+  async _uploadToYouTube(videoData) {
+    if (!this.youtubeBridge?.isAuthenticated()) {
+      logger.warn('YouTube not authenticated — skipping upload');
+      return null;
+    }
+
+    try {
+      const r = await this.youtubeBridge.uploadVideo({
+        videoPath: videoData.videoPath,
+        title: videoData.title,
+        description: videoData.description,
+        tags: videoData.tags || ['mr worldwidewebster', 'shorts'],
+      });
+      logger.success(`Uploaded: ${r.url}`);
+      return r;
+    } catch (e) {
+      logger.error(`Upload failed: ${e.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Boost uploaded video
+   */
+  async _boostVideo(url) {
+    if (!url) return;
+    try {
+      logger.info('Waiting 30s settle before boost...');
+      await new Promise(r => setTimeout(r, 30000));
+
+      const { BoostEngine } = require('../boost/boost-engine');
+      const engine = new BoostEngine();
+      const result = await engine.run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
+
+      if (result.success) {
+        logger.success(`Boosted ${result.views} views`);
+      } else {
+        logger.warn(`Boost: ${result.error || 'no views'}`);
+      }
+    } catch (e) {
+      logger.warn(`Boost error: ${e.message}`);
+    }
+  }
+
+  /**
+   * Send Discord notification
+   */
+  async _sendDiscord(data) {
+    try {
+      const { DiscordBridge } = require('../discord/discord-bridge');
+      const bridge = new DiscordBridge();
+      await bridge.sendDailySummary(data);
+      try { await bridge.destroy(); } catch {}
+    } catch {}
+  }
+
+  /**
+   * Run the daily pipeline
+   */
+  async runDaily(overrideCountry) {
+    logger.header('DAILY: Gemini-First Pipeline');
+
+    const country = this._pickCountry(overrideCountry);
+    logger.info(`Country for today: ${country}`);
+
+    // Ensure output directories exist
+    for (const dir of [config.paths.clips, config.paths.assets, config.paths.voiceovers]) {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Run Type 1 pipeline
+    const { runType1Pipeline } = require('../pipeline/type1-clip-pipeline');
+
+    let result;
+    try {
+      result = await runType1Pipeline({
+        country,
+        outputDir: config.paths.clips,
+      });
+    } catch (e) {
+      logger.error(`Pipeline crashed: ${e.message}`);
+      result = { success: false, error: e.message };
+    }
+
+    if (!result.success) {
+      logger.error(`Pipeline failed: ${result.error}`);
+      this.logger?.error?.(`❌ 0 shorts uploaded — ${result.error}`);
+
+      // Update memory
+      this.memory.lastRunDate = new Date().toISOString().split('T')[0];
+      this._saveMemory();
+
+      await this._sendDiscord({
+        videos: [],
+        countries: this.memory.countriesUsedThisWeek || [],
+        totalVideos: this.memory.totalVideosPosted || 0,
+        errors: [result.error],
+      });
+
+      return { uploadedVideos: [], errors: [result.error] };
+    }
+
+    // Upload
+    logger.info('Uploading to YouTube...');
+    const uploadResult = await this._uploadToYouTube(result);
+
+    const uploaded = [];
+    if (uploadResult) {
+      uploaded.push({
+        title: result.title,
+        url: uploadResult.url,
+        country: result.country,
+        geminiScore: result.geminiScore,
+        editType: result.editType,
+      });
+
+      // Update memory
+      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+      if (!this.memory.countriesUsedThisWeek) this.memory.countriesUsedThisWeek = [];
+      if (!this.memory.countriesUsedThisWeek.includes(country)) {
+        this.memory.countriesUsedThisWeek.push(country);
+      }
+      // Keep only last 7 countries
+      if (this.memory.countriesUsedThisWeek.length > 7) {
+        this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
+      }
+      this.memory.lastRunDate = new Date().toISOString().split('T')[0];
+      this._saveMemory();
+
+      // Boost
+      await this._boostVideo(uploadResult.url);
+    } else {
+      logger.warn('Upload skipped — no YouTube authentication');
+    }
+
+    // Discord notification
+    await this._sendDiscord({
+      videos: uploaded,
+      countries: this.memory.countriesUsedThisWeek || [],
+      totalVideos: this.memory.totalVideosPosted || 0,
+      errors: [],
+    });
+
+    // Summary
+    logger.header('SUMMARY');
+    if (uploaded.length > 0) {
+      logger.success(`✅ ${uploaded.length} short uploaded`);
+      logger.success(`📺 "${result.title}"`);
+      logger.success(`🌍 Country: ${country}`);
+      logger.success(`⭐ Gemini Score: ${result.geminiScore}/10`);
+      logger.success(`🎬 Edit Type: ${result.editType}`);
+      logger.success(`🔗 ${uploaded[0].url}`);
+    } else {
+      logger.warn('⚠ Pipeline succeeded but upload skipped');
+    }
+
+    // Return exit code info
+    const exitCode = uploaded.length > 0 ? 0 : 1;
+    return { uploadedVideos: uploaded, errors: [], exitCode };
+  }
+
+  /**
+   * Run nightly trend discovery (lightweight — just updates trend banks)
+   */
+  async runNightly() {
+    logger.header('NIGHTLY: Trend Bank Update');
+
+    const gemini = this.gemini;
+
+    // For each country, ask Gemini to suggest new trending keywords
+    for (const country of ALL_COUNTRIES.slice(0, 5)) { // Just top 5 to save API calls
+      try {
+        const trendBankPath = path.join(config.paths.trendBanks, `${country.toLowerCase().replace(/ /g, '-')}.json`);
+        if (!fs.existsSync(trendBankPath)) continue;
+
+        const bank = JSON.parse(fs.readFileSync(trendBankPath, 'utf8'));
+        const currentKeywords = bank.keywords.filter(k => k.status === 'active').map(k => k.term);
+
+        // Ask Gemini for fresh keywords
+        const newKeywords = await gemini.generateQueries(country, currentKeywords, 5);
+
+        if (Array.isArray(newKeywords)) {
+          const today = new Date().toISOString().split('T')[0];
+          for (const kw of newKeywords) {
+            const clean = kw.replace(/#shorts|#tiktok|#reels|#douyin/gi, '').trim();
+            if (clean.length > 3 && !currentKeywords.includes(clean)) {
+              bank.keywords.push({ term: clean, added: today, status: 'active' });
+              logger.info(`  + ${country}: ${clean}`);
+            }
+          }
+          bank.lastUpdated = today;
+          fs.writeFileSync(trendBankPath, JSON.stringify(bank, null, 2));
+        }
+
+        // Small delay between countries
+        await new Promise(r => setTimeout(r, 2000));
+      } catch (e) {
+        logger.warn(`Nightly update failed for ${country}: ${e.message.substring(0, 60)}`);
+      }
+    }
+
+    logger.success('Nightly trend bank update complete');
+  }
+
+  /**
+   * Main entry point
+   */
+  async run() {
+    await this.initialize();
+
+    const args = process.argv.slice(2);
+    const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'daily';
+    const countryArg = args.includes('--country') ? args[args.indexOf('--country') + 1] : null;
+
+    let exitCode = 0;
+
+    try {
+      if (mode === 'daily') {
+        const result = await this.runDaily(countryArg);
+        exitCode = result.exitCode || (result.uploadedVideos?.length > 0 ? 0 : 1);
+      } else if (mode === 'nightly') {
+        await this.runNightly();
+        exitCode = 0;
+      } else {
+        console.log(`Unknown mode: ${mode}. Use --mode daily or --mode nightly`);
+        exitCode = 1;
+      }
+    } catch (e) {
+      logger.error(`Runner error: ${e.message}`);
+      exitCode = 1;
+    }
+
+    logger.success('Done');
+
+    setTimeout(() => { process.exit(exitCode); }, 3000).unref();
+    process.exit(exitCode);
+  }
+}
+
+process.on('uncaughtException', e => console.error(e.message));
+process.on('unhandledRejection', r => console.error(r?.message || r));
+new DailyRunner().run().catch(e => { console.error(`Fatal: ${e.message}`); setTimeout(() => process.exit(1), 1000); });
