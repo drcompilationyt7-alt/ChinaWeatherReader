@@ -604,15 +604,14 @@ async function runType1Pipeline(options = {}) {
   }
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
-  // Target 5-10 quality shorts for AI ranking
+  // Target exactly 10 quality shorts for AI ranking
   let candidates = await searchYouTube(queries, 10);
   let filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
 
-  // If fewer than 5 candidates passed after all filter levels, retry with relaxed criteria
-  if (filtered.length < 5 && candidates.length > 0) {
+  // If fewer than 10 candidates passed, retry with relaxed criteria
+  if (filtered.length < 10 && candidates.length > 0) {
     logger.warn(`Only ${filtered.length} candidates passed strict filter — relaxing quality gate for retry`);
-    // Lower the quality gate thresholds
     const fallbackGate = candidates.filter(c => {
       if (c.view_count < 2000) return false;
       if (c.channel_follower_count > 5000000) return false;
@@ -624,6 +623,12 @@ async function runType1Pipeline(options = {}) {
     if (fallbackGate.length > 0) {
       filtered = fallbackGate;
     }
+  }
+  
+  // If still fewer than 5 after relaxed gate, use ALL candidates as last resort
+  if (filtered.length < 5 && candidates.length > 0) {
+    logger.warn(`Still only ${filtered.length} after relaxed gate — using all ${candidates.length} candidates`);
+    filtered = candidates;
   }
 
   if (filtered.length === 0) {
@@ -656,13 +661,13 @@ async function runType1Pipeline(options = {}) {
   const ranked = await rankVideos(filtered, country, gemini, curatorSkill, tmpDir);
 
   if (ranked.length === 0) {
-    // Video File Upload Ranking (Gemini actually WATCHES the video)
-    logger.warn('Gemini URL ranking failed — downloading videos for actual visual analysis');
+    // Fallback: download video and rank via CLI with 720p preview
+    logger.warn('Gemini URL ranking failed — downloading 720p preview for CLI-based ranking');
     const top3 = filtered.slice(0, 3);
     const videoRanked = [];
 
     for (const cand of top3) {
-      logger.info(`Downloading for video analysis: "${cand.title.substring(0, 50)}"`);
+      logger.info(`Downloading 720p preview for: "${cand.title.substring(0, 50)}"`);
 
       // Build engagement data for this candidate
       const candAgeInDays = cand.upload_date

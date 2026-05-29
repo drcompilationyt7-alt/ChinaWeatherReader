@@ -6,7 +6,9 @@
  * Supports:
  * - YouTube URL video analysis (file_data.file_uri)
  * - Video File API upload for fallback
- * - Model fallback chain: gemini-3.5-flash → gemini-3.1-flash-lite → gemini-2.5-flash → gemini-2.5-flash-lite
+ * - Model fallback chain: gemini-3.5-flash → gemini-2.5-flash
+ * - Exponential backoff on 503 (capped at 30s)
+ * - Key rotation first, model rotation only after all keys exhausted
  */
 const axios = require('axios');
 const { Logger } = require('./logger');
@@ -16,13 +18,11 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-const MIN_DELAY = 5000;
+const MIN_DELAY = 2000;
 
 const MODEL_CHAIN = [
   'gemini-3.5-flash',
-  'gemini-3.1-flash-lite',
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
 ];
 
 class GeminiService {
@@ -43,19 +43,28 @@ class GeminiService {
       if (key) this.keys.push(key);
     }
     if (this.keys.length === 0 && process.env.GEMINI_API_KEY) this.keys.push(process.env.GEMINI_API_KEY);
-    logger.info(`Loaded ${this.keys.length} Gemini API keys, model chain: ${MODEL_CHAIN.join(' → ')}`);
+    logger.info(`Loaded ${this.keys.length} Gemini API keys, models: ${MODEL_CHAIN.join(' → ')}`);
   }
 
   _getKey() { return this.keys.length ? this.keys[this.currentKeyIndex % this.keys.length] : null; }
 
   _rotateKey() {
     if (this.keys.length <= 1) return;
+    const prev = this.currentKeyIndex;
     this.currentKeyIndex = (this.currentKeyIndex + 1) % this.keys.length;
+    // If we wrapped around to 0, all keys were tried — rotate model
+    if (this.currentKeyIndex === 0 && prev !== 0) {
+      this._rotateModel();
+    }
   }
 
   _rotateModel() {
+    const prev = MODEL_CHAIN[this.currentModelIndex % MODEL_CHAIN.length];
     this.currentModelIndex = (this.currentModelIndex + 1) % MODEL_CHAIN.length;
-    logger.info(`Switching model to: ${this.model}`);
+    const next = this.model;
+    if (prev !== next) {
+      logger.info(`All keys exhausted for ${prev} — switching model to: ${next}`);
+    }
   }
 
   async _callAPI(contents, options = {}) {
@@ -93,7 +102,7 @@ class GeminiService {
           const blockReason = resp.data?.promptFeedback?.blockReason;
           logger.warn(`Gemini empty candidates (model: ${this.model}, block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
+          await new Promise(r => setTimeout(r, MIN_DELAY));
           continue;
         }
 
@@ -108,42 +117,40 @@ class GeminiService {
         // Log the exact error for debugging
         logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
 
-        // Private/restricted video — can't access regardless of key, skip immediately
+        // Private/restricted video — can't access regardless of key or model, skip immediately
         if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
-          logger.warn('Video access denied (private/restricted) — not retrying other keys');
+          logger.warn('Video access denied (private/restricted) — not retrying other keys/models');
           return null;
         }
 
-        // Rate limit or quota — rotate key, switch model too
+        // 429 Rate limit — rotate key only. Model rotates automatically when all keys exhausted
         if (status === 429 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${MIN_DELAY * (attempt + 1)}ms`);
+          const delay = Math.min(MIN_DELAY * (attempt + 1), 30000);
+          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${delay}ms`);
           this._rotateKey();
-          this._rotateModel();
-          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
+          await new Promise(r => setTimeout(r, delay));
           continue;
         }
 
-        // 503 / high demand / transient — switch model first, then key
-        if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline')) {
-          logger.warn(`Model ${this.model} overloaded — switching to next model`);
-          this._rotateModel();
-          await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
+        // 503 / high demand / transient — exponential backoff capped at 30s, rotate key
+        if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline') || errText?.includes('write EPIPE')) {
+          const backoff = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000);
+          logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms, then rotating key`);
+          this._rotateKey();
+          await new Promise(r => setTimeout(r, backoff));
           continue;
         }
 
-        // 400 errors (bad request, invalid model, etc.) — rotate model + key
+        // 400 errors (bad request, invalid model, etc.) — rotate key
         if (status === 400) {
-          const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
-          logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error (${field}) — rotating`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error — rotating`);
           this._rotateKey();
-          this._rotateModel();
           await new Promise(r => setTimeout(r, MIN_DELAY));
           continue;
         }
 
-        // Any other error — rotate key and model
+        // Any other error — rotate key
         this._rotateKey();
-        this._rotateModel();
         await new Promise(r => setTimeout(r, MIN_DELAY));
       }
     }
