@@ -300,26 +300,36 @@ Evaluate:
 1. 3-Second Hook (does it grab attention immediately?)
 2. Language independence (can it be understood without translation?)
 3. Visual quality and entertainment value
-4. Comment engagement potential
-5. Watermark presence and removal feasibility
-6. Does it match the country ${country}?
-7. Would it perform well as a YouTube Short?
+4. Watermark presence and removal feasibility
+5. Does it match the country ${country}?
+6. Would it perform well as a YouTube Short?
 
+Respond ONLY with valid JSON. No markdown, no explanation.
 Return JSON:
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "engagement_potential": "high/medium/low", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation", "suggested_edit": "what edits would help"}`;
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation"}`;
 
-    const response = await this.chat(curatorSkill || 'You are a viral content curator.', userMessage, {
+    const response = await this.chat(curatorSkill || 'You are a viral content curator. Respond ONLY with valid JSON.', userMessage, {
       temperature: 0.3,
-      maxTokens: 1024,
+      maxTokens: 2048,
     });
 
-    if (!response) return null;
+    if (!response) {
+      logger.warn(`rankVideo: Gemini returned null for "${url.substring(0, 50)}"`);
+      return null;
+    }
 
     try {
       const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Normalize verdict field
+        const verdict = (parsed.verdict || 'REJECTED').toUpperCase().trim();
+        parsed.verdict = verdict === 'APPROVED' || verdict === 'CONDITIONAL' ? 'APPROVED' : 'REJECTED';
+        return parsed;
+      }
     } catch (e) {
-      logger.warn(`Rank parse failed: ${e.message.substring(0, 60)}`);
+      logger.warn(`rankVideo: JSON parse failed — ${e.message.substring(0, 80)}`);
+      logger.warn(`rankVideo: Raw response (first 300 chars): ${response.substring(0, 300)}`);
     }
     return null;
   }

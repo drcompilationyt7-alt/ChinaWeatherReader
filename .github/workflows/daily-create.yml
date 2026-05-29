@@ -62,10 +62,7 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci || npm install
 
-      - name: Install Gemini CLI
-        run: |
-          curl -fsSL https://google.github.io/gemini-cli/install.sh | bash || echo "Gemini CLI install failed — will use API fallback"
-          echo "$HOME/.gemini/bin" >> $GITHUB_PATH || true
+      # Gemini CLI not needed — all AI tasks use the REST API directly
 
       - name: Pre-download whisper model
         run: |

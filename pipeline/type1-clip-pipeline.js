@@ -479,8 +479,22 @@ async function runType1Pipeline(options = {}) {
   const ranked = await rankVideos(filtered, country, gemini, curatorSkill);
 
   if (ranked.length === 0) {
-    logger.error('No videos approved by Gemini — aborting');
-    return { success: false, error: 'No approved videos' };
+    // Fallback: take the highest-view-count video that's a Short
+    logger.warn('Gemini ranking failed — using fallback: pick highest-view Short');
+    const shorts = filtered.filter(c => c.duration <= 60 && c.duration > 0);
+    if (shorts.length > 0) {
+      const fallback = shorts.sort((a, b) => b.view_count - a.view_count)[0];
+      logger.warn(`Fallback: "${fallback.title.substring(0, 50)}" (${(fallback.view_count / 1000000).toFixed(1)}M views)`);
+      ranked.push({
+        ...fallback,
+        geminiScore: 5,
+        hookScore: 5,
+        geminiCountry: country,
+      });
+    } else {
+      logger.error('No videos approved by Gemini and no fallback candidates — aborting');
+      return { success: false, error: 'No approved videos' };
+    }
   }
 
   const bestVideo = ranked[0];
