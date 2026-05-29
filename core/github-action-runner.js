@@ -105,9 +105,14 @@ class DailyRunner {
 
   async _boostVideo(url) {
     if (!url) return;
+    if (config.boost.enabled === false) {
+      logger.info('Boost disabled — skipping view boosting');
+      return;
+    }
     try {
-      logger.info('Waiting 30s settle before boost...');
-      await new Promise(r => setTimeout(r, 30000));
+      const waitSec = 30 + Math.floor(Math.random() * 60); // 30-90s settle
+      logger.info(`Waiting ${waitSec}s settle before boost...`);
+      await new Promise(r => setTimeout(r, waitSec * 1000));
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
       const result = await engine.run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
