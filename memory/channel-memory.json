@@ -1,12 +1,26 @@
 {
   "channelName": "Mr. WorldWideWebster",
-  "totalVideosPosted": 4,
-  "countriesUsedThisWeek": [
-    "Nigeria",
-    "China",
-    "India",
-    "Japan"
+  "tagline": "Bringing the world to you",
+  "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
+  "createdAt": "2026-05-29T11:58:43.653Z",
+  "totalVideosPosted": 0,
+  "lastCountryUsed": "",
+  "countriesUsedThisWeek": [],
+  "bestPerformingFormats": [],
+  "titleFormulas": [
+    "What is this [thing]? ([country] edition)",
+    "[country]s favorite [category] right now",
+    "Americans dont understand [country] [thing]",
+    "[country] vs [country]: Who does it better?",
+    "This [category] from [country] is going viral"
   ],
-  "hermesNotes": [],
-  "trendingKeywords": {}
+  "postingSchedule": {
+    "hour": 6,
+    "minute": 0,
+    "timezone": "UTC"
+  },
+  "skills": [],
+  "lastUpdated": "2026-05-29T11:58:43.729Z",
+  "lastContentType": "",
+  "usedTopics": []
 }
