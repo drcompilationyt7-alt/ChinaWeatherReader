@@ -158,32 +158,47 @@ async function searchYouTube(queries, videosPerQuery = 6) {
   // Limit to top 20 by title relevance to avoid too many API calls
   const toEnrich = allResults.slice(0, 20);
   let enriched = 0;
+  let fetchErrors = 0;
 
   for (const candidate of toEnrich) {
     try {
-      const metaCmd = `yt-dlp --dump-json --no-download "${candidate.url}" 2>/dev/null`;
+      // Try with cookies if available
+      const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
+      const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "${candidate.url}" 2>&1`;
       const metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
-      if (metaOut) {
+      if (metaOut && !metaOut.includes('ERROR') && !metaOut.includes('WARNING')) {
         const meta = JSON.parse(metaOut.split('\n')[0]);
         candidate.view_count = meta.view_count || 0;
         candidate.channel_follower_count = meta.channel_follower_count || 0;
         candidate.like_count = meta.like_count || 0;
         candidate.comment_count = meta.comment_count || 0;
         candidate.channel = meta.channel || meta.uploader || candidate.channel;
-        candidate.channel_follower_count = meta.channel_follower_count || 0;
         candidate.duration = meta.duration || candidate.duration;
         candidate.description = (meta.description || '').substring(0, 300);
         enriched++;
+      } else {
+        fetchErrors++;
+        if (fetchErrors <= 3) {
+          logger.warn(`Meta fetch error for "${candidate.title.substring(0, 40)}": ${metaOut?.substring(0, 100) || 'empty'}`);
+        }
       }
-    } catch {
-      // Metadata fetch failed — candidate will have zeros, likely filtered out
+    } catch (e) {
+      fetchErrors++;
     }
 
     // Small delay between metadata fetches
     await new Promise(r => setTimeout(r, 200));
   }
 
-  logger.success(`Pass 2 complete: ${enriched}/${toEnrich.length} enriched with metadata`);
+  logger.success(`Pass 2 complete: ${enriched}/${toEnrich.length} enriched with metadata (${fetchErrors} errors)`);
+
+  // If metadata fetch failed for ALL candidates, keep them anyway and log warning
+  // This means engagement filter will pass them through based on level 3 (broad)
+  if (enriched === 0 && toEnrich.length > 0) {
+    logger.warn('Metadata fetch failed for all candidates — YouTube may require fresh cookies or auth');
+    logger.warn('Candidates will be passed to filter without engagement data');
+  }
+
   return toEnrich;
 }
 
@@ -192,6 +207,15 @@ async function searchYouTube(queries, videosPerQuery = 6) {
  * Progressively relaxes until we have at least 5 candidates for ranking.
  */
 function filterCandidates(candidates) {
+  // Check if we got engagement data or metadata failed
+  const hasEngagementData = candidates.some(c => c.like_count > 0 || c.comment_count > 0);
+
+  if (!hasEngagementData) {
+    logger.warn('No engagement data available — skipping engagement filter, passing all to Gemini for ranking');
+    logger.warn(`Passing ${candidates.length} candidates to Gemini un-filtered`);
+    return candidates.filter(c => c.duration <= 120); // Only filter by duration
+  }
+
   // Level 1: Strict (100+ likes, 30+ comments, not famous)
   let filtered = candidates.filter(c => {
     if (c.like_count < 100) return false;
