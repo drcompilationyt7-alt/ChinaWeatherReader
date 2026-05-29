@@ -15,7 +15,7 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-const MIN_DELAY = 3000;
+const MIN_DELAY = 2000;
 
 class GeminiService {
   constructor() {
@@ -88,10 +88,15 @@ class GeminiService {
         lastError = error;
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
-        const respBody = JSON.stringify(error.response?.data || {}).substring(0, 200);
 
-        // Log the exact error detail
-        logger.warn(`Key ${this.currentKeyIndex + 1} error (status ${status}): ${errText?.substring(0, 120)}`);
+        // Log the exact error for debugging
+        logger.warn(`Key ${this.currentKeyIndex + 1} error (status ${status}): ${(errText || '').substring(0, 120)}`);
+
+        // Private/restricted video — can't access regardless of key, skip immediately
+        if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
+          logger.warn('Video access denied (private/restricted) — not retrying other keys');
+          return null;
+        }
 
         // Rate limit or quota — rotate, wait, retry
         if (status === 429 || status === 403 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
@@ -112,19 +117,18 @@ class GeminiService {
         // 400 errors (bad request, invalid model, etc.) — rotate to next key
         if (status === 400) {
           const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
-          logger.warn(`Key ${this.currentKeyIndex + 1} 400 error (${field}): ${respBody.substring(0, 100)} — rotating, waiting ${MIN_DELAY}ms`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} 400 error (${field}) — rotating`);
           this._rotateKey();
           await new Promise(r => setTimeout(r, MIN_DELAY));
           continue;
         }
 
         // Any other error — rotate and retry before giving up
-        logger.warn(`Key ${this.currentKeyIndex + 1} error (${status}): ${errText?.substring(0, 120)} — rotating, waiting ${MIN_DELAY}ms`);
         this._rotateKey();
         await new Promise(r => setTimeout(r, MIN_DELAY));
       }
     }
-    logger.error(`All keys exhausted. Last: ${lastError?.message?.substring(0, 80)}`);
+    logger.error(`All keys exhausted. Last: ${(lastError?.message || '').substring(0, 80)}`);
     return null;
   }
 
@@ -293,7 +297,6 @@ Respond ONLY with valid JSON (no markdown):
       logger.success(`File ready: ${uploadedFile.name} (${uploadedFile.state})`);
     } catch (e) {
       logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
-      // Log detailed response body
       if (e.response?.data) logger.warn(`Upload response: ${JSON.stringify(e.response.data).substring(0, 200)}`);
       return null;
     }
@@ -361,7 +364,6 @@ Respond ONLY with valid JSON:
       timeout: 120000,
     });
 
-    // Cleanup uploaded file
     try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 10000 }); } catch {}
 
     if (!response) { logger.warn('rankVideoFile: returned null'); return null; }
