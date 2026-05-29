@@ -21,7 +21,7 @@ class GeminiService {
   constructor() {
     this.keys = [];
     this.currentKeyIndex = 0;
-    this.model = 'gemini-3.5-flash';
+    this.model = 'gemini-2.5-flash';
     this.requestCount = 0;
     this.lastResetTime = Date.now();
     this._loadKeys();
