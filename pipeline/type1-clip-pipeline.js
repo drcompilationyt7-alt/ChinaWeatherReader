@@ -118,109 +118,131 @@ async function generateQueries(country, gemini, trendBank) {
 }
 
 /**
- * Search YouTube for videos — 2-pass approach
- * Pass 1: Quick flat search to get video IDs
- * Pass 2: Fetch full metadata (likes, comments, views) for each candidate
- * Returns candidates enriched with engagement data
+ * Search YouTube — Dynamic Harvesting Loop
+ * 
+ * For each query, paginates through search results in batches, performing full
+ * metadata fetch + quality gate on each video. Keeps paginating until we have
+ * enough quality candidates or hit the safety limit.
+ * 
+ * Quality Gate:
+ * - Views >= 5000
+ * - Comments > 0 (not disabled)
+ * - Embeddable (not restricted)
+ * - Like ratio >= 1.5%
+ * - Duration < 60s, public, not live
+ * - From last 90 days
  */
-async function searchYouTube(queries, videosPerQuery = 6) {
+async function searchYouTube(queries, targetCount = 15) {
   const allResults = [];
   const seen = new Set();
+  const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
-  // ─── Pass 1: Quick flat search ─────────────────────────────────────
+  // 90 days ago for freshness filter
+  const threeMonthsAgo = new Date(Date.now() - 90 * 86400000);
+  const dateStr = threeMonthsAgo.toISOString().split('T')[0].replace(/-/g, '');
+
   for (const query of queries) {
-    try {
-      logger.info(`Searching: "${query}"`);
-      const searchCount = Math.min(videosPerQuery + 4, 15);
-      const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${searchCount}:${query}" 2>/dev/null`;
-      const out = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
+    if (allResults.length >= targetCount) break;
 
-      if (!out) continue;
+    let batchStart = 1;
+    const batchSize = 40;
+    const maxBatches = 5; // Safety ceiling
 
-      const lines = out.split('\n').filter(Boolean);
+    for (let batch = 0; batch < maxBatches && allResults.length < targetCount; batch++) {
+      logger.info(`Searching batch ${batch + 1}/${maxBatches} for: "${query}" (offset ${batchStart})`);
 
-      for (const line of lines) {
-        try {
-          const p = JSON.parse(line);
-          if (p.is_live) continue;
-          if (p.duration && p.duration > 120) continue;
+      try {
+        // Fetch flat playlist with dense batch + quality filters
+        const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
+          `--dateafter ${dateStr} ` +
+          `--match-filter "!is_live & !upcoming & duration < 60 & availability = 'public'" ` +
+          `"ytsearch${batchStart}-${batchStart + batchSize}:${query}" 2>/dev/null`;
 
-          const watchUrl = `https://www.youtube.com/watch?v=${p.id}`;
-
-          if (seen.has(p.id)) continue;
-          seen.add(p.id);
-
-          allResults.push({
-            id: p.id,
-            url: watchUrl,
-            shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
-            title: p.title || 'YouTube video',
-            duration: p.duration || 0,
-            searchQuery: query,
-            // These will be filled in Pass 2
-            view_count: 0,
-            channel_follower_count: 0,
-            like_count: 0,
-            comment_count: 0,
-            channel: p.channel || p.uploader || 'Unknown',
-            description: (p.description || '').substring(0, 300),
-            upload_date: p.upload_date || '',
-          });
-        } catch {}
-      }
-    } catch (e) {
-      logger.warn(`Search failed for "${query}": ${e.message.substring(0, 60)}`);
-    }
-
-    await new Promise(r => setTimeout(r, 300));
-  }
-
-  logger.info(`Pass 1 complete: ${allResults.length} raw candidates found`);
-
-  if (allResults.length === 0) return [];
-
-  // ─── Pass 2: Fetch full metadata for all candidates ────────────────
-  // Limit to top 20 by title relevance to avoid too many API calls
-  const toEnrich = allResults.slice(0, 20);
-  let enriched = 0;
-  let fetchErrors = 0;
-
-  for (const candidate of toEnrich) {
-    try {
-      // Try with cookies if available
-      const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
-      const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "${candidate.url}" 2>&1`;
-      const metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
-      if (metaOut && !metaOut.includes('ERROR') && !metaOut.includes('WARNING')) {
-        const meta = JSON.parse(metaOut.split('\n')[0]);
-        candidate.view_count = meta.view_count || 0;
-        candidate.channel_follower_count = meta.channel_follower_count || 0;
-        candidate.like_count = meta.like_count || 0;
-        candidate.comment_count = meta.comment_count || 0;
-        candidate.channel = meta.channel || meta.uploader || candidate.channel;
-        candidate.duration = meta.duration || candidate.duration;
-        candidate.description = (meta.description || '').substring(0, 300);
-        enriched++;
-      } else {
-        fetchErrors++;
-        if (fetchErrors <= 3) {
-          logger.warn(`Meta fetch error for "${candidate.title.substring(0, 40)}": ${metaOut?.substring(0, 100) || 'empty'}`);
+        const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
+        if (!out) {
+          logger.info('No more results from this query');
+          break;
         }
-      }
-    } catch (e) {
-      fetchErrors++;
-    }
 
-    // Small delay between metadata fetches
-    await new Promise(r => setTimeout(r, 200));
+        const lines = out.split('\n').filter(Boolean);
+
+        for (const line of lines) {
+          if (allResults.length >= targetCount) break;
+
+          try {
+            const p = JSON.parse(line);
+            if (p.id && !seen.has(p.id)) {
+              seen.add(p.id);
+
+              // Fetch full metadata for this candidate
+              const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "https://www.youtube.com/watch?v=${p.id}" 2>&1`;
+              let metaOut;
+              try {
+                metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
+              } catch {}
+              if (!metaOut || metaOut.includes('ERROR')) continue;
+
+              const meta = JSON.parse(metaOut.split('\n')[0]);
+              const views = meta.view_count || 0;
+              const likes = meta.like_count || 0;
+              const comments = meta.comment_count || 0;
+
+              // ═══ Quality Gate ═══════════════════════════════════════
+              // 1. Minimum views (saves API quota from dead content)
+              if (views < 5000) {
+                continue;
+              }
+
+              // 2. Comments disabled/private
+              if (comments === 0) {
+                continue;
+              }
+
+              // 3. Embedding restricted (blocks Gemini URL streaming)
+              if (meta.is_embeddable === false) {
+                continue;
+              }
+
+              // 4. Like ratio check
+              if (views > 0 && (likes / views) * 100 < 1.5) {
+                continue;
+              }
+
+              // ✅ Passed all gates
+              const candidate = {
+                id: p.id,
+                url: `https://www.youtube.com/watch?v=${p.id}`,
+                shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
+                title: meta.title || p.title || 'YouTube video',
+                duration: meta.duration || p.duration || 0,
+                searchQuery: query,
+                view_count: views,
+                channel_follower_count: meta.channel_follower_count || 0,
+                like_count: likes,
+                comment_count: comments,
+                channel: meta.channel || meta.uploader || p.channel || 'Unknown',
+                description: (meta.description || '').substring(0, 300),
+                upload_date: meta.upload_date || p.upload_date || '',
+              };
+
+              allResults.push(candidate);
+            }
+          } catch {}
+        }
+      } catch (e) {
+        logger.warn(`Search batch failed for "${query}": ${e.message.substring(0, 60)}`);
+      }
+
+      batchStart += batchSize + 1;
+    }
   }
 
-  logger.success(`Pass 2 complete: ${enriched}/${toEnrich.length} enriched with metadata (${fetchErrors} errors)`);
+  logger.success(`Dynamic harvest complete: ${allResults.length} quality candidates found`);
 
   // ─── Debug: Log engagement data from top candidates ────────────────
-  if (enriched > 0) {
-    logger.info('── Engagement data from top 5 candidates ──');
-    toEnrich.slice(0, 5).forEach((c, i) => {
+  if (allResults.length > 0) {
+    logger.info('── Gated candidates (top 5) ──');
+    allResults.slice(0, 5).forEach((c, i) => {
       const ageDays = c.upload_date
         ? Math.max(1, Math.floor((Date.now() - new Date(
             c.upload_date.substring(0, 4),
@@ -230,19 +252,12 @@ async function searchYouTube(queries, videosPerQuery = 6) {
         : 'N/A';
       logger.info(`  #${i + 1} "${c.title.substring(0, 40)}"`);
       logger.info(`       Views: ${c.view_count?.toLocaleString() || 0} | Likes: ${c.like_count?.toLocaleString() || 0} | Comments: ${c.comment_count?.toLocaleString() || 0}`);
-      logger.info(`       Age: ${ageDays}d | Duration: ${c.duration}s | Upload: ${c.upload_date || 'unknown'}`);
+      logger.info(`       Age: ${ageDays}d | Duration: ${c.duration}s | Embed: yes`);
     });
     logger.info('──────────────────────────────────────────');
   }
 
-  // If metadata fetch failed for ALL candidates, keep them anyway and log warning
-  // This means engagement filter will pass them through based on level 3 (broad)
-  if (enriched === 0 && toEnrich.length > 0) {
-    logger.warn('Metadata fetch failed for all candidates — YouTube may require fresh cookies or auth');
-    logger.warn('Candidates will be passed to filter without engagement data');
-  }
-
-  return toEnrich;
+  return allResults;
 }
 
 /**
@@ -621,7 +636,7 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
   logger.info('Phase 2: Search YouTube');
-  const candidates = await searchYouTube(queries, 6);
+  const candidates = await searchYouTube(queries, 15);
   const filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
 
