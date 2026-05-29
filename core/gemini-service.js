@@ -2,20 +2,26 @@
  * Gemini Service — Free AI Brain for Mr. WorldWideWebster
  * Uses Google AI Studio (free tier) with 8-key rotation.
  * Free tier: 15 RPM, 1M tokens/day per key, 8 keys = 120 RPM
+ * 
+ * Supports Gemini File API for video uploads (actually watches videos).
  */
 const axios = require('axios');
+const { execSync } = require('child_process');
 const { Logger } = require('./logger');
 const path = require('path');
 const fs = require('fs');
 
 const logger = new Logger('GeminiService');
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
+
+const MIN_DELAY = 3000; // Base delay ms for retries
 
 class GeminiService {
   constructor() {
     this.keys = [];
     this.currentKeyIndex = 0;
-    this.model = 'gemini-2.5-flash';
+    this.model = 'gemini-3.5-flash';
     this.requestCount = 0;
     this.lastResetTime = Date.now();
     this._loadKeys();
@@ -27,7 +33,7 @@ class GeminiService {
       if (key) this.keys.push(key);
     }
     if (this.keys.length === 0 && process.env.GEMINI_API_KEY) this.keys.push(process.env.GEMINI_API_KEY);
-    logger.info(`Loaded ${this.keys.length} Gemini API keys`);
+    logger.info(`Loaded ${this.keys.length} Gemini API keys (model: ${this.model})`);
   }
 
   _getKey() { return this.keys.length ? this.keys[this.currentKeyIndex % this.keys.length] : null; }
@@ -59,7 +65,7 @@ class GeminiService {
         }
 
         const resp = await axios.post(
-          `${GEMINI_API_BASE}/models/${this.model}:generateContent?key=${key}`,
+          `${GEMINI_BASE}/models/${this.model}:generateContent?key=${key}`,
           body,
           { headers: { 'Content-Type': 'application/json' }, timeout: options.timeout || 60000 }
         );
@@ -68,11 +74,11 @@ class GeminiService {
         const candidates = resp.data?.candidates;
 
         if (!candidates || candidates.length === 0) {
-          // Blocked by safety filters or empty response
           const blockReason = resp.data?.promptFeedback?.blockReason;
-          logger.warn(`Gemini returned empty candidates (block: ${blockReason || 'unknown'})`);
+          logger.warn(`Gemini empty candidates (block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, 3000));
+          const backoff = MIN_DELAY * (attempt + 1);
+          await new Promise(r => setTimeout(r, backoff));
           continue;
         }
 
@@ -83,17 +89,18 @@ class GeminiService {
         lastError = error;
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
+        const backoff = MIN_DELAY * (attempt + 1);
 
         if (status === 429 || status === 403 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${backoff}ms`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, backoff));
           continue;
         }
         if (errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating, waiting ${backoff}ms`);
           this._rotateKey();
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, backoff));
           continue;
         }
         logger.error(`Gemini API error: ${errText?.substring(0, 120)}`);
@@ -111,12 +118,160 @@ class GeminiService {
   async chatJSON(systemPrompt, userMessage, opts = {}) {
     const r = await this.chat(systemPrompt + '\n\nIMPORTANT: Respond ONLY with valid JSON.', userMessage, opts);
     if (!r) return null;
+    return this._extractJSON(r);
+  }
+
+  _extractJSON(text) {
     try {
-      const m = r.match(/\{[\s\S]*\}/);
+      const m = text.match(/\{[\s\S]*\}/);
       if (m) return JSON.parse(m[0]);
-      const a = r.match(/\[[\s\S]*\]/);
+      const a = text.match(/\[[\s\S]*\]/);
       if (a) return JSON.parse(a[0]);
-    } catch (e) { logger.warn(`JSON parse: ${e.message.substring(0, 60)}`); logger.warn(`Raw: ${r.substring(0, 200)}`); }
+    } catch (e) {
+      logger.warn(`JSON parse: ${e.message.substring(0, 60)}`);
+      logger.warn(`Raw: ${text.substring(0, 200)}`);
+    }
+    return null;
+  }
+
+  /**
+   * Upload a video file to Gemini File API, then rank it visually.
+   * This is the REAL "Gemini watches the video" method.
+   * 
+   * @param {string} videoPath - Path to local video file
+   * @param {string} country - Expected country
+   * @param {string} curatorSkill - Skill prompt for ranking
+   * @returns {Object|null} - { score, verdict, reasoning, ... }
+   */
+  async rankVideoFile(videoPath, country, curatorSkill) {
+    if (!fs.existsSync(videoPath)) {
+      logger.warn(`rankVideoFile: video not found: ${videoPath}`);
+      return null;
+    }
+
+    const fileSize = fs.statSync(videoPath).size;
+    const fileName = path.basename(videoPath);
+    logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
+
+    // Upload to Gemini File API
+    const key = this._getKey();
+    if (!key) { logger.warn('No API keys for upload'); return null; }
+
+    let uploadedFile;
+    try {
+      // Read the file as binary and upload
+      const fileBuffer = fs.readFileSync(videoPath);
+      const uploadResp = await axios.post(
+        `${GEMINI_UPLOAD}/files?key=${key}`,
+        fileBuffer,
+        {
+          headers: {
+            'Content-Type': 'video/mp4',
+            'X-Goog-Upload-Protocol': 'resumable',
+            'X-Goog-Upload-Command': 'start, upload, finalize',
+            'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
+            'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+          },
+          timeout: 300000, // 5 min for upload
+          maxContentLength: 100 * 1024 * 1024,
+        }
+      );
+
+      uploadedFile = uploadResp.data?.file || uploadResp.data;
+      if (!uploadedFile || !uploadedFile.name) {
+        logger.warn('File upload response missing file name');
+        return null;
+      }
+      logger.info(`File uploaded: ${uploadedFile.name} (state: ${uploadedFile.state})`);
+
+      // Wait for processing
+      let waitCount = 0;
+      while (uploadedFile.state === 'PROCESSING' || uploadedFile.state === 'UPLOADING' || uploadedFile.state === 'QUEUED') {
+        waitCount++;
+        if (waitCount > 60) { // 5 min max wait
+          logger.warn('File processing timed out');
+          break;
+        }
+        await new Promise(r => setTimeout(r, 5000));
+        try {
+          const statusResp = await axios.get(
+            `${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`,
+            { timeout: 15000 }
+          );
+          uploadedFile = statusResp.data?.file || statusResp.data;
+        } catch {
+          logger.warn('File status check failed');
+          break;
+        }
+      }
+
+      if (uploadedFile.state === 'FAILED') {
+        logger.warn(`File processing failed: ${uploadedFile.error?.message || ''}`);
+        return null;
+      }
+
+      logger.success(`File ready: ${uploadedFile.name} (${uploadedFile.state})`);
+
+    } catch (e) {
+      logger.warn(`File upload/processing error: ${e.message.substring(0, 100)}`);
+      return null;
+    }
+
+    if (!uploadedFile || !uploadedFile.name) return null;
+
+    // Now analyze with the uploaded video
+    const prompt = `Rank this video for reposting on "Mr. WorldWideWebster".
+
+Target country: ${country}
+
+WATCH the video carefully and evaluate:
+1. 3-Second Hook — does it grab attention immediately?
+2. Language independence — can it be understood without translation?
+3. Visual quality and entertainment value
+4. Watermark presence and removal feasibility
+5. Does the content match the country ${country}?
+6. Would this perform well as a YouTube Short?
+
+Respond ONLY with valid JSON:
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation"}`;
+
+    const contents = [{
+      role: 'user',
+      parts: [
+        { fileData: { mimeType: 'video/mp4', fileUri: uploadedFile.uri || uploadedFile.name } },
+        { text: prompt }
+      ]
+    }];
+
+    const response = await this._callAPI(contents, {
+      systemInstruction: curatorSkill,
+      temperature: 0.3,
+      maxTokens: 1024,
+      timeout: 120000,
+    });
+
+    // Cleanup uploaded file
+    try {
+      await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 10000 });
+      logger.info('Cleaned up uploaded file');
+    } catch {}
+
+    if (!response) {
+      logger.warn('rankVideoFile: Gemini returned null after watching video');
+      return null;
+    }
+
+    try {
+      const m = response.match(/\{[\s\S]*\}/);
+      if (m) {
+        const p = JSON.parse(m[0]);
+        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+        return p;
+      }
+    } catch (e) {
+      logger.warn(`rankVideoFile JSON: ${e.message.substring(0, 80)}`);
+      logger.warn(`Raw: ${response.substring(0, 200)}`);
+    }
     return null;
   }
 
@@ -139,14 +294,9 @@ Respond ONLY with valid JSON:
 
     const resp = await this.chat(curatorSkill || '', msg, { temperature: 0.3, maxTokens: 1024 });
     if (!resp) { logger.warn(`rankVideo: null for "${url.substring(0, 50)}"`); return null; }
-
     try {
       const m = resp.match(/\{[\s\S]*\}/);
-      if (m) {
-        const p = JSON.parse(m[0]);
-        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
-        return p;
-      }
+      if (m) { const p = JSON.parse(m[0]); p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'; return p; }
     } catch (e) { logger.warn(`rankVideo JSON: ${e.message.substring(0, 80)}`); logger.warn(`Raw: ${resp.substring(0, 200)}`); }
     return null;
   }
