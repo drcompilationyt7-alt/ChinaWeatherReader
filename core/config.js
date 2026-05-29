@@ -108,6 +108,19 @@ const config = {
       minGeminiScore: 7,
       shortsPerDay: 1,
     },
+    // Type 2: World explainer shorts
+    type2: {
+      minDuration: 30,
+      maxDuration: 60,
+      targetPhases: ['hook', 'evidence', 'explanation', 'contrast'],
+      maxSourcingRetries: 3,
+      maxReviewIterations: 3,
+      rendering: {
+        crf: 15,
+        preset: 'slow',
+        fps: 30,
+      },
+    },
   },
 
   paths: {

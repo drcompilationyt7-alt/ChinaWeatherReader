@@ -1,0 +1,107 @@
+name: Daily Explainer Creation
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      country:
+        description: 'Override country (optional)'
+        required: false
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
+  GEMINI_API_KEY_6: ${{ secrets.GEMINI_API_KEY_6 }}
+  GEMINI_API_KEY_7: ${{ secrets.GEMINI_API_KEY_7 }}
+  GEMINI_API_KEY_8: ${{ secrets.GEMINI_API_KEY_8 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+  DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
+  GH_PAT: ${{ secrets.GH_PAT }}
+  EDGE_TTS_VOICE_EXPLAINER: en-US-GuyNeural
+
+jobs:
+  create-explainer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Clean output
+        run: |
+          rm -rf output/explainers/
+          mkdir -p output/explainers output/assets/voiceovers output/assets/audio memory
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install edge-tts yt-dlp faster-whisper opencv-python-headless --break-system-packages
+
+      - name: Install Node.js dependencies
+        run: npm ci || npm install
+
+      - name: Install Gemini CLI
+        run: |
+          curl -fsSL https://google.github.io/gemini-cli/install.sh | bash || echo "Gemini CLI install failed — will use API fallback"
+          echo "$HOME/.gemini/bin" >> $GITHUB_PATH || true
+
+      - name: Pre-download whisper model
+        run: |
+          python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
+
+      - name: Write cookies file
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then
+            printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
+          fi
+
+      - name: Run explainer pipeline
+        run: |
+          COUNTRY_ARG=""
+          if [ -n "${{ github.event.inputs.country }}" ]; then
+            COUNTRY_ARG="--country ${{ github.event.inputs.country }}"
+          fi
+          node core/github-action-runner.js --mode explainer $COUNTRY_ARG
+
+      - name: Save memory
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add memory/channel-memory.json config/trend-banks/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+
+      - name: Weekly cleanup
+        if: github.event_name == 'schedule'
+        run: |
+          DOW=$(date +%u)
+          if [ "$DOW" = "7" ]; then
+            rm -rf output/explainers/* output/assets/voiceovers/* output/assets/audio/* 2>/dev/null || true
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/yt_cookies.txt 2>/dev/null || true
