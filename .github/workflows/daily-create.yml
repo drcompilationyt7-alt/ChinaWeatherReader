@@ -54,15 +54,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
 
+      - name: Install Deno (JS runtime for yt-dlp)
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          export DENO_INSTALL="$HOME/.deno"
+          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install edge-tts yt-dlp faster-whisper opencv-python-headless --break-system-packages
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless --break-system-packages
 
       - name: Install Node.js dependencies
-        run: npm ci || npm install
+        run: |
+          npm ci || npm install
+          npm install axios
 
-      # Gemini CLI not needed — all AI tasks use the REST API directly
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
 
       - name: Pre-download whisper model
         run: |

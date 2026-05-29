@@ -103,7 +103,10 @@ async function searchYouTube(queries, videosPerQuery = 4) {
   for (const query of queries) {
     try {
       logger.info(`Searching: "${query}"`);
-      const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${videosPerQuery + 5}:${query}" 2>/dev/null`;
+      // Use --match-filters to only get Shorts with 500k+ views from non-famous channels
+      // Remove --flat-playlist so we get real metadata (view_count, channel_follower_count)
+      const searchCount = Math.min(videosPerQuery + 5, 20);
+      const cmd = `yt-dlp --dump-json --match-filters "view_count > 500000 & channel_follower_count < 500000 & duration < 121" "ytsearch${searchCount}:${query}" 2>/dev/null`;
       const out = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
 
       if (!out) continue;
