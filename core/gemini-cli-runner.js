@@ -68,43 +68,38 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
+        // Write prompt to temp file (avoids shell escaping issues with -p)
+        // For video analysis, prepend @video.mp4 to the prompt text
+        let promptContent = fullPrompt;
+        if (options.videoPath && fs.existsSync(options.videoPath)) {
+          promptContent = `@${options.videoPath} ${fullPrompt}`;
+        }
+
+        const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
+        fs.writeFileSync(promptFile, promptContent, 'utf8');
+
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
         let cmd;
 
-        // ─── Mode 1: Direct video analysis via @ syntax ──────────────
-        // gemini -m gemini-3.5-flash -p "@video.mp4 prompt" --yolo 2>&1
-        if (options.videoPath && fs.existsSync(options.videoPath)) {
-          cmd = `GEMINI_API_KEY="${key}" ${cli} -m gemini-3.5-flash -p "@${options.videoPath} ${fullPrompt}" --yolo 2>&1`;
-        } else {
-          // ─── Mode 2: Text/image via stdin pipe ─────────────────────
-          const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-          fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-
-          if (options.images && options.images.length > 0) {
-            const existingImages = options.images.filter(f => fs.existsSync(f));
-            if (existingImages.length > 0) {
-              const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
-              cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} ${imageArgs} 2>&1`;
-            } else {
-              cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
-            }
+        if (options.images && options.images.length > 0) {
+          const existingImages = options.images.filter(f => fs.existsSync(f));
+          if (existingImages.length > 0) {
+            const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
+            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} ${imageArgs} 2>&1`;
           } else {
             cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
           }
+        } else {
+          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
         }
 
         logger.info(`CLI run (attempt ${attempt + 1})`);
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
-        // Cleanup temp file if one was created
-        try {
-          if (!options.videoPath) {
-            const promptFile = cmd.match(/"([^"]+\.txt)"/);
-            if (promptFile) fs.unlinkSync(promptFile[1]);
-          }
-        } catch {}
+        // Cleanup temp file
+        try { fs.unlinkSync(promptFile); } catch {}
 
         const output = result.trim();
         if (output && output.length > 10) {
