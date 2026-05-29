@@ -257,40 +257,65 @@ function filterCandidates(candidates) {
 }
 
 /**
- * Rank videos using Gemini API (paste URL directly — Gemini watches YouTube natively)
+ * Rank videos using Gemini File API (downloads MP4, uploads, watches video)
+ * This is the REAL "Gemini watches the video" approach.
+ * URL-based ranking does NOT work for actual video analysis.
  */
-async function rankVideos(candidates, country, gemini, curatorSkill) {
+async function rankVideos(candidates, country, gemini, curatorSkill, tmpDir) {
   const ranked = [];
 
-  // Only rank top 5 — we only need 1 video
-  const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 5);
+  // Rank top 15 — some will fail from API limits
+  const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 15);
 
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
 
-    const result = await gemini.rankVideo(candidate.url, country, curatorSkill);
-
-    if (result && result.verdict === 'APPROVED' && result.score >= 7) {
-      ranked.push({
-        ...candidate,
-        geminiScore: result.score,
-        hookScore: result.hook_score,
-        geminiCountry: result.country,
-        watermarkType: result.watermark_type,
-        suggestedEdit: result.suggested_edit,
-        reasoning: result.reasoning,
-      });
-      logger.success(`  ✅ Score: ${result.score}/10 — ${result.reasoning?.substring(0, 60)}`);
-    } else {
-      logger.info(`  ❌ ${result?.verdict || 'FAILED'} (score: ${result?.score || '?'}) — ${result?.reasoning?.substring(0, 60) || 'no reason'}`);
+    // Download the video first
+    logger.info(`Downloading for visual analysis...`);
+    const dlPath = await downloadBestVideo(candidate, tmpDir);
+    if (!dlPath) {
+      logger.warn('Download failed for this candidate — skipping');
+      continue;
     }
 
-    // 4s delay between calls to stay under 15 RPM limit per key
-    await new Promise(r => setTimeout(r, 4000));
+    // Upload to Gemini File API — Gemini WATCHES the video
+    logger.info(`Uploading to Gemini File API for actual video analysis...`);
+    const result = await gemini.rankVideoFile(dlPath, country, curatorSkill);
+
+    // Cleanup
+    try { fs.unlinkSync(dlPath); } catch {}
+
+    if (result && result.verdict === 'APPROVED' && result.score >= 6) {
+      ranked.push({
+        ...candidate,
+        geminiScore: Math.min(10, Math.max(1, result.score)),
+        hookScore: result.hook_score || 5,
+        geminiCountry: result.country || country,
+        watermarkType: result.watermark_type,
+        reasoning: result.reasoning || '',
+      });
+      logger.success(`  ✅ File API Score: ${result.score}/10 — ${result.reasoning?.substring(0, 60)}`);
+    } else if (result) {
+      logger.info(`  ❌ Rejected (score: ${result.score || '?'}) — ${result.reasoning?.substring(0, 60) || ''}`);
+    } else {
+      logger.warn('  File API returned null');
+    }
+
+    // 40s delay between calls
+    await new Promise(r => setTimeout(r, 40000));
   }
 
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
-  logger.success(`Ranked: ${ranked.length} approved videos`);
+  logger.success(`File API ranked: ${ranked.length} approved videos`);
+
+  // If File API ranking returned nothing, fallback to highest views
+  if (ranked.length === 0) {
+    logger.warn('No videos approved by File API — using highest-view as fallback');
+    const shorts = sorted.filter(c => c.duration <= 60 && c.duration > 0);
+    if (shorts.length > 0) {
+      ranked.push({ ...shorts[0], geminiScore: 5, hookScore: 5, geminiCountry: country });
+    }
+  }
   return ranked;
 }
 
@@ -567,7 +592,7 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 3: Gemini Ranking ───────────────────────────────────────
   logger.info('Phase 3: Gemini Ranking');
-  const ranked = await rankVideos(filtered, country, gemini, curatorSkill);
+  const ranked = await rankVideos(filtered, country, gemini, curatorSkill, tmpDir);
 
   if (ranked.length === 0) {
     // Video File Upload Ranking (Gemini actually WATCHES the video)
