@@ -31,6 +31,31 @@ const SHORTS_W = 1080;
 const SHORTS_H = 1920;
 
 /**
+ * Fetch top comments from a YouTube video using yt-dlp
+ * Returns array of { text, likes, author } objects
+ */
+async function fetchTopComments(url, maxComments = 3) {
+  try {
+    const cmd = `yt-dlp --write-comments --extractor-args "youtube:max_comments=${maxComments},comment_sort=top" --dump-json --no-download "${url}" 2>&1`;
+    const out = execSync(cmd, { timeout: 20000, maxBuffer: 2 * 1024 * 1024 }).toString().trim();
+    if (!out || out.includes('ERROR') || out.includes('WARNING')) return [];
+
+    const meta = JSON.parse(out.split('\n')[0]);
+    const comments = (meta.comments || [])
+      .slice(0, maxComments)
+      .filter(c => c.text)
+      .map(c => ({
+        text: (c.text || '').substring(0, 200),
+        likes: c.like_count || 0,
+        author: (c.author || 'Unknown').substring(0, 30),
+      }));
+    return comments;
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
  * Load trend bank for a country
  */
 function loadTrendBank(country) {
@@ -192,6 +217,24 @@ async function searchYouTube(queries, videosPerQuery = 6) {
 
   logger.success(`Pass 2 complete: ${enriched}/${toEnrich.length} enriched with metadata (${fetchErrors} errors)`);
 
+  // ─── Debug: Log engagement data from top candidates ────────────────
+  if (enriched > 0) {
+    logger.info('── Engagement data from top 5 candidates ──');
+    toEnrich.slice(0, 5).forEach((c, i) => {
+      const ageDays = c.upload_date
+        ? Math.max(1, Math.floor((Date.now() - new Date(
+            c.upload_date.substring(0, 4),
+            c.upload_date.substring(4, 6) - 1,
+            c.upload_date.substring(6, 8)
+          ).getTime()) / 86400000))
+        : 'N/A';
+      logger.info(`  #${i + 1} "${c.title.substring(0, 40)}"`);
+      logger.info(`       Views: ${c.view_count?.toLocaleString() || 0} | Likes: ${c.like_count?.toLocaleString() || 0} | Comments: ${c.comment_count?.toLocaleString() || 0}`);
+      logger.info(`       Age: ${ageDays}d | Duration: ${c.duration}s | Upload: ${c.upload_date || 'unknown'}`);
+    });
+    logger.info('──────────────────────────────────────────');
+  }
+
   // If metadata fetch failed for ALL candidates, keep them anyway and log warning
   // This means engagement filter will pass them through based on level 3 (broad)
   if (enriched === 0 && toEnrich.length > 0) {
@@ -270,7 +313,28 @@ async function rankVideos(candidates, country, gemini, curatorSkill) {
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
 
-    const result = await gemini.rankVideo(candidate.url, country, curatorSkill);
+    // Build engagement data from Pass 2 metadata
+    const ageInDays = candidate.upload_date
+      ? Math.max(1, Math.floor((Date.now() - new Date(
+          candidate.upload_date.substring(0, 4),
+          candidate.upload_date.substring(4, 6) - 1,
+          candidate.upload_date.substring(6, 8)
+        ).getTime()) / 86400000))
+      : 30;
+    const engagementData = {
+      views: candidate.view_count || 0,
+      likes: candidate.like_count || 0,
+      comments: candidate.comment_count || 0,
+      ageInDays,
+      title: candidate.title || 'YouTube video',
+      topComments: candidate.topComments || [],
+    };
+
+    const commentsLog = engagementData.topComments.length > 0
+      ? `, ${engagementData.topComments.length} top comments`
+      : '';
+    logger.info(`  Engagement sent to Gemini: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old${commentsLog}`);
+    const result = await gemini.rankVideo(candidate.url, country, curatorSkill, engagementData);
 
     if (result && result.verdict === 'APPROVED' && result.score >= 6) {
       ranked.push({
@@ -533,7 +597,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
  * @returns {Object} - { success, videoPath, title, description, country }
  */
 async function runType1Pipeline(options = {}) {
-  const country = options.country;
+  let country = options.country;
   const outputDir = options.outputDir || path.join(__dirname, '..', 'output', 'clips');
   const tmpDir = path.join(outputDir, `tmp_${Date.now()}`);
 
@@ -574,6 +638,18 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'No candidates' };
   }
 
+  // ─── Phase 2b: Fetch Top Comments ──────────────────────────────────
+  logger.info('Fetching top comments for top candidates...');
+  const candidatesForComments = filtered.slice(0, Math.min(5, filtered.length));
+  for (const cand of candidatesForComments) {
+    cand.topComments = await fetchTopComments(cand.url, 3);
+    if (cand.topComments.length > 0) {
+      logger.info(`  "${cand.title.substring(0, 40)}" → ${cand.topComments.length} comments fetched`);
+    } else {
+      logger.info(`  "${cand.title.substring(0, 40)}" → no comments (private/disabled)`);
+    }
+  }
+
   // ─── Phase 3: Gemini Ranking ───────────────────────────────────────
   logger.info('Phase 3: Gemini Ranking');
   const ranked = await rankVideos(filtered, country, gemini, curatorSkill, tmpDir);
@@ -586,12 +662,30 @@ async function runType1Pipeline(options = {}) {
 
     for (const cand of top3) {
       logger.info(`Downloading for video analysis: "${cand.title.substring(0, 50)}"`);
+
+      // Build engagement data for this candidate
+      const candAgeInDays = cand.upload_date
+        ? Math.max(1, Math.floor((Date.now() - new Date(
+            cand.upload_date.substring(0, 4),
+            cand.upload_date.substring(4, 6) - 1,
+            cand.upload_date.substring(6, 8)
+          ).getTime()) / 86400000))
+        : 30;
+      const candEngagementData = {
+        views: cand.view_count || 0,
+        likes: cand.like_count || 0,
+        comments: cand.comment_count || 0,
+        ageInDays: candAgeInDays,
+        title: cand.title || 'YouTube video',
+        topComments: cand.topComments || [],
+      };
+
       const dlPath = await downloadBestVideo(cand, tmpDir);
       if (!dlPath) continue;
 
       // Upload video to Gemini File API and let it WATCH the video
       logger.info(`Uploading to Gemini File API for visual ranking...`);
-      const result = await gemini.rankVideoFile(dlPath, country, curatorSkill);
+      const result = await gemini.rankVideoFile(dlPath, country, curatorSkill, candEngagementData);
 
       if (result && result.verdict === 'APPROVED' && result.score >= 5) {
         videoRanked.push({
@@ -633,6 +727,15 @@ async function runType1Pipeline(options = {}) {
 
   const bestVideo = ranked[0];
   logger.success(`Best video: "${bestVideo.title.substring(0, 50)}" (score: ${bestVideo.geminiScore}/10)`);
+
+  // ─── Country Recategorization ──────────────────────────────────────
+  // Gemini detected the video's actual country — override if different
+  if (bestVideo.geminiCountry && bestVideo.geminiCountry !== country) {
+    logger.warn(`⚠️  Country recategorized: "${country}" → "${bestVideo.geminiCountry}"`);
+    logger.warn(`   Gemini detected actual origin of "${bestVideo.title.substring(0, 40)}"`);
+    country = bestVideo.geminiCountry;
+    logger.info(`   Using "${country}" for signature, metadata, and memory`);
+  }
 
   // ─── Phase 4: Download + Transcribe ────────────────────────────────
   logger.info('Phase 4: Download + Transcribe');

@@ -136,10 +136,41 @@ class GeminiService {
    * Gemini watches the video natively via file_data (no download needed).
    * Uses snake_case for REST API compatibility.
    */
-  async rankVideo(url, country, curatorSkill) {
+  async rankVideo(url, country, curatorSkill, engagementData = null) {
+    let metricsBlock = '';
+    if (engagementData) {
+      const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
+      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
+      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
+
+      metricsBlock = `
+ENGAGEMENT METRICS:
+- Views: ${engagementData.views || 0}
+- Likes: ${engagementData.likes || 0}
+- Comments: ${engagementData.comments || 0}
+- Age in days: ${engagementData.ageInDays || 0}
+- Title: "${engagementData.title || 'Unknown'}"
+
+HARD METRIC COMPUTATION:
+- Velocity (views/day): ${velocity}
+- Like Ratio (likes/views×100): ${likeRatio}%  [Benchmark: >3% good, <1.5% bad]
+- Comment Density (comments/views×100): ${commentDensity}%  [Benchmark: >0.2% = high engagement]`;
+
+      if (engagementData.topComments && engagementData.topComments.length > 0) {
+        const commentLines = engagementData.topComments
+          .map((c, i) => `  ${i + 1}. "${c.text}" (${c.likes} likes, by ${c.author})`)
+          .join('\n');
+        metricsBlock += `\n\nTOP VIEWER COMMENTS:\n${commentLines}`;
+      }
+    }
+
     const prompt = `WATCH this YouTube video and rank it for reposting on "Mr. WorldWideWebster" channel.
 
-Target country: ${country}
+Target country: ${country}${metricsBlock}
+
+HYBRID EVALUATION FRAMEWORK:
+1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
+2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
 
 Carefully evaluate the actual video content:
 1. 3-Second Hook — does it grab attention in the first 3 seconds?
@@ -150,7 +181,7 @@ Carefully evaluate the actual video content:
 6. Would this perform well as a YouTube Short?
 
 Respond ONLY with valid JSON (no markdown):
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation of visual quality and hook"}`;
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
 
     // REST API uses snake_case: file_data.file_uri
     const contents = [{
@@ -191,7 +222,7 @@ Respond ONLY with valid JSON (no markdown):
    * FALLBACK: Upload a video file to Gemini File API, then rank visually.
    * Used when URL-based ranking fails (private videos, rate limits, etc.)
    */
-  async rankVideoFile(videoPath, country, curatorSkill) {
+  async rankVideoFile(videoPath, country, curatorSkill, engagementData = null) {
     if (!fs.existsSync(videoPath)) {
       logger.warn(`rankVideoFile: video not found: ${videoPath}`);
       return null;
@@ -256,9 +287,40 @@ Respond ONLY with valid JSON (no markdown):
 
     if (!uploadedFile || !uploadedFile.name) return null;
 
+    let metricsBlock = '';
+    if (engagementData) {
+      const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
+      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
+      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
+
+      metricsBlock = `
+ENGAGEMENT METRICS:
+- Views: ${engagementData.views || 0}
+- Likes: ${engagementData.likes || 0}
+- Comments: ${engagementData.comments || 0}
+- Age in days: ${engagementData.ageInDays || 0}
+- Title: "${engagementData.title || 'Unknown'}"
+
+HARD METRIC COMPUTATION:
+- Velocity (views/day): ${velocity}
+- Like Ratio (likes/views×100): ${likeRatio}%  [Benchmark: >3% good, <1.5% bad]
+- Comment Density (comments/views×100): ${commentDensity}%  [Benchmark: >0.2% = high engagement]`;
+
+      if (engagementData.topComments && engagementData.topComments.length > 0) {
+        const commentLines = engagementData.topComments
+          .map((c, i) => `  ${i + 1}. "${c.text}" (${c.likes} likes, by ${c.author})`)
+          .join('\n');
+        metricsBlock += `\n\nTOP VIEWER COMMENTS:\n${commentLines}`;
+      }
+    }
+
     const prompt = `WATCH this video and rank it for reposting on "Mr. WorldWideWebster".
 
-Target country: ${country}
+Target country: ${country}${metricsBlock}
+
+HYBRID EVALUATION FRAMEWORK:
+1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
+2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
 
 WATCH the video carefully and evaluate:
 1. 3-Second Hook
@@ -269,7 +331,7 @@ WATCH the video carefully and evaluate:
 6. YouTube Shorts potential?
 
 Respond ONLY with valid JSON:
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief explanation"}`;
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
 
     const contents = [{
       role: 'user',
