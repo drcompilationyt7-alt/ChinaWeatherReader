@@ -140,9 +140,9 @@ async function searchYouTube(queries, targetCount = 15) {
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
-  // 90 days ago for freshness filter
-  const threeMonthsAgo = new Date(Date.now() - 90 * 86400000);
-  const dateStr = threeMonthsAgo.toISOString().split('T')[0].replace(/-/g, '');
+  // 2 years ago for freshness filter
+  const twoYearsAgo = new Date(Date.now() - 730 * 86400000);
+  const dateStr = twoYearsAgo.toISOString().split('T')[0].replace(/-/g, '');
 
   for (const query of queries) {
     if (allResults.length >= targetCount) break;
