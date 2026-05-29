@@ -533,7 +533,7 @@ async function runType1Pipeline(options = {}) {
   logger.header(`TYPE 1 PIPELINE: ${country}`);
 
   const gemini = getGeminiService();
-  const curatorSkillPath = path.join(__dirname, '..', 'skills', 'viral-clip-curator.md');
+  const curatorSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'viral-clip-curator.md');
   const curatorSkill = fs.existsSync(curatorSkillPath) ? fs.readFileSync(curatorSkillPath, 'utf8') : null;
 
   // ─── Phase 1: Content Discovery ────────────────────────────────────
@@ -570,21 +570,78 @@ async function runType1Pipeline(options = {}) {
   const ranked = await rankVideos(filtered, country, gemini, curatorSkill);
 
   if (ranked.length === 0) {
-    // Fallback: take the highest-view-count video that's a Short
-    logger.warn('Gemini ranking failed — using fallback: pick highest-view Short');
-    const shorts = filtered.filter(c => c.duration <= 60 && c.duration > 0);
-    if (shorts.length > 0) {
-      const fallback = shorts.sort((a, b) => b.view_count - a.view_count)[0];
-      logger.warn(`Fallback: "${fallback.title.substring(0, 50)}" (${(fallback.view_count / 1000000).toFixed(1)}M views)`);
-      ranked.push({
-        ...fallback,
-        geminiScore: 5,
-        hookScore: 5,
-        geminiCountry: country,
-      });
+    // Frame-Based Visual Ranking Fallback
+    // Download top 3 candidates, extract frames, and rank visually
+    logger.warn('Gemini URL ranking failed — trying frame-based visual ranking');
+    const geminiCLI = getGeminiCLI();
+    const top3 = filtered.slice(0, 3);
+    const frameRanked = [];
+
+    for (const cand of top3) {
+      logger.info(`Downloading for frame analysis: "${cand.title.substring(0, 50)}"`);
+      const dlPath = await downloadBestVideo(cand, tmpDir);
+      if (!dlPath) continue;
+
+      // Extract 5 frames spread across the video
+      const frameDir = path.join(tmpDir, `frames_${cand.id}`);
+      const duration = cand.duration || 30;
+      const frameTimes = [1, Math.floor(duration / 4), Math.floor(duration / 2), Math.floor(duration * 3 / 4), Math.max(duration - 2, 2)];
+      const frames = extractFrames(dlPath, frameDir, frameTimes);
+
+      if (frames.length === 0) continue;
+
+      // Try Gemini CLI first (has vision + can run commands)
+      if (geminiCLI.isAvailable()) {
+        const prompt = `Rate this video (frames shown) for reposting on YouTube Shorts channel "Mr. WorldWideWebster". Target country: ${country}. Score 1-10. Consider: visual quality, hook, watermark, cultural match.`;
+        const result = await geminiCLI.run(prompt, { images: frames, skillFile: path.join(__dirname, '..', 'skills', 'type1', 'viral-clip-curator.md'), timeout: 60000 });
+        if (result) {
+          try {
+            const m = result.match(/\{[\s\S]*\}/);
+            if (m) {
+              const parsed = JSON.parse(m[0]);
+              const score = parsed.score || 5;
+              frameRanked.push({ ...cand, geminiScore: Math.min(10, Math.max(1, score)), hookScore: parsed.hook_score || 5, geminiCountry: parsed.country || country, reasoning: parsed.reasoning || '' });
+              logger.success(`  Frame rank: ${score}/10 — ${parsed.reasoning?.substring(0, 60) || ''}`);
+            }
+          } catch {}
+        }
+      } else {
+        // Fallback: use Gemini REST API with frames
+        const question = `Rate this video's clips from ${country} for reposting on YouTube Shorts. Score 1-10. Consider: visual hook, quality, watermark, cultural match. Return JSON: {"score": N, "reasoning": "..."}`;
+        const result = await gemini.analyzeFrames(frames, question, curatorSkill);
+        if (result) {
+          try {
+            const m = result.match(/\{[\s\S]*\}/);
+            if (m) {
+              const parsed = JSON.parse(m[0]);
+              const score = parsed.score || 5;
+              frameRanked.push({ ...cand, geminiScore: Math.min(10, Math.max(1, score)), hookScore: 5, geminiCountry: country, reasoning: parsed.reasoning || '' });
+              logger.success(`  Frame rank: ${score}/10 — ${parsed.reasoning?.substring(0, 60) || ''}`);
+            }
+          } catch {}
+        }
+      }
+
+      // Cleanup downloaded file and frames
+      try { fs.unlinkSync(dlPath); } catch {}
+      try { fs.rmSync(frameDir, { recursive: true, force: true }); } catch {}
+    }
+
+    if (frameRanked.length > 0) {
+      frameRanked.sort((a, b) => b.geminiScore - a.geminiScore);
+      ranked.push(frameRanked[0]);
+      logger.success(`Frame-based winner: "${ranked[0].title.substring(0, 50)}" (score: ${ranked[0].geminiScore}/10)`);
     } else {
-      logger.error('No videos approved by Gemini and no fallback candidates — aborting');
-      return { success: false, error: 'No approved videos' };
+      // Ultimate fallback: highest view count
+      logger.warn('Frame ranking also failed — using highest-view as fallback');
+      const shorts = filtered.filter(c => c.duration <= 60 && c.duration > 0);
+      if (shorts.length > 0) {
+        const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0];
+        ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country });
+      } else {
+        logger.error('No fallback candidates — aborting');
+        return { success: false, error: 'No approved videos' };
+      }
     }
   }
 

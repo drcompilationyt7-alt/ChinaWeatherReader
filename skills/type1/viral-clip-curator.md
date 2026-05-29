@@ -62,7 +62,7 @@ Examine the following to determine cultural origin:
 - Satisfying visual loops (oddly satisfying)
 - Cultural moments (festivals, traditions, daily life)
 - Unexpected/funny moments
-- Skill展示 (talent showcases)
+- Skill showcases
 
 ## 3. Engagement Assessment
 Evaluate these metrics when available:
@@ -80,7 +80,7 @@ When a country is specified, verify the content actually matches:
 - If the video doesn't match the expected country, note the correct country
 
 ## 5. Output Format
-For each submitted video, you MUST output this exact JSON structure:
+For each submitted video, output this exact JSON structure:
 
 ```json
 {
@@ -93,21 +93,21 @@ For each submitted video, you MUST output this exact JSON structure:
   "engagement_potential": "high",
   "verdict": "APPROVED",
   "reasoning": "Fast beat-sync transition at 0:04 grabs attention without needing translation. Dance trend format is universally understood.",
-  "suggested_edit": "Crop Douyin watermark from top-left. Consider zoom 105% for uniqueness. No captions needed — visual content only.",
+  "suggested_edit": "Crop Douyin watermark from top-left. Consider zoom 105% for uniqueness. No captions needed.",
   "video_length_seconds": 12,
   "channel_subscribers": 50000,
-  "comment_quality": "Active engagement with fire emojis and sharing"
+  "comment_quality": "Active engagement with sharing"
 }
 ```
 
 ### Scoring Guide
-- **9-10**: Viral bomb. Post immediately. Perfect hook, universal appeal, high engagement.
-- **7-8**: Strong clip. Good hook, minimal edits needed, high potential.
-- **5-6**: Decent content. Needs work (better crop, captions) but has potential.
-- **3-4**: Below average. Weak hook, too long, or needs heavy editing.
-- **1-2**: Don't post. Not suitable for the channel.
+- **9-10**: Viral bomb. Post immediately.
+- **7-8**: Strong clip. Good hook, minimal edits needed.
+- **5-6**: Decent content. Needs work but has potential.
+- **3-4**: Below average. Weak hook or needs heavy editing.
+- **1-2**: Don't post.
 
 ### Verdict Rules
 - Score 7+ AND not rejected by auto-reject rules → APPROVED
-- Score 5-6 AND has strong visual hook → CONDITIONAL APPROVED (needs edits)
+- Score 5-6 AND has strong visual hook → CONDITIONAL APPROVED
 - Score below 5 OR auto-reject triggered → REJECTED
