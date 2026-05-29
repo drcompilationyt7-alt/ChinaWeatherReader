@@ -93,35 +93,33 @@ async function generateQueries(country, gemini, trendBank) {
 }
 
 /**
- * Search YouTube for videos matching queries
- * Returns up to 4 candidates per query
+ * Search YouTube for videos — 2-pass approach
+ * Pass 1: Quick flat search to get video IDs
+ * Pass 2: Fetch full metadata (likes, comments, views) for each candidate
+ * Returns candidates enriched with engagement data
  */
-async function searchYouTube(queries, videosPerQuery = 4) {
+async function searchYouTube(queries, videosPerQuery = 6) {
   const allResults = [];
   const seen = new Set();
 
+  // ─── Pass 1: Quick flat search ─────────────────────────────────────
   for (const query of queries) {
     try {
       logger.info(`Searching: "${query}"`);
-      // Use --match-filters to only get Shorts with 500k+ views from non-famous channels
-      // Remove --flat-playlist so we get real metadata (view_count, channel_follower_count)
-      const searchCount = Math.min(videosPerQuery + 5, 20);
-      const cmd = `yt-dlp --dump-json --match-filters "view_count > 500000 & channel_follower_count < 500000 & duration < 121" "ytsearch${searchCount}:${query}" 2>/dev/null`;
+      const searchCount = Math.min(videosPerQuery + 4, 15);
+      const cmd = `yt-dlp --flat-playlist --dump-json "ytsearch${searchCount}:${query}" 2>/dev/null`;
       const out = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
 
       if (!out) continue;
 
       const lines = out.split('\n').filter(Boolean);
-      let count = 0;
 
       for (const line of lines) {
-        if (count >= videosPerQuery) break;
         try {
           const p = JSON.parse(line);
           if (p.is_live) continue;
           if (p.duration && p.duration > 120) continue;
 
-          const url = `https://www.youtube.com/shorts/${p.id}`;
           const watchUrl = `https://www.youtube.com/watch?v=${p.id}`;
 
           if (seen.has(p.id)) continue;
@@ -130,44 +128,108 @@ async function searchYouTube(queries, videosPerQuery = 4) {
           allResults.push({
             id: p.id,
             url: watchUrl,
-            shortsUrl: url,
-            title: p.title || 'Video',
-            view_count: p.view_count || 0,
+            shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
+            title: p.title || 'YouTube video',
             duration: p.duration || 0,
+            searchQuery: query,
+            // These will be filled in Pass 2
+            view_count: 0,
+            channel_follower_count: 0,
+            like_count: 0,
+            comment_count: 0,
             channel: p.channel || p.uploader || 'Unknown',
-            channel_follower_count: p.channel_follower_count || 0,
             description: (p.description || '').substring(0, 300),
             upload_date: p.upload_date || '',
-            searchQuery: query,
           });
-          count++;
         } catch {}
       }
     } catch (e) {
       logger.warn(`Search failed for "${query}": ${e.message.substring(0, 60)}`);
     }
 
-    // Small delay between searches
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 300));
   }
 
-  logger.success(`Found ${allResults.length} candidate videos`);
-  return allResults;
+  logger.info(`Pass 1 complete: ${allResults.length} raw candidates found`);
+
+  if (allResults.length === 0) return [];
+
+  // ─── Pass 2: Fetch full metadata for all candidates ────────────────
+  // Limit to top 20 by title relevance to avoid too many API calls
+  const toEnrich = allResults.slice(0, 20);
+  let enriched = 0;
+
+  for (const candidate of toEnrich) {
+    try {
+      const metaCmd = `yt-dlp --dump-json --no-download "${candidate.url}" 2>/dev/null`;
+      const metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
+      if (metaOut) {
+        const meta = JSON.parse(metaOut.split('\n')[0]);
+        candidate.view_count = meta.view_count || 0;
+        candidate.channel_follower_count = meta.channel_follower_count || 0;
+        candidate.like_count = meta.like_count || 0;
+        candidate.comment_count = meta.comment_count || 0;
+        candidate.channel = meta.channel || meta.uploader || candidate.channel;
+        candidate.channel_follower_count = meta.channel_follower_count || 0;
+        candidate.duration = meta.duration || candidate.duration;
+        candidate.description = (meta.description || '').substring(0, 300);
+        enriched++;
+      }
+    } catch {
+      // Metadata fetch failed — candidate will have zeros, likely filtered out
+    }
+
+    // Small delay between metadata fetches
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  logger.success(`Pass 2 complete: ${enriched}/${toEnrich.length} enriched with metadata`);
+  return toEnrich;
 }
 
 /**
- * Filter candidates by view count and channel size
+ * Filter candidates by engagement metrics (likes + comments)
+ * Progressively relaxes until we have at least 5 candidates for ranking.
  */
 function filterCandidates(candidates) {
-  return candidates.filter(c => {
-    // Must have minimum views
-    if (c.view_count < 500000) return false;
-    // Must not be from a famous YouTuber
+  // Level 1: Strict (100+ likes, 30+ comments, not famous)
+  let filtered = candidates.filter(c => {
+    if (c.like_count < 100) return false;
+    if (c.comment_count < 30) return false;
     if (c.channel_follower_count > 500000) return false;
-    // Must not be a live stream
     if (c.duration > 120) return false;
     return true;
   });
+
+  if (filtered.length >= 5) {
+    logger.info(`Level 1 (strict: 100 likes, 30 comments): ${filtered.length} candidates`);
+    return filtered;
+  }
+
+  // Level 2: Relaxed (50+ likes, 15+ comments)
+  filtered = candidates.filter(c => {
+    if (c.like_count < 50) return false;
+    if (c.comment_count < 15) return false;
+    if (c.channel_follower_count > 1000000) return false;
+    if (c.duration > 120) return false;
+    return true;
+  });
+
+  if (filtered.length >= 5) {
+    logger.info(`Level 2 (relaxed: 50 likes, 15 comments): ${filtered.length} candidates`);
+    return filtered;
+  }
+
+  // Level 3: Broad (any likes, any comments, not a huge channel)
+  filtered = candidates.filter(c => {
+    if (c.like_count < 1 && c.comment_count < 1) return false;
+    if (c.channel_follower_count > 5000000) return false;
+    if (c.duration > 120) return false;
+    return true;
+  });
+
+  logger.info(`Level 3 (broad): ${filtered.length} candidates`);
+  return filtered;
 }
 
 /**
@@ -462,19 +524,21 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
   logger.info('Phase 2: Search YouTube');
-  const candidates = await searchYouTube(queries, 4);
+  const candidates = await searchYouTube(queries, 6);
   const filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
 
   if (filtered.length === 0) {
-    // Relax filter if nothing passes
-    logger.warn('No candidates pass strict filter — relaxing to 100k+ views');
-    const relaxed = candidates.filter(c => c.view_count >= 100000 && c.channel_follower_count < 1000000);
-    if (relaxed.length === 0) {
-      logger.error('Still no candidates — aborting');
-      return { success: false, error: 'No candidates' };
+    // filterCandidates already tried 3 progressive levels.
+    // If still 0, log what the candidates' engagement looks like and abort.
+    if (candidates.length > 0) {
+      logger.warn('Candidate engagement snapshot (top 5):');
+      candidates.slice(0, 5).forEach(c => {
+        logger.warn(`  "${c.title.substring(0, 40)}" — ${c.like_count} likes, ${c.comment_count} comments, ${c.channel_follower_count} subs`);
+      });
     }
-    filtered.push(...relaxed);
+    logger.error('No candidates passed any filter level — aborting');
+    return { success: false, error: 'No candidates' };
   }
 
   // ─── Phase 3: Gemini Ranking ───────────────────────────────────────
