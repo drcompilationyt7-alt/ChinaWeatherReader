@@ -262,8 +262,8 @@ function filterCandidates(candidates) {
 async function rankVideos(candidates, country, gemini, curatorSkill) {
   const ranked = [];
 
-  // Limit to top 15 by view count to avoid too many API calls
-  const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 15);
+  // Only rank top 5 — we only need 1 video
+  const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 5);
 
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
@@ -285,8 +285,8 @@ async function rankVideos(candidates, country, gemini, curatorSkill) {
       logger.info(`  ❌ ${result?.verdict || 'FAILED'} (score: ${result?.score || '?'}) — ${result?.reasoning?.substring(0, 60) || 'no reason'}`);
     }
 
-    // Small delay between API calls
-    await new Promise(r => setTimeout(r, 1000));
+    // 4s delay between calls to stay under 15 RPM limit per key
+    await new Promise(r => setTimeout(r, 4000));
   }
 
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
