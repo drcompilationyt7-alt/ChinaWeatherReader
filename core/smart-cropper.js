@@ -145,7 +145,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   
   logger.info(`Initial crop filter: ${cropFilter}`);
 
-  // Step 3: Gemini evaluates the video directly to find the subject
+  // Step 3: Gemini feedback loop — find subject, crop, verify, adjust
   const gemini = getGeminiCLI();
   const shouldUseCLI = gemini.isAvailable();
 
@@ -153,37 +153,30 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   const qaPositions = [duration / 4, duration / 2, duration * 3 / 4].map(t => startTime + t);
 
   if (shouldUseCLI) {
-    logger.info('Analyzing video with Gemini to locate subject...');
     const smartCropSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'smart-crop-skill.md');
-    const evaluation = await gemini.evaluateCropFromVideo(videoPath, country, smartCropSkillPath);
+    const cropEvalSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'crop-evaluator-skill.md');
+    const targetHeight = 1920;
+    const targetWidth = 1080;
+    const scaleFactor = targetHeight / srcH;
+    const scaledWidth = Math.round(srcW * scaleFactor);
+    const maxCropX = scaledWidth - targetWidth;
 
-    if (evaluation) {
+    // ─── Phase A: Find subject center from original video ───────────
+    logger.info('Analyzing video with Gemini to locate subject...');
+    const evalResult = await gemini.evaluateCropFromVideo(videoPath, country, smartCropSkillPath);
+
+    if (evalResult) {
       try {
-        const jsonMatch = evaluation.match(/\{[\s\S]*\}/);
+        const jsonMatch = evalResult.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const result = JSON.parse(jsonMatch[0]);
           const centerPercent = result.calculated_center_percentage;
-
           if (typeof centerPercent === 'number' && centerPercent >= 0 && centerPercent <= 100) {
             logger.info(`Subject detected: "${result.subject_label || 'Unknown'}" at ${centerPercent}% horizontally`);
-
-            // Compute the crop pixel offset from the percentage
-            const targetHeight = 1920;
-            const targetWidth = 1080;
-
-            // Scale proportionally: height matches 1920, width scales by same factor
-            const scaleFactor = targetHeight / srcH;
-            const scaledWidth = Math.round(srcW * scaleFactor);
-
-            // Center the 1080px crop window over the subject's position
             const subjectX = (centerPercent / 100) * scaledWidth;
-            cropOffsetX = Math.max(0, Math.min(
-              Math.round(subjectX - (targetWidth / 2)),
-              scaledWidth - targetWidth
-            ));
-
-            logger.info(`Scaled width: ${scaledWidth}px, Subject X: ${Math.round(subjectX)}px, Crop offset: ${cropOffsetX}px`);
+            cropOffsetX = Math.max(0, Math.min(Math.round(subjectX - (targetWidth / 2)), maxCropX));
             cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
+            logger.info(`Scaled width: ${scaledWidth}px, Subject X: ${Math.round(subjectX)}px, Crop offset: ${cropOffsetX}px`);
           } else {
             logger.warn(`Invalid center percentage: ${centerPercent} — using center crop`);
           }
@@ -194,6 +187,74 @@ async function smartCrop(videoPath, outputPath, options = {}) {
     } else {
       logger.warn('Gemini crop analysis returned null — using center crop');
     }
+
+    // ─── Phase B: 3-iteration verification feedback loop ────────────
+    const croppedAttemptPath = path.join(tmpDir, 'crop_attempt.mp4');
+    for (let iteration = 0; iteration < 3; iteration++) {
+      logger.info(`--- QA iteration ${iteration + 1}/3 ---`);
+
+      // Apply current crop
+      try {
+        execSync(
+          `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -vf "${cropFilter}" -c:v libx264 -preset fast -crf 22 -c:a aac -shortest "${croppedAttemptPath}" 2>/dev/null`,
+          { timeout: 180000, maxBuffer: 50 * 1024 * 1024 }
+        );
+      } catch (e) {
+        logger.warn(`Crop attempt failed: ${e.message.substring(0, 60)}`);
+        break;
+      }
+
+      if (!fs.existsSync(croppedAttemptPath) || fs.statSync(croppedAttemptPath).size < 50000) {
+        logger.warn('Cropped output too small — breaking loop');
+        break;
+      }
+
+      // Send cropped video to Gemini for QA check
+      const qaFeedback = await gemini.evaluateCropQuality(croppedAttemptPath, cropEvalSkillPath);
+
+      if (!qaFeedback) {
+        logger.warn('QA evaluation returned null — keeping current crop');
+        break;
+      }
+
+      try {
+        const jsonMatch = qaFeedback.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          const status = (result.status || '').toUpperCase();
+          const reason = result.reason || '';
+          logger.info(`QA verdict: ${status} — ${reason}`);
+
+          if (status === 'PASS') {
+            logger.success(`Crop approved after ${iteration + 1} iterations`);
+            break;
+          }
+
+          // REJECT — adjust offset
+          const adjustment = parseInt(result.adjustment_needed) || 0;
+          if (adjustment === 0) {
+            logger.warn('No adjustment suggested — keeping current crop');
+            break;
+          }
+
+          const oldOffset = cropOffsetX;
+          cropOffsetX = Math.max(0, Math.min(cropOffsetX + adjustment, maxCropX));
+          logger.info(`Adjusting crop: ${adjustment > 0 ? 'right' : 'left'} by ${Math.abs(adjustment)}px (${oldOffset} → ${cropOffsetX})`);
+          cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
+
+          if (cropOffsetX === oldOffset) {
+            logger.warn('Crop offset clamped to same value — breaking loop');
+            break;
+          }
+        }
+      } catch (e) {
+        logger.warn(`Failed to parse QA feedback: ${e.message} — accepting current crop`);
+        break;
+      }
+    }
+
+    // Cleanup temp attempt file
+    try { fs.unlinkSync(croppedAttemptPath); } catch {}
   }
 
   // Step 4: Apply final crop to actual video

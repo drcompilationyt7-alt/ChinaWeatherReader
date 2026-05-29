@@ -133,6 +133,15 @@ class GeminiCLIRunner {
     });
   }
 
+  async evaluateCropQuality(croppedVideoPath, skillFilePath) {
+    const prompt = `Analyze this 9:16 vertical cropped video. Is the main subject properly centered and fully visible? Are any faces cut off by the edges? Return PASS or REJECT with pixel adjustment.`;
+    return this.run(prompt, {
+      videoPath: croppedVideoPath,
+      skillFile: skillFilePath || path.join(__dirname, '..', 'skills', 'type1', 'crop-evaluator-skill.md'),
+      timeout: 60000,
+    });
+  }
+
   async evaluateCrop(rawFrames, croppedFrames, question) {
     const images = [...rawFrames, ...croppedFrames];
     const prompt = `${question}\n\nRespond JSON: {"verdict":"GOOD/BAD","suggested_adjustment":{"direction":"left/right","pixels":N}}`;
