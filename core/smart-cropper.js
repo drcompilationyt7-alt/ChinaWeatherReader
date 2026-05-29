@@ -68,13 +68,18 @@ function extractFrames(videoPath, outputDir, positions) {
  */
 function applyCropToFrame(framePath, outputPath, cropFilter) {
   try {
-    execSync(
-      `ffmpeg -y -i "${framePath}" -vf "${cropFilter}" -q:v 2 "${outputPath}" 2>/dev/null`,
-      { timeout: 10000 }
+    const out = execSync(
+      `ffmpeg -y -i "${framePath}" -vf "${cropFilter}" -q:v 2 "${outputPath}" 2>&1`,
+      { timeout: 10000, encoding: 'utf8' }
     );
-    return fs.existsSync(outputPath);
-  } catch {}
-  return false;
+    if (fs.existsSync(outputPath)) return true;
+    logger.warn(`Crop frame missing at output — ffmpeg stderr: ${(out || '').substring(0, 200)}`);
+    return false;
+  } catch (e) {
+    const errText = (e.stderr || e.stdout || e.message || '').toString().substring(0, 200);
+    logger.warn(`Crop frame ffmpeg error: ${errText}`);
+    return false;
+  }
 }
 
 /**
@@ -140,102 +145,54 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   
   logger.info(`Initial crop filter: ${cropFilter}`);
 
-  // Step 3: Iterative Gemini CLI feedback loop
+  // Step 3: Gemini evaluates the video directly to find the subject
   const gemini = getGeminiCLI();
   const shouldUseCLI = gemini.isAvailable();
 
-  // Pre-calculate frame positions for QA (used both in loop and after)
+  // Pre-calculate frame positions for QA (used after crop)
   const qaPositions = [duration / 4, duration / 2, duration * 3 / 4].map(t => startTime + t);
 
   if (shouldUseCLI) {
-    const checkDir = path.join(tmpDir, `crop_check_${Date.now()}`);
-    fs.mkdirSync(checkDir, { recursive: true });
+    logger.info('Analyzing video with Gemini to locate subject...');
+    const smartCropSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'smart-crop-skill.md');
+    const evaluation = await gemini.evaluateCropFromVideo(videoPath, country, smartCropSkillPath);
 
-    try {
-      for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-        logger.info(`--- Crop iteration ${iteration + 1}/${MAX_ITERATIONS} ---`);
-
-        // Extract 3 frames at 25%, 50%, 75% of the segment
-        const rawFrames = extractFrames(videoPath, path.join(checkDir, `raw_${iteration}`), qaPositions);
-
-        // Apply the current crop filter to each frame
-        const croppedFrames = [];
-        for (let i = 0; i < rawFrames.length; i++) {
-          const croppedPath = rawFrames[i].replace('raw_', 'cropped_');
-          if (applyCropToFrame(rawFrames[i], croppedPath, cropFilter)) {
-            croppedFrames.push(croppedPath);
-          }
-        }
-
-        if (croppedFrames.length === 0) {
-          logger.warn('No cropped frames generated — using initial crop');
-          break;
-        }
-
-        // Ask Gemini CLI to evaluate
-        const evaluation = await gemini.evaluateCrop(
-          rawFrames,
-          croppedFrames,
-          `Evaluate this crop for a YouTube Short from ${country}. ` +
-          `The video is being converted from ${srcW}x${srcH} to 1080x1920 (9:16 portrait). ` +
-          `Current crop offset: ${cropOffsetX}px, zoom: ${(zoom * 100).toFixed(0)}%. ` +
-          `Is the crop good? Is the main subject centered? Any important content cut off?`
-        );
-
-        if (!evaluation) {
-          logger.warn('Gemini CLI evaluation failed — using current crop');
-          break;
-        }
-
-        // Parse the evaluation
-        let verdict = 'GOOD';
-        let adjustment = null;
-        try {
-          const jsonMatch = evaluation.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const result = JSON.parse(jsonMatch[0]);
-            verdict = result.verdict || 'GOOD';
-            adjustment = result.suggested_adjustment;
-          }
-        } catch {
-          // If we can't parse, check for keywords
-          if (evaluation.toLowerCase().includes('bad') || evaluation.toLowerCase().includes('issue')) {
-            verdict = 'BAD';
-          }
-        }
-
-        logger.info(`Iteration ${iteration + 1} verdict: ${verdict}`);
-
-        if (verdict === 'GOOD') {
-          logger.success(`Crop approved after ${iteration + 1} iterations`);
-          break;
-        }
-
-        // Apply adjustment
-        if (adjustment && adjustment.direction !== 'none') {
-          const pixels = Math.min(200, Math.max(20, adjustment.pixels || 50));
-          if (adjustment.direction === 'left') {
-            cropOffsetX += pixels;
-          } else if (adjustment.direction === 'right') {
-            cropOffsetX -= pixels;
-          }
-          logger.info(`Adjusting crop: ${adjustment.direction} by ${pixels}px — ${adjustment.reason || ''}`);
-          cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
-        } else {
-          // Try slight zoom adjustment instead
-          zoom = Math.min(1.15, zoom + 0.03);
-          logger.info(`Increasing zoom to ${(zoom * 100).toFixed(0)}%`);
-          cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
-        }
-      }
-    } finally {
-      // Cleanup check frames
+    if (evaluation) {
       try {
-        const checkDirs = fs.readdirSync(checkDir).filter(d => d.startsWith('raw_') || d.startsWith('cropped_'));
-        for (const d of checkDirs) {
-          fs.rmSync(path.join(checkDir, d), { recursive: true, force: true });
+        const jsonMatch = evaluation.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          const centerPercent = result.calculated_center_percentage;
+
+          if (typeof centerPercent === 'number' && centerPercent >= 0 && centerPercent <= 100) {
+            logger.info(`Subject detected: "${result.subject_label || 'Unknown'}" at ${centerPercent}% horizontally`);
+
+            // Compute the crop pixel offset from the percentage
+            const targetHeight = 1920;
+            const targetWidth = 1080;
+
+            // Scale proportionally: height matches 1920, width scales by same factor
+            const scaleFactor = targetHeight / srcH;
+            const scaledWidth = Math.round(srcW * scaleFactor);
+
+            // Center the 1080px crop window over the subject's position
+            const subjectX = (centerPercent / 100) * scaledWidth;
+            cropOffsetX = Math.max(0, Math.min(
+              Math.round(subjectX - (targetWidth / 2)),
+              scaledWidth - targetWidth
+            ));
+
+            logger.info(`Scaled width: ${scaledWidth}px, Subject X: ${Math.round(subjectX)}px, Crop offset: ${cropOffsetX}px`);
+            cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
+          } else {
+            logger.warn(`Invalid center percentage: ${centerPercent} — using center crop`);
+          }
         }
-      } catch {}
+      } catch (e) {
+        logger.warn(`Failed to parse Gemini crop eval: ${e.message} — using center crop`);
+      }
+    } else {
+      logger.warn('Gemini crop analysis returned null — using center crop');
     }
   }
 

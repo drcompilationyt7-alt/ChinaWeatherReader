@@ -29,15 +29,17 @@ class OpenRouterQA {
   }
 
   _loadKeys() {
-    for (let i = 1; i <= 8; i++) {
+    // Start from _7 (biggest/newest key) and work down to base key
+    for (let i = 7; i >= 1; i--) {
       const suffix = i === 1 ? '' : `_${i}`;
       const key = process.env[`OPENROUTER_API_KEY${suffix}`];
       if (key) this.keys.push(key);
     }
-    if (this.keys.length === 0 && process.env.OPENROUTER_API_KEY) {
+    // Also try the base key as fallback
+    if (!this.keys.includes(process.env.OPENROUTER_API_KEY) && process.env.OPENROUTER_API_KEY) {
       this.keys.push(process.env.OPENROUTER_API_KEY);
     }
-    logger.info(`Loaded ${this.keys.length} OpenRouter QA keys`);
+    logger.info(`Loaded ${this.keys.length} OpenRouter QA keys (order: _7 → _6 → ... → base)`);
   }
 
   _getKey() {

@@ -68,32 +68,43 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
-        // Write prompt to temp file
-        const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-        fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-
-        // Use stdin pipe: cat prompt_file | gemini [images]
-        // This avoids the `-p` flag + positional args conflict
-        let cmd;
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
+        const key = this._getApiKey();
+        let cmd;
 
-        if (options.images && options.images.length > 0) {
-          const existingImages = options.images.filter(f => fs.existsSync(f));
-          if (existingImages.length > 0) {
-            const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${this._getApiKey()}" ${cli} --quiet ${imageArgs} 2>&1`;
-          } else {
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${this._getApiKey()}" ${cli} --quiet 2>&1`;
-          }
+        // ─── Mode 1: Direct video analysis via @ syntax ──────────────
+        // gemini -m gemini-3.5-flash -p "@video.mp4 prompt" --yolo 2>&1
+        if (options.videoPath && fs.existsSync(options.videoPath)) {
+          cmd = `GEMINI_API_KEY="${key}" ${cli} -m gemini-3.5-flash -p "@${options.videoPath} ${fullPrompt}" --yolo 2>&1`;
         } else {
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${this._getApiKey()}" ${cli} --quiet 2>&1`;
+          // ─── Mode 2: Text/image via stdin pipe ─────────────────────
+          const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
+          fs.writeFileSync(promptFile, fullPrompt, 'utf8');
+
+          if (options.images && options.images.length > 0) {
+            const existingImages = options.images.filter(f => fs.existsSync(f));
+            if (existingImages.length > 0) {
+              const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
+              cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} ${imageArgs} 2>&1`;
+            } else {
+              cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
+            }
+          } else {
+            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} 2>&1`;
+          }
         }
 
         logger.info(`CLI run (attempt ${attempt + 1})`);
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
-        try { fs.unlinkSync(promptFile); } catch {}
+        // Cleanup temp file if one was created
+        try {
+          if (!options.videoPath) {
+            const promptFile = cmd.match(/"([^"]+\.txt)"/);
+            if (promptFile) fs.unlinkSync(promptFile[1]);
+          }
+        } catch {}
 
         const output = result.trim();
         if (output && output.length > 10) {
@@ -111,6 +122,15 @@ class GeminiCLIRunner {
       }
     }
     return null;
+  }
+
+  async evaluateCropFromVideo(videoPath, country, skillFilePath) {
+    const prompt = `Evaluate this video for a YouTube Short from ${country}. The video needs to be cropped from landscape to 9:16 portrait (1080x1920). Locate the primary subject and return the calculated center percentage.`;
+    return this.run(prompt, {
+      videoPath,
+      skillFile: skillFilePath || path.join(__dirname, '..', 'skills', 'type1', 'smart-crop-skill.md'),
+      timeout: 60000,
+    });
   }
 
   async evaluateCrop(rawFrames, croppedFrames, question) {
