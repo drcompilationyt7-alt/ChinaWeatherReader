@@ -6,6 +6,7 @@
  * Supports:
  * - YouTube URL video analysis (file_data.file_uri)
  * - Video File API upload for fallback
+ * - Model fallback chain: gemini-3.5-flash → gemini-3.1-flash-lite → gemini-2.5-flash → gemini-2.5-flash-lite
  */
 const axios = require('axios');
 const { Logger } = require('./logger');
@@ -15,17 +16,26 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-const MIN_DELAY = 2000;
+const MIN_DELAY = 5000;
+
+const MODEL_CHAIN = [
+  'gemini-3.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+];
 
 class GeminiService {
   constructor() {
     this.keys = [];
     this.currentKeyIndex = 0;
-    this.model = 'gemini-2.5-flash';
+    this.currentModelIndex = 0;
     this.requestCount = 0;
     this.lastResetTime = Date.now();
     this._loadKeys();
   }
+
+  get model() { return MODEL_CHAIN[this.currentModelIndex % MODEL_CHAIN.length]; }
 
   _loadKeys() {
     for (let i = 1; i <= 8; i++) {
@@ -33,7 +43,7 @@ class GeminiService {
       if (key) this.keys.push(key);
     }
     if (this.keys.length === 0 && process.env.GEMINI_API_KEY) this.keys.push(process.env.GEMINI_API_KEY);
-    logger.info(`Loaded ${this.keys.length} Gemini API keys (model: ${this.model})`);
+    logger.info(`Loaded ${this.keys.length} Gemini API keys, model chain: ${MODEL_CHAIN.join(' → ')}`);
   }
 
   _getKey() { return this.keys.length ? this.keys[this.currentKeyIndex % this.keys.length] : null; }
@@ -43,8 +53,14 @@ class GeminiService {
     this.currentKeyIndex = (this.currentKeyIndex + 1) % this.keys.length;
   }
 
+  _rotateModel() {
+    this.currentModelIndex = (this.currentModelIndex + 1) % MODEL_CHAIN.length;
+    logger.info(`Switching model to: ${this.model}`);
+  }
+
   async _callAPI(contents, options = {}) {
-    const maxRetries = this.keys.length + 1;
+    // Total attempts = (keys × models) + 1 extra
+    const maxRetries = (this.keys.length || 1) * MODEL_CHAIN.length + 1;
     let lastError = null;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -75,7 +91,7 @@ class GeminiService {
 
         if (!candidates || candidates.length === 0) {
           const blockReason = resp.data?.promptFeedback?.blockReason;
-          logger.warn(`Gemini empty candidates (block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
+          logger.warn(`Gemini empty candidates (model: ${this.model}, block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
           this._rotateKey();
           await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
@@ -90,7 +106,7 @@ class GeminiService {
         const errText = error.response?.data?.error?.message || error.message;
 
         // Log the exact error for debugging
-        logger.warn(`Key ${this.currentKeyIndex + 1} error (status ${status}): ${(errText || '').substring(0, 120)}`);
+        logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
 
         // Private/restricted video — can't access regardless of key, skip immediately
         if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
@@ -98,37 +114,40 @@ class GeminiService {
           return null;
         }
 
-        // Rate limit or quota — rotate, wait, retry
-        if (status === 429 || status === 403 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
+        // Rate limit or quota — rotate key, switch model too
+        if (status === 429 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
           logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${MIN_DELAY * (attempt + 1)}ms`);
           this._rotateKey();
+          this._rotateModel();
           await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
 
-        // Transient errors — rotate, wait, retry
-        if (errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline')) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating`);
-          this._rotateKey();
+        // 503 / high demand / transient — switch model first, then key
+        if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline')) {
+          logger.warn(`Model ${this.model} overloaded — switching to next model`);
+          this._rotateModel();
           await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
 
-        // 400 errors (bad request, invalid model, etc.) — rotate to next key
+        // 400 errors (bad request, invalid model, etc.) — rotate model + key
         if (status === 400) {
           const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
-          logger.warn(`Key ${this.currentKeyIndex + 1} 400 error (${field}) — rotating`);
+          logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error (${field}) — rotating`);
           this._rotateKey();
+          this._rotateModel();
           await new Promise(r => setTimeout(r, MIN_DELAY));
           continue;
         }
 
-        // Any other error — rotate and retry before giving up
+        // Any other error — rotate key and model
         this._rotateKey();
+        this._rotateModel();
         await new Promise(r => setTimeout(r, MIN_DELAY));
       }
     }
-    logger.error(`All keys exhausted. Last: ${(lastError?.message || '').substring(0, 80)}`);
+    logger.error(`All keys + models exhausted. Last: ${(lastError?.message || '').substring(0, 80)}`);
     return null;
   }
 
@@ -148,11 +167,6 @@ class GeminiService {
     return null;
   }
 
-  /**
-   * PRIMARY: Rank a YouTube video by URL.
-   * Gemini watches the video natively via file_data (no download needed).
-   * Uses snake_case for REST API compatibility.
-   */
   async rankVideo(url, country, curatorSkill, engagementData = null) {
     let metricsBlock = '';
     if (engagementData) {
@@ -200,7 +214,6 @@ Carefully evaluate the actual video content:
 Respond ONLY with valid JSON (no markdown):
 {"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
 
-    // REST API uses snake_case: file_data.file_uri
     const contents = [{
       role: 'user',
       parts: [
@@ -235,10 +248,6 @@ Respond ONLY with valid JSON (no markdown):
     return null;
   }
 
-  /**
-   * FALLBACK: Upload a video file to Gemini File API, then rank visually.
-   * Used when URL-based ranking fails (private videos, rate limits, etc.)
-   */
   async rankVideoFile(videoPath, country, curatorSkill, engagementData = null) {
     if (!fs.existsSync(videoPath)) {
       logger.warn(`rankVideoFile: video not found: ${videoPath}`);
@@ -278,7 +287,6 @@ Respond ONLY with valid JSON (no markdown):
       }
       logger.info(`File uploaded: ${uploadedFile.name} (state: ${uploadedFile.state})`);
 
-      // Wait for processing
       let waitCount = 0;
       while (uploadedFile.state === 'PROCESSING' || uploadedFile.state === 'UPLOADING' || uploadedFile.state === 'QUEUED') {
         waitCount++;

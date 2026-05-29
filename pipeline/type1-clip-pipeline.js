@@ -604,10 +604,27 @@ async function runType1Pipeline(options = {}) {
   }
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
-  logger.info('Phase 2: Search YouTube');
-  const candidates = await searchYouTube(queries, 15);
-  const filtered = filterCandidates(candidates);
+  // Target 5-10 quality shorts for AI ranking
+  let candidates = await searchYouTube(queries, 10);
+  let filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
+
+  // If fewer than 5 candidates passed after all filter levels, retry with relaxed criteria
+  if (filtered.length < 5 && candidates.length > 0) {
+    logger.warn(`Only ${filtered.length} candidates passed strict filter — relaxing quality gate for retry`);
+    // Lower the quality gate thresholds
+    const fallbackGate = candidates.filter(c => {
+      if (c.view_count < 2000) return false;
+      if (c.channel_follower_count > 5000000) return false;
+      if (c.duration > 120) return false;
+      if (c.view_count > 0 && (c.like_count / c.view_count) * 100 < 1.0) return false;
+      return true;
+    });
+    logger.info(`Relaxed gate yielded: ${fallbackGate.length} candidates`);
+    if (fallbackGate.length > 0) {
+      filtered = fallbackGate;
+    }
+  }
 
   if (filtered.length === 0) {
     // filterCandidates already tried 3 progressive levels.
