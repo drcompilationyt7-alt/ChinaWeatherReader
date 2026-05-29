@@ -121,126 +121,92 @@ async function generateQueries(country, gemini, trendBank) {
 }
 
 /**
- * Search YouTube — Dynamic Harvesting Loop
+ * Search YouTube — Bulk Fetch + Quality Gate
  * 
- * For each query, paginates through search results in batches, performing full
- * metadata fetch + quality gate on each video. Keeps paginating until we have
- * enough quality candidates or hit the safety limit.
- * 
- * Quality Gate:
- * - Views >= 5000
- * - Comments > 0 (not disabled)
- * - Embeddable (not restricted)
- * - Like ratio >= 1.5%
- * - Duration < 60s, public, not live
- * - From last 90 days
+ * Fetches up to 200 search results per query via ytsearch200: syntax.
+ * For each result, fetches full metadata and applies quality gate.
+ * Quality Gate: views>=5000, comments>0, embeddable, like ratio>=1.5%, <60s, public
  */
 async function searchYouTube(queries, targetCount = 15) {
   const allResults = [];
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
-  // 2 years ago for freshness filter
-  const twoYearsAgo = new Date(Date.now() - 730 * 86400000);
-  const dateStr = twoYearsAgo.toISOString().split('T')[0].replace(/-/g, '');
-
   for (const query of queries) {
     if (allResults.length >= targetCount) break;
 
-    let batchStart = 1;
-    const batchSize = 40;
-    const maxBatches = 5; // Safety ceiling
+    logger.info(`Searching for: "${query}"`);
 
-    for (let batch = 0; batch < maxBatches && allResults.length < targetCount; batch++) {
-      logger.info(`Searching batch ${batch + 1}/${maxBatches} for: "${query}" (offset ${batchStart})`);
+    try {
+      // Use ytsearchN:QUERY where N is count (NOT a range)
+      // ytsearch1-41:QUERY is INVALID syntax — must use ytsearch200:QUERY
+      const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
+        `--match-filter "!is_live & !upcoming & duration < 60 & availability = 'public'" ` +
+        `"ytsearch200:${query}" 2>&1`;
 
-      try {
-        // Fetch flat playlist with dense batch + quality filters
-        const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
-          `--dateafter ${dateStr} ` +
-          `--match-filter "!is_live & !upcoming & duration < 60 & availability = public" ` +
-          `"ytsearch${batchStart}-${batchStart + batchSize}:${query}" 2>&1`;
-
-        const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024 }).toString().trim();
-        if (!out) {
-          logger.info('No more results from this query');
-          break;
-        }
-
-        const lines = out.split('\n').filter(Boolean);
-
-        for (const line of lines) {
-          if (allResults.length >= targetCount) break;
-
-          try {
-            const p = JSON.parse(line);
-            if (p.id && !seen.has(p.id)) {
-              seen.add(p.id);
-
-              // Fetch full metadata for this candidate
-              const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "https://www.youtube.com/watch?v=${p.id}" 2>&1`;
-              let metaOut;
-              try {
-                metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
-              } catch {}
-              if (!metaOut || metaOut.includes('ERROR')) continue;
-
-              const meta = JSON.parse(metaOut.split('\n')[0]);
-              const views = meta.view_count || 0;
-              const likes = meta.like_count || 0;
-              const comments = meta.comment_count || 0;
-
-              // ═══ Quality Gate ═══════════════════════════════════════
-              // 1. Minimum views (saves API quota from dead content)
-              if (views < 5000) {
-                continue;
-              }
-
-              // 2. Comments disabled/private
-              if (comments === 0) {
-                continue;
-              }
-
-              // 3. Embedding restricted (blocks Gemini URL streaming)
-              if (meta.is_embeddable === false) {
-                continue;
-              }
-
-              // 4. Like ratio check
-              if (views > 0 && (likes / views) * 100 < 1.5) {
-                continue;
-              }
-
-              // ✅ Passed all gates
-              const candidate = {
-                id: p.id,
-                url: `https://www.youtube.com/watch?v=${p.id}`,
-                shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
-                title: meta.title || p.title || 'YouTube video',
-                duration: meta.duration || p.duration || 0,
-                searchQuery: query,
-                view_count: views,
-                channel_follower_count: meta.channel_follower_count || 0,
-                like_count: likes,
-                comment_count: comments,
-                channel: meta.channel || meta.uploader || p.channel || 'Unknown',
-                description: (meta.description || '').substring(0, 300),
-                upload_date: meta.upload_date || p.upload_date || '',
-              };
-
-              allResults.push(candidate);
-            }
-          } catch {}
-        }
-      } catch (e) {
-        logger.warn(`Search batch failed for "${query}": ${(e.message || '').substring(0, 200)}`);
+      const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }).toString().trim();
+      if (!out) {
+        logger.info('No results from this query');
+        continue;
       }
 
-      batchStart += batchSize + 1;
+      const lines = out.split('\n').filter(Boolean);
+      logger.info(`Raw results: ${lines.length} videos`);
+
+      for (const line of lines) {
+        if (allResults.length >= targetCount) break;
+
+        try {
+          const p = JSON.parse(line);
+          if (p.id && !seen.has(p.id)) {
+            seen.add(p.id);
+
+            // Fetch full metadata for this candidate
+            const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "https://www.youtube.com/watch?v=${p.id}" 2>&1`;
+            let metaOut;
+            try {
+              metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
+            } catch {}
+            if (!metaOut || metaOut.includes('ERROR')) continue;
+
+            const meta = JSON.parse(metaOut.split('\n')[0]);
+            const views = meta.view_count || 0;
+            const likes = meta.like_count || 0;
+            const comments = meta.comment_count || 0;
+
+            // ═══ Quality Gate ═══════════════════════════════════════
+            if (views < 5000) continue;
+            if (comments === 0) continue;
+            if (meta.is_embeddable === false) continue;
+            if (views > 0 && (likes / views) * 100 < 1.5) continue;
+
+            // ✅ Passed all gates
+            const candidate = {
+              id: p.id,
+              url: `https://www.youtube.com/watch?v=${p.id}`,
+              shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
+              title: meta.title || p.title || 'YouTube video',
+              duration: meta.duration || p.duration || 0,
+              searchQuery: query,
+              view_count: views,
+              channel_follower_count: meta.channel_follower_count || 0,
+              like_count: likes,
+              comment_count: comments,
+              channel: meta.channel || meta.uploader || p.channel || 'Unknown',
+              description: (meta.description || '').substring(0, 300),
+              upload_date: meta.upload_date || p.upload_date || '',
+            };
+
+            allResults.push(candidate);
+          }
+        } catch {}
+      }
+    } catch (e) {
+      logger.warn(`Search failed for "${query}": ${(e.message || '').substring(0, 200)}`);
     }
   }
 
-  logger.success(`Dynamic harvest complete: ${allResults.length} quality candidates found`);
+  logger.success(`Search complete: ${allResults.length} quality candidates found`);
 
   // ─── Debug: Log engagement data from top candidates ────────────────
   if (allResults.length > 0) {
