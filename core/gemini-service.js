@@ -15,7 +15,7 @@ const fs = require('fs');
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-const MIN_DELAY = 10000;
+const MIN_DELAY = 3000;
 
 class GeminiService {
   constructor() {
@@ -90,25 +90,38 @@ class GeminiService {
         const errText = error.response?.data?.error?.message || error.message;
         const respBody = JSON.stringify(error.response?.data || {}).substring(0, 200);
 
-        if (status === 400) {
-          const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
-          logger.warn(`Gemini 400 error (${field}): ${respBody}`);
-        }
+        // Log the exact error detail
+        logger.warn(`Key ${this.currentKeyIndex + 1} error (status ${status}): ${errText?.substring(0, 120)}`);
 
+        // Rate limit or quota — rotate, wait, retry
         if (status === 429 || status === 403 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
           logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${MIN_DELAY * (attempt + 1)}ms`);
           this._rotateKey();
           await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
-        if (errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes')) {
+
+        // Transient errors — rotate, wait, retry
+        if (errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline')) {
           logger.warn(`Key ${this.currentKeyIndex + 1} transient error — rotating`);
           this._rotateKey();
           await new Promise(r => setTimeout(r, MIN_DELAY * (attempt + 1)));
           continue;
         }
-        logger.error(`Gemini API error (${status}): ${errText?.substring(0, 150)}`);
-        return null;
+
+        // 400 errors (bad request, invalid model, etc.) — rotate to next key
+        if (status === 400) {
+          const field = error.response?.data?.error?.details?.[0]?.fieldViolations?.[0]?.field || 'unknown';
+          logger.warn(`Key ${this.currentKeyIndex + 1} 400 error (${field}): ${respBody.substring(0, 100)} — rotating, waiting ${MIN_DELAY}ms`);
+          this._rotateKey();
+          await new Promise(r => setTimeout(r, MIN_DELAY));
+          continue;
+        }
+
+        // Any other error — rotate and retry before giving up
+        logger.warn(`Key ${this.currentKeyIndex + 1} error (${status}): ${errText?.substring(0, 120)} — rotating, waiting ${MIN_DELAY}ms`);
+        this._rotateKey();
+        await new Promise(r => setTimeout(r, MIN_DELAY));
       }
     }
     logger.error(`All keys exhausted. Last: ${lastError?.message?.substring(0, 80)}`);
