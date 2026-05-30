@@ -86,8 +86,8 @@ function loadTrendBank(country) {
  * 3. LLM + trend bank hybrid
  */
 async function generateQueries(country, gemini, trendBank) {
-  // Use LLM + trend bank hybrid (Method 3 only) — generate 5 diverse queries
-  const queries = await gemini.generateQueries(country, trendBank.keywords, 5);
+  // Use LLM + trend bank hybrid with query generator skill — generate 15-20 diverse queries
+  const queries = await gemini.generateQueries(country, trendBank.keywords, 20);
   const allQueries = [];
 
   if (Array.isArray(queries)) {

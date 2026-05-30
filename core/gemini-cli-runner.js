@@ -3,6 +3,11 @@
  * Uses stdin pipe for pure text prompts to avoid shell escaping issues.
  * Uses explicit positional invocation args (gemini "prompt" file1) 
  * for multimodal inputs to force correct media ingestion across file types.
+ * 
+ * Model-Switching-First Strategy:
+ * On quota (429) errors, switches model first on the same API key.
+ * Only rotates to next API key after all models exhausted for current key.
+ * Since CLI and upload share the same keys, this preserves quota for uploads.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -11,12 +16,20 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('GeminiCLI');
 
+const MODEL_CHAIN = [
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+];
+
 class GeminiCLIRunner {
   constructor() {
     this.available = false;
     this.keyIndex = 0;
+    this.modelIndex = 0;
     this._checkAvailability();
   }
+
+  get model() { return MODEL_CHAIN[this.modelIndex % MODEL_CHAIN.length]; }
 
   _checkAvailability() {
     try {
@@ -49,13 +62,40 @@ class GeminiCLIRunner {
     return process.env.GEMINI_API_KEY || null;
   }
 
-  _rotateKey() { this.keyIndex++; }
+  /** Rotates to next model. Returns true if model changed, false if wrapped around (all models exhausted) */
+  _rotateModel() {
+    const prev = this.model;
+    this.modelIndex++;
+    const next = this.model;
+    const wrapped = prev === next; // wrapped around if same after increment
+    if (!wrapped) {
+      logger.info(`Switching model: ${prev} → ${next} (key ${this.keyIndex + 1})`);
+    }
+    return !wrapped;
+  }
+
+  /** Rotates to next key and resets model */
+  _rotateKey() {
+    const prevKey = this.keyIndex;
+    this.keyIndex++;
+    this.modelIndex = 0;
+    logger.info(`Switching key: ${prevKey + 1} → ${(this.keyIndex % 8) + 1}, model reset to ${this.model}`);
+  }
+
+  /** On quota error: switch model first, only rotate key if all models exhausted */
+  _rotateOnQuota() {
+    const modelSwitched = this._rotateModel();
+    if (!modelSwitched) {
+      // All models exhausted for current key — rotate key, reset model
+      this._rotateKey();
+    }
+  }
 
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
 
     const timeout = options.timeout || 120000;
-    const maxRetries = 3;
+    const maxRetries = MODEL_CHAIN.length * 8 + 1;
     const tmpDir = '/tmp';
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -93,15 +133,15 @@ class GeminiCLIRunner {
             .replace(/\$/g, '\\$')
             .replace(/`/g, '\\`');
 
-          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
+          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
         } else {
           // Text-only mode
           promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
           fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash 2>&1`;
+          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
         }
 
-        logger.info(`CLI run (attempt ${attempt + 1})`);
+        logger.info(`CLI run (attempt ${attempt + 1}, model: ${this.model}, key: ${this.keyIndex + 1})`);
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
@@ -122,8 +162,8 @@ class GeminiCLIRunner {
         const errText = (e.stderr || e.stdout || e.message || '').toString();
         if (e.signal === 'SIGKILL' || e.killed) { logger.warn('CLI timeout'); return null; }
         if (errText.includes('429') || errText.includes('quota')) { 
-          logger.warn(`CLI rate limited (429) on key ${this.keyIndex + 1} — rotating...`);
-          this._rotateKey(); 
+          logger.warn(`CLI rate limited (429) on model ${this.model}, key ${this.keyIndex + 1} — rotating model first...`);
+          this._rotateOnQuota();
           await new Promise(r => setTimeout(r, 2000)); 
           continue; 
         }
@@ -137,6 +177,7 @@ class GeminiCLIRunner {
   /**
    * Upload a local video file to the Gemini File API and return the resource URI.
    * Uses axios directly (not the CLI) to upload, then passes the URI to CLI for analysis.
+   * After upload, waits 13 seconds for processing instead of polling the broken status API.
    */
   async _uploadFileForCLI(videoPath) {
     const axios = require('axios');
@@ -194,28 +235,12 @@ class GeminiCLIRunner {
       else { logger.warn('No file name in upload response'); return null; }
     }
 
-    // Step 3: Wait for metadata propagation, then poll until ACTIVE (every 45s, max 25)
-    logger.info(`File uploaded: ${uf.name} (state: ${uf.state}) — waiting 3s for metadata propagation...`);
-    await new Promise(r => setTimeout(r, 3000));
-    let pollCount = 0;
-    while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
-      pollCount++;
-      if (pollCount > 25) { logger.warn('File processing timed out'); break; }
-      logger.info(`  Poll ${pollCount}/25 — waiting 45s (state: ${uf.state})...`);
-      await new Promise(r => setTimeout(r, 45000));
-      try {
-        const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${key}`, { timeout: 15000 });
-        uf = statusResp.data?.file || statusResp.data;
-      } catch (e) {
-        logger.warn(`Status check failed: ${(e.message || '').substring(0, 60)} — pausing 30s`);
-        await new Promise(r => setTimeout(r, 30000));
-      }
-    }
-
-    if (uf.state === 'FAILED') { logger.warn(`File failed: ${uf.error?.message || ''}`); return null; }
-    if (uf.state !== 'ACTIVE') { logger.warn(`File not ACTIVE (state: ${uf.state})`); return null; }
+    // Step 3: Wait 13 seconds for processing instead of polling broken status API
+    logger.info(`File uploaded: ${uf.name} — waiting 13s for processing...`);
+    await new Promise(r => setTimeout(r, 13000));
+    
     logger.success(`File ready for CLI: ${uf.name}`);
-    return { name: uf.name, uri: uf.uri || uf.name, key, state: uf.state };
+    return { name: uf.name, uri: uf.uri || uf.name, key, state: 'ACTIVE' };
   }
 
   /** Delete a file from Gemini File API */

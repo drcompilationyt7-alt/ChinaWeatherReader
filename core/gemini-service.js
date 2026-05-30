@@ -470,10 +470,20 @@ Respond ONLY with valid JSON:
     return this._callAPI([{ role: 'user', parts }], { systemInstruction: skillPrompt, temperature: 0.3, maxTokens: 1024 });
   }
 
-  async generateQueries(country, tKeys, count = 3) {
-    const sp = `You generate YouTube Shorts search queries. Every query ends with #shorts #tiktok #reels (add #douyin for China).`;
-    const tl = tKeys?.length ? `\nTrends: ${tKeys.join(', ')}` : '';
-    return this.chatJSON(sp, `Generate ${count} queries for ${country}.${tl} Return JSON array.`, { temperature: 0.9 });
+  async generateQueries(country, tKeys, count = 20) {
+    // Load query generator skill for rich, specific queries
+    const skillPath = path.join(__dirname, '..', 'skills', 'type1', 'query-generator.md');
+    let skillContent = '';
+    try {
+      if (fs.existsSync(skillPath)) {
+        skillContent = fs.readFileSync(skillPath, 'utf8');
+      }
+    } catch (e) {}
+    
+    const tl = tKeys?.length ? `\nRelevant trend keywords for ${country}: ${tKeys.join(', ')}` : '';
+    const userMessage = `Generate ${count} search queries for finding viral clips from ${country}.${tl}\n\nReturn ONLY a JSON array of strings, no markdown.`;
+    
+    return this.chatJSON(skillContent || 'You generate YouTube Shorts search queries.', userMessage, { temperature: 0.9 });
   }
 
   async generateTitle(country, transcript, origTitle) {
