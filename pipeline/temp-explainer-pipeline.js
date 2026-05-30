@@ -181,21 +181,21 @@ function downloadMaxQuality(video, outputDir) {
   const outputFile = path.join(outputDir, `source_${video.id}.mp4`);
   logger.info(`Downloading: ${video.url} (lossless)`);
 
-  // Use simpler format args — yt-dlp handles Shorts best natively
+  // Mirror Type 1's download strategies exactly (proven working)
   const strategies = [
-    { name: 'default', args: '-S "res:1080" --merge-output-format mp4' },
-    { name: 'android', args: '--extractor-args "youtube:player_client=android" -S "res:1080" --merge-output-format mp4' },
-    { name: 'web', args: '--extractor-args "youtube:player_client=web" -S "res:1080" --merge-output-format mp4' },
+    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=1080]+bestaudio/best" --merge-output-format mp4' },
+    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
+    { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
   ];
 
   for (const s of strategies) {
     try {
       const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      const cookieArg = hasCookies ? '--cookies /tmp/yt_cookies.txt' : '';
+      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
-      const cmd = `yt-dlp ${cookieArg} ${s.args} ` +
+      const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
         `-o "${outputFile}" "${video.url}" ` +
-        `--no-playlist --max-filesize 500M --socket-timeout 30 --retries 3 --force-ipv4 2>&1`;
+        `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4`;
 
       execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
 
