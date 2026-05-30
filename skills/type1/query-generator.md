@@ -9,6 +9,27 @@ CRITICAL: Do NOT include any hashtags (#shorts, #tiktok, #reels, #douyin, etc.) 
 
 Before generating the list, use your LLM knowledge to recall **specific names** of regional trends, dances, and memes. Do not use placeholder words; use the actual cultural names.
 
+## 🔥 Proven High-Performance Seed Queries
+These queries have been verified to return viral content. Use them as inspiration and building blocks when generating your list. Adapt them to the target country by replacing country-specific terms.
+
+### Meme & Funny
+- "social credit points meme china"
+- "top funniest african videos compilation"
+- "ranking funniest african meme moments"
+- "Saiyaara meme"
+
+### Food & Street Food
+- "Vicky Tarri Poha street food"
+- "SUPERFAST street food cooking"
+- "asian street food viral"
+
+### Dance Trends
+- "Confidence TikTok dance challenge"
+- "new Chinese dance trend"
+- "Guangxi Subject Three dance" (aka Kemusan/科目三)
+- "Douyin summer dance transition"
+- "TikTok dance challenge viral"
+
 ## 🧠 Query Generation Rules
 
 ### 1. The "Dance" Requirement
