@@ -273,9 +273,10 @@ Respond ONLY with valid JSON (no markdown):
       const fileBuffer = fs.readFileSync(videoPath);
 
       // Step 1: Start resumable upload — get upload URL
+      // Fix: Send a valid JSON payload specifying the file metadata instead of `null`
       const startResp = await axios.post(
         `${GEMINI_UPLOAD}/files?key=${key}`,
-        null,
+        { file: { displayName: fileName } },
         {
           headers: {
             'X-Goog-Upload-Protocol': 'resumable',
@@ -295,6 +296,8 @@ Respond ONLY with valid JSON (no markdown):
       }
 
       // Step 2: Upload the file data as raw binary (NOT JSON serialized)
+      // Fix: Add Infinity maxBodyLength and maxContentLength to allow large buffers safely.
+      // Force offset parameter required by API when combining upload and finalize hooks.
       const uploadResp = await axios.put(
         uploadUrl,
         fileBuffer,
@@ -303,10 +306,11 @@ Respond ONLY with valid JSON (no markdown):
             'Content-Type': 'video/mp4',
             'Content-Length': fileSize.toString(),
             'X-Goog-Upload-Command': 'upload, finalize',
+            'X-Goog-Upload-Offset': '0',
           },
           timeout: 300000,
-          maxContentLength: 100 * 1024 * 1024,
-          // Prevent Axios from converting the response/request to JSON
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
           transformRequest: [(data) => data],
           transformResponse: [(data) => data],
         }
