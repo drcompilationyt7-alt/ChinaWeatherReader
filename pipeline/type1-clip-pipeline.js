@@ -76,7 +76,7 @@ function loadTrendBank(country) {
   }
 
   // Fallback
-  return { keywords: [country.toLowerCase()], suffix: '#shorts #tiktok #reels', songs: [] };
+  return { keywords: [country.toLowerCase()], suffix: '#shorts', songs: [] };
 }
 
 /**
@@ -92,7 +92,10 @@ async function generateQueries(country, gemini, trendBank) {
 
   if (Array.isArray(queries)) {
     for (const q of queries) {
-      const query = q.includes('#shorts') ? q : `${q} ${trendBank.suffix}`;
+      // Strip any existing hashtags (LLM sometimes adds #tiktok #reels #douyin despite instructions)
+      const clean = q.replace(/#\w+/g, '').trim();
+      // Always append just #shorts
+      const query = `${clean} ${trendBank.suffix}`;
       if (!allQueries.includes(query)) allQueries.push(query);
     }
     logger.info(`LLM+bank queries: ${allQueries.length} queries`);
@@ -644,8 +647,8 @@ async function runType1Pipeline(options = {}) {
   }
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
-  // Target exactly 10 quality shorts for AI ranking
-  let candidates = await searchYouTube(queries, 10);
+  // Target 6 candidates per batch, 3 batches total
+  let candidates = await searchYouTube(queries, 6);
   let filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
 
@@ -697,7 +700,7 @@ async function runType1Pipeline(options = {}) {
   }
 
   // ─── Phase 3: Gemini Ranking (with batch retry loop ×3) ───────────
-  // Each batch searches 10 new candidates, ranks them with per-video
+  // Each batch searches 6 new candidates, ranks them with per-video
   // URL→720p download→File API→CLI fallback. null results don't count,
   // only actual APPROVED/REJECTED responses from Gemini.
   logger.info('Phase 3: Gemini Ranking');
@@ -708,14 +711,14 @@ async function runType1Pipeline(options = {}) {
     logger.header(`Ranking batch ${batch}/${MAX_BATCHES}`);
 
     if (batch > 1) {
-      // Search a fresh batch of 10 candidates
+      // Search a fresh batch of 6 candidates
       logger.info(`Batch ${batch}: Searching for fresh candidates...`);
       const newQueries = await generateQueries(country, gemini, trendBank);
       if (newQueries.length === 0) {
         logger.warn(`Batch ${batch}: No new queries generated — skipping`);
         continue;
       }
-      candidates = await searchYouTube(newQueries, 10);
+      candidates = await searchYouTube(newQueries, 6);
       filtered = filterCandidates(candidates);
       if (filtered.length < 5) {
         const fallbackGate = (candidates || []).filter(c => {
