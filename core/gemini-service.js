@@ -316,31 +316,10 @@ Respond ONLY with valid JSON (no markdown):
           else { logger.warn('No file name in response'); return null; }
         }
 
-        // Wait for metadata propagation before polling
-        logger.info(`File uploaded: ${uf.name} (state: ${uf.state}) — waiting 3s for metadata propagation...`);
-        await new Promise(r => setTimeout(r, 3000));
-        let waitCount = 0;
-        while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
-          waitCount++;
-          if (waitCount > 25) { logger.warn('File processing timed out (~19 min)'); break; }
-          logger.info(`  Poll ${waitCount}/25 — waiting 45s (state: ${uf.state})...`);
-          await new Promise(r => setTimeout(r, 45000));
-          try {
-            const pollUrl = `${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`;
-            logger.info(`  Polling URL: ${GEMINI_BASE}/files/${uf.name}`);
-            const statusResp = await axios.get(pollUrl, { timeout: 15000 });
-            uf = statusResp.data?.file || statusResp.data;
-          } catch (e) {
-            const errBody = e.response?.data ? JSON.stringify(e.response.data).substring(0, 200) : '';
-            logger.warn(`File status check failed (status ${e.response?.status || 'none'}): ${errBody || e.message}`);
-            logger.warn(`  File: ${uf.name} | Key used: ${currentKey}`);
-            await new Promise(r => setTimeout(r, 30000));
-          }
-        }
-
-        if (uf.state === 'FAILED') { logger.warn(`File failed: ${uf.error?.message || ''}`); return null; }
-        if (uf.state !== 'ACTIVE') { logger.warn(`File not ACTIVE (state: ${uf.state}) — skipping`); return null; }
-        logger.success(`File ready: ${uf.name} (${uf.state})`);
+        // Wait 15s for processing instead of polling broken status API
+        logger.info(`File uploaded: ${uf.name} — waiting 15s for processing...`);
+        await new Promise(r => setTimeout(r, 15000));
+        logger.success(`File ready: ${uf.name}`);
         return { file: uf, key: currentKey };
       } catch (e) {
         logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
