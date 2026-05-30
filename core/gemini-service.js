@@ -326,10 +326,13 @@ Respond ONLY with valid JSON (no markdown):
           try {
             const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`, { timeout: 15000 });
             uf = statusResp.data?.file || statusResp.data;
-          } catch { logger.warn('File status check failed'); break; }
+          } catch (e) {
+            logger.warn('File status check failed (Network/429), retrying...');
+          }
         }
 
         if (uf.state === 'FAILED') { logger.warn(`File failed: ${uf.error?.message || ''}`); return null; }
+        if (uf.state !== 'ACTIVE') { logger.warn(`File not ACTIVE (state: ${uf.state}) — skipping`); return null; }
         logger.success(`File ready: ${uf.name} (${uf.state})`);
         return { file: uf, key: currentKey };
       } catch (e) {

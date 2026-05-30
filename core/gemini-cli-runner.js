@@ -119,7 +119,12 @@ class GeminiCLIRunner {
       } catch (e) {
         const errText = (e.stderr || e.stdout || e.message || '').toString();
         if (e.signal === 'SIGKILL' || e.killed) { logger.warn('CLI timeout'); return null; }
-        if (errText.includes('429') || errText.includes('quota')) { this._rotateKey(); await new Promise(r => setTimeout(r, 2000)); continue; }
+        if (errText.includes('429') || errText.includes('quota')) { 
+          logger.warn(`CLI rate limited (429) on key ${this.keyIndex + 1} — rotating...`);
+          this._rotateKey(); 
+          await new Promise(r => setTimeout(r, 2000)); 
+          continue; 
+        }
         logger.warn(`CLI error: ${errText.substring(0, 120)}`);
         this._rotateKey();
       }
