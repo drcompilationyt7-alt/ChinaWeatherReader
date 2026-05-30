@@ -1,8 +1,7 @@
 /**
  * Gemini CLI Runner
- * 
  * Uses stdin pipe for pure text prompts to avoid shell escaping issues.
- * Uses explicit positional invocation args (gemini -p "prompt" file1 file2) 
+ * Uses explicit positional invocation args (gemini "prompt" file1) 
  * for multimodal inputs to force correct media ingestion across file types.
  */
 const { execSync } = require('child_process');
@@ -52,13 +51,6 @@ class GeminiCLIRunner {
 
   _rotateKey() { this.keyIndex++; }
 
-  /**
-   * Run Gemini CLI with a prompt.
-   * For text-only: pipe prompt via stdin (cat promptFile | gemini ...).
-   * For multimodal (images/video): use -p "prompt" with file args, since
-   * the @file expansion and positional args don't work properly with
-   * piped stdin mode. Response text is logged for debugging.
-   */
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
 
@@ -77,7 +69,6 @@ class GeminiCLIRunner {
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
 
-        // Collect file arguments: images first, then videos
         const fileArgs = [];
         if (options.images && options.images.length > 0) {
           for (const f of options.images) {
@@ -95,17 +86,16 @@ class GeminiCLIRunner {
         let cmd;
         let promptFile = null;
         if (fileArgs.length > 0) {
-          // Multimodal mode: Use positional command execution layout instead of text piping.
-          // Safely neutralize shell metacharacters (\, ", $, `) for bash execution blocks.
+          // Multimodal mode: Removed -p to fix positional argument clash with files
           const escapedPrompt = fullPrompt
             .replace(/\\/g, '\\\\')
             .replace(/"/g, '\\"')
             .replace(/\$/g, '\\$')
             .replace(/`/g, '\\`');
 
-          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash -p "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
+          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
         } else {
-          // Text-only mode: use pipe (avoids shell escaping issues over raw string blocks)
+          // Text-only mode
           promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
           fs.writeFileSync(promptFile, fullPrompt, 'utf8');
           cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash 2>&1`;
@@ -115,13 +105,11 @@ class GeminiCLIRunner {
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
-        // Cleanup temp file (only defined in text-only path)
         try { if (promptFile) fs.unlinkSync(promptFile); } catch {}
 
         const output = result.trim();
         if (output && output.length > 10) {
           logger.success(`CLI responded (${output.length} chars)`);
-          // Log first 300 chars of response for debugging
           const preview = output.substring(0, 300);
           logger.info(`   Response: ${preview.replace(/\n/g, '\\n')}`);
           return output;
@@ -139,10 +127,6 @@ class GeminiCLIRunner {
     return null;
   }
 
-  /**
-   * Rank a video for viral reposting via Gemini CLI (no API key exhaustion).
-   * Uses the viral-clip-curator skill with engagement metrics.
-   */
   async rankVideoFromPath(videoPath, country, curatorSkill, engagementData = null) {
     if (!this.available) {
       logger.warn('Gemini CLI not available for video ranking');
@@ -219,11 +203,6 @@ Respond ONLY with valid JSON (no markdown):
     return null;
   }
 
-  /**
-   * Compare original (unedited/uncropped) video with edited video.
-   * Returns JSON with verdict and improvement suggestions.
-   * Used in smart-crop and smart-edit QA feedback loops.
-   */
   async compareAndReviewQA(originalPath, editedPath, editType, country = 'Global') {
     if (!this.available) { logger.warn('CLI not available for QA'); return null; }
     if (!fs.existsSync(originalPath) || !fs.existsSync(editedPath)) {
@@ -281,10 +260,6 @@ Respond ONLY JSON:
     return null;
   }
 
-  /**
-   * Review the final video before upload (replaces broken frame-based geminiReview).
-   * Sends the complete MP4 to CLI for final quality check.
-   */
   async reviewFinalVideo(videoPath, country = 'Global') {
     if (!this.available) { logger.warn('CLI not available for final review'); return null; }
     if (!fs.existsSync(videoPath)) {

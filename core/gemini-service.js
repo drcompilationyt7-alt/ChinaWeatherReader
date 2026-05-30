@@ -114,16 +114,13 @@ class GeminiService {
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
 
-        // Log the exact error for debugging
         logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
 
-        // Private/restricted video — can't access regardless of key or model, skip immediately
         if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
           logger.warn('Video access denied (private/restricted) — not retrying other keys/models');
           return null;
         }
 
-        // 429 Rate limit — rotate key only. Model rotates automatically when all keys exhausted
         if (status === 429 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
           const delay = Math.min(MIN_DELAY * (attempt + 1), 30000);
           logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${delay}ms`);
@@ -132,7 +129,6 @@ class GeminiService {
           continue;
         }
 
-        // 503 / high demand / transient — exponential backoff capped at 30s, rotate key
         if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline') || errText?.includes('write EPIPE')) {
           const backoff = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000);
           logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms, then rotating key`);
@@ -141,7 +137,6 @@ class GeminiService {
           continue;
         }
 
-        // 400 errors (bad request, invalid model, etc.) — rotate key
         if (status === 400) {
           logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error — rotating`);
           this._rotateKey();
@@ -149,7 +144,6 @@ class GeminiService {
           continue;
         }
 
-        // Any other error — rotate key
         this._rotateKey();
         await new Promise(r => setTimeout(r, MIN_DELAY));
       }
@@ -272,8 +266,7 @@ Respond ONLY with valid JSON (no markdown):
     try {
       const fileBuffer = fs.readFileSync(videoPath);
 
-      // Step 1: Start resumable upload — get upload URL
-      // Fix: Send a valid JSON payload specifying the file metadata instead of `null`
+      // Step 1: Start resumable upload
       const startResp = await axios.post(
         `${GEMINI_UPLOAD}/files?key=${key}`,
         { file: { displayName: fileName } },
@@ -295,9 +288,7 @@ Respond ONLY with valid JSON (no markdown):
         return null;
       }
 
-      // Step 2: Upload the file data as raw binary (NOT JSON serialized)
-      // Fix: Add Infinity maxBodyLength and maxContentLength to allow large buffers safely.
-      // Force offset parameter required by API when combining upload and finalize hooks.
+      // Step 2: Upload raw binary
       const uploadResp = await axios.put(
         uploadUrl,
         fileBuffer,
@@ -306,7 +297,7 @@ Respond ONLY with valid JSON (no markdown):
             'Content-Type': 'video/mp4',
             'Content-Length': fileSize.toString(),
             'X-Goog-Upload-Command': 'upload, finalize',
-            'X-Goog-Upload-Offset': '0',
+            'X-Goog-Upload-Offset': '0'
           },
           timeout: 300000,
           maxContentLength: Infinity,
@@ -316,9 +307,17 @@ Respond ONLY with valid JSON (no markdown):
         }
       );
 
-      uploadedFile = uploadResp.data?.file || uploadResp.data;
+      // Fix: Manually parse the raw buffer response into JSON to extract the file name
+      let responseData = uploadResp.data;
+      try {
+        if (typeof responseData === 'string' || Buffer.isBuffer(responseData)) {
+          responseData = JSON.parse(responseData.toString());
+        }
+      } catch (e) {}
+
+      uploadedFile = responseData?.file || responseData;
+
       if (!uploadedFile || !uploadedFile.name) {
-        // Try to parse from response headers if body is empty
         const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
         if (fileUri) {
           uploadedFile = { name: fileUri, state: 'PROCESSING' };
