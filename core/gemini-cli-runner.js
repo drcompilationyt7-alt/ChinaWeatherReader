@@ -1,14 +1,9 @@
 /**
  * Gemini CLI Runner
  * 
- * Uses stdin pipe for prompts (fixes `-p "..."` shell escaping issues).
- * The new Gemini CLI v0.44 does NOT support `-p` with positional image args.
- * 
- * Fix: cat prompt_file | GEMINI_API_KEY="x" gemini image1 image2
- * 
- * Video files MUST be passed as positional CLI arguments, NOT embedded
- * in the prompt text with @ prefixes. The @file syntax only works in
- * interactive mode, not piped mode.
+ * Uses stdin pipe for pure text prompts to avoid shell escaping issues.
+ * Uses explicit positional invocation args (gemini -p "prompt" file1 file2) 
+ * for multimodal inputs to force correct media ingestion across file types.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -61,8 +56,8 @@ class GeminiCLIRunner {
    * Run Gemini CLI with a prompt.
    * For text-only: pipe prompt via stdin (cat promptFile | gemini ...).
    * For multimodal (images/video): use -p "prompt" with file args, since
-   *   the @file expansion and positional args don't work properly with
-   *   piped stdin mode. Response text is logged for debugging.
+   * the @file expansion and positional args don't work properly with
+   * piped stdin mode. Response text is logged for debugging.
    */
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
@@ -100,19 +95,20 @@ class GeminiCLIRunner {
         let cmd;
         let promptFile = null;
         if (fileArgs.length > 0) {
-          // Multimodal mode: use -p with escaped prompt + file args
-          // Pipe mode breaks video file ingestion, so we use -p
+          // Multimodal mode: Use positional command execution layout instead of text piping.
+          // Safely neutralize shell metacharacters (\, ", $, `) for bash execution blocks.
           const escapedPrompt = fullPrompt
             .replace(/\\/g, '\\\\')
             .replace(/"/g, '\\"')
-            .replace(/\n/g, '\\n')
-            .replace(/'/g, "'\\''");
-          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash -p "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
+            .replace(/\$/g, '\\$')
+            .replace(/`/g, '\\`');
+
+          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash -p "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
         } else {
-          // Text-only mode: use pipe (avoids shell escaping issues)
+          // Text-only mode: use pipe (avoids shell escaping issues over raw string blocks)
           promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
           fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash 2>&1`;
+          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-3.5-flash 2>&1`;
         }
 
         logger.info(`CLI run (attempt ${attempt + 1})`);
@@ -127,7 +123,7 @@ class GeminiCLIRunner {
           logger.success(`CLI responded (${output.length} chars)`);
           // Log first 300 chars of response for debugging
           const preview = output.substring(0, 300);
-          logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
+          logger.info(`   Response: ${preview.replace(/\n/g, '\\n')}`);
           return output;
         }
         logger.warn('CLI empty response');
