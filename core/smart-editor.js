@@ -246,16 +246,35 @@ async function smartEdit(videoPath, outputPath, options = {}) {
   let needsTranslation = false;
 
   if (dialogue.hasDialogue && dialogue.wordCount > 5) {
-    const isNonEnglish = dialogue.language !== 'en' && dialogue.language !== 'english';
-    if (isNonEnglish) {
-      editType = 'translation';
-      needsCaptions = true;
-      needsTranslation = true;
-      logger.info(`Edit type: TRANSLATION (${dialogue.language} → English captions)`);
+    // Check if transcript is actually music lyrics vs speech
+    // Music lyrics tend to have short words, repetition, low word density
+    const transcript = (dialogue.transcript || '').toLowerCase();
+    const words = transcript.split(/\s+/).filter(w => w.length > 0);
+    const wordDensity = duration > 0 ? words.length / duration : 0;
+    
+    // Music lyrics detection heuristics:
+    // 1. Low word density (< 1 word per 2 seconds = sparse lyrics)
+    // 2. High repetition of same short phrases
+    // 3. Very short total transcript (< 10 words for 30s video)
+    const isMusic = wordDensity < 1.0 || words.length < 8;
+    
+    if (isMusic) {
+      editType = 'none';
+      needsCaptions = false;
+      needsTranslation = false;
+      logger.info(`Edit type: NONE (music/lyrics detected — ${words.length} words, ${wordDensity.toFixed(2)} words/sec)`);
     } else {
-      editType = 'tiktok_captions';
-      needsCaptions = true;
-      logger.info(`Edit type: TIKTOK CAPTIONS (English speech detected)`);
+      const isNonEnglish = dialogue.language !== 'en' && dialogue.language !== 'english';
+      if (isNonEnglish) {
+        editType = 'translation';
+        needsCaptions = true;
+        needsTranslation = true;
+        logger.info(`Edit type: TRANSLATION (${dialogue.language} → English captions)`);
+      } else {
+        editType = 'tiktok_captions';
+        needsCaptions = true;
+        logger.info(`Edit type: TIKTOK CAPTIONS (English speech detected)`);
+      }
     }
   } else {
     logger.info('Edit type: NONE (dance/music only — no captions)');
