@@ -321,9 +321,9 @@ Respond ONLY with valid JSON (no markdown):
         let waitCount = 0;
         while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
           waitCount++;
-          if (waitCount > 15) { logger.warn('File processing timed out (15 min)'); break; }
-          logger.info(`  Poll ${waitCount}/15 — waiting 30s (state: ${uf.state})...`);
-          await new Promise(r => setTimeout(r, 30000));
+          if (waitCount > 25) { logger.warn('File processing timed out (~19 min)'); break; }
+          logger.info(`  Poll ${waitCount}/25 — waiting 45s (state: ${uf.state})...`);
+          await new Promise(r => setTimeout(r, 45000));
           try {
             const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`, { timeout: 15000 });
             uf = statusResp.data?.file || statusResp.data;
