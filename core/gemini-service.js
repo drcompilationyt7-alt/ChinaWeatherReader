@@ -316,18 +316,21 @@ Respond ONLY with valid JSON (no markdown):
           else { logger.warn('No file name in response'); return null; }
         }
 
-        // Poll until ready
+        // Poll until ready — check every 30s, pause 30s on 429
         logger.info(`File uploaded: ${uf.name} (state: ${uf.state})`);
         let waitCount = 0;
         while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
           waitCount++;
-          if (waitCount > 60) { logger.warn('File processing timed out'); break; }
-          await new Promise(r => setTimeout(r, 5000));
+          if (waitCount > 15) { logger.warn('File processing timed out (15 min)'); break; }
+          logger.info(`  Poll ${waitCount}/15 — waiting 30s (state: ${uf.state})...`);
+          await new Promise(r => setTimeout(r, 30000));
           try {
             const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`, { timeout: 15000 });
             uf = statusResp.data?.file || statusResp.data;
           } catch (e) {
-            logger.warn('File status check failed (Network/429), retrying...');
+            const errText = (e.response?.data?.error?.message || e.message || '').substring(0, 80);
+            logger.warn(`File status check failed: ${errText} — pausing 30s before retry`);
+            await new Promise(r => setTimeout(r, 30000));
           }
         }
 

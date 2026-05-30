@@ -112,6 +112,8 @@ class GeminiCLIRunner {
           logger.success(`CLI responded (${output.length} chars)`);
           const preview = output.substring(0, 300);
           logger.info(`   Response: ${preview.replace(/\n/g, '\\n')}`);
+          // Pause 10s between CLI calls to avoid 429 rate limiting
+          await new Promise(r => setTimeout(r, 10000));
           return output;
         }
         logger.warn('CLI empty response');
