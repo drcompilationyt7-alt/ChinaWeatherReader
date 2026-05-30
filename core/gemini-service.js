@@ -230,6 +230,64 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
     return null;
   }
 
+  /**
+   * Match a YouTube video URL against a storyboard clip description.
+   * Uses the same file_data.file_uri mechanism as rankVideo() — Gemini fetches the URL itself.
+   * No download or upload needed for the matching step.
+   * 
+   * @param {string} url - YouTube URL
+   * @param {Object} clipDescription - { visual_direction, phase, voiceover }
+   * @param {string} qaSkill - QA skill system prompt
+   * @returns {Object|null} - { result: "MATCHED"/"COMPILATION_FOUND"/"REJECTED", reasoning, target_slice_start, target_slice_end, revised_queries }
+   */
+  async matchVideoClip(url, clipDescription, qaSkill) {
+    const prompt = `Check if this video matches a storyboard clip.
+
+STORYBOARD CLIP:
+${JSON.stringify(clipDescription, null, 2)}
+
+Evaluate if this YouTube video contains footage that matches the storyboard clip's visual_direction.
+Return STRICT JSON with: result ("MATCHED"/"COMPILATION_FOUND"/"REJECTED"), reasoning, target_slice_start, target_slice_end, revised_queries.`;
+
+    const contents = [{
+      role: 'user',
+      parts: [
+        { file_data: { file_uri: url } },
+        { text: prompt }
+      ]
+    }];
+
+    const response = await this._callAPI(contents, {
+      systemInstruction: qaSkill,
+      temperature: 0.2,
+      maxTokens: 1024,
+      timeout: 60000,
+    });
+
+    if (!response) {
+      logger.warn(`matchVideoClip: null for "${url.substring(0, 50)}"`);
+      return null;
+    }
+
+    try {
+      const m = response.match(/\{[\s\S]*\}/);
+      if (m) {
+        const p = JSON.parse(m[0]);
+        return {
+          result: (p.result || '').toUpperCase(),
+          reasoning: p.reasoning || '',
+          target_slice_start: p.target_slice_start || '00:00:00.00',
+          target_slice_end: p.target_slice_end || '00:00:00.00',
+          revised_queries: p.revised_queries || [],
+        };
+      }
+    } catch (e) {
+      logger.warn(`matchVideoClip JSON: ${e.message.substring(0, 80)}`);
+      logger.warn(`Raw: ${response.substring(0, 200)}`);
+    }
+    return null;
+  }
+
   async rankVideoFile(videoPath, country, curatorSkill, engagementData = null) {
     if (!fs.existsSync(videoPath)) {
       logger.warn(`rankVideoFile: video not found: ${videoPath}`);

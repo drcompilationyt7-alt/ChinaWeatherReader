@@ -1,7 +1,7 @@
 /**
  * Type 2 Pipeline — World Explainer Short
  * 
- * 7-stage production pipeline for original scripted explainer videos.
+ * 8-stage production pipeline for original scripted explainer videos.
  * 
  * Stage 1: Planning Agent (Gemini CLI) → Storyboard
  * Stage 2: Sourcing Agent (Gemini API)  → Search queries
@@ -9,7 +9,12 @@
  * Stage 4: TTS Processing                → Voiceover audio
  * Stage 5: Editor Agent (Gemini CLI)     → Editing manifest
  * Stage 6: Review Agent (OpenRouter)     → Manifest approval
- * Stage 7: Rendering Engine (FFmpeg)     → Final .mp4
+ * Stage 7: Rendering Engine (FFmpeg)     → Raw .mp4
+ * Stage 8: Post-Processing (Smart Crop + TikTok Captions + QA)
+ * 
+ * Stage 8 reuses Type 1's smart-cropper (YOLO subject detection),
+ * smart-editor (TikTok word-perfect captions via whisper), and
+ * frame-qa (final Gemini CLI review).
  */
 const path = require('path');
 const fs = require('fs');
@@ -20,6 +25,9 @@ const { pickCountry, generateTopicGuidance } = require('../core/explainer-topics
 const { generateAllLines } = require('../core/tts-engine');
 const { searchWithQueries, downloadVideo, getVideoMetadata, sliceClip } = require('../core/explainer-downloader');
 const { render } = require('../core/video-compiler');
+const { smartCrop, extractFrames } = require('../core/smart-cropper');
+const { smartEdit } = require('../core/smart-editor');
+const { validateOutput, geminiReview } = require('../core/frame-qa');
 
 const logger = new Logger('Type2Pipeline');
 
@@ -158,8 +166,16 @@ Return STRICT JSON: { "clips": [{ "clip_id": N, "yt_queries": [...], "fallback_q
 }
 
 /**
- * Stage 3: Download + QA Loop
- * Sources footage for each clip with retry logic
+ * Stage 3: Download + QA Loop (mirrors Type 1's URL-based ranking)
+ * Sources footage for each clip by:
+ *   1. Searching YouTube for each query
+ *   2. For each search result: send the YouTube URL to Gemini via file_data.file_uri
+ *      (same mechanism as Type 1's gemini.rankVideo) — Gemini fetches the preview itself
+ *   3. If MATCHED → download the video → accept it
+ *   4. If COMPILATION_FOUND → download → slice → accept
+ *   5. If REJECTED → try next result, or use revised_queries on retry
+ * 
+ * No download happens before Gemini matching — saves bandwidth and API calls.
  */
 async function stage3_downloadQA(storyboard, queryData, tmpDir) {
   logger.header('STAGE 3: DOWNLOAD + QA LOOP');
@@ -174,6 +190,12 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
 
   for (let i = 0; i < clipTargets.length; i++) {
     const clip = clipTargets[i];
+    const clipDescription = {
+      clip_id: clip.clip_id,
+      visual_direction: clip.visual_direction,
+      phase: clip.phase,
+      voiceover: clip.voiceover,
+    };
     const queryEntry = queryData.find(q => q.clip_id === clip.clip_id) || {};
     const queries = queryEntry.yt_queries || [`${storyboard.country} ${clip.phase}`];
     const fallback = queryEntry.fallback_query || `${storyboard.country} footage`;
@@ -201,55 +223,34 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
         break;
       }
 
-      // Try each result until one passes QA
-      let downloadedClip = null;
+      // Try each result via URL-based Gemini matching (no download yet)
       let qaResult = null;
 
       for (const result of results) {
-        logger.info(`  Trying: "${result.title.substring(0, 50)}" (${result.duration}s)`);
+        logger.info(`  Trying URL: "${result.title.substring(0, 50)}" (${result.duration}s)`);
 
-        // Download
-        const downloadedPath = downloadVideo(result.url, clipsDir);
-        if (!downloadedPath) continue;
+        // Step 1: Ask Gemini if this YouTube URL matches the storyboard clip
+        // Uses file_data.file_uri — same mechanism as Type 1's rankVideo()
+        const qaMatch = await gemini.matchVideoClip(result.url, clipDescription, qaSkill || '');
 
-        // Get metadata
-        const meta = getVideoMetadata(downloadedPath);
-
-        // QA check using Gemini
-        const qaPrompt = `Clip ${clip.clip_id} storyboard request:
-${JSON.stringify({
-  visual_direction: clip.visual_direction,
-  phase: clip.phase,
-  voiceover: clip.voiceover,
-}, null, 2)}
-
-Downloaded asset metadata:
-${JSON.stringify({
-  title: result.title,
-  duration: result.duration,
-  channel: result.channel,
-  video_duration: meta.duration,
-  video_resolution: `${meta.width}x${meta.height}`,
-}, null, 2)}
-
-Evaluate if this video matches the storyboard clip. Return STRICT JSON.`;
-
-        const qaText = await gemini.chat(qaSkill || '', qaPrompt, { temperature: 0.2, maxTokens: 500 });
-
-        if (qaText) {
-          try {
-            const qaJsonMatch = qaText.match(/\{[\s\S]*\}/);
-            if (qaJsonMatch) {
-              qaResult = JSON.parse(qaJsonMatch[0]);
-            }
-          } catch {}
+        if (!qaMatch) {
+          logger.warn(`  URL matching returned null (API/keys exhausted) — trying next result`);
+          continue;
         }
 
-        const resultType = qaResult?.result || 'REJECTED';
-        logger.info(`  QA result: ${resultType} — ${qaResult?.reasoning?.substring(0, 60) || ''}`);
+        const resultType = qaMatch.result || 'REJECTED';
+        logger.info(`  URL match: ${resultType} — ${qaMatch.reasoning?.substring(0, 80) || ''}`);
 
         if (resultType === 'MATCHED') {
-          // Use the full video
+          // Step 2: Download the matched video
+          logger.info(`  MATCHED — downloading...`);
+          const downloadedPath = downloadVideo(result.url, clipsDir);
+          if (!downloadedPath) {
+            logger.warn(`  Download failed — trying next result`);
+            continue;
+          }
+          const meta = getVideoMetadata(downloadedPath);
+
           approvedClips.push({
             clip_id: clip.clip_id,
             videoPath: downloadedPath,
@@ -258,38 +259,44 @@ Evaluate if this video matches the storyboard clip. Return STRICT JSON.`;
             sourceUrl: result.url,
             action: 'use_full',
           });
-          downloadedClip = downloadedPath;
           matched = true;
-          logger.success(`  ✅ Clip ${clip.clip_id}: MATCHED — using full video`);
+          logger.success(`  ✅ Clip ${clip.clip_id}: MATCHED — ${(fs.statSync(downloadedPath).size / 1024 / 1024).toFixed(1)}MB`);
           break;
         }
 
-        if (resultType === 'COMPILATION_FOUND' && qaResult.target_slice_start) {
-          // Slice the compilation
+        if (resultType === 'COMPILATION_FOUND' && qaMatch.target_slice_start) {
+          // Step 2: Download the compilation, then slice
+          logger.info(`  COMPILATION_FOUND — downloading for slicing...`);
+          const downloadedPath = downloadVideo(result.url, clipsDir);
+          if (!downloadedPath) {
+            logger.warn(`  Download failed — trying next result`);
+            continue;
+          }
+
           const slicedPath = path.join(clipsDir, `sliced_${clip.clip_id}.mp4`);
-          const sliced = sliceClip(downloadedPath, slicedPath, qaResult.target_slice_start, qaResult.target_slice_end);
+          const sliced = sliceClip(downloadedPath, slicedPath, qaMatch.target_slice_start, qaMatch.target_slice_end);
           if (sliced) {
             approvedClips.push({
               clip_id: clip.clip_id,
               videoPath: sliced,
-              duration: meta.duration,
+              duration: 30, // approximate slice duration
               sourceTitle: result.title,
               sourceUrl: result.url,
               action: 'sliced',
             });
             matched = true;
-            // Delete the original compilation to save space
             try { fs.unlinkSync(downloadedPath); } catch {}
             logger.success(`  ✅ Clip ${clip.clip_id}: COMPILATION_FOUND — sliced successfully`);
             break;
           }
+          // Slice failed — clean up and try next
+          try { fs.unlinkSync(downloadedPath); } catch {}
+          continue;
         }
 
-        // REJECTED: delete file, continue to next result
-        try { fs.unlinkSync(downloadedPath); } catch {}
-
-        if (retries < maxRetries && qaResult?.revised_queries?.length > 0) {
-          currentQueries = qaResult.revised_queries;
+        // REJECTED: try next result, update queries if revised provided
+        if (qaMatch.revised_queries?.length > 0) {
+          currentQueries = qaMatch.revised_queries;
         }
       }
 
@@ -329,6 +336,7 @@ async function stage4_tts(storyboard, tmpDir) {
 /**
  * Stage 5: Editor Agent
  * Generates the frame-by-frame editing manifest
+ * Sends sourced video clips to Gemini CLI as visual media for better manifest generation
  */
 async function stage5_editor(storyboard, approvedClips, ttsData) {
   logger.header('STAGE 5: EDITOR AGENT');
@@ -378,11 +386,19 @@ For pacing: clips should change every 2-3 seconds.
 If TTS is longer than video, loop/slow down/hold final frame.`;
 
   // Use Gemini CLI for editor (handles complex structured output better)
+  // Pass the actual video clips as media so Gemini can visually see them
   const geminiCLI = getGeminiCLI();
   let manifest = null;
 
   if (geminiCLI.isAvailable()) {
-    const result = await geminiCLI.run(userPrompt, { skillFile: path.join(SKILLS_DIR, 'editor-agent.md'), timeout: 120000 });
+    const videoPaths = approvedClips.map(c => c.videoPath).filter(p => fs.existsSync(p));
+    logger.info(`Sending ${videoPaths.length} video clips to Gemini CLI for visual analysis...`);
+    
+    const result = await geminiCLI.run(userPrompt, {
+      skillFile: path.join(SKILLS_DIR, 'editor-agent.md'),
+      timeout: 120000,
+      videoPaths: videoPaths,
+    });
     if (result) {
       try {
         const jsonMatch = result.match(/\{[\s\S]*\}/);
@@ -477,6 +493,103 @@ async function stage7_render(manifest, approvedClips, ttsDir, outputPath) {
 }
 
 /**
+ * Stage 8: Post-Processing
+ * Reuses Type 1's smartCrop, smartEdit (TikTok captions), and QA
+ * 
+ * Flow:
+ *   8a. Smart crop to 9:16 (YOLO subject detection + Gemini CLI feedback)
+ *   8b. Smart edit (TikTok word-perfect captions via whisper)
+ *   8c. Final QA review (automated validation + Gemini CLI visual review)
+ */
+async function stage8_postprocess(renderedPath, country, tmpDir, outputDir) {
+  logger.header('STAGE 8: POST-PROCESSING');
+
+  if (!renderedPath || !fs.existsSync(renderedPath)) {
+    logger.error('No rendered video to post-process');
+    return null;
+  }
+
+  // ─── Stage 8a: Smart Crop ──────────────────────────────────────────
+  logger.info('Stage 8a: Smart Crop (YOLO subject detection)');
+  const croppedPath = path.join(tmpDir, `cropped_${Date.now()}.mp4`);
+
+  // Get duration of rendered video
+  let videoDuration = 60;
+  try {
+    const durOut = require('child_process').execSync(
+      `ffprobe -i "${renderedPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`,
+      { timeout: 10000, encoding: 'utf8' }
+    ).trim();
+    if (durOut) videoDuration = parseFloat(durOut);
+  } catch {}
+
+  const cropResult = await smartCrop(renderedPath, croppedPath, {
+    country,
+    duration: Math.min(videoDuration, 60),
+    startTime: 0,
+  });
+
+  if (!cropResult.success) {
+    logger.error('Smart crop failed — using rendered video as-is');
+    return renderedPath;
+  }
+  logger.success(`Smart crop complete: ${croppedPath}`);
+
+  // ─── Stage 8b: Smart Edit (TikTok Captions) ────────────────────────
+  logger.info('Stage 8b: Smart Edit (TikTok-style word-perfect captions)');
+  const editedPath = path.join(tmpDir, `edited_${Date.now()}.mp4`);
+
+  // smartEdit will:
+  // 1. Extract audio → whisper transcribe (picks up TTS voiceover perfectly)
+  // 2. Generate word-timed TikTok-style .ASS subtitles (yellow, black outline, 1-2 words)
+  // 3. Burn captions into video
+  // 4. Run Gemini CLI QA feedback loop on edits
+
+  const editResult = await smartEdit(croppedPath, editedPath, {
+    country,
+    duration: Math.min(videoDuration, 60),
+    // No dialogue/transcript passed — smartEdit transcribes from the video's audio
+    // which already has the TTS voiceover baked in
+  });
+
+  if (!editResult.success) {
+    logger.warn('Smart edit failed — using cropped video without captions');
+    return croppedPath;
+  }
+  logger.success(`Smart edit complete: ${editResult.editType}, captions: ${editResult.hasCaptions}`);
+
+  // ─── Stage 8c: Final QA ────────────────────────────────────────────
+  logger.info('Stage 8c: Final QA Review');
+
+  // Automated validation
+  const validation = await validateOutput(editedPath);
+  if (!validation.passed) {
+    logger.warn(`Validation issues: ${validation.issues.join(', ')}`);
+    if (validation.score < 4) {
+      logger.error('Validation score too low — returning cropped but not edited');
+      return croppedPath;
+    }
+  }
+
+  // Gemini CLI visual review (full video QA)
+  const geminiQA = await geminiReview(editedPath);
+  logger.info(`Gemini QA: ${geminiQA.score}/10 — ${geminiQA.recommendation}`);
+  logger.info(`  Crop: ${geminiQA.cropOk ? 'OK' : 'Issues'} | Subtitles: ${geminiQA.subtitlesOk ? 'OK' : 'Issues'}`);
+  logger.info(`  Watermarks: ${geminiQA.watermarkRemoved ? 'Removed' : 'Present'} | Hook: ${geminiQA.hookQuality}`);
+
+  // Final output: copy to output dir with clean name
+  const finalPath = path.join(outputDir, `explainer_final_${Date.now()}.mp4`);
+  try {
+    fs.copyFileSync(editedPath, finalPath);
+    logger.success(`Final video: ${finalPath.split(/[\\/]/).pop()} (${(fs.statSync(finalPath).size / 1024 / 1024).toFixed(1)}MB)`);
+    return finalPath;
+  } catch (e) {
+    logger.warn(`Copy failed: ${e.message}`);
+    return editedPath;
+  }
+}
+
+/**
  * Main Type 2 Pipeline Entry Point
  */
 async function runType2Pipeline(options = {}) {
@@ -554,7 +667,7 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
         const result = await geminiCLI.run(revisionPrompt, { skillFile: path.join(SKILLS_DIR, 'editor-agent.md'), timeout: 120000 });
         if (result) {
           try {
-            const jsonMatch = result.match(/\{[\s\S]*\}/);
+            const jsonMatch = result.match(/\{[\sS]*\}/);
             if (jsonMatch) revisedManifest = JSON.parse(jsonMatch[0]);
           } catch {}
         }
@@ -571,26 +684,42 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
   }
 
   // ─── Stage 7: Render ──────────────────────────────────────────────
-  const finalPath = path.join(outputDir, `explainer_${Date.now()}.mp4`);
-  const rendered = await stage7_render(manifest, approvedClips, ttsData.ttsDir, finalPath);
+  const renderedPath = path.join(tmpDir, `explainer_raw_${Date.now()}.mp4`);
+  const rendered = await stage7_render(manifest, approvedClips, ttsData.ttsDir, renderedPath);
+
+  if (!rendered) {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    return { success: false, error: 'Render failed' };
+  }
+
+  // ─── Stage 8: Post-Process (Crop + Captions + QA) ─────────────────
+  const finalPath = await stage8_postprocess(rendered, country, tmpDir, outputDir);
 
   // ─── Cleanup ──────────────────────────────────────────────────────
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
-  if (rendered) {
-    return {
+  if (finalPath && fs.existsSync(finalPath)) {
+    const result = {
       success: true,
-      videoPath: rendered,
+      videoPath: finalPath,
       title: storyboard.topic_title,
       country,
       angle: topicGuidance.angle,
       clipsApproved: approvedClips.length,
       totalClips: (storyboard.clips || []).length,
-      manifestPath: rendered.replace('.mp4', '_manifest.json'),
+      manifestPath: renderedPath.replace('.mp4', '_manifest.json'),
     };
+    
+    logger.header('PIPELINE COMPLETE');
+    logger.success(`Video: ${finalPath}`);
+    logger.success(`Title: ${result.title}`);
+    logger.success(`Country: ${country}`);
+    logger.success(`Angle: ${topicGuidance.angle}`);
+    
+    return result;
   }
 
-  return { success: false, error: 'Render failed' };
+  return { success: false, error: 'Post-processing failed' };
 }
 
 module.exports = { runType2Pipeline };
