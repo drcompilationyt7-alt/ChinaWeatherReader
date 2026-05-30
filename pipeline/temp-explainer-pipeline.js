@@ -1,14 +1,14 @@
 /**
  * Temp Explainer Pipeline — Channel Shorts Reposter
  * 
- * Picks a channel from a curated list per region, finds an old Short (>=1 year),
+ * Picks a channel from a curated list per region, finds an old Short (>=3 months),
  * downloads it losslessly, uses Gemini to identify the country, overlays a flag
  * emoji at top-center (YOLO-verified to not block content), generates new metadata,
  * and returns the final video for upload.
  * 
  * Flow:
  *   1. Pick region → pick channel → scrape Shorts feed
- *   2. Filter by age (>=365 days) and dedup (memory)
+ *   2. Filter by age (>=3 months) and dedup (memory)
  *   3. Download best quality (no re-encode)
  *   4. Gemini identifies country from video + title + description
  *   5. Download flag emoji PNG (twemoji CDN)
@@ -115,15 +115,15 @@ function pickChannel(memory) {
 function findOldShort(channelInfo, memory) {
   logger.info(`Scraping Shorts from @${channelInfo.handle}...`);
 
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  const dateBefore = oneYearAgo.toISOString().split('T')[0].replace(/-/g, '');
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  const dateBefore = threeMonthsAgo.toISOString().split('T')[0].replace(/-/g, '');
 
   try {
     const cmd = `yt-dlp --flat-playlist --dump-json ` +
       `--datebefore ${dateBefore} ` +
       `--playlist-end 50 ` +
-      `--match-filter "!is_live & !upcoming & duration < 61" ` +
+      `--match-filter "!is_live & !upcoming" ` +
       `"${channelInfo.channelUrl}" 2>&1`;
 
     const out = execSync(cmd, { timeout: 30000, maxBuffer: 5 * 1024 * 1024, encoding: 'utf8' }).toString().trim();
@@ -181,21 +181,21 @@ function downloadMaxQuality(video, outputDir) {
   const outputFile = path.join(outputDir, `source_${video.id}.mp4`);
   logger.info(`Downloading: ${video.url} (lossless)`);
 
+  // Use simpler format args — yt-dlp handles Shorts best natively
   const strategies = [
-    { name: 'best+copy', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
-    { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=2160]+bestaudio/best" --merge-output-format mp4' },
+    { name: 'default', args: '-S "res:1080" --merge-output-format mp4' },
+    { name: 'android', args: '--extractor-args "youtube:player_client=android" -S "res:1080" --merge-output-format mp4' },
+    { name: 'web', args: '--extractor-args "youtube:player_client=web" -S "res:1080" --merge-output-format mp4' },
   ];
 
   for (const s of strategies) {
     try {
       const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
+      const cookieArg = hasCookies ? '--cookies /tmp/yt_cookies.txt' : '';
 
-      const cmd = `yt-dlp ${cookieArg} ${s.args || ''} ${s.format} ` +
+      const cmd = `yt-dlp ${cookieArg} ${s.args} ` +
         `-o "${outputFile}" "${video.url}" ` +
-        `--no-playlist --max-filesize 500M --socket-timeout 30 --retries 3 --force-ipv4 ` +
-        `--concurrent-fragments 4 2>&1`;
+        `--no-playlist --max-filesize 500M --socket-timeout 30 --retries 3 --force-ipv4 2>&1`;
 
       execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
 
@@ -473,14 +473,16 @@ async function generateMetadata(country, originalTitle, gemini) {
     `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
 Each short shows amazing places around the world. Generate viral, engaging metadata.
 
-Rules:
+CRITICAL RULES:
 - Title: max 70 characters, emoji-heavy, mentions the country ${country}
+- Title must be COMPLETELY ORIGINAL — do NOT use any words or phrases from the original video title
 - Description: 2-3 sentences, mentions the country, includes hashtags
+- Description must be COMPLETELY ORIGINAL — do NOT reference the original channel name, source, or any part of the original description
+- Do NOT mention where the video was found, who made it, or that it was reposted
 - Tags: array of 5-8 relevant tags`,
-    `Original video title: "${originalTitle || 'Unknown'}"
-Country identified: ${country}
+    `Country identified: ${country}
 
-Generate new metadata for this reposted short. Return STRICT JSON.`,
+Generate completely new, original metadata for a travel short. Do NOT reference the original source.`,
     { temperature: 0.8, maxTokens: 512 }
   );
 
