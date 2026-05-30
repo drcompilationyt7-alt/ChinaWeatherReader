@@ -316,8 +316,9 @@ Respond ONLY with valid JSON (no markdown):
           else { logger.warn('No file name in response'); return null; }
         }
 
-        // Poll until ready — check every 30s, pause 30s on 429
-        logger.info(`File uploaded: ${uf.name} (state: ${uf.state})`);
+        // Wait for metadata propagation before polling
+        logger.info(`File uploaded: ${uf.name} (state: ${uf.state}) — waiting 3s for metadata propagation...`);
+        await new Promise(r => setTimeout(r, 3000));
         let waitCount = 0;
         while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
           waitCount++;
@@ -325,11 +326,14 @@ Respond ONLY with valid JSON (no markdown):
           logger.info(`  Poll ${waitCount}/25 — waiting 45s (state: ${uf.state})...`);
           await new Promise(r => setTimeout(r, 45000));
           try {
-            const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`, { timeout: 15000 });
+            const pollUrl = `${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`;
+            logger.info(`  Polling URL: ${GEMINI_BASE}/files/${uf.name}`);
+            const statusResp = await axios.get(pollUrl, { timeout: 15000 });
             uf = statusResp.data?.file || statusResp.data;
           } catch (e) {
-            const errText = (e.response?.data?.error?.message || e.message || '').substring(0, 80);
-            logger.warn(`File status check failed: ${errText} — pausing 30s before retry`);
+            const errBody = e.response?.data ? JSON.stringify(e.response.data).substring(0, 200) : '';
+            logger.warn(`File status check failed (status ${e.response?.status || 'none'}): ${errBody || e.message}`);
+            logger.warn(`  File: ${uf.name} | Key used: ${currentKey}`);
             await new Promise(r => setTimeout(r, 30000));
           }
         }

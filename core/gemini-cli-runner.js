@@ -134,6 +134,101 @@ class GeminiCLIRunner {
     return null;
   }
 
+  /**
+   * Upload a local video file to the Gemini File API and return the resource URI.
+   * Uses axios directly (not the CLI) to upload, then passes the URI to CLI for analysis.
+   */
+  async _uploadFileForCLI(videoPath) {
+    const axios = require('axios');
+    const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
+    const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+    const fileName = path.basename(videoPath);
+    const fileBuffer = fs.readFileSync(videoPath);
+    const fileSize = fileBuffer.length;
+    const key = this._getApiKey();
+    if (!key) { logger.warn('No API key for upload'); return null; }
+
+    logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) for CLI analysis...`);
+
+    // Step 1: Start resumable upload
+    const startResp = await axios.post(
+      `${GEMINI_UPLOAD}/files?key=${key}`,
+      { file: { displayName: fileName } },
+      {
+        headers: {
+          'X-Goog-Upload-Protocol': 'resumable',
+          'X-Goog-Upload-Command': 'start',
+          'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
+          'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      }
+    );
+
+    const uploadUrl = startResp.headers['x-goog-upload-url'];
+    if (!uploadUrl) { logger.warn('No upload URL'); return null; }
+
+    // Step 2: Upload binary
+    const uploadResp = await axios.put(uploadUrl, fileBuffer, {
+      headers: {
+        'Content-Type': 'video/mp4',
+        'Content-Length': fileSize.toString(),
+        'X-Goog-Upload-Command': 'upload, finalize',
+        'X-Goog-Upload-Offset': '0',
+      },
+      timeout: 300000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      transformRequest: [(d) => d],
+      transformResponse: [(d) => d],
+    });
+
+    let respData = uploadResp.data;
+    try { if (typeof respData === 'string' || Buffer.isBuffer(respData)) respData = JSON.parse(respData.toString()); } catch (e) {}
+
+    let uf = respData?.file || respData;
+    if (!uf || !uf.name) {
+      const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
+      if (fileUri) uf = { name: fileUri, state: 'PROCESSING' };
+      else { logger.warn('No file name in upload response'); return null; }
+    }
+
+    // Step 3: Wait for metadata propagation, then poll until ACTIVE (every 45s, max 25)
+    logger.info(`File uploaded: ${uf.name} (state: ${uf.state}) — waiting 3s for metadata propagation...`);
+    await new Promise(r => setTimeout(r, 3000));
+    let pollCount = 0;
+    while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
+      pollCount++;
+      if (pollCount > 25) { logger.warn('File processing timed out'); break; }
+      logger.info(`  Poll ${pollCount}/25 — waiting 45s (state: ${uf.state})...`);
+      await new Promise(r => setTimeout(r, 45000));
+      try {
+        const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${key}`, { timeout: 15000 });
+        uf = statusResp.data?.file || statusResp.data;
+      } catch (e) {
+        logger.warn(`Status check failed: ${(e.message || '').substring(0, 60)} — pausing 30s`);
+        await new Promise(r => setTimeout(r, 30000));
+      }
+    }
+
+    if (uf.state === 'FAILED') { logger.warn(`File failed: ${uf.error?.message || ''}`); return null; }
+    if (uf.state !== 'ACTIVE') { logger.warn(`File not ACTIVE (state: ${uf.state})`); return null; }
+    logger.success(`File ready for CLI: ${uf.name}`);
+    return { name: uf.name, uri: uf.uri || uf.name, key, state: uf.state };
+  }
+
+  /** Delete a file from Gemini File API */
+  async _deleteFile(fileUri, apiKey) {
+    const axios = require('axios');
+    const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+    try { await axios.delete(`${GEMINI_BASE}/files/${fileUri}?key=${apiKey}`, { timeout: 10000 }); } catch {}
+  }
+
+  /**
+   * Rank a video for viral reposting via Gemini CLI.
+   * Uploads file first, then references the URI in the prompt.
+   */
   async rankVideoFromPath(videoPath, country, curatorSkill, engagementData = null) {
     if (!this.available) {
       logger.warn('Gemini CLI not available for video ranking');
@@ -141,6 +236,18 @@ class GeminiCLIRunner {
     }
     if (!fs.existsSync(videoPath)) {
       logger.warn(`rankVideoFromPath: video not found: ${videoPath}`);
+      return null;
+    }
+
+    // Upload file first, then reference its URI in the CLI prompt
+    let uploadedFile = null;
+    try {
+      uploadedFile = await this._uploadFileForCLI(videoPath);
+    } catch (e) {
+      logger.warn(`Upload failed: ${e.message.substring(0, 60)}`);
+    }
+    if (!uploadedFile) {
+      logger.warn('rankVideoFromPath: upload failed — cannot rank');
       return null;
     }
 
@@ -168,7 +275,7 @@ HARD METRIC COMPUTATION:
       }
     }
 
-    const prompt = `WATCH this video and rank it for reposting on "Mr. WorldWideWebster" channel.
+    const prompt = `Analyze the uploaded video file at ${uploadedFile.uri} and rank it for reposting on "Mr. WorldWideWebster" channel.
 
 Target country: ${country}${metricsBlock}
 
@@ -188,7 +295,6 @@ Respond ONLY with valid JSON (no markdown):
 {"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
 
     const result = await this.run(prompt, {
-      videoPath,
       timeout: 120000,
     });
 
