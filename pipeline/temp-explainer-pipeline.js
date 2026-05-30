@@ -173,7 +173,7 @@ function findOldShort(channelInfo, memory) {
 }
 
 /**
- * Step 3: Download at max quality, no re-encode
+ * Step 3: Download at max quality, prefer 1080p
  */
 function downloadMaxQuality(video, outputDir) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
@@ -181,10 +181,10 @@ function downloadMaxQuality(video, outputDir) {
   const outputFile = path.join(outputDir, `source_${video.id}.mp4`);
   logger.info(`Downloading: ${video.url} (lossless)`);
 
-  // Mirror Type 1's download strategies exactly (proven working)
+  // Sort by resolution (prefer 1080p) for best quality
   const strategies = [
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
-    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
+    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
+    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
     { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
   ];
 
@@ -196,7 +196,7 @@ function downloadMaxQuality(video, outputDir) {
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
         `-o "${outputFile}" "${video.url}" ` +
         `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 ` +
-        `--remote-components ejs:github`;
+        `--remote-components ejs:github 2>&1`;
 
       execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
 
@@ -264,7 +264,7 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
           if (p.country && p.confidence >= 4) {
             country = p.country;
             confidence = p.confidence;
-            logger.success(`Country: ${country} (${confidence}/10)`);
+            logger.success(`Country: ${country} (${confidence}/10) — ${(p.reasoning || '').substring(0, 100)}`);
             return { country, confidence };
           }
           logger.warn(`Low confidence: ${p.country || 'none'} (${p.confidence}/10)`);
@@ -367,6 +367,9 @@ async function downloadFlag(country, tmpDir) {
 
 /**
  * Step 6: Overlay flag at top-center for first few seconds
+ * Appears at top-center (x=480, y=20) for first 4 seconds of the video.
+ * If video is not 9:16, first scales+crops to 1080x1920 then overlays.
+ * YOLO check (if available) adjusts flag Y to avoid overlapping subjects.
  */
 async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   logger.info('Overlaying flag at top-center...');
@@ -383,64 +386,56 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   const flagDuration = Math.min(4, videoDuration - 1);
   const flagWidth = 120;
   const flagHeight = 120;
-  const flagX = Math.floor((SHORTS_W - flagWidth) / 2);
+  const flagX = Math.floor((SHORTS_W - flagWidth) / 2); // centered: (1080-120)/2 = 480
   const flagY = 20;
 
-  // YOLO check: flag placement at the top
+  // Quick YOLO check for flag placement (skip silently if unavailable)
   let adjustedY = flagY;
   try {
-    const { execSync: exec } = require('child_process');
-    const yoloDir = path.join(tmpDir, `yolo_flag_${Date.now()}`);
-    fs.mkdirSync(yoloDir, { recursive: true });
-    const framePath = path.join(yoloDir, 'flag_check.jpg');
-    execSync(
-      `ffmpeg -y -ss 1 -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" 2>/dev/null`,
-      { timeout: 10000 }
-    );
-
-    if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
-      const yoloOut = execSync(
-        `python3 "${path.join(__dirname, '..', 'core', 'yolo-crop.py')}" "${framePath}" 2>&1`,
-        { timeout: 30000, encoding: 'utf8' }
-      ).toString().trim();
-      const yoloResult = JSON.parse(yoloOut);
-
-      if (yoloResult.subject !== 'none') {
-        logger.info(`YOLO: ${yoloResult.subject} detected`);
-        // Check if subject is in the top portion where flag goes
-        const bbox = yoloResult.bbox || { y: 0, h: 0 };
-        const subjectBottom = (bbox.y || 0) + (bbox.h || 0);
-        if (subjectBottom < flagY + flagHeight + 50) {
-          // Subject is overlapping flag area — move flag down
-          adjustedY = subjectBottom + 20;
-          logger.warn(`Adjusting flag Y to ${adjustedY}px to avoid subject`);
+    if (fs.existsSync(path.join(__dirname, '..', 'core', 'yolo-crop.py'))) {
+      const yoloDir = path.join(tmpDir, `yolo_flag_${Date.now()}`);
+      fs.mkdirSync(yoloDir, { recursive: true });
+      const framePath = path.join(yoloDir, 'flag_check.jpg');
+      execSync(
+        `ffmpeg -y -ss 1 -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" 2>/dev/null`,
+        { timeout: 10000 }
+      );
+      if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
+        const yoloOut = execSync(
+          `python3 "${path.join(__dirname, '..', 'core', 'yolo-crop.py')}" "${framePath}" 2>&1`,
+          { timeout: 15000, encoding: 'utf8' }
+        ).toString().trim();
+        const yoloResult = JSON.parse(yoloOut);
+        if (yoloResult.subject !== 'none') {
+          const bbox = yoloResult.bbox || { y: 0, h: 0 };
+          const subjectBottom = (bbox.y || 0) + (bbox.h || 0);
+          if (subjectBottom < flagY + flagHeight + 100) {
+            adjustedY = Math.min(subjectBottom + 20, 800);
+            logger.info(`YOLO: adjusted flag Y to ${adjustedY}px`);
+          }
         }
-      } else {
-        logger.info('YOLO: No subject in top area — flag placement safe');
       }
+      try { fs.rmSync(yoloDir, { recursive: true, force: true }); } catch {}
     }
-    try { fs.rmSync(yoloDir, { recursive: true, force: true }); } catch {}
-  } catch (e) {
-    logger.warn(`YOLO check: ${(e.message || '').substring(0, 60)}`);
-  }
+  } catch {}
 
-  // Check if source is already 9:16 or needs scaling
+  // Check dimensions for scaling
   const srcDims = getVideoMetadata(videoPath);
-  const isPortrait = srcDims.height > srcDims.width;
   const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05;
 
-  let scaleFilter = '';
-  if (!isShortsSize) {
-    scaleFilter = `scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H},`;
+  // Build FFmpeg filter:
+  // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
+  // If already 9:16, just overlay flag directly
+  let overlayFilter;
+  if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
+    overlayFilter =
+      `[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}[bg];` +
+      `[bg][1:v]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
+  } else {
+    overlayFilter =
+      `[0:v][1:v]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   }
 
-  // Build overlay filter: flag visible only during first flagDuration seconds
-  // Flag with fade-in (0.3s) at top-center
-  const overlayFilter = `${scaleFilter}[0:v]` +
-    `[1:v]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
-
-  // Also add a small semi-transparent background box for readability
-  // Simple approach: just overlay the flag directly
   const outPath = outputPath || videoPath.replace(/\.\w+$/, '_flagged.mp4');
 
   try {
