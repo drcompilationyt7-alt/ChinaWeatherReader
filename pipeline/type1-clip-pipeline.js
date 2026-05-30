@@ -405,8 +405,8 @@ async function downloadBestVideo(video, outputDir) {
   logger.info(`Downloading: ${url}`);
 
   const strategies = [
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=1080]+bestaudio/best" --merge-output-format mp4' },
-    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
+    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
+    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
     { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
   ];
 
@@ -417,7 +417,7 @@ async function downloadBestVideo(video, outputDir) {
 
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
         `--download-sections "*0-60" -o "${outputFile}" "${url}" ` +
-        `--no-playlist --max-filesize 150M --socket-timeout 30 --retries 3 --force-ipv4`;
+        `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 --remote-components ejs:github`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
 
@@ -579,7 +579,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       execSync(
         `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
         `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
-        `-c:v libx264 -preset fast -crf 20 -c:a aac -shortest "${outputPath}" 2>/dev/null`,
+        `-c:v libx264 -preset fast -crf 0 -c:a aac -shortest "${outputPath}" 2>/dev/null`,
         { timeout: 120000 }
       );
     } else {

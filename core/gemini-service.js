@@ -460,10 +460,26 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
   }
 
   async generateTitle(country, transcript, origTitle) {
+    // Load viral-metadata-generator skill
+    const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');
+    let skillContent = '';
+    try {
+      if (fs.existsSync(skillPath)) {
+        skillContent = fs.readFileSync(skillPath, 'utf8');
+      }
+    } catch (e) {}
+
+    let visualSummary = transcript
+      ? `A trending video from ${country}. ${transcript.substring(0, 150)}`
+      : `A viral moment from ${country}`;
+    if (origTitle) {
+      visualSummary += `\nOriginal title: "${origTitle}"`;
+    }
+
     return this.chatJSON(
-      'You write YouTube Shorts titles. Max 70 chars, emoji-heavy, English. Return JSON: {"title":"...","description":"...","tags":[...]}',
-      `Country: ${country}\n${transcript ? `Transcript: "${transcript.substring(0, 300)}"` : ''}\n${origTitle ? `Original: "${origTitle}"` : ''}`,
-      { temperature: 0.8 }
+      skillContent || 'You write YouTube Shorts titles and descriptions. Return JSON: {"title":"...","description":"...","tags":[...]}',
+      `Visual Summary: ${visualSummary || ''}\nVibe/Tone: engaging, entertaining\nSource/Category: ${country.toLowerCase()} shorts`,
+      { temperature: 0.8, maxTokens: 512 }
     );
   }
 

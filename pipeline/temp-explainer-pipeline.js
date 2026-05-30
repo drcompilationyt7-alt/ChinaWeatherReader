@@ -34,6 +34,37 @@ const SHORTS_W = 1080;
 const SHORTS_H = 1920;
 
 /**
+ * Convert country name to flag emoji (e.g. "United States" → "🇺🇸")
+ */
+function getFlagEmoji(country) {
+  const isoMap = {
+    'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU',
+    'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN',
+    'Mexico': 'MX', 'UK': 'GB', 'United Kingdom': 'GB', 'South Korea': 'KR',
+    'Egypt': 'EG', 'Italy': 'IT', 'Spain': 'ES', 'China': 'CN',
+    'Global': 'UN', 'Indonesia': 'ID', 'Vietnam': 'VN', 'United States': 'US',
+    'USA': 'US', 'America': 'US', 'Canada': 'CA', 'Turkey': 'TR',
+    'Russia': 'RU', 'Argentina': 'AR', 'Colombia': 'CO', 'South Africa': 'ZA',
+    'Saudi Arabia': 'SA', 'UAE': 'AE', 'United Arab Emirates': 'AE',
+    'Singapore': 'SG', 'Malaysia': 'MY', 'Philippines': 'PH', 'Taiwan': 'TW',
+    'Hong Kong': 'HK', 'Portugal': 'PT', 'Netherlands': 'NL', 'Sweden': 'SE',
+    'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI', 'Poland': 'PL',
+    'Greece': 'GR', 'Switzerland': 'CH', 'Austria': 'AT', 'Belgium': 'BE',
+    'Ireland': 'IE', 'New Zealand': 'NZ', 'Peru': 'PE', 'Chile': 'CL',
+  };
+  let iso = isoMap[country];
+  if (!iso) {
+    for (const [name, code] of Object.entries(isoMap)) {
+      if (country.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(country.toLowerCase())) {
+        iso = code; break;
+      }
+    }
+  }
+  if (!iso) return '🌍';
+  return String.fromCodePoint(...iso.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
+/**
  * Load dedup memory
  */
 function loadMemory() {
@@ -352,7 +383,7 @@ async function downloadFlag(country, tmpDir) {
     if (fs.existsSync(flagFile) && fs.statSync(flagFile).size > 100) {
       const scaledFlag = path.join(tmpDir, `flag_${iso}_scaled.png`);
       execSync(
-        `ffmpeg -y -i "${flagFile}" -vf "scale=120:120:flags=lanczos" "${scaledFlag}" 2>/dev/null`,
+        `ffmpeg -y -i "${flagFile}" -vf "scale=150:150:flags=lanczos" "${scaledFlag}" 2>/dev/null`,
         { timeout: 10000 }
       );
       const result = (fs.existsSync(scaledFlag) && fs.statSync(scaledFlag).size > 100) ? scaledFlag : flagFile;
@@ -384,9 +415,9 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   } catch {}
 
   const flagDuration = Math.min(4, videoDuration - 1);
-  const flagWidth = 120;
-  const flagHeight = 120;
-  const flagX = Math.floor((SHORTS_W - flagWidth) / 2); // centered: (1080-120)/2 = 480
+  const flagWidth = 150;
+  const flagHeight = 150;
+  const flagX = Math.floor((SHORTS_W - flagWidth) / 2); // centered: (1080-150)/2 = 465
   const flagY = 20;
 
   // Quick YOLO check for flag placement (skip silently if unavailable)
@@ -447,7 +478,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
     execSync(
       `ffmpeg -y -i "${videoPath}" -i "${flagPath}" ` +
       `-filter_complex "${overlayFilter}" ` +
-      `-c:v libx264 -preset medium -crf 18 -c:a copy -pix_fmt yuv420p -shortest "${outPath}" 2>/dev/null`,
+      `-c:v libx264 -preset medium -crf 0 -c:a copy -pix_fmt yuv420p -shortest "${outPath}" 2>/dev/null`,
       { timeout: 180000 }
     );
 
@@ -470,26 +501,36 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
 async function generateMetadata(country, originalTitle, gemini) {
   logger.info('Generating new title and description...');
 
+  // Load viral-metadata-generator skill for optimal metadata
+  const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');
+  let skillContent = '';
+  try {
+    if (fs.existsSync(skillPath)) {
+      skillContent = fs.readFileSync(skillPath, 'utf8');
+    }
+  } catch (e) {}
+
+  const flagEmoji = getFlagEmoji(country);
+  const visualSummary = `A viral travel short from ${country}${originalTitle ? ` (original: "${originalTitle}")` : ''}`;
+
   const result = await gemini.chatJSON(
-    `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
-Each short shows amazing places around the world. Generate viral, engaging metadata.
+    skillContent || `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
+Title: max 50 chars, emoji-heavy, curiosity gap, mentions ${country}. Description: hook + engagement CTA + 3 hashtags.
+Do NOT reference the original video title/channel. Add "Follow Mr. WorldWideWebster" + ${flagEmoji} at the end of description.`,
+    `Visual Summary: ${visualSummary}
+Vibe/Tone: exciting, travel, discovery
+Source/Category: ${country.toLowerCase()} travel shorts
 
-CRITICAL RULES:
-- Title: max 70 characters, emoji-heavy, mentions the country ${country}
-- Title must be COMPLETELY ORIGINAL — do NOT use any words or phrases from the original video title
-- Description: 2-3 sentences, mentions the country, includes hashtags
-- Description must be COMPLETELY ORIGINAL — do NOT reference the original channel name, source, or any part of the original description
-- Do NOT mention where the video was found, who made it, or that it was reposted
-- Tags: array of 5-8 relevant tags`,
-    `Country identified: ${country}
-
-Generate completely new, original metadata for a travel short. Do NOT reference the original source.`,
+Add "Follow Mr. WorldWideWebster 🌍✈️" to the end of the description.`,
     { temperature: 0.8, maxTokens: 512 }
   );
 
   if (result) {
-    const title = (result.title || `${country} Travel Short 🔥`).substring(0, 100);
-    const description = result.description || `Amazing travel short from ${country}! Follow Mr. WorldWideWebster for more! 🌍✈️`;
+    const title = (result.title || `${country} Travel Short 🔥`).substring(0, 50);
+    let description = result.description || `Amazing travel short from ${country}! Follow Mr. WorldWideWebster for more! 🌍✈️`;
+    if (!description.includes('Mr. WorldWideWebster')) {
+      description += `\n\nFollow Mr. WorldWideWebster for more! ${flagEmoji}🌍✈️`;
+    }
     const tags = result.tags || ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'travel'];
     logger.success(`Title: "${title}"`);
     return { title, description, tags };
@@ -497,7 +538,7 @@ Generate completely new, original metadata for a travel short. Do NOT reference 
 
   return {
     title: `${country} Travel Short 🔥`,
-    description: `Incredible scenes from ${country}. Follow Mr. WorldWideWebster for global travel content! 🌍✈️`,
+    description: `Incredible scenes from ${country}. Follow Mr. WorldWideWebster for global travel content! ${flagEmoji}🌍✈️`,
     tags: ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'travel'],
   };
 }

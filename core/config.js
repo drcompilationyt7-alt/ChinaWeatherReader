@@ -60,8 +60,8 @@ const config = {
   },
 
   boost: {
-    enabled: false, // Disabled for testing — re-enable after review
-    maxViews: parseInt(process.env.BOOST_MAX_VIEWS) || 100,
+    enabled: true,
+    maxViews: parseInt(process.env.BOOST_MAX_VIEWS) || 20,
     minViews: parseInt(process.env.BOOST_MIN_VIEWS) || 50,
     minWatchSec: parseInt(process.env.BOOST_MIN_WATCH_SEC) || 30,
     maxWatchSec: parseInt(process.env.BOOST_MAX_WATCH_SEC) || 90,
