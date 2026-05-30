@@ -86,34 +86,16 @@ function loadTrendBank(country) {
  * 3. LLM + trend bank hybrid
  */
 async function generateQueries(country, gemini, trendBank) {
+  // Use LLM + trend bank hybrid (Method 3 only) — generate 5 diverse queries
+  const queries = await gemini.generateQueries(country, trendBank.keywords, 5);
   const allQueries = [];
 
-  // Method 1: Direct trend bank keywords
-  const bankQueries = trendBank.keywords.slice(0, 3).map(kw => `${kw} ${trendBank.suffix}`);
-  allQueries.push(...bankQueries);
-  logger.info(`Method 1 (trend bank): ${bankQueries.length} queries`);
-
-  // Method 2: LLM-generated
-  const llmQueries = await gemini.generateQueries(country, [], 3);
-  if (Array.isArray(llmQueries)) {
-    for (const q of llmQueries) {
+  if (Array.isArray(queries)) {
+    for (const q of queries) {
       const query = q.includes('#shorts') ? q : `${q} ${trendBank.suffix}`;
       if (!allQueries.includes(query)) allQueries.push(query);
     }
-    logger.info(`Method 2 (LLM): ${llmQueries.length} queries`);
-  }
-
-  // Pacing gap to avoid 429 rate limit
-  await new Promise(r => setTimeout(r, 3000));
-
-  // Method 3: LLM + trend bank hybrid
-  const hybridQueries = await gemini.generateQueries(country, trendBank.keywords, 3);
-  if (Array.isArray(hybridQueries)) {
-    for (const q of hybridQueries) {
-      const query = q.includes('#shorts') ? q : `${q} ${trendBank.suffix}`;
-      if (!allQueries.includes(query)) allQueries.push(query);
-    }
-    logger.info(`Method 3 (LLM+bank): ${hybridQueries.length} queries`);
+    logger.info(`LLM+bank queries: ${allQueries.length} queries`);
   }
 
   logger.success(`Total queries generated: ${allQueries.length}`);
@@ -130,10 +112,8 @@ async function generateQueries(country, gemini, trendBank) {
 async function searchYouTube(queries, targetCount = 15) {
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
-  // Collect results per-query in a map for interleaving
+  // Collect results per-query in a map for interleaving (no per-query cap)
   const perQueryResults = new Map();
-
-  const perQueryTarget = Math.max(1, Math.ceil(targetCount / queries.length));
 
   for (const query of queries) {
     logger.info(`Searching for: "${query}"`);
@@ -154,8 +134,6 @@ async function searchYouTube(queries, targetCount = 15) {
 
       const queryResults = [];
       for (const line of lines) {
-        if (queryResults.length >= perQueryTarget) break;
-
         try {
           const p = JSON.parse(line);
           if (p.id && !seen.has(p.id)) {
@@ -204,9 +182,19 @@ async function searchYouTube(queries, targetCount = 15) {
     }
   }
 
-  // Interleave results from all queries: take 1 from each query in round-robin
-  const allResults = [];
+  // Shuffle within each query's results for randomness, then interleave round-robin
   const queryList = Array.from(perQueryResults.keys());
+  for (const q of queryList) {
+    const results = perQueryResults.get(q);
+    // Fisher-Yates shuffle
+    for (let i = results.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [results[i], results[j]] = [results[j], results[i]];
+    }
+  }
+
+  // Interleave: take 1 from each query in round-robin
+  const allResults = [];
   let maxLen = 0;
   for (const q of queryList) maxLen = Math.max(maxLen, perQueryResults.get(q).length);
 

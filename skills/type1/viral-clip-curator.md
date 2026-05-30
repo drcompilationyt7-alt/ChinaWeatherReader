@@ -47,15 +47,15 @@ Examine these to determine actual country of origin:
 - Cultural elements (flags, landmarks, traditional items)
 
 ## 3. Length & Format Filters
-- **Ideal length:** 7–12 seconds (perfect for Shorts)
-- **Acceptable:** Up to 30 seconds
-- **Auto-reject:** Longer than 45 seconds
+- **Ideal length:** 7–30 seconds 
+- **Acceptable:** Up to 60 seconds
+- **Auto-reject:** Longer than 60 seconds
 
 ### AUTO-REJECT (Hard Rules)
 - "Talking head" videos (person talking directly to camera for entire video)
 - Explainers, podcasts, heavy dialogue
 - Educational content
-- Anything longer than 45 seconds
+- Anything longer than 60 seconds
 - Low resolution (below 480p)
 - Videos from channels with >500k subscribers (famous YouTubers)
 - Live streams
