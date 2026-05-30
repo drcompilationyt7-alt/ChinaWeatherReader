@@ -172,8 +172,6 @@ class GeminiService {
     let metricsBlock = '';
     if (engagementData) {
       const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
-      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
-      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
 
       metricsBlock = `
 ENGAGEMENT METRICS:
@@ -182,11 +180,7 @@ ENGAGEMENT METRICS:
 - Comments: ${engagementData.comments || 0}
 - Age in days: ${engagementData.ageInDays || 0}
 - Title: "${engagementData.title || 'Unknown'}"
-
-HARD METRIC COMPUTATION:
-- Velocity (views/day): ${velocity}
-- Like Ratio (likes/views×100): ${likeRatio}%  [Benchmark: >3% good, <1.5% bad]
-- Comment Density (comments/views×100): ${commentDensity}%  [Benchmark: >0.2% = high engagement]`;
+- Velocity (views/day): ${velocity}`;
 
       if (engagementData.topComments && engagementData.topComments.length > 0) {
         const commentLines = engagementData.topComments
@@ -196,24 +190,11 @@ HARD METRIC COMPUTATION:
       }
     }
 
-    const prompt = `WATCH this YouTube video and rank it for reposting on "Mr. WorldWideWebster" channel.
+    const prompt = `Rank this video for Mr. WorldWideWebster channel.
 
-Target country: ${country}${metricsBlock}
+Country: ${country}${metricsBlock}
 
-HYBRID EVALUATION FRAMEWORK:
-1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
-2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
-
-Carefully evaluate the actual video content:
-1. 3-Second Hook — does it grab attention in the first 3 seconds?
-2. Language independence — can it be understood without translation?
-3. Visual quality and entertainment value
-4. Watermark presence — can it be cropped out?
-5. Does the content match country ${country}?
-6. Would this perform well as a YouTube Short?
-
-Respond ONLY with valid JSON (no markdown):
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
+Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
 
     const contents = [{
       role: 'user',
@@ -338,8 +319,6 @@ Respond ONLY with valid JSON (no markdown):
     let metricsBlock = '';
     if (engagementData) {
       const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
-      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
-      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
 
       metricsBlock = `
 ENGAGEMENT METRICS:
@@ -348,11 +327,7 @@ ENGAGEMENT METRICS:
 - Comments: ${engagementData.comments || 0}
 - Age in days: ${engagementData.ageInDays || 0}
 - Title: "${engagementData.title || 'Unknown'}"
-
-HARD METRIC COMPUTATION:
-- Velocity (views/day): ${velocity}
-- Like Ratio (likes/views×100): ${likeRatio}%  [Benchmark: >3% good, <1.5% bad]
-- Comment Density (comments/views×100): ${commentDensity}%  [Benchmark: >0.2% = high engagement]`;
+- Velocity (views/day): ${velocity}`;
 
       if (engagementData.topComments && engagementData.topComments.length > 0) {
         const commentLines = engagementData.topComments
@@ -362,24 +337,11 @@ HARD METRIC COMPUTATION:
       }
     }
 
-    const prompt = `WATCH this video and rank it for reposting on "Mr. WorldWideWebster".
+    const prompt = `Rank this video for Mr. WorldWideWebster channel.
 
-Target country: ${country}${metricsBlock}
+Country: ${country}${metricsBlock}
 
-HYBRID EVALUATION FRAMEWORK:
-1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
-2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
-
-WATCH the video carefully and evaluate:
-1. 3-Second Hook
-2. Language independence
-3. Visual quality
-4. Watermark presence
-5. Country match: ${country}?
-6. YouTube Shorts potential?
-
-Respond ONLY with valid JSON:
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
+Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
 
     const contents = [{
       role: 'user',
@@ -402,7 +364,7 @@ Respond ONLY with valid JSON:
       if (newKey !== currentKey) {
         logger.warn(`Key rotated (${currentKey} → ${newKey}) — re-uploading video and retrying query`);
         // Delete old file
-        try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
+        try { await axios.delete(`${GEMINI_BASE}/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
         // Re-upload with new key
         const reUploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
         if (reUploaded) {
@@ -420,7 +382,7 @@ Respond ONLY with valid JSON:
     }
 
     // Cleanup
-    try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
+    try { await axios.delete(`${GEMINI_BASE}/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
 
     if (!response) { logger.warn('rankVideoFile: returned null'); return null; }
 

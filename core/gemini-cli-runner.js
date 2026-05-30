@@ -279,8 +279,6 @@ class GeminiCLIRunner {
     let metricsBlock = '';
     if (engagementData) {
       const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
-      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
-      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
 
       metricsBlock = `ENGAGEMENT METRICS:
 - Views: ${engagementData.views || 0}
@@ -288,11 +286,7 @@ class GeminiCLIRunner {
 - Comments: ${engagementData.comments || 0}
 - Age in days: ${engagementData.ageInDays || 0}
 - Title: "${engagementData.title || 'Unknown'}"
-
-HARD METRIC COMPUTATION:
-- Velocity (views/day): ${velocity}
-- Like Ratio (likes/views×100): ${likeRatio}%
-- Comment Density (comments/views×100): ${commentDensity}%`;
+- Velocity (views/day): ${velocity}`;
 
       if (engagementData.topComments && engagementData.topComments.length > 0) {
         metricsBlock += '\n\nTOP VIEWER COMMENTS:\n' +
@@ -300,24 +294,11 @@ HARD METRIC COMPUTATION:
       }
     }
 
-    const prompt = `Analyze the uploaded video file at ${uploadedFile.uri} and rank it for reposting on "Mr. WorldWideWebster" channel.
+    const prompt = `Rank the uploaded video at ${uploadedFile.uri} for Mr. WorldWideWebster.
 
-Target country: ${country}${metricsBlock}
+Country: ${country}${metricsBlock}
 
-HYBRID EVALUATION FRAMEWORK:
-1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
-2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
-
-WATCH the video carefully and evaluate:
-1. 3-Second Hook — does it grab attention in the first 3 seconds?
-2. Language independence — can it be understood without translation?
-3. Visual quality and entertainment value
-4. Watermark presence — can it be cropped out?
-5. Does the content match country ${country}?
-6. Would this perform well as a YouTube Short?
-
-Respond ONLY with valid JSON (no markdown):
-{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
+Follow the skill instructions. Return JSON.`;
 
     const result = await this.run(prompt, {
       timeout: 120000,
