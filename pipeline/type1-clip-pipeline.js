@@ -283,56 +283,100 @@ function filterCandidates(candidates) {
 }
 
 /**
- * Rank videos via Gemini YouTube URL analysis only (no File API fallback).
- * Full reasoning shown in logs. 15s delay between videos.
- * Key rotation handled internally by gemini-service.js.
+ * Rank a single video: try URL-based Gemini ranking, fall back to
+ * downloading 720p and using File API + CLI for visual ranking.
+ * Returns a valid ranking result or null (no result possible).
  */
-async function rankVideos(candidates, country, gemini, curatorSkill) {
+async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSkill, tmpDir) {
+  const ageInDays = candidate.upload_date
+    ? Math.max(1, Math.floor((Date.now() - new Date(
+        candidate.upload_date.substring(0, 4),
+        candidate.upload_date.substring(4, 6) - 1,
+        candidate.upload_date.substring(6, 8)
+      ).getTime()) / 86400000))
+    : 30;
+  const engagementData = {
+    views: candidate.view_count || 0,
+    likes: candidate.like_count || 0,
+    comments: candidate.comment_count || 0,
+    ageInDays,
+    title: candidate.title || 'YouTube video',
+    topComments: candidate.topComments || [],
+  };
+
+  const commentsLog = engagementData.topComments.length > 0
+    ? `, ${engagementData.topComments.length} top comments`
+    : '';
+  logger.info(`  Engagement: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old${commentsLog}`);
+
+  // Step 1: Try URL-based Gemini ranking
+  logger.info(`  Step 1 — URL-based ranking...`);
+  let result = await gemini.rankVideo(candidate.url, country, curatorSkill, engagementData);
+
+  // If URL ranking returned a valid result (APPROVED or REJECTED), use it
+  if (result !== null) {
+    return { result, candidate };
+  }
+
+  // Step 2: URL ranking failed (keys exhausted / error) — download 720p for File API + CLI
+  logger.info(`  Step 2 — URL ranking returned null, downloading 720p for visual ranking...`);
+  const dlPath = await downloadBestVideo(candidate, tmpDir);
+  if (!dlPath) {
+    logger.warn(`  Download failed — cannot rank this video`);
+    return null;
+  }
+
+  // Step 2a: Try Gemini File API upload
+  logger.info(`  Step 2a — Uploading to Gemini File API...`);
+  result = await gemini.rankVideoFile(dlPath, country, curatorSkill, engagementData);
+
+  // Step 2b: If File API also failed, try Gemini CLI
+  if (result === null && geminiCLI && geminiCLI.isAvailable()) {
+    logger.info(`  Step 2b — File API failed, trying Gemini CLI...`);
+    result = await geminiCLI.rankVideoFromPath(dlPath, country, curatorSkill, engagementData);
+  }
+
+  // Cleanup downloaded file
+  try { fs.unlinkSync(dlPath); } catch {}
+
+  if (result === null) {
+    logger.warn(`  All ranking methods failed for this video — skipping`);
+    return null;
+  }
+
+  return { result, candidate };
+}
+
+/**
+ * Rank videos via Gemini with per-video fallback chain:
+ * URL → 720p download → File API → CLI.
+ * No internal fallback — returns empty array if no videos were approved.
+ */
+async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, tmpDir) {
   const ranked = [];
 
-  // Rank top 15 — some will fail from API limits
+  // Rank top 15
   const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 15);
 
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
 
-    // Build engagement data from Pass 2 metadata
-    const ageInDays = candidate.upload_date
-      ? Math.max(1, Math.floor((Date.now() - new Date(
-          candidate.upload_date.substring(0, 4),
-          candidate.upload_date.substring(4, 6) - 1,
-          candidate.upload_date.substring(6, 8)
-        ).getTime()) / 86400000))
-      : 30;
-    const engagementData = {
-      views: candidate.view_count || 0,
-      likes: candidate.like_count || 0,
-      comments: candidate.comment_count || 0,
-      ageInDays,
-      title: candidate.title || 'YouTube video',
-      topComments: candidate.topComments || [],
-    };
+    const out = await rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSkill, tmpDir);
 
-    const commentsLog = engagementData.topComments.length > 0
-      ? `, ${engagementData.topComments.length} top comments`
-      : '';
-    logger.info(`  Engagement sent to Gemini: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old${commentsLog}`);
-    const result = await gemini.rankVideo(candidate.url, country, curatorSkill, engagementData);
-
-    if (result && result.verdict === 'APPROVED' && result.score >= 6) {
+    if (out === null) {
+      logger.warn(`  → No valid ranking obtained for this video`);
+    } else if (out.result.verdict === 'APPROVED' && out.result.score >= 6) {
       ranked.push({
-        ...candidate,
-        geminiScore: Math.min(10, Math.max(1, result.score)),
-        hookScore: result.hook_score || 5,
-        geminiCountry: result.country || country,
-        watermarkType: result.watermark_type,
-        reasoning: result.reasoning || '',
+        ...out.candidate,
+        geminiScore: Math.min(10, Math.max(1, out.result.score)),
+        hookScore: out.result.hook_score || 5,
+        geminiCountry: out.result.country || country,
+        watermarkType: out.result.watermark_type,
+        reasoning: out.result.reasoning || '',
       });
-      logger.success(`  ✅ Score: ${result.score}/10 — ${result.reasoning}`);
-    } else if (result) {
-      logger.info(`  ❌ Rejected (score: ${result.score}) — ${result.reasoning}`);
+      logger.success(`  ✅ Score: ${out.result.score}/10 — ${out.result.reasoning}`);
     } else {
-      logger.warn('  All keys exhausted — moving to next video');
+      logger.info(`  ❌ Rejected (score: ${out.result.score}) — ${out.result.reasoning}`);
     }
 
     // 10s delay between videos to avoid rate limits
@@ -341,12 +385,6 @@ async function rankVideos(candidates, country, gemini, curatorSkill) {
 
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
   logger.success(`Ranked: ${ranked.length} approved videos`);
-
-  if (ranked.length === 0) {
-    logger.warn('No videos approved — using highest-view fallback');
-    const shorts = sorted.filter(c => c.duration <= 60 && c.duration > 0);
-    if (shorts.length > 0) ranked.push({ ...shorts[0], geminiScore: 5, hookScore: 5, geminiCountry: country });
-  }
   return ranked;
 }
 
@@ -589,6 +627,7 @@ async function runType1Pipeline(options = {}) {
   logger.header(`TYPE 1 PIPELINE: ${country}`);
 
   const gemini = getGeminiService();
+  const geminiCLI = getGeminiCLI();
   const curatorSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'viral-clip-curator.md');
   const curatorSkill = fs.existsSync(curatorSkillPath) ? fs.readFileSync(curatorSkillPath, 'utf8') : null;
 
@@ -655,78 +694,70 @@ async function runType1Pipeline(options = {}) {
     }
   }
 
-  // ─── Phase 3: Gemini Ranking ───────────────────────────────────────
+  // ─── Phase 3: Gemini Ranking (with batch retry loop ×3) ───────────
+  // Each batch searches 10 new candidates, ranks them with per-video
+  // URL→720p download→File API→CLI fallback. null results don't count,
+  // only actual APPROVED/REJECTED responses from Gemini.
   logger.info('Phase 3: Gemini Ranking');
-  const ranked = await rankVideos(filtered, country, gemini, curatorSkill, tmpDir);
+  let ranked = [];
+  const MAX_BATCHES = 3;
 
-  if (ranked.length === 0) {
-    // Fallback: download video and rank via CLI with 720p preview
-    logger.warn('Gemini URL ranking failed — downloading 720p preview for CLI-based ranking');
-    const top3 = filtered.slice(0, 3);
-    const videoRanked = [];
+  for (let batch = 1; batch <= MAX_BATCHES; batch++) {
+    logger.header(`Ranking batch ${batch}/${MAX_BATCHES}`);
 
-    for (const cand of top3) {
-      logger.info(`Downloading 720p preview for: "${cand.title.substring(0, 50)}"`);
-
-      // Build engagement data for this candidate
-      const candAgeInDays = cand.upload_date
-        ? Math.max(1, Math.floor((Date.now() - new Date(
-            cand.upload_date.substring(0, 4),
-            cand.upload_date.substring(4, 6) - 1,
-            cand.upload_date.substring(6, 8)
-          ).getTime()) / 86400000))
-        : 30;
-      const candEngagementData = {
-        views: cand.view_count || 0,
-        likes: cand.like_count || 0,
-        comments: cand.comment_count || 0,
-        ageInDays: candAgeInDays,
-        title: cand.title || 'YouTube video',
-        topComments: cand.topComments || [],
-      };
-
-      const dlPath = await downloadBestVideo(cand, tmpDir);
-      if (!dlPath) continue;
-
-      // Upload video to Gemini File API and let it WATCH the video
-      logger.info(`Uploading to Gemini File API for visual ranking...`);
-      const result = await gemini.rankVideoFile(dlPath, country, curatorSkill, candEngagementData);
-
-      if (result && result.verdict === 'APPROVED' && result.score >= 5) {
-        videoRanked.push({
-          ...cand,
-          geminiScore: Math.min(10, Math.max(1, result.score)),
-          hookScore: result.hook_score || 5,
-          geminiCountry: result.country || country,
-          watermarkType: result.watermark_type,
-          reasoning: result.reasoning || '',
+    if (batch > 1) {
+      // Search a fresh batch of 10 candidates
+      logger.info(`Batch ${batch}: Searching for fresh candidates...`);
+      const newQueries = await generateQueries(country, gemini, trendBank);
+      if (newQueries.length === 0) {
+        logger.warn(`Batch ${batch}: No new queries generated — skipping`);
+        continue;
+      }
+      candidates = await searchYouTube(newQueries, 10);
+      filtered = filterCandidates(candidates);
+      if (filtered.length < 5) {
+        const fallbackGate = (candidates || []).filter(c => {
+          if (c.view_count < 2000) return false;
+          if (c.channel_follower_count > 5000000) return false;
+          if (c.duration > 120) return false;
+          return true;
         });
-        logger.success(`  Video rank: ${result.score}/10 — ${result.reasoning?.substring(0, 60) || ''}`);
-      } else if (result) {
-        logger.info(`  Rejected by video analysis: ${result.score || '?'}/10 — ${result.reasoning?.substring(0, 60) || ''}`);
-      } else {
-        logger.warn('  Video analysis returned null');
+        if (fallbackGate.length > 0) filtered = fallbackGate;
+      }
+      if (filtered.length < 2) {
+        logger.warn(`Batch ${batch}: Only ${filtered.length} candidates — not enough to rank`);
+        continue;
       }
 
-      // Cleanup downloaded file
-      try { fs.unlinkSync(dlPath); } catch {}
+      // Fetch top comments for new batch
+      const newCandsForComments = filtered.slice(0, Math.min(5, filtered.length));
+      for (const cand of newCandsForComments) {
+        cand.topComments = await fetchTopComments(cand.url, 3);
+      }
     }
 
-    if (videoRanked.length > 0) {
-      videoRanked.sort((a, b) => b.geminiScore - a.geminiScore);
-      ranked.push(videoRanked[0]);
-      logger.success(`Video-based winner: "${ranked[0].title.substring(0, 50)}" (score: ${ranked[0].geminiScore}/10)`);
+    // Rank this batch — each video gets URL→720p→File API→CLI fallback
+    ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
+
+    if (ranked.length > 0) {
+      logger.success(`Batch ${batch}: Found ${ranked.length} approved videos — using best`);
+      break;
+    }
+
+    logger.warn(`Batch ${batch}: All videos rejected or unrankable — trying next batch`);
+  }
+
+  // Ultimate fallback: highest-view from last batch
+  if (ranked.length === 0) {
+    logger.warn('All batches exhausted — using highest-view fallback');
+    const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
+    if (shorts.length > 0) {
+      const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0];
+      ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country });
+      logger.warn(`Fallback: highest-view video "${fb.title.substring(0, 50)}" (score: 5/10)`);
     } else {
-      // Ultimate fallback: highest view count
-      logger.warn('Video analysis failed for all — using highest-view as fallback');
-      const shorts = filtered.filter(c => c.duration <= 60 && c.duration > 0);
-      if (shorts.length > 0) {
-        const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0];
-        ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country });
-      } else {
-        logger.error('No fallback candidates — aborting');
-        return { success: false, error: 'No approved videos' };
-      }
+      logger.error('No fallback candidates — aborting');
+      return { success: false, error: 'No approved videos' };
     }
   }
 
@@ -817,39 +848,12 @@ async function runType1Pipeline(options = {}) {
     }
   }
 
-  // Gemini visual review (via REST API frames)
-  const qaFrames = extractFrames(finalPath, path.join(tmpDir, 'qa_final'), [3, Math.floor((bestVideo.duration || 30) / 2), Math.max(5, (bestVideo.duration || 30) - 3)]);
-  if (qaFrames.length > 0) {
-    const geminiQA = await geminiReview(qaFrames);
-    logger.info(`Gemini QA: ${geminiQA.score}/10 — ${geminiQA.recommendation}`);
+  // Gemini visual review (via CLI — sends full MP4 for analysis)
+  const geminiQA = await geminiReview(finalPath);
+  logger.info(`Gemini QA: ${geminiQA.score}/10 — ${geminiQA.recommendation}`);
 
-    if (geminiQA.recommendation === 'RENDER_AGAIN' && geminiQA.score < 5) {
-      logger.warn('Gemini QA recommends re-render, but proceeding with current output');
-    }
-  }
-
-  // ─── OpenRouter nano final review (non-directional, "are you sure?") ──
-  try {
-    const orQA = getOpenRouterQA();
-    const orDir = path.join(tmpDir, `qa_final_or`);
-    const orFrames = extractFrames(finalPath, orDir, [3, Math.floor((bestVideo.duration || 30) / 2), Math.max(5, (bestVideo.duration || 30) - 3)]);
-    if (orFrames.length > 0) {
-      const orResult = await orQA.finalReview(orFrames, country);
-      if (orResult) {
-        if (orResult.ready === false) {
-          logger.warn(`OpenRouter final review: NOT READY — ${(orResult.issues || []).join('; ')}`);
-        } else {
-          logger.success(`OpenRouter final review: ready to upload (score: ${orResult.score || '?'}/10)`);
-        }
-        if (orResult.notes) {
-          logger.info(`OpenRouter note: ${orResult.notes.substring(0, 150)}`);
-        }
-      }
-    }
-    try { fs.rmSync(orDir, { recursive: true, force: true }); } catch {}
-  } catch (orError) {
-    // Non-blocking
-    logger.warn(`OpenRouter final review error: ${orError.message.substring(0, 60)}`);
+  if (geminiQA.recommendation === 'RENDER_AGAIN' && geminiQA.score < 5) {
+    logger.warn('Gemini QA recommends re-render, but proceeding with current output');
   }
 
   // ─── Phase 9: Generate Metadata ────────────────────────────────────

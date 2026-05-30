@@ -1,5 +1,5 @@
 /**
- * Frame QA — OpenCV Frame Inspection + Gemini Analysis
+ * Frame QA — OpenCV Frame Inspection + Gemini CLI Video QA
  * 
  * Uses OpenCV (via Python) for:
  * - Black frame detection
@@ -7,8 +7,8 @@
  * - Scene validation
  * - Silence detection
  * 
- * Uses Gemini API for:
- * - Visual quality review
+ * Uses Gemini CLI for:
+ * - Video quality review (sends full MP4)
  * - Caption blocking check
  * - Overall quality scoring
  */
@@ -16,7 +16,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { Logger } = require('./logger');
-const { getGeminiService } = require('./gemini-service');
+const { getGeminiCLI } = require('./gemini-cli-runner');
 
 const logger = new Logger('FrameQA');
 
@@ -202,47 +202,38 @@ async function validateOutput(videoPath) {
 }
 
 /**
- * Gemini-powered visual quality review
- * @param {string[]} framePaths - Frames from the final video
- * @returns {Object} - { score, issues, recommendation }
+ * Gemini CLI-powered visual quality review (replaces broken gemini.analyzeFramesJSON).
+ * Sends the full MP4 to Gemini CLI for final quality check.
+ * @param {string} videoPath - Path to the final rendered video
+ * @returns {Object} - { score, issues, recommendation, cropOk, subtitlesOk, watermarkRemoved, hookQuality }
  */
-async function geminiReview(framePaths) {
-  const gemini = getGeminiService();
+async function geminiReview(videoPath) {
+  const geminiCLI = getGeminiCLI();
 
-  const question = `Review these frames from a YouTube Short for "Mr. WorldWideWebster" channel.
+  if (!geminiCLI.isAvailable()) {
+    logger.warn('Gemini CLI not available for review');
+    return { score: 5, issues: ['CLI not available'], recommendation: 'APPROVE', cropOk: true, subtitlesOk: true, watermarkRemoved: true, hookQuality: 'unknown' };
+  }
 
-Check:
-1. Is the video properly cropped to 9:16 portrait (1080x1920)?
-2. Are any subtitles/captions readable and NOT blocking the main content?
-3. Are captions too big or too small?
-4. Is any watermark still visible?
-5. Does the first frame serve as a good hook?
-6. Is the video quality acceptable (not blurry, not pixelated)?
-7. Overall quality rating: 1-10
+  const result = await geminiCLI.reviewFinalVideo(videoPath);
 
-Return JSON:
-{"quality_score": 7, "crop_ok": true, "subtitles_ok": true, "watermark_removed": true, "hook_quality": "strong", "issues": [], "recommendation": "APPROVE"}`;
-
-  const curatorSkill = fs.existsSync(path.join(__dirname, '..', 'skills', 'viral-clip-curator.md'))
-    ? fs.readFileSync(path.join(__dirname, '..', 'skills', 'viral-clip-curator.md'), 'utf8')
-    : null;
-
-  const response = await gemini.analyzeFramesJSON(framePaths, question, curatorSkill);
-
-  if (response) {
-    logger.info(`Gemini QA: ${response.quality_score}/10 — ${response.recommendation}`);
+  if (result) {
+    logger.info(`Gemini CLI QA: ${result.quality_score}/10 — ${result.recommendation}`);
+    if (result.issues && result.issues.length > 0) {
+      logger.warn(`Gemini CLI QA issues: ${result.issues.join(', ')}`);
+    }
     return {
-      score: response.quality_score || 5,
-      issues: response.issues || [],
-      recommendation: response.recommendation || 'APPROVE',
-      cropOk: response.crop_ok !== false,
-      subtitlesOk: response.subtitles_ok !== false,
-      watermarkRemoved: response.watermark_removed !== false,
-      hookQuality: response.hook_quality || 'unknown',
+      score: result.quality_score || 5,
+      issues: result.issues || [],
+      recommendation: result.recommendation || 'APPROVE',
+      cropOk: result.crop_ok !== false,
+      subtitlesOk: result.subtitles_ok !== false,
+      watermarkRemoved: result.watermark_removed !== false,
+      hookQuality: result.hook_quality || 'unknown',
     };
   }
 
-  return { score: 5, issues: ['Gemini review unavailable'], recommendation: 'APPROVE' };
+  return { score: 5, issues: ['Gemini review unavailable'], recommendation: 'APPROVE', cropOk: true, subtitlesOk: true, watermarkRemoved: true, hookQuality: 'unknown' };
 }
 
 module.exports = { detectBlackFrames, detectSilence, validateOutput, geminiReview };

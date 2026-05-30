@@ -39,8 +39,8 @@ Provide exact instructions for dynamic on-screen text.
 - **Animation**: Slight bounce or pop-in effect (ASS subtitle style)
 
 ### When to Add Captions
-- **Has talking/speech**: YES — add TikTok-style captions
-- **Non-English speech**: YES — captions with English translation
+- **Has talking/speech**: YES — add TikTok-style captions (yellow/black ASS subtitles)
+- **Non-English speech**: YES — captions with English translation using same TikTok-style ASS format (yellow text, black stroke, center-bottom)
 - **Dance/music only (no speech)**: NO — no captions needed
 - **Background music + occasional speech**: YES — caption the speech parts only
 

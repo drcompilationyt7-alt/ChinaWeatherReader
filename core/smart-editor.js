@@ -126,6 +126,39 @@ function generateTikTokCaptions(transcript, words, totalDuration) {
 }
 
 /**
+ * Generate TikTok-style ASS captions for translated text (non-English → English)
+ * Same TikTok styling as original speech captions.
+ */
+function generateTranslatedTikTokCaptions(translatedText, totalDuration) {
+  if (!translatedText || translatedText.length < 3) return null;
+
+  const words = translatedText.split(/\s+/).filter(w => w.length > 0);
+  const blocks = [];
+  let i = 0;
+  while (i < words.length) {
+    if (i + 1 < words.length && words[i].length + words[i + 1].length < 14) {
+      blocks.push(words[i] + ' ' + words[i + 1]);
+      i += 2;
+    } else {
+      blocks.push(words[i]);
+      i += 1;
+    }
+  }
+
+  const timePerBlock = totalDuration / blocks.length;
+  let assContent = buildAssHeader();
+  let blockStart = 0;
+
+  for (const block of blocks) {
+    const blockEnd = Math.min(totalDuration, blockStart + timePerBlock);
+    assContent += `Dialogue: 0,${formatAssTime(blockStart)},${formatAssTime(blockEnd)},TikTok,${block.replace(/"/g, '\\"')}\n`;
+    blockStart = blockEnd;
+  }
+
+  return assContent;
+}
+
+/**
  * Generate timed captions from whisper word timestamps
  */
 function generateTimedCaptions(words, totalDuration) {
@@ -188,50 +221,6 @@ function formatAssTime(seconds) {
   const s = seconds % 60;
   const cs = Math.floor((s - Math.floor(s)) * 100);
   return `${h}:${String(m).padStart(2, '0')}:${String(Math.floor(s)).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
-}
-
-/**
- * Generate SRT subtitle content for translated text
- */
-function generateTranslatedSRT(transcript, translatedText, totalDuration) {
-  if (!translatedText || translatedText.length < 3) return null;
-
-  const words = translatedText.split(/\s+/).filter(w => w.length > 0);
-  const blocks = [];
-  let i = 0;
-  while (i < words.length) {
-    if (i + 1 < words.length && words[i].length + words[i + 1].length < 14) {
-      blocks.push(words[i] + ' ' + words[i + 1]);
-      i += 2;
-    } else {
-      blocks.push(words[i]);
-      i += 1;
-    }
-  }
-
-  const timePerBlock = totalDuration / blocks.length;
-  let srt = '';
-  let blockStart = 0;
-  let index = 1;
-
-  for (const block of blocks) {
-    const blockEnd = Math.min(totalDuration, blockStart + timePerBlock);
-    srt += `${index}\n`;
-    srt += `${formatSrtTime(blockStart)} --> ${formatSrtTime(blockEnd)}\n`;
-    srt += `${block}\n\n`;
-    blockStart = blockEnd;
-    index++;
-  }
-
-  return srt;
-}
-
-function formatSrtTime(seconds) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
 }
 
 /**
@@ -325,9 +314,9 @@ async function smartEdit(videoPath, outputPath, options = {}) {
     let subPath = null;
 
     if (needsTranslation && translatedText) {
-      // Use translated SRT for non-English speech
-      subContent = generateTranslatedSRT(dialogue.transcript, translatedText, duration);
-      subPath = path.join(tmpDir, `captions_${Date.now()}.srt`);
+      // Use TikTok-style ASS for translated captions (same style as English)
+      subContent = generateTranslatedTikTokCaptions(translatedText, duration);
+      subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
     } else if (editType === 'tiktok_captions' && dialogue.transcript) {
       // Use TikTok-style ASS for English speech
       subContent = generateTikTokCaptions(dialogue.transcript, dialogue.words, duration);
@@ -368,62 +357,107 @@ async function smartEdit(videoPath, outputPath, options = {}) {
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
       logger.success(`Edited: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(1)}MB`);
 
-      // Step 5: QA review with Gemini CLI
-      let qaFrames = null;
-      if (geminiCLI.isAvailable()) {
-        qaFrames = extractFrames(outputPath, path.join(tmpDir, `qa_gemini_${Date.now()}`), framePositions);
-        if (qaFrames.length > 0) {
-          const review = await geminiCLI.qualityReview(qaFrames);
-          if (review) {
-            try {
-              const jsonMatch = review.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                const qa = JSON.parse(jsonMatch[0]);
-                logger.info(`Gemini CLI QA: ${qa.quality_score}/10 — ${qa.recommendation}`);
+      // Step 5: QA feedback loop using Gemini CLI with original vs edited MP4 (max 3 iterations)
+      let currentOutput = outputPath;
+      let finalHookText = editPlan.suggested_hook_text || null;
+      const MAX_EDIT_QA_ITERATIONS = 3;
 
-                if (qa.recommendation === 'RENDER_AGAIN' && qa.issues?.length > 0) {
-                  logger.warn(`Gemini CLI QA issues: ${qa.issues.join(', ')}`);
-                }
-              }
-            } catch {}
-          }
-          try { fs.rmSync(path.join(tmpDir, `qa_gemini_${Date.now()}`), { recursive: true, force: true }); } catch {}
+      for (let qaIter = 1; qaIter <= MAX_EDIT_QA_ITERATIONS; qaIter++) {
+        logger.info(`--- Edit QA iteration ${qaIter}/${MAX_EDIT_QA_ITERATIONS} ---`);
+
+        if (!geminiCLI.isAvailable()) {
+          logger.info('Gemini CLI not available — skipping QA');
+          break;
         }
+
+        // If not first iteration, re-path the output
+        const qaOutputPath = qaIter > 1
+          ? path.join(tmpDir, `edited_qa_${Date.now()}_${qaIter}.mp4`)
+          : currentOutput;
+
+        // Send original (uncropped, unedited videoPath) + current edited to CLI for comparison
+        const qaResult = await geminiCLI.compareAndReviewQA(videoPath, qaOutputPath, 'edit', country);
+
+        if (!qaResult) {
+          logger.warn('  Edit QA returned null — proceeding with current version');
+          break;
+        }
+
+        logger.info(`  Edit QA verdict: ${qaResult.verdict} (score: ${qaResult.score}/10)`);
+
+        if (qaResult.verdict === 'APPROVE') {
+          logger.success(`  ✅ Edit approved at iteration ${qaIter}`);
+          currentOutput = qaOutputPath;
+          break;
+        }
+
+        if (qaResult.verdict === 'IMPROVE' && qaIter < MAX_EDIT_QA_ITERATIONS && qaResult.improvement_suggestions) {
+          logger.warn(`  Improvement needed: ${qaResult.improvement_suggestions.substring(0, 200)}`);
+
+          // Apply improvements by adjusting the ffmpeg command based on suggestions
+          let adjZoom = zoomPercent;
+          let adjContrast = 1.05;
+          let adjSaturation = 1.1;
+          let adjVolume = 1.5;
+
+          // Parse suggestions for adjustments (if any)
+          const sug = (qaResult.improvement_suggestions || '').toLowerCase();
+          if (sug.includes('zoom') || sug.includes('crop')) adjZoom = 108; // Slightly more zoom
+          if (sug.includes('bright') || sug.includes('contrast')) adjContrast = 1.1;
+          if (sug.includes('saturat')) adjSaturation = 1.15;
+          if (sug.includes('volume') || sug.includes('loud')) adjVolume = 2.0;
+
+          const adjZw = Math.floor(1080 * (adjZoom / 100) / 2) * 2;
+          const adjZh = Math.floor(1920 * (adjZoom / 100) / 2) * 2;
+
+          const adjVf = [
+            `scale=${adjZw}:${adjZh}:flags=lanczos,crop=1080:1920:(iw-1080)/2:(ih-1920)/2`,
+            `eq=contrast=${adjContrast.toFixed(2)}:saturation=${adjSaturation.toFixed(2)}`
+          ];
+          if (subContent && subPath && fs.existsSync(subPath)) {
+            const escPath = subPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''");
+            adjVf.push(subPath.endsWith('.ass') ? `ass='${escPath}'` : `subtitles='${escPath}'`);
+          }
+          const adjAf = adjVolume !== 1.5 ? `volume=${adjVolume.toFixed(1)}` : 'volume=1.5';
+
+          const adjCmd = `ffmpeg -y -i "${videoPath}" ` +
+            `-vf "${adjVf.join(',')}" -af "${adjAf}" ` +
+            `-c:v libx264 -preset fast -crf 20 -c:a aac -b:a 128k ` +
+            `-pix_fmt yuv420p -shortest "${qaOutputPath}" 2>/dev/null`;
+
+          logger.info(`  Re-rendering with adjustments...`);
+          try {
+            execSync(adjCmd, { timeout: 180000, maxBuffer: 50 * 1024 * 1024 });
+            if (fs.existsSync(qaOutputPath) && fs.statSync(qaOutputPath).size > 100000) {
+              logger.success(`  Re-rendered: ${(fs.statSync(qaOutputPath).size / 1024 / 1024).toFixed(1)}MB`);
+              currentOutput = qaOutputPath;
+              continue; // Re-QA in next iteration
+            }
+          } catch (reRenderError) {
+            logger.warn(`  Re-render failed: ${reRenderError.message.substring(0, 60)}`);
+            break;
+          }
+        }
+
+        // REJECT or can't improve — use current version
+        if (qaResult.verdict === 'REJECT') {
+          logger.warn(`  Edit REJECTED — using current version anyway`);
+        }
+        break; // Only continue if IMPROVE + re-render + not last iteration
       }
 
-      // ─── Step 5b: OpenRouter nano QA (non-directional second opinion) ─────
-      try {
-        const qa2 = getOpenRouterQA();
-        const qaDir2 = path.join(tmpDir, `qa_openrouter_${Date.now()}`);
-        const orFrames = extractFrames(outputPath, qaDir2, framePositions);
-        if (orFrames.length > 0) {
-          const qaResult = await qa2.checkEdit(orFrames, editType, country);
-          if (qaResult) {
-            if (qaResult.yes === false || (qaResult.issues && qaResult.issues.length > 0)) {
-              logger.warn(`OpenRouter QA flags edit issues: ${(qaResult.issues || ['Unknown']).join('; ')}`);
-            } else {
-              logger.success(`OpenRouter QA: edit looks good`);
-            }
-            if (qaResult.notes) {
-              logger.info(`OpenRouter QA note: ${qaResult.notes.substring(0, 120)}`);
-            }
-          }
-        }
-        try { fs.rmSync(qaDir2, { recursive: true, force: true }); } catch {}
-      } catch (qaError) {
-        // QA is non-blocking
-        logger.warn(`OpenRouter QA error: ${qaError.message.substring(0, 60)}`);
-      }
-
-      // Cleanup edit frames
+      // Cleanup temp files
       try { fs.rmSync(frameDir, { recursive: true, force: true }); } catch {}
+      if (currentOutput !== outputPath) {
+        try { fs.copyFileSync(currentOutput, outputPath); } catch {}
+      }
 
       return {
         success: true,
         outputPath,
         hasCaptions: needsCaptions,
         editType,
-        hookText: editPlan.suggested_hook_text || null,
+        hookText: finalHookText,
       };
     }
   } catch (e) {
@@ -439,4 +473,4 @@ async function smartEdit(videoPath, outputPath, options = {}) {
   return { success: false, outputPath: null };
 }
 
-module.exports = { smartEdit, detectDialogue, generateTikTokCaptions, generateTranslatedSRT };
+module.exports = { smartEdit, detectDialogue, generateTikTokCaptions, generateTranslatedTikTokCaptions };

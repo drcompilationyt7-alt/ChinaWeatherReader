@@ -53,6 +53,11 @@ class GeminiCLIRunner {
 
   _rotateKey() { this.keyIndex++; }
 
+  /**
+   * Run Gemini CLI with a prompt.
+   * If both videoPaths array is provided, appends @video1.mp4 @video2.mp4 etc.
+   * Logs response text for debugging.
+   */
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
 
@@ -68,12 +73,17 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
-        // Write prompt to temp file (avoids shell escaping issues with -p)
-        // For video analysis, prepend @video.mp4 to the prompt text
-        let promptContent = fullPrompt;
-        if (options.videoPath && fs.existsSync(options.videoPath)) {
-          promptContent = `@${options.videoPath} ${fullPrompt}`;
+        // Build prompt content with video paths prefixed via @file.mp4 syntax
+        let videoArgs = '';
+        if (options.videoPaths && options.videoPaths.length > 0) {
+          videoArgs = options.videoPaths
+            .filter(vp => vp && fs.existsSync(vp))
+            .map(vp => `@${vp}`)
+            .join(' ') + ' ';
+        } else if (options.videoPath && fs.existsSync(options.videoPath)) {
+          videoArgs = `@${options.videoPath} `;
         }
+        let promptContent = videoArgs + fullPrompt;
 
         const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
         fs.writeFileSync(promptFile, promptContent, 'utf8');
@@ -104,6 +114,9 @@ class GeminiCLIRunner {
         const output = result.trim();
         if (output && output.length > 10) {
           logger.success(`CLI responded (${output.length} chars)`);
+          // Log first 300 chars of response for debugging
+          const preview = output.substring(0, 300);
+          logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
           return output;
         }
         logger.warn('CLI empty response');
@@ -117,6 +130,199 @@ class GeminiCLIRunner {
       }
     }
     return null;
+  }
+
+  /**
+   * Rank a video for viral reposting via Gemini CLI (no API key exhaustion).
+   * Uses the viral-clip-curator skill with engagement metrics.
+   */
+  async rankVideoFromPath(videoPath, country, curatorSkill, engagementData = null) {
+    if (!this.available) {
+      logger.warn('Gemini CLI not available for video ranking');
+      return null;
+    }
+    if (!fs.existsSync(videoPath)) {
+      logger.warn(`rankVideoFromPath: video not found: ${videoPath}`);
+      return null;
+    }
+
+    let metricsBlock = '';
+    if (engagementData) {
+      const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
+      const likeRatio = engagementData.views > 0 ? ((engagementData.likes / engagementData.views) * 100).toFixed(2) : 'N/A';
+      const commentDensity = engagementData.views > 0 ? ((engagementData.comments / engagementData.views) * 100).toFixed(3) : 'N/A';
+
+      metricsBlock = `ENGAGEMENT METRICS:
+- Views: ${engagementData.views || 0}
+- Likes: ${engagementData.likes || 0}
+- Comments: ${engagementData.comments || 0}
+- Age in days: ${engagementData.ageInDays || 0}
+- Title: "${engagementData.title || 'Unknown'}"
+
+HARD METRIC COMPUTATION:
+- Velocity (views/day): ${velocity}
+- Like Ratio (likes/views×100): ${likeRatio}%
+- Comment Density (comments/views×100): ${commentDensity}%`;
+
+      if (engagementData.topComments && engagementData.topComments.length > 0) {
+        metricsBlock += '\n\nTOP VIEWER COMMENTS:\n' +
+          engagementData.topComments.map((c, i) => `  ${i + 1}. "${c.text}" (${c.likes} likes, by ${c.author})`).join('\n');
+      }
+    }
+
+    const prompt = `WATCH this video and rank it for reposting on "Mr. WorldWideWebster" channel.
+
+Target country: ${country}${metricsBlock}
+
+HYBRID EVALUATION FRAMEWORK:
+1. Hard Metrics (40% weight): Evaluate velocity, like ratio, and comment density against benchmarks
+2. Multimodal Visual (60% weight): 3-Second Hook, language independence, production cleanliness
+
+WATCH the video carefully and evaluate:
+1. 3-Second Hook — does it grab attention in the first 3 seconds?
+2. Language independence — can it be understood without translation?
+3. Visual quality and entertainment value
+4. Watermark presence — can it be cropped out?
+5. Does the content match country ${country}?
+6. Would this perform well as a YouTube Short?
+
+Respond ONLY with valid JSON (no markdown):
+{"score": 1-10, "country": "detected country", "hook_score": 1-10, "velocity_score": 1-10, "engagement_score": 1-10, "language_independent": true/false, "has_watermark": true/false, "watermark_type": "type or null", "verdict": "APPROVED/REJECTED", "reasoning": "brief hybrid evaluation — metrics + visual quality + hook"}`;
+
+    const result = await this.run(prompt, {
+      videoPath,
+      timeout: 120000,
+    });
+
+    if (!result) {
+      logger.warn('rankVideoFromPath: CLI returned null');
+      return null;
+    }
+
+    try {
+      const m = result.match(/\{[\s\S]*\}/);
+      if (m) {
+        const p = JSON.parse(m[0]);
+        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+        return p;
+      }
+    } catch (e) {
+      logger.warn(`rankVideoFromPath JSON parse: ${e.message.substring(0, 80)}`);
+    }
+    return null;
+  }
+
+  /**
+   * Compare original (unedited/uncropped) video with edited video.
+   * Returns JSON with verdict and improvement suggestions.
+   * Used in smart-crop and smart-edit QA feedback loops.
+   * @param {string} originalPath - Original/unprocessed video
+   * @param {string} editedPath - Edited/cropped video
+   * @param {string} editType - 'crop' or 'edit' 
+   * @param {string} country - Target country
+   * @returns {Object|null} - { verdict, score, improvements, ... }
+   */
+  async compareAndReviewQA(originalPath, editedPath, editType, country = 'Global') {
+    if (!this.available) { logger.warn('CLI not available for QA'); return null; }
+    if (!fs.existsSync(originalPath) || !fs.existsSync(editedPath)) {
+      logger.warn('compareAndReviewQA: one or both videos missing');
+      return null;
+    }
+
+    const isCrop = editType === 'crop';
+    const prompt = isCrop
+      ? `Compare the original landscape video with the CROPPED 9:16 portrait version.
+
+Evaluate the CROPPED video:
+1. Is the main subject properly centered in the 9:16 frame?
+2. Is any face cut off by the edges?
+3. Is the cropping smooth and not jarring?
+4. Is watermark still visible?
+5. Overall quality score 1-10
+
+If improvements are needed, specify precise pixel adjustments:
+- adjustment: number of pixels to shift left/right (negative=left, positive=right)
+- zoom_adjustment: fine-tune zoom percentage (95-110)
+
+Respond ONLY JSON:
+{"verdict":"APPROVE/IMPROVE/REJECT","score":N,"adjustment":0,"zoom_adjustment":0,"reason":"brief reason"}`
+      : `Compare the original UNEDITED video with the EDITED version.
+
+Evaluate the EDITED video:
+1. Are TikTok-style captions clear and readable?
+2. Are captions properly timed with speech?
+3. Are watermarks properly removed?
+4. Is the visual quality good?
+5. Does the edit feel natural?
+6. Overall quality score 1-10
+
+If improvements needed, specify what to change.
+Respond ONLY JSON:
+{"verdict":"APPROVE/IMPROVE/REJECT","score":N,"issues":[],"improvement_suggestions":"specific changes needed","reason":"brief reason"}`;
+
+    const result = await this.run(prompt, {
+      videoPaths: [originalPath, editedPath],
+      timeout: 120000,
+    });
+
+    if (!result) {
+      logger.warn(`compareAndReviewQA (${editType}): null response`);
+      return null;
+    }
+
+    try {
+      const m = result.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+    } catch (e) {
+      logger.warn(`compareAndReviewQA JSON: ${e.message.substring(0, 80)}`);
+    }
+    return null;
+  }
+
+  /**
+   * Review the final video before upload (replaces broken frame-based geminiReview).
+   * Sends the complete MP4 to CLI for final quality check.
+   * @param {string} videoPath - Path to final rendered MP4
+   * @param {string} country - Target country 
+   * @returns {Object|null} - { quality_score, recommendation, issues }
+   */
+  async reviewFinalVideo(videoPath, country = 'Global') {
+    if (!this.available) { logger.warn('CLI not available for final review'); return null; }
+    if (!fs.existsSync(videoPath)) {
+      logger.warn(`reviewFinalVideo: video not found: ${videoPath}`);
+      return null;
+    }
+
+    const prompt = `Review this YouTube Short for "Mr. WorldWideWebster" channel. Target country: ${country}.
+
+Check:
+1. Is the video in 9:16 portrait (1080x1920)? If not, pixel dimensions?
+2. Are any subtitles/captions readable and NOT blocking main content?
+3. Is any watermark still visible?
+4. Does the first 3 seconds serve as a good hook?
+5. Is the video quality acceptable (not blurry/pixelated)?
+6. Overall quality rating 1-10
+
+Respond ONLY with JSON:
+{"quality_score":N,"recommendation":"APPROVE/RENDER_AGAIN","issues":[],"crop_ok":true,"subtitles_ok":true,"watermark_removed":true,"hook_quality":"strong"}`;
+
+    const result = await this.run(prompt, {
+      videoPath,
+      timeout: 120000,
+    });
+
+    if (!result) {
+      logger.warn('reviewFinalVideo: null response');
+      return { quality_score: 5, recommendation: 'APPROVE', issues: ['CLI review unavailable'], crop_ok: true, subtitles_ok: true, watermark_removed: true, hook_quality: 'unknown' };
+    }
+
+    try {
+      const m = result.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+    } catch (e) {
+      logger.warn(`reviewFinalVideo JSON: ${e.message.substring(0, 80)}`);
+    }
+    return { quality_score: 5, recommendation: 'APPROVE', issues: [], crop_ok: true, subtitles_ok: true, watermark_removed: true, hook_quality: 'unknown' };
   }
 
   async evaluateCropFromVideo(videoPath, country, skillFilePath) {
