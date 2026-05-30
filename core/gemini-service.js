@@ -257,101 +257,94 @@ Respond ONLY with valid JSON (no markdown):
 
     const fileSize = fs.statSync(videoPath).size;
     const fileName = path.basename(videoPath);
-    logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
+    const fileBuffer = fs.readFileSync(videoPath);
 
-    const key = this._getKey();
-    if (!key) { logger.warn('No API keys for upload'); return null; }
+    // Helper: upload video with the current key and return the uploaded file object
+    async function uploadWithCurrentKey(displayName, buffer, size) {
+      logger.info(`Uploading ${displayName} (${(size / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
+      const currentKey = this._getKey();
+      if (!currentKey) { logger.warn('No API keys for upload'); return null; }
 
-    let uploadedFile;
-    try {
-      const fileBuffer = fs.readFileSync(videoPath);
-
-      // Step 1: Start resumable upload
-      const startResp = await axios.post(
-        `${GEMINI_UPLOAD}/files?key=${key}`,
-        { file: { displayName: fileName } },
-        {
-          headers: {
-            'X-Goog-Upload-Protocol': 'resumable',
-            'X-Goog-Upload-Command': 'start',
-            'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
-            'X-Goog-Upload-Header-Content-Type': 'video/mp4',
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000,
-        }
-      );
-
-      const uploadUrl = startResp.headers['x-goog-upload-url'];
-      if (!uploadUrl) {
-        logger.warn('No upload URL returned from start');
-        return null;
-      }
-
-      // Step 2: Upload raw binary
-      const uploadResp = await axios.put(
-        uploadUrl,
-        fileBuffer,
-        {
-          headers: {
-            'Content-Type': 'video/mp4',
-            'Content-Length': fileSize.toString(),
-            'X-Goog-Upload-Command': 'upload, finalize',
-            'X-Goog-Upload-Offset': '0'
-          },
-          timeout: 300000,
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-          transformRequest: [(data) => data],
-          transformResponse: [(data) => data],
-        }
-      );
-
-      // Fix: Manually parse the raw buffer response into JSON to extract the file name
-      let responseData = uploadResp.data;
       try {
-        if (typeof responseData === 'string' || Buffer.isBuffer(responseData)) {
-          responseData = JSON.parse(responseData.toString());
-        }
-      } catch (e) {}
+        const startResp = await axios.post(
+          `${GEMINI_UPLOAD}/files?key=${currentKey}`,
+          { file: { displayName } },
+          {
+            headers: {
+              'X-Goog-Upload-Protocol': 'resumable',
+              'X-Goog-Upload-Command': 'start',
+              'X-Goog-Upload-Header-Content-Length': size.toString(),
+              'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+              'Content-Type': 'application/json',
+            },
+            timeout: 30000,
+          }
+        );
 
-      uploadedFile = responseData?.file || responseData;
+        const uploadUrl = startResp.headers['x-goog-upload-url'];
+        if (!uploadUrl) { logger.warn('No upload URL'); return null; }
 
-      if (!uploadedFile || !uploadedFile.name) {
-        const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
-        if (fileUri) {
-          uploadedFile = { name: fileUri, state: 'PROCESSING' };
-        } else {
-          logger.warn('File upload response missing file name');
-          return null;
-        }
-      }
-      logger.info(`File uploaded: ${uploadedFile.name} (state: ${uploadedFile.state})`);
+        const uploadResp = await axios.put(
+          uploadUrl, buffer,
+          {
+            headers: {
+              'Content-Type': 'video/mp4',
+              'Content-Length': size.toString(),
+              'X-Goog-Upload-Command': 'upload, finalize',
+              'X-Goog-Upload-Offset': '0',
+            },
+            timeout: 300000,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            transformRequest: [(data) => data],
+            transformResponse: [(data) => data],
+          }
+        );
 
-      // Step 3: Poll until processing completes
-      let waitCount = 0;
-      while (uploadedFile.state === 'PROCESSING' || uploadedFile.state === 'UPLOADING' || uploadedFile.state === 'QUEUED') {
-        waitCount++;
-        if (waitCount > 60) { logger.warn('File processing timed out'); break; }
-        await new Promise(r => setTimeout(r, 5000));
+        // Parse raw buffer response to JSON
+        let respData = uploadResp.data;
         try {
-          const statusResp = await axios.get(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 15000 });
-          uploadedFile = statusResp.data?.file || statusResp.data;
-        } catch { logger.warn('File status check failed'); break; }
-      }
+          if (typeof respData === 'string' || Buffer.isBuffer(respData)) {
+            respData = JSON.parse(respData.toString());
+          }
+        } catch (e) {}
 
-      if (uploadedFile.state === 'FAILED') {
-        logger.warn(`File processing failed: ${uploadedFile.error?.message || ''}`);
+        let uf = respData?.file || respData;
+        if (!uf || !uf.name) {
+          const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
+          if (fileUri) uf = { name: fileUri, state: 'PROCESSING' };
+          else { logger.warn('No file name in response'); return null; }
+        }
+
+        // Poll until ready
+        logger.info(`File uploaded: ${uf.name} (state: ${uf.state})`);
+        let waitCount = 0;
+        while (uf.state === 'PROCESSING' || uf.state === 'UPLOADING' || uf.state === 'QUEUED') {
+          waitCount++;
+          if (waitCount > 60) { logger.warn('File processing timed out'); break; }
+          await new Promise(r => setTimeout(r, 5000));
+          try {
+            const statusResp = await axios.get(`${GEMINI_BASE}/files/${uf.name}?key=${currentKey}`, { timeout: 15000 });
+            uf = statusResp.data?.file || statusResp.data;
+          } catch { logger.warn('File status check failed'); break; }
+        }
+
+        if (uf.state === 'FAILED') { logger.warn(`File failed: ${uf.error?.message || ''}`); return null; }
+        logger.success(`File ready: ${uf.name} (${uf.state})`);
+        return { file: uf, key: currentKey };
+      } catch (e) {
+        logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
+        if (e.response?.data) logger.warn(`Upload response: ${JSON.stringify(e.response.data).substring(0, 200)}`);
         return null;
       }
-      logger.success(`File ready: ${uploadedFile.name} (${uploadedFile.state})`);
-    } catch (e) {
-      logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
-      if (e.response?.data) logger.warn(`Upload response: ${JSON.stringify(e.response.data).substring(0, 200)}`);
-      return null;
     }
 
-    if (!uploadedFile || !uploadedFile.name) return null;
+    // Check if key changed — helper to compare current key vs upload key
+    const uploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
+    if (!uploaded) return null;
+
+    let currentKey = uploaded.key;
+    let uploadedFile = uploaded.file;
 
     let metricsBlock = '';
     if (engagementData) {
@@ -407,14 +400,38 @@ Respond ONLY with valid JSON:
       ]
     }];
 
-    const response = await this._callAPI(contents, {
+    let response = await this._callAPI(contents, {
       systemInstruction: curatorSkill,
       temperature: 0.3,
       maxTokens: 1024,
       timeout: 120000,
     });
 
-    try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${key}`, { timeout: 10000 }); } catch {}
+    // If query failed (null), check if key rotated — re-upload and retry once
+    if (!response) {
+      const newKey = this._getKey();
+      if (newKey !== currentKey) {
+        logger.warn(`Key rotated (${currentKey} → ${newKey}) — re-uploading video and retrying query`);
+        // Delete old file
+        try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
+        // Re-upload with new key
+        const reUploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
+        if (reUploaded) {
+          currentKey = reUploaded.key;
+          uploadedFile = reUploaded.file;
+          contents[0].parts[0].file_data.file_uri = uploadedFile.uri || uploadedFile.name;
+          response = await this._callAPI(contents, {
+            systemInstruction: curatorSkill,
+            temperature: 0.3,
+            maxTokens: 1024,
+            timeout: 120000,
+          });
+        }
+      }
+    }
+
+    // Cleanup
+    try { await axios.delete(`${GEMINI_BASE}/files/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
 
     if (!response) { logger.warn('rankVideoFile: returned null'); return null; }
 
