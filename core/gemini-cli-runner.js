@@ -5,7 +5,8 @@
  * 
  * Model-Switching-First Strategy:
  * On quota (429) errors, switches model first on the same API key.
- * Only rotates to next API key after all models exhausted for current key.
+ * After 3 model switches, rotates to next key and re-uploads.
+ * Media is uploaded ONCE per key, not per retry attempt.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -65,7 +66,7 @@ class GeminiCLIRunner {
     const prev = this.model;
     this.modelIndex++;
     const next = this.model;
-    const wrapped = prev === next; 
+    const wrapped = prev === next;
     if (!wrapped) {
       logger.info(`Switching model: ${prev} → ${next} (key ${this.keyIndex + 1})`);
     }
@@ -77,13 +78,6 @@ class GeminiCLIRunner {
     this.keyIndex++;
     this.modelIndex = 0;
     logger.info(`Switching key: ${prevKey + 1} → ${(this.keyIndex % 8) + 1}, model reset to ${this.model}`);
-  }
-
-  _rotateOnQuota() {
-    const modelSwitched = this._rotateModel();
-    if (!modelSwitched) {
-      this._rotateKey();
-    }
   }
 
   /** Upload media via File API and return URI */
@@ -145,92 +139,140 @@ class GeminiCLIRunner {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
 
     const timeout = options.timeout || 120000;
-    const maxRetries = MODEL_CHAIN.length * 8 + 1;
     const tmpDir = '/tmp';
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      let uploadedUris = [];
-      try {
-        let fullPrompt = prompt;
-        if (options.skillFile && fs.existsSync(options.skillFile)) {
-          const skillContent = fs.readFileSync(options.skillFile, 'utf8');
-          fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
-        }
+    // Step 1: Upload all media files ONCE (before any retries)
+    let uploadedUris = [];
+    let mediaString = '';
+    const allMediaPaths = [
+      ...(options.images || []),
+      ...(options.videoPaths || []),
+      ...(options.videoPath ? [options.videoPath] : [])
+    ];
 
-        // Intercept and upload all local media files first
-        let mediaString = '';
-        const allMediaPaths = [
-          ...(options.images || []),
-          ...(options.videoPaths || []),
-          ...(options.videoPath ? [options.videoPath] : [])
-        ];
-
-        for (const filePath of allMediaPaths) {
-          if (fs.existsSync(filePath)) {
-            const uri = await this._uploadFileForCLI(filePath);
-            if (uri) {
-              uploadedUris.push(uri);
-              mediaString += `\nMedia URI attached: ${uri}\n`; 
-            }
-          }
+    for (const filePath of allMediaPaths) {
+      if (fs.existsSync(filePath)) {
+        const uri = await this._uploadFileForCLI(filePath);
+        if (uri) {
+          uploadedUris.push(uri);
+          mediaString += `\nMedia URI attached: ${uri}\n`;
         }
-        
-        if (mediaString) {
-          fullPrompt = `${mediaString}\n${fullPrompt}`;
-        }
+      }
+    }
 
+    // Step 2: Build the full prompt (with skill + media URIs)
+    let fullPrompt = prompt;
+    if (options.skillFile && fs.existsSync(options.skillFile)) {
+      const skillContent = fs.readFileSync(options.skillFile, 'utf8');
+      fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
+    }
+    if (mediaString) {
+      fullPrompt = `${mediaString}\n${fullPrompt}`;
+    }
+
+    // Step 3: Try models × keys, retry with SAME uploaded URIs
+    // Per key: try up to 3 model switches (429 → switch model, wait 10s)
+    // After 3 model fails: rotate key, re-upload, reset
+    const MAX_KEYS = 8;
+    for (let keyAttempt = 0; keyAttempt < MAX_KEYS; keyAttempt++) {
+      // Try up to MODEL_CHAIN.length models for this key
+      for (let modelAttempt = 0; modelAttempt < MODEL_CHAIN.length; modelAttempt++) {
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
 
-        // Text-only mode piped execution (media references are now part of the text prompt)
         const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
         fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-        
+
         const cmd = `cat "${promptFile}" | TERM=xterm-256color GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
 
-        logger.info(`CLI run (attempt ${attempt + 1}, model: ${this.model}, key: ${this.keyIndex + 1})`);
+        logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${MODEL_CHAIN.length})`);
 
-        const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
+        try {
+          const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
+          try { fs.unlinkSync(promptFile); } catch {}
 
-        try { fs.unlinkSync(promptFile); } catch {}
-
-        // Cleanup remote files on success
-        for (const uri of uploadedUris) {
+          // Success — cleanup files and return
+          for (const uri of uploadedUris) {
             await this._deleteFile(uri);
-        }
+          }
 
-        // Filter terminal/CLI noise from output
-        const output = result.trim().split('\n')
-          .filter(l => !l.includes('256-color') && !l.includes('Ripgrep') && !l.includes('Warning:'))
-          .join('\n')
-          .trim();
-        if (output && output.length > 10) {
-          logger.success(`CLI responded (${output.length} chars)`);
-          const preview = output.substring(0, 300);
-          logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
-          await new Promise(r => setTimeout(r, 10000));
-          return output;
-        }
-        logger.warn('CLI empty response');
-        this._rotateKey();
-      } catch (e) {
-        // Cleanup remote files on failure
-        for (const uri of uploadedUris) {
-            await this._deleteFile(uri);
-        }
+          // Filter terminal/CLI noise from output
+          const output = result.trim().split('\n')
+            .filter(l => !l.includes('256-color') && !l.includes('Ripgrep') && !l.includes('Warning:'))
+            .join('\n')
+            .trim();
 
-        const errText = (e.stderr || e.stdout || e.message || '').toString();
-        if (e.signal === 'SIGKILL' || e.killed) { logger.warn('CLI timeout'); return null; }
-        if (errText.includes('429') || errText.includes('quota')) { 
-          logger.warn(`CLI rate limited (429) on model ${this.model}, key ${this.keyIndex + 1} — rotating model first...`);
-          this._rotateOnQuota();
-          await new Promise(r => setTimeout(r, 2000)); 
-          continue; 
+          if (output && output.length > 10) {
+            logger.success(`CLI responded (${output.length} chars)`);
+            const preview = output.substring(0, 300);
+            logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
+            await new Promise(r => setTimeout(r, 10000));
+            return output;
+          }
+          logger.warn('CLI empty response');
+          return null;
+        } catch (e) {
+          try { fs.unlinkSync(promptFile); } catch {}
+
+          const errText = (e.stderr || e.stdout || e.message || '').toString();
+          if (e.signal === 'SIGKILL' || e.killed) {
+            logger.warn('CLI timeout');
+            // Cleanup files on timeout
+            for (const uri of uploadedUris) await this._deleteFile(uri);
+            return null;
+          }
+
+          if (errText.includes('429') || errText.includes('quota')) {
+            // 429 — switch model, retry with SAME URIs
+            if (modelAttempt < MODEL_CHAIN.length - 1) {
+              logger.warn(`Rate limited (429) — waiting 10s, switching model...`);
+              await new Promise(r => setTimeout(r, 10000));
+              this._rotateModel();
+            } else {
+              // All models exhausted for this key — need new key + re-upload
+              logger.warn(`All ${MODEL_CHAIN.length} models rate-limited on key ${this.keyIndex + 1} — rotating key`);
+              // Cleanup old uploads before re-uploading with new key
+              for (const uri of uploadedUris) await this._deleteFile(uri);
+              uploadedUris = [];
+              this._rotateKey();
+
+              // Re-upload with new key
+              const newUris = [];
+              const newMediaString = [];
+              for (const filePath of allMediaPaths) {
+                if (fs.existsSync(filePath)) {
+                  const uri = await this._uploadFileForCLI(filePath);
+                  if (uri) {
+                    newUris.push(uri);
+                    newMediaString.push(`\nMedia URI attached: ${uri}\n`);
+                  }
+                }
+              }
+              uploadedUris = newUris;
+              mediaString = newMediaString.join('');
+              if (mediaString || options.skillFile) {
+                fullPrompt = prompt;
+                if (options.skillFile && fs.existsSync(options.skillFile)) {
+                  const skillContent = fs.readFileSync(options.skillFile, 'utf8');
+                  fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
+                }
+                fullPrompt = `${mediaString}\n${fullPrompt}`;
+              }
+              // Break inner loop — next iteration of outer loop starts fresh with new key
+              break;
+            }
+          } else {
+            logger.warn(`CLI error: ${errText.substring(0, 120)}`);
+            for (const uri of uploadedUris) await this._deleteFile(uri);
+            return null;
+          }
         }
-        logger.warn(`CLI error: ${errText.substring(0, 120)}`);
-        this._rotateKey();
       }
     }
+
+    // All keys + models exhausted
+    for (const uri of uploadedUris) await this._deleteFile(uri);
+    logger.error('All keys + models exhausted');
     return null;
   }
 

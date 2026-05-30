@@ -1,1 +1,1 @@
-SDK polling 3x10s + TERM=xterm-256color + filter CLI noise  
+fix retry loop: upload once per key, model switch reuses URIs  
