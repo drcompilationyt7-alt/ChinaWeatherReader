@@ -32,7 +32,13 @@ To find content outside the US bubble, you must append regional social media pla
 *   **LatAm / Brazil**: Kwai, Funk Paulista trends
 *   **Russia/Eastern Europe**: VKontakte (VK) memes, hardbass trends
 
-### 4. Output Format
+### 4. Generic Fallback Queries
+You must include at least 4 broad, high-volume queries alongside the specific ones. These ensure the search returns results even when hyper-specific queries fail.
+*   *Bad*: Only hyper-specific queries (many return 0 results)
+*   *Good*: Mix of specific + generic
+*   *Examples*: "{country} shorts", "{country} girl", "{country} dance", "{country} funny", "{country} tiktok compilation", "{country} viral"
+
+### 5. Output Format
 Always categorize your output so the user can easily copy and paste the queries into search engines or video platforms. Return a JSON array of strings.
 
 ## ✅ Example Output Structure

@@ -143,7 +143,6 @@ class GeminiCLIRunner {
 
     // Step 1: Upload all media files ONCE (before any retries)
     let uploadedUris = [];
-    let mediaString = '';
     const allMediaPaths = [
       ...(options.images || []),
       ...(options.videoPaths || []),
@@ -155,19 +154,15 @@ class GeminiCLIRunner {
         const uri = await this._uploadFileForCLI(filePath);
         if (uri) {
           uploadedUris.push(uri);
-          mediaString += `\nMedia URI attached: ${uri}\n`;
         }
       }
     }
 
-    // Step 2: Build the full prompt (with skill + media URIs)
+    // Step 2: Build the full prompt (with skill prepended)
     let fullPrompt = prompt;
     if (options.skillFile && fs.existsSync(options.skillFile)) {
       const skillContent = fs.readFileSync(options.skillFile, 'utf8');
       fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
-    }
-    if (mediaString) {
-      fullPrompt = `${mediaString}\n${fullPrompt}`;
     }
 
     // Step 3: Try models × keys, retry with SAME uploaded URIs
@@ -183,7 +178,9 @@ class GeminiCLIRunner {
         const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
         fs.writeFileSync(promptFile, fullPrompt, 'utf8');
 
-        const cmd = `cat "${promptFile}" | TERM=xterm-256color GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
+        // Pass uploaded file URIs as positional arguments (CLI ingests them natively)
+        const uriArgs = uploadedUris.map(u => `"${u}"`).join(' ');
+        const cmd = `cat "${promptFile}" | TERM=xterm-256color GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} ${uriArgs} 2>&1`;
 
         logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${MODEL_CHAIN.length})`);
 
@@ -238,25 +235,20 @@ class GeminiCLIRunner {
 
               // Re-upload with new key
               const newUris = [];
-              const newMediaString = [];
               for (const filePath of allMediaPaths) {
                 if (fs.existsSync(filePath)) {
                   const uri = await this._uploadFileForCLI(filePath);
                   if (uri) {
                     newUris.push(uri);
-                    newMediaString.push(`\nMedia URI attached: ${uri}\n`);
                   }
                 }
               }
               uploadedUris = newUris;
-              mediaString = newMediaString.join('');
-              if (mediaString || options.skillFile) {
-                fullPrompt = prompt;
-                if (options.skillFile && fs.existsSync(options.skillFile)) {
-                  const skillContent = fs.readFileSync(options.skillFile, 'utf8');
-                  fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
-                }
-                fullPrompt = `${mediaString}\n${fullPrompt}`;
+              // Rebuild prompt (without media text markers since URIs are positional args)
+              fullPrompt = prompt;
+              if (options.skillFile && fs.existsSync(options.skillFile)) {
+                const skillContent = fs.readFileSync(options.skillFile, 'utf8');
+                fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
               }
               // Break inner loop — next iteration of outer loop starts fresh with new key
               break;

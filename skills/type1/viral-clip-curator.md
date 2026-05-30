@@ -61,6 +61,9 @@ Examine these to determine actual country of origin:
 - Live streams
 - Content with profanity or offensive material
 - **Low-effort text slideshows on solid color backgrounds** (Note: High-effort aesthetic photo dumps, Y2K edits, or trend-based image transitions are **ALLOWED**).
+- **Sexual or risqué content** — No "no bra" / "no panties" type videos, no explicit dating content, no onlyfans-style thumbnails, no cleavage-focused content, no sexually suggestive dancing or poses.
+- **Adult/gay/transgender focus** — No ladyboy, gay, or transgender-focused content unless it's authentic cultural documentary (e.g. Thai kathoey cultural coverage — but check it's genuinely cultural, not fetish/clickbait). When in doubt, reject.
+- **Kissing or romantic intimacy** — No makeout sessions, kissing scenes, intimate couple content, romantic drama clips.
 
 ### AUTO-APPROVE (High Priority)
 - **High-effort aesthetic photo dumps, retro/Y2K edits, and nostalgic image transitions synced to music.**
