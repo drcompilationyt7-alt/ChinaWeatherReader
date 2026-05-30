@@ -7,6 +7,7 @@
  *   --mode daily     = Type 1 clip pipeline (6am)
  *   --mode explainer = Type 2 explainer pipeline (8am)  
  *   --mode nightly   = Trend bank updates
+ *   --mode temp      = Temp Explainer - channel shorts reposter
  *   --country X      = Override country pick
  */
 
@@ -110,7 +111,7 @@ class DailyRunner {
       return;
     }
     try {
-      const waitSec = 30 + Math.floor(Math.random() * 60); // 30-90s settle
+      const waitSec = 30 + Math.floor(Math.random() * 60);
       logger.info(`Waiting ${waitSec}s settle before boost...`);
       await new Promise(r => setTimeout(r, waitSec * 1000));
       const { BoostEngine } = require('../boost/boost-engine');
@@ -208,7 +209,6 @@ class DailyRunner {
       return { uploadedVideos: [], errors: [result.error] };
     }
 
-    // Generate title + upload
     const metadata = await this.gemini.generateTitle(result.country, '', result.title);
     const title = metadata?.title || result.title || `${result.country} Explainer`;
     const description = metadata?.description || `An explainer about ${result.country}. Follow Mr. WorldWideWebster! 🌍`;
@@ -234,6 +234,52 @@ class DailyRunner {
     if (uploaded.length > 0) {
       logger.success(`✅ Explainer uploaded — "${title}"`);
       logger.success(`🌍 ${result.country} | 📺 ${result.clipsApproved}/${result.totalClips} clips sourced`);
+    }
+
+    return { uploadedVideos: uploaded, errors: [], exitCode: uploaded.length > 0 ? 0 : 1 };
+  }
+
+  async runTempExplainer(overrideCountry) {
+    logger.header('TEMP EXPLAINER: Channel Shorts Reposter');
+
+    for (const dir of [path.join(__dirname, '..', 'output', 'temp-explainer'), config.paths.assets]) {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const { runTempExplainerPipeline } = require('../pipeline/temp-explainer-pipeline');
+    let result;
+    try {
+      result = await runTempExplainerPipeline({ outputDir: path.join(__dirname, '..', 'output', 'temp-explainer') });
+    } catch (e) {
+      logger.error(`Temp pipeline crash: ${e.message}`);
+      result = { success: false, error: e.message };
+    }
+
+    if (!result.success) {
+      logger.error(`Temp pipeline: ${result.error}`);
+      return { uploadedVideos: [], errors: [result.error] };
+    }
+
+    logger.info('Uploading temp explainer...');
+    const uploadResult = await this._uploadToYouTube({
+      videoPath: result.videoPath,
+      title: result.title.substring(0, 100),
+      description: result.description,
+      tags: result.tags || ['mr worldwidewebster', 'shorts', result.country.toLowerCase()],
+    });
+
+    const uploaded = [];
+    if (uploadResult) {
+      uploaded.push({ title: result.title, url: uploadResult.url, country: result.country, type: 'temp' });
+      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+      this._saveMemory();
+      await this._boostVideo(uploadResult.url);
+    }
+
+    logger.header('SUMMARY');
+    if (uploaded.length > 0) {
+      logger.success(`✅ Temp video uploaded — "${result.title}"`);
+      logger.success(`🌍 ${result.country} | 📺 Source: @${result.sourceChannel}`);
     }
 
     return { uploadedVideos: uploaded, errors: [], exitCode: uploaded.length > 0 ? 0 : 1 };
@@ -285,8 +331,11 @@ class DailyRunner {
         exitCode = result.exitCode || 0;
       } else if (mode === 'nightly') {
         await this.runNightly();
+      } else if (mode === 'temp') {
+        const result = await this.runTempExplainer(countryArg);
+        exitCode = result.exitCode || 0;
       } else {
-        console.log(`Unknown: ${mode}. Use daily, explainer, or nightly`);
+        console.log(`Unknown: ${mode}. Use daily, explainer, nightly, or temp`);
         exitCode = 1;
       }
     } catch (e) {

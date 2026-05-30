@@ -1,8 +1,8 @@
-name: Daily Explainer Creation
+name: Daily Temp Explainer (Channel Shorts)
 
 on:
   schedule:
-    - cron: "0 5 31 2 *"
+    - cron: "0 6,14,20 * * *"
   workflow_dispatch:
     inputs:
       country:
@@ -33,12 +33,11 @@ env:
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   GH_PAT: ${{ secrets.GH_PAT }}
-  EDGE_TTS_VOICE_EXPLAINER: en-US-GuyNeural
 
 jobs:
-  create-explainer:
+  create-temp-explainer:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -54,8 +53,8 @@ jobs:
 
       - name: Clean output
         run: |
-          rm -rf output/explainers/
-          mkdir -p output/explainers output/assets/voiceovers output/assets/audio memory
+          rm -rf output/temp-explainer/
+          mkdir -p output/temp-explainer output/assets/audio memory
 
       - name: Install system dependencies
         run: |
@@ -71,19 +70,12 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless --break-system-packages
+          python3 -m pip install yt-dlp opencv-python-headless --break-system-packages
 
       - name: Install Node.js dependencies
         run: |
           npm ci || npm install
           npm install axios
-
-      - name: Install Gemini CLI
-        run: npm install -g @google/gemini-cli
-
-      - name: Pre-download whisper model
-        run: |
-          python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
 
       - name: Write cookies file
         run: |
@@ -91,27 +83,15 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Run explainer pipeline
+      - name: Run temp explainer pipeline
         run: |
-          COUNTRY_ARG=""
-          if [ -n "${{ github.event.inputs.country }}" ]; then
-            COUNTRY_ARG="--country ${{ github.event.inputs.country }}"
-          fi
-          node core/github-action-runner.js --mode explainer $COUNTRY_ARG
+          node core/github-action-runner.js --mode temp
 
       - name: Save memory
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/channel-memory.json config/trend-banks/ 2>/dev/null || true
+          git add memory/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
-
-      - name: Weekly cleanup
-        if: github.event_name == 'schedule'
-        run: |
-          DOW=$(date +%u)
-          if [ "$DOW" = "7" ]; then
-            rm -rf output/explainers/* output/assets/voiceovers/* output/assets/audio/* 2>/dev/null || true
-          fi
 
       - name: Cleanup
         if: always()

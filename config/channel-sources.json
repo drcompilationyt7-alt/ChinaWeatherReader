@@ -1,0 +1,31 @@
+{
+  "China": {
+    "name": "China / Japan / Korea",
+    "channels": [
+      "https://www.youtube.com/@Curious-Bloom/shorts",
+      "https://www.youtube.com/@TinaaTravel/shorts",
+      "https://www.youtube.com/@KyoSol_Boy/shorts",
+      "https://www.youtube.com/@EasterAxisEats/shorts",
+      "https://www.youtube.com/@tokyotrending/shorts",
+      "https://www.youtube.com/@sakurasquad7/shorts",
+      "https://www.youtube.com/@realya28/shorts",
+      "https://www.youtube.com/@KyoSol_Boy/shorts",
+      "https://www.youtube.com/@kuroseshorts/shorts"
+    ]
+  },
+  "World": {
+    "name": "World / Travel Random",
+    "channels": [
+      "https://www.youtube.com/@BucketListVacationers/shorts",
+      "https://www.youtube.com/@UniversalTravellingWith__MS/shorts",
+      "https://www.youtube.com/@PlanetEarth0_0/shorts",
+      "https://www.youtube.com/@Travel-Destination-Discoveries/shorts"
+    ]
+  },
+  "US": {
+    "name": "United States",
+    "channels": [
+      "https://www.youtube.com/@lifelightsbyhenry/shorts"
+    ]
+  }
+}
