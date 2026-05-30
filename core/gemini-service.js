@@ -271,16 +271,38 @@ Respond ONLY with valid JSON (no markdown):
     let uploadedFile;
     try {
       const fileBuffer = fs.readFileSync(videoPath);
-      const uploadResp = await axios.post(
+
+      // Step 1: Start resumable upload — get upload URL
+      const startResp = await axios.post(
         `${GEMINI_UPLOAD}/files?key=${key}`,
+        null,
+        {
+          headers: {
+            'X-Goog-Upload-Protocol': 'resumable',
+            'X-Goog-Upload-Command': 'start',
+            'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
+            'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      );
+
+      const uploadUrl = startResp.headers['x-goog-upload-url'];
+      if (!uploadUrl) {
+        logger.warn('No upload URL returned from start');
+        return null;
+      }
+
+      // Step 2: Upload the file data
+      const uploadResp = await axios.put(
+        uploadUrl,
         fileBuffer,
         {
           headers: {
+            'Content-Length': fileSize.toString(),
             'Content-Type': 'video/mp4',
-            'X-Goog-Upload-Protocol': 'resumable',
-            'X-Goog-Upload-Command': 'start, upload, finalize',
-            'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
-            'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+            'X-Goog-Upload-Command': 'upload, finalize',
           },
           timeout: 300000,
           maxContentLength: 100 * 1024 * 1024,
@@ -289,11 +311,18 @@ Respond ONLY with valid JSON (no markdown):
 
       uploadedFile = uploadResp.data?.file || uploadResp.data;
       if (!uploadedFile || !uploadedFile.name) {
-        logger.warn('File upload response missing file name');
-        return null;
+        // Try to parse from response headers if body is empty
+        const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
+        if (fileUri) {
+          uploadedFile = { name: fileUri, state: 'PROCESSING' };
+        } else {
+          logger.warn('File upload response missing file name');
+          return null;
+        }
       }
       logger.info(`File uploaded: ${uploadedFile.name} (state: ${uploadedFile.state})`);
 
+      // Step 3: Poll until processing completes
       let waitCount = 0;
       while (uploadedFile.state === 'PROCESSING' || uploadedFile.state === 'UPLOADING' || uploadedFile.state === 'QUEUED') {
         waitCount++;

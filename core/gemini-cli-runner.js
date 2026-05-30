@@ -5,6 +5,10 @@
  * The new Gemini CLI v0.44 does NOT support `-p` with positional image args.
  * 
  * Fix: cat prompt_file | GEMINI_API_KEY="x" gemini image1 image2
+ * 
+ * Video files MUST be passed as positional CLI arguments, NOT embedded
+ * in the prompt text with @ prefixes. The @file syntax only works in
+ * interactive mode, not piped mode.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -55,8 +59,9 @@ class GeminiCLIRunner {
 
   /**
    * Run Gemini CLI with a prompt.
-   * If both videoPaths array is provided, appends @video1.mp4 @video2.mp4 etc.
-   * Logs response text for debugging.
+   * Video files are passed as positional CLI arguments (NOT @ in prompt text),
+   * which is required for the model to actually process the video.
+   * Response text is logged for debugging.
    */
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
@@ -73,33 +78,32 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
-        // Build prompt content with video paths prefixed via @file.mp4 syntax
-        let videoArgs = '';
-        if (options.videoPaths && options.videoPaths.length > 0) {
-          videoArgs = options.videoPaths
-            .filter(vp => vp && fs.existsSync(vp))
-            .map(vp => `@${vp}`)
-            .join(' ') + ' ';
-        } else if (options.videoPath && fs.existsSync(options.videoPath)) {
-          videoArgs = `@${options.videoPath} `;
-        }
-        let promptContent = videoArgs + fullPrompt;
-
+        // Write prompt to temp file (avoids shell escaping issues with -p)
         const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-        fs.writeFileSync(promptFile, promptContent, 'utf8');
+        fs.writeFileSync(promptFile, fullPrompt, 'utf8');
 
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
-        let cmd;
 
+        // Collect all file arguments: first image files, then video files
+        const fileArgs = [];
         if (options.images && options.images.length > 0) {
-          const existingImages = options.images.filter(f => fs.existsSync(f));
-          if (existingImages.length > 0) {
-            const imageArgs = existingImages.map(f => `"${f}"`).join(' ');
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash ${imageArgs} 2>&1`;
-          } else {
-            cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash 2>&1`;
+          for (const f of options.images) {
+            if (fs.existsSync(f)) fileArgs.push(`"${f}"`);
           }
+        }
+        if (options.videoPaths && options.videoPaths.length > 0) {
+          for (const vp of options.videoPaths) {
+            if (vp && fs.existsSync(vp)) fileArgs.push(`"${vp}"`);
+          }
+        } else if (options.videoPath && fs.existsSync(options.videoPath)) {
+          fileArgs.push(`"${options.videoPath}"`);
+        }
+
+        // Build command: cat prompt | GEMINI_API_KEY=x gemini --skip-trust -m gemini-2.5-flash video1 video2
+        let cmd;
+        if (fileArgs.length > 0) {
+          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash ${fileArgs.join(' ')} 2>&1`;
         } else {
           cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash 2>&1`;
         }
@@ -216,11 +220,6 @@ Respond ONLY with valid JSON (no markdown):
    * Compare original (unedited/uncropped) video with edited video.
    * Returns JSON with verdict and improvement suggestions.
    * Used in smart-crop and smart-edit QA feedback loops.
-   * @param {string} originalPath - Original/unprocessed video
-   * @param {string} editedPath - Edited/cropped video
-   * @param {string} editType - 'crop' or 'edit' 
-   * @param {string} country - Target country
-   * @returns {Object|null} - { verdict, score, improvements, ... }
    */
   async compareAndReviewQA(originalPath, editedPath, editType, country = 'Global') {
     if (!this.available) { logger.warn('CLI not available for QA'); return null; }
@@ -282,9 +281,6 @@ Respond ONLY JSON:
   /**
    * Review the final video before upload (replaces broken frame-based geminiReview).
    * Sends the complete MP4 to CLI for final quality check.
-   * @param {string} videoPath - Path to final rendered MP4
-   * @param {string} country - Target country 
-   * @returns {Object|null} - { quality_score, recommendation, issues }
    */
   async reviewFinalVideo(videoPath, country = 'Global') {
     if (!this.available) { logger.warn('CLI not available for final review'); return null; }
