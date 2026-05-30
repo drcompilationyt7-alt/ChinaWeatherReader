@@ -376,13 +376,13 @@ async function smartEdit(videoPath, outputPath, options = {}) {
 
   const cmd = `ffmpeg -y -i "${videoPath}" ` +
     `-vf "${vf}" -af "${af}" ` +
-    `-c:v libx264 -preset fast -crf 20 -c:a aac -b:a 128k ` +
-    `-pix_fmt yuv420p -shortest "${outputPath}" 2>/dev/null`;
+    `-c:v libx264 -preset medium -crf 0 -c:a aac -b:a 320k ` +
+    `-pix_fmt yuv444p -shortest "${outputPath}" 2>/dev/null`;
 
   logger.info(`Executing edit command...`);
 
   try {
-    execSync(cmd, { timeout: 180000, maxBuffer: 50 * 1024 * 1024 });
+  execSync(cmd, { timeout: 300000, maxBuffer: 500 * 1024 * 1024 });
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 100000) {
       logger.success(`Edited: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(1)}MB`);
@@ -452,8 +452,8 @@ async function smartEdit(videoPath, outputPath, options = {}) {
 
           const adjCmd = `ffmpeg -y -i "${videoPath}" ` +
             `-vf "${adjVf.join(',')}" -af "${adjAf}" ` +
-            `-c:v libx264 -preset fast -crf 20 -c:a aac -b:a 128k ` +
-            `-pix_fmt yuv420p -shortest "${qaOutputPath}" 2>/dev/null`;
+            `-c:v libx264 -preset medium -crf 0 -c:a aac -b:a 320k ` +
+            `-pix_fmt yuv444p -shortest "${qaOutputPath}" 2>/dev/null`;
 
           logger.info(`  Re-rendering with adjustments...`);
           try {

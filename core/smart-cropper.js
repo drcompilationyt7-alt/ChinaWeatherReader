@@ -205,16 +205,16 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   // Step 4: Apply final crop to actual video
   logger.info(`Applying final crop: ${cropFilter}`);
   
-  const crf = srcW * srcH < 300000 ? 20 : 18;
+  const crf = 0;
   const finalOutput = outputPath || videoPath.replace(/\.\w+$/, '_shorts.mp4');
 
   try {
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
       `-vf "${cropFilter}" ` +
-      `-c:v libx264 -preset fast -crf ${crf} -c:a aac -b:a 128k ` +
-      `-pix_fmt yuv420p -shortest "${finalOutput}" 2>/dev/null`,
-      { timeout: 180000, maxBuffer: 50 * 1024 * 1024 }
+      `-c:v libx264 -preset medium -crf ${crf} -c:a aac -b:a 320k ` +
+      `-pix_fmt yuv444p -shortest "${finalOutput}" 2>/dev/null`,
+      { timeout: 180000, maxBuffer: 200 * 1024 * 1024 }
     );
 
     if (fs.existsSync(finalOutput) && fs.statSync(finalOutput).size > 100000) {
