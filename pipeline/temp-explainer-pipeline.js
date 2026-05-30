@@ -426,14 +426,19 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   // Build FFmpeg filter:
   // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
   // If already 9:16, just overlay flag directly
+  // For the flag PNG: remove any green-alpha in the source by making it transparent with colorkey
+  // Then overlay the clean flag on the video.
+  // If video is not 9:16, scale with pillarbox (black bars) to maintain aspect ratio.
   let overlayFilter;
   if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
     overlayFilter =
-      `[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}[bg];` +
-      `[bg][1:v]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
+      `[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[bg];` +
+      `[1:v]colorkey=0x00FF00:0.01:0.0,format=rgba[cleanflag];` +
+      `[bg][cleanflag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   } else {
     overlayFilter =
-      `[0:v][1:v]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
+      `[1:v]colorkey=0x00FF00:0.01:0.0,format=rgba[cleanflag];` +
+      `[0:v][cleanflag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   }
 
   const outPath = outputPath || videoPath.replace(/\.\w+$/, '_flagged.mp4');
