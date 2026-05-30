@@ -61,12 +61,12 @@ const config = {
 
   boost: {
     enabled: true,
-    maxViews: parseInt(process.env.BOOST_MAX_VIEWS) || 20,
-    minViews: parseInt(process.env.BOOST_MIN_VIEWS) || 50,
-    minWatchSec: parseInt(process.env.BOOST_MIN_WATCH_SEC) || 30,
+    maxViews: parseInt(process.env.BOOST_MAX_VIEWS) || 300,
+    minViews: parseInt(process.env.BOOST_MIN_VIEWS) || 100,
+    minWatchSec: parseInt(process.env.BOOST_MIN_WATCH_SEC) || 15,
     maxWatchSec: parseInt(process.env.BOOST_MAX_WATCH_SEC) || 90,
     spreadMinMinutes: parseInt(process.env.BOOST_SPREAD_MIN) || 15,
-    spreadMaxMinutes: parseInt(process.env.BOOST_SPREAD_MAX) || 45,
+    spreadMaxMinutes: parseInt(process.env.BOOST_SPREAD_MAX) || 180,
   },
 
   youtube: {
