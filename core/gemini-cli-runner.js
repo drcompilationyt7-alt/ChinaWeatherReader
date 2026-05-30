@@ -109,13 +109,23 @@ class GeminiCLIRunner {
 
       if (!mediaFile || !mediaFile.name) return null;
 
-      // Only wait 13s for video files, images process instantly
+      // Poll for ACTIVE state (3 tries × 10s), proceed even if still processing
       if (mimeType.startsWith('video/')) {
-        logger.info(`File uploaded: ${mediaFile.name} — waiting 13s for processing...`);
-        await new Promise(r => setTimeout(r, 13000));
+        let fileState = await ai.files.get({ name: mediaFile.name });
+        for (let poll = 1; poll <= 3; poll++) {
+          if (fileState.state === 'ACTIVE') break;
+          logger.info(`  Poll ${poll}/3 — waiting 10s (state: ${fileState.state})...`);
+          await new Promise(r => setTimeout(r, 10000));
+          fileState = await ai.files.get({ name: mediaFile.name });
+        }
+        if (fileState.state === 'FAILED') {
+          logger.warn('File processing FAILED');
+          return null;
+        }
+        logger.success(`File ready: ${mediaFile.name} (state: ${fileState.state})`);
       }
       
-      return mediaFile.name; // This is the URI needed for the model prompt
+      return mediaFile.name;
     } catch (e) {
       logger.warn(`File upload error: ${e.message}`);
       return null;
@@ -176,7 +186,7 @@ class GeminiCLIRunner {
         const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
         fs.writeFileSync(promptFile, fullPrompt, 'utf8');
         
-        const cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
+        const cmd = `cat "${promptFile}" | TERM=xterm-256color GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
 
         logger.info(`CLI run (attempt ${attempt + 1}, model: ${this.model}, key: ${this.keyIndex + 1})`);
 
@@ -189,7 +199,11 @@ class GeminiCLIRunner {
             await this._deleteFile(uri);
         }
 
-        const output = result.trim();
+        // Filter terminal/CLI noise from output
+        const output = result.trim().split('\n')
+          .filter(l => !l.includes('256-color') && !l.includes('Ripgrep') && !l.includes('Warning:'))
+          .join('\n')
+          .trim();
         if (output && output.length > 10) {
           logger.success(`CLI responded (${output.length} chars)`);
           const preview = output.substring(0, 300);

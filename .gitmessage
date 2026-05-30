@@ -1,1 +1,1 @@
-refactor CLI runner: upload media via SDK before passing URIs to CLI  
+SDK polling 3x10s + TERM=xterm-256color + filter CLI noise  
