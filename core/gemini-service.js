@@ -242,69 +242,35 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
 
     // Helper: upload video with the current key and return the uploaded file object
     async function uploadWithCurrentKey(displayName, buffer, size) {
+      const { GoogleGenAI } = require('@google/genai');
       logger.info(`Uploading ${displayName} (${(size / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
       const currentKey = this._getKey();
       if (!currentKey) { logger.warn('No API keys for upload'); return null; }
 
+      // Write buffer to temp file for SDK upload
+      const tmpPath = `/tmp/gemini_upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
       try {
-        const startResp = await axios.post(
-          `${GEMINI_UPLOAD}/files?key=${currentKey}`,
-          { file: { displayName } },
-          {
-            headers: {
-              'X-Goog-Upload-Protocol': 'resumable',
-              'X-Goog-Upload-Command': 'start',
-              'X-Goog-Upload-Header-Content-Length': size.toString(),
-              'X-Goog-Upload-Header-Content-Type': 'video/mp4',
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          }
-        );
+        fs.writeFileSync(tmpPath, buffer);
+        const ai = new GoogleGenAI({ apiKey: currentKey });
+        const videoFile = await ai.files.upload({
+          file: tmpPath,
+          mimeType: 'video/mp4',
+        });
+        try { fs.unlinkSync(tmpPath); } catch {}
 
-        const uploadUrl = startResp.headers['x-goog-upload-url'];
-        if (!uploadUrl) { logger.warn('No upload URL'); return null; }
-
-        const uploadResp = await axios.put(
-          uploadUrl, buffer,
-          {
-            headers: {
-              'Content-Type': 'video/mp4',
-              'Content-Length': size.toString(),
-              'X-Goog-Upload-Command': 'upload, finalize',
-              'X-Goog-Upload-Offset': '0',
-            },
-            timeout: 300000,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            transformRequest: [(data) => data],
-            transformResponse: [(data) => data],
-          }
-        );
-
-        // Parse raw buffer response to JSON
-        let respData = uploadResp.data;
-        try {
-          if (typeof respData === 'string' || Buffer.isBuffer(respData)) {
-            respData = JSON.parse(respData.toString());
-          }
-        } catch (e) {}
-
-        let uf = respData?.file || respData;
-        if (!uf || !uf.name) {
-          const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
-          if (fileUri) uf = { name: fileUri, state: 'PROCESSING' };
-          else { logger.warn('No file name in response'); return null; }
+        if (!videoFile || !videoFile.name) {
+          logger.warn('No file name in response');
+          return null;
         }
 
-        // Wait 15s for processing instead of polling broken status API
-        logger.info(`File uploaded: ${uf.name} — waiting 15s for processing...`);
+        // Wait 15s for processing
+        logger.info(`File uploaded: ${videoFile.name} — waiting 15s for processing...`);
         await new Promise(r => setTimeout(r, 15000));
-        logger.success(`File ready: ${uf.name}`);
-        return { file: uf, key: currentKey };
+        logger.success(`File ready: ${videoFile.name}`);
+        return { file: videoFile, key: currentKey };
       } catch (e) {
+        try { fs.unlinkSync(tmpPath); } catch {}
         logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
-        if (e.response?.data) logger.warn(`Upload response: ${JSON.stringify(e.response.data).substring(0, 200)}`);
         return null;
       }
     }
@@ -364,7 +330,11 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       if (newKey !== currentKey) {
         logger.warn(`Key rotated (${currentKey} → ${newKey}) — re-uploading video and retrying query`);
         // Delete old file
-        try { await axios.delete(`${GEMINI_BASE}/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
+        try {
+          const { GoogleGenAI } = require('@google/genai');
+          const da = new GoogleGenAI({ apiKey: currentKey });
+          await da.files.delete({ name: uploadedFile.name });
+        } catch {}
         // Re-upload with new key
         const reUploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
         if (reUploaded) {
@@ -382,7 +352,11 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
     }
 
     // Cleanup
-    try { await axios.delete(`${GEMINI_BASE}/${uploadedFile.name}?key=${currentKey}`, { timeout: 10000 }); } catch {}
+    try {
+      const { GoogleGenAI } = require('@google/genai');
+      const ca = new GoogleGenAI({ apiKey: currentKey });
+      await ca.files.delete({ name: uploadedFile.name });
+    } catch {}
 
     if (!response) { logger.warn('rankVideoFile: returned null'); return null; }
 

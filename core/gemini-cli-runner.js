@@ -175,79 +175,50 @@ class GeminiCLIRunner {
   }
 
   /**
-   * Upload a local video file to the Gemini File API and return the resource URI.
-   * Uses axios directly (not the CLI) to upload, then passes the URI to CLI for analysis.
-   * After upload, waits 13 seconds for processing instead of polling the broken status API.
+   * Upload a local video file to the Gemini File API and return the upload metadata.
+   * Uses @google/genai SDK which handles resumable upload, chunking, and streaming.
+   * After upload, waits 13 seconds for processing instead of polling the status API.
    */
   async _uploadFileForCLI(videoPath) {
-    const axios = require('axios');
-    const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
-    const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+    const { GoogleGenAI } = require('@google/genai');
     const fileName = path.basename(videoPath);
-    const fileBuffer = fs.readFileSync(videoPath);
-    const fileSize = fileBuffer.length;
+    const fileSize = fs.statSync(videoPath).size;
     const key = this._getApiKey();
     if (!key) { logger.warn('No API key for upload'); return null; }
 
     logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) for CLI analysis...`);
 
-    // Step 1: Start resumable upload
-    const startResp = await axios.post(
-      `${GEMINI_UPLOAD}/files?key=${key}`,
-      { file: { displayName: fileName } },
-      {
-        headers: {
-          'X-Goog-Upload-Protocol': 'resumable',
-          'X-Goog-Upload-Command': 'start',
-          'X-Goog-Upload-Header-Content-Length': fileSize.toString(),
-          'X-Goog-Upload-Header-Content-Type': 'video/mp4',
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const videoFile = await ai.files.upload({
+        file: videoPath,
+        mimeType: 'video/mp4',
+      });
+
+      if (!videoFile || !videoFile.name) {
+        logger.warn('No file name in upload response');
+        return null;
       }
-    );
 
-    const uploadUrl = startResp.headers['x-goog-upload-url'];
-    if (!uploadUrl) { logger.warn('No upload URL'); return null; }
-
-    // Step 2: Upload binary
-    const uploadResp = await axios.put(uploadUrl, fileBuffer, {
-      headers: {
-        'Content-Type': 'video/mp4',
-        'Content-Length': fileSize.toString(),
-        'X-Goog-Upload-Command': 'upload, finalize',
-        'X-Goog-Upload-Offset': '0',
-      },
-      timeout: 300000,
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      transformRequest: [(d) => d],
-      transformResponse: [(d) => d],
-    });
-
-    let respData = uploadResp.data;
-    try { if (typeof respData === 'string' || Buffer.isBuffer(respData)) respData = JSON.parse(respData.toString()); } catch (e) {}
-
-    let uf = respData?.file || respData;
-    if (!uf || !uf.name) {
-      const fileUri = uploadResp.headers['x-goog-upload-file-uri'];
-      if (fileUri) uf = { name: fileUri, state: 'PROCESSING' };
-      else { logger.warn('No file name in upload response'); return null; }
+      // Wait 13 seconds for processing
+      logger.info(`File uploaded: ${videoFile.name} — waiting 13s for processing...`);
+      await new Promise(r => setTimeout(r, 13000));
+      
+      logger.success(`File ready for CLI: ${videoFile.name}`);
+      return { name: videoFile.name, uri: videoFile.name, key, state: 'ACTIVE' };
+    } catch (e) {
+      logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
+      return null;
     }
-
-    // Step 3: Wait 13 seconds for processing instead of polling broken status API
-    logger.info(`File uploaded: ${uf.name} — waiting 13s for processing...`);
-    await new Promise(r => setTimeout(r, 13000));
-    
-    logger.success(`File ready for CLI: ${uf.name}`);
-    return { name: uf.name, uri: uf.uri || uf.name, key, state: 'ACTIVE' };
   }
 
-  /** Delete a file from Gemini File API */
+  /** Delete a file from Gemini File API using SDK */
   async _deleteFile(fileUri, apiKey) {
-    const axios = require('axios');
-    const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-    try { await axios.delete(`${GEMINI_BASE}/files/${fileUri}?key=${apiKey}`, { timeout: 10000 }); } catch {}
+    try {
+      const { GoogleGenAI } = require('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      await ai.files.delete({ name: fileUri });
+    } catch {}
   }
 
   /**

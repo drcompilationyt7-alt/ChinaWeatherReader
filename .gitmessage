@@ -1,1 +1,1 @@
-fix files/files/ URL bug + simplify rank prompts, skill is source of truth  
+migrate upload to @google/genai SDK, add to package.json deps  
