@@ -59,9 +59,10 @@ class GeminiCLIRunner {
 
   /**
    * Run Gemini CLI with a prompt.
-   * Video files are passed as positional CLI arguments (NOT @ in prompt text),
-   * which is required for the model to actually process the video.
-   * Response text is logged for debugging.
+   * For text-only: pipe prompt via stdin (cat promptFile | gemini ...).
+   * For multimodal (images/video): use -p "prompt" with file args, since
+   *   the @file expansion and positional args don't work properly with
+   *   piped stdin mode. Response text is logged for debugging.
    */
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
@@ -78,14 +79,10 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
-        // Write prompt to temp file (avoids shell escaping issues with -p)
-        const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-        fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
 
-        // Collect all file arguments: first image files, then video files
+        // Collect file arguments: images first, then videos
         const fileArgs = [];
         if (options.images && options.images.length > 0) {
           for (const f of options.images) {
@@ -100,11 +97,21 @@ class GeminiCLIRunner {
           fileArgs.push(`"${options.videoPath}"`);
         }
 
-        // Build command: cat prompt | GEMINI_API_KEY=x gemini --skip-trust -m gemini-2.5-flash video1 video2
         let cmd;
+        let promptFile = null;
         if (fileArgs.length > 0) {
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash ${fileArgs.join(' ')} 2>&1`;
+          // Multimodal mode: use -p with escaped prompt + file args
+          // Pipe mode breaks video file ingestion, so we use -p
+          const escapedPrompt = fullPrompt
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/'/g, "'\\''");
+          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash -p "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
         } else {
+          // Text-only mode: use pipe (avoids shell escaping issues)
+          promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
+          fs.writeFileSync(promptFile, fullPrompt, 'utf8');
           cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m gemini-2.5-flash 2>&1`;
         }
 
@@ -112,8 +119,8 @@ class GeminiCLIRunner {
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
-        // Cleanup temp file
-        try { fs.unlinkSync(promptFile); } catch {}
+        // Cleanup temp file (only defined in text-only path)
+        try { if (promptFile) fs.unlinkSync(promptFile); } catch {}
 
         const output = result.trim();
         if (output && output.length > 10) {

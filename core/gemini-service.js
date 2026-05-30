@@ -294,18 +294,21 @@ Respond ONLY with valid JSON (no markdown):
         return null;
       }
 
-      // Step 2: Upload the file data
+      // Step 2: Upload the file data as raw binary (NOT JSON serialized)
       const uploadResp = await axios.put(
         uploadUrl,
         fileBuffer,
         {
           headers: {
-            'Content-Length': fileSize.toString(),
             'Content-Type': 'video/mp4',
+            'Content-Length': fileSize.toString(),
             'X-Goog-Upload-Command': 'upload, finalize',
           },
           timeout: 300000,
           maxContentLength: 100 * 1024 * 1024,
+          // Prevent Axios from converting the response/request to JSON
+          transformRequest: [(data) => data],
+          transformResponse: [(data) => data],
         }
       );
 
