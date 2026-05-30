@@ -329,29 +329,40 @@ async function smartEdit(videoPath, outputPath, options = {}) {
 
   // 3c: Burn in captions if needed
   if (needsCaptions) {
-    let subContent = null;
     let subPath = null;
 
     if (needsTranslation && translatedText) {
-      // Use TikTok-style ASS for translated captions (same style as English)
-      subContent = generateTranslatedTikTokCaptions(translatedText, duration);
-      subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
+      // Use TikTok-style ASS for translated captions (JS-based, evenly timed)
+      const subContent = generateTranslatedTikTokCaptions(translatedText, duration);
+      if (subContent) {
+        subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
+        fs.writeFileSync(subPath, subContent, 'utf8');
+      }
     } else if (editType === 'tiktok_captions' && dialogue.transcript) {
-      // Use TikTok-style ASS for English speech
-      subContent = generateTikTokCaptions(dialogue.transcript, dialogue.words, duration);
+      // Use Python script for word-perfect TikTok captions via faster-whisper
       subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
+      try {
+        const captionOut = execSync(
+          `python3 "${path.join(__dirname, 'tiktok_captions.py')}" "${videoPath}" "${subPath}" 2>&1`,
+          { timeout: 120000, encoding: 'utf8' }
+        ).toString().trim();
+        const captionResult = JSON.parse(captionOut);
+        logger.info(`TikTok captions: ${captionResult.word_count} words, ${captionResult.ass_file}`);
+      } catch (e) {
+        logger.warn(`TikTok caption generation failed (${(e.message || '').substring(0, 60)}) — falling back to JS captions`);
+        const subContent = generateTikTokCaptions(dialogue.transcript, dialogue.words, duration);
+        if (subContent) {
+          subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
+          fs.writeFileSync(subPath, subContent, 'utf8');
+        } else {
+          subPath = null;
+        }
+      }
     }
 
-    if (subContent && subPath) {
-      fs.writeFileSync(subPath, subContent, 'utf8');
+    if (subPath && fs.existsSync(subPath)) {
       const escapedPath = subPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''");
-
-      if (subPath.endsWith('.ass')) {
-        videoFilters.push(`ass='${escapedPath}'`);
-      } else {
-        videoFilters.push(`subtitles='${escapedPath}'`);
-      }
-
+      videoFilters.push(`ass='${escapedPath}'`);
       logger.info(`Subtitles: ${subPath.split(/[\\/]/).pop()}`);
     }
   }
