@@ -15,7 +15,7 @@ const path = require('path');
 const fs = require('fs');
 const { Logger } = require('./logger');
 const { getGeminiCLI } = require('./gemini-cli-runner');
-const { getOpenRouterQA } = require('./openrouter-qa');
+
 
 const logger = new Logger('SmartCropper');
 
@@ -152,109 +152,54 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   // Pre-calculate frame positions for QA (used after crop)
   const qaPositions = [duration / 4, duration / 2, duration * 3 / 4].map(t => startTime + t);
 
-  if (shouldUseCLI) {
-    const smartCropSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'smart-crop-skill.md');
-    const cropEvalSkillPath = path.join(__dirname, '..', 'skills', 'type1', 'crop-evaluator-skill.md');
+  if (true) {
     const targetHeight = 1920;
     const targetWidth = 1080;
     const scaleFactor = targetHeight / srcH;
     const scaledWidth = Math.round(srcW * scaleFactor);
     const maxCropX = scaledWidth - targetWidth;
 
-    // ─── Phase A: Find subject center from original video ───────────
-    logger.info('Analyzing video with Gemini to locate subject...');
-    const evalResult = await gemini.evaluateCropFromVideo(videoPath, country, smartCropSkillPath);
+    // ─── Phase A: Find subject center using YOLO ────────────────────
+    logger.info('Analyzing video with YOLO to locate subject...');
+    const yoloDir = path.join(tmpDir, `yolo_frames_${Date.now()}`);
+    fs.mkdirSync(yoloDir, { recursive: true });
+    const yoloPositions = [2, Math.min(duration / 2, 15), Math.min(duration - 3, 25)];
 
-    if (evalResult) {
-      try {
-        const jsonMatch = evalResult.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const result = JSON.parse(jsonMatch[0]);
-          const centerPercent = result.calculated_center_percentage;
-          if (typeof centerPercent === 'number' && centerPercent >= 0 && centerPercent <= 100) {
-            logger.info(`Subject detected: "${result.subject_label || 'Unknown'}" at ${centerPercent}% horizontally`);
-            const subjectX = (centerPercent / 100) * scaledWidth;
-            cropOffsetX = Math.max(0, Math.min(Math.round(subjectX - (targetWidth / 2)), maxCropX));
-            cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
-            logger.info(`Scaled width: ${scaledWidth}px, Subject X: ${Math.round(subjectX)}px, Crop offset: ${cropOffsetX}px`);
-          } else {
-            logger.warn(`Invalid center percentage: ${centerPercent} — using center crop`);
-          }
-        }
-      } catch (e) {
-        logger.warn(`Failed to parse Gemini crop eval: ${e.message} — using center crop`);
-      }
-    } else {
-      logger.warn('Gemini crop analysis returned null — using center crop');
-    }
-
-    // ─── Phase B: 3-iteration verification feedback loop ────────────
-    const croppedAttemptPath = path.join(tmpDir, 'crop_attempt.mp4');
-    for (let iteration = 0; iteration < 3; iteration++) {
-      logger.info(`--- QA iteration ${iteration + 1}/3 ---`);
-
-      // Apply current crop
+    const subjectCenters = [];
+    for (const pos of yoloPositions) {
+      const framePath = path.join(yoloDir, `yolo_frame.jpg`);
       try {
         execSync(
-          `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} -vf "${cropFilter}" -c:v libx264 -preset fast -crf 22 -c:a aac -shortest "${croppedAttemptPath}" 2>/dev/null`,
-          { timeout: 180000, maxBuffer: 50 * 1024 * 1024 }
+          `ffmpeg -y -ss ${(startTime + pos).toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" 2>/dev/null`,
+          { timeout: 10000 }
         );
-      } catch (e) {
-        logger.warn(`Crop attempt failed: ${e.message.substring(0, 60)}`);
-        break;
-      }
-
-      if (!fs.existsSync(croppedAttemptPath) || fs.statSync(croppedAttemptPath).size < 50000) {
-        logger.warn('Cropped output too small — breaking loop');
-        break;
-      }
-
-      // Send cropped video to Gemini for QA check
-      const qaFeedback = await gemini.evaluateCropQuality(croppedAttemptPath, cropEvalSkillPath);
-
-      if (!qaFeedback) {
-        logger.warn('QA evaluation returned null — keeping current crop');
-        break;
-      }
-
-      try {
-        const jsonMatch = qaFeedback.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const result = JSON.parse(jsonMatch[0]);
-          const status = (result.status || '').toUpperCase();
-          const reason = result.reason || '';
-          logger.info(`QA verdict: ${status} — ${reason}`);
-
-          if (status === 'PASS') {
-            logger.success(`Crop approved after ${iteration + 1} iterations`);
-            break;
-          }
-
-          // REJECT — adjust offset
-          const adjustment = parseInt(result.adjustment_needed) || 0;
-          if (adjustment === 0) {
-            logger.warn('No adjustment suggested — keeping current crop');
-            break;
-          }
-
-          const oldOffset = cropOffsetX;
-          cropOffsetX = Math.max(0, Math.min(cropOffsetX + adjustment, maxCropX));
-          logger.info(`Adjusting crop: ${adjustment > 0 ? 'right' : 'left'} by ${Math.abs(adjustment)}px (${oldOffset} → ${cropOffsetX})`);
-          cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
-
-          if (cropOffsetX === oldOffset) {
-            logger.warn('Crop offset clamped to same value — breaking loop');
-            break;
+        if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
+          const yoloOut = execSync(
+            `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${framePath}" 2>&1`,
+            { timeout: 30000, encoding: 'utf8' }
+          ).toString().trim();
+          const yoloResult = JSON.parse(yoloOut);
+          if (yoloResult.subject !== 'none' && yoloResult.center_x >= 0) {
+            subjectCenters.push(yoloResult.center_x);
+            logger.info(`  Frame @${pos}s: ${yoloResult.subject} at center_x=${yoloResult.center_x.toFixed(0)} (conf: ${yoloResult.confidence.toFixed(2)})`);
           }
         }
       } catch (e) {
-        logger.warn(`Failed to parse QA feedback: ${e.message} — accepting current crop`);
-        break;
+        logger.warn(`YOLO frame @${pos}s failed: ${(e.message || '').substring(0, 60)}`);
       }
     }
 
-    // Cleanup temp attempt file
-    try { fs.unlinkSync(croppedAttemptPath); } catch {}
+    try { fs.rmSync(yoloDir, { recursive: true, force: true }); } catch {}
+
+    if (subjectCenters.length > 0) {
+      const avgCenterX = subjectCenters.reduce((a, b) => a + b, 0) / subjectCenters.length;
+      cropOffsetX = Math.max(0, Math.min(Math.round(avgCenterX - (targetWidth / 2)), maxCropX));
+      cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
+      logger.info(`YOLO subject centers: [${subjectCenters.map(c => c.toFixed(0)).join(', ')}], avg: ${avgCenterX.toFixed(0)}, crop offset: ${cropOffsetX}px`);
+    } else {
+      logger.info('YOLO: No subject detected — using center crop');
+    }
+
   }
 
   // Step 4: Apply final crop to actual video
@@ -276,29 +221,35 @@ async function smartCrop(videoPath, outputPath, options = {}) {
       const sizeMB = (fs.statSync(finalOutput).size / 1024 / 1024).toFixed(1);
       logger.success(`Cropped: ${sizeMB}MB at ${SHORTS_W}x${SHORTS_H} (CRF ${crf})`);
 
-      // ─── OpenRouter QA Check (non-directional second opinion) ─────
+      // ─── YOLO QA Check (verify subject is centered in final crop) ─────
       try {
-        const qa = getOpenRouterQA();
-        const qaDir = path.join(tmpDir, `qa_crop_${Date.now()}`);
+        const qaDir = path.join(tmpDir, `yolo_qa_${Date.now()}`);
         fs.mkdirSync(qaDir, { recursive: true });
         const qaFrames = extractFrames(finalOutput, qaDir, qaPositions);
-        if (qaFrames.length > 0) {
-          // No rawFrames reference here — QA just checks the final cropped output
-          const qaResult = await qa.checkCrop([], qaFrames, country);
-          if (qaResult) {
-            if (qaResult.yes === false || (qaResult.issues && qaResult.issues.length > 0)) {
-              logger.warn(`OpenRouter QA flags crop issues: ${(qaResult.issues || ['Unknown']).join('; ')}`);
-            } else {
-              logger.success(`OpenRouter QA: crop looks good (confidence: ${qaResult.confidence || '?'}/10)`);
+        const qaOffsets = [];
+        for (const fp of qaFrames) {
+          try {
+            const yoloOut = execSync(
+              `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${fp}" 2>&1`,
+              { timeout: 30000, encoding: 'utf8' }
+            ).toString().trim();
+            const yoloResult = JSON.parse(yoloOut);
+            if (yoloResult.subject !== 'none' && yoloResult.center_x >= 0) {
+              qaOffsets.push(Math.abs(yoloResult.center_x - (SHORTS_W / 2)));
             }
-          } else {
-            logger.info('OpenRouter QA: no response (keys exhausted?)');
-          }
+          } catch {}
         }
         try { fs.rmSync(qaDir, { recursive: true, force: true }); } catch {}
+        if (qaOffsets.length > 0) {
+          const avgOffset = qaOffsets.reduce((a, b) => a + b, 0) / qaOffsets.length;
+          if (avgOffset > SHORTS_W * 0.2) {
+            logger.warn(`YOLO QA: subject avg offset ${avgOffset.toFixed(0)}px — may be off-center`);
+          } else {
+            logger.success(`YOLO QA: subject well-centered (avg offset ${avgOffset.toFixed(0)}px)`);
+          }
+        }
       } catch (qaError) {
-        // QA is non-blocking — never let it break the pipeline
-        logger.warn(`OpenRouter QA error: ${qaError.message.substring(0, 60)}`);
+        logger.warn(`YOLO QA error: ${(qaError.message || '').substring(0, 60)}`);
       }
 
       return {
