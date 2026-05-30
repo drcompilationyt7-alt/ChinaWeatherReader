@@ -128,18 +128,17 @@ async function generateQueries(country, gemini, trendBank) {
  * Quality Gate: views>=5000, comments>0, embeddable, like ratio>=1.5%, <60s, public
  */
 async function searchYouTube(queries, targetCount = 15) {
-  const allResults = [];
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
+  // Collect results per-query in a map for interleaving
+  const perQueryResults = new Map();
+
+  const perQueryTarget = Math.max(1, Math.ceil(targetCount / queries.length));
 
   for (const query of queries) {
-    if (allResults.length >= targetCount) break;
-
     logger.info(`Searching for: "${query}"`);
 
     try {
-      // Use ytsearchN:QUERY where N is count (NOT a range)
-      // ytsearch1-41:QUERY is INVALID syntax — must use ytsearch200:QUERY
       const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
         `--match-filter "!is_live & !upcoming & duration < 60 & availability = 'public'" ` +
         `"ytsearch200:${query}" 2>&1`;
@@ -153,15 +152,15 @@ async function searchYouTube(queries, targetCount = 15) {
       const lines = out.split('\n').filter(Boolean);
       logger.info(`Raw results: ${lines.length} videos`);
 
+      const queryResults = [];
       for (const line of lines) {
-        if (allResults.length >= targetCount) break;
+        if (queryResults.length >= perQueryTarget) break;
 
         try {
           const p = JSON.parse(line);
           if (p.id && !seen.has(p.id)) {
             seen.add(p.id);
 
-            // Fetch full metadata for this candidate
             const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "https://www.youtube.com/watch?v=${p.id}" 2>&1`;
             let metaOut;
             try {
@@ -174,13 +173,10 @@ async function searchYouTube(queries, targetCount = 15) {
             const likes = meta.like_count || 0;
             const comments = meta.comment_count || 0;
 
-            // ═══ Quality Gate ═══════════════════════════════════════
-            // Relaxed: views >= 2000, comments > 0, no embeddable check
             if (views < 2000) continue;
             if (comments === 0) continue;
 
-            // ✅ Passed all gates
-            const candidate = {
+            queryResults.push({
               id: p.id,
               url: `https://www.youtube.com/watch?v=${p.id}`,
               shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
@@ -194,14 +190,32 @@ async function searchYouTube(queries, targetCount = 15) {
               channel: meta.channel || meta.uploader || p.channel || 'Unknown',
               description: (meta.description || '').substring(0, 300),
               upload_date: meta.upload_date || p.upload_date || '',
-            };
-
-            allResults.push(candidate);
+            });
           }
         } catch {}
       }
+
+      if (queryResults.length > 0) {
+        perQueryResults.set(query, queryResults);
+        logger.info(`  → ${queryResults.length} candidates from this query`);
+      }
     } catch (e) {
       logger.warn(`Search failed for "${query}": ${(e.message || '').substring(0, 200)}`);
+    }
+  }
+
+  // Interleave results from all queries: take 1 from each query in round-robin
+  const allResults = [];
+  const queryList = Array.from(perQueryResults.keys());
+  let maxLen = 0;
+  for (const q of queryList) maxLen = Math.max(maxLen, perQueryResults.get(q).length);
+
+  for (let i = 0; i < maxLen && allResults.length < targetCount; i++) {
+    for (const q of queryList) {
+      const results = perQueryResults.get(q);
+      if (i < results.length && allResults.length < targetCount) {
+        allResults.push(results[i]);
+      }
     }
   }
 
