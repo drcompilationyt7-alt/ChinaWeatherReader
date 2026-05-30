@@ -183,7 +183,7 @@ function downloadMaxQuality(video, outputDir) {
 
   // Mirror Type 1's download strategies exactly (proven working)
   const strategies = [
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=1080]+bestaudio/best" --merge-output-format mp4' },
+    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
     { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
     { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
   ];
@@ -195,7 +195,8 @@ function downloadMaxQuality(video, outputDir) {
 
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
         `-o "${outputFile}" "${video.url}" ` +
-        `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4`;
+        `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 ` +
+        `--remote-components ejs:github`;
 
       execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
 

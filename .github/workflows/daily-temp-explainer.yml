@@ -70,7 +70,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install yt-dlp opencv-python-headless --break-system-packages
+          python3 -m pip install yt-dlp yt-dlp-ejs opencv-python-headless --break-system-packages
 
       - name: Install Node.js dependencies
         run: |
