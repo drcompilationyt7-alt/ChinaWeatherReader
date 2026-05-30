@@ -1,1 +1,1 @@
-migrate upload to @google/genai SDK, add to package.json deps  
+refactor CLI runner: upload media via SDK before passing URIs to CLI  

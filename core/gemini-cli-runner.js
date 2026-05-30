@@ -1,17 +1,16 @@
 /**
  * Gemini CLI Runner
  * Uses stdin pipe for pure text prompts to avoid shell escaping issues.
- * Uses explicit positional invocation args (gemini "prompt" file1) 
- * for multimodal inputs to force correct media ingestion across file types.
+ * Staging media files via Google GenAI SDK before passing URIs to CLI.
  * 
  * Model-Switching-First Strategy:
  * On quota (429) errors, switches model first on the same API key.
  * Only rotates to next API key after all models exhausted for current key.
- * Since CLI and upload share the same keys, this preserves quota for uploads.
  */
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { GoogleGenAI } = require('@google/genai');
 const { Logger } = require('./logger');
 
 const logger = new Logger('GeminiCLI');
@@ -62,19 +61,17 @@ class GeminiCLIRunner {
     return process.env.GEMINI_API_KEY || null;
   }
 
-  /** Rotates to next model. Returns true if model changed, false if wrapped around (all models exhausted) */
   _rotateModel() {
     const prev = this.model;
     this.modelIndex++;
     const next = this.model;
-    const wrapped = prev === next; // wrapped around if same after increment
+    const wrapped = prev === next; 
     if (!wrapped) {
       logger.info(`Switching model: ${prev} → ${next} (key ${this.keyIndex + 1})`);
     }
     return !wrapped;
   }
 
-  /** Rotates to next key and resets model */
   _rotateKey() {
     const prevKey = this.keyIndex;
     this.keyIndex++;
@@ -82,13 +79,56 @@ class GeminiCLIRunner {
     logger.info(`Switching key: ${prevKey + 1} → ${(this.keyIndex % 8) + 1}, model reset to ${this.model}`);
   }
 
-  /** On quota error: switch model first, only rotate key if all models exhausted */
   _rotateOnQuota() {
     const modelSwitched = this._rotateModel();
     if (!modelSwitched) {
-      // All models exhausted for current key — rotate key, reset model
       this._rotateKey();
     }
+  }
+
+  /** Upload media via File API and return URI */
+  async _uploadFileForCLI(filePath) {
+    const fileName = path.basename(filePath);
+    const fileSize = fs.statSync(filePath).size;
+    const key = this._getApiKey();
+    if (!key) { logger.warn('No API key for upload'); return null; }
+
+    const ext = path.extname(filePath).toLowerCase();
+    let mimeType = 'video/mp4';
+    if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+    else if (ext === '.png') mimeType = 'image/png';
+
+    logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(2)}MB) for analysis...`);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const mediaFile = await ai.files.upload({
+        file: filePath,
+        mimeType: mimeType,
+      });
+
+      if (!mediaFile || !mediaFile.name) return null;
+
+      // Only wait 13s for video files, images process instantly
+      if (mimeType.startsWith('video/')) {
+        logger.info(`File uploaded: ${mediaFile.name} — waiting 13s for processing...`);
+        await new Promise(r => setTimeout(r, 13000));
+      }
+      
+      return mediaFile.name; // This is the URI needed for the model prompt
+    } catch (e) {
+      logger.warn(`File upload error: ${e.message}`);
+      return null;
+    }
+  }
+
+  async _deleteFile(fileUri) {
+    const key = this._getApiKey();
+    if (!key || !fileUri) return;
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      await ai.files.delete({ name: fileUri });
+    } catch {}
   }
 
   async run(prompt, options = {}) {
@@ -99,6 +139,7 @@ class GeminiCLIRunner {
     const tmpDir = '/tmp';
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
+      let uploadedUris = [];
       try {
         let fullPrompt = prompt;
         if (options.skillFile && fs.existsSync(options.skillFile)) {
@@ -106,59 +147,64 @@ class GeminiCLIRunner {
           fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
         }
 
+        // Intercept and upload all local media files first
+        let mediaString = '';
+        const allMediaPaths = [
+          ...(options.images || []),
+          ...(options.videoPaths || []),
+          ...(options.videoPath ? [options.videoPath] : [])
+        ];
+
+        for (const filePath of allMediaPaths) {
+          if (fs.existsSync(filePath)) {
+            const uri = await this._uploadFileForCLI(filePath);
+            if (uri) {
+              uploadedUris.push(uri);
+              mediaString += `\nMedia URI attached: ${uri}\n`; 
+            }
+          }
+        }
+        
+        if (mediaString) {
+          fullPrompt = `${mediaString}\n${fullPrompt}`;
+        }
+
         const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
         const key = this._getApiKey();
 
-        const fileArgs = [];
-        if (options.images && options.images.length > 0) {
-          for (const f of options.images) {
-            if (fs.existsSync(f)) fileArgs.push(`"${f}"`);
-          }
-        }
-        if (options.videoPaths && options.videoPaths.length > 0) {
-          for (const vp of options.videoPaths) {
-            if (vp && fs.existsSync(vp)) fileArgs.push(`"${vp}"`);
-          }
-        } else if (options.videoPath && fs.existsSync(options.videoPath)) {
-          fileArgs.push(`"${options.videoPath}"`);
-        }
-
-        let cmd;
-        let promptFile = null;
-        if (fileArgs.length > 0) {
-          // Multimodal mode: Removed -p to fix positional argument clash with files
-          const escapedPrompt = fullPrompt
-            .replace(/\\/g, '\\\\')
-            .replace(/"/g, '\\"')
-            .replace(/\$/g, '\\$')
-            .replace(/`/g, '\\`');
-
-          cmd = `GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} "${escapedPrompt}" ${fileArgs.join(' ')} 2>&1`;
-        } else {
-          // Text-only mode
-          promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-          fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-          cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
-        }
+        // Text-only mode piped execution (media references are now part of the text prompt)
+        const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
+        fs.writeFileSync(promptFile, fullPrompt, 'utf8');
+        
+        const cmd = `cat "${promptFile}" | GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} 2>&1`;
 
         logger.info(`CLI run (attempt ${attempt + 1}, model: ${this.model}, key: ${this.keyIndex + 1})`);
 
         const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
 
-        try { if (promptFile) fs.unlinkSync(promptFile); } catch {}
+        try { fs.unlinkSync(promptFile); } catch {}
+
+        // Cleanup remote files on success
+        for (const uri of uploadedUris) {
+            await this._deleteFile(uri);
+        }
 
         const output = result.trim();
         if (output && output.length > 10) {
           logger.success(`CLI responded (${output.length} chars)`);
           const preview = output.substring(0, 300);
-          logger.info(`   Response: ${preview.replace(/\n/g, '\\n')}`);
-          // Pause 10s between CLI calls to avoid 429 rate limiting
+          logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
           await new Promise(r => setTimeout(r, 10000));
           return output;
         }
         logger.warn('CLI empty response');
         this._rotateKey();
       } catch (e) {
+        // Cleanup remote files on failure
+        for (const uri of uploadedUris) {
+            await this._deleteFile(uri);
+        }
+
         const errText = (e.stderr || e.stdout || e.message || '').toString();
         if (e.signal === 'SIGKILL' || e.killed) { logger.warn('CLI timeout'); return null; }
         if (errText.includes('429') || errText.includes('quota')) { 
@@ -170,125 +216,6 @@ class GeminiCLIRunner {
         logger.warn(`CLI error: ${errText.substring(0, 120)}`);
         this._rotateKey();
       }
-    }
-    return null;
-  }
-
-  /**
-   * Upload a local video file to the Gemini File API and return the upload metadata.
-   * Uses @google/genai SDK which handles resumable upload, chunking, and streaming.
-   * After upload, waits 13 seconds for processing instead of polling the status API.
-   */
-  async _uploadFileForCLI(videoPath) {
-    const { GoogleGenAI } = require('@google/genai');
-    const fileName = path.basename(videoPath);
-    const fileSize = fs.statSync(videoPath).size;
-    const key = this._getApiKey();
-    if (!key) { logger.warn('No API key for upload'); return null; }
-
-    logger.info(`Uploading ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) for CLI analysis...`);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: key });
-      const videoFile = await ai.files.upload({
-        file: videoPath,
-        mimeType: 'video/mp4',
-      });
-
-      if (!videoFile || !videoFile.name) {
-        logger.warn('No file name in upload response');
-        return null;
-      }
-
-      // Wait 13 seconds for processing
-      logger.info(`File uploaded: ${videoFile.name} — waiting 13s for processing...`);
-      await new Promise(r => setTimeout(r, 13000));
-      
-      logger.success(`File ready for CLI: ${videoFile.name}`);
-      return { name: videoFile.name, uri: videoFile.name, key, state: 'ACTIVE' };
-    } catch (e) {
-      logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
-      return null;
-    }
-  }
-
-  /** Delete a file from Gemini File API using SDK */
-  async _deleteFile(fileUri, apiKey) {
-    try {
-      const { GoogleGenAI } = require('@google/genai');
-      const ai = new GoogleGenAI({ apiKey });
-      await ai.files.delete({ name: fileUri });
-    } catch {}
-  }
-
-  /**
-   * Rank a video for viral reposting via Gemini CLI.
-   * Uploads file first, then references the URI in the prompt.
-   */
-  async rankVideoFromPath(videoPath, country, curatorSkill, engagementData = null) {
-    if (!this.available) {
-      logger.warn('Gemini CLI not available for video ranking');
-      return null;
-    }
-    if (!fs.existsSync(videoPath)) {
-      logger.warn(`rankVideoFromPath: video not found: ${videoPath}`);
-      return null;
-    }
-
-    // Upload file first, then reference its URI in the CLI prompt
-    let uploadedFile = null;
-    try {
-      uploadedFile = await this._uploadFileForCLI(videoPath);
-    } catch (e) {
-      logger.warn(`Upload failed: ${e.message.substring(0, 60)}`);
-    }
-    if (!uploadedFile) {
-      logger.warn('rankVideoFromPath: upload failed — cannot rank');
-      return null;
-    }
-
-    let metricsBlock = '';
-    if (engagementData) {
-      const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
-
-      metricsBlock = `ENGAGEMENT METRICS:
-- Views: ${engagementData.views || 0}
-- Likes: ${engagementData.likes || 0}
-- Comments: ${engagementData.comments || 0}
-- Age in days: ${engagementData.ageInDays || 0}
-- Title: "${engagementData.title || 'Unknown'}"
-- Velocity (views/day): ${velocity}`;
-
-      if (engagementData.topComments && engagementData.topComments.length > 0) {
-        metricsBlock += '\n\nTOP VIEWER COMMENTS:\n' +
-          engagementData.topComments.map((c, i) => `  ${i + 1}. "${c.text}" (${c.likes} likes, by ${c.author})`).join('\n');
-      }
-    }
-
-    const prompt = `Rank the uploaded video at ${uploadedFile.uri} for Mr. WorldWideWebster.
-
-Country: ${country}${metricsBlock}
-
-Follow the skill instructions. Return JSON.`;
-
-    const result = await this.run(prompt, {
-      timeout: 120000,
-    });
-
-    if (!result) {
-      logger.warn('rankVideoFromPath: CLI returned null');
-      return null;
-    }
-
-    try {
-      const m = result.match(/\{[\s\S]*\}/);
-      if (m) {
-        const p = JSON.parse(m[0]);
-        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
-        return p;
-      }
-    } catch (e) {
-      logger.warn(`rankVideoFromPath JSON parse: ${e.message.substring(0, 80)}`);
     }
     return null;
   }
@@ -420,6 +347,56 @@ Respond ONLY with JSON:
 
   async qualityReview(frames) {
     return this.run('QA review this Short. Score 1-10. JSON: {"quality_score":N,"recommendation":"APPROVE/RENDER_AGAIN"}', { images: frames, timeout: 60000 });
+  }
+
+  async rankVideoFromPath(videoPath, country, curatorSkillContent, engagementData = null) {
+    if (!this.available) return null;
+    if (!fs.existsSync(videoPath)) return null;
+
+    let metricsBlock = '';
+    if (engagementData) {
+      const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
+      metricsBlock = `ENGAGEMENT METRICS:
+- Views: ${engagementData.views || 0}
+- Likes: ${engagementData.likes || 0}
+- Comments: ${engagementData.comments || 0}
+- Age in days: ${engagementData.ageInDays || 0}
+- Title: "${engagementData.title || 'Unknown'}"
+- Velocity (views/day): ${velocity}`;
+
+      if (engagementData.topComments && engagementData.topComments.length > 0) {
+        metricsBlock += '\n\nTOP VIEWER COMMENTS:\n' +
+          engagementData.topComments.map((c, i) => `  ${i + 1}. "${c.text}" (${c.likes} likes, by ${c.author})`).join('\n');
+      }
+    }
+
+    // skill content is passed directly from pipeline (not a file path)
+    const skillHeader = curatorSkillContent ? `## SKILL INSTRUCTIONS\n${curatorSkillContent}\n\n## TASK\n` : '';
+
+    const prompt = `${skillHeader}Rank the attached video for Mr. WorldWideWebster.
+
+Country: ${country}${metricsBlock}
+
+Follow the skill instructions. Return JSON.`;
+
+    const result = await this.run(prompt, {
+      videoPath: videoPath,
+      timeout: 120000,
+    });
+
+    if (!result) return null;
+
+    try {
+      const m = result.match(/\{[\s\S]*\}/);
+      if (m) {
+        const p = JSON.parse(m[0]);
+        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+        return p;
+      }
+    } catch (e) {
+      logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
+    }
+    return null;
   }
 }
 
