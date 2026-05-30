@@ -36,7 +36,7 @@ When top viewer comments are provided, evaluate their sentiment as an additional
 
 When a video URL is provided, analyze the actual visual content:
 - **The 3-Second Hook:** Does the video have immediate high-energy movement or a visual pattern shift in the first 3 seconds? Would a scroller STOP and watch? Score 1-10.
-- **Language Independence:** Can a viewer in the UK/US understand the joke, dance, or context without needing to speak the video's native language? Score 1-10. The BEST clips require ZERO language comprehension — visual humor, physical comedy, dance, stunts, reactions transcend language.
+- **Language Independence:** Language is NOT a barrier — our pipeline adds translated captions. Focus on visual entertainment value, hook strength, and cultural appeal. Non-English content is welcomed as long as the visuals are engaging.
 - **Production Cleanliness:** Are there giant multi-layered watermarks, distracting text overlays, or low resolution (below 480p)? Small corner watermarks are acceptable (cropable). Giant center watermarks = auto-reject.
 
 ### Visual Categorization (Cultural Origin)

@@ -175,10 +175,9 @@ async function searchYouTube(queries, targetCount = 15) {
             const comments = meta.comment_count || 0;
 
             // ═══ Quality Gate ═══════════════════════════════════════
-            if (views < 5000) continue;
+            // Relaxed: views >= 2000, comments > 0, no embeddable check
+            if (views < 2000) continue;
             if (comments === 0) continue;
-            if (meta.is_embeddable === false) continue;
-            if (views > 0 && (likes / views) * 100 < 1.5) continue;
 
             // ✅ Passed all gates
             const candidate = {
