@@ -323,9 +323,36 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
     return { result, candidate };
   }
 
-  // Step 2: URL ranking failed (keys exhausted / error) — download 720p for File API + CLI
-  logger.info(`  Step 2 — URL ranking returned null, downloading 720p for visual ranking...`);
-  const dlPath = await downloadBestVideo(candidate, tmpDir);
+  // Step 2: URL ranking failed — download truncated clip for visual ranking
+  logger.info(`  Step 2 — URL ranking returned null, downloading truncated clip for visual ranking...`);
+
+  // For ranking: download only 8-20s section to save time/bandwidth
+  let dlPath = null;
+  const rankingStrategies = [
+    { name: 'ranking_web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
+    { name: 'ranking_default', args: '', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
+  ];
+
+  const outputFile = path.join(tmpDir, `rank_${Date.now()}.mp4`);
+  for (const s of rankingStrategies) {
+    try {
+      const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
+      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
+      const url = candidate.shortsUrl || candidate.url;
+      const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ${s.sections} ` +
+        `-o "${outputFile}" "${url}" ` +
+        `--no-playlist --socket-timeout 30 --retries 2 --force-ipv4 --remote-components ejs:github 2>&1`;
+
+      execSync(cmd, { timeout: 120000, maxBuffer: 50 * 1024 * 1024 });
+      if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 50000) {
+        dlPath = outputFile;
+        break;
+      }
+    } catch (e) {
+      logger.warn(`  Ranking download ${s.name} failed: ${(e.message || '').substring(0, 60)}`);
+    }
+  }
+
   if (!dlPath) {
     logger.warn(`  Download failed — cannot rank this video`);
     return null;

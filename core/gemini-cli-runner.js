@@ -427,23 +427,41 @@ Country: ${country}${metricsBlock}
 
 Follow the skill instructions. Return JSON.`;
 
-    const result = await this.run(prompt, {
-      videoPath: videoPath,
-      timeout: 120000,
-    });
+    // Retry loop: up to 5 rounds with increasing waits (10s, 20s, 30s, 40s, 50s)
+    // On each retry, switch model to try a different one
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const waitTime = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
 
-    if (!result) return null;
-
-    try {
-      const m = result.match(/\{[\s\S]*\}/);
-      if (m) {
-        const p = JSON.parse(m[0]);
-        p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
-        return p;
+      if (attempt > 0) {
+        logger.info(`rankVideoFromPath retry ${attempt + 1}/${maxRetries} — waiting ${waitTime / 1000}s, switching model...`);
+        await new Promise(r => setTimeout(r, waitTime));
+        this._rotateModel();
       }
-    } catch (e) {
-      logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
+
+      const result = await this.run(prompt, {
+        videoPath: videoPath,
+        timeout: 120000,
+      });
+
+      if (result) {
+        try {
+          const m = result.match(/\{[\s\S]*\}/);
+          if (m) {
+            const p = JSON.parse(m[0]);
+            p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+            return p;
+          }
+        } catch (e) {
+          logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
+          return null;
+        }
+      }
+
+      logger.warn(`rankVideoFromPath attempt ${attempt + 1}/${maxRetries} returned null`);
     }
+
+    logger.error(`rankVideoFromPath all ${maxRetries} retries exhausted`);
     return null;
   }
 }
