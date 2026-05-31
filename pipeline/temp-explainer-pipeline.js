@@ -512,26 +512,41 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
 }
 
 /**
- * Step 7: Gemini generates new title and description
- * Falls back to OpenRouter if Gemini is exhausted
+ * Step 7: Gemini generates new title and description using the same
+ * generateTitle() method as Type 1 pipeline — with full key rotation.
+ * Falls back to OpenRouter only after all Gemini keys/models exhausted.
  */
 async function generateMetadata(country, originalTitle, gemini) {
   logger.info('Generating new title and description...');
 
-  // Load viral-metadata-generator skill for optimal metadata
-  const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');
-  let skillContent = '';
-  try {
-    if (fs.existsSync(skillPath)) {
-      skillContent = fs.readFileSync(skillPath, 'utf8');
-    }
-  } catch (e) {}
+  const flagEmoji = getFlagEmoji(country);
 
-  const systemPrompt = skillContent || `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
+  // Use Type 1's generateTitle which has 2 retry cycles × 8 keys × 2 models
+  // This exhausts ALL Gemini capacity before falling back
+  const metadataContext = {
+    sourceUrl: null,
+    originalTitle: originalTitle,
+  };
+  let result = await gemini.generateTitle(country, '', originalTitle, metadataContext);
+
+  // If Gemini fully exhausted, try OpenRouter as final fallback
+  if (!result || !result.title) {
+    logger.warn('All Gemini keys/models exhausted for metadata — trying OpenRouter fallback');
+    const { getOpenRouterQA } = require('../core/openrouter-qa');
+    const qa = getOpenRouterQA();
+
+    const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');
+    let systemPrompt = '';
+    try {
+      if (fs.existsSync(skillPath)) {
+        systemPrompt = fs.readFileSync(skillPath, 'utf8');
+      }
+    } catch (e) {}
+    systemPrompt = systemPrompt || `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
 Title: max 50 chars, emoji-heavy, curiosity gap, mentions the country. Description: hook + engagement CTA + 3 hashtags.
 Do NOT reference the original video title/channel. Add "Follow Mr. WorldWideWebster" with globe emoji at the end of description.`;
 
-  const userMessage = `Generate a YouTube Shorts title and description for a travel video from ${country}.
+    const userMessage = `Generate a YouTube Shorts title and description for a travel video from ${country}.
 Original video title: "${originalTitle || 'Unknown'}"
 Country: ${country}
 
@@ -540,14 +555,6 @@ Source/Category: ${country.toLowerCase()} travel shorts
 
 Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag2", "tag3"]}`;
 
-  // Try Gemini first (has built-in key rotation + retry)
-  let result = await gemini.chatJSON(systemPrompt, userMessage, { temperature: 0.8, maxTokens: 512 });
-
-  // If Gemini returned null (all keys exhausted), try OpenRouter as fallback
-  if (!result) {
-    logger.warn('Gemini exhausted for metadata generation — trying OpenRouter fallback');
-    const { getOpenRouterQA } = require('../core/openrouter-qa');
-    const qa = getOpenRouterQA();
     const orResult = await qa.chat(
       systemPrompt + '\n\nIMPORTANT: Respond ONLY with valid JSON.',
       userMessage,
@@ -563,20 +570,18 @@ Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag
     }
   }
 
-  if (result) {
-    const flagEmoji = getFlagEmoji(country);
-    const title = (result.title || `${country} Travel Short 🔥`).substring(0, 50);
+  if (result && result.title) {
+    const title = result.title.substring(0, 50);
     let description = result.description || `Amazing travel short from ${country}! Follow Mr. WorldWideWebster for more! 🌍✈️`;
     if (!description.includes('Mr. WorldWideWebster')) {
       description += `\n\nFollow Mr. WorldWideWebster for more! ${flagEmoji}🌍✈️`;
     }
     const tags = result.tags || ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'travel'];
-    logger.success(`Title: "${title}" (${result?.title ? 'Gemini' : 'OpenRouter'})`);
+    logger.success(`Title: "${title}"`);
     return { title, description, tags };
   }
 
-  // Ultimate fallback — should rarely happen
-  const flagEmoji = getFlagEmoji(country);
+  // Ultimate fallback — should never happen
   logger.error('All LLM providers exhausted for metadata — using fallback');
   return {
     title: `${country} Travel Short 🔥`.substring(0, 50),
