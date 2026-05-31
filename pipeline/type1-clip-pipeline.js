@@ -561,7 +561,8 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
     logger.info(`Searching for: "${query}"`);
 
     try {
-      const searchCmd = `yt-dlp --flat-playlist --dump-json "ytsearch200:${query}" 2>&1`;
+      // Fetch 100 results via fast flat playlist (no per-video metadata yet)
+      const searchCmd = `yt-dlp --flat-playlist --dump-json "ytsearch100:${query}" 2>&1`;
 
       const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }).toString().trim();
       if (!out) {
@@ -572,13 +573,23 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       const lines = out.split('\n').filter(Boolean);
       logger.info(`Raw results: ${lines.length} videos`);
 
+      // Fisher-Yates shuffle for random selection
+      for (let i = lines.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [lines[i], lines[j]] = [lines[j], lines[i]];
+      }
+
+      // Take first 5 from shuffled list for metadata enrichment
+      const selected = lines.slice(0, 5);
       let addedFromQuery = 0;
-      for (const line of lines) {
+
+      for (const line of selected) {
         try {
           const p = JSON.parse(line);
           if (p.id && !seen.has(p.id)) {
             seen.add(p.id);
 
+            // Fetch detailed metadata only for this selected video
             const metaCmd = `yt-dlp ${cookieArg} --dump-json --no-download "https://www.youtube.com/watch?v=${p.id}" 2>&1`;
             let metaOut;
             try {
@@ -611,7 +622,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       }
 
       if (addedFromQuery > 0) {
-        logger.info(`  → ${addedFromQuery} raw candidates added from this query`);
+        logger.info(`  → ${addedFromQuery} enriched candidates from this query (random from 100 results)`);
       }
     } catch (e) {
       logger.warn(`Search failed for "${query}": ${(e.message || '').substring(0, 200)}`);
