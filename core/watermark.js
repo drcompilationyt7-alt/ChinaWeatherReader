@@ -42,20 +42,49 @@ async function addWatermark(videoPath, outputPath) {
 
   logger.info(`Adding watermark to ${path.basename(videoPath)}`);
 
+  // Probe input video for audio stream
+  let hasAudio = true;
   try {
-    // FFmpeg filter: scale logo, overlay at bottom-right, then draw text below
-    const cmd = `ffmpeg -y -i "${videoPath}" -i "${PROFILE_IMAGE}" ` +
-      `-filter_complex ` +
-      `"[1:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:flags=lanczos,format=rgba[logo];` +
-      `[0:v][logo]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,` +
-      `drawtext=text='${TEXT}':` +
-      `fontcolor=white@0.55:` +
-      `fontsize=${FONT_SIZE}:` +
-      `x=W-tw-${MARGIN_RIGHT}:` +
-      `y=H-th-${MARGIN_RIGHT-10}:` +
-      `shadowcolor=black@0.55:shadowx=1:shadowy=1[out]" ` +
-      `-map "[out]" -map 0:a -c:v libx264 -preset medium -crf 0 -c:a copy ` +
-      `-pix_fmt yuv420p -shortest "${outputPath}" 2>/dev/null`;
+    const probeOut = execSync(
+      `ffprobe -v error -show_entries stream=codec_type -of csv=p=0 "${videoPath}"`,
+      { timeout: 10000, encoding: 'utf8' }
+    ).trim();
+    const streamTypes = probeOut.split('\n').filter(Boolean);
+    hasAudio = streamTypes.includes('audio');
+  } catch (e) {
+    logger.warn(`Failed to probe video for audio: ${(e.message || '').substring(0, 60)}`);
+  }
+
+  try {
+    // Build FFmpeg command — conditionally map audio if present
+    let cmd;
+    if (hasAudio) {
+      cmd = `ffmpeg -y -i "${videoPath}" -i "${PROFILE_IMAGE}" ` +
+        `-filter_complex ` +
+        `"[1:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:flags=lanczos,format=rgba[logo];` +
+        `[0:v][logo]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,` +
+        `drawtext=text='${TEXT}':` +
+        `fontcolor=white@0.55:` +
+        `fontsize=${FONT_SIZE}:` +
+        `x=W-tw-${MARGIN_RIGHT}:` +
+        `y=H-th-${MARGIN_RIGHT-10}:` +
+        `shadowcolor=black@0.55:shadowx=1:shadowy=1[out]" ` +
+        `-map "[out]" -map 0:a -c:v libx264 -preset medium -crf 0 -c:a copy ` +
+        `-pix_fmt yuv420p -shortest "${outputPath}"`;
+    } else {
+      cmd = `ffmpeg -y -i "${videoPath}" -i "${PROFILE_IMAGE}" ` +
+        `-filter_complex ` +
+        `"[1:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:flags=lanczos,format=rgba[logo];` +
+        `[0:v][logo]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,` +
+        `drawtext=text='${TEXT}':` +
+        `fontcolor=white@0.55:` +
+        `fontsize=${FONT_SIZE}:` +
+        `x=W-tw-${MARGIN_RIGHT}:` +
+        `y=H-th-${MARGIN_RIGHT-10}:` +
+        `shadowcolor=black@0.55:shadowx=1:shadowy=1[out]" ` +
+        `-map "[out]" -c:v libx264 -preset medium -crf 0 ` +
+        `-pix_fmt yuv420p -shortest "${outputPath}"`;
+    }
 
     execSync(cmd, { timeout: 180000, maxBuffer: 500 * 1024 * 1024 });
 

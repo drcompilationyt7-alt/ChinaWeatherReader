@@ -936,15 +936,35 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'word_count': 
 async function addSignature(videoPath, outputPath, country, tmpDir) {
   logger.info(`Adding signature: "Enjoy this clip from ${country}"`);
 
+  // Probe input video for streams
+  let hasAudio = true;
+  let videoDuration = 30;
+  try {
+    const probeOut = execSync(
+      `ffprobe -v error -show_entries stream=codec_type -of csv=p=0 "${videoPath}"`,
+      { timeout: 10000, encoding: 'utf8' }
+    ).trim();
+    const streamTypes = probeOut.split('\n').filter(Boolean);
+    hasAudio = streamTypes.includes('audio');
+    // Get video duration
+    const durOut = execSync(
+      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`,
+      { timeout: 5000, encoding: 'utf8' }
+    ).trim();
+    if (durOut) videoDuration = parseFloat(durOut);
+  } catch (e) {
+    logger.warn(`Failed to probe video: ${(e.message || '').substring(0, 60)}`);
+  }
+
   // Generate TTS
   const ttsPath = path.join(tmpDir, `signature_${Date.now()}.mp3`);
   try {
     execSync(
-      `edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this clip from ${country}" --write-media "${ttsPath}" 2>/dev/null`,
+      `edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this clip from ${country}" --write-media "${ttsPath}"`,
       { timeout: 30000 }
     );
   } catch (e) {
-    logger.warn(`TTS failed: ${e.message.substring(0, 60)}`);
+    logger.warn(`TTS failed: ${(e.message || '').substring(0, 60)}`);
     // Fallback: just copy without signature
     try { fs.copyFileSync(videoPath, outputPath); } catch {}
     return fs.existsSync(outputPath);
@@ -959,7 +979,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
   let ttsDuration = 3;
   try {
     const durOut = execSync(
-      `ffprobe -i "${ttsPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`,
+      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${ttsPath}"`,
       { timeout: 5000, encoding: 'utf8' }
     ).trim();
     if (durOut) ttsDuration = Math.min(parseFloat(durOut), 5);
@@ -983,55 +1003,76 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       const cp2 = 0x1f1e6 + (iso.charCodeAt(1) - 65);
       const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
       const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
-      const response = await require('axios')({ method: 'GET', url, responseType: 'stream', timeout: 10000 });
+      const response = await require('axios')('GET', url, {
+        responseType: 'stream',
+        timeout: 10000,
+        validateStatus: status => status === 200,
+      });
       const writer = fs.createWriteStream(flagFile);
       response.data.pipe(writer);
       await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
-      if (fs.existsSync(flagFile) && fs.statSync(flagFile).size > 100) hasFlag = true;
-    } catch {}
+      // Validate flag PNG: must be > 100 bytes and begin with PNG header
+      if (fs.existsSync(flagFile) && fs.statSync(flagFile).size > 100) {
+        const header = fs.readFileSync(flagFile, null).slice(0, 8).toString('latin1');
+        if (header.startsWith('\x89PNG')) hasFlag = true;
+      }
+    } catch (e) {
+      logger.warn(`Flag download failed: ${(e.message || '').substring(0, 60)}`);
+    }
   }
 
-  // Get video duration
-  let videoDuration = 30;
-  try {
-    const durOut = execSync(
-      `ffprobe -i "${videoPath}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`,
-      { timeout: 5000, encoding: 'utf8' }
-    ).trim();
-    if (durOut) videoDuration = parseFloat(durOut);
-  } catch {}
+  if (!hasFlag) {
+    logger.info('No flag overlay available — using TTS-only signature');
+  }
 
-  // Mix: original audio ducked + signature TTS + optional flag
-  try {
-    const startDelay = Math.min(1, Math.max(0, videoDuration - ttsDuration - 0.5));
-    const endTime = startDelay + ttsDuration;
-    const delayMs = Math.round(startDelay * 1000);
+  // Build ffmpeg command based on available streams
+  const startDelay = Math.min(1, Math.max(0, videoDuration - ttsDuration - 0.5));
+  const endTime = startDelay + ttsDuration;
+  const delayMs = Math.round(startDelay * 1000);
 
-    if (hasFlag) {
+  try {
+    let ffmpegCmd;
+    if (hasFlag && hasAudio) {
+      // Full: flag overlay + audio duck + TTS mix
       const filterComplex =
         `[2:v]scale=144:-1[flag];` +
         `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v];` +
         `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
         `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
-      execSync(
+      ffmpegCmd =
         `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
         `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
-        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}" 2>/dev/null`,
-        { timeout: 120000 }
-      );
-    } else {
+        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}"`;
+    } else if (hasFlag && !hasAudio) {
+      // No original audio: just overlay flag + TTS as main audio
+      const filterComplex =
+        `[2:v]scale=144:-1[flag];` +
+        `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v]`;
+
+      ffmpegCmd =
+        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
+        `-filter_complex "${filterComplex}" -map "[v]" -map 1:a ` +
+        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}"`;
+    } else if (!hasFlag && hasAudio) {
+      // No flag: just audio duck + TTS mix
       const filterComplex =
         `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
         `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
-      execSync(
+      ffmpegCmd =
         `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
         `-filter_complex "${filterComplex}" -map 0:v -map "[a]" ` +
-        `-c:v copy -c:a aac -shortest "${outputPath}" 2>/dev/null`,
-        { timeout: 120000 }
-      );
+        `-c:v copy -c:a aac -shortest "${outputPath}"`;
+    } else {
+      // No flag, no original audio: just TTS audio over video
+      ffmpegCmd =
+        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
+        `-map 0:v -map 1:a -c:v copy -c:a aac -shortest "${outputPath}"`;
     }
+
+    const stderr = execSync(ffmpegCmd, { timeout: 120000, encoding: 'utf8' });
+    const stderrStr = (stderr || '').toString();
 
     // Cleanup
     try { fs.unlinkSync(ttsPath); } catch {}
@@ -1041,8 +1082,14 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       logger.success(`Signature added: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(1)}MB`);
       return true;
     }
+
+    // ffmpeg returned 0 but output is too small — log stderr for debugging
+    if (stderrStr.includes('error') || stderrStr.includes('Error')) {
+      logger.warn(`ffmpeg warning: ${stderrStr.substring(0, 200)}`);
+    }
   } catch (e) {
-    logger.warn(`Signature overlay failed: ${e.message.substring(0, 100)}`);
+    const stderrMsg = (e.stderr || e.message || '').substring(0, 100);
+    logger.warn(`Signature overlay failed: ${stderrMsg}`);
   }
 
   // Fallback: copy without signature

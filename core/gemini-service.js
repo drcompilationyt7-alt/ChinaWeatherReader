@@ -119,92 +119,109 @@ class GeminiService {
   }
 
   async _callAPI(contents, options = {}) {
-    // Total attempts = (keys × models) + 1 extra
-    const maxRetries = (this.keys.length || 1) * MODEL_CHAIN.length + 1;
+    // Total attempts per cycle = (keys × models) + 1 extra
+    const attemptsPerCycle = (this.keys.length || 1) * MODEL_CHAIN.length + 1;
+    // Use 2 full retry cycles with escalating cooldown
+    const MAX_CYCLES = 2;
+    const CYCLE_COOLDOWNS = [0, 60000]; // cycle 0: no extra wait, cycle 1: 60s global cooldown
     let lastError = null;
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const key = this._getKey();
-      if (!key) { logger.warn('No API keys available'); return null; }
+    for (let cycle = 0; cycle < MAX_CYCLES; cycle++) {
+      // Apply global cooldown before this cycle (except first)
+      if (CYCLE_COOLDOWNS[cycle] > 0) {
+        logger.warn(`All keys exhausted — waiting ${CYCLE_COOLDOWNS[cycle] / 1000}s global cooldown before retry cycle ${cycle + 1}/${MAX_CYCLES}`);
+        await new Promise(r => setTimeout(r, CYCLE_COOLDOWNS[cycle]));
+      }
 
-      try {
-        const body = {
-          contents,
-          generationConfig: {
-            temperature: options.temperature || 0.7,
-            maxOutputTokens: options.maxTokens || 2048,
-            topP: options.topP || 0.9,
-          },
-        };
-        if (options.systemInstruction) {
-          body.systemInstruction = { parts: [{ text: options.systemInstruction }] };
-        }
+      for (let attempt = 0; attempt < attemptsPerCycle; attempt++) {
+        const key = this._getKey();
+        if (!key) { logger.warn('No API keys available'); return null; }
 
-        const url = `${GEMINI_BASE}/models/${this.model}:generateContent?key=${key}`;
-        const resp = await axios.post(url, body, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: options.timeout || 120000,
-        });
+        try {
+          const body = {
+            contents,
+            generationConfig: {
+              temperature: options.temperature || 0.7,
+              maxOutputTokens: options.maxTokens || 2048,
+              topP: options.topP || 0.9,
+            },
+          };
+          if (options.systemInstruction) {
+            body.systemInstruction = { parts: [{ text: options.systemInstruction }] };
+          }
 
-        this.requestCount++;
-        const candidates = resp.data?.candidates;
+          const url = `${GEMINI_BASE}/models/${this.model}:generateContent?key=${key}`;
+          const resp = await axios.post(url, body, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: options.timeout || 120000,
+          });
 
-        if (!candidates || candidates.length === 0) {
-          const blockReason = resp.data?.promptFeedback?.blockReason;
-          logger.warn(`Gemini empty candidates (model: ${this.model}, block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
+          this.requestCount++;
+          const candidates = resp.data?.candidates;
+
+          if (!candidates || candidates.length === 0) {
+            const blockReason = resp.data?.promptFeedback?.blockReason;
+            logger.warn(`Gemini empty candidates (model: ${this.model}, block: ${blockReason || 'unknown'}, key: ${this.currentKeyIndex + 1})`);
+            this._rotateKey();
+            await new Promise(r => setTimeout(r, MIN_DELAY));
+            continue;
+          }
+
+          const parts = candidates[0].content?.parts;
+          if (parts && parts.length > 0) return parts.map(p => p.text || '').join('');
+          return null;
+        } catch (error) {
+          lastError = error;
+          const status = error.response?.status;
+          const errText = error.response?.data?.error?.message || error.message;
+
+          logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
+
+          if (errText?.includes('not in an ACTIVE state')) {
+            logger.warn('Gemini file is not ACTIVE at generation time - falling back to another visual path');
+            return null;
+          }
+
+          if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
+            logger.warn('Video access denied or file usage denied - not retrying other keys/models for this media file');
+            return null;
+          }
+
+          if (status === 429 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
+            const delay = Math.min(MIN_DELAY * (attempt + 1), 30000);
+            logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${delay}ms`);
+            this._rotateKey();
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+
+          if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline') || errText?.includes('write EPIPE')) {
+            const backoff = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000);
+            logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms, then rotating key`);
+            this._rotateKey();
+            await new Promise(r => setTimeout(r, backoff));
+            continue;
+          }
+
+          if (status === 400) {
+            logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error — rotating`);
+            this._rotateKey();
+            await new Promise(r => setTimeout(r, MIN_DELAY));
+            continue;
+          }
+
           this._rotateKey();
           await new Promise(r => setTimeout(r, MIN_DELAY));
-          continue;
         }
+      }
 
-        const parts = candidates[0].content?.parts;
-        if (parts && parts.length > 0) return parts.map(p => p.text || '').join('');
-        return null;
-      } catch (error) {
-        lastError = error;
-        const status = error.response?.status;
-        const errText = error.response?.data?.error?.message || error.message;
-
-        logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
-
-        if (errText?.includes('not in an ACTIVE state')) {
-          logger.warn('Gemini file is not ACTIVE at generation time - falling back to another visual path');
-          return null;
-        }
-
-        if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
-          logger.warn('Video access denied or file usage denied - not retrying other keys/models for this media file');
-          return null;
-        }
-
-        if (status === 429 || errText?.includes('quota') || errText?.includes('RESOURCE_EXHAUSTED')) {
-          const delay = Math.min(MIN_DELAY * (attempt + 1), 30000);
-          logger.warn(`Key ${this.currentKeyIndex + 1} rate limited — rotating, waiting ${delay}ms`);
-          this._rotateKey();
-          await new Promise(r => setTimeout(r, delay));
-          continue;
-        }
-
-        if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline') || errText?.includes('write EPIPE')) {
-          const backoff = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000);
-          logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms, then rotating key`);
-          this._rotateKey();
-          await new Promise(r => setTimeout(r, backoff));
-          continue;
-        }
-
-        if (status === 400) {
-          logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} 400 error — rotating`);
-          this._rotateKey();
-          await new Promise(r => setTimeout(r, MIN_DELAY));
-          continue;
-        }
-
-        this._rotateKey();
-        await new Promise(r => setTimeout(r, MIN_DELAY));
+      // If we finish a cycle and still have errors, log we're going for another cycle
+      if (cycle < MAX_CYCLES - 1) {
+        logger.warn(`Cycle ${cycle + 1}/${MAX_CYCLES} exhausted all keys/models — preparing retry with cooldown`);
       }
     }
-    logger.error(`All keys + models exhausted. Last: ${(lastError?.message || '').substring(0, 80)}`);
+
+    logger.error(`All keys + models exhausted after ${MAX_CYCLES} retry cycles. Last: ${(lastError?.message || '').substring(0, 80)}`);
     return null;
   }
 
