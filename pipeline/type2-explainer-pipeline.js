@@ -25,6 +25,7 @@ const { pickCountry, generateTopicGuidance } = require('../core/explainer-topics
 const { generateAllLines } = require('../core/tts-engine');
 const { searchWithQueries, downloadVideo, getVideoMetadata, sliceClip } = require('../core/explainer-downloader');
 const { render } = require('../core/video-compiler');
+const { addWatermark } = require('../core/watermark');
 const { smartCrop, extractFrames } = require('../core/smart-cropper');
 const { smartEdit } = require('../core/smart-editor');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
@@ -693,7 +694,13 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
   }
 
   // ─── Stage 8: Post-Process (Crop + Captions + QA) ─────────────────
-  const finalPath = await stage8_postprocess(rendered, country, tmpDir, outputDir);
+  const postProcessed = await stage8_postprocess(rendered, country, tmpDir, tmpDir);
+  
+  // ─── Stage 8b: Watermark ─────────────────────────────────────────
+  logger.info('Stage 8b: Add Watermark');
+  const wmPath = path.join(tmpDir, `watermarked_${Date.now()}.mp4`);
+  const wmResult = await addWatermark(postProcessed, wmPath);
+  const finalPath = wmResult || postProcessed;
 
   // ─── Cleanup ──────────────────────────────────────────────────────
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}

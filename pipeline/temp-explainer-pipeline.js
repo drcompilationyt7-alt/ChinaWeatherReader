@@ -602,6 +602,8 @@ async function runTempExplainerPipeline(options = {}) {
   const finalCountry = country || (channelInfo.region === 'World' ? 'Global' : channelInfo.region);
   logger.success(`Final country: ${finalCountry}`);
 
+  const { addWatermark } = require('../core/watermark');
+
   // ─── Step 5: Download Flag ─────────────────────────────────────────
   logger.header('STEP 5: DOWNLOAD FLAG');
   const flagPath = await downloadFlag(finalCountry, tmpDir);
@@ -640,10 +642,16 @@ async function runTempExplainerPipeline(options = {}) {
   memory.lastRun = new Date().toISOString();
   saveMemory(memory);
 
+  // ─── Step 8b: Watermark ──────────────────────────────────────────
+  logger.header('STEP 8b: ADD WATERMARK');
+  const watermarkedPath = path.join(tmpDir, `watermarked_${video.id}.mp4`);
+  const wmResult = await addWatermark(flaggedPath, watermarkedPath);
+  const finalOutputPath = wmResult || flaggedPath;
+
   // Copy to output with clean name
   const finalPath = path.join(outputDir, `temp_${video.id}.mp4`);
   try {
-    fs.copyFileSync(flaggedPath, finalPath);
+    fs.copyFileSync(finalOutputPath, finalPath);
   } catch (e) {
     logger.warn(`Copy failed: ${e.message}`);
   }
