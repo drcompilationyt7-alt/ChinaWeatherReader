@@ -70,7 +70,7 @@ async function addWatermark(videoPath, outputPath) {
         `y=H-th-${MARGIN_RIGHT-10}:` +
         `shadowcolor=black@0.55:shadowx=1:shadowy=1[out]" ` +
         `-map "[out]" -map 0:a -c:v libx264 -preset medium -crf 0 -c:a copy ` +
-        `-pix_fmt yuv420p -shortest "${outputPath}"`;
+        `-pix_fmt yuv444p -shortest "${outputPath}"`;
     } else {
       cmd = `ffmpeg -y -i "${videoPath}" -i "${PROFILE_IMAGE}" ` +
         `-filter_complex ` +
@@ -83,7 +83,7 @@ async function addWatermark(videoPath, outputPath) {
         `y=H-th-${MARGIN_RIGHT-10}:` +
         `shadowcolor=black@0.55:shadowx=1:shadowy=1[out]" ` +
         `-map "[out]" -c:v libx264 -preset medium -crf 0 ` +
-        `-pix_fmt yuv420p -shortest "${outputPath}"`;
+        `-pix_fmt yuv444p -shortest "${outputPath}"`;
     }
 
     execSync(cmd, { timeout: 180000, maxBuffer: 500 * 1024 * 1024 });

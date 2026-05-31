@@ -90,8 +90,26 @@ function downloadVideo(url, outputDir) {
   const outputFile = path.join(outputDir, `source_${Date.now()}_%(id)s.%(ext)s`);
 
   const strategies = [
-    { name: 'default', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4' },
-    { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
+    {
+      name: 'web_1080_mp4',
+      args: '--extractor-args "youtube:player_client=web"',
+      format: '-f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,vcodec:h264,acodec:m4a,ext:mp4:m4a" --merge-output-format mp4',
+    },
+    {
+      name: 'default_1080_best',
+      args: '',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'android_1080',
+      args: '--extractor-args "youtube:player_client=android"',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/best" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'fallback_best',
+      args: '',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4',
+    },
   ];
 
   for (const s of strategies) {
@@ -99,7 +117,7 @@ function downloadVideo(url, outputDir) {
       const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
       const cmd = `yt-dlp ${cookieArg} ${s.args || ''} ${s.format} ` +
         `-o "${outputFile}" "${url}" ` +
-        `--no-playlist --max-filesize 200M --socket-timeout 30 --retries 2 --force-ipv4`;
+        `--no-playlist --max-filesize 500M --socket-timeout 30 --retries 2 --force-ipv4`;
       
       execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
 
@@ -153,8 +171,8 @@ function sliceClip(inputPath, outputPath, startTime, endTime) {
   try {
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${inputPath}" -to ${endTime} ` +
-      `-c:v libx264 -preset fast -crf 18 -c:a aac -b:a 192k ` +
-      `-pix_fmt yuv420p "${outputPath}" 2>/dev/null`,
+      `-c:v libx264 -preset fast -crf 0 -c:a aac -b:a 320k ` +
+      `-pix_fmt yuv444p "${outputPath}"`,
       { timeout: 120000 }
     );
 

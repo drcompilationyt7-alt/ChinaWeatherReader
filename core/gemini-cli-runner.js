@@ -12,6 +12,7 @@
 const { execFileSync, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { GoogleGenAI } = require('@google/genai');
 const { Logger } = require('./logger');
 
@@ -332,7 +333,6 @@ class GeminiCLIRunner {
           this.model,
           '-p',
           fullPrompt,
-          ...uploadedUris,
         ];
 
         logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${modelAttemptsPerKey})`);
@@ -443,7 +443,7 @@ Respond ONLY JSON:
     let runOptions = { timeout: 120000 };
 
     try {
-      frameDir = fs.mkdtempSync(path.join(path.dirname(editedPath), 'qa_frames_'));
+      frameDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qa_frames_'));
       const frames = this._extractReviewFrames([originalPath, editedPath], frameDir);
       if (frames.length >= 2) {
         runOptions = {
@@ -508,7 +508,7 @@ Respond ONLY with JSON:
     let frameDir = null;
     let result = null;
     try {
-      frameDir = fs.mkdtempSync(path.join(path.dirname(videoPath), 'final_qa_frames_'));
+      frameDir = fs.mkdtempSync(path.join(os.tmpdir(), 'final_qa_frames_'));
       const frames = this._extractReviewFrames([videoPath], frameDir);
       if (frames.length > 0) {
         result = await this.run(`${prompt}
@@ -645,7 +645,7 @@ Follow the skill instructions. Return JSON.`;
 
     let frameDir = null;
     try {
-      frameDir = fs.mkdtempSync(path.join(path.dirname(videoPath), 'rank_frames_'));
+      frameDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rank_frames_'));
       const frames = this._extractReviewFrames([videoPath], frameDir);
       if (frames.length > 0) {
         logger.info(`rankVideoFromPath: video analysis unavailable; retrying with ${frames.length} extracted frames`);

@@ -17,7 +17,7 @@ const logger = new Logger('VideoCompiler');
 
 const OUTPUT_W = 1080;
 const OUTPUT_H = 1920;
-const CRF = 15; // Maximum quality (0-51, lower = better)
+const CRF = 0; // Lossless (0-51, lower = better)
 const PRESET = 'slow';
 
 /**
@@ -186,7 +186,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
       const cmd = `ffmpeg -y -i "${clipPath}" ${audioInput} ${duration} ` +
         `-vf "${vf}" ${filterComplex} ` +
         `-c:v libx264 -preset ${PRESET} -crf ${CRF} ` +
-        `-c:a aac -b:a 192k -shortest "${segmentOutput}" 2>/dev/null`;
+        `-pix_fmt yuv444p -c:a aac -b:a 320k -shortest "${segmentOutput}"`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 50 * 1024 * 1024 });
 
@@ -220,15 +220,15 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
 
     if (firstUseConcat) {
       concatCmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" ` +
-        `-c:v libx264 -preset ${PRESET} -crf ${CRF} -c:a aac -b:a 192k ` +
-        `-pix_fmt yuv420p "${outputPath}" 2>/dev/null`;
+        `-c:v libx264 -preset ${PRESET} -crf ${CRF} -c:a aac -b:a 320k ` +
+        `-pix_fmt yuv444p "${outputPath}"`;
     } else {
       // Fallback: use concat filter
       const inputs = processedClips.map(c => `-i "${c}"`).join(' ');
       const streams = processedClips.map((_, i) => `[${i}:v][${i}:a]`).join('');
       concatCmd = `ffmpeg -y ${inputs} ` +
         `-filter_complex "${streams}concat=n=${processedClips.length}:v=1:a=1[vo][ao]" ` +
-        `-map "[vo]" -map "[ao]" -c:v libx264 -preset ${PRESET} -crf ${CRF} -c:a aac -b:a 192k "${outputPath}" 2>/dev/null`;
+        `-map "[vo]" -map "[ao]" -c:v libx264 -preset ${PRESET} -crf ${CRF} -pix_fmt yuv444p -c:a aac -b:a 320k "${outputPath}"`;
     }
 
     execSync(concatCmd, { timeout: 300000, maxBuffer: 100 * 1024 * 1024 });

@@ -1041,46 +1041,46 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
   const endTime = startDelay + ttsDuration;
   const delayMs = Math.round(startDelay * 1000);
 
-  try {
-    let ffmpegCmd;
-    if (hasFlag && hasAudio) {
-      // Full: flag overlay + audio duck + TTS mix
-      const filterComplex =
-        `[2:v]scale=144:-1[flag];` +
-        `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v];` +
-        `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
-        `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
+    try {
+      let ffmpegCmd;
+      if (hasFlag && hasAudio) {
+        // Full: flag overlay + audio duck + TTS mix
+        const filterComplex =
+          `[2:v]scale=144:-1[flag];` +
+          `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v];` +
+          `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
+          `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
-      ffmpegCmd =
-        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
-        `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
-        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}"`;
-    } else if (hasFlag && !hasAudio) {
-      // No original audio: just overlay flag + TTS as main audio
-      const filterComplex =
-        `[2:v]scale=144:-1[flag];` +
-        `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v]`;
+        ffmpegCmd =
+          `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
+          `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
+          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
+      } else if (hasFlag && !hasAudio) {
+        // No original audio: just overlay flag + TTS as main audio
+        const filterComplex =
+          `[2:v]scale=144:-1[flag];` +
+          `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v]`;
 
-      ffmpegCmd =
-        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
-        `-filter_complex "${filterComplex}" -map "[v]" -map 1:a ` +
-        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}"`;
-    } else if (!hasFlag && hasAudio) {
-      // No flag: just audio duck + TTS mix
-      const filterComplex =
-        `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
-        `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
+        ffmpegCmd =
+          `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
+          `-filter_complex "${filterComplex}" -map "[v]" -map 1:a ` +
+          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
+      } else if (!hasFlag && hasAudio) {
+        // No flag: just audio duck + TTS mix
+        const filterComplex =
+          `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
+          `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
-      ffmpegCmd =
-        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
-        `-filter_complex "${filterComplex}" -map 0:v -map "[a]" ` +
-        `-c:v copy -c:a aac -shortest "${outputPath}"`;
-    } else {
-      // No flag, no original audio: just TTS audio over video
-      ffmpegCmd =
-        `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
-        `-map 0:v -map 1:a -c:v copy -c:a aac -shortest "${outputPath}"`;
-    }
+        ffmpegCmd =
+          `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
+          `-filter_complex "${filterComplex}" -map 0:v -map "[a]" ` +
+          `-c:v copy -c:a aac -shortest "${outputPath}"`;
+      } else {
+        // No flag, no original audio: just TTS audio over video
+        ffmpegCmd =
+          `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
+          `-map 0:v -map 1:a -c:v copy -c:a aac -shortest "${outputPath}"`;
+      }
 
     const stderr = execSync(ffmpegCmd, { timeout: 120000, encoding: 'utf8' });
     const stderrStr = (stderr || '').toString();
