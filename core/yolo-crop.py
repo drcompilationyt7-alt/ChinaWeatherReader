@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 def get_smart_crop_center(image_path):
     # Load model (auto-downloads yolov8n.pt on first run, ~6MB)
-    model = YOLO("yolov8n.pt")
+    model = YOLO("yolov8n.pt", verbose=False)
     
     results = model(image_path)
     
