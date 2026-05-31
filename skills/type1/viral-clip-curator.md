@@ -46,8 +46,8 @@ This is where most of the score comes from. Analyze the video's content DEEPLY w
   - Aesthetic photo dumps, Y2K edits, travel = allowed
   - TV show clips, award events, lectures = score penalty (-3)
 - **Visual Quality:** Clean, well-lit, good resolution (>=480p)? Poor quality = penalty.
+- **Format:** Non-9:16 resolution (landscape, square, etc.) = **-2 score penalty** (we prioritize TikTok-style vertical Shorts format).
 - **Watermarks:** Giant center watermarks = auto-reject. Small corner marks = acceptable.
-- **Language:** Non-English is fine, language is NOT a barrier.
 
 ### When You CANNOT See the Video (URL failed / null):
 - Do NOT approve or reject from title, description, or engagement data.

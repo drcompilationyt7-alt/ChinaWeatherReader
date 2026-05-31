@@ -573,14 +573,42 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       const lines = out.split('\n').filter(Boolean);
       logger.info(`Raw results: ${lines.length} videos`);
 
-      // Fisher-Yates shuffle for random selection
-      for (let i = lines.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [lines[i], lines[j]] = [lines[j], lines[i]];
+      // Separate Shorts from non-Shorts
+      const shorts = [];
+      const nonShorts = [];
+      for (const line of lines) {
+        try {
+          const p = JSON.parse(line);
+          if (p.id) {
+            // yt-dlp flat playlist returns Shorts with the ID; we check if the URL is a Shorts URL
+            // The id itself doesn't indicate Shorts, but we can check if duration < 60s as heuristic
+            // A more reliable approach: the search query for Shorts often returns Shorts, but some results are regular videos.
+            // We'll use duration < 60s as a reliable Shorts indicator from flat-playlist
+            if (p.duration && p.duration <= 60) {
+              shorts.push(line);
+            } else {
+              nonShorts.push(line);
+            }
+          }
+        } catch {}
       }
 
-      // Take first 5 from shuffled list for metadata enrichment
-      const selected = lines.slice(0, 5);
+      // Fisher-Yates shuffle both lists
+      for (let i = shorts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shorts[i], shorts[j]] = [shorts[j], shorts[i]];
+      }
+      for (let i = nonShorts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [nonShorts[i], nonShorts[j]] = [nonShorts[j], nonShorts[i]];
+      }
+
+      // Prefer Shorts: take up to 5 from shuffled shorts, fill rest from non-shorts
+      const selectedFromShorts = shorts.slice(0, 5);
+      const selectedFromNonShorts = nonShorts.slice(0, Math.max(0, 5 - selectedFromShorts.length));
+      const selected = [...selectedFromShorts, ...selectedFromNonShorts];
+      logger.info(`Selected: ${selectedFromShorts.length} shorts + ${selectedFromNonShorts.length} non-shorts`);
+
       let addedFromQuery = 0;
 
       for (const line of selected) {

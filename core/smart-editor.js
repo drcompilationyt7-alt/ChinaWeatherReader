@@ -444,7 +444,8 @@ async function smartEdit(videoPath, outputPath, options = {}) {
             `scale=${adjZw}:${adjZh}:flags=lanczos,crop=1080:1920:(iw-1080)/2:(ih-1920)/2`,
             `eq=contrast=${adjContrast.toFixed(2)}:saturation=${adjSaturation.toFixed(2)}`
           ];
-          if (subContent && subPath && fs.existsSync(subPath)) {
+          // Use needsCaptions instead of undefined subContent
+          if (needsCaptions && subPath && fs.existsSync(subPath)) {
             const escPath = subPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''");
             adjVf.push(subPath.endsWith('.ass') ? `ass='${escPath}'` : `subtitles='${escPath}'`);
           }

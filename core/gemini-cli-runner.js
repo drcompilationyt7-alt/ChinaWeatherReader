@@ -230,10 +230,14 @@ class GeminiCLIRunner {
     for (let videoIndex = 0; videoIndex < videoPaths.length; videoIndex++) {
       const videoPath = videoPaths[videoIndex];
       const duration = this._probeDuration(videoPath);
+      // Use 6 frames for better temporal coverage: early, mid-early, middle, mid-late, late, end
       const positions = [
         Math.min(1, Math.max(0, duration - 0.5)),
+        Math.max(0, duration * 0.15),
         Math.max(0, duration * 0.35),
-        Math.max(0, duration * 0.7),
+        Math.max(0, duration * 0.55),
+        Math.max(0, duration * 0.75),
+        Math.max(0, duration * 0.9),
       ];
 
       for (let frameIndex = 0; frameIndex < positions.length; frameIndex++) {
