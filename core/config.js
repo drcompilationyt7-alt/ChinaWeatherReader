@@ -94,7 +94,8 @@ const config = {
     'China', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
     'India', 'Indonesia', 'Brazil', 'Mexico', 'France',
     'Germany', 'Italy', 'Spain', 'UK', 'Egypt',
-    'Nigeria', 'Australia', 'Global'
+    'Nigeria', 'Australia',
+    'Turkey', 'Colombia', 'Peru', 'Argentina', 'Chile', 'Portugal', 'Russia', 'Canada',
   ],
 
   // ─── Pipeline settings ────────────────────────────────────────────

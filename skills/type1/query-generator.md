@@ -30,6 +30,110 @@ These queries have been verified to return viral content. Use them as inspiratio
 - "Douyin summer dance transition"
 - "TikTok dance challenge viral"
 
+## 🌍 Country Viral Content Profiles
+When generating queries for a specific country, use these proven viral content categories to inform your search queries. Adapt specific terms, platform names, and local slang to the target country.
+
+### 🇮🇳 India
+- Bollywood edits, dance challenges, cricket clips, comedy skits, motivational content
+- Regional-language creators (Tamil, Telugu, Hindi, Punjabi)
+- Trending music Shorts, street food videos, transformation content
+
+### 🇧🇷 Brazil
+- Dance challenges (funk, samba, forró), football skills, favela humor
+- Music trends (funk Paulista, sertanejo, axé), viral WhatsApp phenomena
+- Beach lifestyle, local comedy sketches, creator-led entertainment
+
+### 🇯🇵 Japan
+- Anime edits, kawaii culture, gaming clips (VTubers, Nintendo, arcade)
+- Food videos (ramen, sushi, bento), "Wabi Sabi" aesthetic videos
+- 2000s nostalgic retro edits, Y2K Shibuya vibe, train content
+
+### 🇰🇷 South Korea
+- K-pop dance challenges, idol fancams, beauty/makeup content
+- Fashion trends, short K-drama clips, reaction videos
+- Korean street food, skincare routines, 10-year challenge content
+
+### 🇮🇩 Indonesia
+- Live-selling streams, comedy sketches, dance trends
+- K-pop content translations, family entertainment, local music (dangdut)
+- Street food tours, Islamic lifestyle content, ASMR eating
+
+### 🇲🇽 Mexico
+- Dance challenges (cumbia, banda), regional music, soccer clips
+- Relationship humor (novelas style), food reviews (tacos, elote)
+- Street vendor content, quinceañera clips, lucha libre, corridos
+
+### 🇬🇧 United Kingdom
+- Dry British humor, football banter, pub culture, "day in London"
+- Fashion (streetwear), productivity tips, commentary videos
+- Chick-fil-a style food, UK drill music, roast comedy
+
+### 🇩🇪 Germany
+- Educational content, technology reviews, cars (Autobahn), engineering
+- Productivity hacks, travel, fitness, efficiency humor
+- Beer culture, Christmas markets, cycling content
+
+### 🇸🇦 Saudi Arabia
+- Luxury lifestyle, cars, travel, family content, fashion
+- Comedy sketches, traditional food, desert camping, shopping
+
+### 🇹🇷 Turkey
+- Ice cream (dondurma) pranks, Turkish barbers, Istanbul street food
+- Bazaar bargaining, Turkish tea culture, cats of Istanbul, dramatic TV clips
+
+### 🇨🇴 Colombia
+- Salsa, reggaeton dances, Medellín street life, neighborhood comedy
+- Coffee region, Cartagena beaches, football clips, vallenato music
+
+### 🇵🇪 Peru
+- Llamas/alpacas, Machu Picchu, ceviche food, Andes mountain videos
+- Rainbow Mountain, traditional clothing, Peruvian cooking content
+
+### 🇦🇷 Argentina
+- Football edits, mate culture, Messi content, street interviews
+- Tango dance, asado cooking, Buenos Aires city life, fútbol chants
+
+### 🇨🇱 Chile
+- Earthquake jokes, mountain scenery, food reviews (completos, empanadas)
+- Patagonia nature, Chilean slang content, local comedy
+
+### 🇺🇸 United States
+- Street interviews, pranks, fitness transformations, AI memes
+- Fast food reviews, car culture, reality TV drama, influencer content
+
+### 🇨🇦 Canada
+- Winter content (ice skating, snow), wildlife (moose, bears)
+- Multicultural food content, "sorry" culture, nature/timelapse videos
+
+### 🇫🇷 France
+- Luxury fashion, Paris cafés, bakery videos (croissant, baguette)
+- French humor, protests, travel content, wine tasting
+
+### 🇪🇸 Spain
+- Football (LaLiga, Barcelona, Real Madrid), beach life, flamenco
+- Tapas food tour, nightlife, siesta humor, San Fermín running
+
+### 🇵🇹 Portugal
+- Surfing, Lisbon travel, seafood content (pastel de nata)
+- Porto bridges, Fado music, Algarve beaches, azulejo tile art
+
+### 🇷🇺 Russia
+- Extreme weather, dashcam clips, unusual inventions
+- Siberian nature, brutalist architecture, Soviet nostalgia, ballet
+
+### 🇨🇳 China
+- Douyin dances, Bilibili edits, Xiaohongshu lifestyle, street food
+- Kuaishou comedy, Tuanbo livestreams, Chinese romance dramas
+- High-speed rail, futuristic cities, traditional clothing (hanfu)
+
+### 🇻🇳 Vietnam
+- Vietnamese street food (phở, bánh mì), motorbike traffic content
+- Sapa rice terraces, Halong Bay, Ao Dai fashion, Hanoi nightlife
+
+### 🇹🇭 Thailand
+- Thai street food, Muay Thai, temple visits, beach paradise
+- Thai BL dramas, Songkran water festival, tuk-tuk content
+
 ## 🧠 Query Generation Rules
 
 ### 1. The "Dance" Requirement
