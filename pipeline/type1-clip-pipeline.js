@@ -831,13 +831,20 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 7: Signature ────────────────────────────────────────────
   logger.info('Phase 7: Add Signature');
-  const finalPath = path.join(outputDir, `short_${Date.now()}.mp4`);
-  const sigResult = await addSignature(editedPath, finalPath, country, tmpDir);
+  const sigOutput = path.join(tmpDir, `signed_${Date.now()}.mp4`);
+  const sigResult = await addSignature(editedPath, sigOutput, country, tmpDir);
 
   if (!sigResult) {
     logger.error('Signature failed — aborting');
     return { success: false, error: 'Signature failed' };
   }
+
+  // ─── Phase 7b: Watermark ──────────────────────────────────────────
+  logger.info('Phase 7b: Add Watermark');
+  const { addWatermark } = require('../core/watermark');
+  const wmPath = path.join(tmpDir, `watermarked_${Date.now()}.mp4`);
+  const wmResult = await addWatermark(sigOutput, wmPath);
+  const finalPath = wmResult || sigOutput;
 
   // ─── Phase 8: QA Review ────────────────────────────────────────────
   logger.info('Phase 8: QA Review');
