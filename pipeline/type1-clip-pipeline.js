@@ -1076,7 +1076,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
         // Full: flag overlay + audio duck + TTS mix
         const filterComplex =
           `[2:v]scale=144:-1[flag];` +
-          `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v];` +
+          `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v];` +
           `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
           `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
@@ -1088,7 +1088,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
         // No original audio: just overlay flag + TTS as main audio
         const filterComplex =
           `[2:v]scale=144:-1[flag];` +
-          `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v]`;
+          `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v]`;
 
         ffmpegCmd =
           `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
