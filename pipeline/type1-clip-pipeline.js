@@ -844,10 +844,11 @@ async function downloadBestVideo(video, outputDir) {
   for (const s of strategies) {
     try {
       const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
+      // Don't pass cookies with android client (it rejects them)
+      const cookieArg = (hasCookies && !s.name.includes('android')) ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
-        `--download-sections "*0-60" -o "${outputTemplate}" "${url}" ` +
+        `-o "${outputTemplate}" "${url}" ` +
         `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 --remote-components ejs:github`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
@@ -1244,7 +1245,43 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'Download failed' };
   }
 
-  const dialogue = await transcribeAudio(downloadedPath, tmpDir);
+  // ─── Phase 4b: Highlight Detection (for videos > 2 min) ────────────
+  // Run YOLO + OpenCV scoring pipeline to find the most interesting 30-60s segment
+  let workingVideoPath = downloadedPath;
+  const workingVideoDuration = probeDownloadedVideo(downloadedPath).duration || 0;
+  if (workingVideoDuration > 120) {
+    logger.info('Phase 4b: Highlight Detection');
+    logger.info(`Video is ${workingVideoDuration.toFixed(0)}s — running YOLO highlight detector...`);
+    try {
+      const hlCmd = `python3 "${path.join(__dirname, '..', 'core', 'highlight-detector.py')}" --output-json "${downloadedPath}" 2>&1`;
+      const hlOut = execSync(hlCmd, { timeout: 600000, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }).toString().trim();
+      // Last line is JSON output
+      const lines = hlOut.split('\n').filter(Boolean);
+      const hlResult = JSON.parse(lines[lines.length - 1]);
+
+      if (hlResult.action === 'extract' && hlResult.start >= 0 && hlResult.duration > 0) {
+        logger.success(`Highlight detected: ${hlResult.start}s → ${hlResult.end}s (${hlResult.duration}s, score: ${hlResult.peak_highlight_score || 'N/A'})`);
+        const clippedPath = path.join(tmpDir, `highlight_${Date.now()}.mp4`);
+        execSync(
+          `ffmpeg -y -ss ${hlResult.start} -i "${downloadedPath}" -to ${hlResult.end} ` +
+          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${clippedPath}"`,
+          { timeout: 180000 }
+        );
+        if (fs.existsSync(clippedPath) && fs.statSync(clippedPath).size > 100000) {
+          workingVideoPath = clippedPath;
+          logger.success(`Highlight clip extracted: ${(fs.statSync(clippedPath).size / 1024 / 1024).toFixed(1)}MB`);
+        }
+      } else {
+        logger.info(`Highlight detector returned: ${hlResult.action} — using full video`);
+      }
+    } catch (e) {
+      logger.warn(`Highlight detection failed: ${(e.message || '').substring(0, 80)} — using full video`);
+    }
+  } else {
+    logger.info(`Video is ${workingVideoDuration.toFixed(0)}s — under 2 min, using full video`);
+  }
+
+  const dialogue = await transcribeAudio(workingVideoPath, tmpDir);
 
   // Check for profanity
   if (gemini.hasProfanity(dialogue.transcript)) {
@@ -1255,9 +1292,11 @@ async function runType1Pipeline(options = {}) {
   // ─── Phase 5: Smart Crop ───────────────────────────────────────────
   logger.info('Phase 5: Smart Crop');
   const croppedPath = path.join(tmpDir, `cropped_${Date.now()}.mp4`);
-  const cropResult = await smartCrop(downloadedPath, croppedPath, {
+  // Use the working video (full or highlight clip) and probe its actual duration
+  const cropDuration = probeDownloadedVideo(workingVideoPath).duration || 30;
+  const cropResult = await smartCrop(workingVideoPath, croppedPath, {
     country,
-    duration: Math.min(bestVideo.duration || 30, 60),
+    duration: Math.min(cropDuration, 60),
     startTime: 3,
   });
 
@@ -1278,7 +1317,7 @@ async function runType1Pipeline(options = {}) {
     country,
     dialogue,
     translatedText,
-    duration: Math.min(bestVideo.duration || 30, 60),
+    duration: Math.min(cropDuration, 60),
   });
 
   if (!editResult.success) {
