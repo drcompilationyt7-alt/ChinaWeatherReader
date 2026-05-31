@@ -2,7 +2,7 @@ name: 🌙 Midnight Hermes Investigation
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 31 2 *'
   workflow_dispatch:
 
 env:
