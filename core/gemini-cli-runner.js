@@ -1,14 +1,15 @@
 /**
  * Gemini CLI Runner
  * Uses stdin pipe for pure text prompts to avoid shell escaping issues.
- * Staging media files via Google GenAI SDK before passing URIs to CLI.
+ * Passes local media files to Gemini CLI with explicit @file references.
  * 
  * Model-Switching-First Strategy:
- * On quota (429) errors, switches model first on the same API key.
- * After 3 model switches, rotates to next key and re-uploads.
- * Media is uploaded ONCE per key, not per retry attempt.
+ * Each request starts from key 1/model 1. On quota (429) errors,
+ * alternates models on the same API key with growing waits before
+ * rotating to the next key. Local media is passed through explicit
+ * Gemini CLI @file references.
  */
-const { execSync } = require('child_process');
+const { execFileSync, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { GoogleGenAI } = require('@google/genai');
@@ -20,6 +21,27 @@ const MODEL_CHAIN = [
   'gemini-3.5-flash',
   'gemini-2.5-flash',
 ];
+const DEFAULT_MODEL_ATTEMPTS_PER_KEY = 5;
+
+function responseLacksVisualAnalysis(result) {
+  const text = [
+    result?.reasoning,
+    result?.reason,
+    result?.analysis,
+    result?.issues,
+  ].flat().filter(Boolean).join(' ').toLowerCase();
+
+  return (
+    text.includes('visual analysis was not possible') ||
+    text.includes('visual analysis not possible') ||
+    text.includes('video content could not be accessed') ||
+    text.includes('video file was not directly accessible') ||
+    text.includes('could not be accessed') ||
+    text.includes('could not access the video') ||
+    text.includes('unable to view the video') ||
+    text.includes('cannot view the video')
+  );
+}
 
 class GeminiCLIRunner {
   constructor() {
@@ -30,6 +52,11 @@ class GeminiCLIRunner {
   }
 
   get model() { return MODEL_CHAIN[this.modelIndex % MODEL_CHAIN.length]; }
+
+  _resetRetryState() {
+    this.keyIndex = 0;
+    this.modelIndex = 0;
+  }
 
   _checkAvailability() {
     try {
@@ -135,63 +162,114 @@ class GeminiCLIRunner {
     } catch {}
   }
 
+  _probeDuration(videoPath) {
+    try {
+      const out = execSync(
+        `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`,
+        { timeout: 10000, encoding: 'utf8' }
+      ).trim();
+      const duration = parseFloat(out);
+      return Number.isFinite(duration) && duration > 0 ? duration : 30;
+    } catch {
+      return 30;
+    }
+  }
+
+  _extractReviewFrames(videoPaths, outputDir) {
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+    const frames = [];
+
+    for (let videoIndex = 0; videoIndex < videoPaths.length; videoIndex++) {
+      const videoPath = videoPaths[videoIndex];
+      const duration = this._probeDuration(videoPath);
+      const positions = [
+        Math.min(1, Math.max(0, duration - 0.5)),
+        Math.max(0, duration * 0.35),
+        Math.max(0, duration * 0.7),
+      ];
+
+      for (let frameIndex = 0; frameIndex < positions.length; frameIndex++) {
+        const framePath = path.join(outputDir, `v${videoIndex + 1}_frame_${frameIndex + 1}.jpg`);
+        try {
+          execSync(
+            `ffmpeg -y -ss ${positions[frameIndex].toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 3 "${framePath}" 2>/dev/null`,
+            { timeout: 15000 }
+          );
+          if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
+            frames.push(framePath);
+          }
+        } catch {}
+      }
+    }
+
+    return frames;
+  }
+
   async run(prompt, options = {}) {
     if (!this.available) { logger.warn('Gemini CLI not available'); return null; }
 
     const timeout = options.timeout || 120000;
-    const tmpDir = '/tmp';
+    const modelAttemptsPerKey = options.modelAttemptsPerKey || DEFAULT_MODEL_ATTEMPTS_PER_KEY;
 
-    // Step 1: Upload all media files ONCE (before any retries)
-    let uploadedUris = [];
+    // No cross-video memory: every new CLI task starts from key 1/model 1.
+    // Retries inside this run still rotate model/key normally.
+    if (options.resetRetryState !== false) {
+      this._resetRetryState();
+    }
+
     const allMediaPaths = [
       ...(options.images || []),
       ...(options.videoPaths || []),
       ...(options.videoPath ? [options.videoPath] : [])
-    ];
+    ].filter(filePath => filePath && fs.existsSync(filePath));
 
-    for (const filePath of allMediaPaths) {
-      if (fs.existsSync(filePath)) {
-        const uri = await this._uploadFileForCLI(filePath);
-        if (uri) {
-          uploadedUris.push(uri);
-        }
-      }
-    }
-
-    // Step 2: Build the full prompt (with skill prepended)
+    // Step 1: Build the full prompt (with skill prepended). Gemini CLI reads
+    // local multimodal files through explicit @path references.
     let fullPrompt = prompt;
+    if (allMediaPaths.length > 0) {
+      const mediaRefs = allMediaPaths
+        .map(filePath => `@${path.resolve(filePath).replace(/\\/g, '/')}`)
+        .join('\n');
+      fullPrompt = `## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
+    }
     if (options.skillFile && fs.existsSync(options.skillFile)) {
       const skillContent = fs.readFileSync(options.skillFile, 'utf8');
       fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
+      if (allMediaPaths.length > 0) {
+        const mediaRefs = allMediaPaths
+          .map(filePath => `@${path.resolve(filePath).replace(/\\/g, '/')}`)
+          .join('\n');
+        fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
+      }
     }
 
-    // Step 3: Try models × keys, retry with SAME uploaded URIs
-    // Per key: try up to 3 model switches (429 → switch model, wait 10s)
-    // After 3 model fails: rotate key, re-upload, reset
+    // Step 2: Try model alternation per key, retrying the same local file refs.
+    // Per key: alternate models up to 5 attempts by default. Wait grows
+    // after each 429: 10s, 20s, 30s, 40s, then rotate key.
     const MAX_KEYS = 8;
     for (let keyAttempt = 0; keyAttempt < MAX_KEYS; keyAttempt++) {
-      // Try up to MODEL_CHAIN.length models for this key
-      for (let modelAttempt = 0; modelAttempt < MODEL_CHAIN.length; modelAttempt++) {
-        const cli = fs.existsSync('/snap/bin/gemini') ? 'gemini' : 'npx @google/gemini-cli';
+      for (let modelAttempt = 0; modelAttempt < modelAttemptsPerKey; modelAttempt++) {
+        const useGlobalGemini = fs.existsSync('/snap/bin/gemini');
+        const cli = useGlobalGemini ? 'gemini' : (process.platform === 'win32' ? 'npx.cmd' : 'npx');
         const key = this._getApiKey();
+        const cliArgs = [
+          ...(useGlobalGemini ? [] : ['@google/gemini-cli']),
+          '--skip-trust',
+          '-m',
+          this.model,
+          '-p',
+          fullPrompt,
+        ];
 
-        const promptFile = path.join(tmpDir, `gemini_p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.txt`);
-        fs.writeFileSync(promptFile, fullPrompt, 'utf8');
-
-        // Pass uploaded file URIs as positional arguments (CLI ingests them natively)
-        const uriArgs = uploadedUris.map(u => `"${u}"`).join(' ');
-        const cmd = `cat "${promptFile}" | TERM=xterm-256color GEMINI_API_KEY="${key}" ${cli} --skip-trust -m ${this.model} ${uriArgs} 2>&1`;
-
-        logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${MODEL_CHAIN.length})`);
+        logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${modelAttemptsPerKey})`);
 
         try {
-          const result = execSync(cmd, { timeout, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' });
-          try { fs.unlinkSync(promptFile); } catch {}
-
-          // Success — cleanup files and return
-          for (const uri of uploadedUris) {
-            await this._deleteFile(uri);
-          }
+          const result = execFileSync(cli, cliArgs, {
+            timeout,
+            maxBuffer: 10 * 1024 * 1024,
+            encoding: 'utf8',
+            env: { ...process.env, GEMINI_API_KEY: key, TERM: 'xterm-256color' },
+          });
 
           // Filter terminal/CLI noise from output
           const output = result.trim().split('\n')
@@ -209,53 +287,27 @@ class GeminiCLIRunner {
           logger.warn('CLI empty response');
           return null;
         } catch (e) {
-          try { fs.unlinkSync(promptFile); } catch {}
-
           const errText = (e.stderr || e.stdout || e.message || '').toString();
           if (e.signal === 'SIGKILL' || e.killed) {
             logger.warn('CLI timeout');
-            // Cleanup files on timeout
-            for (const uri of uploadedUris) await this._deleteFile(uri);
             return null;
           }
 
           if (errText.includes('429') || errText.includes('quota')) {
-            // 429 — switch model, retry with SAME URIs
-            if (modelAttempt < MODEL_CHAIN.length - 1) {
-              logger.warn(`Rate limited (429) — waiting 10s, switching model...`);
-              await new Promise(r => setTimeout(r, 10000));
+            // 429: switch model and retry with SAME URIs.
+            if (modelAttempt < modelAttemptsPerKey - 1) {
+              const delay = (modelAttempt + 1) * 10000;
+              logger.warn(`Rate limited (429) - waiting ${delay / 1000}s, switching model...`);
+              await new Promise(r => setTimeout(r, delay));
               this._rotateModel();
             } else {
-              // All models exhausted for this key — need new key + re-upload
-              logger.warn(`All ${MODEL_CHAIN.length} models rate-limited on key ${this.keyIndex + 1} — rotating key`);
-              // Cleanup old uploads before re-uploading with new key
-              for (const uri of uploadedUris) await this._deleteFile(uri);
-              uploadedUris = [];
+              // Model attempts exhausted for this key - use the next key.
+              logger.warn(`All ${modelAttemptsPerKey} model attempts rate-limited on key ${this.keyIndex + 1} - rotating key`);
               this._rotateKey();
-
-              // Re-upload with new key
-              const newUris = [];
-              for (const filePath of allMediaPaths) {
-                if (fs.existsSync(filePath)) {
-                  const uri = await this._uploadFileForCLI(filePath);
-                  if (uri) {
-                    newUris.push(uri);
-                  }
-                }
-              }
-              uploadedUris = newUris;
-              // Rebuild prompt (without media text markers since URIs are positional args)
-              fullPrompt = prompt;
-              if (options.skillFile && fs.existsSync(options.skillFile)) {
-                const skillContent = fs.readFileSync(options.skillFile, 'utf8');
-                fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
-              }
-              // Break inner loop — next iteration of outer loop starts fresh with new key
               break;
             }
           } else {
             logger.warn(`CLI error: ${errText.substring(0, 120)}`);
-            for (const uri of uploadedUris) await this._deleteFile(uri);
             return null;
           }
         }
@@ -263,7 +315,6 @@ class GeminiCLIRunner {
     }
 
     // All keys + models exhausted
-    for (const uri of uploadedUris) await this._deleteFile(uri);
     logger.error('All keys + models exhausted');
     return null;
   }
@@ -306,10 +357,30 @@ If improvements needed, specify what to change.
 Respond ONLY JSON:
 {"verdict":"APPROVE/IMPROVE/REJECT","score":N,"issues":[],"improvement_suggestions":"specific changes needed","reason":"brief reason"}`;
 
-    const result = await this.run(prompt, {
+    let frameDir = null;
+    let runOptions = {
       videoPaths: [originalPath, editedPath],
       timeout: 120000,
-    });
+    };
+
+    try {
+      frameDir = fs.mkdtempSync(path.join(path.dirname(editedPath), 'qa_frames_'));
+      const frames = this._extractReviewFrames([originalPath, editedPath], frameDir);
+      if (frames.length >= 2) {
+        runOptions = {
+          images: frames,
+          timeout: 120000,
+        };
+      }
+    } catch {}
+
+    const result = await this.run(`${prompt}
+
+The attached images are ordered as frame samples from the original video followed by matching frame samples from the edited video. Use these visual frames for the comparison.`, runOptions);
+
+    try {
+      if (frameDir) fs.rmSync(frameDir, { recursive: true, force: true });
+    } catch {}
 
     if (!result) {
       logger.warn(`compareAndReviewQA (${editType}): null response`);
@@ -425,43 +496,35 @@ Respond ONLY with JSON:
 
 Country: ${country}${metricsBlock}
 
+You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
+
 Follow the skill instructions. Return JSON.`;
 
-    // Retry loop: up to 5 rounds with increasing waits (10s, 20s, 30s, 40s, 50s)
-    // On each retry, switch model to try a different one
-    const maxRetries = 5;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const waitTime = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
+    const result = await this.run(prompt, {
+      videoPath: videoPath,
+      timeout: 120000,
+      modelAttemptsPerKey: 5,
+    });
 
-      if (attempt > 0) {
-        logger.info(`rankVideoFromPath retry ${attempt + 1}/${maxRetries} — waiting ${waitTime / 1000}s, switching model...`);
-        await new Promise(r => setTimeout(r, waitTime));
-        this._rotateModel();
-      }
-
-      const result = await this.run(prompt, {
-        videoPath: videoPath,
-        timeout: 120000,
-      });
-
-      if (result) {
-        try {
-          const m = result.match(/\{[\s\S]*\}/);
-          if (m) {
-            const p = JSON.parse(m[0]);
-            p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
-            return p;
+    if (result) {
+      try {
+        const m = result.match(/\{[\s\S]*\}/);
+        if (m) {
+          const p = JSON.parse(m[0]);
+          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+            logger.warn('rankVideoFromPath: model did not actually analyze video; ignoring response');
+            return null;
           }
-        } catch (e) {
-          logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
-          return null;
+          p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+          return p;
         }
+      } catch (e) {
+        logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
+        return null;
       }
-
-      logger.warn(`rankVideoFromPath attempt ${attempt + 1}/${maxRetries} returned null`);
     }
 
-    logger.error(`rankVideoFromPath all ${maxRetries} retries exhausted`);
+    logger.error('rankVideoFromPath exhausted CLI retry cycle');
     return null;
   }
 }

@@ -166,6 +166,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
     const yoloPositions = [2, Math.min(duration / 2, 15), Math.min(duration - 3, 25)];
 
     const subjectCenters = [];
+    const subjectBoxes = [];
     for (const pos of yoloPositions) {
       const framePath = path.join(yoloDir, `yolo_frame.jpg`);
       try {
@@ -175,17 +176,21 @@ async function smartCrop(videoPath, outputPath, options = {}) {
         );
         if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
           const yoloOut = execSync(
-            `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${framePath}" 2>&1`,
+            `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${framePath}"`,
             { timeout: 30000, encoding: 'utf8' }
           ).toString().trim();
           const yoloResult = JSON.parse(yoloOut);
           if (yoloResult.subject !== 'none' && yoloResult.center_x >= 0) {
             subjectCenters.push(yoloResult.center_x);
+            if (Array.isArray(yoloResult.bbox) && yoloResult.bbox.length === 4) {
+              subjectBoxes.push(yoloResult.bbox);
+            }
             logger.info(`  Frame @${pos}s: ${yoloResult.subject} at center_x=${yoloResult.center_x.toFixed(0)} (conf: ${yoloResult.confidence.toFixed(2)})`);
           }
         }
       } catch (e) {
-        logger.warn(`YOLO frame @${pos}s failed: ${(e.message || '').substring(0, 60)}`);
+        const errText = (e.stderr || e.stdout || e.message || '').toString();
+        logger.warn(`YOLO frame @${pos}s failed: ${errText.substring(0, 120)}`);
       }
     }
 
@@ -193,9 +198,24 @@ async function smartCrop(videoPath, outputPath, options = {}) {
 
     if (subjectCenters.length > 0) {
       const avgCenterX = subjectCenters.reduce((a, b) => a + b, 0) / subjectCenters.length;
-      cropOffsetX = Math.max(0, Math.min(Math.round(avgCenterX - (targetWidth / 2)), maxCropX));
+      const avgScaledCenterX = avgCenterX * scaleFactor;
+      let cropX = avgScaledCenterX - (targetWidth / 2);
+
+      if (subjectBoxes.length > 0) {
+        const padding = 80;
+        const scaledBoxes = subjectBoxes.map(([x1, , x2]) => ({
+          left: x1 * scaleFactor,
+          right: x2 * scaleFactor,
+        }));
+        const leftMost = Math.min(...scaledBoxes.map(b => b.left));
+        const rightMost = Math.max(...scaledBoxes.map(b => b.right));
+        if (leftMost < cropX + padding) cropX = leftMost - padding;
+        if (rightMost > cropX + targetWidth - padding) cropX = rightMost - targetWidth + padding;
+      }
+
+      cropOffsetX = Math.max(0, Math.min(Math.round(cropX), maxCropX));
       cropFilter = buildCropFilter(srcW, srcH, cropOffsetX, zoom);
-      logger.info(`YOLO subject centers: [${subjectCenters.map(c => c.toFixed(0)).join(', ')}], avg: ${avgCenterX.toFixed(0)}, crop offset: ${cropOffsetX}px`);
+      logger.info(`YOLO subject centers: [${subjectCenters.map(c => c.toFixed(0)).join(', ')}], avg: ${avgCenterX.toFixed(0)}, scaled avg: ${avgScaledCenterX.toFixed(0)}, crop offset: ${cropOffsetX}px`);
     } else {
       logger.info('YOLO: No subject detected — using center crop');
     }
@@ -230,7 +250,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
         for (const fp of qaFrames) {
           try {
             const yoloOut = execSync(
-              `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${fp}" 2>&1`,
+              `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${fp}"`,
               { timeout: 30000, encoding: 'utf8' }
             ).toString().trim();
             const yoloResult = JSON.parse(yoloOut);

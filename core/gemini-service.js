@@ -14,16 +14,38 @@ const axios = require('axios');
 const { Logger } = require('./logger');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_UPLOAD = 'https://generativelanguage.googleapis.com/upload/v1beta';
 const MIN_DELAY = 2000;
+const INLINE_VIDEO_LIMIT_BYTES = 18 * 1024 * 1024;
 
 const MODEL_CHAIN = [
   'gemini-3.5-flash',
   'gemini-2.5-flash',
 ];
+
+function responseLacksVisualAnalysis(result) {
+  const text = [
+    result?.reasoning,
+    result?.reason,
+    result?.analysis,
+    result?.issues,
+  ].flat().filter(Boolean).join(' ').toLowerCase();
+
+  return (
+    text.includes('visual analysis was not possible') ||
+    text.includes('visual analysis not possible') ||
+    text.includes('video content could not be accessed') ||
+    text.includes('video file was not directly accessible') ||
+    text.includes('could not be accessed') ||
+    text.includes('could not access the video') ||
+    text.includes('unable to view the video') ||
+    text.includes('cannot view the video')
+  );
+}
 
 class GeminiService {
   constructor() {
@@ -194,6 +216,8 @@ ENGAGEMENT METRICS:
 
 Country: ${country}${metricsBlock}
 
+You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
+
 Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
 
     const contents = [{
@@ -219,7 +243,11 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
     try {
       const m = response.match(/\{[\s\S]*\}/);
       if (m) {
-        const p = JSON.parse(m[0]);
+          const p = JSON.parse(m[0]);
+        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+          logger.warn('rankVideo: model did not actually analyze video; ignoring response');
+          return null;
+        }
         p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
         return p;
       }
@@ -298,48 +326,6 @@ Return STRICT JSON with: result ("MATCHED"/"COMPILATION_FOUND"/"REJECTED"), reas
     const fileName = path.basename(videoPath);
     const fileBuffer = fs.readFileSync(videoPath);
 
-    // Helper: upload video with the current key and return the uploaded file object
-    async function uploadWithCurrentKey(displayName, buffer, size) {
-      const { GoogleGenAI } = require('@google/genai');
-      logger.info(`Uploading ${displayName} (${(size / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
-      const currentKey = this._getKey();
-      if (!currentKey) { logger.warn('No API keys for upload'); return null; }
-
-      // Write buffer to temp file for SDK upload
-      const tmpPath = `/tmp/gemini_upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
-      try {
-        fs.writeFileSync(tmpPath, buffer);
-        const ai = new GoogleGenAI({ apiKey: currentKey });
-        const videoFile = await ai.files.upload({
-          file: tmpPath,
-          mimeType: 'video/mp4',
-        });
-        try { fs.unlinkSync(tmpPath); } catch {}
-
-        if (!videoFile || !videoFile.name) {
-          logger.warn('No file name in response');
-          return null;
-        }
-
-        // Wait 15s for processing
-        logger.info(`File uploaded: ${videoFile.name} — waiting 15s for processing...`);
-        await new Promise(r => setTimeout(r, 15000));
-        logger.success(`File ready: ${videoFile.name}`);
-        return { file: videoFile, key: currentKey };
-      } catch (e) {
-        try { fs.unlinkSync(tmpPath); } catch {}
-        logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
-        return null;
-      }
-    }
-
-    // Check if key changed — helper to compare current key vs upload key
-    const uploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
-    if (!uploaded) return null;
-
-    let currentKey = uploaded.key;
-    let uploadedFile = uploaded.file;
-
     let metricsBlock = '';
     if (engagementData) {
       const velocity = engagementData.ageInDays > 0 ? (engagementData.views / engagementData.ageInDays).toFixed(0) : 'N/A';
@@ -365,12 +351,100 @@ ENGAGEMENT METRICS:
 
 Country: ${country}${metricsBlock}
 
+You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
+
 Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
+
+    if (fileSize <= INLINE_VIDEO_LIMIT_BYTES) {
+      logger.info(`Analyzing ${fileName} (${(fileSize / 1024 / 1024).toFixed(1)}MB) as inline video data...`);
+      const contents = [{
+        role: 'user',
+        parts: [
+          { inline_data: { mime_type: 'video/mp4', data: fileBuffer.toString('base64') } },
+          { text: prompt }
+        ]
+      }];
+
+      const response = await this._callAPI(contents, {
+        systemInstruction: curatorSkill,
+        temperature: 0.3,
+        maxTokens: 1024,
+        timeout: 120000,
+      });
+
+      if (!response) { logger.warn('rankVideoFile inline: returned null'); return null; }
+
+      try {
+        const m = response.match(/\{[\s\S]*\}/);
+        if (m) {
+        const p = JSON.parse(m[0]);
+          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+            logger.warn('rankVideoFile inline: model did not actually analyze video; ignoring response');
+            return null;
+          }
+          p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+          return p;
+        }
+      } catch (e) { logger.warn(`rankVideoFile inline JSON: ${e.message.substring(0, 80)}`); }
+      return null;
+    }
+
+    // Helper: upload video with the current key and return the uploaded file object.
+    async function uploadWithCurrentKey(displayName, buffer, size) {
+      const { GoogleGenAI } = require('@google/genai');
+      logger.info(`Uploading ${displayName} (${(size / 1024 / 1024).toFixed(1)}MB) to Gemini File API...`);
+      const currentKey = this._getKey();
+      if (!currentKey) { logger.warn('No API keys for upload'); return null; }
+
+      const tmpPath = path.join(os.tmpdir(), `gemini_upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`);
+      try {
+        fs.writeFileSync(tmpPath, buffer);
+        const ai = new GoogleGenAI({ apiKey: currentKey });
+        const videoFile = await ai.files.upload({
+          file: tmpPath,
+          mimeType: 'video/mp4',
+        });
+        try { fs.unlinkSync(tmpPath); } catch {}
+
+        if (!videoFile || !videoFile.name) {
+          logger.warn('No file name in response');
+          return null;
+        }
+
+        let fileState = await ai.files.get({ name: videoFile.name });
+        for (let poll = 1; poll <= 6; poll++) {
+          if (fileState.state === 'ACTIVE') break;
+          if (fileState.state === 'FAILED') {
+            logger.warn(`File processing FAILED: ${videoFile.name}`);
+            return null;
+          }
+          logger.info(`File uploaded: ${videoFile.name} - poll ${poll}/6, waiting 10s (state: ${fileState.state})...`);
+          await new Promise(r => setTimeout(r, 10000));
+          fileState = await ai.files.get({ name: videoFile.name });
+        }
+        if (fileState.state !== 'ACTIVE') {
+          logger.warn(`File not ACTIVE after polling: ${videoFile.name} (${fileState.state})`);
+          return null;
+        }
+        logger.success(`File ready: ${videoFile.name}`);
+        return { file: fileState, key: currentKey };
+      } catch (e) {
+        try { fs.unlinkSync(tmpPath); } catch {}
+        logger.warn(`File upload error: ${e.message.substring(0, 100)}`);
+        return null;
+      }
+    }
+
+    const uploaded = await uploadWithCurrentKey.call(this, fileName, fileBuffer, fileSize);
+    if (!uploaded) return null;
+
+    let currentKey = uploaded.key;
+    let uploadedFile = uploaded.file;
 
     const contents = [{
       role: 'user',
       parts: [
-        { file_data: { mimeType: 'video/mp4', file_uri: uploadedFile.uri || uploadedFile.name } },
+        { file_data: { mime_type: 'video/mp4', file_uri: uploadedFile.uri || uploadedFile.name } },
         { text: prompt }
       ]
     }];
@@ -422,6 +496,10 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       const m = response.match(/\{[\s\S]*\}/);
       if (m) {
         const p = JSON.parse(m[0]);
+        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+          logger.warn('rankVideoFile: model did not actually analyze video; ignoring response');
+          return null;
+        }
         p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
         return p;
       }
@@ -459,7 +537,7 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
     return this.chatJSON(skillContent || 'You generate YouTube Shorts search queries.', userMessage, { temperature: 0.9 });
   }
 
-  async generateTitle(country, transcript, origTitle) {
+  async generateTitle(country, transcript, origTitle, context = {}) {
     // Load viral-metadata-generator skill
     const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');
     let skillContent = '';
@@ -469,16 +547,25 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       }
     } catch (e) {}
 
-    let visualSummary = transcript
-      ? `A trending video from ${country}. ${transcript.substring(0, 150)}`
-      : `A viral moment from ${country}`;
+    const visualParts = [
+      `Country: ${country}`,
+      context.reasoning ? `Gemini visual ranking: ${context.reasoning}` : '',
+      context.searchQuery ? `Discovery query: ${context.searchQuery}` : '',
+      context.hookScore ? `Hook score: ${context.hookScore}/10` : '',
+      context.geminiScore ? `Overall score: ${context.geminiScore}/10` : '',
+      context.editType ? `Edit type: ${context.editType}` : '',
+      context.hasCaptions !== undefined ? `Captions added: ${context.hasCaptions}` : '',
+      transcript && transcript.length > 10 ? `Transcript excerpt: ${transcript.substring(0, 220)}` : '',
+    ].filter(Boolean);
+
+    let visualSummary = visualParts.join('\n') || `A viral moment from ${country}`;
     if (origTitle) {
       visualSummary += `\nOriginal title: "${origTitle}"`;
     }
 
     return this.chatJSON(
       skillContent || 'You write YouTube Shorts titles and descriptions. Return JSON: {"title":"...","description":"...","tags":[...]}',
-      `Visual Summary: ${visualSummary || ''}\nVibe/Tone: engaging, entertaining\nSource/Category: ${country.toLowerCase()} shorts`,
+      `Visual Summary:\n${visualSummary || ''}\n\nVibe/Tone: engaging, entertaining, culturally specific\nSource/Category: ${country.toLowerCase()} short-form internet culture\n\nAvoid generic titles like "${country} Clip" or "viral moment". Write the title around the actual visual action Gemini identified.`,
       { temperature: 0.8, maxTokens: 512 }
     );
   }

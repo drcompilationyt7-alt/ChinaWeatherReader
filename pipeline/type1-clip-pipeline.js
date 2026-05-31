@@ -30,6 +30,440 @@ const logger = new Logger('Type1Pipeline');
 const SHORTS_W = 1080;
 const SHORTS_H = 1920;
 
+const COUNTRY_QUERY_PRESETS = {
+  China: [
+    'Chinese waiter dance Douyin',
+    'Chinese restaurant waiter dancing',
+    'Chinese street dance Douyin',
+    'Chinese public square dance viral',
+    'Douyin Subject Three dance China',
+    'Kemusan dance Guangxi China',
+    'Chinese group livestream dance',
+    'Tuanbo group dance China',
+    'Chinese mall dance performance',
+    'Chinese school dance performance Douyin',
+    'Chinese traditional hanfu dance Douyin',
+    'Chinese festival dance street',
+    'Kuaishou Chinese comedy skit',
+    'Bilibili Chinese dance cover',
+    'Xiaohongshu Chinese street fashion dance',
+    'Chinese security guard dancing',
+    'Chinese delivery guy dancing',
+    'Chinese uncle auntie dancing',
+    'Chinese village dance viral',
+    'Chinese Douyin funny moments',
+  ],
+  Japan: [
+    'Japanese game show funny moments',
+    'Japan convenience store viral',
+    'Japanese street food funny vendor',
+    'Tokyo street interview funny',
+    'Shibuya street fashion viral',
+    'Japanese arcade funny moments',
+    'Japanese mascot funny moments',
+    'NicoNico dance cover Japan',
+    'Japanese train station funny moments',
+    'Japanese school festival performance',
+    'Japan vending machine weird viral',
+    'Japanese ramen chef viral',
+    'Japanese dance challenge public',
+    'Japanese comedy skit viral',
+    'Japan 2000s nostalgic edit',
+  ],
+  'South Korea': [
+    'Korean street interview funny',
+    'Korean convenience store viral',
+    'Korean street food funny moment',
+    'Korean public random play dance',
+    'K-pop dance challenge Korea',
+    'Hongdae busking dance viral',
+    'Korean couple comedy skit',
+    'Korean school performance viral',
+    'Korean mukbang funny moments',
+    'Korean beauty transformation funny',
+    'Korean gym comedy skit',
+    'Korean cafe worker funny',
+    'Korean drama meme short',
+    'Korean auntie funny moment',
+    'Seoul street fashion viral',
+  ],
+  UK: [
+    'British comedy skit viral',
+    'UK roadman funny moments',
+    'London street interview funny',
+    'British pub banter viral',
+    'UK drill meme compilation',
+    'British school funny moments',
+    'UK football banter funny',
+    'British roast battle short',
+    'Manchester funny street interview',
+    'London chicken shop funny',
+    'British train station funny moment',
+    'UK vs US slang funny',
+    'British grandma funny moment',
+    'UK council estate comedy skit',
+    'British weather meme short',
+  ],
+  Nigeria: [
+    'Nigerian comedy skit viral',
+    'Nollywood reaction meme short',
+    'Nigerian wedding dance viral',
+    'Lagos street interview funny',
+    'Nigerian auntie funny moments',
+    'Nigerian pastor funny meme',
+    'Nigerian market funny moment',
+    'Afrobeats dance challenge Nigeria',
+    'Nigerian school comedy skit',
+    'Nigerian street food funny',
+    'Nigerian relationship comedy short',
+    'Nigerian TikTok funny moments',
+    'African comedy skit Nigeria',
+    'Lagos traffic funny moments',
+    'Nigerian mum funny skit',
+  ],
+  Africa: [
+    'African comedy skit viral',
+    'funniest African videos compilation',
+    'African dance challenge viral',
+    'Amapiano dance challenge South Africa',
+    'Nigerian comedy skit viral',
+    'Ghanaian comedy skit viral',
+    'South African taxi funny moments',
+    'African wedding dance viral',
+    'Nollywood reaction meme short',
+    'African auntie funny moments',
+    'African street interview funny',
+    'Afrobeats dance challenge',
+    'African school comedy skit',
+    'African market funny moment',
+    'African football celebration funny',
+  ],
+  'South Africa': [
+    'South African comedy skit viral',
+    'Amapiano dance challenge South Africa',
+    'South African taxi funny moments',
+    'Cape Town street interview funny',
+    'Mzansi funny moments',
+    'South African school dance viral',
+    'South African wedding dance viral',
+    'South African football fan funny',
+    'South African auntie funny moments',
+    'South African TikTok funny moments',
+  ],
+  India: [
+    'Indian street food funny vendor',
+    'Bollywood dance challenge viral',
+    'Indian wedding dance viral',
+    'Indian comedy skit viral',
+    'Mumbai street interview funny',
+    'Indian cricket fan funny moments',
+    'Indian train funny moment',
+    'Indian school performance viral',
+    'Indian auntie funny skit',
+    'Indian street performer viral',
+  ],
+  Brazil: [
+    'Brazilian funk dance challenge',
+    'Brazil football skills funny',
+    'Brazilian favela comedy skit',
+    'Brazil beach funny moments',
+    'Brazilian street interview funny',
+    'Brazilian WhatsApp meme viral',
+    'Brazil samba dance viral',
+    'Brazilian food vendor funny',
+    'Brazilian football fan funny',
+    'Brazilian comedy short viral',
+  ],
+  Mexico: [
+    'Mexican comedy skit viral',
+    'Mexican street food funny vendor',
+    'Mexico cumbia dance challenge',
+    'Mexican soccer fan funny moments',
+    'Mexican mom funny skit',
+    'Mexican street interview funny',
+    'Mexican quinceanera dance viral',
+    'Mexican lucha libre funny moments',
+    'Mexican banda dance viral',
+    'Mexican relationship comedy short',
+  ],
+  France: [
+    'French comedy skit viral',
+    'Paris street interview funny',
+    'French bakery viral moment',
+    'French fashion street viral',
+    'French protest funny moments',
+    'French cafe funny moment',
+    'French football fan funny',
+    'French street food viral',
+  ],
+  Germany: [
+    'German comedy skit viral',
+    'Germany Autobahn funny moments',
+    'German efficiency meme short',
+    'German street interview funny',
+    'German football fan funny',
+    'German Christmas market viral',
+    'German train station funny moment',
+    'German beer festival funny',
+  ],
+  Italy: [
+    'Italian comedy skit viral',
+    'Italian grandma funny moments',
+    'Italian street food viral',
+    'Italian hand gestures funny',
+    'Italian football fan funny',
+    'Rome street interview funny',
+    'Italian pasta chef viral',
+    'Italian family comedy skit',
+  ],
+  Spain: [
+    'Spanish comedy skit viral',
+    'Spain football fan funny',
+    'Spanish street interview funny',
+    'Flamenco street performance viral',
+    'Spanish tapas funny moment',
+    'Madrid funny street interview',
+    'Spanish beach funny moments',
+    'Spanish family comedy short',
+  ],
+  Thailand: [
+    'Thai street food funny vendor',
+    'Thailand comedy skit viral',
+    'Thai market funny moment',
+    'Songkran funny moments',
+    'Muay Thai funny moment',
+    'Thailand tuk tuk funny',
+    'Thai school performance viral',
+    'Thai dance challenge viral',
+  ],
+  Vietnam: [
+    'Vietnamese street food funny vendor',
+    'Vietnam motorbike traffic funny',
+    'Vietnamese comedy skit viral',
+    'Vietnam school performance viral',
+    'Vietnamese market funny moment',
+    'Vietnamese dance challenge viral',
+    'Hanoi street interview funny',
+    'Vietnam cafe viral moment',
+  ],
+  Indonesia: [
+    'Indonesian comedy skit viral',
+    'Indonesia dangdut dance viral',
+    'Indonesian street food funny',
+    'Indonesian live selling funny',
+    'Jakarta street interview funny',
+    'Indonesian school comedy skit',
+    'Indonesian family funny moments',
+    'Indonesian TikTok viral funny',
+  ],
+  Egypt: [
+    'Egyptian comedy skit viral',
+    'Cairo street interview funny',
+    'Egyptian wedding dance viral',
+    'Egyptian street food funny',
+    'Egyptian football fan funny',
+    'Egyptian market funny moment',
+    'Egyptian taxi funny moments',
+    'Egyptian TikTok funny moments',
+  ],
+  Turkey: [
+    'Turkish ice cream prank viral',
+    'Turkish barber funny moments',
+    'Istanbul street food viral',
+    'Turkish comedy skit viral',
+    'Turkish bazaar funny moment',
+    'Turkish tea funny moments',
+    'Turkish wedding dance viral',
+    'Turkish street interview funny',
+  ],
+  Colombia: [
+    'Colombian comedy skit viral',
+    'Colombia salsa dance viral',
+    'Medellin street interview funny',
+    'Colombian football fan funny',
+    'Colombian street food funny',
+    'Colombian family comedy short',
+  ],
+  Peru: [
+    'Peruvian comedy skit viral',
+    'Peru street food funny',
+    'Peruvian dance viral',
+    'Lima street interview funny',
+    'Peruvian market funny moment',
+    'Peruvian football fan funny',
+  ],
+  Argentina: [
+    'Argentinian comedy skit viral',
+    'Argentina football fan funny',
+    'Buenos Aires street interview funny',
+    'Argentinian mate funny moment',
+    'Argentinian tango street viral',
+    'Argentinian roast comedy short',
+  ],
+  Chile: [
+    'Chilean comedy skit viral',
+    'Chile street interview funny',
+    'Chilean football fan funny',
+    'Chilean slang funny moments',
+    'Chile completo food funny',
+    'Chilean family comedy short',
+  ],
+  Portugal: [
+    'Portuguese comedy skit viral',
+    'Lisbon street interview funny',
+    'Portugal football fan funny',
+    'Portuguese street food viral',
+    'Portuguese grandma funny moments',
+    'Portugal surf funny moments',
+  ],
+  Russia: [
+    'Russian dashcam funny moments',
+    'Russian comedy skit viral',
+    'Russian hardbass funny moments',
+    'Russian street interview funny',
+    'Russian winter funny moments',
+    'Russian invention funny viral',
+  ],
+  Canada: [
+    'Canadian comedy skit viral',
+    'Canada winter funny moments',
+    'Toronto street interview funny',
+    'Canadian hockey fan funny',
+    'Canadian food review funny',
+    'Canadian politeness meme short',
+  ],
+  Australia: [
+    'Australian comedy skit viral',
+    'Australian tradie funny moments',
+    'Australia beach funny moments',
+    'Australian accent funny interview',
+    'Sydney street interview funny',
+    'Australian football fan funny',
+  ],
+};
+
+const COUNTRY_RELEVANCE = {
+  China: {
+    positive: [
+      'china', 'chinese', 'douyin', 'bilibili', 'kuaishou', 'xiaohongshu',
+      'hanfu', 'guangxi', 'kemusan', 'subject three', 'tuanbo', 'mandarin',
+      'beijing', 'shanghai', 'sichuan', 'cantonese', 'waiter', 'restaurant',
+      'street dance', 'square dance',
+    ],
+    negative: [
+      'india', 'bollywood', 'chammak', 'shambhavi', 'xml status', 'alight motion',
+      'moliy', 'silent addy', 'shake it to the max', 'sweet body', 'hot yoga',
+      'loli', 'no bra', 'onlyfans',
+    ],
+  },
+  Japan: {
+    positive: ['japan', 'japanese', 'tokyo', 'shibuya', 'osaka', 'anime', 'ramen', 'niconico', 'kawaii', 'arcade', 'mascot'],
+    negative: ['china', 'chinese', 'korea', 'korean', 'india', 'bollywood', 'onlyfans', 'no bra'],
+  },
+  'South Korea': {
+    positive: ['korea', 'korean', 'seoul', 'hongdae', 'k-pop', 'kpop', 'kimchi', 'mukbang', 'kdrama', 'k-drama'],
+    negative: ['japan', 'japanese', 'china', 'chinese', 'india', 'bollywood', 'onlyfans', 'no bra'],
+  },
+  UK: {
+    positive: ['uk', 'british', 'england', 'english', 'london', 'manchester', 'roadman', 'drill', 'pub', 'football', 'britain'],
+    negative: ['america', 'american', 'india', 'bollywood', 'onlyfans', 'no bra'],
+  },
+  Nigeria: {
+    positive: ['nigeria', 'nigerian', 'lagos', 'afrobeats', 'nollywood', 'yoruba', 'igbo', 'african'],
+    negative: ['india', 'bollywood', 'america', 'american', 'onlyfans', 'no bra'],
+  },
+  Africa: {
+    positive: ['africa', 'african', 'nigeria', 'nigerian', 'ghana', 'ghanaian', 'kenya', 'south africa', 'amapiano', 'afrobeats', 'nollywood'],
+    negative: ['india', 'bollywood', 'america', 'american', 'onlyfans', 'no bra'],
+  },
+  'South Africa': {
+    positive: ['south africa', 'south african', 'mzansi', 'amapiano', 'cape town', 'johannesburg', 'pretoria'],
+    negative: ['india', 'bollywood', 'america', 'american', 'onlyfans', 'no bra'],
+  },
+};
+
+const COUNTRY_METADATA_PROFILES = {
+  China: { titleBase: 'China', tags: ['douyin', 'china', 'chinese dance'], hashtags: '#shorts #douyin #china' },
+  Japan: { titleBase: 'Japan', tags: ['japan', 'japanese comedy', 'tokyo'], hashtags: '#shorts #japan #tokyo' },
+  'South Korea': { titleBase: 'Korea', tags: ['south korea', 'korean comedy', 'kpop'], hashtags: '#shorts #korea #seoul' },
+  UK: { titleBase: 'The UK', tags: ['uk', 'british comedy', 'london'], hashtags: '#shorts #uk #british' },
+  Nigeria: { titleBase: 'Nigeria', tags: ['nigeria', 'african comedy', 'afrobeats'], hashtags: '#shorts #nigeria #africa' },
+  Africa: { titleBase: 'Africa', tags: ['africa', 'african comedy', 'afrobeats'], hashtags: '#shorts #africa #funny' },
+  'South Africa': { titleBase: 'South Africa', tags: ['south africa', 'amapiano', 'mzansi'], hashtags: '#shorts #southafrica #amapiano' },
+};
+
+const COUNTRY_ALIASES = {
+  Korea: 'South Korea',
+  'United Kingdom': 'UK',
+  Britain: 'UK',
+  England: 'UK',
+  African: 'Africa',
+};
+
+function countryKey(country) {
+  return COUNTRY_ALIASES[country] || country;
+}
+
+function isGenericCountryQuery(query, country) {
+  const normalized = query.trim().toLowerCase();
+  const names = [country, countryKey(country)]
+    .filter(Boolean)
+    .flatMap(name => {
+      const lower = String(name).toLowerCase();
+      return lower === 'south korea' ? [lower, 'korea', 'korean'] : [lower];
+    });
+  const genericTails = ['', 'viral', 'dance', 'shorts', 'funny', 'music', 'best', 'trends'];
+
+  return names.some(name => genericTails.some(tail => normalized === `${name}${tail ? ` ${tail}` : ''}`));
+}
+
+function isCountryRelevantCandidate(candidate, country) {
+  const rules = COUNTRY_RELEVANCE[countryKey(country)];
+  if (!rules) return true;
+
+  const text = [
+    candidate.title,
+    candidate.description,
+    candidate.channel,
+    candidate.searchQuery,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (rules.negative.some(term => text.includes(term))) return false;
+  return rules.positive.some(term => text.includes(term));
+}
+
+function buildFallbackMetadata(country, bestVideo, dialogue) {
+  const reasoning = (bestVideo.reasoning || '').toLowerCase();
+  const sourceTitle = bestVideo.title || '';
+  const profile = COUNTRY_METADATA_PROFILES[countryKey(country)] || {
+    titleBase: country,
+    tags: [country.toLowerCase(), `${country.toLowerCase()} culture`],
+    hashtags: `#shorts #${String(country).toLowerCase().replace(/[^a-z0-9]/g, '')} #viral`,
+  };
+
+  let hook = `${profile.titleBase} Street Moment`;
+  if (reasoning.includes('waiter') || /waiter/i.test(sourceTitle)) hook = 'This Waiter Started Dancing';
+  else if (reasoning.includes('dance') || /dance|douyin|kemusan|subject three|amapiano|k-pop|kpop|salsa|cumbia/i.test(sourceTitle)) hook = `${profile.titleBase} Dance Hits Different`;
+  else if (reasoning.includes('funny') || reasoning.includes('comedy') || /funny|comedy|skit|meme/i.test(sourceTitle)) hook = `${profile.titleBase} Has Main Character Energy`;
+  else if (reasoning.includes('street food') || /food|ramen|taco|kebab|market|vendor/i.test(sourceTitle)) hook = `${profile.titleBase} Street Food Goes Crazy`;
+  else if (reasoning.includes('hanfu') || /hanfu/i.test(sourceTitle)) hook = 'This Hanfu Moment Is Unreal';
+  else if (reasoning.includes('football') || /football|soccer/i.test(sourceTitle)) hook = `${profile.titleBase} Football Fans Are Different`;
+  else if (reasoning.includes('interview') || /street interview/i.test(sourceTitle)) hook = `${profile.titleBase} Street Interviews Are Unhinged`;
+
+  const shortTranscript = (dialogue?.transcript || '').trim();
+  const descriptionHook = bestVideo.reasoning
+    ? bestVideo.reasoning.split('.').slice(0, 2).join('.').substring(0, 180)
+    : `A viral ${country} short with a visual hook from the first seconds.`;
+
+  return {
+    title: hook.substring(0, 50),
+    description: `${descriptionHook}\n\nWould you stop and watch this?\n\n${profile.hashtags}`,
+    tags: ['shorts', 'viral', 'mr worldwidewebster'].concat(profile.tags).concat(
+      shortTranscript ? ['global trends'] : []
+    ),
+  };
+}
+
 /**
  * Fetch top comments from a YouTube video using yt-dlp
  * Returns array of { text, likes, author } objects
@@ -89,18 +523,25 @@ async function generateQueries(country, gemini, trendBank) {
   // Use LLM + trend bank hybrid with query generator skill — generate 15-20 diverse queries
   const queries = await gemini.generateQueries(country, trendBank.keywords, 20);
   const allQueries = [];
+  const key = countryKey(country);
+  const presetQueries = COUNTRY_QUERY_PRESETS[key] || [];
 
-  if (Array.isArray(queries)) {
-    for (const q of queries) {
-      // Strip any existing hashtags (LLM sometimes adds #tiktok #reels #douyin despite instructions)
-      const clean = q.replace(/#\w+/g, '').trim();
-      // Always append just #shorts
-      const query = `${clean} ${trendBank.suffix}`;
-      if (!allQueries.includes(query)) allQueries.push(query);
+  for (const q of [...presetQueries, ...(Array.isArray(queries) ? queries : [])]) {
+    if (typeof q !== 'string') continue;
+    if (presetQueries.length > 0 && isGenericCountryQuery(q, country)) {
+      continue;
     }
-    logger.info(`LLM+bank queries: ${allQueries.length} queries`);
+
+    // Strip any existing hashtags (LLM sometimes adds #tiktok #reels #douyin despite instructions)
+    const clean = q.replace(/#\w+/g, '').trim();
+    if (!clean) continue;
+
+    // Always append the country trend-bank suffix.
+    const query = `${clean} ${trendBank.suffix}`;
+    if (!allQueries.includes(query)) allQueries.push(query);
   }
 
+  logger.info(`Preset+LLM queries: ${allQueries.length} queries`);
   logger.success(`Total queries generated: ${allQueries.length}`);
   return allQueries;
 }
@@ -112,7 +553,7 @@ async function generateQueries(country, gemini, trendBank) {
  * For each result, fetches full metadata and applies quality gate.
  * Quality Gate: views>=5000, comments>0, embeddable, like ratio>=1.5%, <60s, public
  */
-async function searchYouTube(queries, targetCount = 15) {
+async function searchYouTube(queries, targetCount = 15, country = null) {
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
   // Collect results per-query in a map for interleaving (no per-query cap)
@@ -198,13 +639,14 @@ async function searchYouTube(queries, targetCount = 15) {
 
   // Interleave: take 1 from each query in round-robin
   const allResults = [];
+  const collectTarget = country ? targetCount * 3 : targetCount;
   let maxLen = 0;
   for (const q of queryList) maxLen = Math.max(maxLen, perQueryResults.get(q).length);
 
-  for (let i = 0; i < maxLen && allResults.length < targetCount; i++) {
+  for (let i = 0; i < maxLen && allResults.length < collectTarget; i++) {
     for (const q of queryList) {
       const results = perQueryResults.get(q);
-      if (i < results.length && allResults.length < targetCount) {
+      if (i < results.length && allResults.length < collectTarget) {
         allResults.push(results[i]);
       }
     }
@@ -212,10 +654,18 @@ async function searchYouTube(queries, targetCount = 15) {
 
   logger.success(`Search complete: ${allResults.length} quality candidates found`);
 
+  const relevantResults = country
+    ? allResults.filter(c => isCountryRelevantCandidate(c, country))
+    : allResults;
+  if (country && relevantResults.length < allResults.length) {
+    logger.info(`Country relevance filter (${country}): ${relevantResults.length}/${allResults.length} candidates kept`);
+  }
+  const finalResults = (relevantResults.length > 0 ? relevantResults : allResults).slice(0, targetCount);
+
   // ─── Debug: Log engagement data from top candidates ────────────────
-  if (allResults.length > 0) {
+  if (finalResults.length > 0) {
     logger.info('── Gated candidates (top 5) ──');
-    allResults.slice(0, 5).forEach((c, i) => {
+    finalResults.slice(0, 5).forEach((c, i) => {
       const ageDays = c.upload_date
         ? Math.max(1, Math.floor((Date.now() - new Date(
             c.upload_date.substring(0, 4),
@@ -230,7 +680,7 @@ async function searchYouTube(queries, targetCount = 15) {
     logger.info('──────────────────────────────────────────');
   }
 
-  return allResults;
+  return finalResults;
 }
 
 /**
@@ -288,8 +738,8 @@ function filterCandidates(candidates) {
 }
 
 /**
- * Rank a single video: try URL-based Gemini ranking, fall back to
- * downloading 720p and using File API + CLI for visual ranking.
+ * Rank a single video by downloading a short preview and sending the
+ * actual MP4 to Gemini for visual ranking.
  * Returns a valid ranking result or null (no result possible).
  */
 async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSkill, tmpDir) {
@@ -314,17 +764,8 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
     : '';
   logger.info(`  Engagement: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old${commentsLog}`);
 
-  // Step 1: Try URL-based Gemini ranking
-  logger.info(`  Step 1 — URL-based ranking...`);
-  let result = await gemini.rankVideo(candidate.url, country, curatorSkill, engagementData);
-
-  // If URL ranking returned a valid result (APPROVED or REJECTED), use it
-  if (result !== null) {
-    return { result, candidate };
-  }
-
-  // Step 2: URL ranking failed — download truncated clip for visual ranking
-  logger.info(`  Step 2 — URL ranking returned null, downloading truncated clip for visual ranking...`);
+  // Always download a short clip for ranking so Gemini sees the actual video.
+  logger.info(`  Step 1 — downloading truncated clip for visual ranking...`);
 
   // For ranking: download only 8-20s section to save time/bandwidth
   let dlPath = null;
@@ -358,13 +799,13 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
     return null;
   }
 
-  // Step 2a: Try Gemini File API upload
-  logger.info(`  Step 2a — Uploading to Gemini File API...`);
-  result = await gemini.rankVideoFile(dlPath, country, curatorSkill, engagementData);
+  // Step 2: Try Gemini API with inline video data for small ranking clips.
+  logger.info(`  Step 2 — Analyzing MP4 with Gemini API...`);
+  let result = await gemini.rankVideoFile(dlPath, country, curatorSkill, engagementData);
 
-  // Step 2b: If File API also failed, try Gemini CLI
+  // Step 3: If API failed, try Gemini CLI using an explicit local @file ref.
   if (result === null && geminiCLI && geminiCLI.isAvailable()) {
-    logger.info(`  Step 2b — File API failed, trying Gemini CLI...`);
+    logger.info(`  Step 3 — API failed, trying Gemini CLI with local file ref...`);
     result = await geminiCLI.rankVideoFromPath(dlPath, country, curatorSkill, engagementData);
   }
 
@@ -381,7 +822,7 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
 
 /**
  * Rank videos via Gemini with per-video fallback chain:
- * URL → 720p download → File API → CLI.
+ * 720p preview download → inline video API → CLI local file fallback.
  * No internal fallback — returns empty array if no videos were approved.
  */
 async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, tmpDir) {
@@ -595,24 +1036,27 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
 
   // Mix: original audio ducked + signature TTS + optional flag
   try {
-    const startDelay = Math.max(1, videoDuration - ttsDuration - 2); // Place near end
+    const startDelay = Math.min(1, Math.max(0, videoDuration - ttsDuration - 0.5));
+    const endTime = startDelay + ttsDuration;
+    const delayMs = Math.round(startDelay * 1000);
 
     if (hasFlag) {
       const filterComplex =
-        `[0:v][1:v]overlay=(W-w)/2:160:enable='between(t,${startDelay},${startDelay + ttsDuration})'[v];` +
-        `[0:a]volume=enable='between(t,${startDelay},${startDelay + ttsDuration})':volume=0.2[ad];` +
-        `[1:a]adelay=${startDelay * 1000}[av];[ad][av]amix=inputs=2:duration=first[a]`;
+        `[2:v]scale=144:-1[flag];` +
+        `[0:v][flag]overlay=(W-w)/2:160:enable='between(t,${startDelay},${endTime})'[v];` +
+        `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
+        `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
       execSync(
         `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
         `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
-        `-c:v libx264 -preset fast -crf 0 -c:a aac -shortest "${outputPath}" 2>/dev/null`,
+        `-c:v libx264 -preset fast -crf 18 -pix_fmt yuv420p -c:a aac -shortest "${outputPath}" 2>/dev/null`,
         { timeout: 120000 }
       );
     } else {
       const filterComplex =
-        `[0:a]volume=enable='between(t,${startDelay},${startDelay + ttsDuration})':volume=0.2[ad];` +
-        `[1:a]adelay=${startDelay * 1000}[av];[ad][av]amix=inputs=2:duration=first[a]`;
+        `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
+        `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
       execSync(
         `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" ` +
@@ -675,7 +1119,7 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 2: Search + Filter ──────────────────────────────────────
   // Target 6 candidates per batch, 3 batches total
-  let candidates = await searchYouTube(queries, 6);
+  let candidates = await searchYouTube(queries, 6, country);
   let filtered = filterCandidates(candidates);
   logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
 
@@ -728,7 +1172,7 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 3: Gemini Ranking (with batch retry loop ×3) ───────────
   // Each batch searches 6 new candidates, ranks them with per-video
-  // URL→720p download→File API→CLI fallback. null results don't count,
+  // 720p preview download→inline video API→CLI fallback. null results don't count,
   // only actual APPROVED/REJECTED responses from Gemini.
   logger.info('Phase 3: Gemini Ranking');
   let ranked = [];
@@ -745,7 +1189,7 @@ async function runType1Pipeline(options = {}) {
         logger.warn(`Batch ${batch}: No new queries generated — skipping`);
         continue;
       }
-      candidates = await searchYouTube(newQueries, 6);
+      candidates = await searchYouTube(newQueries, 6, country);
       filtered = filterCandidates(candidates);
       if (filtered.length < 5) {
         const fallbackGate = (candidates || []).filter(c => {
@@ -768,7 +1212,7 @@ async function runType1Pipeline(options = {}) {
       }
     }
 
-    // Rank this batch — each video gets URL→720p→File API→CLI fallback
+    // Rank this batch — each video gets 720p preview→inline video API→CLI fallback
     ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
 
     if (ranked.length > 0) {
@@ -897,16 +1341,41 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 9: Generate Metadata ────────────────────────────────────
   logger.info('Phase 9: Generate Metadata');
-  const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title);
-  const title = metadata?.title || `${country} Clip 🔥`;
-  const description = metadata?.description || `Amazing viral clip from ${country}! Follow Mr. WorldWideWebster for more global trends! 🌍`;
-  const tags = metadata?.tags || ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'viral', 'tiktok'];
+  const metadataContext = {
+    reasoning: bestVideo.reasoning,
+    searchQuery: bestVideo.searchQuery,
+    hookScore: bestVideo.hookScore,
+    geminiScore: bestVideo.geminiScore,
+    editType: editResult.editType,
+    hasCaptions: editResult.hasCaptions,
+    sourceUrl: bestVideo.url,
+  };
+  const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title, metadataContext);
+  const fallbackMetadata = buildFallbackMetadata(country, bestVideo, dialogue);
+  const title = metadata?.title || fallbackMetadata.title;
+  const description = metadata?.description || fallbackMetadata.description;
+  const tags = metadata?.tags || fallbackMetadata.tags;
+
+  const safeCountry = String(country || 'global').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
+  const durableFinalPath = path.join(outputDir, `type1_${safeCountry}_${Date.now()}.mp4`);
+
+  try {
+    fs.copyFileSync(finalPath, durableFinalPath);
+  } catch (e) {
+    logger.error(`Failed to preserve final video before cleanup: ${e.message}`);
+    return { success: false, error: 'Failed to preserve final video' };
+  }
+
+  if (!fs.existsSync(durableFinalPath) || fs.statSync(durableFinalPath).size < 100000) {
+    logger.error('Final video copy missing or too small — aborting before temp cleanup');
+    return { success: false, error: 'Final video copy failed' };
+  }
 
   // Cleanup tmp
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
   logger.header('PIPELINE COMPLETE');
-  logger.success(`Video: ${finalPath}`);
+  logger.success(`Video: ${durableFinalPath}`);
   logger.success(`Title: ${title}`);
   logger.success(`Country: ${country}`);
   logger.success(`Gemini Score: ${bestVideo.geminiScore}/10`);
@@ -915,7 +1384,7 @@ async function runType1Pipeline(options = {}) {
 
   return {
     success: true,
-    videoPath: finalPath,
+    videoPath: durableFinalPath,
     title,
     description,
     tags,
