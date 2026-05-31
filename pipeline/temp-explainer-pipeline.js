@@ -210,19 +210,37 @@ function downloadMaxQuality(video, outputDir) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   const outputFile = path.join(outputDir, `source_${video.id}.mp4`);
-  logger.info(`Downloading: ${video.url} (lossless)`);
+  logger.info(`Downloading: ${video.url} (1080p)`);
 
   // Sort by resolution (prefer 1080p) for best quality
   const strategies = [
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
-    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
-    { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
+    {
+      name: 'web_1080_mp4',
+      args: '--extractor-args "youtube:player_client=web"',
+      format: '-f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,vcodec:h264,acodec:m4a,ext:mp4:m4a" --merge-output-format mp4',
+    },
+    {
+      name: 'default_1080_best',
+      args: '',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'android_1080',
+      args: '--extractor-args "youtube:player_client=android"',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/best" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'fallback_best',
+      args: '',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4',
+    },
   ];
 
   for (const s of strategies) {
     try {
       const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
+      // Don't pass cookies with android client (it rejects them)
+      const cookieArg = (hasCookies && !s.name.includes('android')) ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
         `-o "${outputFile}" "${video.url}" ` +
@@ -457,19 +475,17 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   // Build FFmpeg filter:
   // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
   // If already 9:16, just overlay flag directly
-  // For the flag PNG: remove any green-alpha in the source by making it transparent with colorkey
-  // Then overlay the clean flag on the video.
-  // If video is not 9:16, scale with pillarbox (black bars) to maintain aspect ratio.
+  // The twemoji PNG has proper alpha transparency — no colorkey needed
   let overlayFilter;
   if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
     overlayFilter =
       `[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[bg];` +
-      `[1:v]colorkey=0x00FF00:0.01:0.0,format=rgba[cleanflag];` +
-      `[bg][cleanflag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
+      `[1:v]format=rgba[flag];` +
+      `[bg][flag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   } else {
     overlayFilter =
-      `[1:v]colorkey=0x00FF00:0.01:0.0,format=rgba[cleanflag];` +
-      `[0:v][cleanflag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
+      `[1:v]format=rgba[flag];` +
+      `[0:v][flag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   }
 
   const outPath = outputPath || videoPath.replace(/\.\w+$/, '_flagged.mp4');
@@ -478,7 +494,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
     execSync(
       `ffmpeg -y -i "${videoPath}" -i "${flagPath}" ` +
       `-filter_complex "${overlayFilter}" ` +
-      `-c:v libx264 -preset medium -crf 0 -c:a copy -pix_fmt yuv420p -shortest "${outPath}" 2>/dev/null`,
+      `-c:v libx264 -preset slow -crf 18 -c:a aac -b:a 320k -pix_fmt yuv420p -shortest "${outPath}"`,
       { timeout: 180000 }
     );
 
@@ -497,6 +513,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
 
 /**
  * Step 7: Gemini generates new title and description
+ * Falls back to OpenRouter if Gemini is exhausted
  */
 async function generateMetadata(country, originalTitle, gemini) {
   logger.info('Generating new title and description...');
@@ -510,34 +527,59 @@ async function generateMetadata(country, originalTitle, gemini) {
     }
   } catch (e) {}
 
-  const flagEmoji = getFlagEmoji(country);
-  const visualSummary = `A viral travel short from ${country}${originalTitle ? ` (original: "${originalTitle}")` : ''}`;
+  const systemPrompt = skillContent || `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
+Title: max 50 chars, emoji-heavy, curiosity gap, mentions the country. Description: hook + engagement CTA + 3 hashtags.
+Do NOT reference the original video title/channel. Add "Follow Mr. WorldWideWebster" with globe emoji at the end of description.`;
 
-  const result = await gemini.chatJSON(
-    skillContent || `You write YouTube Shorts titles and descriptions for a travel channel called "Mr. WorldWideWebster".
-Title: max 50 chars, emoji-heavy, curiosity gap, mentions ${country}. Description: hook + engagement CTA + 3 hashtags.
-Do NOT reference the original video title/channel. Add "Follow Mr. WorldWideWebster" + ${flagEmoji} at the end of description.`,
-    `Visual Summary: ${visualSummary}
+  const userMessage = `Generate a YouTube Shorts title and description for a travel video from ${country}.
+Original video title: "${originalTitle || 'Unknown'}"
+Country: ${country}
+
 Vibe/Tone: exciting, travel, discovery
 Source/Category: ${country.toLowerCase()} travel shorts
 
-Add "Follow Mr. WorldWideWebster 🌍✈️" to the end of the description.`,
-    { temperature: 0.8, maxTokens: 512 }
-  );
+Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag2", "tag3"]}`;
+
+  // Try Gemini first (has built-in key rotation + retry)
+  let result = await gemini.chatJSON(systemPrompt, userMessage, { temperature: 0.8, maxTokens: 512 });
+
+  // If Gemini returned null (all keys exhausted), try OpenRouter as fallback
+  if (!result) {
+    logger.warn('Gemini exhausted for metadata generation — trying OpenRouter fallback');
+    const { getOpenRouterQA } = require('../core/openrouter-qa');
+    const qa = getOpenRouterQA();
+    const orResult = await qa.chat(
+      systemPrompt + '\n\nIMPORTANT: Respond ONLY with valid JSON.',
+      userMessage,
+      { temperature: 0.8, maxTokens: 512, timeout: 30000 }
+    );
+    if (orResult) {
+      try {
+        const m = orResult.match(/\{[\s\S]*\}/);
+        if (m) result = JSON.parse(m[0]);
+      } catch (e) {
+        logger.warn(`OpenRouter JSON parse failed: ${e.message.substring(0, 50)}`);
+      }
+    }
+  }
 
   if (result) {
+    const flagEmoji = getFlagEmoji(country);
     const title = (result.title || `${country} Travel Short 🔥`).substring(0, 50);
     let description = result.description || `Amazing travel short from ${country}! Follow Mr. WorldWideWebster for more! 🌍✈️`;
     if (!description.includes('Mr. WorldWideWebster')) {
       description += `\n\nFollow Mr. WorldWideWebster for more! ${flagEmoji}🌍✈️`;
     }
     const tags = result.tags || ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'travel'];
-    logger.success(`Title: "${title}"`);
+    logger.success(`Title: "${title}" (${result?.title ? 'Gemini' : 'OpenRouter'})`);
     return { title, description, tags };
   }
 
+  // Ultimate fallback — should rarely happen
+  const flagEmoji = getFlagEmoji(country);
+  logger.error('All LLM providers exhausted for metadata — using fallback');
   return {
-    title: `${country} Travel Short 🔥`,
+    title: `${country} Travel Short 🔥`.substring(0, 50),
     description: `Incredible scenes from ${country}. Follow Mr. WorldWideWebster for global travel content! ${flagEmoji}🌍✈️`,
     tags: ['mr worldwidewebster', 'shorts', country.toLowerCase(), 'travel'],
   };

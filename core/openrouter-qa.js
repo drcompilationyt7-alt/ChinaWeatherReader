@@ -157,6 +157,75 @@ class OpenRouterQA {
   }
 
   /**
+   * Generic text-only chat call to OpenRouter (no frames).
+   * Used as fallback for title/metadata generation when Gemini is exhausted.
+   * @param {string} systemPrompt - System instruction
+   * @param {string} userMessage - User message
+   * @param {Object} opts - { temperature, maxTokens }
+   * @returns {string|null} - Response text
+   */
+  async chat(systemPrompt, userMessage, opts = {}) {
+    const maxRetries = this.keys.length + 1;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const key = this._getKey();
+      if (!key) {
+        logger.warn('No OpenRouter keys available for chat');
+        return null;
+      }
+
+      try {
+        const response = await axios.post(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            model: opts.model || 'openrouter/auto',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: opts.maxTokens || 512,
+            temperature: opts.temperature || 0.7,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${key}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
+              'X-Title': 'Mr. WorldWideWebster Metadata',
+            },
+            timeout: opts.timeout || 20000,
+          }
+        );
+
+        if (response.data?.choices?.[0]?.message?.content) {
+          return response.data.choices[0].message.content;
+        }
+      } catch (error) {
+        const status = error.response?.status;
+        const errText = error.response?.data?.error?.message || error.message;
+
+        if (status === 429 || errText?.includes('quota') || errText?.includes('rate')) {
+          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} rate limited — rotating`);
+          this._rotateKey();
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+
+        if (status === 402) {
+          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} out of credits — rotating`);
+          this._rotateKey();
+          continue;
+        }
+
+        logger.warn(`OpenRouter chat error: ${errText?.substring(0, 80)}`);
+        this._rotateKey();
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * QA check for crop quality
    * Non-directional: just asks "does this look correct?"
    */
