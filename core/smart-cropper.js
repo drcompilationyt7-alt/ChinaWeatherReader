@@ -24,6 +24,16 @@ const SHORTS_H = 1920;
 const TARGET_RATIO = SHORTS_W / SHORTS_H; // 0.5625
 const MAX_ITERATIONS = 3;
 
+function parseJsonFromOutput(output) {
+  const text = String(output || '').trim();
+  try { return JSON.parse(text); } catch {}
+  const matches = text.match(/\{[\s\S]*?\}/g) || [];
+  for (let i = matches.length - 1; i >= 0; i--) {
+    try { return JSON.parse(matches[i]); } catch {}
+  }
+  throw new Error(`No JSON object found in output: ${text.substring(0, 120)}`);
+}
+
 /**
  * Probe video dimensions using ffprobe
  */
@@ -179,7 +189,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
             `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${framePath}"`,
             { timeout: 30000, encoding: 'utf8' }
           ).toString().trim();
-          const yoloResult = JSON.parse(yoloOut);
+          const yoloResult = parseJsonFromOutput(yoloOut);
           if (yoloResult.subject !== 'none' && yoloResult.center_x >= 0) {
             subjectCenters.push(yoloResult.center_x);
             if (Array.isArray(yoloResult.bbox) && yoloResult.bbox.length === 4) {
@@ -253,7 +263,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
               `python3 "${path.join(__dirname, 'yolo-crop.py')}" "${fp}"`,
               { timeout: 30000, encoding: 'utf8' }
             ).toString().trim();
-            const yoloResult = JSON.parse(yoloOut);
+            const yoloResult = parseJsonFromOutput(yoloOut);
             if (yoloResult.subject !== 'none' && yoloResult.center_x >= 0) {
               qaOffsets.push(Math.abs(yoloResult.center_x - (SHORTS_W / 2)));
             }

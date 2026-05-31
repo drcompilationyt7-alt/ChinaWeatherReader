@@ -50,9 +50,10 @@ This is where most of the score comes from. Analyze the video's content DEEPLY w
 - **Language:** Non-English is fine, language is NOT a barrier.
 
 ### When You CANNOT See the Video (URL failed / null):
-- **Penalty: Subtract 3 from the final score**
-- Rely on title, description, and engagement data only
-- Be transparent in reasoning that visual analysis was not possible
+- Do NOT approve or reject from title, description, or engagement data.
+- Do NOT infer sexual, romantic, TV, adult, or low-quality content from title clickbait alone.
+- Return `"verdict":"VISUAL_UNAVAILABLE"`, `"score":0`, and explain that the visual content could not be inspected.
+- The pipeline will retry using another visual path, such as extracted frames.
 
 ### Visual Categorization (Cultural Origin)
 - Background (architecture, indoor/outdoor, signage)
@@ -75,6 +76,8 @@ This is where most of the score comes from. Analyze the video's content DEEPLY w
 - **Adult/gay/transgender focus** — Reject unless authentic cultural documentary
 - **Kissing or romantic intimacy** — No makeout sessions, kissing scenes
 - **TV show clips, award ceremony footage, speeches** — Not what our audience wants
+
+Only apply these hard rules when you can verify them visually in the video or frames. Do not apply hard rules from the title alone.
 
 ### AUTO-APPROVE (High Priority)
 - **Dance trends, TikTok challenges, funny memes, reaction content**

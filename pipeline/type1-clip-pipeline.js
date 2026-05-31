@@ -547,25 +547,21 @@ async function generateQueries(country, gemini, trendBank) {
 }
 
 /**
- * Search YouTube — Bulk Fetch + Quality Gate
+ * Search YouTube — Bulk Fetch + Random Batch
  * 
- * Fetches up to 200 search results per query via ytsearch200: syntax.
- * For each result, fetches full metadata and applies quality gate.
- * Quality Gate: views>=5000, comments>0, embeddable, like ratio>=1.5%, <60s, public
+ * Fetches raw search results, enriches metrics when available, then randomly
+ * picks a batch for Gemini. Gemini decides content quality; metrics are support.
  */
 async function searchYouTube(queries, targetCount = 15, country = null) {
   const seen = new Set();
   const cookieArg = fs.existsSync('/tmp/yt_cookies.txt') ? '--cookies "/tmp/yt_cookies.txt"' : '';
-  // Collect results per-query in a map for interleaving (no per-query cap)
-  const perQueryResults = new Map();
+  const allResults = [];
 
   for (const query of queries) {
     logger.info(`Searching for: "${query}"`);
 
     try {
-      const searchCmd = `yt-dlp --flat-playlist --dump-json ` +
-        `--match-filter "!is_live & !upcoming & duration < 60 & availability = 'public'" ` +
-        `"ytsearch200:${query}" 2>&1`;
+      const searchCmd = `yt-dlp --flat-playlist --dump-json "ytsearch200:${query}" 2>&1`;
 
       const out = execSync(searchCmd, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }).toString().trim();
       if (!out) {
@@ -576,7 +572,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       const lines = out.split('\n').filter(Boolean);
       logger.info(`Raw results: ${lines.length} videos`);
 
-      const queryResults = [];
+      let addedFromQuery = 0;
       for (const line of lines) {
         try {
           const p = JSON.parse(line);
@@ -588,83 +584,51 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
             try {
               metaOut = execSync(metaCmd, { timeout: 15000, maxBuffer: 1024 * 1024 }).toString().trim();
             } catch {}
-            if (!metaOut || metaOut.includes('ERROR')) continue;
 
-            const meta = JSON.parse(metaOut.split('\n')[0]);
-            const views = meta.view_count || 0;
-            const likes = meta.like_count || 0;
-            const comments = meta.comment_count || 0;
+            let meta = {};
+            if (metaOut && !metaOut.includes('ERROR')) {
+              try { meta = JSON.parse(metaOut.split('\n')[0]); } catch {}
+            }
 
-            if (views < 2000) continue;
-            if (comments === 0) continue;
-
-            queryResults.push({
+            allResults.push({
               id: p.id,
               url: `https://www.youtube.com/watch?v=${p.id}`,
               shortsUrl: `https://www.youtube.com/shorts/${p.id}`,
               title: meta.title || p.title || 'YouTube video',
               duration: meta.duration || p.duration || 0,
               searchQuery: query,
-              view_count: views,
+              view_count: meta.view_count || p.view_count || 0,
               channel_follower_count: meta.channel_follower_count || 0,
-              like_count: likes,
-              comment_count: comments,
+              like_count: meta.like_count || 0,
+              comment_count: meta.comment_count || 0,
               channel: meta.channel || meta.uploader || p.channel || 'Unknown',
               description: (meta.description || '').substring(0, 300),
               upload_date: meta.upload_date || p.upload_date || '',
             });
+            addedFromQuery++;
           }
         } catch {}
       }
 
-      if (queryResults.length > 0) {
-        perQueryResults.set(query, queryResults);
-        logger.info(`  → ${queryResults.length} candidates from this query`);
+      if (addedFromQuery > 0) {
+        logger.info(`  → ${addedFromQuery} raw candidates added from this query`);
       }
     } catch (e) {
       logger.warn(`Search failed for "${query}": ${(e.message || '').substring(0, 200)}`);
     }
   }
 
-  // Shuffle within each query's results for randomness, then interleave round-robin
-  const queryList = Array.from(perQueryResults.keys());
-  for (const q of queryList) {
-    const results = perQueryResults.get(q);
-    // Fisher-Yates shuffle
-    for (let i = results.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [results[i], results[j]] = [results[j], results[i]];
-    }
+  for (let i = allResults.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allResults[i], allResults[j]] = [allResults[j], allResults[i]];
   }
+  const finalResults = allResults.slice(0, targetCount);
 
-  // Interleave: take 1 from each query in round-robin
-  const allResults = [];
-  const collectTarget = country ? targetCount * 3 : targetCount;
-  let maxLen = 0;
-  for (const q of queryList) maxLen = Math.max(maxLen, perQueryResults.get(q).length);
+  logger.success(`Search complete: ${allResults.length} raw candidates collected; randomly selected ${finalResults.length} for Gemini`);
 
-  for (let i = 0; i < maxLen && allResults.length < collectTarget; i++) {
-    for (const q of queryList) {
-      const results = perQueryResults.get(q);
-      if (i < results.length && allResults.length < collectTarget) {
-        allResults.push(results[i]);
-      }
-    }
-  }
-
-  logger.success(`Search complete: ${allResults.length} quality candidates found`);
-
-  const relevantResults = country
-    ? allResults.filter(c => isCountryRelevantCandidate(c, country))
-    : allResults;
-  if (country && relevantResults.length < allResults.length) {
-    logger.info(`Country relevance filter (${country}): ${relevantResults.length}/${allResults.length} candidates kept`);
-  }
-  const finalResults = (relevantResults.length > 0 ? relevantResults : allResults).slice(0, targetCount);
-
-  // ─── Debug: Log engagement data from top candidates ────────────────
+  // ─── Debug: Log support metrics for selected candidates ────────────
   if (finalResults.length > 0) {
-    logger.info('── Gated candidates (top 5) ──');
+    logger.info('── Random Gemini batch (top 5 shown) ──');
     finalResults.slice(0, 5).forEach((c, i) => {
       const ageDays = c.upload_date
         ? Math.max(1, Math.floor((Date.now() - new Date(
@@ -675,7 +639,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
         : 'N/A';
       logger.info(`  #${i + 1} "${c.title.substring(0, 40)}"`);
       logger.info(`       Views: ${c.view_count?.toLocaleString() || 0} | Likes: ${c.like_count?.toLocaleString() || 0} | Comments: ${c.comment_count?.toLocaleString() || 0}`);
-      logger.info(`       Age: ${ageDays}d | Duration: ${c.duration}s | Embed: yes`);
+      logger.info(`       Age: ${ageDays}d | Duration: ${c.duration}s | Query: ${c.searchQuery.substring(0, 50)}`);
     });
     logger.info('──────────────────────────────────────────');
   }
@@ -684,57 +648,12 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
 }
 
 /**
- * Filter candidates by engagement metrics (likes + comments)
- * Progressively relaxes until we have at least 5 candidates for ranking.
+ * Keep the hook for older call sites, but do not pre-filter Type 1 batches.
+ * Gemini should rank the visual content; engagement metrics are support only.
  */
 function filterCandidates(candidates) {
-  // Check if we got engagement data or metadata failed
-  const hasEngagementData = candidates.some(c => c.like_count > 0 || c.comment_count > 0);
-
-  if (!hasEngagementData) {
-    logger.warn('No engagement data available — skipping engagement filter, passing all to Gemini for ranking');
-    logger.warn(`Passing ${candidates.length} candidates to Gemini un-filtered`);
-    return candidates.filter(c => c.duration <= 120); // Only filter by duration
-  }
-
-  // Level 1: Strict (100+ likes, 30+ comments, not famous)
-  let filtered = candidates.filter(c => {
-    if (c.like_count < 100) return false;
-    if (c.comment_count < 30) return false;
-    if (c.channel_follower_count > 500000) return false;
-    if (c.duration > 120) return false;
-    return true;
-  });
-
-  if (filtered.length >= 5) {
-    logger.info(`Level 1 (strict: 100 likes, 30 comments): ${filtered.length} candidates`);
-    return filtered;
-  }
-
-  // Level 2: Relaxed (50+ likes, 15+ comments)
-  filtered = candidates.filter(c => {
-    if (c.like_count < 50) return false;
-    if (c.comment_count < 15) return false;
-    if (c.channel_follower_count > 1000000) return false;
-    if (c.duration > 120) return false;
-    return true;
-  });
-
-  if (filtered.length >= 5) {
-    logger.info(`Level 2 (relaxed: 50 likes, 15 comments): ${filtered.length} candidates`);
-    return filtered;
-  }
-
-  // Level 3: Broad (any likes, any comments, not a huge channel)
-  filtered = candidates.filter(c => {
-    if (c.like_count < 1 && c.comment_count < 1) return false;
-    if (c.channel_follower_count > 5000000) return false;
-    if (c.duration > 120) return false;
-    return true;
-  });
-
-  logger.info(`Level 3 (broad): ${filtered.length} candidates`);
-  return filtered;
+  logger.info(`No pre-Gemini filter: passing ${candidates.length} random raw candidates to Gemini`);
+  return candidates;
 }
 
 /**
@@ -864,18 +783,51 @@ async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, 
 /**
  * Download a video using yt-dlp
  */
+function probeDownloadedVideo(videoPath) {
+  try {
+    const out = execSync(
+      `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "${videoPath}"`,
+      { timeout: 10000, encoding: 'utf8' }
+    ).trim();
+    const [width, height, duration] = out.split(',').map(s => Number.parseFloat(s.trim()));
+    if (Number.isFinite(width) && Number.isFinite(height)) {
+      return { width: Math.round(width), height: Math.round(height), duration: Number.isFinite(duration) ? duration : 0 };
+    }
+  } catch {}
+  return { width: 0, height: 0, duration: 0 };
+}
+
 async function downloadBestVideo(video, outputDir) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  const outputFile = path.join(outputDir, `source_${Date.now()}.mp4`);
+  const outputStem = `source_${Date.now()}`;
+  const outputTemplate = path.join(outputDir, `${outputStem}.%(ext)s`);
   const url = video.shortsUrl || video.url;
 
   logger.info(`Downloading: ${url}`);
+  let bestFallback = null;
 
   const strategies = [
-    { name: 'web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
-    { name: 'default', args: '', format: '-f "bestvideo+bestaudio/best" -S "res:1080" --merge-output-format mp4' },
-    { name: 'android', args: '--extractor-args "youtube:player_client=android"', format: '-f "best"' },
+    {
+      name: 'web_1080_mp4',
+      args: '--extractor-args "youtube:player_client=web"',
+      format: '-f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,vcodec:h264,acodec:m4a,ext:mp4:m4a" --merge-output-format mp4',
+    },
+    {
+      name: 'default_1080_best',
+      args: '',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'android_1080',
+      args: '--extractor-args "youtube:player_client=android"',
+      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/best" -S "res:1080,fps,br" --merge-output-format mp4',
+    },
+    {
+      name: 'absolute_best_last_resort',
+      args: '',
+      format: '-f "bv*+ba/b" -S "res,fps,br" --merge-output-format mp4',
+    },
   ];
 
   for (const s of strategies) {
@@ -884,24 +836,39 @@ async function downloadBestVideo(video, outputDir) {
       const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
 
       const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
-        `--download-sections "*0-60" -o "${outputFile}" "${url}" ` +
+        `--download-sections "*0-60" -o "${outputTemplate}" "${url}" ` +
         `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 --remote-components ejs:github`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
 
-      // Check for output file
+      // Only accept files produced by this source download. Do not accidentally
+      // pick low-res ranking previews from the same temp directory.
       const files = fs.readdirSync(outputDir)
-        .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
+        .filter(f => f.startsWith(outputStem) && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(outputDir, f)).size > 50000)
         .sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
 
       if (files.length > 0) {
         const fp = path.join(outputDir, files[0]);
-        logger.success(`Downloaded: ${files[0]} (${(fs.statSync(fp).size / 1024 / 1024).toFixed(1)}MB)`);
+        const dims = probeDownloadedVideo(fp);
+        const sizeMb = (fs.statSync(fp).size / 1024 / 1024).toFixed(1);
+        logger.success(`Downloaded: ${files[0]} (${sizeMb}MB, ${dims.width}x${dims.height}, strategy: ${s.name})`);
+        if (!bestFallback || Math.max(dims.width, dims.height) > Math.max(bestFallback.dims.width, bestFallback.dims.height)) {
+          bestFallback = { path: fp, dims, strategy: s.name };
+        }
+        if (Math.max(dims.width || 0, dims.height || 0) < 720) {
+          logger.warn(`Downloaded source is only ${dims.width}x${dims.height}; trying next quality strategy`);
+          continue;
+        }
         return fp;
       }
     } catch (e) {
       logger.warn(`Download strategy ${s.name} failed: ${e.message.substring(0, 60)}`);
     }
+  }
+
+  if (bestFallback?.path && fs.existsSync(bestFallback.path)) {
+    logger.warn(`Using best available source despite low resolution: ${bestFallback.dims.width}x${bestFallback.dims.height} (${bestFallback.strategy})`);
+    return bestFallback.path;
   }
 
   logger.error(`All download strategies failed for ${url}`);
@@ -1117,44 +1084,14 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'No queries' };
   }
 
-  // ─── Phase 2: Search + Filter ──────────────────────────────────────
-  // Target 6 candidates per batch, 3 batches total
+  // ─── Phase 2: Search + Random Batch ────────────────────────────────
+  // Target 6 random raw candidates per batch, 3 batches total.
   let candidates = await searchYouTube(queries, 6, country);
   let filtered = filterCandidates(candidates);
-  logger.info(`Candidates: ${candidates.length} → Filtered: ${filtered.length}`);
-
-  // If fewer than 10 candidates passed, retry with relaxed criteria
-  if (filtered.length < 10 && candidates.length > 0) {
-    logger.warn(`Only ${filtered.length} candidates passed strict filter — relaxing quality gate for retry`);
-    const fallbackGate = candidates.filter(c => {
-      if (c.view_count < 2000) return false;
-      if (c.channel_follower_count > 5000000) return false;
-      if (c.duration > 120) return false;
-      if (c.view_count > 0 && (c.like_count / c.view_count) * 100 < 1.0) return false;
-      return true;
-    });
-    logger.info(`Relaxed gate yielded: ${fallbackGate.length} candidates`);
-    if (fallbackGate.length > 0) {
-      filtered = fallbackGate;
-    }
-  }
-  
-  // If still fewer than 5 after relaxed gate, use ALL candidates as last resort
-  if (filtered.length < 5 && candidates.length > 0) {
-    logger.warn(`Still only ${filtered.length} after relaxed gate — using all ${candidates.length} candidates`);
-    filtered = candidates;
-  }
+  logger.info(`Candidates selected for Gemini: ${filtered.length}`);
 
   if (filtered.length === 0) {
-    // filterCandidates already tried 3 progressive levels.
-    // If still 0, log what the candidates' engagement looks like and abort.
-    if (candidates.length > 0) {
-      logger.warn('Candidate engagement snapshot (top 5):');
-      candidates.slice(0, 5).forEach(c => {
-        logger.warn(`  "${c.title.substring(0, 40)}" — ${c.like_count} likes, ${c.comment_count} comments, ${c.channel_follower_count} subs`);
-      });
-    }
-    logger.error('No candidates passed any filter level — aborting');
+    logger.error('No raw candidates found — aborting');
     return { success: false, error: 'No candidates' };
   }
 
@@ -1191,15 +1128,6 @@ async function runType1Pipeline(options = {}) {
       }
       candidates = await searchYouTube(newQueries, 6, country);
       filtered = filterCandidates(candidates);
-      if (filtered.length < 5) {
-        const fallbackGate = (candidates || []).filter(c => {
-          if (c.view_count < 2000) return false;
-          if (c.channel_follower_count > 5000000) return false;
-          if (c.duration > 120) return false;
-          return true;
-        });
-        if (fallbackGate.length > 0) filtered = fallbackGate;
-      }
       if (filtered.length < 2) {
         logger.warn(`Batch ${batch}: Only ${filtered.length} candidates — not enough to rank`);
         continue;
@@ -1306,8 +1234,13 @@ async function runType1Pipeline(options = {}) {
   const sigResult = await addSignature(editedPath, sigOutput, country, tmpDir);
 
   if (!sigResult) {
-    logger.error('Signature failed — aborting');
-    return { success: false, error: 'Signature failed' };
+    logger.warn('Signature failed - preserving edited video without signature');
+    try {
+      fs.copyFileSync(editedPath, sigOutput);
+    } catch (e) {
+      logger.error(`Could not preserve edited video after signature failure: ${e.message}`);
+      return { success: false, error: 'Signature failed' };
+    }
   }
 
   // ─── Phase 7b: Watermark ──────────────────────────────────────────
@@ -1315,7 +1248,23 @@ async function runType1Pipeline(options = {}) {
   const { addWatermark } = require('../core/watermark');
   const wmPath = path.join(tmpDir, `watermarked_${Date.now()}.mp4`);
   const wmResult = await addWatermark(sigOutput, wmPath);
-  const finalPath = wmResult || sigOutput;
+  const tempFinalPath = wmResult || sigOutput;
+
+  const safeCountry = String(country || 'global').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
+  const durableFinalPath = path.join(outputDir, `type1_${safeCountry}_${Date.now()}.mp4`);
+
+  try {
+    fs.copyFileSync(tempFinalPath, durableFinalPath);
+  } catch (e) {
+    logger.error(`Failed to preserve final video before QA/upload: ${e.message}`);
+    return { success: false, error: 'Failed to preserve final video' };
+  }
+
+  if (!fs.existsSync(durableFinalPath) || fs.statSync(durableFinalPath).size < 100000) {
+    logger.error('Durable final video missing or too small');
+    return { success: false, error: 'Final video copy failed' };
+  }
+  const finalPath = durableFinalPath;
 
   // ─── Phase 8: QA Review ────────────────────────────────────────────
   logger.info('Phase 8: QA Review');
@@ -1355,21 +1304,6 @@ async function runType1Pipeline(options = {}) {
   const title = metadata?.title || fallbackMetadata.title;
   const description = metadata?.description || fallbackMetadata.description;
   const tags = metadata?.tags || fallbackMetadata.tags;
-
-  const safeCountry = String(country || 'global').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
-  const durableFinalPath = path.join(outputDir, `type1_${safeCountry}_${Date.now()}.mp4`);
-
-  try {
-    fs.copyFileSync(finalPath, durableFinalPath);
-  } catch (e) {
-    logger.error(`Failed to preserve final video before cleanup: ${e.message}`);
-    return { success: false, error: 'Failed to preserve final video' };
-  }
-
-  if (!fs.existsSync(durableFinalPath) || fs.statSync(durableFinalPath).size < 100000) {
-    logger.error('Final video copy missing or too small — aborting before temp cleanup');
-    return { success: false, error: 'Final video copy failed' };
-  }
 
   // Cleanup tmp
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}

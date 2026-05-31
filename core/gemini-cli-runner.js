@@ -32,14 +32,55 @@ function responseLacksVisualAnalysis(result) {
   ].flat().filter(Boolean).join(' ').toLowerCase();
 
   return (
+    /visual[\s\S]{0,40}content[\s\S]{0,40}analysis[\s\S]{0,80}(not possible|was impossible|unavailable|could not|couldn't|failed)/.test(text) ||
+    /visual analysis[\s\S]{0,80}(not possible|was impossible|unavailable|could not|couldn't|failed)/.test(text) ||
+    /(not possible|unable|could not|couldn't|failed)[\s\S]{0,80}(visual analysis|view|inspect|access)[\s\S]{0,80}(video|content|file)/.test(text) ||
     text.includes('visual analysis was not possible') ||
     text.includes('visual analysis not possible') ||
+    text.includes('visual content analysis was not possible') ||
+    text.includes('visual content could not be analyzed') ||
+    text.includes('inability to view the video') ||
+    text.includes('inability to inspect the video') ||
     text.includes('video content could not be accessed') ||
     text.includes('video file was not directly accessible') ||
     text.includes('could not be accessed') ||
     text.includes('could not access the video') ||
     text.includes('unable to view the video') ||
     text.includes('cannot view the video')
+  );
+}
+
+function responseRejectsFromTitleOnly(result) {
+  const text = [
+    result?.reasoning,
+    result?.reason,
+    result?.analysis,
+    result?.issues,
+  ].flat().filter(Boolean).join(' ').toLowerCase();
+
+  const titleInference =
+    text.includes('due to its title') ||
+    text.includes('based on the title') ||
+    text.includes('inferred from the title') ||
+    text.includes('title strongly suggests') ||
+    text.includes('title implies') ||
+    text.includes('as inferred from the title');
+
+  const adultOrHardReject =
+    /(adult|sexual|risqu|sexy|romance|romantic|intimacy|kissing|tv show|auto-?reject|unsuitable|violating)/.test(text);
+
+  return titleInference && adultOrHardReject;
+}
+
+function responseCannotViewMediaText(text) {
+  const normalized = String(text || '').toLowerCase();
+  return (
+    normalized.includes('text-based ai') ||
+    normalized.includes('cannot directly view') ||
+    normalized.includes('unable to provide a verdict') ||
+    normalized.includes('unable to compare video files') ||
+    normalized.includes('cannot view or compare video') ||
+    normalized.includes('cannot analyze video files')
   );
 }
 
@@ -130,20 +171,26 @@ class GeminiCLIRunner {
 
       if (!mediaFile || !mediaFile.name) return null;
 
-      // Poll for ACTIVE state (3 tries × 10s), proceed even if still processing
+      // Poll for ACTIVE state and never proceed with PROCESSING/FAILED files.
       if (mimeType.startsWith('video/')) {
         let fileState = await ai.files.get({ name: mediaFile.name });
-        for (let poll = 1; poll <= 3; poll++) {
+        for (let poll = 1; poll <= 6; poll++) {
           if (fileState.state === 'ACTIVE') break;
-          logger.info(`  Poll ${poll}/3 — waiting 10s (state: ${fileState.state})...`);
+          if (fileState.state === 'FAILED') {
+            logger.warn('File processing FAILED');
+            try { await ai.files.delete({ name: mediaFile.name }); } catch {}
+            return null;
+          }
+          logger.info(`  Poll ${poll}/6 - waiting 10s (state: ${fileState.state})...`);
           await new Promise(r => setTimeout(r, 10000));
           fileState = await ai.files.get({ name: mediaFile.name });
         }
-        if (fileState.state === 'FAILED') {
-          logger.warn('File processing FAILED');
+        if (fileState.state !== 'ACTIVE') {
+          logger.warn(`File not ACTIVE after polling (${fileState.state})`);
+          try { await ai.files.delete({ name: mediaFile.name }); } catch {}
           return null;
         }
-        logger.success(`File ready: ${mediaFile.name} (state: ${fileState.state})`);
+        logger.success(`File ready: ${fileState.name || mediaFile.name} (state: ${fileState.state})`);
       }
       
       return mediaFile.name;
@@ -191,11 +238,16 @@ class GeminiCLIRunner {
       for (let frameIndex = 0; frameIndex < positions.length; frameIndex++) {
         const framePath = path.join(outputDir, `v${videoIndex + 1}_frame_${frameIndex + 1}.jpg`);
         try {
-          execSync(
-            `ffmpeg -y -ss ${positions[frameIndex].toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 3 "${framePath}" 2>/dev/null`,
-            { timeout: 15000 }
-          );
-          if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
+          execFileSync('ffmpeg', [
+            '-y',
+            '-ss', positions[frameIndex].toFixed(2),
+            '-i', videoPath,
+            '-frames:v', '1',
+            '-update', '1',
+            '-q:v', '3',
+            framePath,
+          ], { timeout: 15000, stdio: 'ignore' });
+          if (fs.existsSync(framePath) && fs.statSync(framePath).size > 300) {
             frames.push(framePath);
           }
         } catch {}
@@ -222,26 +274,47 @@ class GeminiCLIRunner {
       ...(options.videoPaths || []),
       ...(options.videoPath ? [options.videoPath] : [])
     ].filter(filePath => filePath && fs.existsSync(filePath));
+    let uploadedUris = [];
 
-    // Step 1: Build the full prompt (with skill prepended). Gemini CLI reads
-    // local multimodal files through explicit @path references.
-    let fullPrompt = prompt;
-    if (allMediaPaths.length > 0) {
-      const mediaRefs = allMediaPaths
-        .map(filePath => `@${path.resolve(filePath).replace(/\\/g, '/')}`)
-        .join('\n');
-      fullPrompt = `## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
-    }
-    if (options.skillFile && fs.existsSync(options.skillFile)) {
-      const skillContent = fs.readFileSync(options.skillFile, 'utf8');
-      fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
-      if (allMediaPaths.length > 0) {
-        const mediaRefs = allMediaPaths
-          .map(filePath => `@${path.resolve(filePath).replace(/\\/g, '/')}`)
-          .join('\n');
-        fullPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
+    const deleteUploadedForCurrentKey = async () => {
+      for (const uri of uploadedUris) await this._deleteFile(uri);
+      uploadedUris = [];
+    };
+
+    const uploadMediaForCurrentKey = async () => {
+      await deleteUploadedForCurrentKey();
+      if (!options.uploadMediaForCLI || allMediaPaths.length === 0) return;
+      for (const filePath of allMediaPaths) {
+        const uri = await this._uploadFileForCLI(filePath);
+        if (uri) uploadedUris.push(uri);
       }
-    }
+    };
+
+    const buildFullPrompt = () => {
+      const mediaRefsForPrompt = uploadedUris.length > 0
+        ? uploadedUris
+        : allMediaPaths.map(filePath => `@${path.resolve(filePath).replace(/\\/g, '/')}`);
+
+      let builtPrompt = prompt;
+      if (mediaRefsForPrompt.length > 0) {
+        const mediaRefs = mediaRefsForPrompt.join('\n');
+        builtPrompt = `## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
+      }
+      if (mediaRefsForPrompt.length > 0) {
+        if (options.skillFile && fs.existsSync(options.skillFile)) {
+          const skillContent = fs.readFileSync(options.skillFile, 'utf8');
+          const mediaRefs = mediaRefsForPrompt.join('\n');
+          builtPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## MEDIA FILES TO ANALYZE\n${mediaRefs}\n\n## TASK\n${prompt}`;
+        }
+      } else if (options.skillFile && fs.existsSync(options.skillFile)) {
+        const skillContent = fs.readFileSync(options.skillFile, 'utf8');
+        builtPrompt = `## SKILL INSTRUCTIONS\n${skillContent}\n\n## TASK\n${prompt}`;
+      }
+      return builtPrompt;
+    };
+
+    await uploadMediaForCurrentKey();
+    let fullPrompt = buildFullPrompt();
 
     // Step 2: Try model alternation per key, retrying the same local file refs.
     // Per key: alternate models up to 5 attempts by default. Wait grows
@@ -259,6 +332,7 @@ class GeminiCLIRunner {
           this.model,
           '-p',
           fullPrompt,
+          ...uploadedUris,
         ];
 
         logger.info(`CLI run (key ${this.keyIndex + 1}/${MAX_KEYS}, model ${this.model}, model try ${modelAttempt + 1}/${modelAttemptsPerKey})`);
@@ -282,14 +356,17 @@ class GeminiCLIRunner {
             const preview = output.substring(0, 300);
             logger.info(`  Response: ${preview.replace(/\n/g, '\\n')}`);
             await new Promise(r => setTimeout(r, 10000));
+            for (const uri of uploadedUris) await this._deleteFile(uri);
             return output;
           }
           logger.warn('CLI empty response');
+          for (const uri of uploadedUris) await this._deleteFile(uri);
           return null;
         } catch (e) {
           const errText = (e.stderr || e.stdout || e.message || '').toString();
           if (e.signal === 'SIGKILL' || e.killed) {
             logger.warn('CLI timeout');
+            for (const uri of uploadedUris) await this._deleteFile(uri);
             return null;
           }
 
@@ -303,11 +380,15 @@ class GeminiCLIRunner {
             } else {
               // Model attempts exhausted for this key - use the next key.
               logger.warn(`All ${modelAttemptsPerKey} model attempts rate-limited on key ${this.keyIndex + 1} - rotating key`);
+              await deleteUploadedForCurrentKey();
               this._rotateKey();
+              await uploadMediaForCurrentKey();
+              fullPrompt = buildFullPrompt();
               break;
             }
           } else {
             logger.warn(`CLI error: ${errText.substring(0, 120)}`);
+            for (const uri of uploadedUris) await this._deleteFile(uri);
             return null;
           }
         }
@@ -315,6 +396,7 @@ class GeminiCLIRunner {
     }
 
     // All keys + models exhausted
+    for (const uri of uploadedUris) await this._deleteFile(uri);
     logger.error('All keys + models exhausted');
     return null;
   }
@@ -358,10 +440,7 @@ Respond ONLY JSON:
 {"verdict":"APPROVE/IMPROVE/REJECT","score":N,"issues":[],"improvement_suggestions":"specific changes needed","reason":"brief reason"}`;
 
     let frameDir = null;
-    let runOptions = {
-      videoPaths: [originalPath, editedPath],
-      timeout: 120000,
-    };
+    let runOptions = { timeout: 120000 };
 
     try {
       frameDir = fs.mkdtempSync(path.join(path.dirname(editedPath), 'qa_frames_'));
@@ -371,8 +450,18 @@ Respond ONLY JSON:
           images: frames,
           timeout: 120000,
         };
+      } else {
+        runOptions = {
+          videoPaths: [originalPath, editedPath],
+          timeout: 120000,
+        };
       }
-    } catch {}
+    } catch {
+      runOptions = {
+        videoPaths: [originalPath, editedPath],
+        timeout: 120000,
+      };
+    }
 
     const result = await this.run(`${prompt}
 
@@ -382,7 +471,7 @@ The attached images are ordered as frame samples from the original video followe
       if (frameDir) fs.rmSync(frameDir, { recursive: true, force: true });
     } catch {}
 
-    if (!result) {
+    if (!result || responseCannotViewMediaText(result)) {
       logger.warn(`compareAndReviewQA (${editType}): null response`);
       return null;
     }
@@ -416,12 +505,33 @@ Check:
 Respond ONLY with JSON:
 {"quality_score":N,"recommendation":"APPROVE/RENDER_AGAIN","issues":[],"crop_ok":true,"subtitles_ok":true,"watermark_removed":true,"hook_quality":"strong"}`;
 
-    const result = await this.run(prompt, {
-      videoPath,
-      timeout: 120000,
-    });
+    let frameDir = null;
+    let result = null;
+    try {
+      frameDir = fs.mkdtempSync(path.join(path.dirname(videoPath), 'final_qa_frames_'));
+      const frames = this._extractReviewFrames([videoPath], frameDir);
+      if (frames.length > 0) {
+        result = await this.run(`${prompt}
+
+The attached images are spread-out frame samples from the final video. Use these visible frames to check crop, captions, watermark, visual quality, and hook.`, {
+          images: frames,
+          timeout: 120000,
+        });
+      }
+    } catch {}
+
+    try {
+      if (frameDir) fs.rmSync(frameDir, { recursive: true, force: true });
+    } catch {}
 
     if (!result) {
+      result = await this.run(prompt, {
+        videoPath,
+        timeout: 120000,
+      });
+    }
+
+    if (!result || responseCannotViewMediaText(result)) {
       logger.warn('reviewFinalVideo: null response');
       return { quality_score: 5, recommendation: 'APPROVE', issues: ['CLI review unavailable'], crop_ok: true, subtitles_ok: true, watermark_removed: true, hook_quality: 'unknown' };
     }
@@ -496,32 +606,64 @@ Respond ONLY with JSON:
 
 Country: ${country}${metricsBlock}
 
+Judge the video primarily by the actual visual/content hook, humor, surprise, cultural specificity, and Shorts replay value. Use engagement metrics only as supporting context, never as the main approval/rejection reason.
+
+Do not apply adult/sexual/romance/TV-show hard rejects from the title alone. Titles are often clickbait. Only reject for those reasons if you can verify them in the video pixels or extracted frames.
+
 You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
 
 Follow the skill instructions. Return JSON.`;
 
-    const result = await this.run(prompt, {
-      videoPath: videoPath,
-      timeout: 120000,
-      modelAttemptsPerKey: 5,
-    });
-
-    if (result) {
+    const parseRanking = (result, source) => {
+      if (!result) return null;
       try {
         const m = result.match(/\{[\s\S]*\}/);
         if (m) {
           const p = JSON.parse(m[0]);
-          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
-            logger.warn('rankVideoFromPath: model did not actually analyze video; ignoring response');
+          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p) || responseRejectsFromTitleOnly(p)) {
+            logger.warn(`${source}: model did not actually analyze visuals; ignoring response`);
             return null;
           }
           p.verdict = (p.verdict || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED';
           return p;
         }
       } catch (e) {
-        logger.warn(`rankVideoFromPath JSON parse: ${e.message}`);
-        return null;
+        logger.warn(`${source} JSON parse: ${e.message}`);
       }
+      return null;
+    };
+
+    const result = await this.run(prompt, {
+      videoPath: videoPath,
+      timeout: 120000,
+      modelAttemptsPerKey: 5,
+      uploadMediaForCLI: true,
+    });
+
+    const videoRanking = parseRanking(result, 'rankVideoFromPath video');
+    if (videoRanking) return videoRanking;
+
+    let frameDir = null;
+    try {
+      frameDir = fs.mkdtempSync(path.join(path.dirname(videoPath), 'rank_frames_'));
+      const frames = this._extractReviewFrames([videoPath], frameDir);
+      if (frames.length > 0) {
+        logger.info(`rankVideoFromPath: video analysis unavailable; retrying with ${frames.length} extracted frames`);
+        const framePrompt = `${prompt}
+
+The attached images are ordered frame samples from the same video. Rank using these visible frames as the visual evidence. If the frames are blank or unreadable, return {"verdict":"VISUAL_UNAVAILABLE","reasoning":"frames unavailable"}.`;
+        const frameResult = await this.run(framePrompt, {
+          images: frames,
+          timeout: 120000,
+          modelAttemptsPerKey: 5,
+        });
+        const frameRanking = parseRanking(frameResult, 'rankVideoFromPath frames');
+        if (frameRanking) return frameRanking;
+      }
+    } finally {
+      try {
+        if (frameDir) fs.rmSync(frameDir, { recursive: true, force: true });
+      } catch {}
     }
 
     logger.error('rankVideoFromPath exhausted CLI retry cycle');

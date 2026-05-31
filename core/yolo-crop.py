@@ -8,11 +8,13 @@ Output: JSON {"center_x": 500, "confidence": 0.92, "subject": "person", "bbox": 
 import sys
 import json
 import contextlib
+import io
 from ultralytics import YOLO
 
 def get_smart_crop_center(image_path):
     # Keep stdout JSON-only. Ultralytics may print model/download/progress logs.
-    with contextlib.redirect_stdout(sys.stderr):
+    captured = io.StringIO()
+    with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
         model = YOLO("yolov8n.pt", verbose=False)
         results = model.predict(image_path, verbose=False)
     

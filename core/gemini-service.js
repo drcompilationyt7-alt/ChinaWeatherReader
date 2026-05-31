@@ -36,8 +36,15 @@ function responseLacksVisualAnalysis(result) {
   ].flat().filter(Boolean).join(' ').toLowerCase();
 
   return (
+    /visual[\s\S]{0,40}content[\s\S]{0,40}analysis[\s\S]{0,80}(not possible|was impossible|unavailable|could not|couldn't|failed)/.test(text) ||
+    /visual analysis[\s\S]{0,80}(not possible|was impossible|unavailable|could not|couldn't|failed)/.test(text) ||
+    /(not possible|unable|could not|couldn't|failed)[\s\S]{0,80}(visual analysis|view|inspect|access)[\s\S]{0,80}(video|content|file)/.test(text) ||
     text.includes('visual analysis was not possible') ||
     text.includes('visual analysis not possible') ||
+    text.includes('visual content analysis was not possible') ||
+    text.includes('visual content could not be analyzed') ||
+    text.includes('inability to view the video') ||
+    text.includes('inability to inspect the video') ||
     text.includes('video content could not be accessed') ||
     text.includes('video file was not directly accessible') ||
     text.includes('could not be accessed') ||
@@ -45,6 +52,28 @@ function responseLacksVisualAnalysis(result) {
     text.includes('unable to view the video') ||
     text.includes('cannot view the video')
   );
+}
+
+function responseRejectsFromTitleOnly(result) {
+  const text = [
+    result?.reasoning,
+    result?.reason,
+    result?.analysis,
+    result?.issues,
+  ].flat().filter(Boolean).join(' ').toLowerCase();
+
+  const titleInference =
+    text.includes('due to its title') ||
+    text.includes('based on the title') ||
+    text.includes('inferred from the title') ||
+    text.includes('title strongly suggests') ||
+    text.includes('title implies') ||
+    text.includes('as inferred from the title');
+
+  const adultOrHardReject =
+    /(adult|sexual|risqu|sexy|romance|romantic|intimacy|kissing|tv show|auto-?reject|unsuitable|violating)/.test(text);
+
+  return titleInference && adultOrHardReject;
 }
 
 class GeminiService {
@@ -138,8 +167,13 @@ class GeminiService {
 
         logger.warn(`Key ${this.currentKeyIndex + 1} model ${this.model} error (status ${status}): ${(errText || '').substring(0, 120)}`);
 
+        if (errText?.includes('not in an ACTIVE state')) {
+          logger.warn('Gemini file is not ACTIVE at generation time - falling back to another visual path');
+          return null;
+        }
+
         if (status === 403 || errText?.includes('forbidden') || errText?.includes('not allowed') || errText?.includes('permission') || errText?.includes('private video')) {
-          logger.warn('Video access denied (private/restricted) — not retrying other keys/models');
+          logger.warn('Video access denied or file usage denied - not retrying other keys/models for this media file');
           return null;
         }
 
@@ -216,6 +250,10 @@ ENGAGEMENT METRICS:
 
 Country: ${country}${metricsBlock}
 
+Judge the video primarily by the actual visual/content hook, humor, surprise, cultural specificity, and Shorts replay value. Use engagement metrics only as supporting context, never as the main approval/rejection reason.
+
+Do not apply adult/sexual/romance/TV-show hard rejects from the title alone. Titles are often clickbait. Only reject for those reasons if you can verify them in the video pixels or extracted frames.
+
 You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
 
 Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
@@ -244,7 +282,7 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       const m = response.match(/\{[\s\S]*\}/);
       if (m) {
           const p = JSON.parse(m[0]);
-        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p) || responseRejectsFromTitleOnly(p)) {
           logger.warn('rankVideo: model did not actually analyze video; ignoring response');
           return null;
         }
@@ -351,6 +389,10 @@ ENGAGEMENT METRICS:
 
 Country: ${country}${metricsBlock}
 
+Judge the video primarily by the actual visual/content hook, humor, surprise, cultural specificity, and Shorts replay value. Use engagement metrics only as supporting context, never as the main approval/rejection reason.
+
+Do not apply adult/sexual/romance/TV-show hard rejects from the title alone. Titles are often clickbait. Only reject for those reasons if you can verify them in the video pixels or extracted frames.
+
 You MUST inspect the attached video visually. If you cannot actually see the video content, return JSON with "verdict":"VISUAL_UNAVAILABLE" and explain that the video was unavailable.
 
 Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`;
@@ -378,7 +420,7 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
         const m = response.match(/\{[\s\S]*\}/);
         if (m) {
         const p = JSON.parse(m[0]);
-          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+          if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p) || responseRejectsFromTitleOnly(p)) {
             logger.warn('rankVideoFile inline: model did not actually analyze video; ignoring response');
             return null;
           }
@@ -424,6 +466,12 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
         }
         if (fileState.state !== 'ACTIVE') {
           logger.warn(`File not ACTIVE after polling: ${videoFile.name} (${fileState.state})`);
+          return null;
+        }
+        await new Promise(r => setTimeout(r, 3000));
+        fileState = await ai.files.get({ name: videoFile.name });
+        if (fileState.state !== 'ACTIVE') {
+          logger.warn(`File lost ACTIVE state before use: ${videoFile.name} (${fileState.state})`);
           return null;
         }
         logger.success(`File ready: ${videoFile.name}`);
@@ -496,7 +544,7 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       const m = response.match(/\{[\s\S]*\}/);
       if (m) {
         const p = JSON.parse(m[0]);
-        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p)) {
+        if ((p.verdict || '').toUpperCase() === 'VISUAL_UNAVAILABLE' || responseLacksVisualAnalysis(p) || responseRejectsFromTitleOnly(p)) {
           logger.warn('rankVideoFile: model did not actually analyze video; ignoring response');
           return null;
         }
