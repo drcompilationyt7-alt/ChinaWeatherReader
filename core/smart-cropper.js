@@ -173,7 +173,11 @@ async function smartCrop(videoPath, outputPath, options = {}) {
     logger.info('Analyzing video with YOLO to locate subject...');
     const yoloDir = path.join(tmpDir, `yolo_frames_${Date.now()}`);
     fs.mkdirSync(yoloDir, { recursive: true });
-    const yoloPositions = [2, Math.min(duration / 2, 15), Math.min(duration - 3, 25)];
+    // Sample every 1.5s for accurate subject center averaging across full clip
+    const yoloPositions = [];
+    for (let t = 1.5; t < duration - 1; t += 1.5) {
+      yoloPositions.push(t);
+    }
 
     const subjectCenters = [];
     const subjectBoxes = [];
