@@ -43,7 +43,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             if not clean_word:
                 continue
 
-            start_time = format_ass_time(word.start)
+            # Add 0.08s offset to word start to avoid premature subtitle appearance (breath before speech)
+            adjusted_start = max(0, word.start + 0.08)
+            # Clamp so end doesn't push past next word boundary
+            start_time = format_ass_time(adjusted_start)
             end_time = format_ass_time(word.end)
             anim_tag = r"{\fscx50\fscy50\t(0,80,\fscx100\fscy100)}"
             line = f"Dialogue: 0,{start_time},{end_time},TikTokStyle,,0,0,0,,{anim_tag}{clean_word}\n"

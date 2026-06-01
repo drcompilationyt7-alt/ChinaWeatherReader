@@ -295,31 +295,30 @@ def sample_video(video_path, sample_interval=1.0, max_duration=300):
 def compute_highlight_scores(samples, detect_type='auto'):
     """
     Weight the scores into a final highlight_score.
+    score = 0.4 * motion + 0.3 * audio_peak + 0.2 * object_event + 0.1 * reaction
     detect_type: 'dance', 'sports', or 'auto'
     """
     if detect_type == 'dance':
-        w_motion, w_pose, w_objects, w_events = 0.50, 0.40, 0.05, 0.05
+        w_motion, w_audio, w_objects, w_reaction = 0.40, 0.30, 0.15, 0.15
     elif detect_type == 'sports':
-        w_motion, w_pose, w_objects, w_events = 0.30, 0.20, 0.30, 0.20
+        w_motion, w_audio, w_objects, w_reaction = 0.30, 0.20, 0.30, 0.20
     else:
-        w_motion, w_pose, w_objects, w_events = 0.40, 0.30, 0.15, 0.15
+        w_motion, w_audio, w_objects, w_reaction = 0.40, 0.30, 0.20, 0.10
 
     scored = []
     for s in samples:
-        # Heuristic event bonus: significant object count changes or high motion + pose
-        event_bonus = 0
-        if s['objects'] > 50:
-            event_bonus += 15
-        if s['motion'] > 60 and s['pose'] > 40:
-            event_bonus += 15
-        if s['motion'] > 80:
-            event_bonus += 10
+        # Audio peak estimate: use motion derivative as proxy (sudden motion changes often correlate with audio events)
+        audio_peak = min(100, s.get('motion_derivative', s['motion'] * 0.5))
+        # Object event: high object count or rapid changes
+        object_event = s['objects']
+        # Reaction: high pose + motion together suggests exciting moment
+        reaction = min(100, (s['pose'] * 0.6 + s['motion'] * 0.4))
 
         highlight = (
             s['motion'] * w_motion +
-            s['pose'] * w_pose +
-            s['objects'] * w_objects +
-            event_bonus * w_events
+            audio_peak * w_audio +
+            object_event * w_objects +
+            reaction * w_reaction
         )
         scored.append({**s, 'highlight': round(highlight, 1)})
 
