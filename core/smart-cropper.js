@@ -242,7 +242,7 @@ async function smartCrop(videoPath, outputPath, options = {}) {
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${videoPath}" -t ${duration} ` +
       `-vf "${cropFilter}" ` +
-      `-c:v libx264 -preset medium -crf ${crf} -c:a aac -b:a 320k ` +
+      `-c:v libx264 -preset veryslow -crf ${crf} -c:a aac -b:a 320k ` +
       `-pix_fmt yuv444p -shortest "${finalOutput}" 2>/dev/null`,
       { timeout: 180000, maxBuffer: 200 * 1024 * 1024 }
     );

@@ -215,22 +215,22 @@ function downloadMaxQuality(video, outputDir) {
   // Sort by resolution (prefer 1080p) for best quality
   const strategies = [
     {
-      name: 'web_1080_mp4',
+      name: 'web_best',
       args: '--extractor-args "youtube:player_client=web"',
-      format: '-f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,vcodec:h264,acodec:m4a,ext:mp4:m4a" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'default_1080_best',
+      name: 'default_best',
       args: '',
-      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,br" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'android_1080',
+      name: 'android_best',
       args: '--extractor-args "youtube:player_client=android"',
-      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/best" -S "res:1080,fps,br" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'fallback_best',
+      name: 'fallback_mp4',
       args: '',
       format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4',
     },
@@ -475,16 +475,17 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   // Build FFmpeg filter:
   // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
   // If already 9:16, just overlay flag directly
-  // The twemoji PNG has proper alpha transparency — no colorkey needed
+  // Gentle colorkey removes green anti-aliasing fringe from twemoji edges
+  // without affecting actual video content (low similarity threshold)
   let overlayFilter;
   if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
     overlayFilter =
       `[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[bg];` +
-      `[1:v]format=rgba[flag];` +
+      `[1:v]colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
       `[bg][flag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   } else {
     overlayFilter =
-      `[1:v]format=rgba[flag];` +
+      `[1:v]colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
       `[0:v][flag]overlay=${flagX}:${adjustedY}:enable='between(t,0,${flagDuration})'`;
   }
 
@@ -494,7 +495,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
     execSync(
       `ffmpeg -y -i "${videoPath}" -i "${flagPath}" ` +
       `-filter_complex "${overlayFilter}" ` +
-      `-c:v libx264 -preset slow -crf 18 -c:a aac -b:a 320k -pix_fmt yuv420p -shortest "${outPath}"`,
+      `-c:v libx264 -preset veryslow -crf 0 -c:a aac -b:a 320k -pix_fmt yuv444p -shortest "${outPath}"`,
       { timeout: 180000 }
     );
 

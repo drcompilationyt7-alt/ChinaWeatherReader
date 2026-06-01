@@ -848,24 +848,24 @@ async function downloadBestVideo(video, outputDir) {
 
   const strategies = [
     {
-      name: 'web_1080_mp4',
+      name: 'web_best',
       args: '--extractor-args "youtube:player_client=web"',
-      format: '-f "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,vcodec:h264,acodec:m4a,ext:mp4:m4a" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'default_1080_best',
+      name: 'default_best',
       args: '',
-      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b" -S "res:1080,fps,br" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'android_1080',
+      name: 'android_best',
       args: '--extractor-args "youtube:player_client=android"',
-      format: '-f "bv*[height<=1080]+ba/b[height<=1080]/best" -S "res:1080,fps,br" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
     },
     {
-      name: 'absolute_best_last_resort',
+      name: 'fallback_mp4',
       args: '',
-      format: '-f "bv*+ba/b" -S "res,fps,br" --merge-output-format mp4',
+      format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4',
     },
   ];
 
