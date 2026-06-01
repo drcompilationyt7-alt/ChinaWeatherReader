@@ -1,16 +1,26 @@
 {
   "channelName": "Mr. WorldWideWebster",
-  "totalVideosPosted": 3,
+  "tagline": "Bringing the world to you",
+  "targetAudience": "Global culture enthusiasts, travelers, people curious about international trends",
+  "createdAt": "2026-06-01T19:29:19.467Z",
+  "totalVideosPosted": 0,
+  "lastCountryUsed": "",
   "countriesUsedThisWeek": [],
-  "hermesNotes": [
-    {
-      "date": "2026-05-29",
-      "insight": "Query: NIGHTLY for Mr. WorldWideWebster.\nVideos: 0 | Countries: \n\nTASKS:\n1. Browse YouTube Shorts for CURRENT trending topics — include song/audio names\n2. List 3-5 specific keywords per country\n3. Suggest 10 fresh queries\n4. Suggest cool locations for the \"special short\"\n\nFORMAT:\nTRENDS: China: keyword1, keyword2 | Vietnam: Ai Đưa Em Về\nQUERIES: query1, query2\nLOCATIONS: France: Paris Eiffel Tower | Japan: Shibuya skyline\nSTRATEGY: ...\nInitializing agent...\r\n────────────────────────────────────"
-    }
+  "bestPerformingFormats": [],
+  "titleFormulas": [
+    "What is this [thing]? ([country] edition)",
+    "[country]s favorite [category] right now",
+    "Americans dont understand [country] [thing]",
+    "[country] vs [country]: Who does it better?",
+    "This [category] from [country] is going viral"
   ],
-  "trendingKeywords": {
-    "Vietnam": [
-      "Ai Đưa Em Về"
-    ]
-  }
+  "postingSchedule": {
+    "hour": 6,
+    "minute": 0,
+    "timezone": "UTC"
+  },
+  "skills": [],
+  "lastUpdated": "2026-06-01T19:29:19.555Z",
+  "lastContentType": "",
+  "usedTopics": []
 }
