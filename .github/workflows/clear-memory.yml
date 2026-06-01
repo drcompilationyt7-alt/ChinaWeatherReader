@@ -1,9 +1,7 @@
 name: Bi-Weekly Memory & Output Cleanup
 
 on:
-  schedule:
-    - cron: '0 0 */14 * *'
-  workflow_dispatch:
+    workflow_dispatch:
 
 jobs:
   clear-memory:
