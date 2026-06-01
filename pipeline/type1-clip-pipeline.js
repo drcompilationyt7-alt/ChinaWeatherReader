@@ -1074,10 +1074,11 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       let ffmpegCmd;
       if (hasFlag && hasAudio) {
         // Full: flag overlay + audio duck + TTS mix
+        // Proven working syntax from clip-editor.js: no colorkey, volume=enable syntax
         const filterComplex =
-          `[2:v]scale=144:-1,colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
+          `[2:v]scale=120:-1,format=rgba[flag];` +
           `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v];` +
-          `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
+          `[0:a]volume=enable='between(t,${startDelay},${endTime})':volume=0.25[ad];` +
           `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
 
         ffmpegCmd =
@@ -1087,7 +1088,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       } else if (hasFlag && !hasAudio) {
         // No original audio: just overlay flag + TTS as main audio
         const filterComplex =
-          `[2:v]scale=144:-1,colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
+          `[2:v]scale=120:-1,format=rgba[flag];` +
           `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v]`;
 
         ffmpegCmd =
