@@ -573,7 +573,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       const lines = out.split('\n').filter(Boolean);
       logger.info(`Raw results: ${lines.length} videos`);
 
-      // Separate Shorts from non-Shorts
+      // Separate Shorts from non-Shorts with quality tier
       const shorts = [];
       const nonShorts = [];
       for (const line of lines) {
@@ -582,10 +582,11 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
           if (p.id) {
             // yt-dlp flat playlist returns Shorts with the ID; we check if the URL is a Shorts URL
             // The id itself doesn't indicate Shorts, but we can check if duration < 60s as heuristic
-            // A more reliable approach: the search query for Shorts often returns Shorts, but some results are regular videos.
-            // We'll use duration < 60s as a reliable Shorts indicator from flat-playlist
             if (p.duration && p.duration <= 60) {
-              shorts.push(line);
+              // Parse height for quality tier if available from flat-playlist
+              const height = p.height || 0;
+              const tier = height >= 1080 ? 3 : height >= 720 ? 2 : height >= 480 ? 1 : 0;
+              shorts.push({ line, tier, height });
             } else {
               nonShorts.push(line);
             }
@@ -593,18 +594,30 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
         } catch {}
       }
 
-      // Fisher-Yates shuffle both lists
-      for (let i = shorts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shorts[i], shorts[j]] = [shorts[j], shorts[i]];
+      // Sort shorts by quality tier descending (1080p first), then Fisher-Yates within each tier
+      shorts.sort((a, b) => b.tier - a.tier);
+      // Shuffle within same tier: group by tier, shuffle each group
+      const shuffledShorts = [];
+      for (let tier = 3; tier >= 0; tier--) {
+        const tierItems = shorts.filter(s => s.tier === tier).map(s => s.line);
+        for (let i = tierItems.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [tierItems[i], tierItems[j]] = [tierItems[j], tierItems[i]];
+        }
+        shuffledShorts.push(...tierItems);
       }
+
       for (let i = nonShorts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [nonShorts[i], nonShorts[j]] = [nonShorts[j], nonShorts[i]];
       }
 
-      // Prefer Shorts: take up to 5 from shuffled shorts, fill rest from non-shorts
-      const selectedFromShorts = shorts.slice(0, 5);
+      // Log quality breakdown
+      const tierCounts = { '1080p': shorts.filter(s => s.tier >= 3).length, '720p': shorts.filter(s => s.tier === 2).length, 'lower': shorts.filter(s => s.tier < 2).length };
+      logger.info(`Shorts quality: ${tierCounts['1080p']}×1080p, ${tierCounts['720p']}×720p, ${tierCounts['lower']}×lower`);
+
+      // Prefer Shorts: take up to 5 from quality-sorted shorts, fill rest from non-shorts
+      const selectedFromShorts = shuffledShorts.slice(0, 5);
       const selectedFromNonShorts = nonShorts.slice(0, Math.max(0, 5 - selectedFromShorts.length));
       const selected = [...selectedFromShorts, ...selectedFromNonShorts];
       logger.info(`Selected: ${selectedFromShorts.length} shorts + ${selectedFromNonShorts.length} non-shorts`);
@@ -1043,11 +1056,8 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       const cp2 = 0x1f1e6 + (iso.charCodeAt(1) - 65);
       const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
       const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
-      const response = await require('axios')('GET', url, {
-        responseType: 'stream',
-        timeout: 10000,
-        validateStatus: status => status === 200,
-      });
+      const axios = require('axios');
+      const response = await axios({ method: 'GET', url, responseType: 'stream', timeout: 10000, validateStatus: status => status === 200 });
       const writer = fs.createWriteStream(flagFile);
       response.data.pipe(writer);
       await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
