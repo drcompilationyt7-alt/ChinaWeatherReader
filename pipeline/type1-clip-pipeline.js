@@ -1075,7 +1075,7 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
       if (hasFlag && hasAudio) {
         // Full: flag overlay + audio duck + TTS mix
         const filterComplex =
-          `[2:v]scale=144:-1[flag];` +
+          `[2:v]scale=144:-1,colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
           `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v];` +
           `[0:a]volume='if(between(t,${startDelay},${endTime}),0.25,1)'[ad];` +
           `[1:a]adelay=${delayMs}:all=1[av];[ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
@@ -1083,17 +1083,17 @@ async function addSignature(videoPath, outputPath, country, tmpDir) {
         ffmpegCmd =
           `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
           `-filter_complex "${filterComplex}" -map "[v]" -map "[a]" ` +
-          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
+          `-c:v libx264 -preset veryslow -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
       } else if (hasFlag && !hasAudio) {
         // No original audio: just overlay flag + TTS as main audio
         const filterComplex =
-          `[2:v]scale=144:-1[flag];` +
+          `[2:v]scale=144:-1,colorkey=0x00FF00:0.05:0.05,format=rgba[flag];` +
           `[0:v][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v]`;
 
         ffmpegCmd =
           `ffmpeg -y -i "${videoPath}" -i "${ttsPath}" -i "${flagFile}" ` +
           `-filter_complex "${filterComplex}" -map "[v]" -map 1:a ` +
-          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
+          `-c:v libx264 -preset veryslow -crf 0 -pix_fmt yuv444p -c:a aac -shortest "${outputPath}"`;
       } else if (!hasFlag && hasAudio) {
         // No flag: just audio duck + TTS mix
         const filterComplex =
@@ -1292,7 +1292,7 @@ async function runType1Pipeline(options = {}) {
         const clippedPath = path.join(tmpDir, `highlight_${Date.now()}.mp4`);
         execSync(
           `ffmpeg -y -ss ${hlResult.start} -i "${downloadedPath}" -to ${hlResult.end} ` +
-          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${clippedPath}"`,
+          `-c:v libx264 -preset veryslow -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${clippedPath}"`,
           { timeout: 180000 }
         );
         if (fs.existsSync(clippedPath) && fs.statSync(clippedPath).size > 100000) {
