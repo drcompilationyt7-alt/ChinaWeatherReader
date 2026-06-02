@@ -121,9 +121,9 @@ class GeminiService {
   async _callAPI(contents, options = {}) {
     // Total attempts per cycle = (keys × models) + 1 extra
     const attemptsPerCycle = (this.keys.length || 1) * MODEL_CHAIN.length + 1;
-    // Use 2 full retry cycles with escalating cooldown
-    const MAX_CYCLES = 2;
-    const CYCLE_COOLDOWNS = [0, 60000]; // cycle 0: no extra wait, cycle 1: 60s global cooldown
+    // Use 3 full retry cycles with escalating cooldown
+    const MAX_CYCLES = 3;
+    const CYCLE_COOLDOWNS = [0, 60000, 120000]; // cycle 0: no wait, cycle 1: 60s, cycle 2: 120s global cooldown
     let lastError = null;
 
     for (let cycle = 0; cycle < MAX_CYCLES; cycle++) {
@@ -196,8 +196,11 @@ class GeminiService {
           }
 
           if (status === 503 || errText?.includes('high demand') || errText?.includes('temporarily') || errText?.includes('spikes') || errText?.includes('unavailable') || errText?.includes('deadline') || errText?.includes('write EPIPE')) {
-            const backoff = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000);
-            logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms, then rotating key`);
+            // Sequential backoff: 10s, 20s, 30s cap — gives Gemini time to recover
+            const backoffTimes = [10000, 20000, 30000];
+            const boIdx = Math.min(attempt, backoffTimes.length - 1);
+            const backoff = backoffTimes[boIdx] + Math.floor(Math.random() * 500);
+            logger.warn(`Model ${this.model} overloaded — backoff ${Math.round(backoff)}ms (attempt ${attempt + 1}), then rotating key`);
             this._rotateKey();
             await new Promise(r => setTimeout(r, backoff));
             continue;

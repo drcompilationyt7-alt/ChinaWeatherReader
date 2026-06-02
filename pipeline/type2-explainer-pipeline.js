@@ -696,11 +696,73 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
   // ─── Stage 8: Post-Process (Crop + Captions + QA) ─────────────────
   const postProcessed = await stage8_postprocess(rendered, country, tmpDir, tmpDir);
   
-  // ─── Stage 8b: Watermark ─────────────────────────────────────────
-  logger.info('Stage 8b: Add Watermark');
+  // ─── Stage 8b: Flag Overlay ──────────────────────────────────────
+  logger.info('Stage 8b: Flag Overlay');
+  const flagIsoMap = {
+    'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU',
+    'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN',
+    'Mexico': 'MX', 'UK': 'GB', 'United Kingdom': 'GB', 'South Korea': 'KR',
+    'Egypt': 'EG', 'Italy': 'IT', 'Spain': 'ES', 'China': 'CN',
+    'Global': 'UN', 'Indonesia': 'ID', 'Vietnam': 'VN', 'United States': 'US',
+    'USA': 'US', 'America': 'US', 'Canada': 'CA', 'Turkey': 'TR',
+    'Russia': 'RU', 'Argentina': 'AR', 'Colombia': 'CO', 'South Africa': 'ZA',
+    'Saudi Arabia': 'SA', 'UAE': 'AE', 'United Arab Emirates': 'AE',
+    'Singapore': 'SG', 'Malaysia': 'MY', 'Philippines': 'PH', 'Taiwan': 'TW',
+    'Hong Kong': 'HK', 'Portugal': 'PT', 'Netherlands': 'NL', 'Sweden': 'SE',
+    'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI', 'Poland': 'PL',
+    'Greece': 'GR', 'Switzerland': 'CH', 'Austria': 'AT', 'Belgium': 'BE',
+    'Ireland': 'IE', 'New Zealand': 'NZ', 'Peru': 'PE', 'Chile': 'CL',
+  };
+  let flagIso = flagIsoMap[country];
+  if (!flagIso) {
+    for (const [name, code] of Object.entries(flagIsoMap)) {
+      if (country.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(country.toLowerCase())) {
+        flagIso = code; break;
+      }
+    }
+  }
+  let flaggedPath = postProcessed;
+  if (flagIso) {
+    const flagPath = path.join(tmpDir, `flag_${Date.now()}.png`);
+    try {
+      const cp1 = 0x1f1e6 + (flagIso.charCodeAt(0) - 65); const cp2 = 0x1f1e6 + (flagIso.charCodeAt(1) - 65);
+      const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
+      const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
+      execSync(`curl -sL -o "${flagPath}" "${url}"`, { timeout: 10000 });
+      if (fs.existsSync(flagPath) && fs.statSync(flagPath).size > 100) {
+        const flaggedOut = path.join(tmpDir, `flagged_${Date.now()}.mp4`);
+        // Get duration of video for flag overlay timing
+        let videoDuration = 60;
+        try {
+          const durOut = require('child_process').execSync(
+            `ffprobe -i "${postProcessed}" -show_entries format=duration -v quiet -of csv="p=0" 2>/dev/null`,
+            { timeout: 5000, encoding: 'utf8' }
+          ).trim();
+          if (durOut) videoDuration = parseFloat(durOut);
+        } catch {}
+        const flagStart = 0; // flag starts at the beginning
+        const flagEnd = Math.min(4, videoDuration - 0.5);
+        execSync(
+          `ffmpeg -y -i "${postProcessed}" -i "${flagPath}" ` +
+          `-filter_complex "[1:v]scale=120:-1,format=rgba[flag];[0:v][flag]overlay=(W-w)/2:20:enable='between(t,${flagStart},${flagEnd})'" ` +
+          `-c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a copy -shortest "${flaggedOut}"`,
+          { timeout: 120000 }
+        );
+        if (fs.existsSync(flaggedOut) && fs.statSync(flaggedOut).size > 100000) {
+          flaggedPath = flaggedOut;
+          logger.success(`Flag overlayed at top-center from ${flagStart}s to ${flagEnd}s`);
+        }
+      }
+    } catch (e) {
+      logger.warn(`Flag overlay skipped: ${(e.message || '').substring(0, 60)}`);
+    }
+  }
+
+  // ─── Stage 8c: Watermark ─────────────────────────────────────────
+  logger.info('Stage 8c: Add Watermark');
   const wmPath = path.join(tmpDir, `watermarked_${Date.now()}.mp4`);
-  const wmResult = await addWatermark(postProcessed, wmPath);
-  const finalPath = wmResult || postProcessed;
+  const wmResult = await addWatermark(flaggedPath, wmPath);
+  const finalPath = wmResult || flaggedPath;
 
   // ─── Cleanup ──────────────────────────────────────────────────────
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}

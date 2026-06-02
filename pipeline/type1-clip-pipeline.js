@@ -421,8 +421,22 @@ function getCropOffset(videoPath, srcW, srcH, tmpDir) {
 
 /**
  * Build the combined FFmpeg filter for Type 1 pipeline
+ * @param {number} cropOffsetX - Horizontal crop offset for YOLO subject centering
+ * @param {number} srcW - Source width
+ * @param {number} srcH - Source height
+ * @param {boolean} hasSubtitles - Whether subtitles exist
+ * @param {string|null} subPath - Path to subtitles .ass file
+ * @param {boolean} hasFlag - Whether flag is available (independent of TTS signature)
+ * @param {string|null} flagPath - Path to flag PNG image
+ * @param {boolean} hasWatermark - Whether watermark logo exists
+ * @param {string|null} wmPath - Path to watermark logo image
+ * @param {number} startDelay - When TTS signature starts (seconds)
+ * @param {number} endTime - When TTS signature ends (seconds)
+ * @param {number} delayMs - TTS delay in milliseconds
+ * @param {number} flagInputIdx - FFmpeg input index for flag image (pass -1 if no flag)
+ * @param {number} wmInputIdx - FFmpeg input index for watermark image (pass -1 if no watermark)
  */
-function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, hasSignature, flagPath, hasWatermark, wmPath, startDelay, endTime, delayMs) {
+function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, hasFlag, flagPath, hasWatermark, wmPath, startDelay, endTime, delayMs, flagInputIdx, wmInputIdx) {
   const filters = [];
   let currentLabel = '0:v';
   
@@ -458,21 +472,22 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v2';
   }
   
-  // 3. Signature flag overlay (if has flag)
-  if (hasSignature && flagPath && fs.existsSync(flagPath)) {
-    filters.push(`[2:v]scale=120:-1,format=rgba[flag]`);
-    filters.push(`[${currentLabel}][flag]overlay=(W-w)/2:(H-h)/2:enable='between(t,${startDelay},${endTime})'[v3]`);
+  // 3. Flag overlay at top-center — synced with TTS "Enjoy this clip from [country]"
+  if (hasFlag && flagPath && fs.existsSync(flagPath) && flagInputIdx >= 0) {
+    filters.push(`[${flagInputIdx}:v]scale=120:-1,format=rgba[flag]`);
+    // Flag at top-center: (1080-120)/2 = 480, y=20, synced with TTS time window
+    filters.push(`[${currentLabel}][flag]overlay=(W-w)/2:20:enable='between(t,${startDelay},${endTime})'[v3]`);
     currentLabel = 'v3';
   }
   
   // 4. Watermark (logo + text)
-  if (hasWatermark && wmPath && fs.existsSync(wmPath)) {
+  if (hasWatermark && wmPath && fs.existsSync(wmPath) && wmInputIdx >= 0) {
     const LOGO_SIZE = Math.max(30, Math.round(srcH * 0.04));
     const MARGIN_RIGHT = 20;
     const MARGIN_BOTTOM = Math.floor(srcH * 0.09);
     const FONT_SIZE = Math.max(12, Math.round(srcH * 0.015));
     const TEXT = '@Mr.WorldWideWebster';
-    filters.push(`[${currentLabel}][3:v]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.55:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${MARGIN_RIGHT-10}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v4]`);
+    filters.push(`[${currentLabel}][${wmInputIdx}:v]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.55:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${MARGIN_RIGHT-10}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
   }
   
@@ -615,21 +630,38 @@ async function runType1Pipeline(options = {}) {
   if (!freshPath) { logger.error('Redownload failed — aborting'); return { success: false, error: 'Redownload failed' }; }
 
   // Download flag
-  const isoMap = { 'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU', 'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN', 'Mexico': 'MX', 'UK': 'GB', 'South Korea': 'KR', 'Egypt': 'EG', 'Italy': 'IT', 'Spain': 'ES', 'China': 'CN', 'Global': 'UN', 'Indonesia': 'ID', 'Vietnam': 'VN' };
-  const iso = isoMap[country];
+  const flagIsoMap = {
+    'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU',
+    'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN',
+    'Mexico': 'MX', 'UK': 'GB', 'United Kingdom': 'GB', 'South Korea': 'KR',
+    'Egypt': 'EG', 'Italy': 'IT', 'Spain': 'ES', 'China': 'CN',
+    'Global': 'UN', 'Indonesia': 'ID', 'Vietnam': 'VN', 'United States': 'US',
+    'USA': 'US', 'America': 'US', 'Canada': 'CA', 'Turkey': 'TR',
+    'Russia': 'RU', 'Argentina': 'AR', 'Colombia': 'CO', 'South Africa': 'ZA',
+    'Saudi Arabia': 'SA', 'UAE': 'AE', 'United Arab Emirates': 'AE',
+    'Singapore': 'SG', 'Malaysia': 'MY', 'Philippines': 'PH', 'Taiwan': 'TW',
+    'Hong Kong': 'HK', 'Portugal': 'PT', 'Netherlands': 'NL', 'Sweden': 'SE',
+    'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI', 'Poland': 'PL',
+    'Greece': 'GR', 'Switzerland': 'CH', 'Austria': 'AT', 'Belgium': 'BE',
+    'Ireland': 'IE', 'New Zealand': 'NZ', 'Peru': 'PE', 'Chile': 'CL',
+  };
+  let flagIso = flagIsoMap[country];
+  if (!flagIso) {
+    for (const [name, code] of Object.entries(flagIsoMap)) {
+      if (country.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(country.toLowerCase())) {
+        flagIso = code; break;
+      }
+    }
+  }
   let flagPath = null;
-  if (iso) {
+  if (flagIso) {
     flagPath = path.join(tmpDir, `flag_${Date.now()}.png`);
     try {
-      const cp1 = 0x1f1e6 + (iso.charCodeAt(0) - 65); const cp2 = 0x1f1e6 + (iso.charCodeAt(1) - 65);
+      const cp1 = 0x1f1e6 + (flagIso.charCodeAt(0) - 65); const cp2 = 0x1f1e6 + (flagIso.charCodeAt(1) - 65);
       const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
       const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
-      const axios = require('axios');
-      const response = await axios({ method: 'GET', url, responseType: 'stream', timeout: 10000, validateStatus: status => status === 200 });
-      const writer = fs.createWriteStream(flagPath);
-      response.data.pipe(writer);
-      await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
-      if (!(fs.existsSync(flagPath) && fs.statSync(flagPath).size > 100 && Buffer.from(fs.readFileSync(flagPath, null).slice(0, 8).toString('latin1')).includes(Buffer.from('\x89PNG')))) { flagPath = null; }
+      execSync(`curl -sL -o "${flagPath}" "${url}"`, { timeout: 10000 });
+      if (!(fs.existsSync(flagPath) && fs.statSync(flagPath).size > 100)) { flagPath = null; }
     } catch { flagPath = null; }
   }
 
@@ -647,13 +679,35 @@ async function runType1Pipeline(options = {}) {
 
   const ttsDuration = hasSignature ? Math.min(5, (() => { try { return parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${ttsPath}"`, { timeout: 5000, encoding: 'utf8' }).trim()); } catch { return 3 } })()) : 0;
   const clipDuration = cut.end - cut.start;
-  const startDelay = Math.min(1, Math.max(0, clipDuration - ttsDuration - 0.5));
-  const endTime = startDelay + ttsDuration;
+  // Signature "Enjoy this clip from [country]" + flag starts after 1s preview
+  const startDelay = 1.0; // 1s delay for visual preview first
+  const endTime = Math.min(startDelay + ttsDuration, clipDuration - 0.5);
   const delayMs = Math.round(startDelay * 1000);
 
-  // Build combined filter
+  // Build combined filter — track FFmpeg input indices dynamically
   const freshDims = probeDownloadedVideo(freshPath);
-  const { filterComplex, videoOut } = buildCombinedFilter(cropOffsetX, freshDims.width, freshDims.height, !!subPath, subPath, hasSignature && !!flagPath, flagPath, hasWatermark, wmImagePath, startDelay, endTime, delayMs);
+  let nextInputIdx = 1; // index 0 is the video
+  let flagInputIdx = -1;
+  let wmInputIdx = -1;
+  
+  // TTS input
+  if (hasSignature) {
+    nextInputIdx++; // TTS will be input 1
+  }
+  
+  // Flag image input
+  if (flagPath && fs.existsSync(flagPath)) {
+    flagInputIdx = nextInputIdx;
+    nextInputIdx++;
+  }
+  
+  // Watermark image input
+  if (hasWatermark) {
+    wmInputIdx = nextInputIdx;
+    nextInputIdx++;
+  }
+  
+  const { filterComplex, videoOut } = buildCombinedFilter(cropOffsetX, freshDims.width, freshDims.height, !!subPath, subPath, !!flagPath && fs.existsSync(flagPath), flagPath, hasWatermark, wmImagePath, startDelay, endTime, delayMs, flagInputIdx, wmInputIdx);
 
   const finalOutput = path.join(tmpDir, `final_${Date.now()}.mp4`);
 
@@ -665,13 +719,13 @@ async function runType1Pipeline(options = {}) {
   // Add TTS input and audio mixing if signature
   if (hasSignature) {
     inputs += ` -i "${ttsPath}"`;
-    // Flag is input 2 if flag + signature
-    let flagInputIdx = 2;
-    if (hasSignature && flagPath) {
+    
+    // Flag image (next input index after TTS = 1)
+    if (flagPath && fs.existsSync(flagPath)) {
       inputs += ` -i "${flagPath}"`;
-      flagInputIdx = 2;
     }
-    // Watermark image input
+    
+    // Watermark image
     if (hasWatermark) {
       inputs += ` -i "${wmImagePath}"`;
     }

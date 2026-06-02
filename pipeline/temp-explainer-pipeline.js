@@ -394,11 +394,8 @@ async function downloadFlag(country, tmpDir) {
     const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
     const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
 
-    const axios = require('axios');
-    const response = await axios({ method: 'GET', url, responseType: 'stream', timeout: 10000 });
-    const writer = fs.createWriteStream(flagFile);
-    response.data.pipe(writer);
-    await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
+    // Use curl instead of axios to avoid compatibility issues
+    execSync(`curl -sL -o "${flagFile}" "${url}"`, { timeout: 10000 });
 
     if (fs.existsSync(flagFile) && fs.statSync(flagFile).size > 100) {
       const scaledFlag = path.join(tmpDir, `flag_${iso}_scaled.png`);
@@ -681,7 +678,10 @@ async function runTempExplainerPipeline(options = {}) {
   const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
   const hasWatermark = fs.existsSync(wmImagePath);
   const srcDims = getVideoMetadata(downloadedPath);
-  const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05;
+  // Check if source is already close to 9:16 AND at least 1080x1920
+  // If source is already ≥1080x1920, skip scaling to avoid pad dimension error
+  const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05
+    && srcDims.width >= SHORTS_W && srcDims.height >= SHORTS_H;
   
   const flagDuration = Math.min(4, (srcDims.duration || 30) - 1);
   const flagWidth = 150;
@@ -751,8 +751,8 @@ async function runTempExplainerPipeline(options = {}) {
   logger.header('STEP 8: GENERATE METADATA');
   const metadata = await generateMetadata(finalCountry, video.title, gemini);
 
-  // ─── Step 8: Final QA ──────────────────────────────────────────────
-  logger.header('STEP 8: FINAL QA');
+  // ─── Step 9: Final QA ──────────────────────────────────────────────
+  logger.header('STEP 9: FINAL QA');
 
   const validation = await validateOutput(finalOutputPath);
   if (!validation.passed) {
@@ -765,8 +765,8 @@ async function runTempExplainerPipeline(options = {}) {
     logger.info(`Gemini QA: ${gqa.score}/10 — ${gqa.recommendation}`);
   }
 
-  // ─── Step 9: Save Memory ──────────────────────────────────────────
-  logger.header('STEP 9: SAVE MEMORY');
+  // ─── Step 10: Save Memory ─────────────────────────────────────────
+  logger.header('STEP 10: SAVE MEMORY');
   memory.usedVideoIds.push(video.id);
   memory.lastRun = new Date().toISOString();
   saveMemory(memory);
