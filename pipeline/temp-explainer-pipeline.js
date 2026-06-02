@@ -24,6 +24,8 @@ const { Logger } = require('../core/logger');
 const { getGeminiService } = require('../core/gemini-service');
 const { getGeminiCLI } = require('../core/gemini-cli-runner');
 const { getVideoMetadata } = require('../core/explainer-downloader');
+const { detectDialogue } = require('../core/smart-editor');
+const { addWatermark } = require('../core/watermark');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
 
 const logger = new Logger('TempExplainerPipeline');
@@ -637,8 +639,25 @@ async function runTempExplainerPipeline(options = {}) {
     return { success: false, error: 'Download failed' };
   }
 
-  // ─── Step 4: Identify Country ──────────────────────────────────────
-  logger.header('STEP 4: IDENTIFY COUNTRY');
+  // ─── Step 4: Explainer Dialogue Filter ──────────────────────────
+  logger.header('STEP 4: EXPLAINER DIALOGUE CHECK');
+  let hasDialogue = false;
+  try {
+    const dialogueCheck = await detectDialogue(downloadedPath);
+    hasDialogue = dialogueCheck.hasDialogue && dialogueCheck.wordCount > 5;
+    if (hasDialogue) {
+      logger.success(`Dialogue detected: ${dialogueCheck.wordCount} words (${dialogueCheck.language})`);
+    } else {
+      logger.warn(`No dialogue detected (${dialogueCheck.wordCount} words) — not an explainer video, skipping`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      return { success: false, error: 'No dialogue — not an explainer video' };
+    }
+  } catch (e) {
+    logger.warn(`Dialogue check failed: ${(e.message || '').substring(0, 60)} — proceeding anyway`);
+  }
+
+  // ─── Step 5: Identify Country ──────────────────────────────────────
+  logger.header('STEP 5: IDENTIFY COUNTRY');
   const { country, confidence } = await identifyCountry(downloadedPath, video.title, gemini);
   if (!country || confidence < 4) {
     logger.warn(`Country not confidently identified (${country || 'none'}) — using region`);
