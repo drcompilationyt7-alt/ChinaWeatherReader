@@ -669,37 +669,99 @@ async function runTempExplainerPipeline(options = {}) {
   const finalCountry = country || (channelInfo.region === 'World' ? 'Global' : channelInfo.region);
   logger.success(`Final country: ${finalCountry}`);
 
-  const { addWatermark } = require('../core/watermark');
-
-  // ─── Step 5: Download Flag ─────────────────────────────────────────
-  logger.header('STEP 5: DOWNLOAD FLAG');
+  // ─── Step 6: Download Flag ─────────────────────────────────────────
+  logger.header('STEP 6: DOWNLOAD FLAG');
   const flagPath = await downloadFlag(finalCountry, tmpDir);
-
-  // ─── Step 6: Overlay Flag ──────────────────────────────────────────
-  logger.header('STEP 6: OVERLAY FLAG');
-  let flaggedPath = downloadedPath;
-  if (flagPath) {
-    flaggedPath = path.join(tmpDir, `flagged_${video.id}.mp4`);
-    flaggedPath = await overlayFlag(downloadedPath, flagPath, flaggedPath, finalCountry, tmpDir);
-  } else {
-    logger.warn('No flag available — skipping overlay');
+  if (flagPath) logger.success('Flag downloaded for combined render');
+  
+  // ─── Step 7: Combined Render (Flag → Watermark → 1440p) ──────────
+  logger.header('STEP 7: COMBINED RENDER (Flag + Watermark + 1440p)');
+  
+  // Build a single ffmpeg filter that does everything
+  const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
+  const hasWatermark = fs.existsSync(wmImagePath);
+  const srcDims = getVideoMetadata(downloadedPath);
+  const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05;
+  
+  const flagDuration = Math.min(4, (srcDims.duration || 30) - 1);
+  const flagWidth = 150;
+  const flagHeight = 150;
+  const flagX = Math.floor((SHORTS_W - flagWidth) / 2);
+  const flagY = 20;
+  
+  // Build filter
+  const filterParts = [];
+  
+  // Step 1: Scale to 9:16 if needed (pillarbox)
+  let currentLabel = '0:v';
+  if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
+    filterParts.push(`[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[v1]`);
+    currentLabel = 'v1';
   }
+  
+  // Step 2: Flag overlay (input 1)
+  if (flagPath) {
+    filterParts.push(`[1:v]scale=120:-1,format=rgba[flag]`);
+    filterParts.push(`[${currentLabel}][flag]overlay=${flagX}:${flagY}:enable='between(t,0,${flagDuration})'[v2]`);
+    currentLabel = 'v2';
+  }
+  
+  // Step 3: Watermark (input 2 or last)
+  const wmIdx = flagPath ? 2 : 1;
+  if (hasWatermark) {
+    const logoSize = Math.max(30, Math.round(srcDims.height * 0.04));
+    const marginRight = 20;
+    const marginBottom = Math.floor(srcDims.height * 0.09);
+    const fontSize = Math.max(12, Math.round(srcDims.height * 0.015));
+    const text = '@Mr.WorldWideWebster';
+    filterParts.push(`[${wmIdx}:v]scale=${logoSize}:${logoSize}:flags=lanczos,format=rgba[wm]`);
+    filterParts.push(`[${currentLabel}][wm]overlay=W-w-${marginRight}:H-h-${marginBottom}:format=auto,drawtext=text='${text}':fontcolor=white@0.55:fontsize=${fontSize}:x=W-tw-${marginRight}:y=H-th-${marginRight-10}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v3]`);
+    currentLabel = 'v3';
+  }
+  
+  // Step 4: Upscale to 1440p for VP9
+  filterParts.push(`[${currentLabel}]scale=2560:1440:flags=lanczos[vout]`);
+  
+  const filterComplex = filterParts.join(';');
+  
+  // Build inputs
+  let inputs = `-i "${downloadedPath}"`;
+  if (flagPath) inputs += ` -i "${flagPath}"`;
+  if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
+  
+  const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
+  
+  try {
+    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v libx264 -preset veryslow -crf 0 -pix_fmt yuv444p -c:a copy -shortest "${combinedOutput}"`;
+    execSync(cmd, { timeout: 180000 });
+    if (fs.existsSync(combinedOutput) && fs.statSync(combinedOutput).size > 100000) {
+      logger.success(`Combined render: ${(fs.statSync(combinedOutput).size / 1024 / 1024).toFixed(1)}MB`);
+    } else {
+      logger.warn('Combined render produced no output — using original');
+      try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
+    }
+  } catch (e) {
+    logger.warn(`Combined render failed: ${(e.message || '').substring(0, 80)} — using original`);
+    try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
+  }
+  
+  const finalOutputPath = combinedOutput;
 
-  // ─── Step 7: Generate Metadata ─────────────────────────────────────
-  logger.header('STEP 7: GENERATE METADATA');
+  // ─── Step 8: Generate Metadata ─────────────────────────────────────
+  logger.header('STEP 8: GENERATE METADATA');
   const metadata = await generateMetadata(finalCountry, video.title, gemini);
 
   // ─── Step 8: Final QA ──────────────────────────────────────────────
   logger.header('STEP 8: FINAL QA');
 
-  const validation = await validateOutput(flaggedPath);
+  const validation = await validateOutput(finalOutputPath);
   if (!validation.passed) {
     logger.warn(`QA issues: ${validation.issues.join(', ')}`);
   }
 
   // Gemini CLI visual review (if available)
   if (geminiCLI.isAvailable()) {
-    const gqa = await geminiReview(flaggedPath);
+    const gqa = await geminiReview(finalOutputPath);
     logger.info(`Gemini QA: ${gqa.score}/10 — ${gqa.recommendation}`);
   }
 
@@ -708,12 +770,6 @@ async function runTempExplainerPipeline(options = {}) {
   memory.usedVideoIds.push(video.id);
   memory.lastRun = new Date().toISOString();
   saveMemory(memory);
-
-  // ─── Step 8b: Watermark ──────────────────────────────────────────
-  logger.header('STEP 8b: ADD WATERMARK');
-  const watermarkedPath = path.join(tmpDir, `watermarked_${video.id}.mp4`);
-  const wmResult = await addWatermark(flaggedPath, watermarkedPath);
-  const finalOutputPath = wmResult || flaggedPath;
 
   // Copy to output with clean name
   const finalPath = path.join(outputDir, `temp_${video.id}.mp4`);
