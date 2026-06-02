@@ -2,7 +2,7 @@ name: Daily Shorts Creation (Gemini-First)
 
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "12 7 * * *"
   workflow_dispatch:
     inputs:
       country:

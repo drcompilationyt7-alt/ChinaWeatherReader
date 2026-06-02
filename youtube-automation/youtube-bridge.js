@@ -173,7 +173,23 @@ class YouTubeBridge {
     // Prepare video metadata
     // Support scheduled publishing via publishAt parameter
     const privacyStatus = config.youtube.privacyStatus || 'public';
-    const isScheduled = params.publishAt && new Date(params.publishAt) > new Date();
+    // Check if publishAt is valid: must be at least 15 minutes in the future
+    let publishAt = null;
+    let useScheduled = false;
+    if (params.publishAt) {
+      const scheduleTime = new Date(params.publishAt);
+      const minValid = new Date(Date.now() + 15 * 60 * 1000); // 15 min from now
+      if (scheduleTime > minValid) {
+        publishAt = params.publishAt;
+        useScheduled = true;
+        this.logger.info(`Scheduled upload at: ${publishAt}`);
+      } else {
+        this.logger.warn(`publishAt (${params.publishAt}) is too close or in the past — falling back to immediate public publish`);
+      }
+    } else {
+      this.logger.info('No publishAt provided — uploading as public immediately');
+    }
+    const isScheduled = useScheduled;
 
     const videoMetadata = {
       snippet: {
