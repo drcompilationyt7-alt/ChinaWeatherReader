@@ -398,11 +398,18 @@ function smartCut(videoPath, duration) {
     if (e.stdout) logger.warn(`  Stdout: ${e.stdout.toString().substring(0, 500)}`);
   }
   
-  // Fallback: use middle 45s
-  const mid = duration / 2;
-  const fallback = { start: Math.max(0, mid - 22.5), end: Math.min(duration, mid + 22.5) };
-  logger.info(`Smart Cut fallback: ${fallback.start}s Ă˘ÂEE${fallback.end}s`);
-  return fallback;
+  // Fallback: use middle 60s (only if video > 2 minutes)
+  if (duration > 120) {
+    const mid = duration / 2;
+    const fallback = { start: Math.max(0, mid - 30), end: Math.min(duration, mid + 30) };
+    logger.info(`Smart Cut fallback: ${fallback.start}s → ${fallback.end}s (duration > 2min, cutting to ~60s)`);
+    return fallback;
+  } else {
+    // Video is already short — use the full video
+    const fallback = { start: 0, end: duration };
+    logger.info(`Smart Cut: video is ${duration.toFixed(1)}s (<= 2min), using full video`);
+    return fallback;
+  }
 }
 
 /**

@@ -12,10 +12,10 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Watermark');
 
-const LOGO_SIZE = 50;
-const MARGIN_RIGHT = 20;
-const MARGIN_BOTTOM = 65;
-const FONT_SIZE = 20;
+const LOGO_SIZE = 30;
+const MARGIN_RIGHT = 15;
+const MARGIN_BOTTOM = 40;
+const FONT_SIZE = 18;
 const TEXT = '@Mr.WorldWideWebster';
 
 const PROFILE_IMAGE = path.join(__dirname, 'assets', 'mrw-logo.png');
