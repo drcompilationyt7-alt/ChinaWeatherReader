@@ -136,8 +136,10 @@ async function validateOutput(videoPath) {
     ).trim();
 
     const [w, h] = dims.split(',').map(s => parseInt(s.trim()));
-    if (w !== 1080 || h !== 1920) {
-      issues.push(`Wrong dimensions: ${w}x${h} (expected 1080x1920)`);
+    // Accept 1080x1920 (standard Shorts) or 1440x2560 (vertical 2K Shorts)
+    const isValid = (w === 1080 && h === 1920) || (w === 1440 && h === 2560);
+    if (!isValid) {
+      issues.push(`Wrong dimensions: ${w}x${h} (expected 1080x1920 or 1440x2560)`);
       score -= 3;
     }
   } catch {

@@ -520,8 +520,8 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v4';
   }
   
-  // 5. Final label - no upscale, keep at 1080x1920 (already correct size)
-  filters.push(`[${currentLabel}]format=yuv444p10le[vout]`);
+  // 5. Scale to 1440p vertical (1440x2560) — YouTube accepts this for Shorts
+  filters.push(`[${currentLabel}]scale=1440:2560:flags=lanczos[vout]`);
   
   return { filterComplex: filters.join(';'), videoOut: '[vout]' };
 }
