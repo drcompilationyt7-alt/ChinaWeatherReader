@@ -1,14 +1,17 @@
 /**
- * Smart Cropper — Gemini CLI Feedback Loop
+ * Smart Cropper — Gemini CLI Feedback Loop + Dynamic Virtual Camera Crop
  * 
- * Converts any video to YouTube Shorts format (1080x1920) using:
- * 1. Initial smart crop based on source dimensions
- * 2. Frame extraction (raw + cropped)
- * 3. Gemini CLI evaluates the crop quality
- * 4. Feedback loop: adjust and re-crop if needed
- * 5. Final validation
+ * Provides two crop modes:
+ * 1. Static crop (existing): single crop position averaged across all frames
+ * 2. Dynamic crop (new): smooth sliding crop window that follows people frame-by-frame
  * 
- * Never stretches or squeezes — maintains proper aspect ratio.
+ * The dynamic crop:
+ * - Analyzes 1 frame per second using YOLO person detection
+ * - Computes optimal crop center to keep all people in frame
+ * - Smooths positions with EMA to avoid jitter
+ * - Builds an FFmpeg filter with time-conditional crop segments
+ * - NEVER zooms in/out — only repositions the 9:16 crop window
+ * - Crops directly from original pixels, resizes once at the end
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -125,6 +128,351 @@ function buildCropFilter(srcW, srcH, cropOffsetX = 0, zoom = 1.0) {
     return `scale=${sw}:${sh}:flags=lanczos,crop=${SHORTS_W}:${SHORTS_H}:0:${even((sh - SHORTS_H) / 2)}`;
   }
 }
+
+// ────────────────────────────────────────────────────────────
+// NEW: Dynamic Crop Position Functions
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Compute 9:16 crop dimensions from original source dimensions.
+ * Crops directly from the original frame without intermediate scaling.
+ * Returns { cropW, cropH, cropY, maxCropX } or null if source is already 9:16.
+ */
+function computeCropDimensions(srcW, srcH) {
+  const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
+  const ratio = srcW / srcH;
+  const TARGET = SHORTS_W / SHORTS_H; // 9:16 = 0.5625
+
+  // If already very close to 9:16, no crop needed
+  if (Math.abs(ratio - TARGET) < 0.01) {
+    return null;
+  }
+
+  if (ratio > TARGET) {
+    // Landscape: crop to full height, calculate width
+    const cropH = even(srcH);
+    const cropW = even(cropH * TARGET);
+    const maxCropX = Math.max(0, srcW - cropW);
+    return { cropW, cropH, cropY: 0, maxCropX };
+  } else {
+    // Portrait taller than 9:16: crop to full width, calculate height
+    const cropW = even(srcW);
+    const cropH = even(cropW / TARGET);
+    const maxCropY = Math.max(0, srcH - cropH);
+    return { cropW, cropH, cropY: Math.floor(maxCropY / 4) * 2, maxCropX: 0 };
+  }
+}
+
+/**
+ * Analyze a video clip and generate per-second crop positions.
+ * Samples 1 frame per second, runs YOLO person detection, 
+ * returns array of { time, cropX } positions.
+ * 
+ * @param {string} videoPath - Path to the video to analyze
+ * @param {number} startTime - Start offset in seconds
+ * @param {number} duration - Duration to analyze in seconds
+ * @param {Object} cropDims - { cropW, cropH, cropY, maxCropX } from computeCropDimensions
+ * @param {string} tmpDir - Temporary directory for frame extraction
+ * @returns {Array<{time: number, cropX: number}>} Per-second crop positions
+ */
+function getDynamicCropPositions(videoPath, startTime, duration, cropDims, tmpDir) {
+  logger.info('Dynamic crop: analyzing video at 1 FPS for subject tracking...');
+  const yoloDir = path.join(tmpDir, `dyn_crop_${Date.now()}`);
+  fs.mkdirSync(yoloDir, { recursive: true });
+
+  const { maxCropX } = cropDims;
+  const positions = [];
+
+  // Sample at 1 FPS
+  const fps = 1;
+  const sampleCount = Math.max(1, Math.floor(duration * fps));
+
+  for (let i = 0; i < sampleCount; i++) {
+    const t = i / fps;
+    if (t >= duration) break;
+    const framePath = path.join(yoloDir, `frame_${i}.jpg`);
+    try {
+      execSync(
+        `ffmpeg -y -ss ${(startTime + t).toFixed(2)} -i "${videoPath}" -vframes 1 -q:v 2 "${framePath}" 2>/dev/null`,
+        { timeout: 10000 }
+      );
+      if (fs.existsSync(framePath) && fs.statSync(framePath).size > 1000) {
+        const detectorOut = execSync(
+          `python3 "${path.join(__dirname, 'person-detector.py')}" "${framePath}"`,
+          { timeout: 30000, encoding: 'utf8' }
+        ).toString().trim();
+        const result = parseJsonFromOutput(detectorOut);
+
+        if (result.center_x >= 0 && result.person_count > 0) {
+          // Scale center_x from original pixel space to crop space
+          // center_x is in original frame coordinates
+          // We need: what would the crop X be to center the subject?
+          let rawCropX = result.center_x - (cropDims.cropW / 2);
+          
+          // If multiple people, adjust to keep group in frame
+          if (result.person_count > 1 && Array.isArray(result.bboxes) && result.bboxes.length > 0) {
+            // Find leftmost and rightmost edges of all people in crop space
+            // This prevents people at the edges from being cut off
+            const leftEdge = Math.min(...result.bboxes.map(b => b[0]));
+            const rightEdge = Math.max(...result.bboxes.map(b => b[2]));
+            const padding = 40; // pixels of padding on each side
+
+            // If group is wider than crop window, favor the group center
+            if ((rightEdge - leftEdge) > cropDims.cropW) {
+              const groupCropX = ((leftEdge + rightEdge) / 2) - (cropDims.cropW / 2);
+              rawCropX = groupCropX;
+            } else {
+              // Adjust rawCropX so both edges fit with padding
+              const minAllowed = leftEdge - padding;
+              const maxAllowed = rightEdge - cropDims.cropW + padding;
+              rawCropX = Math.max(minAllowed, Math.min(rawCropX, maxAllowed));
+            }
+          }
+
+          const cropX = Math.max(0, Math.min(Math.round(rawCropX), maxCropX));
+          positions.push({ time: t, cropX, personCount: result.person_count });
+          
+          if (i % 5 === 0 || i === sampleCount - 1) {
+            logger.info(`  Dynamic crop @${t.toFixed(1)}s: ${result.person_count} person(s), body=${result.body_type}, cropX=${cropX}/${maxCropX}`);
+          }
+        } else {
+          // No people detected — use center of frame
+          const centerCropX = Math.max(0, Math.min(Math.round((result.frame_width - cropDims.cropW) / 2), maxCropX));
+          positions.push({ time: t, cropX: centerCropX, personCount: 0 });
+        }
+      }
+    } catch (e) {
+      // On error, use interpolated position (filled in later)
+      positions.push({ time: t, cropX: null, personCount: 0 });
+    }
+  }
+
+  // Cleanup frames
+  try { fs.rmSync(yoloDir, { recursive: true, force: true }); } catch {}
+
+  logger.info(`Dynamic crop: ${positions.length} samples collected (${positions.filter(p => p.cropX !== null).length} valid)`);
+  return positions;
+}
+
+/**
+ * Smooth crop positions using Exponential Moving Average (EMA).
+ * Fills gaps (null positions) via linear interpolation from neighbors.
+ * Adaptive alpha: 
+ *   - Small movement (<20px): α=0.15 (smooth, slow)
+ *   - Medium movement (20-60px): α=0.35 (moderate)
+ *   - Large movement (>60px): α=0.55 (responsive, subject change)
+ * Clamps all positions to valid range [0, maxCropX].
+ * 
+ * @param {Array<{time: number, cropX: number|null, personCount: number}>} positions
+ * @param {number} maxCropX - Maximum allowed crop X value
+ * @returns {Array<{time: number, cropX: number}>} Smoothed positions
+ */
+function smoothCropPositions(positions, maxCropX) {
+  if (positions.length === 0) return [];
+
+  // Step 1: Fill null values by linear interpolation
+  const filled = [...positions];
+  let lastValid = null;
+  let lastValidIdx = -1;
+
+  for (let i = 0; i < filled.length; i++) {
+    if (filled[i].cropX !== null) {
+      if (lastValid !== null && i - lastValidIdx > 1) {
+        // Interpolate between lastValid and filled[i]
+        const gap = i - lastValidIdx;
+        const startVal = lastValid;
+        const endVal = filled[i].cropX;
+        for (let j = 1; j < gap; j++) {
+          const frac = j / gap;
+          filled[lastValidIdx + j].cropX = Math.round(startVal + (endVal - startVal) * frac);
+        }
+      }
+      lastValid = filled[i].cropX;
+      lastValidIdx = i;
+    }
+  }
+
+  // If leading nulls, fill with first valid value
+  if (lastValidIdx > 0 && filled[0].cropX === null) {
+    const firstValid = filled[lastValidIdx].cropX;
+    for (let i = 0; i < lastValidIdx; i++) {
+      filled[i].cropX = firstValid;
+    }
+  }
+
+  // If trailing nulls, fill with last valid
+  let lastValidBack = null;
+  let lastValidBackIdx = -1;
+  for (let i = filled.length - 1; i >= 0; i--) {
+    if (filled[i].cropX !== null) {
+      lastValidBack = filled[i].cropX;
+      lastValidBackIdx = i;
+      break;
+    }
+  }
+  if (lastValidBackIdx >= 0 && lastValidBackIdx < filled.length - 1) {
+    for (let i = lastValidBackIdx + 1; i < filled.length; i++) {
+      filled[i].cropX = lastValidBack;
+    }
+  }
+
+  // If everything is null, use center of frame
+  if (filled[0].cropX === null) {
+    const center = Math.round(maxCropX / 2);
+    for (let i = 0; i < filled.length; i++) {
+      filled[i].cropX = center;
+    }
+  }
+
+  // Step 2: Apply EMA smoothing with adaptive alpha
+  const smoothed = [];
+  let prevCropX = filled[0].cropX;
+
+  for (let i = 0; i < filled.length; i++) {
+    const raw = filled[i].cropX;
+    const diff = Math.abs(raw - prevCropX);
+
+    // Adaptive alpha: larger movement = less smoothing (more responsive)
+    let alpha;
+    if (diff < 20) {
+      alpha = 0.15;    // Smooth small movements
+    } else if (diff < 60) {
+      alpha = 0.35;    // Moderate
+    } else if (diff < 150) {
+      alpha = 0.55;    // Faster transition for subject changes
+    } else {
+      alpha = 0.75;    // Very fast for abrupt scene changes
+    }
+
+    // Clamp max step to prevent jarring jumps (max 50px per second)
+    const maxStep = 50;
+    let smoothVal = raw;
+    if (diff > maxStep) {
+      const direction = raw > prevCropX ? 1 : -1;
+      smoothVal = prevCropX + direction * maxStep;
+    } else {
+      smoothVal = prevCropX + alpha * (raw - prevCropX);
+    }
+
+    smoothVal = Math.max(0, Math.min(Math.round(smoothVal), maxCropX));
+    smoothed.push({ time: filled[i].time, cropX: smoothVal });
+    prevCropX = smoothVal;
+  }
+
+  return smoothed;
+}
+
+/**
+ * Build an FFmpeg filter string with time-conditional crop segments.
+ * Adjacent positions within 2px are merged to reduce filter segment count.
+ * Ends with a single scale to 1920x1080.
+ * 
+ * @param {number} srcW - Source width
+ * @param {number} srcH - Source height
+ * @param {Object} cropDims - { cropW, cropH, cropY } from computeCropDimensions
+ * @param {Array<{time: number, cropX: number}>} smoothedPositions - Smoothed positions
+ * @returns {string} FFmpeg filter_complex string
+ */
+function buildDynamicCropFilter(srcW, srcH, cropDims, smoothedPositions) {
+  if (!smoothedPositions || smoothedPositions.length === 0) {
+    // Fallback: static center crop
+    const centerX = Math.floor((srcW - cropDims.cropW) / 4) * 2;
+    return `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+  }
+
+  // Step 1: Merge adjacent positions that are similar (within 2px)
+  const merged = [];
+  let segStart = smoothedPositions[0].time;
+  let segCropX = smoothedPositions[0].cropX;
+
+  for (let i = 1; i < smoothedPositions.length; i++) {
+    const pos = smoothedPositions[i];
+    const prev = smoothedPositions[i - 1];
+    const timeGap = pos.time - prev.time;
+
+    if (Math.abs(pos.cropX - segCropX) <= 2 && timeGap <= 1.5) {
+      // Similar enough to merge — extend segment
+      continue;
+    } else {
+      // End current segment
+      merged.push({ start: segStart, end: prev.time + 0.5, cropX: segCropX });
+      segStart = pos.time;
+      segCropX = pos.cropX;
+    }
+  }
+  // Final segment
+  const lastTime = smoothedPositions[smoothedPositions.length - 1].time;
+  merged.push({ start: segStart, end: lastTime + 0.5, cropX: segCropX });
+
+  // Step 2: Build filter string
+  // Only merge if it reduces segment count
+  const segments = merged.length < smoothedPositions.length ? merged : 
+    smoothedPositions.map((p, i) => ({
+      start: p.time,
+      end: i < smoothedPositions.length - 1 ? (p.time + smoothedPositions[i + 1].time) / 2 : p.time + 0.5,
+      cropX: p.cropX,
+    }));
+
+  const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
+
+  // For very long segments, we can batch more aggressively
+  const finalSegments = [];
+  for (const seg of segments) {
+    const cropX = even(seg.cropX);
+    finalSegments.push(`crop=${cropDims.cropW}:${cropDims.cropH}:${cropX}:${cropDims.cropY}:enable='between(t,${seg.start.toFixed(1)},${seg.end.toFixed(1)})'`);
+  }
+
+  // Join all crop segments — they are mutually exclusive (only one is active at a time)
+  const cropChain = finalSegments.join(',');
+
+  // Add final scale to 1920x1080
+  const filterStr = `${cropChain},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+
+  logger.info(`Dynamic crop filter: ${finalSegments.length} time segments (merged from ${smoothedPositions.length} samples)`);
+  return filterStr;
+}
+
+/**
+ * Full dynamic crop pipeline: detect, smooth, and build filter.
+ * 
+ * @param {string} videoPath - Path to the video
+ * @param {number} startTime - Start time in seconds
+ * @param {number} duration - Duration to crop in seconds
+ * @param {number} srcW - Source width
+ * @param {number} srcH - Source height
+ * @param {string} tmpDir - Temp directory for frame extraction
+ * @returns {string|null} FFmpeg filter string, or null on failure
+ */
+function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, tmpDir) {
+  try {
+    const cropDims = computeCropDimensions(srcW, srcH);
+    if (!cropDims) {
+      // Already 9:16 — just scale
+      return `scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+    }
+    if (cropDims.maxCropX <= 0) {
+      // Portrait taller than 9:16 — static vertical centering, no horizontal movement
+      return `crop=${cropDims.cropW}:${cropDims.cropH}:0:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+    }
+
+    const rawPositions = getDynamicCropPositions(videoPath, startTime, duration, cropDims, tmpDir);
+    if (rawPositions.length === 0) {
+      const centerX = Math.floor((srcW - cropDims.cropW) / 4) * 2;
+      return `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+    }
+
+    const smoothed = smoothCropPositions(rawPositions, cropDims.maxCropX);
+    const filterStr = buildDynamicCropFilter(srcW, srcH, cropDims, smoothed);
+    return filterStr;
+  } catch (e) {
+    logger.warn(`Dynamic crop generation failed: ${e.message.substring(0, 100)}`);
+    return null;
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// END: Dynamic Crop Functions
+// ────────────────────────────────────────────────────────────
 
 /**
  * Smart crop with Gemini CLI feedback loop
@@ -316,4 +664,15 @@ async function smartCrop(videoPath, outputPath, options = {}) {
   return { success: false, outputPath: null };
 }
 
-module.exports = { smartCrop, probeVideo, extractFrames, buildCropFilter };
+module.exports = { 
+  smartCrop, 
+  probeVideo, 
+  extractFrames, 
+  buildCropFilter,
+  // New exports
+  computeCropDimensions,
+  getDynamicCropPositions,
+  smoothCropPositions,
+  buildDynamicCropFilter,
+  generateDynamicCropFilter,
+};
