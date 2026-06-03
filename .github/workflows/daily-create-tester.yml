@@ -86,9 +86,9 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Run test pipeline (China, no ranking, first video only)
+      - name: Run daily pipeline (China, test mode)
         run: |
-          node core/github-action-runner.js --mode test --country China --query "viral chinese douyin #shorts" --no-ranking
+          node core/github-action-runner.js --mode daily --country China
 
       - name: Save memory
         run: |
