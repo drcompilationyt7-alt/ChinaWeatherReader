@@ -88,7 +88,7 @@ jobs:
 
       - name: Run daily pipeline (China, no ranking, test mode)
         run: |
-          node core/github-action-runner.js --mode daily --country China --skip-ranking
+          node core/github-action-runner.js --mode daily --country China --skip-ranking --search-query "viral chinese douyin #shorts"
 
       - name: Save memory
         run: |

@@ -517,13 +517,22 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 1: Content Discovery ────────────────────────────────────
   logger.info('Phase 1: Content Discovery');
-  const trendBank = loadTrendBank(country);
-  const queries = await generateQueries(country, gemini, trendBank);
+  
+  let queries;
+  if (options.searchQuery) {
+    // Use a single custom query (for testing)
+    queries = [options.searchQuery];
+    logger.info(`Using single test query: "${options.searchQuery}"`);
+  } else {
+    const trendBank = loadTrendBank(country);
+    queries = await generateQueries(country, gemini, trendBank);
+  }
+  
   if (queries.length === 0) { logger.error('No queries generated — aborting'); return { success: false, error: 'No queries' }; }
 
   let candidates = await searchYouTube(queries, 6, country);
   let filtered = filterCandidates(candidates);
-  logger.info(`Candidates selected for Gemini: ${filtered.length}`);
+  logger.info(`Candidates selected for pipeline: ${filtered.length}`);
   if (filtered.length === 0) { logger.error('No raw candidates found — aborting'); return { success: false, error: 'No candidates' }; }
 
   logger.info('Fetching top comments for top candidates...');
