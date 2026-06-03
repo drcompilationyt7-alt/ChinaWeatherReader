@@ -1,5 +1,5 @@
 /**
- * Temp Explainer Pipeline — Channel Shorts Reposter
+ * Temp Explainer Pipeline  EChannel Shorts Reposter
  * 
  * Picks a channel from a curated list per region, finds an old Short (>=3 months),
  * downloads it losslessly, uses Gemini to identify the country, overlays a flag
@@ -7,12 +7,12 @@
  * and returns the final video for upload.
  * 
  * Flow:
- *   1. Pick region → pick channel → scrape Shorts feed
+ *   1. Pick region ↁEpick channel ↁEscrape Shorts feed
  *   2. Filter by age (>=3 months) and dedup (memory)
  *   3. Download best quality (no re-encode)
  *   4. Gemini identifies country from video + title + description
  *   5. Download flag emoji PNG (twemoji CDN)
- *   6. YOLO verifies subject position → overlay flag top-center for first 4s
+ *   6. YOLO verifies subject position ↁEoverlay flag top-center for first 4s
  *   7. Gemini generates new title + description
  *   8. Final QA (validateOutput + geminiReview)
  *   9. Save used video ID to memory
@@ -36,7 +36,7 @@ const SHORTS_W = 1080;
 const SHORTS_H = 1920;
 
 /**
- * Convert country name to flag emoji (e.g. "United States" → "🇺🇸")
+ * Convert country name to flag emoji (e.g. "United States" ↁE"�E�E")
  */
 function getFlagEmoji(country) {
   const isoMap = {
@@ -135,7 +135,7 @@ function pickChannel(memory) {
     const handleMatch = channelUrl.match(/@([\w-]+)/);
     const handle = handleMatch ? handleMatch[1] : channelUrl;
 
-    logger.info(`Picked region: ${region} (${regionData.name}) → channel: @${handle}`);
+    logger.info(`Picked region: ${region} (${regionData.name}) ↁEchannel: @${handle}`);
     return { region, regionName: regionData.name, channelUrl, handle };
   }
 
@@ -189,7 +189,7 @@ function findOldShort(channelInfo, memory) {
     logger.info(`After dedup: ${candidates.length} candidates`);
 
     if (candidates.length === 0) {
-      logger.warn('All shorts from this channel have been used — marking channel as used');
+      logger.warn('All shorts from this channel have been used  Emarking channel as used');
       if (!memory.usedChannels) memory.usedChannels = [];
       memory.usedChannels.push(channelInfo.channelUrl);
       saveMemory(memory);
@@ -315,7 +315,7 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
           if (p.country && p.confidence >= 4) {
             country = p.country;
             confidence = p.confidence;
-            logger.success(`Country: ${country} (${confidence}/10) — ${(p.reasoning || '').substring(0, 100)}`);
+            logger.success(`Country: ${country} (${confidence}/10)  E${(p.reasoning || '').substring(0, 100)}`);
             return { country, confidence };
           }
           logger.warn(`Low confidence: ${p.country || 'none'} (${p.confidence}/10)`);
@@ -474,7 +474,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   // Build FFmpeg filter:
   // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
   // If already 9:16, just overlay flag directly
-  // No colorkey needed — twemoji PNGs have proper alpha transparency
+  // No colorkey needed  Etwemoji PNGs have proper alpha transparency
   // Uses format=rgba to preserve alpha channel in the filter chain
   let overlayFilter;
   if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
@@ -494,7 +494,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
     execSync(
       `ffmpeg -y -i "${videoPath}" -i "${flagPath}" ` +
       `-filter_complex "${overlayFilter}" ` +
-      `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outPath}"`,
+      `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outPath}"`,
       { timeout: 180000 }
     );
 
@@ -513,7 +513,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
 
 /**
  * Step 7: Gemini generates new title and description using the same
- * generateTitle() method as Type 1 pipeline — with full key rotation.
+ * generateTitle() method as Type 1 pipeline  Ewith full key rotation.
  * Falls back to OpenRouter only after all Gemini keys/models exhausted.
  */
 async function generateMetadata(country, originalTitle, gemini) {
@@ -521,7 +521,7 @@ async function generateMetadata(country, originalTitle, gemini) {
 
   const flagEmoji = getFlagEmoji(country);
 
-  // Use Type 1's generateTitle which has 2 retry cycles × 8 keys × 2 models
+  // Use Type 1's generateTitle which has 2 retry cycles ÁE8 keys ÁE2 models
   // This exhausts ALL Gemini capacity before falling back
   const metadataContext = {
     sourceUrl: null,
@@ -531,7 +531,7 @@ async function generateMetadata(country, originalTitle, gemini) {
 
   // If Gemini fully exhausted, try OpenRouter as final fallback
   if (!result || !result.title) {
-    logger.warn('All Gemini keys/models exhausted for metadata — trying OpenRouter fallback');
+    logger.warn('All Gemini keys/models exhausted for metadata  Etrying OpenRouter fallback');
     const { getOpenRouterQA } = require('../core/openrouter-qa');
     const qa = getOpenRouterQA();
 
@@ -581,8 +581,8 @@ Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag
     return { title, description, tags };
   }
 
-  // Ultimate fallback — should never happen
-  logger.error('All LLM providers exhausted for metadata — using fallback');
+  // Ultimate fallback  Eshould never happen
+  logger.error('All LLM providers exhausted for metadata  Eusing fallback');
   return {
     title: `${country} Travel Short 🔥`.substring(0, 50),
     description: `Incredible scenes from ${country}. Follow Mr. WorldWideWebster for global travel content! ${flagEmoji}🌍✈️`,
@@ -623,7 +623,7 @@ async function runTempExplainerPipeline(options = {}) {
   logger.header('STEP 2: FIND OLD SHORT');
   const video = findOldShort(channelInfo, memory);
   if (!video) {
-    logger.warn('No old shorts — trying different channel');
+    logger.warn('No old shorts  Etrying different channel');
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
     return { success: false, error: 'No old shorts found' };
   }
@@ -645,19 +645,19 @@ async function runTempExplainerPipeline(options = {}) {
     if (hasDialogue) {
       logger.success(`Dialogue detected: ${dialogueCheck.wordCount} words (${dialogueCheck.language})`);
     } else {
-      logger.warn(`No dialogue detected (${dialogueCheck.wordCount} words) — not an explainer video, skipping`);
+      logger.warn(`No dialogue detected (${dialogueCheck.wordCount} words)  Enot an explainer video, skipping`);
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-      return { success: false, error: 'No dialogue — not an explainer video' };
+      return { success: false, error: 'No dialogue  Enot an explainer video' };
     }
   } catch (e) {
-    logger.warn(`Dialogue check failed: ${(e.message || '').substring(0, 60)} — proceeding anyway`);
+    logger.warn(`Dialogue check failed: ${(e.message || '').substring(0, 60)}  Eproceeding anyway`);
   }
 
   // ─── Step 5: Identify Country ──────────────────────────────────────
   logger.header('STEP 5: IDENTIFY COUNTRY');
   const { country, confidence } = await identifyCountry(downloadedPath, video.title, gemini);
   if (!country || confidence < 4) {
-    logger.warn(`Country not confidently identified (${country || 'none'}) — using region`);
+    logger.warn(`Country not confidently identified (${country || 'none'})  Eusing region`);
     // Fallback: use region as country
     const finalCountry = channelInfo.region === 'World' ? 'Global' : channelInfo.region;
     logger.info(`Using region as country: ${finalCountry}`);
@@ -671,7 +671,7 @@ async function runTempExplainerPipeline(options = {}) {
   const flagPath = await downloadFlag(finalCountry, tmpDir);
   if (flagPath) logger.success('Flag downloaded for combined render');
   
-  // ─── Step 7: Combined Render (Flag → Watermark → 1440p) ──────────
+  // ─── Step 7: Combined Render (Flag ↁEWatermark ↁE1440p) ──────────
   logger.header('STEP 7: COMBINED RENDER (Flag + Watermark + 1440p)');
   
   // Build a single ffmpeg filter that does everything
@@ -732,16 +732,16 @@ async function runTempExplainerPipeline(options = {}) {
   const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
   
   try {
-    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${combinedOutput}"`;
+    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${combinedOutput}"`;
     execSync(cmd, { timeout: 180000 });
     if (fs.existsSync(combinedOutput) && fs.statSync(combinedOutput).size > 100000) {
       logger.success(`Combined render: ${(fs.statSync(combinedOutput).size / 1024 / 1024).toFixed(1)}MB`);
     } else {
-      logger.warn('Combined render produced no output — using original');
+      logger.warn('Combined render produced no output  Eusing original');
       try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
     }
   } catch (e) {
-    logger.warn(`Combined render failed: ${(e.message || '').substring(0, 80)} — using original`);
+    logger.warn(`Combined render failed: ${(e.message || '').substring(0, 80)}  Eusing original`);
     try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
   }
   
@@ -762,7 +762,7 @@ async function runTempExplainerPipeline(options = {}) {
   // Gemini CLI visual review (if available)
   if (geminiCLI.isAvailable()) {
     const gqa = await geminiReview(finalOutputPath);
-    logger.info(`Gemini QA: ${gqa.score}/10 — ${gqa.recommendation}`);
+    logger.info(`Gemini QA: ${gqa.score}/10  E${gqa.recommendation}`);
   }
 
   // ─── Step 10: Save Memory ─────────────────────────────────────────

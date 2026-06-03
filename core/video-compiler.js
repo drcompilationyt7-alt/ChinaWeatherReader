@@ -1,5 +1,5 @@
 /**
- * Video Compiler — FFmpeg Render Engine
+ * Video Compiler  EFFmpeg Render Engine
  * 
  * Takes an Editor Manifest (JSON timeline) and produces the final .mp4.
  * 
@@ -109,7 +109,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
     const sourcePath = path.join(assetsDir, clipId);
 
     if (!fs.existsSync(sourcePath)) {
-      logger.warn(`Missing video: ${clipId} — checking assets dir...`);
+      logger.warn(`Missing video: ${clipId}  Echecking assets dir...`);
       // Search assetsDir for any file containing this clip ID
       const files = fs.readdirSync(assetsDir).filter(f => f.includes(clipId.replace('.mp4', '')));
       if (files.length > 0) {
@@ -117,7 +117,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
         logger.info(`Found alternate: ${found.split(/[\\/]/).pop()}`);
         segment.video._resolvedPath = found;
       } else {
-        logger.error(`Cannot find video for clip "${clipId}" — skipping segment`);
+        logger.error(`Cannot find video for clip "${clipId}"  Eskipping segment`);
         continue;
       }
     } else {
@@ -185,7 +185,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
 
       const cmd = `ffmpeg -y -i "${clipPath}" ${audioInput} ${duration} ` +
         `-vf "${vf}" ${filterComplex} ` +
-        `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
         `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${segmentOutput}"`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 50 * 1024 * 1024 });
@@ -220,7 +220,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
 
     if (firstUseConcat) {
       concatCmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" ` +
-        `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
         `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${outputPath}"`;
     } else {
       // Fallback: use concat filter
@@ -228,7 +228,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
       const streams = processedClips.map((_, i) => `[${i}:v][${i}:a]`).join('');
       concatCmd = `ffmpeg -y ${inputs} ` +
         `-filter_complex "${streams}concat=n=${processedClips.length}:v=1:a=1[vo][ao]" ` +
-        `-map "[vo]" -map "[ao]" -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-map "[vo]" -map "[ao]" -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
         `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${outputPath}"`;
     }
 
@@ -245,7 +245,7 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
       try {
         execSync(
           `ffmpeg -y -i "${outputPath}" -vf "ass='${assPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''")}'" ` +
-          `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+          `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
           `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${subbedPath}" 2>/dev/null`,
           { timeout: 120000 }
         );

@@ -1,5 +1,5 @@
 /**
- * AI Clipper — Smart Video Clipping with Adaptive Multi-Subject Centering
+ * AI Clipper  ESmart Video Clipping with Adaptive Multi-Subject Centering
  * 
  * Combines YOLO subject detection with intelligent cropping strategies:
  * - 1 subject: Center on that person
@@ -164,18 +164,18 @@ function buildCropFilter(srcW, srcH, cropOffsetX = 0) {
   const even = (n) => Math.max(2, Math.floor(n / 2) * 2);
 
   if (isAlreadyPortrait(srcW, srcH)) {
-    // Already close to 9:16 — scale up to fill 1080x1920
+    // Already close to 9:16  Escale up to fill 1080x1920
     return `scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,crop=${SHORTS_W}:${SHORTS_H}`;
   }
 
   if (ratio > TARGET_RATIO) {
-    // Landscape — scale height to match, then crop width
+    // Landscape  Escale height to match, then crop width
     const sh = SHORTS_H;
     const sw = even(sh * ratio);
     const cropX = even(Math.max(0, Math.min(sw - SHORTS_W, (sw - SHORTS_W) / 2 + cropOffsetX)));
     return `scale=${sw}:${sh}:flags=lanczos,crop=${SHORTS_W}:${SHORTS_H}:${cropX}:0`;
   } else {
-    // Portrait but not 9:16 — scale width to match, then crop height
+    // Portrait but not 9:16  Escale width to match, then crop height
     const sw = SHORTS_W;
     const sh = even(sw / ratio);
     return `scale=${sw}:${sh}:flags=lanczos,crop=${SHORTS_W}:${SHORTS_H}:0:${even((sh - SHORTS_H) / 2)}`;
@@ -196,7 +196,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
   const duration = endTime ? endTime - startTime : 30;
   const tmpDir = path.dirname(outputPath);
   
-  logger.info(`Smart clip and crop: ${path.basename(sourcePath)} → 9:16 portrait`);
+  logger.info(`Smart clip and crop: ${path.basename(sourcePath)} ↁE9:16 portrait`);
   
   // Step 1: Probe source dimensions
   const dims = probeVideo(sourcePath);
@@ -206,7 +206,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
   
   // Step 2: Check if already 9:16
   if (isAlreadyPortrait(srcW, srcH) && srcW >= SHORTS_W && srcH >= SHORTS_H) {
-    logger.info('Source is already 9:16 at sufficient resolution — just extracting segment');
+    logger.info('Source is already 9:16 at sufficient resolution  Ejust extracting segment');
     
     // Just extract the time segment without re-encoding
     const clipFilter = endTime ? `-to ${duration}` : '';
@@ -235,7 +235,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
     try {
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
-        `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
         `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
         { timeout: 120000 }
       );
@@ -319,7 +319,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
       logger.info(`Crop offset: ${cropOffsetX}px (scaled center: ${scaledCenterX.toFixed(0)}, max: ${maxCropX})`);
     }
   } else {
-    logger.info('No subjects detected — using center crop');
+    logger.info('No subjects detected  Eusing center crop');
   }
   
   // Step 5: Build crop filter and apply
@@ -332,7 +332,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
       `-vf "${cropFilter}" ` +
-      `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+      `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
       `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
       { timeout: 300000, maxBuffer: 500 * 1024 * 1024 }
     );
@@ -362,7 +362,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
     execSync(
       `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
       `-vf "${fallbackFilter}" ` +
-      `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+      `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
       `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
       { timeout: 180000 }
     );

@@ -1,15 +1,15 @@
 e/**
- * Type 2 Pipeline — World Explainer Short
+ * Type 2 Pipeline  EWorld Explainer Short
  * 
  * 8-stage production pipeline for original scripted explainer videos.
  * 
- * Stage 1: Planning Agent (Gemini CLI) → Storyboard
- * Stage 2: Sourcing Agent (Gemini API)  → Search queries
- * Stage 3: Download + QA Loop           → Sourced clips
- * Stage 4: TTS Processing                → Voiceover audio
- * Stage 5: Editor Agent (Gemini CLI)     → Editing manifest
- * Stage 6: Review Agent (OpenRouter)     → Manifest approval
- * Stage 7: Rendering Engine (FFmpeg)     → Raw .mp4
+ * Stage 1: Planning Agent (Gemini CLI) ↁEStoryboard
+ * Stage 2: Sourcing Agent (Gemini API)  ↁESearch queries
+ * Stage 3: Download + QA Loop           ↁESourced clips
+ * Stage 4: TTS Processing                ↁEVoiceover audio
+ * Stage 5: Editor Agent (Gemini CLI)     ↁEEditing manifest
+ * Stage 6: Review Agent (OpenRouter)     ↁEManifest approval
+ * Stage 7: Rendering Engine (FFmpeg)     ↁERaw .mp4
  * Stage 8: Post-Processing (Smart Crop + TikTok Captions + QA)
  * 
  * Stage 8 reuses Type 1's smart-cropper (YOLO subject detection),
@@ -137,7 +137,7 @@ Return STRICT JSON: { "clips": [{ "clip_id": N, "yt_queries": [...], "fallback_q
 
   if (!result) {
     // Fallback: generate generic queries
-    logger.warn('Sourcing agent failed — using fallback queries');
+    logger.warn('Sourcing agent failed  Eusing fallback queries');
     return (storyboard.clips || []).map(c => ({
       clip_id: c.clip_id,
       yt_queries: [`${storyboard.country} ${c.phase} footage`, `${storyboard.country} ${c.phase} compilation`],
@@ -171,12 +171,12 @@ Return STRICT JSON: { "clips": [{ "clip_id": N, "yt_queries": [...], "fallback_q
  * Sources footage for each clip by:
  *   1. Searching YouTube for each query
  *   2. For each search result: send the YouTube URL to Gemini via file_data.file_uri
- *      (same mechanism as Type 1's gemini.rankVideo) — Gemini fetches the preview itself
- *   3. If MATCHED → download the video → accept it
- *   4. If COMPILATION_FOUND → download → slice → accept
- *   5. If REJECTED → try next result, or use revised_queries on retry
+ *      (same mechanism as Type 1's gemini.rankVideo)  EGemini fetches the preview itself
+ *   3. If MATCHED ↁEdownload the video ↁEaccept it
+ *   4. If COMPILATION_FOUND ↁEdownload ↁEslice ↁEaccept
+ *   5. If REJECTED ↁEtry next result, or use revised_queries on retry
  * 
- * No download happens before Gemini matching — saves bandwidth and API calls.
+ * No download happens before Gemini matching  Esaves bandwidth and API calls.
  */
 async function stage3_downloadQA(storyboard, queryData, tmpDir) {
   logger.header('STAGE 3: DOWNLOAD + QA LOOP');
@@ -231,23 +231,23 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
         logger.info(`  Trying URL: "${result.title.substring(0, 50)}" (${result.duration}s)`);
 
         // Step 1: Ask Gemini if this YouTube URL matches the storyboard clip
-        // Uses file_data.file_uri — same mechanism as Type 1's rankVideo()
+        // Uses file_data.file_uri  Esame mechanism as Type 1's rankVideo()
         const qaMatch = await gemini.matchVideoClip(result.url, clipDescription, qaSkill || '');
 
         if (!qaMatch) {
-          logger.warn(`  URL matching returned null (API/keys exhausted) — trying next result`);
+          logger.warn(`  URL matching returned null (API/keys exhausted)  Etrying next result`);
           continue;
         }
 
         const resultType = qaMatch.result || 'REJECTED';
-        logger.info(`  URL match: ${resultType} — ${qaMatch.reasoning?.substring(0, 80) || ''}`);
+        logger.info(`  URL match: ${resultType}  E${qaMatch.reasoning?.substring(0, 80) || ''}`);
 
         if (resultType === 'MATCHED') {
           // Step 2: Download the matched video
-          logger.info(`  MATCHED — downloading...`);
+          logger.info(`  MATCHED  Edownloading...`);
           const downloadedPath = downloadVideo(result.url, clipsDir);
           if (!downloadedPath) {
-            logger.warn(`  Download failed — trying next result`);
+            logger.warn(`  Download failed  Etrying next result`);
             continue;
           }
           const meta = getVideoMetadata(downloadedPath);
@@ -261,16 +261,16 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
             action: 'use_full',
           });
           matched = true;
-          logger.success(`  ✅ Clip ${clip.clip_id}: MATCHED — ${(fs.statSync(downloadedPath).size / 1024 / 1024).toFixed(1)}MB`);
+          logger.success(`  ✁EClip ${clip.clip_id}: MATCHED  E${(fs.statSync(downloadedPath).size / 1024 / 1024).toFixed(1)}MB`);
           break;
         }
 
         if (resultType === 'COMPILATION_FOUND' && qaMatch.target_slice_start) {
           // Step 2: Download the compilation, then slice
-          logger.info(`  COMPILATION_FOUND — downloading for slicing...`);
+          logger.info(`  COMPILATION_FOUND  Edownloading for slicing...`);
           const downloadedPath = downloadVideo(result.url, clipsDir);
           if (!downloadedPath) {
-            logger.warn(`  Download failed — trying next result`);
+            logger.warn(`  Download failed  Etrying next result`);
             continue;
           }
 
@@ -287,10 +287,10 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
             });
             matched = true;
             try { fs.unlinkSync(downloadedPath); } catch {}
-            logger.success(`  ✅ Clip ${clip.clip_id}: COMPILATION_FOUND — sliced successfully`);
+            logger.success(`  ✁EClip ${clip.clip_id}: COMPILATION_FOUND  Esliced successfully`);
             break;
           }
-          // Slice failed — clean up and try next
+          // Slice failed  Eclean up and try next
           try { fs.unlinkSync(downloadedPath); } catch {}
           continue;
         }
@@ -306,7 +306,7 @@ async function stage3_downloadQA(storyboard, queryData, tmpDir) {
     }
 
     if (!matched) {
-      logger.warn(`  ❌ Clip ${clip.clip_id}: No match found after ${maxRetries} attempts — skipping`);
+      logger.warn(`  ❁EClip ${clip.clip_id}: No match found after ${maxRetries} attempts  Eskipping`);
     }
   }
 
@@ -424,7 +424,7 @@ If TTS is longer than video, loop/slow down/hold final frame.`;
     logger.success(`Editor manifest: ${manifest.timeline?.length || 0} timeline segments`);
     logger.info(`=== EDIT MANIFEST ===`);
     for (const seg of (manifest.timeline || [])) {
-      logger.info(`  [${seg.start_time}-${seg.end_time}] ${seg.video?.source} → ${(seg.captions || []).map(c => c.text).join(' | ').substring(0, 60)}`);
+      logger.info(`  [${seg.start_time}-${seg.end_time}] ${seg.video?.source} ↁE${(seg.captions || []).map(c => c.text).join(' | ').substring(0, 60)}`);
     }
     logger.info(`=== END MANIFEST ===`);
   } else {
@@ -465,7 +465,7 @@ Return STRICT JSON: {"status": "APPROVED" or "REVISION_NEEDED", "feedback": ["it
     }
   } else {
     // If review fails, approve by default
-    logger.warn('Review agent unavailable — auto-approving manifest');
+    logger.warn('Review agent unavailable  Eauto-approving manifest');
     return { status: 'APPROVED', feedback: [] };
   }
 
@@ -531,7 +531,7 @@ async function stage8_postprocess(renderedPath, country, tmpDir, outputDir) {
   });
 
   if (!cropResult.success) {
-    logger.error('Smart crop failed — using rendered video as-is');
+    logger.error('Smart crop failed  Eusing rendered video as-is');
     return renderedPath;
   }
   logger.success(`Smart crop complete: ${croppedPath}`);
@@ -541,7 +541,7 @@ async function stage8_postprocess(renderedPath, country, tmpDir, outputDir) {
   const editedPath = path.join(tmpDir, `edited_${Date.now()}.mp4`);
 
   // smartEdit will:
-  // 1. Extract audio → whisper transcribe (picks up TTS voiceover perfectly)
+  // 1. Extract audio ↁEwhisper transcribe (picks up TTS voiceover perfectly)
   // 2. Generate word-timed TikTok-style .ASS subtitles (yellow, black outline, 1-2 words)
   // 3. Burn captions into video
   // 4. Run Gemini CLI QA feedback loop on edits
@@ -549,12 +549,12 @@ async function stage8_postprocess(renderedPath, country, tmpDir, outputDir) {
   const editResult = await smartEdit(croppedPath, editedPath, {
     country,
     duration: Math.min(videoDuration, 60),
-    // No dialogue/transcript passed — smartEdit transcribes from the video's audio
+    // No dialogue/transcript passed  EsmartEdit transcribes from the video's audio
     // which already has the TTS voiceover baked in
   });
 
   if (!editResult.success) {
-    logger.warn('Smart edit failed — using cropped video without captions');
+    logger.warn('Smart edit failed  Eusing cropped video without captions');
     return croppedPath;
   }
   logger.success(`Smart edit complete: ${editResult.editType}, captions: ${editResult.hasCaptions}`);
@@ -567,14 +567,14 @@ async function stage8_postprocess(renderedPath, country, tmpDir, outputDir) {
   if (!validation.passed) {
     logger.warn(`Validation issues: ${validation.issues.join(', ')}`);
     if (validation.score < 4) {
-      logger.error('Validation score too low — returning cropped but not edited');
+      logger.error('Validation score too low  Ereturning cropped but not edited');
       return croppedPath;
     }
   }
 
   // Gemini CLI visual review (full video QA)
   const geminiQA = await geminiReview(editedPath);
-  logger.info(`Gemini QA: ${geminiQA.score}/10 — ${geminiQA.recommendation}`);
+  logger.info(`Gemini QA: ${geminiQA.score}/10  E${geminiQA.recommendation}`);
   logger.info(`  Crop: ${geminiQA.cropOk ? 'OK' : 'Issues'} | Subtitles: ${geminiQA.subtitlesOk ? 'OK' : 'Issues'}`);
   logger.info(`  Watermarks: ${geminiQA.watermarkRemoved ? 'Removed' : 'Present'} | Hook: ${geminiQA.hookQuality}`);
 
@@ -679,7 +679,7 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
         logger.success(`Manifest revised based on feedback`);
       }
     } else {
-      logger.warn('No actionable feedback — proceeding with current manifest');
+      logger.warn('No actionable feedback  Eproceeding with current manifest');
       break;
     }
   }
@@ -745,7 +745,7 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
         execSync(
           `ffmpeg -y -i "${postProcessed}" -i "${flagPath}" ` +
           `-filter_complex "[1:v]scale=120:-1,format=rgba[flag];[0:v][flag]overlay=(W-w)/2:20:enable='between(t,${flagStart},${flagEnd})'" ` +
-          `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${flaggedOut}"`,
+          `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${flaggedOut}"`,
           { timeout: 120000 }
         );
         if (fs.existsSync(flaggedOut) && fs.statSync(flaggedOut).size > 100000) {

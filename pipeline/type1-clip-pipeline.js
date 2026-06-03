@@ -1,16 +1,16 @@
 /**
- * Type 1 Pipeline — Meme/Trend/Clip Short
+ * Type 1 Pipeline  EMeme/Trend/Clip Short
  * 
  * The main pipeline for finding viral clips from around the world
  * and reposting them with minimal, smart edits.
  * 
  * Flow:
- * 1. Pick country → Load trend bank → Generate queries
- * 2. Search YouTube → Download candidates
- * 3. Gemini ranks URLs (API) → Pick best video
- * 4. Download best video → Smart Cut → Analyze temp
- * 5. Redownload → Combined FFmpeg: Cut → Crop → Captions → Sig → Wm → 1440p
- * 6. QA review → Upload
+ * 1. Pick country ↁELoad trend bank ↁEGenerate queries
+ * 2. Search YouTube ↁEDownload candidates
+ * 3. Gemini ranks URLs (API) ↁEPick best video
+ * 4. Download best video ↁESmart Cut ↁEAnalyze temp
+ * 5. Redownload ↁECombined FFmpeg: Cut ↁECrop ↁECaptions ↁESig ↁEWm ↁE1440p
+ * 6. QA review ↁEUpload
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -192,7 +192,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
       }
       for (let i = nonShorts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [nonShorts[i], nonShorts[j]] = [nonShorts[j], nonShorts[i]]; }
       const tierCounts = { '1080p': shorts.filter(s => s.tier >= 3).length, '720p': shorts.filter(s => s.tier === 2).length, 'lower': shorts.filter(s => s.tier < 2).length };
-      logger.info(`Shorts quality: ${tierCounts['1080p']}×1080p, ${tierCounts['720p']}×720p, ${tierCounts['lower']}×lower`);
+      logger.info(`Shorts quality: ${tierCounts['1080p']}ÁE080p, ${tierCounts['720p']}ÁE20p, ${tierCounts['lower']}×lower`);
       const selectedFromShorts = shuffledShorts.slice(0, 5);
       const selectedFromNonShorts = nonShorts.slice(0, Math.max(0, 5 - selectedFromShorts.length));
       const selected = [...selectedFromShorts, ...selectedFromNonShorts];
@@ -213,7 +213,7 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
           }
         } catch {}
       }
-      if (addedFromQuery > 0) logger.info(`  → ${addedFromQuery} enriched candidates from this query`);
+      if (addedFromQuery > 0) logger.info(`  ↁE${addedFromQuery} enriched candidates from this query`);
     } catch (e) { logger.warn(`Search failed for "${query}": ${(e.message || '').substring(0, 200)}`); }
   }
   for (let i = allResults.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allResults[i], allResults[j]] = [allResults[j], allResults[i]]; }
@@ -228,7 +228,7 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
   const ageInDays = candidate.upload_date ? Math.max(1, Math.floor((Date.now() - new Date(candidate.upload_date.substring(0, 4), candidate.upload_date.substring(4, 6) - 1, candidate.upload_date.substring(6, 8)).getTime()) / 86400000)) : 30;
   const engagementData = { views: candidate.view_count || 0, likes: candidate.like_count || 0, comments: candidate.comment_count || 0, ageInDays, title: candidate.title || 'YouTube video', topComments: candidate.topComments || [] };
   logger.info(`  Engagement: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old`);
-  logger.info(`  Step 1 — downloading truncated clip for visual ranking...`);
+  logger.info(`  Step 1  Edownloading truncated clip for visual ranking...`);
   let dlPath = null;
   const rankingStrategies = [
     { name: 'ranking_web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
@@ -245,15 +245,15 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
       if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 50000) { dlPath = outputFile; break; }
     } catch (e) { logger.warn(`  Ranking download ${s.name} failed: ${(e.message || '').substring(0, 60)}`); }
   }
-  if (!dlPath) { logger.warn(`  Download failed — cannot rank this video`); return null; }
-  logger.info(`  Step 2 — Analyzing MP4 with Gemini API...`);
+  if (!dlPath) { logger.warn(`  Download failed  Ecannot rank this video`); return null; }
+  logger.info(`  Step 2  EAnalyzing MP4 with Gemini API...`);
   let result = await gemini.rankVideoFile(dlPath, country, curatorSkill, engagementData);
   if (result === null && geminiCLI && geminiCLI.isAvailable()) {
-    logger.info(`  Step 3 — API failed, trying Gemini CLI with local file ref...`);
+    logger.info(`  Step 3  EAPI failed, trying Gemini CLI with local file ref...`);
     result = await geminiCLI.rankVideoFromPath(dlPath, country, curatorSkill, engagementData);
   }
   try { fs.unlinkSync(dlPath); } catch {}
-  if (result === null) { logger.warn(`  All ranking methods failed for this video — skipping`); return null; }
+  if (result === null) { logger.warn(`  All ranking methods failed for this video  Eskipping`); return null; }
   return { result, candidate };
 }
 
@@ -263,11 +263,11 @@ async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, 
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
     const out = await rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSkill, tmpDir);
-    if (out === null) { logger.warn(`  → No valid ranking obtained for this video`); }
+    if (out === null) { logger.warn(`  ↁENo valid ranking obtained for this video`); }
     else if (out.result.verdict === 'APPROVED' && out.result.score >= 6) {
       ranked.push({ ...out.candidate, geminiScore: Math.min(10, Math.max(1, out.result.score)), hookScore: out.result.hook_score || 5, geminiCountry: out.result.country || country, watermarkType: out.result.watermark_type, reasoning: out.result.reasoning || '' });
-      logger.success(`  ✅ Score: ${out.result.score}/10 — ${out.result.reasoning}`);
-    } else { logger.info(`  ❌ Rejected (score: ${out.result.score}) — ${out.result.reasoning}`); }
+      logger.success(`  ✁EScore: ${out.result.score}/10  E${out.result.reasoning}`);
+    } else { logger.info(`  ❁ERejected (score: ${out.result.score})  E${out.result.reasoning}`); }
     await new Promise(r => setTimeout(r, 10000));
   }
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
@@ -349,7 +349,7 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'word_count': 
 }
 
 /**
- * Smart Cut — Use PySceneDetect + YOLO to find the best segment in the video
+ * Smart Cut  EUse PySceneDetect + YOLO to find the best segment in the video
  * Returns { start, end, cropOffsetX } for use in the combined render
  */
 function smartCut(videoPath, duration) {
@@ -364,7 +364,7 @@ function smartCut(videoPath, duration) {
       const lines = hlOut.split('\n').filter(Boolean);
       const result = JSON.parse(lines[lines.length - 1]);
       if (result.action === 'extract' && result.start >= 0 && result.duration > 0) {
-        logger.success(`Smart Cut: best segment ${result.start}s → ${result.end}s (${result.duration}s, score: ${result.peak_highlight_score || 'N/A'})`);
+        logger.success(`Smart Cut: best segment ${result.start}s ↁE${result.end}s (${result.duration}s, score: ${result.peak_highlight_score || 'N/A'})`);
         return { start: result.start, end: result.end };
       }
     }
@@ -373,7 +373,7 @@ function smartCut(videoPath, duration) {
   // Fallback: use middle 45s
   const mid = duration / 2;
   const fallback = { start: Math.max(0, mid - 22.5), end: Math.min(duration, mid + 22.5) };
-  logger.info(`Smart Cut fallback: ${fallback.start}s → ${fallback.end}s`);
+  logger.info(`Smart Cut fallback: ${fallback.start}s ↁE${fallback.end}s`);
   return fallback;
 }
 
@@ -473,7 +473,7 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v2';
   }
   
-  // 3. Flag overlay at top-center — synced with TTS "Enjoy this clip from [country]"
+  // 3. Flag overlay at top-center  Esynced with TTS "Enjoy this clip from [country]"
   if (hasFlag && flagPath && fs.existsSync(flagPath) && flagInputIdx >= 0) {
     filters.push(`[${flagInputIdx}:v]scale=120:-1,format=rgba[flag]`);
     // Flag at top-center: (1080-120)/2 = 480, y=20, synced with TTS time window
@@ -528,12 +528,12 @@ async function runType1Pipeline(options = {}) {
     queries = await generateQueries(country, gemini, trendBank);
   }
   
-  if (queries.length === 0) { logger.error('No queries generated — aborting'); return { success: false, error: 'No queries' }; }
+  if (queries.length === 0) { logger.error('No queries generated  Eaborting'); return { success: false, error: 'No queries' }; }
 
   let candidates = await searchYouTube(queries, 6, country);
   let filtered = filterCandidates(candidates);
   logger.info(`Candidates selected for pipeline: ${filtered.length}`);
-  if (filtered.length === 0) { logger.error('No raw candidates found — aborting'); return { success: false, error: 'No candidates' }; }
+  if (filtered.length === 0) { logger.error('No raw candidates found  Eaborting'); return { success: false, error: 'No candidates' }; }
 
   logger.info('Fetching top comments for top candidates...');
   const candidatesForComments = filtered.slice(0, Math.min(5, filtered.length));
@@ -544,7 +544,7 @@ async function runType1Pipeline(options = {}) {
   
   if (options.skipRanking) {
     // Skip ranking - just use the first video from search results
-    logger.info('Phase 2: Skipping ranking — using first search result');
+    logger.info('Phase 2: Skipping ranking  Eusing first search result');
     const firstVideo = filtered[0];
     if (firstVideo) {
       ranked.push({ 
@@ -556,7 +556,7 @@ async function runType1Pipeline(options = {}) {
       });
       logger.success(`Using first result: "${firstVideo.title.substring(0, 50)}"`);
     } else {
-      logger.error('No candidates available — aborting');
+      logger.error('No candidates available  Eaborting');
       return { success: false, error: 'No candidates' };
     }
   } else {
@@ -568,23 +568,23 @@ async function runType1Pipeline(options = {}) {
       if (batch > 1) {
         logger.info(`Batch ${batch}: Searching for fresh candidates...`);
         const newQueries = await generateQueries(country, gemini, trendBank);
-        if (newQueries.length === 0) { logger.warn(`Batch ${batch}: No new queries generated — skipping`); continue; }
+        if (newQueries.length === 0) { logger.warn(`Batch ${batch}: No new queries generated  Eskipping`); continue; }
         candidates = await searchYouTube(newQueries, 6, country);
         filtered = filterCandidates(candidates);
-        if (filtered.length < 2) { logger.warn(`Batch ${batch}: Only ${filtered.length} candidates — not enough to rank`); continue; }
+        if (filtered.length < 2) { logger.warn(`Batch ${batch}: Only ${filtered.length} candidates  Enot enough to rank`); continue; }
         const newCandsForComments = filtered.slice(0, Math.min(5, filtered.length));
         for (const cand of newCandsForComments) { cand.topComments = await fetchTopComments(cand.url, 3); }
       }
       ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
-      if (ranked.length > 0) { logger.success(`Batch ${batch}: Found ${ranked.length} approved videos — using best`); break; }
-      logger.warn(`Batch ${batch}: All videos rejected or unrankable — trying next batch`);
+      if (ranked.length > 0) { logger.success(`Batch ${batch}: Found ${ranked.length} approved videos  Eusing best`); break; }
+      logger.warn(`Batch ${batch}: All videos rejected or unrankable  Etrying next batch`);
     }
 
     if (ranked.length === 0) {
-      logger.warn('All batches exhausted — using highest-view fallback');
+      logger.warn('All batches exhausted  Eusing highest-view fallback');
       const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
       if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country }); logger.warn(`Fallback: highest-view video "${fb.title.substring(0, 50)}" (score: 5/10)`); }
-      else { logger.error('No fallback candidates — aborting'); return { success: false, error: 'No approved videos' }; }
+      else { logger.error('No fallback candidates  Eaborting'); return { success: false, error: 'No approved videos' }; }
     }
   }
 
@@ -592,7 +592,7 @@ async function runType1Pipeline(options = {}) {
   logger.success(`Best video: "${bestVideo.title.substring(0, 50)}" (score: ${bestVideo.geminiScore}/10)`);
 
   if (bestVideo.geminiCountry && bestVideo.geminiCountry !== country) {
-    logger.warn(`⚠️  Country recategorized: "${country}" → "${bestVideo.geminiCountry}"`);
+    logger.warn(`⚠�E�E Country recategorized: "${country}" ↁE"${bestVideo.geminiCountry}"`);
     country = bestVideo.geminiCountry;
     logger.info(`   Using "${country}" for signature, metadata, and memory`);
   }
@@ -600,7 +600,7 @@ async function runType1Pipeline(options = {}) {
   // ─── Phase 3: First Download + Smart Cut Analysis ────────────────
   logger.info('Phase 3: Download + Smart Cut Analysis');
   const tempDownloadPath = await downloadBestVideo(bestVideo, tmpDir);
-  if (!tempDownloadPath) { logger.error('Download failed — aborting'); return { success: false, error: 'Download failed' }; }
+  if (!tempDownloadPath) { logger.error('Download failed  Eaborting'); return { success: false, error: 'Download failed' }; }
 
   const tempDims = probeDownloadedVideo(tempDownloadPath);
   const tempDuration = tempDims.duration || 60;
@@ -615,7 +615,7 @@ async function runType1Pipeline(options = {}) {
   // Analyze the temp clip
   const analysisDims = probeDownloadedVideo(analysisClip);
   const dialogue = await transcribeAudio(analysisClip, tmpDir);
-  if (gemini.hasProfanity(dialogue.transcript)) { logger.error('Profanity detected — aborting'); return { success: false, error: 'Profanity detected' }; }
+  if (gemini.hasProfanity(dialogue.transcript)) { logger.error('Profanity detected  Eaborting'); return { success: false, error: 'Profanity detected' }; }
 
   // Get crop offset from analysis
   const cropOffsetX = getCropOffset(analysisClip, analysisDims.width, analysisDims.height, tmpDir);
@@ -642,7 +642,7 @@ async function runType1Pipeline(options = {}) {
         const captionResult = JSON.parse(captionOut);
         logger.info(`Captions: ${captionResult.word_count} words`);
       } catch {
-        logger.warn('Captions failed — proceeding without');
+        logger.warn('Captions failed  Eproceeding without');
         subPath = null;
       }
     }
@@ -658,7 +658,7 @@ async function runType1Pipeline(options = {}) {
   const freshSourceDir = path.join(tmpDir, 'fresh_source');
   if (!fs.existsSync(freshSourceDir)) fs.mkdirSync(freshSourceDir, { recursive: true });
   const freshPath = await downloadBestVideo(bestVideo, freshSourceDir);
-  if (!freshPath) { logger.error('Redownload failed — aborting'); return { success: false, error: 'Redownload failed' }; }
+  if (!freshPath) { logger.error('Redownload failed  Eaborting'); return { success: false, error: 'Redownload failed' }; }
 
   // Download flag
   const flagIsoMap = {
@@ -706,7 +706,7 @@ async function runType1Pipeline(options = {}) {
   try {
     execSync(`edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this clip from ${country}" --write-media "${ttsPath}"`, { timeout: 30000 });
     if (fs.existsSync(ttsPath) && fs.statSync(ttsPath).size >= 1000) hasSignature = true;
-  } catch { logger.warn('TTS failed — skipping signature'); }
+  } catch { logger.warn('TTS failed  Eskipping signature'); }
 
   const ttsDuration = hasSignature ? Math.min(5, (() => { try { return parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${ttsPath}"`, { timeout: 5000, encoding: 'utf8' }).trim()); } catch { return 3 } })()) : 0;
   const clipDuration = cut.end - cut.start;
@@ -715,7 +715,7 @@ async function runType1Pipeline(options = {}) {
   const endTime = Math.min(startDelay + ttsDuration, clipDuration - 0.5);
   const delayMs = Math.round(startDelay * 1000);
 
-  // Build combined filter — track FFmpeg input indices dynamically
+  // Build combined filter  Etrack FFmpeg input indices dynamically
   const freshDims = probeDownloadedVideo(freshPath);
   let nextInputIdx = 1; // index 0 is the video
   let flagInputIdx = -1;
@@ -768,7 +768,7 @@ async function runType1Pipeline(options = {}) {
     audioFilter = '';
     audioMap = '-map 0:a';
   }
-  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${finalOutput}"`;
+  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${finalOutput}"`;
 
   logger.info('Running combined render...');
   try {
@@ -793,9 +793,9 @@ async function runType1Pipeline(options = {}) {
   // ─── Phase 5: QA Review ────────────────────────────────────────────
   logger.info('Phase 5: QA Review');
   const validation = await validateOutput(durableFinalPath);
-  if (!validation.passed) { logger.warn(`Validation issues: ${validation.issues.join(', ')}`); if (validation.score < 4) { logger.error('Validation score too low — aborting'); return { success: false, error: `Validation failed: ${validation.issues.join('; ')}` }; } }
+  if (!validation.passed) { logger.warn(`Validation issues: ${validation.issues.join(', ')}`); if (validation.score < 4) { logger.error('Validation score too low  Eaborting'); return { success: false, error: `Validation failed: ${validation.issues.join('; ')}` }; } }
   const geminiQA = await geminiReview(durableFinalPath);
-  logger.info(`Gemini QA: ${geminiQA.score}/10 — ${geminiQA.recommendation}`);
+  logger.info(`Gemini QA: ${geminiQA.score}/10  E${geminiQA.recommendation}`);
 
   // ─── Phase 6: Generate Metadata ────────────────────────────────────
   logger.info('Phase 6: Generate Metadata');
