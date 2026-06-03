@@ -374,9 +374,9 @@ function smartCut(videoPath, duration) {
       } catch (sdErr) {
         logger.warn(`PySceneDetect not available: ${(sdErr.stderr || sdErr.message || sdErr.stdout || '').toString().substring(0, 200)}`);
       }
-      // Run the highlight detector
-      const hlCmd = `python3 "${hlPath}" --output-json "${videoPath}" 2>&1`;
-      logger.info(`Running: python3 "${hlPath}" --output-json "${videoPath}"`);
+      // Run the highlight detector (video path must come BEFORE --output-json flag)
+      const hlCmd = `python3 "${hlPath}" "${videoPath}" --output-json 2>&1`;
+      logger.info(`Running: python3 "${hlPath}" "${videoPath}" --output-json`);
       const hlOut = execSync(hlCmd, { timeout: 300000, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }).toString().trim();
       // Log all output lines (especially stderr debug output)
       const outLines = hlOut.split('\n').filter(Boolean);
@@ -520,8 +520,8 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v4';
   }
   
-  // 5. Scale to 1440p for VP9
-  filters.push(`[${currentLabel}]scale=2560:1440:flags=lanczos[vout]`);
+  // 5. Final label - no upscale, keep at 1080x1920 (already correct size)
+  filters.push(`[${currentLabel}]format=yuv444p10le[vout]`);
   
   return { filterComplex: filters.join(';'), videoOut: '[vout]' };
 }
