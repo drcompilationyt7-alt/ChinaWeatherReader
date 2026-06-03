@@ -20,6 +20,7 @@ const { getGeminiService } = require('../core/gemini-service');
 const { getGeminiCLI } = require('../core/gemini-cli-runner');
 const { getOpenRouterQA } = require('../core/openrouter-qa');
 const { smartCrop, probeVideo, extractFrames } = require('../core/smart-cropper');
+const { smartClipAndCrop } = require('../core/ai-clipper');
 const { smartEdit, detectDialogue } = require('../core/smart-editor');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
 const { addWatermark } = require('../core/watermark');
@@ -731,13 +732,14 @@ async function runType1Pipeline(options = {}) {
     }
     
     // Build audio filter for signature ducking + mix
-    audioFilter = `; [0:a]volume=enable='between(t,${startDelay},${endTime})':volume=0.25[ad]; [1:a]adelay=${delayMs}:all=1[av]; [ad][av]amix=inputs=2:duration=first:dropout_transition=0[a]`;
+    // Original audio is ducked during signature, TTS is delayed and mixed in
+    audioFilter = `; [0:a]volume=enable='between(t,${startDelay},${endTime})':volume=0.25[ad]; [1:a]adelay=${delayMs}|${delayMs}:all=1[av]; [ad][av]amix=inputs=2:duration=first:dropout_transition=0[aout]`;
   } else {
     audioFilter = '';
     audioMap = '-map 0:a';
   }
 
-  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v libx264 -preset veryslow -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k -shortest "${finalOutput}"`;
+  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${finalOutput}"`;
 
   logger.info('Running combined render...');
   try {

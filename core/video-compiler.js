@@ -185,8 +185,8 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
 
       const cmd = `ffmpeg -y -i "${clipPath}" ${audioInput} ${duration} ` +
         `-vf "${vf}" ${filterComplex} ` +
-        `-c:v libx264 -preset ${PRESET} -crf ${CRF} ` +
-        `-pix_fmt yuv444p -c:a aac -b:a 320k -shortest "${segmentOutput}"`;
+        `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${segmentOutput}"`;
 
       execSync(cmd, { timeout: 180000, maxBuffer: 50 * 1024 * 1024 });
 
@@ -220,15 +220,16 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
 
     if (firstUseConcat) {
       concatCmd = `ffmpeg -y -f concat -safe 0 -i "${concatFile}" ` +
-        `-c:v libx264 -preset ${PRESET} -crf ${CRF} -c:a aac -b:a 320k ` +
-        `-pix_fmt yuv444p "${outputPath}"`;
+        `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${outputPath}"`;
     } else {
       // Fallback: use concat filter
       const inputs = processedClips.map(c => `-i "${c}"`).join(' ');
       const streams = processedClips.map((_, i) => `[${i}:v][${i}:a]`).join('');
       concatCmd = `ffmpeg -y ${inputs} ` +
         `-filter_complex "${streams}concat=n=${processedClips.length}:v=1:a=1[vo][ao]" ` +
-        `-map "[vo]" -map "[ao]" -c:v libx264 -preset ${PRESET} -crf ${CRF} -pix_fmt yuv444p -c:a aac -b:a 320k "${outputPath}"`;
+        `-map "[vo]" -map "[ao]" -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+        `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${outputPath}"`;
     }
 
     execSync(concatCmd, { timeout: 300000, maxBuffer: 100 * 1024 * 1024 });
@@ -244,7 +245,8 @@ async function render(manifest, assetsDir, ttsDir, outputPath) {
       try {
         execSync(
           `ffmpeg -y -i "${outputPath}" -vf "ass='${assPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''")}'" ` +
-          `-c:v libx264 -preset ${PRESET} -crf ${CRF} -c:a copy "${subbedPath}" 2>/dev/null`,
+          `-c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 ` +
+          `-pix_fmt yuv444p10le -c:a flac -ar 48000 "${subbedPath}" 2>/dev/null`,
           { timeout: 120000 }
         );
 

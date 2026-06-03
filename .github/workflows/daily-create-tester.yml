@@ -1,0 +1,102 @@
+name: Daily Shorts Tester (No Ranking)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
+  GEMINI_API_KEY_6: ${{ secrets.GEMINI_API_KEY_6 }}
+  GEMINI_API_KEY_7: ${{ secrets.GEMINI_API_KEY_7 }}
+  GEMINI_API_KEY_8: ${{ secrets.GEMINI_API_KEY_8 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+  OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
+  OPENROUTER_API_KEY_4: ${{ secrets.OPENROUTER_API_KEY_4 }}
+  OPENROUTER_API_KEY_5: ${{ secrets.OPENROUTER_API_KEY_5 }}
+  OPENROUTER_API_KEY_6: ${{ secrets.OPENROUTER_API_KEY_6 }}
+  OPENROUTER_API_KEY_7: ${{ secrets.OPENROUTER_API_KEY_7 }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+  DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+  DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+  DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
+  GH_PAT: ${{ secrets.GH_PAT }}
+
+jobs:
+  test-shorts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Clean old test data
+        run: |
+          rm -rf output/ memory/hermes-memory/
+          mkdir -p output/clips output/assets/voiceovers output/assets/audio memory
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
+
+      - name: Install Deno (JS runtime for yt-dlp)
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          export DENO_INSTALL="$HOME/.deno"
+          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics --break-system-packages
+
+      - name: Install Node.js dependencies
+        run: |
+          npm ci || npm install
+          npm install axios
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Pre-download whisper model
+        run: |
+          python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
+
+      - name: Write cookies file
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then
+            printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
+          fi
+
+      - name: Run test pipeline (China, no ranking, first video only)
+        run: |
+          node core/github-action-runner.js --mode test --country China --query "viral chinese douyin #shorts" --no-ranking
+
+      - name: Save memory
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add memory/channel-memory.json config/trend-banks/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/yt_cookies.txt 2>/dev/null || true
