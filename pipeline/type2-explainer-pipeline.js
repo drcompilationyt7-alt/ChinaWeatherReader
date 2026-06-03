@@ -745,7 +745,7 @@ Return the COMPLETE revised manifest as STRICT JSON.`;
         execSync(
           `ffmpeg -y -i "${postProcessed}" -i "${flagPath}" ` +
           `-filter_complex "[1:v]scale=120:-1,format=rgba[flag];[0:v][flag]overlay=(W-w)/2:20:enable='between(t,${flagStart},${flagEnd})'" ` +
-          `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${flaggedOut}"`,
+          `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${flaggedOut}"`,
           { timeout: 120000 }
         );
         if (fs.existsSync(flaggedOut) && fs.statSync(flaggedOut).size > 100000) {

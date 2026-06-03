@@ -236,7 +236,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
       execSync(
         `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
         `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
-        `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
+        `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${outputPath}" 2>/dev/null`,
         { timeout: 120000 }
       );
       
@@ -333,7 +333,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
       `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
       `-vf "${cropFilter}" ` +
       `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
-      `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
+      `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${outputPath}" 2>/dev/null`,
       { timeout: 300000, maxBuffer: 500 * 1024 * 1024 }
     );
     
@@ -363,7 +363,7 @@ async function smartClipAndCrop(sourcePath, outputPath, options = {}) {
       `ffmpeg -y -ss ${startTime} -i "${sourcePath}" ${clipFilter} ` +
       `-vf "${fallbackFilter}" ` +
       `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 ` +
-      `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outputPath}" 2>/dev/null`,
+      `-pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${outputPath}" 2>/dev/null`,
       { timeout: 180000 }
     );
     

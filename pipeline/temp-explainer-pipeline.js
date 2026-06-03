@@ -494,7 +494,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
     execSync(
       `ffmpeg -y -i "${videoPath}" -i "${flagPath}" ` +
       `-filter_complex "${overlayFilter}" ` +
-      `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${outPath}"`,
+      `-c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${outPath}"`,
       { timeout: 180000 }
     );
 
@@ -732,7 +732,7 @@ async function runTempExplainerPipeline(options = {}) {
   const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
   
   try {
-    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${combinedOutput}"`;
+    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${combinedOutput}"`;
     execSync(cmd, { timeout: 180000 });
     if (fs.existsSync(combinedOutput) && fs.statSync(combinedOutput).size > 100000) {
       logger.success(`Combined render: ${(fs.statSync(combinedOutput).size / 1024 / 1024).toFixed(1)}MB`);
