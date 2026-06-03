@@ -86,9 +86,9 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Run daily pipeline (China, test mode)
+      - name: Run daily pipeline (China, no ranking, test mode)
         run: |
-          node core/github-action-runner.js --mode daily --country China
+          node core/github-action-runner.js --mode daily --country China --skip-ranking
 
       - name: Save memory
         run: |

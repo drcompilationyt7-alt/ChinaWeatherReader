@@ -133,7 +133,7 @@ class DailyRunner {
     } catch {}
   }
 
-  async runDaily(overrideCountry) {
+  async runDaily(overrideCountry, skipRanking = false) {
     logger.header('DAILY: Type 1 Clip Pipeline');
 
     const country = this._pickCountry(overrideCountry);
@@ -146,7 +146,7 @@ class DailyRunner {
     const { runType1Pipeline } = require('../pipeline/type1-clip-pipeline');
     let result;
     try {
-      result = await runType1Pipeline({ country, outputDir: config.paths.clips });
+      result = await runType1Pipeline({ country, outputDir: config.paths.clips, skipRanking });
     } catch (e) {
       logger.error(`Pipeline crash: ${e.message}`);
       result = { success: false, error: e.message };
@@ -322,9 +322,11 @@ class DailyRunner {
     const countryArg = args.includes('--country') ? args[args.indexOf('--country') + 1] : null;
     let exitCode = 0;
 
+    const skipRanking = args.includes('--skip-ranking');
+
     try {
       if (mode === 'daily') {
-        const result = await this.runDaily(countryArg);
+        const result = await this.runDaily(countryArg, skipRanking);
         exitCode = result.exitCode || 0;
       } else if (mode === 'explainer') {
         const result = await this.runExplainer(countryArg);

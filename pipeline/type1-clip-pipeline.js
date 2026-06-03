@@ -530,32 +530,53 @@ async function runType1Pipeline(options = {}) {
   const candidatesForComments = filtered.slice(0, Math.min(5, filtered.length));
   for (const cand of candidatesForComments) { cand.topComments = await fetchTopComments(cand.url, 3); }
 
-  // ─── Phase 2: Gemini Ranking ──────────────────────────────────────
-  logger.info('Phase 2: Gemini Ranking');
+  // ─── Phase 2: Gemini Ranking (or skip if requested) ────────────────
   let ranked = [];
-  const MAX_BATCHES = 3;
-  for (let batch = 1; batch <= MAX_BATCHES; batch++) {
-    logger.header(`Ranking batch ${batch}/${MAX_BATCHES}`);
-    if (batch > 1) {
-      logger.info(`Batch ${batch}: Searching for fresh candidates...`);
-      const newQueries = await generateQueries(country, gemini, trendBank);
-      if (newQueries.length === 0) { logger.warn(`Batch ${batch}: No new queries generated — skipping`); continue; }
-      candidates = await searchYouTube(newQueries, 6, country);
-      filtered = filterCandidates(candidates);
-      if (filtered.length < 2) { logger.warn(`Batch ${batch}: Only ${filtered.length} candidates — not enough to rank`); continue; }
-      const newCandsForComments = filtered.slice(0, Math.min(5, filtered.length));
-      for (const cand of newCandsForComments) { cand.topComments = await fetchTopComments(cand.url, 3); }
+  
+  if (options.skipRanking) {
+    // Skip ranking - just use the first video from search results
+    logger.info('Phase 2: Skipping ranking — using first search result');
+    const firstVideo = filtered[0];
+    if (firstVideo) {
+      ranked.push({ 
+        ...firstVideo, 
+        geminiScore: 5, 
+        hookScore: 5, 
+        geminiCountry: country,
+        reasoning: 'First search result (no ranking)'
+      });
+      logger.success(`Using first result: "${firstVideo.title.substring(0, 50)}"`);
+    } else {
+      logger.error('No candidates available — aborting');
+      return { success: false, error: 'No candidates' };
     }
-    ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
-    if (ranked.length > 0) { logger.success(`Batch ${batch}: Found ${ranked.length} approved videos — using best`); break; }
-    logger.warn(`Batch ${batch}: All videos rejected or unrankable — trying next batch`);
-  }
+  } else {
+    // Full Gemini ranking
+    logger.info('Phase 2: Gemini Ranking');
+    const MAX_BATCHES = 3;
+    for (let batch = 1; batch <= MAX_BATCHES; batch++) {
+      logger.header(`Ranking batch ${batch}/${MAX_BATCHES}`);
+      if (batch > 1) {
+        logger.info(`Batch ${batch}: Searching for fresh candidates...`);
+        const newQueries = await generateQueries(country, gemini, trendBank);
+        if (newQueries.length === 0) { logger.warn(`Batch ${batch}: No new queries generated — skipping`); continue; }
+        candidates = await searchYouTube(newQueries, 6, country);
+        filtered = filterCandidates(candidates);
+        if (filtered.length < 2) { logger.warn(`Batch ${batch}: Only ${filtered.length} candidates — not enough to rank`); continue; }
+        const newCandsForComments = filtered.slice(0, Math.min(5, filtered.length));
+        for (const cand of newCandsForComments) { cand.topComments = await fetchTopComments(cand.url, 3); }
+      }
+      ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
+      if (ranked.length > 0) { logger.success(`Batch ${batch}: Found ${ranked.length} approved videos — using best`); break; }
+      logger.warn(`Batch ${batch}: All videos rejected or unrankable — trying next batch`);
+    }
 
-  if (ranked.length === 0) {
-    logger.warn('All batches exhausted — using highest-view fallback');
-    const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
-    if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country }); logger.warn(`Fallback: highest-view video "${fb.title.substring(0, 50)}" (score: 5/10)`); }
-    else { logger.error('No fallback candidates — aborting'); return { success: false, error: 'No approved videos' }; }
+    if (ranked.length === 0) {
+      logger.warn('All batches exhausted — using highest-view fallback');
+      const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
+      if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country }); logger.warn(`Fallback: highest-view video "${fb.title.substring(0, 50)}" (score: 5/10)`); }
+      else { logger.error('No fallback candidates — aborting'); return { success: false, error: 'No approved videos' }; }
+    }
   }
 
   const bestVideo = ranked[0];
@@ -738,7 +759,6 @@ async function runType1Pipeline(options = {}) {
     audioFilter = '';
     audioMap = '-map 0:a';
   }
-
   const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder rice -slices 24 -slices-crc 32 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest "${finalOutput}"`;
 
   logger.info('Running combined render...');
