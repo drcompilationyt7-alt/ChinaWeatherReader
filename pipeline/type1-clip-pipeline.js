@@ -509,16 +509,16 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v3';
   }
   
-  // 4. Watermark (logo + text) — scale logo to fixed size, then overlay
+  // 4. Watermark (logo + text) — scale logo to fixed size, apply 40% opacity, overlay
   if (hasWatermark && wmPath && fs.existsSync(wmPath) && wmInputIdx >= 0) {
     const LOGO_SIZE = 80; // fixed size in output pixels (1080x1920 output)
     const MARGIN_RIGHT = 20;
     const MARGIN_BOTTOM = 80;
     const FONT_SIZE = 28; // fixed font size for 1080x1920 output
     const TEXT = '@Mr.WorldWideWebster';
-    // Scale watermark to fixed size first, then overlay
-    filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba[wm]`);
-    filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.55:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v4]`);
+    // Scale watermark to fixed size, make 40% opaque (semi-transparent), then overlay
+    filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.4[wm]`);
+    filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.40:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.40:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
   }
   
