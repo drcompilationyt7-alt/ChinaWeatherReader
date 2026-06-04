@@ -1,26 +1,32 @@
 #!/usr/bin/env node
 
 /**
- * Mr. WorldWideWebster — Boost Engine v6
+ * Mr. WorldWideWebster — Boost Engine v7
  *
- * Human-like view booster with parallel incognito sessions.
- * Each session = unique user identity (different proxy, UA, device, behavior).
- * Views spread over 3 hours with Gaussian delay distribution.
- * Uses proxy rotation from free proxy scraper.
- * No hard timeout — runs until target views reached or all sessions done.
+ * Fetches existing channel videos via yt-dlp, then boosts them
+ * with human-like parallel sessions. Each session = unique identity
+ * (proxy, UA, device, behavior). Proxy pool is tested before use.
+ * 
+ * Target: 1000 views per video with varied watch behavior:
+ * - Some watch full 30s-3min, some watch twice
+ * - Some bounce quickly, some browse YouTube first
+ * - Simulated scrolling after viewing
+ * - Sessions spread over time with Gaussian distribution
+ *
+ * Usage:
+ *   node boost/boost-engine.js --channel "https://www.youtube.com/@channel"
+ *   node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" --views 1000
  */
+const { execSync } = require('child_process');
 const puppeteer = require('puppeteer');
 const { Logger } = require('../core/logger');
-const { getFreeProxies } = require('../core/proxy-scraper');
 
 const logger = new Logger('BoostEngine');
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -59,45 +65,58 @@ const VIEWPORT_PROFILES = [
   { width: 360, height: 780, isMobile: true, hasTouch: true },
   { width: 768, height: 1024, isMobile: false },
   { width: 1024, height: 768, isMobile: false },
+  { width: 820, height: 1180, isMobile: false },
 ];
 
 class BoostEngine {
   constructor() {
-    this.videoUrl = null;
-    this.targetViews = 150;
+    this.videoUrls = [];     // URLs to boost (fetched from channel or given)
+    this.targetViews = 1000; // per video
     this.browser = null;
     this.totalViews = 0;
     this._proxyList = [];
     this._proxyIndex = 0;
     this._startedAt = null;
-    this._sessionsRunning = 0;
     this._completed = false;
   }
 
   async run(params = {}) {
-    if (params.url) this.videoUrl = params.url;
-    if (params.views) this.targetViews = Math.max(parseInt(params.views) || 150, 10);
+    // Resolve channel URL from params or env var (YOUTUBE_USERNAME)
+    let channelUrl = params.channel;
+    if (!channelUrl && process.env.YOUTUBE_USERNAME) {
+      channelUrl = `https://www.youtube.com/@${process.env.YOUTUBE_USERNAME}`;
+      logger.info(`Using channel from YOUTUBE_USERNAME env: ${channelUrl}`);
+    }
 
-    this._parseConfig();
+    if (channelUrl) {
+      this.videoUrls = await this._fetchChannelVideos(channelUrl);
+      if (this.videoUrls.length === 0) {
+        logger.error('No videos found on channel');
+        return { success: false, views: 0, error: 'No videos on channel' };
+      }
+      logger.success(`Found ${this.videoUrls.length} videos on channel`);
+    } else if (params.url) {
+      this.videoUrls = [params.url];
+    }
 
-    if (!this.videoUrl) {
-      logger.error('No URL provided. Use --url <youtube-url>');
+    if (params.views) this.targetViews = Math.max(parseInt(params.views) || 1000, 100);
+
+    // Target 1000 per video
+    this.targetViews = 1000;
+
+    if (this.videoUrls.length === 0) {
+      logger.error('No URLs to boost. Use --channel <url> or --url <url>');
       return { success: false, views: 0 };
     }
 
-    try {
-      this._proxyList = await getFreeProxies();
-      logger.info(`Loaded ${this._proxyList.length} proxies for rotation`);
-    } catch (e) {
-      logger.warn(`Proxy load failed: ${e.message} — using direct`);
-      this._proxyList = [];
-    }
+    // Build and test proxy pool
+    await this._buildProxyPool();
 
-    logger.header('BOOST ENGINE v6');
-    logger.info(`Target URL: ${this.videoUrl}`);
-    logger.info(`Target Views: ${this.targetViews}`);
-    logger.info(`Proxies: ${this._proxyList.length}`);
-    logger.info(`Spread: 3 hours`);
+    logger.header('BOOST ENGINE v7');
+    logger.info(`Videos to boost: ${this.videoUrls.length}`);
+    logger.info(`Target per video: ${this.targetViews} views`);
+    logger.info(`Total targets: ${this.videoUrls.length * this.targetViews} views`);
+    logger.info(`Working proxies: ${this._proxyList.length}`);
 
     if (!await this._launchBrowser()) {
       return { success: false, views: 0, error: 'Browser launch failed' };
@@ -114,28 +133,142 @@ class BoostEngine {
     }
 
     logger.header('BOOST SUMMARY');
-    logger.info(`Video: ${this.videoUrl}`);
-    logger.info(`Total Views: ${this.totalViews}/${this.targetViews}`);
+    logger.info(`Total Views: ${this.totalViews}`);
     const elapsed = ((Date.now() - this._startedAt) / 1000 / 60).toFixed(1);
     logger.info(`Duration: ${elapsed} minutes`);
 
-    return {
-      success: this.totalViews > 0,
-      views: this.totalViews,
-      targetViews: this.targetViews,
-      reachedTarget: this.totalViews >= this.targetViews,
-    };
+    return { success: this.totalViews > 0, views: this.totalViews };
   }
 
-  _parseConfig() {
-    const args = process.argv.slice(2);
-    if (!this.videoUrl) {
-      const urlIdx = args.indexOf('--url');
-      if (urlIdx !== -1) this.videoUrl = args[urlIdx + 1];
+  /**
+   * Fetch existing videos from YouTube channel using yt-dlp
+   */
+  async _fetchChannelVideos(channelUrl) {
+    logger.info(`Fetching videos from channel: ${channelUrl}`);
+    try {
+      const out = execSync(
+        `yt-dlp --flat-playlist --dump-json --playlist-end 20 "${channelUrl}" 2>/dev/null`,
+        { timeout: 30000, encoding: 'utf8', maxBuffer: 5 * 1024 * 1024 }
+      ).toString().trim();
+      const lines = out.split('\n').filter(Boolean);
+      const urls = [];
+      for (const line of lines) {
+        try {
+          const p = JSON.parse(line);
+          if (p.id && p.duration && p.duration <= 180) { // under 3 min = Shorts
+            urls.push(`https://www.youtube.com/watch?v=${p.id}`);
+          }
+        } catch {}
+      }
+      // Shuffle to randomize boost order
+      for (let i = urls.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [urls[i], urls[j]] = [urls[j], urls[i]];
+      }
+      return urls.slice(0, 10); // max 10 videos
+    } catch (e) {
+      logger.warn(`Channel fetch failed: ${e.message.substring(0, 100)}`);
+      return [];
     }
-    const viewsFromArgs = args.indexOf('--views') !== -1 ? parseInt(args[args.indexOf('--views') + 1]) : null;
-    const viewsFromEnv = process.env.BOOST_MAX_VIEWS ? parseInt(process.env.BOOST_MAX_VIEWS) : null;
-    this.targetViews = Math.max(viewsFromArgs || viewsFromEnv || 150, 10);
+  }
+
+  /**
+   * Build proxy pool with verification
+   */
+  async _buildProxyPool() {
+    const raw = [];
+    const seenIps = new Set();
+
+    // Source 1: Proxifly
+    try {
+      const axios = require('axios');
+      const resp = await axios.get('https://api.proxifly.dev/proxy?country=all&type=http&limit=50&format=json', {
+        timeout: 10000,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      const data = resp.data;
+      const list = data.proxies || data.data || (Array.isArray(data) ? data : []);
+      for (const p of list) {
+        const ip = p.ip || p.host;
+        const port = p.port;
+        if (ip && port && !seenIps.has(ip)) {
+          seenIps.add(ip);
+          raw.push({ ip, port: String(port) });
+        }
+      }
+      logger.info(`Proxifly: ${list.length} raw proxies`);
+    } catch (e) {
+      logger.warn(`Proxifly: ${e.message.substring(0, 60)}`);
+    }
+
+    // Source 2: proxyscrape
+    try {
+      const axios = require('axios');
+      const resp = await axios.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all', { timeout: 5000 });
+      const lines = resp.data.split('\n').filter(Boolean);
+      for (const line of lines.slice(0, 100)) {
+        const [ip, port] = line.trim().split(':');
+        if (ip && port && !seenIps.has(ip)) {
+          seenIps.add(ip);
+          raw.push({ ip, port });
+        }
+      }
+      logger.info(`proxyscrape: ${lines.length} raw`);
+    } catch {}
+
+    // Verify proxies concurrently (ping/connect test)
+    logger.info(`Testing ${raw.length} proxies...`);
+    const testConcurrency = 10;
+    const verified = [];
+
+    for (let i = 0; i < raw.length; i += testConcurrency) {
+      const batch = raw.slice(i, i + testConcurrency);
+      const results = await Promise.allSettled(
+        batch.map(p => this._testProxy(p))
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) {
+          verified.push(r.value);
+        }
+      }
+      if ((i + testConcurrency) % 50 === 0 || i + testConcurrency >= raw.length) {
+        logger.info(`  Proxy test: ${verified.length} working / ${i + testConcurrency} tested`);
+      }
+    }
+
+    // Shuffle verified proxies
+    for (let i = verified.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [verified[i], verified[j]] = [verified[j], verified[i]];
+    }
+
+    this._proxyList = verified;
+    logger.success(`Working proxies: ${verified.length}/${raw.length}`);
+  }
+
+  /**
+   * Test if a proxy works by connecting to a fast endpoint
+   */
+  async _testProxy(proxy) {
+    const net = require('net');
+    const timeout = 5000;
+    return new Promise(resolve => {
+      const sock = new net.Socket();
+      sock.setTimeout(timeout);
+      sock.on('connect', () => {
+        sock.destroy();
+        resolve(proxy);
+      });
+      sock.on('error', () => {
+        sock.destroy();
+        resolve(false);
+      });
+      sock.on('timeout', () => {
+        sock.destroy();
+        resolve(false);
+      });
+      sock.connect(parseInt(proxy.port), proxy.ip);
+    });
   }
 
   _gaussianRandom() {
@@ -145,32 +278,41 @@ class BoostEngine {
     return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   }
 
-  // Mean 36s between starts, clamped 10-600s for 3-hour spread across 300 views
-  _randomSessionDelay() {
-    const meanSec = 36;
-    const stdDevSec = 18;
-    const raw = meanSec + this._gaussianRandom() * stdDevSec;
-    return Math.max(10, Math.min(600, Math.round(raw)));
-  }
-
-  _randomWatchTime() {
-    const mean = 30;
-    const stdDev = 12;
-    const raw = mean + this._gaussianRandom() * stdDev;
-    return Math.max(15, Math.min(60, Math.round(raw)));
-  }
-
   _getProxy() {
     if (this._proxyList.length === 0) return null;
-    const proxy = this._proxyList[this._proxyIndex % this._proxyList.length];
+    const p = this._proxyList[this._proxyIndex % this._proxyList.length];
     this._proxyIndex++;
-    return proxy.ip ? `http://${proxy.ip}:${proxy.port}` : null;
+    return `http://${p.ip}:${p.port}`;
+  }
+
+  _getRandomURL() {
+    if (this.videoUrls.length === 0) return null;
+    // Weight toward videos that need more views
+    return this.videoUrls[Math.floor(Math.random() * this.videoUrls.length)];
   }
 
   _getRandomUA() { return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]; }
   _getRandomLang() { return ACCEPT_LANGUAGES[Math.floor(Math.random() * ACCEPT_LANGUAGES.length)]; }
   _getRandomViewport() { return VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)]; }
   _isMobile(viewport) { return viewport.width < 600; }
+
+  /**
+   * Generate varied watch time: 30s to 180s (3 min)
+   * with weighted distribution toward shorter watches
+   */
+  _randomWatchTime() {
+    const roll = Math.random();
+    if (roll < 0.15) return 20 + Math.floor(Math.random() * 15);    // 15% quick bounce (20-35s)
+    if (roll < 0.35) return 35 + Math.floor(Math.random() * 25);    // 20% short (35-60s)
+    if (roll < 0.60) return 60 + Math.floor(Math.random() * 40);    // 25% medium (60-100s)
+    if (roll < 0.80) return 100 + Math.floor(Math.random() * 50);   // 20% good (100-150s)
+    return 150 + Math.floor(Math.random() * 31);                     // 20% full (150-180s)
+  }
+
+  /**
+   * Distribution: ~30% watch twice (rewatch with different proxy)
+   */
+  _shouldRewatch() { return Math.random() < 0.30; }
 
   async _launchBrowser() {
     try {
@@ -197,38 +339,50 @@ class BoostEngine {
     const sessionPromises = [];
 
     for (let i = 0; i < this.targetViews; i++) {
-      const delayMs = this._randomSessionDelay() * 1000;
-      const sessionNum = i + 1;
-
+      const delayMs = this._getSessionDelay() * 1000;
       const promise = (async () => {
-        this._sessionsRunning++;
         try {
           await this._sleep(delayMs);
-          if (this.totalViews >= this.targetViews || this._completed) {
-            this._sessionsRunning--;
-            return;
-          }
-          const result = await this._singleViewSession(sessionNum);
+          if (this._completed) return;
+          const url = this._getRandomURL();
+          if (!url) return;
+
+          const result = await this._singleViewSession(url);
           if (result) {
             this.totalViews++;
             logger.success(`Total: ${this.totalViews}/${this.targetViews}`);
+
+            // ~30% chance to rewatch the same video with different identity
+            if (this._shouldRewatch()) {
+              await this._sleep(5000 + Math.random() * 10000);
+              const rewatch = await this._singleViewSession(url);
+              if (rewatch) {
+                this.totalViews++;
+                logger.success(`Total: ${this.totalViews}/${this.targetViews} (rewatch)`);
+              }
+            }
           }
         } catch (e) {
-          logger.warn(`Session ${sessionNum} crashed: ${e.message.substring(0, 60)}`);
-        } finally {
-          this._sessionsRunning--;
+          logger.warn(`Session crashed: ${e.message.substring(0, 60)}`);
         }
       })();
-
       sessionPromises.push(promise);
     }
 
-    logger.info(`Created ${sessionPromises.length} sessions with staggered delays`);
+    logger.info(`Created ${sessionPromises.length} session slots`);
     await Promise.allSettled(sessionPromises);
     this._completed = true;
   }
 
-  async _singleViewSession(sessionNum) {
+  _getSessionDelay() {
+    // Spread views over ~12 hours with Gaussian distribution, mean 45s apart
+    const meanSec = 43; // 1000 views * 43s = ~12 hours
+    const stdDevSec = 20;
+    const raw = meanSec + this._gaussianRandom() * stdDevSec;
+    return Math.max(15, Math.min(300, Math.round(raw)));
+  }
+
+  async _singleViewSession(videoUrl) {
     let context = null;
     let page = null;
     try {
@@ -249,47 +403,46 @@ class BoostEngine {
       });
 
       const behavior = Math.random();
-      logger.info(`  #${sessionNum} | ${proxyStr ? 'proxy' : 'direct'} | ${viewport.width}x${viewport.height} | ${isMobile ? 'mobile' : 'desktop'}`);
+      logger.info(`  Session | ${proxyStr ? 'proxy' : 'direct'} | ${viewport.width}x${viewport.height}`);
 
+      // 10%: Quick bounce (immediately scroll and leave)
       if (behavior < 0.10) {
-        logger.info(`  #${sessionNum}: Quick bounce`);
-        await page.goto(this.videoUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await this._sleep(5000 + Math.random() * 8000);
+        logger.info(`  Quick bounce`);
+        await page.goto(videoUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await this._sleep(3000 + Math.random() * 5000);
+        // Scroll a bit before leaving
+        try { await page.evaluate(() => window.scrollBy(0, 100 + Math.random() * 300)); } catch {}
+        await this._sleep(500 + Math.random() * 1000);
         await page.close(); await context.close();
         return true;
       }
 
+      // 30%: Browse YouTube first (search results, scroll), then go to video
       if (behavior < 0.40) {
         try {
-          logger.info(`  #${sessionNum}: Browsing YouTube first...`);
+          logger.info(`  Browsing YouTube first...`);
+          const searchTerms = ['shorts', 'trending', 'funny videos', 'viral', 'music', 'comedy', 'dance'];
+          const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
           const homeUrl = isMobile
-            ? 'https://m.youtube.com/results?search_query=shorts'
-            : 'https://www.youtube.com/results?search_query=trending';
+            ? `https://m.youtube.com/results?search_query=${term}`
+            : `https://www.youtube.com/results?search_query=${term}`;
           await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
           await this._sleep(2000 + Math.random() * 4000);
-          for (let s = 0; s < 2 + Math.floor(Math.random() * 3); s++) {
-            await page.evaluate(() => window.scrollBy(0, 300 + Math.random() * 500));
-            await this._sleep(1000 + Math.random() * 2000);
+          for (let s = 0; s < 2 + Math.floor(Math.random() * 4); s++) {
+            await page.evaluate(() => window.scrollBy(0, 200 + Math.random() * 600));
+            await this._sleep(800 + Math.random() * 2000);
           }
         } catch {}
       }
 
-      if (behavior >= 0.40 && behavior < 0.55) {
-        try {
-          const q = ['viral', 'trending', 'shorts', 'funny', 'amazing'][Math.floor(Math.random() * 5)];
-          const url = isMobile ? `https://m.youtube.com/results?search_query=${q}` : `https://www.youtube.com/results?search_query=${q}`;
-          await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-          await this._sleep(3000 + Math.random() * 5000);
-        } catch {}
-      }
-
-      logger.info(`  #${sessionNum}: Loading video...`);
-      const vUrl = isMobile && !this.videoUrl.includes('m.youtube')
-        ? this.videoUrl.replace('www.youtube.com', 'm.youtube.com')
-        : this.videoUrl;
+      // Load the actual video page
+      const vUrl = isMobile && !videoUrl.includes('m.youtube')
+        ? videoUrl.replace('www.youtube.com', 'm.youtube.com')
+        : videoUrl;
       await page.goto(vUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await this._sleep(2000 + Math.random() * 3000);
 
+      // Try to click play
       try {
         for (const sel of ['video', '.html5-video-player', '#movie_player', '.ytp-play-button']) {
           const el = await page.$(sel);
@@ -297,32 +450,48 @@ class BoostEngine {
         }
       } catch {}
 
-      try {
-        for (let s = 0; s < 1 + Math.floor(Math.random() * 4); s++) {
-          await page.evaluate(() => window.scrollBy(0, isMobile ? 100 + Math.random() * 200 : 200 + Math.random() * 400));
-          await this._sleep(500 + Math.random() * 1500);
-        }
-      } catch {}
-
+      // Watch the video with varied watch time
       const watchSec = this._randomWatchTime();
-      logger.info(`  #${sessionNum}: Watching ${watchSec}s...`);
+      logger.info(`  Watching ${watchSec}s...`);
 
-      for (let c = 0; c < Math.floor(watchSec * 1000 / 3000); c++) {
-        await this._sleep(3000);
+      // Simulate watching with occasional mouse movement and scrolling
+      const checkInterval = 3000;
+      const checks = Math.floor(watchSec * 1000 / checkInterval);
+      for (let c = 0; c < checks; c++) {
+        await this._sleep(checkInterval);
         try {
-          await page.mouse.move(100 + Math.random() * (viewport.width - 200), 100 + Math.random() * (viewport.height - 200));
+          // Random mouse movement across the video player area
+          await page.mouse.move(
+            50 + Math.random() * (viewport.width - 100),
+            50 + Math.random() * Math.min(viewport.height, 600)
+          );
         } catch {}
-        if (c % 3 === 0) {
-          try { await page.evaluate(() => window.scrollBy(0, 50 + Math.random() * 150)); } catch {}
+        // Every few checks, scroll down to comments
+        if (c > 0 && c % 3 === 0) {
+          try { await page.evaluate(() => window.scrollBy(0, 80 + Math.random() * 200)); } catch {}
         }
       }
 
-      if (Math.random() < 0.20) {
+      // After watching, scroll through comments/suggestions
+      if (Math.random() < 0.60) {
         try {
-          for (const sel of ['ytd-compact-video-renderer a#thumbnail', '.ytd-compact-video-renderer a']) {
+          logger.info(`  Scrolling after video...`);
+          for (let s = 0; s < 2 + Math.floor(Math.random() * 4); s++) {
+            await page.evaluate(() => window.scrollBy(0, 100 + Math.random() * 400));
+            await this._sleep(800 + Math.random() * 2000);
+          }
+        } catch {}
+      }
+
+      // 25% chance to click a suggested video after
+      if (Math.random() < 0.25) {
+        try {
+          const selectors = ['ytd-compact-video-renderer a#thumbnail', 'a.ytd-compact-video-renderer', 'ytd-rich-item-renderer a#thumbnail'];
+          for (const sel of selectors) {
             const links = await page.$$(sel);
             if (links.length > 1) {
-              await links[1 + Math.floor(Math.random() * Math.min(links.length - 1, 5))].click();
+              const idx = 1 + Math.floor(Math.random() * Math.min(links.length - 1, 4));
+              await links[idx].click();
               await this._sleep(2000 + Math.random() * 4000);
               break;
             }
@@ -331,10 +500,10 @@ class BoostEngine {
       }
 
       await page.close(); await context.close();
-      logger.info(`  #${sessionNum}: Done (${watchSec}s watch)`);
+      logger.info(`  Done (${watchSec}s watch)`);
       return true;
     } catch (error) {
-      logger.warn(`  #${sessionNum}: ${error.message.substring(0, 80)}`);
+      logger.warn(`  Session error: ${error.message.substring(0, 80)}`);
       if (page) try { await page.close(); } catch {}
       if (context) try { await context.close(); } catch {}
       return false;
@@ -353,18 +522,37 @@ class BoostEngine {
 
 if (require.main === module) {
   const engine = new BoostEngine();
-  if (process.argv.includes('--help') || process.argv.includes('-h') || !process.argv.includes('--url')) {
+  const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h') || (!args.includes('--url') && !args.includes('--channel'))) {
     console.log(`
-Usage: node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" [options]
+Usage:
+  node boost/boost-engine.js --channel "https://www.youtube.com/@channel"
+  node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" [--views 1000]
+
 Options:
-  --url <url>          YouTube video URL (required)
-  --views <number>     Target views (default: 150)
-  --help               Show this help
+  --channel <url>     YouTube channel to boost (fetches videos via yt-dlp)
+  --url <url>         Single video URL to boost
+  --views <number>    Target views per video (default: 1000)
+  --help              Show this help
+
+Examples:
+  node boost/boost-engine.js --channel "https://www.youtube.com/@drcompilationyt7"
+  node boost/boost-engine.js --url "https://youtube.com/watch?v=abc123" --views 500
     `);
     process.exit(0);
   }
-  engine.run().then(r => {
-    if (r.success) { console.log(`\nDone: ${r.views} views (target: ${r.targetViews})`); process.exit(0); }
+
+  const params = {};
+  const urlIdx = args.indexOf('--url');
+  if (urlIdx !== -1) params.url = args[urlIdx + 1];
+  const channelIdx = args.indexOf('--channel');
+  if (channelIdx !== -1) params.channel = args[channelIdx + 1];
+  const viewsIdx = args.indexOf('--views');
+  if (viewsIdx !== -1) params.views = parseInt(args[viewsIdx + 1]);
+
+  engine.run(params).then(r => {
+    if (r.success) { console.log(`\nDone: ${r.views} views`); process.exit(0); }
     else { console.error(`\nFailed`); process.exit(1); }
   }).catch(e => { console.error(e.message); process.exit(1); });
 }
