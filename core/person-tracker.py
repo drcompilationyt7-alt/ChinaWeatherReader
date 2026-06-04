@@ -122,16 +122,28 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
             tracked_boxes = []
             if results and len(results) > 0:
                 boxes = results[0].boxes
-                if boxes is not None and boxes.id is not None:
-                    for j, box in enumerate(boxes):
-                        cls_id = int(box.cls[0])
+                if boxes is not None:
+                    cls_tensor = boxes.cls
+                    conf_tensor = boxes.conf
+                    xyxy_tensor = boxes.xyxy
+                    id_tensor = boxes.id
+
+                    num_detections = len(boxes)
+                    for j in range(num_detections):
+                        cls_id = int(cls_tensor[j].item()) if cls_tensor is not None else -1
                         if cls_id != 0:
                             continue
-                        conf = float(box.conf[0])
+                        conf = float(conf_tensor[j].item()) if conf_tensor is not None else 0
                         if conf < 0.35:
                             continue
-                        track_id = int(box.id[j])
-                        x1, y1, x2, y2 = [float(v) for v in box.xyxy[0].tolist()]
+                        # Safely get track ID — may be None if no tracker assigned
+                        track_id = None
+                        if id_tensor is not None and j < len(id_tensor):
+                            track_id = int(id_tensor[j].item())
+                        # If no track ID, still track the detection (use detection-only mode)
+                        if track_id is None:
+                            track_id = - (j + 1)  # use negative index as pseudo-ID
+                        x1, y1, x2, y2 = [float(v) for v in xyxy_tensor[j].tolist()]
 
                         if track_id not in track_history:
                             track_history[track_id] = []
