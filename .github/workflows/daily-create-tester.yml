@@ -90,12 +90,6 @@ jobs:
         run: |
           node core/github-action-runner.js --mode daily --country China --skip-ranking --search-query "viral chinese douyin #shorts"
 
-      - name: Save memory
-        run: |
-          git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/channel-memory.json config/trend-banks/ 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
-
       - name: Cleanup
         if: always()
         run: |

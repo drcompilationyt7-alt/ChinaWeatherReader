@@ -554,12 +554,13 @@ async function runType1Pipeline(options = {}) {
   logger.info('Phase 1: Content Discovery');
   
   let queries;
+  let trendBank = null;
   if (options.searchQuery) {
     // Use a single custom query (for testing)
     queries = [options.searchQuery];
     logger.info(`Using single test query: "${options.searchQuery}"`);
   } else {
-    const trendBank = loadTrendBank(country);
+    trendBank = loadTrendBank(country);
     queries = await generateQueries(country, gemini, trendBank);
   }
   
@@ -620,7 +621,7 @@ async function runType1Pipeline(options = {}) {
     if (ranked.length === 0) {
       logger.warn('All batches exhausted -- using highest-view fallback');
       const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
-      if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country }); logger.warn(`Fallback: highest-view video "${fb.title.substring(0, 50)}" (score: 5/10)`); }
+      if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country, reasoning: 'Fallback' }); }
       else { logger.error('No fallback candidates -- aborting'); return { success: false, error: 'No approved videos' }; }
     }
   }
