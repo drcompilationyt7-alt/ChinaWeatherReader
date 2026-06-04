@@ -212,7 +212,10 @@ function buildCropExpression(cropDims, keyframes, defaultCropY) {
 
   logger.info(`Crop range: ${minX}–${maxX}px (range: ${maxX-minX}px), keyframes: ${keyframes.length}, terms: ${parts.length}`);
 
-  const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:${expr}:${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+  // Escape all commas in the expression to prevent FFmpeg's parser from
+  // misinterpreting them as filter separators (especially at >1024 char expression length)
+  const escapedExpr = expr.replace(/,/g, '\\,');
+  const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:x='${escapedExpr}':y=${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
   return filterStr;
 }
 
