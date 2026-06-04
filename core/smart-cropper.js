@@ -146,14 +146,19 @@ function extractKeyframes(positions, tolerance = 10) {
 }
 
 /**
- * Build an FFmpeg crop expression using nested if(lt(t,...)) with linear interpolation.
+ * Build an FFmpeg crop expression using flat Sum-of-Products (no recursion).
+ * 
+ * Each segment contributes: condition * (interpolation)
+ * Only one condition is 1 at any time; all others are 0.
+ * Condition 1 evaluates to exactly 1, condition 0 to exactly 0.
+ * 
+ * This avoids FFmpeg's expression parser recursion depth limit.
  * 
  * For keyframes [(t0,x0), (t1,x1), ..., (tn,xn)], generates:
- *   if(lt(t,t1), x0+(x1-x0)*(t-t0)/(t1-t0),
- *   if(lt(t,t2), x1+(x2-x1)*(t-t1)/(t2-t1),
- *   ...))
- * 
- * FFmpeg evaluates this per-frame, producing smooth continuous panning.
+ *   (lt(t,t1) * (x0+slope0*(t-t0))) +
+ *   (gte(t,t1)*lt(t,t2) * (x1+slope1*(t-t1))) +
+ *   ...
+ *   (gte(t,tn-1) * (xn-1+slopen-1*(t-tn-1)))
  */
 function buildCropExpression(cropDims, keyframes, defaultCropY) {
   if (!keyframes || keyframes.length === 0) {
@@ -161,37 +166,51 @@ function buildCropExpression(cropDims, keyframes, defaultCropY) {
     return `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY || 0},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
   }
 
-  const maxCropX = cropDims.maxCropX || cropDims.cropW;
   const cropY = defaultCropY || 0;
 
-  // Build expression from last segment backwards (innermost)
-  // Last segment: just returns its end value for t >= last_time
-  let expr = `${keyframes[keyframes.length - 1].cropX}`;
-  
-  // Work backwards from second-to-last to first
-  for (let i = keyframes.length - 2; i >= 0; i--) {
+  if (keyframes.length === 1) {
+    const x = keyframes[0].cropX;
+    const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:${x}:${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+    logger.info(`Crop: static ${x}px (1 keyframe)`);
+    return filterStr;
+  }
+
+  const parts = [];
+
+  for (let i = 0; i < keyframes.length - 1; i++) {
     const a = keyframes[i];
     const b = keyframes[i + 1];
-    const tA = a.time;
-    const tB = b.time;
-    const xA = a.cropX;
-    const xB = b.cropX;
-    const dt = tB - tA;
-    
-    if (dt > 0) {
-      expr = `if(lt(t,${tB.toFixed(3)}),${xA}+(${xB}-${xA})*(t-${tA.toFixed(3)})/${dt.toFixed(3)},${expr})`;
+
+    const dt = Math.max(0.001, b.time - a.time);
+    const slope = (b.cropX - a.cropX) / dt;
+
+    // Interpolation: start_x + slope * (t - start_time)
+    const interp = `${a.cropX.toFixed(2)}+${slope.toFixed(3)}*(t-${a.time.toFixed(3)})`;
+
+    let condition;
+    if (i === 0) {
+      // First segment: t < second keyframe time
+      condition = `lt(t,${b.time.toFixed(3)})`;
+    } else if (i === keyframes.length - 2) {
+      // Last segment: t >= second-to-last time
+      condition = `gte(t,${a.time.toFixed(3)})`;
     } else {
-      // Degenerate segment (same time), skip to next
-      continue;
+      // Middle segments: strictly bounded
+      condition = `(gte(t,${a.time.toFixed(3)})*lt(t,${b.time.toFixed(3)}))`;
     }
+
+    parts.push(`(${condition}*(${interp}))`);
   }
-  
-  // Log info about the crop range
+
+  // Sum all segments — flat, no nesting
+  const expr = parts.join('+');
+
+  // Log crop range info
   const allX = keyframes.map(k => k.cropX);
   const minX = Math.min(...allX);
   const maxX = Math.max(...allX);
-  
-  logger.info(`Crop range: ${minX}–${maxX}px (range: ${maxX-minX}px), keyframes: ${keyframes.length}`);
+
+  logger.info(`Crop range: ${minX}–${maxX}px (range: ${maxX-minX}px), keyframes: ${keyframes.length}, terms: ${parts.length}`);
 
   const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:${expr}:${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
   return filterStr;
