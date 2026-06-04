@@ -259,6 +259,7 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
 
 async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, tmpDir) {
   const ranked = [];
+  const rejected = []; // Collect rejected videos too, sorted by score desc
   const sorted = [...candidates].sort((a, b) => b.view_count - a.view_count).slice(0, 15);
   for (const candidate of sorted) {
     logger.info(`Ranking: "${candidate.title.substring(0, 50)}" (${(candidate.view_count / 1000000).toFixed(1)}M views)`);
@@ -267,12 +268,18 @@ async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, 
     else if (out.result.verdict === 'APPROVED' && out.result.score >= 6) {
       ranked.push({ ...out.candidate, geminiScore: Math.min(10, Math.max(1, out.result.score)), hookScore: out.result.hook_score || 5, geminiCountry: out.result.country || country, watermarkType: out.result.watermark_type, reasoning: out.result.reasoning || '' });
       logger.success(`  Score: ${out.result.score}/10 -- ${out.result.reasoning}`);
-    } else { logger.info(`  Rejected (score: ${out.result.score}) -- ${out.result.reasoning}`); }
+    } else {
+      // Track rejected videos by Gemini score for fallback use
+      const rejectionScore = out.result?.score || 0;
+      rejected.push({ ...out.candidate, geminiScore: rejectionScore, hookScore: out.result?.hook_score || 1, geminiCountry: country, watermarkType: out.result?.watermark_type, reasoning: out.result?.reasoning || 'No ranking' });
+      logger.info(`  Rejected (score: ${out.result.score}) -- ${out.result.reasoning}`);
+    }
     await new Promise(r => setTimeout(r, 10000));
   }
   ranked.sort((a, b) => b.geminiScore - a.geminiScore);
-  logger.success(`Ranked: ${ranked.length} approved videos`);
-  return ranked;
+  rejected.sort((a, b) => b.geminiScore - a.geminiScore);
+  logger.success(`Ranked: ${ranked.length} approved videos, ${rejected.length} rejected`);
+  return { ranked, rejected };
 }
 
 function probeDownloadedVideo(videoPath) {
@@ -360,25 +367,21 @@ function smartCut(videoPath, duration) {
     const hlPath = path.join(__dirname, '..', 'core', 'highlight-detector.py');
     if (fs.existsSync(hlPath)) {
       logger.info(`Running highlight detector: ${hlPath}`);
-      // First check what python version we have
       try {
         const pyVer = execSync(`python3 --version`, { timeout: 5000, encoding: 'utf8' }).toString().trim();
         logger.info(`Python: ${pyVer}`);
       } catch (pyErr) {
         logger.warn(`Python check failed: ${(pyErr.message || '').substring(0, 100)}`);
       }
-      // Check if scenedetect is available
       try {
         const sdCheck = execSync(`python3 -c "from scenedetect import open_video, SceneManager; from scenedetect.detectors import ContentDetector; print('scenedetect OK')"`, { timeout: 10000, encoding: 'utf8' }).toString().trim();
         logger.info(`PySceneDetect: ${sdCheck}`);
       } catch (sdErr) {
         logger.warn(`PySceneDetect not available: ${(sdErr.stderr || sdErr.message || sdErr.stdout || '').toString().substring(0, 200)}`);
       }
-      // Run the highlight detector (video path must come BEFORE --output-json flag)
       const hlCmd = `python3 "${hlPath}" "${videoPath}" --output-json 2>&1`;
       logger.info(`Running: python3 "${hlPath}" "${videoPath}" --output-json`);
       const hlOut = execSync(hlCmd, { timeout: 300000, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }).toString().trim();
-      // Log all output lines (especially stderr debug output)
       const outLines = hlOut.split('\n').filter(Boolean);
       for (const line of outLines.slice(0, -1)) {
         logger.info(`  [highlight-detector] ${line}`);
@@ -398,33 +401,25 @@ function smartCut(videoPath, duration) {
     if (e.stdout) logger.warn(`  Stdout: ${e.stdout.toString().substring(0, 500)}`);
   }
   
-  // Fallback: use middle 60s (only if video > 2 minutes)
   if (duration > 120) {
     const mid = duration / 2;
     const fallback = { start: Math.max(0, mid - 30), end: Math.min(duration, mid + 30) };
     logger.info(`Smart Cut fallback: ${fallback.start}s > ${fallback.end}s (duration > 2min, cutting to ~60s)`);
     return fallback;
   } else {
-    // Video is already short -- use the full video
     const fallback = { start: 0, end: duration };
     logger.info(`Smart Cut: video is ${duration.toFixed(1)}s (<= 2min), using full video`);
     return fallback;
   }
 }
 
-/**
- * Get YOLO subject center from a video for static crop offset (fallback)
- */
 function getCropOffset(videoPath, srcW, srcH, tmpDir) {
   const yoloDir = path.join(tmpDir, `yolo_crop_${Date.now()}`);
   fs.mkdirSync(yoloDir, { recursive: true });
   const dims = probeDownloadedVideo(videoPath);
   const dur = dims.duration || 30;
-  
-  // Sample every 1.5s
   const positions = [];
   for (let t = 1.5; t < dur - 1; t += 1.5) positions.push(t);
-  
   const subjectCenters = [];
   for (const pos of positions) {
     const framePath = path.join(yoloDir, `frame_${pos}.jpg`);
@@ -440,9 +435,7 @@ function getCropOffset(videoPath, srcW, srcH, tmpDir) {
     } catch {}
   }
   try { fs.rmSync(yoloDir, { recursive: true, force: true }); } catch {}
-  
   if (subjectCenters.length === 0) return 0;
-  
   const avgCenterX = subjectCenters.reduce((a, b) => a + b, 0) / subjectCenters.length;
   const targetHeight = 1920;
   const targetWidth = 1080;
@@ -455,87 +448,59 @@ function getCropOffset(videoPath, srcW, srcH, tmpDir) {
   return offset;
 }
 
-/**
- * Build the combined FFmpeg filter for Type 1 pipeline
- * Uses dynamic crop filter if provided, otherwise falls back to static center crop.
- */
 function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, hasFlag, flagPath, hasWatermark, wmPath, startDelay, endTime, delayMs, flagInputIdx, wmInputIdx, dynamicCropFilter) {
   const filters = [];
   let currentLabel = '0:v';
-  
-  // 1. Crop & Scale -- use dynamic filter if available, otherwise static
   if (dynamicCropFilter) {
-    // Dynamic filter includes crop + final scale to 1080x1920
     filters.push(`${dynamicCropFilter}[v1]`);
   } else {
-    // Static crop fallback (existing behavior)
     const targetHeight = 1920;
     const targetWidth = 1080;
     const ratio = srcW / srcH;
     const TARGET_RATIO = targetWidth / targetHeight;
-    
     let filterStr;
     if (Math.abs(ratio - TARGET_RATIO) < 0.05) {
-      // Already close to 9:16
       filterStr = `scale=${targetWidth}:${targetHeight}:flags=lanczos:force_original_aspect_ratio=increase,crop=${targetWidth}:${targetHeight}`;
     } else if (ratio > TARGET_RATIO) {
-      // Landscape
       const sh = targetHeight;
       const sw = Math.floor(sh * ratio / 2) * 2;
       filterStr = `scale=${sw}:${sh}:flags=lanczos,crop=${targetWidth}:${targetHeight}:${cropOffsetX}:0`;
     } else {
-      // Portrait
       const sw = targetWidth;
       const sh = Math.floor(sw / ratio / 2) * 2;
       filterStr = `scale=${sw}:${sh}:flags=lanczos,crop=${targetWidth}:${targetHeight}:0:${Math.floor((sh - targetHeight) / 4) * 2}`;
     }
-    
     filters.push(`${filterStr}[v1]`);
   }
   currentLabel = 'v1';
-  
-  // 2. Subtitles (if any)
   if (hasSubtitles && subPath && fs.existsSync(subPath)) {
     const escPath = subPath.replace(/\\/g, '/').replace(/'/g, "'\\\\''");
     filters.push(`[${currentLabel}]ass='${escPath}'[v2]`);
     currentLabel = 'v2';
   }
-  
-  // 3. Flag overlay at top-center -- synced with TTS "Enjoy this clip from [country]"
   if (hasFlag && flagPath && fs.existsSync(flagPath) && flagInputIdx >= 0) {
     filters.push(`[${flagInputIdx}:v]scale=120:-1,format=rgba[flag]`);
-    // Flag at top-center: (1080-120)/2 = 480, y=20, synced with TTS time window
     filters.push(`[${currentLabel}][flag]overlay=(W-w)/2:20:enable='between(t,${startDelay},${endTime})'[v3]`);
     currentLabel = 'v3';
   }
-  
-  // 4. Watermark (logo + text) — scale logo to fixed size, apply 40% opacity, overlay
   if (hasWatermark && wmPath && fs.existsSync(wmPath) && wmInputIdx >= 0) {
-    const LOGO_SIZE = 80; // fixed size in output pixels (1080x1920 output)
+    const LOGO_SIZE = 80;
     const MARGIN_RIGHT = 20;
     const MARGIN_BOTTOM = 80;
-    const FONT_SIZE = 28; // fixed font size for 1080x1920 output
+    const FONT_SIZE = 28;
     const TEXT = '@Mr.WorldWideWebster';
-    // Scale watermark to fixed size, make 40% opaque (semi-transparent), then overlay
     filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.4[wm]`);
     filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.40:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.40:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
   }
-  
-  // 5. Final scale to 1080x1920 (only needed for static crop path;
-  // dynamic crop filter already includes the scale)
   if (!dynamicCropFilter) {
     filters.push(`[${currentLabel}]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos[vout]`);
   } else {
     filters.push(`[${currentLabel}]null[vout]`);
   }
-  
   return { filterComplex: filters.join(';'), videoOut: '[vout]' };
 }
 
-/**
- * Main Type 1 Pipeline
- */
 async function runType1Pipeline(options = {}) {
   let country = options.country;
   const outputDir = options.outputDir || path.join(__dirname, '..', 'output', 'clips');
@@ -558,7 +523,6 @@ async function runType1Pipeline(options = {}) {
   let queries;
   let trendBank = null;
   if (options.searchQuery) {
-    // Use a single custom query (for testing)
     queries = [options.searchQuery];
     logger.info(`Using single test query: "${options.searchQuery}"`);
   } else {
@@ -581,9 +545,9 @@ async function runType1Pipeline(options = {}) {
   // Phase 2: Gemini Ranking (or skip if requested)
   // ------------------------------------------------------------------------------------------
   let ranked = [];
+  let allRejected = []; // Collect all rejected videos across batches
   
   if (options.skipRanking) {
-    // Skip ranking - just use the first video from search results
     logger.info('Phase 2: Skipping ranking -- using first search result');
     const firstVideo = filtered[0];
     if (firstVideo) {
@@ -600,7 +564,6 @@ async function runType1Pipeline(options = {}) {
       return { success: false, error: 'No candidates' };
     }
   } else {
-    // Full Gemini ranking
     logger.info('Phase 2: Gemini Ranking');
     const MAX_BATCHES = 3;
     for (let batch = 1; batch <= MAX_BATCHES; batch++) {
@@ -615,16 +578,33 @@ async function runType1Pipeline(options = {}) {
         const newCandsForComments = filtered.slice(0, Math.min(5, filtered.length));
         for (const cand of newCandsForComments) { cand.topComments = await fetchTopComments(cand.url, 3); }
       }
-      ranked = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
-      if (ranked.length > 0) { logger.success(`Batch ${batch}: Found ${ranked.length} approved videos -- using best`); break; }
-      logger.warn(`Batch ${batch}: All videos rejected or unrankable -- trying next batch`);
+      const result = await rankVideos(filtered, country, gemini, geminiCLI, curatorSkill, tmpDir);
+      if (result.ranked.length > 0) { 
+        ranked = result.ranked;
+        logger.success(`Batch ${batch}: Found ${ranked.length} approved videos -- using best`);
+        allRejected = result.rejected;
+        break; 
+      }
+      // Collect rejected from this batch
+      allRejected = allRejected.concat(result.rejected);
+      logger.warn(`Batch ${batch}: All ${result.rejected.length} videos rejected -- trying next batch`);
     }
 
+    // If after all batches we still have no approved videos, fall back to best rejected
     if (ranked.length === 0) {
-      logger.warn('All batches exhausted -- using highest-view fallback');
-      const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
-      if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country, reasoning: 'Fallback' }); }
-      else { logger.error('No fallback candidates -- aborting'); return { success: false, error: 'No approved videos' }; }
+      if (allRejected.length > 0) {
+        // Sort all rejected by score descending, pick the best one
+        allRejected.sort((a, b) => b.geminiScore - a.geminiScore);
+        const bestRejected = allRejected[0];
+        logger.warn(`All batches exhausted -- using best rejected video (score: ${bestRejected.geminiScore}/10): "${bestRejected.title.substring(0, 50)}"`);
+        ranked.push(bestRejected);
+      } else {
+        // No rejected videos either — last resort: highest view count
+        logger.warn('No approved or rejected videos -- using highest-view fallback');
+        const shorts = (filtered || candidates || []).filter(c => c.duration <= 60 && c.duration > 0);
+        if (shorts.length > 0) { const fb = shorts.sort((a, b) => b.view_count - a.view_count)[0]; ranked.push({ ...fb, geminiScore: 5, hookScore: 5, geminiCountry: country, reasoning: 'Fallback' }); }
+        else { logger.error('No fallback candidates -- aborting'); return { success: false, error: 'No approved videos' }; }
+      }
     }
   }
 
@@ -647,19 +627,15 @@ async function runType1Pipeline(options = {}) {
   const tempDims = probeDownloadedVideo(tempDownloadPath);
   const tempDuration = tempDims.duration || 60;
 
-  // Smart Cut: find best segment
   const cut = smartCut(tempDownloadPath, tempDuration);
   
-  // Create temp clip for analysis
   const analysisClip = path.join(tmpDir, `analysis_${Date.now()}.mp4`);
   execSync(`ffmpeg -y -ss ${cut.start} -i "${tempDownloadPath}" -to ${cut.end} -c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${analysisClip}"`, { timeout: 120000 });
 
-  // Analyze the temp clip
   const analysisDims = probeDownloadedVideo(analysisClip);
   const dialogue = await transcribeAudio(analysisClip, tmpDir);
   if (gemini.hasProfanity(dialogue.transcript)) { logger.error('Profanity detected -- aborting'); return { success: false, error: 'Profanity detected' }; }
 
-  // Get dynamic crop filter from analysis (1 FPS person tracking)
   const clipDuration = Math.min(cut.end - cut.start, analysisDims.duration || 30);
   logger.info('Generating dynamic crop filter with 1 FPS person tracking...');
   const dynamicCropFilter = generateDynamicCropFilter(
@@ -671,19 +647,15 @@ async function runType1Pipeline(options = {}) {
   } else {
     logger.warn('Dynamic crop failed -- will use static center crop');
   }
-  // Also compute crop offset for the old static fallback path
   const cropOffsetX = getCropOffset(analysisClip, analysisDims.width, analysisDims.height, tmpDir);
 
-  // Get transcript for captions
   let translatedText = null;
   if (dialogue.hasDialogue && dialogue.language !== 'en' && dialogue.language !== 'english') {
     translatedText = await gemini.translate(dialogue.transcript);
   }
 
-  // Generate captions if needed
   let subPath = null;
   if (dialogue.hasDialogue && dialogue.wordCount > 5) {
-    // Check if it's music vs speech
     const transcript = (dialogue.transcript || '').toLowerCase();
     const words = transcript.split(/\s+/).filter(w => w.length > 0);
     const wordDensity = words.length / Math.min(cut.end - cut.start, 30);
@@ -702,7 +674,6 @@ async function runType1Pipeline(options = {}) {
     }
   }
 
-  // Clean up analysis temp
   try { fs.unlinkSync(analysisClip); } catch {}
 
   // ------------------------------------------------------------------------------------------
@@ -710,13 +681,11 @@ async function runType1Pipeline(options = {}) {
   // ------------------------------------------------------------------------------------------
   logger.info('Phase 4: Redownload + Combined Render');
   
-  // Redownload the source for final render
   const freshSourceDir = path.join(tmpDir, 'fresh_source');
   if (!fs.existsSync(freshSourceDir)) fs.mkdirSync(freshSourceDir, { recursive: true });
   const freshPath = await downloadBestVideo(bestVideo, freshSourceDir);
   if (!freshPath) { logger.error('Redownload failed -- aborting'); return { success: false, error: 'Redownload failed' }; }
 
-  // Download flag
   const flagIsoMap = {
     'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU',
     'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN',
@@ -752,11 +721,9 @@ async function runType1Pipeline(options = {}) {
     } catch { flagPath = null; }
   }
 
-  // Get watermark logo
   const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
   const hasWatermark = fs.existsSync(wmImagePath);
 
-  // Get TTS
   const ttsPath = path.join(tmpDir, `signature_${Date.now()}.mp3`);
   let hasSignature = false;
   try {
@@ -765,28 +732,23 @@ async function runType1Pipeline(options = {}) {
   } catch { logger.warn('TTS failed -- skipping signature'); }
 
   const ttsDuration = hasSignature ? Math.min(5, (() => { try { return parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${ttsPath}"`, { timeout: 5000, encoding: 'utf8' }).trim()); } catch { return 3 } })()) : 0;
-  // Signature "Enjoy this clip from [country]" + flag starts after 1s preview
-  const startDelay = 1.0; // 1s delay for visual preview first
+  const startDelay = 1.0;
   const endTime = Math.min(startDelay + ttsDuration, clipDuration - 0.5);
   const delayMs = Math.round(startDelay * 1000);
 
-  // Build combined filter -- track FFmpeg input indices dynamically
-  let nextInputIdx = 1; // index 0 is the video
+  let nextInputIdx = 1;
   let flagInputIdx = -1;
   let wmInputIdx = -1;
   
-  // TTS input
   if (hasSignature) {
-    nextInputIdx++; // TTS will be input 1
+    nextInputIdx++;
   }
   
-  // Flag image input
   if (flagPath && fs.existsSync(flagPath)) {
     flagInputIdx = nextInputIdx;
     nextInputIdx++;
   }
   
-  // Watermark image input
   if (hasWatermark) {
     wmInputIdx = nextInputIdx;
     nextInputIdx++;
@@ -796,33 +758,23 @@ async function runType1Pipeline(options = {}) {
 
   const finalOutput = path.join(tmpDir, `final_${Date.now()}.mkv`);
 
-  // Build ffmpeg inputs
   let inputs = `-ss ${cut.start} -i "${freshPath}"`;
   let audioFilter = '';
   let audioMap = '-map "[aout]"';
   
-  // Add TTS input and audio mixing if signature
   if (hasSignature) {
     inputs += ` -i "${ttsPath}"`;
-    
-    // Flag image (next input index after TTS = 1)
     if (flagPath && fs.existsSync(flagPath)) {
       inputs += ` -i "${flagPath}"`;
     }
-    
-    // Watermark image
     if (hasWatermark) {
       inputs += ` -i "${wmImagePath}"`;
     }
-    
-    // Build audio filter for signature ducking + mix
-    // Original audio is ducked during signature, TTS is delayed and mixed in
     audioFilter = `; [0:a]volume=enable='between(t,${startDelay},${endTime})':volume=0.25[ad]; [1:a]adelay=${delayMs}|${delayMs}:all=1[av]; [ad][av]amix=inputs=2:duration=first:dropout_transition=0[aout]`;
   } else {
     audioFilter = '';
     audioMap = '-map 0:a';
   }
-  // Write filter graph to temp file (avoids shell escaping issues with complex expressions)
   const filterScriptPath = path.join(tmpDir, `filter_${Date.now()}.txt`);
   const fullFilterGraph = `${filterComplex}${audioFilter}`;
   fs.writeFileSync(filterScriptPath, fullFilterGraph, 'utf8');
@@ -832,7 +784,6 @@ async function runType1Pipeline(options = {}) {
   logger.info('Running combined render...');
   try {
     execSync(cmd, { timeout: 300000, maxBuffer: 500 * 1024 * 1024 });
-    // Cleanup filter script
     try { fs.unlinkSync(filterScriptPath); } catch {}
     if (fs.existsSync(finalOutput) && fs.statSync(finalOutput).size > 100000) {
       logger.success(`Combined render: ${(fs.statSync(finalOutput).size / 1024 / 1024).toFixed(1)}MB`);
@@ -845,7 +796,6 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'Render failed' };
   }
 
-  // Move to output
   const safeCountry = String(country || 'global').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
   const durableFinalPath = path.join(outputDir, `type1_${safeCountry}_${Date.now()}.mkv`);
   try { fs.copyFileSync(finalOutput, durableFinalPath); } catch (e) { logger.error(`Copy failed: ${e.message}`); return { success: false, error: 'Copy failed' }; }
@@ -864,7 +814,6 @@ async function runType1Pipeline(options = {}) {
   // Phase 6: Generate Metadata
   // ------------------------------------------------------------------------------------------
   logger.info('Phase 6: Generate Metadata (with Gemini + multi-key retry)');
-  // Build rich context for metadata generation
   const commentsText = bestVideo.topComments?.length > 0
     ? bestVideo.topComments.map(c => `  - "${c.text}" (${c.likes} likes)`).join('\n')
     : '';
@@ -887,7 +836,6 @@ async function runType1Pipeline(options = {}) {
   const description = metadata?.description || fallbackMetadata.description;
   const tags = metadata?.tags || fallbackMetadata.tags;
 
-  // Cleanup tmp
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
   logger.header('PIPELINE COMPLETE');
