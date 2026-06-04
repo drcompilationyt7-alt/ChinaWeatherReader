@@ -146,62 +146,55 @@ function extractKeyframes(positions, tolerance = 10) {
 }
 
 /**
- * Build a compact FFmpeg crop expression using piecewise segments.
- * Uses `lerp` form: for segment (t0,x0)→(t1,x1), the expression is:
- *   between(t,t0,t1) * (x0 + (x1-x0)*(t-t0)/(t1-t0))
- * Each segment adds 0 when inactive, contributes when active.
- * Total sum = active segment's value.
+ * Build an FFmpeg crop expression using nested if(lt(t,...)) with linear interpolation.
  * 
- * NO commas in the expression body — avoids filter-parser splitting.
- * The only commas are the crop=W:H:x:Y separators which are fine.
+ * For keyframes [(t0,x0), (t1,x1), ..., (tn,xn)], generates:
+ *   if(lt(t,t1), x0+(x1-x0)*(t-t0)/(t1-t0),
+ *   if(lt(t,t2), x1+(x2-x1)*(t-t1)/(t2-t1),
+ *   ...))
+ * 
+ * FFmpeg evaluates this per-frame, producing smooth continuous panning.
  */
-function buildCompactCropExpression(cropDims, keyframes, defaultCropY) {
+function buildCropExpression(cropDims, keyframes, defaultCropY) {
   if (!keyframes || keyframes.length === 0) {
     const centerX = Math.round((cropDims.maxCropX || 876) / 4) * 2;
-    return {
-      filter: `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY || 0},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`,
-      segments: 0
-    };
+    return `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY || 0},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
   }
 
   const maxCropX = cropDims.maxCropX || cropDims.cropW;
   const cropY = defaultCropY || 0;
 
-  // For each segment, generate the contribution expression
-  const terms = [];
-  for (let i = 0; i < keyframes.length - 1; i++) {
-    const kf0 = keyframes[i];
-    const kf1 = keyframes[i + 1];
-    const t0 = kf0.time.toFixed(3);
-    const t1 = kf1.time.toFixed(3);
-    const x0 = kf0.cropX;
-    const x1 = kf1.cropX;
-    const dx = x1 - x0;
-    const dt = kf1.time - kf0.time;
-
-    // Segment contribution: active only between t0 and t1
-    // Uses polynomial: between(t,t0,t1) * (x0 + dx * (t-t0)/dt)
-    // between returns 1 when t is in [t0,t1], 0 otherwise — no expression commas!
-    const term = `between(t\\,${t0}\\,${t1})*((${x1}*(${dt}-(t-${t0}))+${x0}*(t-${t0}))/${dt.toFixed(3)})`;
-    terms.push(term);
-  }
-
-  // If only one keyframe, use constant value
-  if (terms.length === 0 && keyframes.length === 1) {
-    const x0 = keyframes[0].cropX;
-    terms.push(`${x0}`);
-  }
-
-  // Sum all terms — only one is active at any time
-  const expr = terms.length === 1 ? terms[0] : terms.join('+');
-
-  // Wrap in min/max to ensure valid range (avoids clip's commas)
-  const fullExpr = `min(max(${expr}\\,0)\\,${maxCropX})`;
+  // Build expression from last segment backwards (innermost)
+  // Last segment: just returns its end value for t >= last_time
+  let expr = `${keyframes[keyframes.length - 1].cropX}`;
   
-  const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:${fullExpr}:${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+  // Work backwards from second-to-last to first
+  for (let i = keyframes.length - 2; i >= 0; i--) {
+    const a = keyframes[i];
+    const b = keyframes[i + 1];
+    const tA = a.time;
+    const tB = b.time;
+    const xA = a.cropX;
+    const xB = b.cropX;
+    const dt = tB - tA;
+    
+    if (dt > 0) {
+      expr = `if(lt(t,${tB.toFixed(3)}),${xA}+(${xB}-${xA})*(t-${tA.toFixed(3)})/${dt.toFixed(3)},${expr})`;
+    } else {
+      // Degenerate segment (same time), skip to next
+      continue;
+    }
+  }
+  
+  // Log info about the crop range
+  const allX = keyframes.map(k => k.cropX);
+  const minX = Math.min(...allX);
+  const maxX = Math.max(...allX);
+  
+  logger.info(`Crop range: ${minX}–${maxX}px (range: ${maxX-minX}px), keyframes: ${keyframes.length}`);
 
-  logger.info(`Compact crop: ${keyframes.length} keyframes, ${terms.length} expression terms`);
-  return { filter: filterStr, segments: keyframes.length };
+  const filterStr = `crop=${cropDims.cropW}:${cropDims.cropH}:${expr}:${cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+  return filterStr;
 }
 
 /**
@@ -259,8 +252,8 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
     // Extract compact keyframes (tolerance=10px, ~1 per second)
     const keyframes = extractKeyframes(smoothed, 10);
 
-    // Build compact expression
-    const { filter } = buildCompactCropExpression(cropDims, keyframes, avgCropY);
+    // Build crop expression with nested if(lt()) lerp
+    const filter = buildCropExpression(cropDims, keyframes, avgCropY);
 
     return filter;
   } catch (e) {
