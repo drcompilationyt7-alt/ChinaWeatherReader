@@ -19,7 +19,7 @@ const { Logger } = require('../core/logger');
 const { getGeminiService } = require('../core/gemini-service');
 const { getGeminiCLI } = require('../core/gemini-cli-runner');
 const { getOpenRouterQA } = require('../core/openrouter-qa');
-const { smartCrop, probeVideo, extractFrames, generateDynamicCropFilter, computeCropDimensions } = require('../core/smart-cropper');
+const { probeVideo, extractFrames, generateDynamicCropFilter, computeCropDimensions } = require('../core/smart-cropper');
 const { smartClipAndCrop } = require('../core/ai-clipper');
 const { smartEdit, detectDialogue } = require('../core/smart-editor');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
@@ -822,11 +822,18 @@ async function runType1Pipeline(options = {}) {
     audioFilter = '';
     audioMap = '-map 0:a';
   }
-  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex "${filterComplex}${audioFilter}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${finalOutput}"`;
+  // Write filter graph to temp file (avoids shell escaping issues with complex expressions)
+  const filterScriptPath = path.join(tmpDir, `filter_${Date.now()}.txt`);
+  const fullFilterGraph = `${filterComplex}${audioFilter}`;
+  fs.writeFileSync(filterScriptPath, fullFilterGraph, 'utf8');
+
+  const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex_script "${filterScriptPath}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${finalOutput}"`;
 
   logger.info('Running combined render...');
   try {
     execSync(cmd, { timeout: 300000, maxBuffer: 500 * 1024 * 1024 });
+    // Cleanup filter script
+    try { fs.unlinkSync(filterScriptPath); } catch {}
     if (fs.existsSync(finalOutput) && fs.statSync(finalOutput).size > 100000) {
       logger.success(`Combined render: ${(fs.statSync(finalOutput).size / 1024 / 1024).toFixed(1)}MB`);
     } else {
