@@ -123,12 +123,9 @@ async function validateOutput(videoPath) {
     issues.push('File too small (< 50KB)');
     score -= 5;
   }
-  if (size > 100 * 1024 * 1024) {
-    issues.push('File too large (> 100MB)');
-    score -= 2;
-  }
+  // Skip >100MB penalty — FFV1 lossless files are often very large
 
-  // Check dimensions
+  // Check dimensions: must be 9:16 (YouTube Shorts ratio)
   try {
     const dims = execSync(
       `ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}" 2>/dev/null`,
@@ -136,11 +133,14 @@ async function validateOutput(videoPath) {
     ).trim();
 
     const [w, h] = dims.split(',').map(s => parseInt(s.trim()));
-    // Accept 1080x1920 (standard Shorts) or 1440x2560 (vertical 2K Shorts)
-    const isValid = (w === 1080 && h === 1920) || (w === 1440 && h === 2560);
-    if (!isValid) {
-      issues.push(`Wrong dimensions: ${w}x${h} (expected 1080x1920 or 1440x2560)`);
+    // Check 9:16 ratio (allow small tolerance)
+    const ratio = w / h;
+    const targetRatio = 9 / 16; // 0.5625
+    if (Math.abs(ratio - targetRatio) > 0.05) {
+      issues.push(`Wrong aspect ratio: ${w}x${h} (expected 9:16, got ${ratio.toFixed(3)})`);
       score -= 3;
+    } else {
+      logger.success(`Dimensions valid: ${w}x${h} (9:16 ratio)`);
     }
   } catch {
     issues.push('Could not probe dimensions');

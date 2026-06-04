@@ -509,14 +509,16 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     currentLabel = 'v3';
   }
   
-  // 4. Watermark (logo + text)
+  // 4. Watermark (logo + text) — scale logo to fixed size, then overlay
   if (hasWatermark && wmPath && fs.existsSync(wmPath) && wmInputIdx >= 0) {
-    const LOGO_SIZE = Math.max(30, Math.round(srcH * 0.04));
+    const LOGO_SIZE = 80; // fixed size in output pixels (1080x1920 output)
     const MARGIN_RIGHT = 20;
-    const MARGIN_BOTTOM = Math.floor(srcH * 0.09);
-    const FONT_SIZE = Math.max(12, Math.round(srcH * 0.015));
+    const MARGIN_BOTTOM = 80;
+    const FONT_SIZE = 28; // fixed font size for 1080x1920 output
     const TEXT = '@Mr.WorldWideWebster';
-    filters.push(`[${currentLabel}][${wmInputIdx}:v]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.55:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${MARGIN_RIGHT-10}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v4]`);
+    // Scale watermark to fixed size first, then overlay
+    filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba[wm]`);
+    filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.55:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
   }
   
@@ -854,8 +856,24 @@ async function runType1Pipeline(options = {}) {
   // ------------------------------------------------------------------------------------------
   // Phase 6: Generate Metadata
   // ------------------------------------------------------------------------------------------
-  logger.info('Phase 6: Generate Metadata');
-  const metadataContext = { reasoning: bestVideo.reasoning, searchQuery: bestVideo.searchQuery, hookScore: bestVideo.hookScore, geminiScore: bestVideo.geminiScore, editType: 'combined', hasCaptions: !!subPath, sourceUrl: bestVideo.url };
+  logger.info('Phase 6: Generate Metadata (with Gemini + multi-key retry)');
+  // Build rich context for metadata generation
+  const commentsText = bestVideo.topComments?.length > 0
+    ? bestVideo.topComments.map(c => `  - "${c.text}" (${c.likes} likes)`).join('\n')
+    : '';
+  const metadataContext = {
+    reasoning: bestVideo.reasoning || '',
+    searchQuery: bestVideo.searchQuery || '',
+    hookScore: bestVideo.hookScore || 5,
+    geminiScore: bestVideo.geminiScore || 5,
+    editType: 'combined',
+    hasCaptions: !!subPath,
+    sourceUrl: bestVideo.url || '',
+    sourceTitle: bestVideo.title || '',
+    viewCount: bestVideo.view_count || 0,
+    comments: commentsText,
+    hookDescription: bestVideo.reasoning?.split('.').slice(0, 2).join('.') || '',
+  };
   const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title, metadataContext);
   const fallbackMetadata = buildFallbackMetadata(country, bestVideo, dialogue);
   const title = metadata?.title || fallbackMetadata.title;

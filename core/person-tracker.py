@@ -1,29 +1,26 @@
 #!/usr/bin/env python3
 """
-Person Tracker — YOLO Pose + ByteTrack + Group-center Calculation
-Processes a video clip and outputs per-frame crop center positions
+Person Tracker — YOLO + ByteTrack + Group-center Calculation
+Processes a video clip and outputs per-frame crop center (X and Y) positions
 with stable person tracking across frames.
 
 Pipeline:
   1. YOLO detection @ 5 FPS with tracking (ByteTrack via ultralytics)
   2. Cross-frame track ID persistence (no identity switching)
   3. Group-center calculation (all tracked people, weighted toward primary)
-  4. Per-frame crop center output
+  4. Per-frame crop center output with cropX and cropY
 
 Usage: python3 person-tracker.py <video_path> [--start 0] [--duration 45] [--fps 5]
-Output: JSON array of [{time, cropX, personCount, primaryId}]
+Output: JSON array of [{time, cropX, cropY, personCount, primaryId}]
 """
 import sys
 import json
-import tempfile
 import os
-import subprocess
 import argparse
 import contextlib
 import io
 
 import cv2
-import numpy as np
 from ultralytics import YOLO
 
 # Number of consecutive frames a track must appear to be considered stable
@@ -31,7 +28,7 @@ TRACK_BOOTSTRAP_FRAMES = 2
 
 
 def extract_frame(video_path, timestamp):
-    """Extract a single frame from video at given timestamp using ffmpeg."""
+    """Extract a single frame from video at given timestamp using OpenCV."""
     try:
         cap = cv2.VideoCapture(video_path)
         cap.set(cv2.CAP_PROP_POS_MSEC, timestamp * 1000)
@@ -44,33 +41,36 @@ def extract_frame(video_path, timestamp):
         return None
 
 
-def compute_group_center(tracked_boxes, frame_width):
+def compute_group_center(tracked_boxes, frame_width, frame_height):
     """
-    Compute the optimal crop center from tracked person boxes.
+    Compute the optimal crop center (X, Y) from tracked person boxes.
+    Returns (center_x, center_y) or (-1, -1) if no valid center.
     
     - If 1 person: center of that person's bounding box
     - If 2+ people: center of the group (midpoint of leftmost/rightmost edges)
-      If group is wider than the crop window, favor the primary subject
-      (most consistently tracked person).
-    - If 0 people: return -1 (caller handles default)
+    - Y axis: center of the tallest person's vertical midpoint (to keep head in frame)
     """
     if not tracked_boxes:
-        return -1
+        return -1, -1
 
-    # Primary = most consistently tracked (highest count in track history)
-    # For single-frame, use the person with largest bbox area (closest to camera)
+    # Primary = person with largest bbox area (closest to camera)
     primary = max(tracked_boxes, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
 
     if len(tracked_boxes) == 1:
         cx = (primary[0] + primary[2]) / 2
-        return cx
+        cy = (primary[1] + primary[3]) / 2
+        return cx, cy
 
-    # Multiple people: compute group bounds
+    # Multiple people: compute group bounds for X
     left_edges = [b[0] for b in tracked_boxes]
     right_edges = [b[2] for b in tracked_boxes]
     group_left = min(left_edges)
     group_right = max(right_edges)
     group_width = group_right - group_left
+
+    # For Y, use the tallest person's vertical center (keeps head in frame)
+    tallest = max(tracked_boxes, key=lambda b: b[3] - b[1])
+    cy = (tallest[1] + tallest[3]) / 2
 
     # Assume crop window is ~56% of frame width (9:16 in landscape)
     crop_width_ratio = 0.56
@@ -81,33 +81,27 @@ def compute_group_center(tracked_boxes, frame_width):
         cx = (group_left + group_right) / 2
     else:
         # Group is wider than crop — favor primary subject
-        # but keep as much of the group as possible
         primary_cx = (primary[0] + primary[2]) / 2
-        # Shift toward group center but don't exceed bounds
         group_cx = (group_left + group_right) / 2
         cx = (primary_cx * 0.6 + group_cx * 0.4)
 
-    return cx
+    return cx, cy
 
 
-def track_video(video_path, start_time, duration, fps=5, max_crop_x=None):
+def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_crop_y=None):
     """
     Track people in a video clip using YOLO with ByteTrack.
-    Returns array of {time, cropX, personCount, primaryId}.
+    Returns array of {time, cropX, cropY, personCount, primaryId}.
     """
     captured = io.StringIO()
     with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
-        # Use YOLO detection model (not pose — faster, and we just need bbox)
         model = YOLO("yolov8n.pt", verbose=False)
 
         sample_interval = 1.0 / fps
         num_samples = max(1, int(duration * fps))
 
-        # Track state across frames
-        track_history = {}  # track_id -> [center_x, ...]
-        track_stability = {}  # track_id -> consecutive frames seen
-        active_tracks = {}  # frame_index -> [{track_id, center_x, bbox}]
-
+        track_history = {}
+        track_stability = {}
         positions = []
 
         for i in range(num_samples):
@@ -121,8 +115,8 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None):
 
             h, w = frame.shape[:2]
             frame_width = max_crop_x or w
+            frame_height = max_crop_y or h
 
-            # Run YOLO tracking with persist=True for cross-frame IDs
             results = model.track(frame, persist=True, verbose=False)
 
             tracked_boxes = []
@@ -131,63 +125,60 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None):
                 if boxes is not None and boxes.id is not None:
                     for j, box in enumerate(boxes):
                         cls_id = int(box.cls[0])
-                        if cls_id != 0:  # Only track people (class 0)
+                        if cls_id != 0:
                             continue
                         conf = float(box.conf[0])
                         if conf < 0.35:
                             continue
                         track_id = int(box.id[j])
                         x1, y1, x2, y2 = [float(v) for v in box.xyxy[0].tolist()]
-                        cx = (x1 + x2) / 2
 
-                        # Update track history
                         if track_id not in track_history:
                             track_history[track_id] = []
                             track_stability[track_id] = 0
-                        track_history[track_id].append(cx)
+                        track_history[track_id].append((x1 + x2) / 2)
                         track_stability[track_id] += 1
 
-                        # Only consider stable tracks (seen multiple frames)
                         if track_stability[track_id] >= TRACK_BOOTSTRAP_FRAMES:
                             tracked_boxes.append({
                                 "track_id": track_id,
-                                "center_x": cx,
+                                "center_x": (x1 + x2) / 2,
+                                "center_y": (y1 + y2) / 2,
                                 "bbox": [x1, y1, x2, y2],
                                 "stability": track_stability[track_id],
                             })
 
-            # Compute crop center from tracked people
             if tracked_boxes:
-                # Extract bbox arrays for group calculation
                 bboxes = [b["bbox"] for b in tracked_boxes]
-                group_cx = compute_group_center(bboxes, frame_width)
+                group_cx, group_cy = compute_group_center(bboxes, frame_width, frame_height)
                 primary_id = max(tracked_boxes, key=lambda b: b["stability"])["track_id"]
 
                 if group_cx >= 0:
                     positions.append({
                         "time": round(t, 2),
                         "cropX": group_cx,
+                        "cropY": group_cy,
                         "personCount": len(tracked_boxes),
                         "primaryId": primary_id,
                     })
                     if i % (fps * 2) == 0 or i == num_samples - 1:
-                        print(f"  {t:.1f}s: {len(tracked_boxes)} person(s), group_center={group_cx:.0f}, primary_id={primary_id}",
+                        print(f"  {t:.1f}s: {len(tracked_boxes)} person(s), cx={group_cx:.0f}, cy={group_cy:.0f}, pid={primary_id}",
                               file=sys.stderr)
                 else:
-                    # No valid group center — use previous position if available
                     if positions:
                         positions.append({
                             "time": round(t, 2),
                             "cropX": positions[-1]["cropX"],
+                            "cropY": positions[-1]["cropY"],
                             "personCount": 0,
                             "primaryId": -1,
                         })
             else:
-                # No people detected — use previous position
                 if positions:
                     positions.append({
                         "time": round(t, 2),
                         "cropX": positions[-1]["cropX"],
+                        "cropY": positions[-1]["cropY"],
                         "personCount": 0,
                         "primaryId": -1,
                     })
@@ -204,6 +195,7 @@ def main():
     parser.add_argument("--duration", type=float, default=45, help="Duration in seconds")
     parser.add_argument("--fps", type=int, default=5, help="Detection frequency (FPS)")
     parser.add_argument("--max-crop-x", type=int, default=None, help="Maximum crop X value")
+    parser.add_argument("--max-crop-y", type=int, default=None, help="Maximum crop Y value")
     args = parser.parse_args()
 
     if not os.path.exists(args.video_path):
@@ -219,9 +211,9 @@ def main():
         args.duration,
         fps=args.fps,
         max_crop_x=args.max_crop_x,
+        max_crop_y=args.max_crop_y,
     )
 
-    # Output as JSON array to stdout
     print(json.dumps(positions))
 
 

@@ -623,19 +623,71 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
       context.geminiScore ? `Overall score: ${context.geminiScore}/10` : '',
       context.editType ? `Edit type: ${context.editType}` : '',
       context.hasCaptions !== undefined ? `Captions added: ${context.hasCaptions}` : '',
-      transcript && transcript.length > 10 ? `Transcript excerpt: ${transcript.substring(0, 220)}` : '',
+      context.sourceTitle ? `Original video title: "${context.sourceTitle}"` : '',
+      context.viewCount ? `Original view count: ${context.viewCount}` : '',
+      context.hookDescription ? `Visual hook: ${context.hookDescription}` : '',
+      context.comments ? `Top viewer comments:\n${context.comments}` : '',
+      transcript && transcript.length > 10 ? `Transcript excerpt: "${transcript.substring(0, 250)}"` : '',
     ].filter(Boolean);
 
     let visualSummary = visualParts.join('\n') || `A viral moment from ${country}`;
     if (origTitle) {
-      visualSummary += `\nOriginal title: "${origTitle}"`;
+      visualSummary += `\n\nOriginal title: "${origTitle}"`;
     }
 
-    return this.chatJSON(
-      skillContent || 'You write YouTube Shorts titles and descriptions. Return JSON: {"title":"...","description":"...","tags":[...]}',
-      `Visual Summary:\n${visualSummary || ''}\n\nVibe/Tone: engaging, entertaining, culturally specific\nSource/Category: ${country.toLowerCase()} short-form internet culture\n\nAvoid generic titles like "${country} Clip" or "viral moment". Write the title around the actual visual action Gemini identified.`,
-      { temperature: 0.8, maxTokens: 512 }
-    );
+    const systemPrompt = skillContent || 'You are an expert YouTube Shorts metadata writer. Create clickable, engaging titles and descriptions for viral clips. Return JSON: {"title":"...","description":"...","tags":[...]}';
+
+    const userPrompt = `Create a YouTube Shorts title, description, and tags for this clip.
+
+VIDEO CONTEXT:
+${visualSummary}
+
+REQUIREMENTS:
+- Title must be clickable, specific to the actual visual content (not generic like "${country} Clip")
+- Description should describe the hook and end with a call to action + hashtags
+- Tags should be 5-10 relevant keywords
+- If transcript is available, use it to understand what's happening
+- If original title is available, use it for context but create a NEW better title
+- If comments are available, understand what viewers found interesting
+
+Return ONLY valid JSON: {"title":"...","description":"...","tags":["tag1","tag2",...]}`;
+
+    // Dedicated retry loop with 10s delay between keys
+    const maxCycles = 2;
+    const keysCount = this.keys.length;
+    
+    for (let cycle = 0; cycle < maxCycles; cycle++) {
+      for (let ki = 0; ki < keysCount; ki++) {
+        // Set current key
+        this.currentKeyIndex = (this.currentKeyIndex + 1) % keysCount;
+        const apiKey = this.keys[this.currentKeyIndex];
+        if (!apiKey) continue;
+
+        if (cycle > 0 || ki > 0) {
+          await new Promise(r => setTimeout(r, 10000)); // 10s delay between key attempts
+        }
+
+        const models = MODEL_CHAIN;
+        for (const model of models) {
+          try {
+            const result = await this.chatJSON(systemPrompt, userPrompt, { temperature: 0.8, maxTokens: 512, model });
+            if (result && result.title && result.title.length > 5) {
+              logger.success(`Title generated (key ${this.currentKeyIndex + 1}, model ${model}): "${result.title.substring(0, 50)}"`);
+              return result;
+            }
+          } catch (e) {
+            logger.warn(`Title gen fail key ${this.currentKeyIndex + 1} model ${model}: ${e.message.substring(0, 60)}`);
+          }
+        }
+      }
+      logger.info(`Title gen: cycle ${cycle + 1}/${maxCycles} exhausted, waiting before retry`);
+      if (cycle < maxCycles - 1) {
+        await new Promise(r => setTimeout(r, 15000));
+      }
+    }
+
+    logger.warn('All keys exhausted for title generation — using fallback');
+    return null;
   }
 
   async translate(text) {
