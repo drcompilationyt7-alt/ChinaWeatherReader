@@ -19,6 +19,7 @@ import os
 import argparse
 import contextlib
 import io
+import time
 
 import cv2
 import numpy as np
@@ -137,7 +138,10 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
     """
     captured = io.StringIO()
     with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
+        t0 = time.time()
+        print("  Loading YOLO model...", file=sys.stderr)
         model = YOLO("yolov8n.pt", verbose=False)
+        print(f"  Model loaded in {time.time() - t0:.1f}s", file=sys.stderr)
 
         sample_interval = 1.0 / max(1, fps)
         num_samples = max(1, int(duration * fps))
@@ -148,6 +152,7 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
         track_stability = {}     # track_id -> frame count
         positions = []
 
+        infer_t0 = time.time()
         for i in range(num_samples):
             t = i * sample_interval
             if t > duration:
@@ -155,9 +160,14 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
 
             frame = extract_frame(video_path, start_time + t)
             if frame is None:
+                print(f"  Frame {i+1}/{num_samples}: no frame extracted", file=sys.stderr)
                 continue
 
             h, w = frame.shape[:2]
+
+            # Log progress every 2 frames or on first/last
+            if i == 0 or i == num_samples - 1 or i % 2 == 0:
+                print(f"  Frame {i+1}/{num_samples}: {w}x{h}", file=sys.stderr)
             frame_w = float(max_crop_x or w)
             frame_h = float(max_crop_y or h)
 
@@ -249,7 +259,8 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
                     })
 
     print(
-        f"  Tracked {num_samples} samples, {len(positions)} with detections",
+        f"  Tracked {num_samples} samples, {len(positions)} with detections, "
+        f"inference took {time.time() - infer_t0:.1f}s total",
         file=sys.stderr,
     )
     return positions

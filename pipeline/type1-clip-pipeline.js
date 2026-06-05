@@ -751,7 +751,15 @@ async function runType1Pipeline(options = {}) {
     analysisDims.width, analysisDims.height, tmpDir
   );
   if (dynamicCropFilter) {
-    logger.success(`Dynamic crop filter generated (${dynamicCropFilter.length} chars)`);
+    // Log whether this is a real dynamic crop (time-based) or static
+    const isDynamic = dynamicCropFilter.includes('lt(t,') || dynamicCropFilter.includes('if(between');
+    if (isDynamic) {
+      logger.success(`✅ Dynamic crop filter generated (${dynamicCropFilter.length} chars, dynamic)`);
+    } else {
+      logger.success(`⚠️  Static crop only (${dynamicCropFilter.length} chars, fallback from dynamic)`);
+    }
+    // Log the first 200 chars of the actual filter for debugging
+    logger.info(`Crop filter preview: ${dynamicCropFilter.substring(0, 200)}`);
   } else {
     logger.warn('Dynamic crop failed -- will use static center crop');
   }

@@ -231,7 +231,7 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
     logger.info(`Dynamic crop: running object tracker @5 FPS on ${duration.toFixed(1)}s clip...`);
     const trackerOutput = execSync(
       `python3 "${path.join(__dirname, 'object-tracker.py')}" "${videoPath}" --start ${startTime} --duration ${duration} --fps 5 --max-crop-x ${cropDims.maxCropX} --max-crop-y ${cropDims.cropH}`,
-      { timeout: 120000, encoding: 'utf8' }
+      { timeout: 180000, encoding: 'utf8' }
     ).toString().trim();
 
     const lines = trackerOutput.split('\n').filter(l => l.startsWith('[{') || l.startsWith('['));
@@ -239,6 +239,12 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
       logger.warn('No tracker output — using center crop');
       const centerX = Math.floor((srcW - cropDims.cropW) / 4) * 2;
       return `crop=${cropDims.cropW}:${cropDims.cropH}:${Math.max(0, centerX)}:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
+    }
+
+    // Log stderr output from tracker (progress messages)
+    const stderrLines = trackerOutput.split('\n').filter(l => !l.startsWith('[{') && !l.startsWith('[') && l.trim().length > 0);
+    if (stderrLines.length > 0) {
+      stderrLines.forEach(l => logger.info(`  [tracker stderr] ${l}`));
     }
 
     const rawPositions = JSON.parse(lines[lines.length - 1]);
