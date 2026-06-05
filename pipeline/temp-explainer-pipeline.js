@@ -744,7 +744,7 @@ async function runTempExplainerPipeline(options = {}) {
     if (flagPath) inputs += ` -i "${flagPath}"`;
     if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
     
-    const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
+    const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mkv`);
     
     try {
       // Use Type 1's FFV1 rendering settings
