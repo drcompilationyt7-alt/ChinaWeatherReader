@@ -77,12 +77,21 @@ function getFlagEmoji(country) {
 }
 
 /**
- * Load dedup memory
+ * Load dedup memory — resilient to corrupt JSON
  */
 function loadMemory() {
   try {
     if (fs.existsSync(MEMORY_FILE)) {
-      return JSON.parse(fs.readFileSync(MEMORY_FILE, 'utf8'));
+      const raw = fs.readFileSync(MEMORY_FILE, 'utf8');
+      try {
+        return JSON.parse(raw);
+      } catch (parseErr) {
+        logger.warn(`Corrupted memory JSON (${parseErr.message}) — resetting`);
+        // Reset corrupted file
+        try {
+          fs.writeFileSync(MEMORY_FILE, JSON.stringify({ usedVideoIds: [], usedChannels: [], lastRun: null }, null, 2));
+        } catch {}
+      }
     }
   } catch (e) {
     logger.warn(`Memory load: ${e.message}`);
