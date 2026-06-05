@@ -1,13 +1,7 @@
-name: Daily Temp Explainer (Channel Shorts)
+name: Daily Temp Explainer (Type 2)
 
 on:
-  schedule:
-     - cron: "31 9 * * *"
   workflow_dispatch:
-    inputs:
-      country:
-        description: 'Override country (optional)'
-        required: false
 
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -35,9 +29,9 @@ env:
   GH_PAT: ${{ secrets.GH_PAT }}
 
 jobs:
-  create-temp-explainer:
+  temp-explainer:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 360
 
     steps:
       - name: Checkout
@@ -51,10 +45,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Clean output
+      - name: Clean old test data
         run: |
-          rm -rf output/temp-explainer/
-          mkdir -p output/temp-explainer output/assets/audio memory
+          rm -rf output/ memory/hermes-memory/
+          mkdir -p output/temp-explainer output/assets memory
 
       - name: Install system dependencies
         run: |
@@ -70,12 +64,36 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install yt-dlp yt-dlp-ejs opencv-python-headless ultralytics --break-system-packages
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] --break-system-packages
 
       - name: Install Node.js dependencies
         run: |
           npm ci || npm install
           npm install axios
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Cache whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: whisper-base-${{ runner.os }}
+
+      - name: Pre-download whisper model (with retries for HF rate limit)
+        run: |
+          RETRIES=0
+          MAX_RETRIES=5
+          until python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"; do
+            RETRIES=$((RETRIES + 1))
+            if [ $RETRIES -ge $MAX_RETRIES ]; then
+              echo "whisper download failed after $MAX_RETRIES retries"
+              exit 1
+            fi
+            WAIT=$((RETRIES * 30))
+            echo "Rate limited by HF, retrying in ${WAIT}s (attempt $RETRIES/$MAX_RETRIES)..."
+            sleep $WAIT
+          done
 
       - name: Write cookies file
         run: |
@@ -83,7 +101,7 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Run temp explainer pipeline
+      - name: Run temp type 2 pipeline
         run: |
           node core/github-action-runner.js --mode temp
 
@@ -91,7 +109,7 @@ jobs:
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
           git add memory/ 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
+          git diff --staged --quiet || (git commit -m "Update temp memory $(date +%F)" && git push || true)
 
       - name: Cleanup
         if: always()

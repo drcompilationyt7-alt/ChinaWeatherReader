@@ -1,8 +1,6 @@
-name: Temp Type 2 Tester (Temp Explainer)
+name: Temp Type 2 Tester (Manual Only)
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 env:
