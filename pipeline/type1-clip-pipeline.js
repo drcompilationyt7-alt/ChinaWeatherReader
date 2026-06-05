@@ -752,7 +752,7 @@ async function runType1Pipeline(options = {}) {
   );
   if (dynamicCropFilter) {
     // Log whether this is a real dynamic crop (time-based) or static
-    const isDynamic = dynamicCropFilter.includes('lt(t,') || dynamicCropFilter.includes('if(between');
+    const isDynamic = dynamicCropFilter.includes('lt(t') || dynamicCropFilter.includes('gte(t');
     if (isDynamic) {
       logger.success(`✅ Dynamic crop filter generated (${dynamicCropFilter.length} chars, dynamic)`);
     } else {
