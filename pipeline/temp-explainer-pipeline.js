@@ -216,67 +216,51 @@ function findOldShort(channelInfo, memory) {
 }
 
 /**
- * Step 3: Download at max quality, prefer 1080p
+ * Step 3: Download at max quality (exact copy of Type 1's downloadBestVideo)
  */
 function downloadMaxQuality(video, outputDir) {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-
-  const outputFile = path.join(outputDir, `source_${video.id}.mp4`);
-  logger.info(`Downloading: ${video.url} (1080p)`);
-
-  // Sort by resolution (prefer 1080p) for best quality
+  const outputStem = `source_${Date.now()}`;
+  const outputTemplate = path.join(outputDir, `${outputStem}.%(ext)s`);
+  const url = video.url;
+  logger.info(`Downloading: ${url}`);
+  let bestFallback = null;
   const strategies = [
-    {
-      name: 'web_best',
-      args: '--extractor-args "youtube:player_client=web"',
-      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
-    },
-    {
-      name: 'default_best',
-      args: '',
-      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
-    },
-    {
-      name: 'android_best',
-      args: '--extractor-args "youtube:player_client=android"',
-      format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv',
-    },
-    {
-      name: 'fallback_mp4',
-      args: '',
-      format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4',
-    },
+    { name: 'web_best', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+    { name: 'default_best', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+    { name: 'android_best', args: '--extractor-args "youtube:player_client=android"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+    { name: 'fallback_mp4', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
   ];
-
   for (const s of strategies) {
     try {
       const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      // Don't pass cookies with android client (it rejects them)
       const cookieArg = (hasCookies && !s.name.includes('android')) ? '--cookies "/tmp/yt_cookies.txt"' : '';
-
-      const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ` +
-        `-o "${outputFile}" "${video.url}" ` +
-        `--no-playlist --socket-timeout 30 --retries 3 --force-ipv4 ` +
-        `--remote-components ejs:github 2>&1`;
-
-      execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
-
-      const files = fs.readdirSync(outputDir)
-.filter(f => (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(outputDir, f)).size > 50000)
-        .sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
-
+      const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} -o "${outputTemplate}" "${url}" --no-playlist --socket-timeout 30 --retries 3 --force-ipv4 --remote-components ejs:github`;
+      execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
+      const files = fs.readdirSync(outputDir).filter(f => f.startsWith(outputStem) && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(outputDir, f)).size > 50000).sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
       if (files.length > 0) {
         const fp = path.join(outputDir, files[0]);
-        logger.success(`Downloaded: ${files[0]} (${(fs.statSync(fp).size / 1024 / 1024).toFixed(1)}MB)`);
+        const dims = probeVideoDims(fp);
+        const sizeMb = (fs.statSync(fp).size / 1024 / 1024).toFixed(1);
+        logger.success(`Downloaded: ${files[0]} (${sizeMb}MB, ${dims.width}x${dims.height}, strategy: ${s.name})`);
+        if (!bestFallback || Math.max(dims.width, dims.height) > Math.max(bestFallback.dims.width, bestFallback.dims.height)) bestFallback = { path: fp, dims, strategy: s.name };
+        if (Math.max(dims.width || 0, dims.height || 0) < 720) { logger.warn(`Downloaded source is only ${dims.width}x${dims.height}; trying next quality strategy`); continue; }
         return fp;
       }
-    } catch (e) {
-      logger.warn(`Strategy ${s.name} failed: ${(e.message || '').substring(0, 60)}`);
-    }
+    } catch (e) { logger.warn(`Download strategy ${s.name} failed: ${e.message.substring(0, 60)}`); }
   }
-
-  logger.error(`All download strategies failed`);
+  if (bestFallback?.path && fs.existsSync(bestFallback.path)) { logger.warn(`Using best available source: ${bestFallback.dims.width}x${bestFallback.dims.height} (${bestFallback.strategy})`); return bestFallback.path; }
+  logger.error(`All download strategies failed for ${url}`);
   return null;
+}
+
+function probeVideoDims(fp) {
+  try {
+    const out = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "${fp}"`, { timeout: 10000, encoding: 'utf8' }).trim();
+    const [width, height, duration] = out.split(',').map(s => Number.parseFloat(s.trim()));
+    if (Number.isFinite(width) && Number.isFinite(height)) return { width: Math.round(width), height: Math.round(height), duration: Number.isFinite(duration) ? duration : 0 };
+  } catch {}
+  return { width: 0, height: 0, duration: 0 };
 }
 
 /**
