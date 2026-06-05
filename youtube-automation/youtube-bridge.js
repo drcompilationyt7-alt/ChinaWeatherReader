@@ -335,6 +335,42 @@ class YouTubeBridge {
   }
 
   /**
+   * Post a comment on a video
+   * @param {string} videoId - The YouTube video ID
+   * @param {string} text - The comment text
+   * @returns {Promise<Object|null>} - { commentId, text } or null on failure
+   */
+  async postComment(videoId, text) {
+    if (!this.authenticated) {
+      this.logger.warn('YouTube not authenticated — cannot post comment');
+      return null;
+    }
+
+    try {
+      const response = await this.youtube.commentThreads.insert({
+        part: ['snippet'],
+        requestBody: {
+          snippet: {
+            videoId: videoId,
+            topLevelComment: {
+              snippet: {
+                textOriginal: text,
+              },
+            },
+          },
+        },
+      });
+
+      const commentId = response.data?.id;
+      this.logger.success(`Comment posted: ${commentId}`);
+      return { commentId, text };
+    } catch (error) {
+      this.logger.warn(`Failed to post comment: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Check authentication status
    */
   isAuthenticated() {

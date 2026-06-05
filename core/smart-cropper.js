@@ -228,9 +228,9 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
     if (!cropDims) return `scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
     if (cropDims.maxCropX <= 0) return `crop=${cropDims.cropW}:${cropDims.cropH}:0:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
 
-    logger.info(`Dynamic crop: running person tracker @5 FPS on ${duration.toFixed(1)}s clip...`);
+    logger.info(`Dynamic crop: running object tracker @5 FPS on ${duration.toFixed(1)}s clip...`);
     const trackerOutput = execSync(
-      `python3 "${path.join(__dirname, 'person-tracker.py')}" "${videoPath}" --start ${startTime} --duration ${duration} --fps 5 --max-crop-x ${cropDims.maxCropX} --max-crop-y ${cropDims.cropH}`,
+      `python3 "${path.join(__dirname, 'object-tracker.py')}" "${videoPath}" --start ${startTime} --duration ${duration} --fps 5 --max-crop-x ${cropDims.maxCropX} --max-crop-y ${cropDims.cropH}`,
       { timeout: 120000, encoding: 'utf8' }
     ).toString().trim();
 

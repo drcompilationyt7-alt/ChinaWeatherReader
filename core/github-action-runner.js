@@ -97,6 +97,21 @@ class DailyRunner {
         tags: videoData.tags || ['mr worldwidewebster', 'shorts'],
       });
       logger.success(`Uploaded: ${r.url}`);
+
+      // Post the full description as a comment (visible on Shorts where descriptions are often hidden)
+      // Type 1 only — videoData.description is only populated by the Type 1 pipeline
+      if (videoData.description && r.videoId) {
+        logger.info('Posting description as comment...');
+        const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
+        const commentText = `${videoData.description}\n\n— ${channelHandle}`;
+        const commentResult = await this.youtubeBridge.postComment(r.videoId, commentText);
+        if (commentResult) {
+          logger.success(`Comment posted: ${commentResult.commentId}`);
+        } else {
+          logger.warn('Failed to post description comment');
+        }
+      }
+
       return r;
     } catch (e) {
       logger.error(`Upload failed: ${e.message}`);

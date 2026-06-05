@@ -605,6 +605,31 @@ Follow the viral-clip-curator skill instructions in system prompt. Return JSON.`
     return this.chatJSON(skillContent || 'You generate YouTube Shorts search queries.', userMessage, { temperature: 0.9 });
   }
 
+  /**
+   * Generate only the "Today we have..." line for the Daily Random Roulette.
+   * Everything else in the intro is a FIXED template.
+   * @param {string} country - The country the video is from
+   * @param {string} hookDescription - Brief summary of what's happening
+   * @param {string} sourceTitle - Original video title
+   * @returns {Promise<string>} - Just the "Today we have..." sentence
+   */
+  async generateRouletteTodayLine(country, hookDescription, sourceTitle) {
+    const prompt = `You are writing ONE sentence for a "Daily Random Roulette" YouTube Short.
+    
+Country: ${country}
+Video hook: ${hookDescription || 'a viral moment'}
+Original title: "${sourceTitle || 'Unknown'}"
+
+Write ONLY ONE sentence starting with "Today we have" that describes what's in this video in a fun, engaging way.
+Example: "Today we have a waiter in China who suddenly starts dancing like nobody is watching!"
+Example: "Today we have a soccer fan in Brazil with the most creative celebration you'll ever see."
+Example: "Today we have a street food vendor in Thailand making the crispiest spring rolls that'll make you drool."
+
+Keep it under 20 words. Just the one sentence, no extra text, no hashtags.`;
+
+    return this.chat(null, prompt, { temperature: 0.8, maxTokens: 80 });
+  }
+
   async generateTitle(country, transcript, origTitle, context = {}) {
     // Load viral-metadata-generator skill
     const skillPath = path.join(__dirname, '..', 'skills', 'viral-metadata-generator.md');

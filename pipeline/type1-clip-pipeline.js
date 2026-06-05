@@ -70,14 +70,23 @@ const COUNTRY_RELEVANCE = {
   'South Africa': { positive: ['south africa', 'south african', 'mzansi', 'amapiano', 'cape town', 'johannesburg', 'pretoria'], negative: ['india', 'bollywood', 'america', 'american', 'onlyfans', 'no bra'] },
 };
 
+// Universal hashtags for cross-platform reach — target people who DON'T know this content yet
+const UNIVERSAL_HASHTAGS = '#shorts #tiktok #reels #instagram';
+
+function buildCountryHashtags(country) {
+  // Always include the country so people curious about that place find it
+  const safe = String(country || '').toLowerCase().replace(/[^a-z0-9]+/g, '').replace(/^(the|a|an)$/, '');
+  return `${UNIVERSAL_HASHTAGS} #${safe} #viral`;
+}
+
 const COUNTRY_METADATA_PROFILES = {
-  China: { titleBase: 'China', tags: ['douyin', 'china', 'chinese dance'], hashtags: '#shorts #douyin #china' },
-  Japan: { titleBase: 'Japan', tags: ['japan', 'japanese comedy', 'tokyo'], hashtags: '#shorts #japan #tokyo' },
-  'South Korea': { titleBase: 'Korea', tags: ['south korea', 'korean comedy', 'kpop'], hashtags: '#shorts #korea #seoul' },
-  UK: { titleBase: 'The UK', tags: ['uk', 'british comedy', 'london'], hashtags: '#shorts #uk #british' },
-  Nigeria: { titleBase: 'Nigeria', tags: ['nigeria', 'african comedy', 'afrobeats'], hashtags: '#shorts #nigeria #africa' },
-  Africa: { titleBase: 'Africa', tags: ['africa', 'african comedy', 'afrobeats'], hashtags: '#shorts #africa #funny' },
-  'South Africa': { titleBase: 'South Africa', tags: ['south africa', 'amapiano', 'mzansi'], hashtags: '#shorts #southafrica #amapiano' },
+  China: { titleBase: 'China', tags: ['china', 'viral', 'funny'], hashtags: buildCountryHashtags('China') },
+  Japan: { titleBase: 'Japan', tags: ['japan', 'viral', 'funny'], hashtags: buildCountryHashtags('Japan') },
+  'South Korea': { titleBase: 'Korea', tags: ['south korea', 'viral', 'funny'], hashtags: buildCountryHashtags('Korea') },
+  UK: { titleBase: 'The UK', tags: ['uk', 'viral', 'funny'], hashtags: buildCountryHashtags('UK') },
+  Nigeria: { titleBase: 'Nigeria', tags: ['nigeria', 'viral', 'funny'], hashtags: buildCountryHashtags('Nigeria') },
+  Africa: { titleBase: 'Africa', tags: ['africa', 'viral', 'funny'], hashtags: buildCountryHashtags('Africa') },
+  'South Africa': { titleBase: 'South Africa', tags: ['south africa', 'viral', 'funny'], hashtags: buildCountryHashtags('South Africa') },
 };
 
 const COUNTRY_ALIASES = { Korea: 'South Korea', 'United Kingdom': 'UK', Britain: 'UK', England: 'UK', African: 'Africa' };
@@ -102,7 +111,7 @@ function isCountryRelevantCandidate(candidate, country) {
 function buildFallbackMetadata(country, bestVideo, dialogue) {
   const reasoning = (bestVideo.reasoning || '').toLowerCase();
   const sourceTitle = bestVideo.title || '';
-  const profile = COUNTRY_METADATA_PROFILES[countryKey(country)] || { titleBase: country, tags: [country.toLowerCase(), `${country.toLowerCase()} culture`], hashtags: `#shorts #${String(country).toLowerCase().replace(/[^a-z0-9]/g, '')} #viral` };
+  const profile = COUNTRY_METADATA_PROFILES[countryKey(country)] || { titleBase: country, tags: [country.toLowerCase(), 'viral', 'funny'], hashtags: buildCountryHashtags(country) };
   let hook = `${profile.titleBase} Street Moment`;
   if (reasoning.includes('waiter') || /waiter/i.test(sourceTitle)) hook = 'This Waiter Started Dancing';
   else if (reasoning.includes('dance') || /dance|douyin|kemusan|subject three|amapiano|k-pop|kpop|salsa|cumbia/i.test(sourceTitle)) hook = `${profile.titleBase} Dance Hits Different`;
@@ -224,36 +233,135 @@ async function searchYouTube(queries, targetCount = 15, country = null) {
 
 function filterCandidates(candidates) { logger.info(`No pre-Gemini filter: passing ${candidates.length} random raw candidates to Gemini`); return candidates; }
 
+/**
+ * Run quality check on a video file using video-quality.py
+ * @param {string} videoPath - Path to the downloaded clip
+ * @returns {Object} - { verdict, laplacian_avg, musiq_avg, edge_density_avg, reasons }
+ */
+function assessVideoQuality(videoPath) {
+  try {
+    const out = execSync(
+      `python3 "${path.join(__dirname, '..', 'core', 'video-quality.py')}" "${videoPath}" --start 0 --duration 12 --interval 5`,
+      { timeout: 60000, encoding: 'utf8', maxBuffer: 1024 * 1024 }
+    ).toString().trim();
+    const lines = out.split('\n').filter(l => l.startsWith('{'));
+    if (lines.length > 0) return JSON.parse(lines[lines.length - 1]);
+  } catch (e) {
+    logger.warn(`Quality assess failed: ${e.message.substring(0, 80)}`);
+  }
+  return { verdict: 'accept', laplacian_avg: -1, musiq_avg: -1, edge_density_avg: -1, frame_count: 0, rejection_reasons: [] };
+}
+
 async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSkill, tmpDir) {
   const ageInDays = candidate.upload_date ? Math.max(1, Math.floor((Date.now() - new Date(candidate.upload_date.substring(0, 4), candidate.upload_date.substring(4, 6) - 1, candidate.upload_date.substring(6, 8)).getTime()) / 86400000)) : 30;
   const engagementData = { views: candidate.view_count || 0, likes: candidate.like_count || 0, comments: candidate.comment_count || 0, ageInDays, title: candidate.title || 'YouTube video', topComments: candidate.topComments || [] };
   logger.info(`  Engagement: ${engagementData.views} views, ${engagementData.likes} likes, ${engagementData.comments} comments, ${engagementData.ageInDays}d old`);
-  logger.info(`  Step 1 -- downloading truncated clip for visual ranking...`);
-  let dlPath = null;
-  const rankingStrategies = [
-    { name: 'ranking_web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
-    { name: 'ranking_default', args: '', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
-  ];
-  const outputFile = path.join(tmpDir, `rank_${Date.now()}.mp4`);
-  for (const s of rankingStrategies) {
-    try {
-      const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
-      const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
-      const url = candidate.shortsUrl || candidate.url;
-      const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ${s.sections} -o "${outputFile}" "${url}" --no-playlist --socket-timeout 30 --retries 2 --force-ipv4 --remote-components ejs:github 2>&1`;
-      execSync(cmd, { timeout: 120000, maxBuffer: 50 * 1024 * 1024 });
-      if (fs.existsSync(outputFile) && fs.statSync(outputFile).size > 50000) { dlPath = outputFile; break; }
-    } catch (e) { logger.warn(`  Ranking download ${s.name} failed: ${(e.message || '').substring(0, 60)}`); }
-  }
-  if (!dlPath) { logger.warn(`  Download failed -- cannot rank this video`); return null; }
+
+  const url = candidate.shortsUrl || candidate.url;
+  const rankFile = path.join(tmpDir, `rank_${Date.now()}.mp4`);
+  const qualityDir = path.join(tmpDir, `quality_${Date.now()}`);
+  if (!fs.existsSync(qualityDir)) fs.mkdirSync(qualityDir, { recursive: true });
+
+  // Step 1: Download BOTH clips IN PARALLEL (720p for Gemini + best quality for quality check)
+  logger.info(`  Step 1 -- downloading ranking clip + best quality in parallel...`);
+  const hasCookies = fs.existsSync('/tmp/yt_cookies.txt');
+  const cookieArg = hasCookies ? '--cookies "/tmp/yt_cookies.txt"' : '';
+
+  const downloadPromises = [];
+
+  // Promises A: 720p ranking clip (8-20s segment, fast)
+  const rankPromise = (async () => {
+    const strategies = [
+      { name: 'ranking_web', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
+      { name: 'ranking_default', args: '', format: '-f "bestvideo[height<=720]+bestaudio/best" --merge-output-format mp4', sections: '--download-sections "*8-20"' },
+    ];
+    for (const s of strategies) {
+      try {
+        const cmd = `yt-dlp ${cookieArg} ${s.args} ${s.format} ${s.sections} -o "${rankFile}" "${url}" --no-playlist --socket-timeout 30 --retries 2 --force-ipv4 --remote-components ejs:github 2>&1`;
+        execSync(cmd, { timeout: 120000, maxBuffer: 50 * 1024 * 1024 });
+        if (fs.existsSync(rankFile) && fs.statSync(rankFile).size > 50000) return rankFile;
+      } catch (e) { logger.warn(`  Ranking dl ${s.name} failed: ${(e.message || '').substring(0, 60)}`); }
+    }
+    return null;
+  })();
+
+  // Promises B: Best quality download (for quality assessment)
+  const qualityPromise = (async () => {
+    const outputStem = `source`;
+    const outputTemplate = path.join(qualityDir, `${outputStem}.%(ext)s`);
+    const strategies = [
+      { name: 'web_best', args: '--extractor-args "youtube:player_client=web"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+      { name: 'default_best', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+      { name: 'android_best', args: '--extractor-args "youtube:player_client=android"', format: '-f "bestvideo+bestaudio/best" --merge-output-format mkv' },
+      { name: 'fallback_mp4', args: '', format: '-f "bestvideo+bestaudio/best" --merge-output-format mp4' },
+    ];
+    for (const s of strategies) {
+      try {
+        const cArg = (hasCookies && !s.name.includes('android')) ? cookieArg : '';
+        const cmd = `yt-dlp ${cArg} ${s.args} ${s.format} -o "${outputTemplate}" "${url}" --no-playlist --socket-timeout 30 --retries 3 --force-ipv4 --remote-components ejs:github 2>&1`;
+        execSync(cmd, { timeout: 180000, maxBuffer: 200 * 1024 * 1024 });
+        const files = fs.readdirSync(qualityDir).filter(f => f.startsWith(outputStem) && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(qualityDir, f)).size > 50000).sort((a, b) => fs.statSync(path.join(qualityDir, b)).mtimeMs - fs.statSync(path.join(qualityDir, a)).mtimeMs);
+        if (files.length > 0) return path.join(qualityDir, files[0]);
+      } catch (e) { logger.warn(`  Quality dl ${s.name} failed: ${(e.message || '').substring(0, 60)}`); }
+    }
+    return null;
+  })();
+
+  const [rankPath, qualityPath] = await Promise.all([rankPromise, qualityPromise]);
+
+  if (!rankPath) { logger.warn(`  Ranking download failed -- cannot rank this video`); try { fs.rmSync(qualityDir, { recursive: true, force: true }); } catch {} return null; }
   logger.info(`  Step 2 -- Analyzing MP4 with Gemini API...`);
-  let result = await gemini.rankVideoFile(dlPath, country, curatorSkill, engagementData);
+
+  let result = await gemini.rankVideoFile(rankPath, country, curatorSkill, engagementData);
   if (result === null && geminiCLI && geminiCLI.isAvailable()) {
     logger.info(`  Step 3 -- API failed, trying Gemini CLI with local file ref...`);
-    result = await geminiCLI.rankVideoFromPath(dlPath, country, curatorSkill, engagementData);
+    result = await geminiCLI.rankVideoFromPath(rankPath, country, curatorSkill, engagementData);
   }
-  try { fs.unlinkSync(dlPath); } catch {}
-  if (result === null) { logger.warn(`  All ranking methods failed for this video -- skipping`); return null; }
+
+  // Clean up ranking clip
+  try { fs.unlinkSync(rankPath); } catch {}
+
+  if (result === null) { logger.warn(`  All ranking methods failed -- skipping`); try { fs.rmSync(qualityDir, { recursive: true, force: true }); } catch {} return null; }
+
+  // ------------------------------------------------------------------
+  // Quality check on BEST quality file (not the 720p segment)
+  // Runs Laplacian + MUSIQ + edge density
+  // ------------------------------------------------------------------
+  let qualityPenalty = 0;
+  let qualityMetrics = null;
+  if (qualityPath && fs.existsSync(qualityPath) && fs.statSync(qualityPath).size > 50000) {
+    const quality = assessVideoQuality(qualityPath);
+    logger.info(`  Quality (best): lap=${quality.laplacian_avg} musiq=${quality.musiq_avg} edge=${quality.edge_density_avg} → ${quality.verdict.toUpperCase()}`);
+
+    qualityMetrics = {
+      laplacian: quality.laplacian_avg,
+      musiq: quality.musiq_avg,
+      edge_density: quality.edge_density_avg,
+    };
+
+    // Apply -4 penalty if quality fails (instead of auto-reject)
+    if (quality.verdict === 'reject') {
+      const reasons = (quality.rejection_reasons || []).join(', ');
+      qualityPenalty = 4;
+      logger.warn(`  --> Quality penalty: -${qualityPenalty} (${reasons})`);
+    }
+    // Clean up quality file
+    try { fs.rmSync(qualityDir, { recursive: true, force: true }); } catch {}
+  }
+
+  // ------------------------------------------------------------------
+  // Apply score: Gemini score reduced by quality penalty
+  // ------------------------------------------------------------------
+  const originalScore = result.score || 0;
+  let finalScore = Math.max(1, originalScore - qualityPenalty);
+  result.quality_penalty = qualityPenalty;
+  result.original_score = originalScore;
+  result.score = finalScore;
+  result.quality_metrics = qualityMetrics;
+  result.quality_rejection = qualityPenalty > 0 ? (qualityMetrics ? `lap=${qualityMetrics.laplacian}, edge=${qualityMetrics.edge_density}` : 'quality_fail') : '';
+
+  logger.info(`  Final score: ${finalScore}/10 (original: ${originalScore}${qualityPenalty > 0 ? `, penalty: -${qualityPenalty}` : ''})`);
+
   return { result, candidate };
 }
 
@@ -833,8 +941,30 @@ async function runType1Pipeline(options = {}) {
   const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title, metadataContext);
   const fallbackMetadata = buildFallbackMetadata(country, bestVideo, dialogue);
   const title = metadata?.title || fallbackMetadata.title;
-  const description = metadata?.description || fallbackMetadata.description;
+  let description = metadata?.description || fallbackMetadata.description;
   const tags = metadata?.tags || fallbackMetadata.tags;
+
+  // ------------------------------------------------------------------------------------------
+  // Phase 7: Generate Daily Roulette Intro (for description + comment)
+  // ------------------------------------------------------------------------------------------
+  logger.info('Phase 7: Building Daily Random Roulette intro...');
+  const hookDescription = bestVideo.reasoning?.split('.').slice(0, 2).join('.') || '';
+  const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
+  // Only the "Today we have..." line is LLM-generated; the rest is a FIXED template
+  const todayLine = await gemini.generateRouletteTodayLine(country, hookDescription, bestVideo.title);
+  const todayFallback = `Today we have a viral moment from ${country}!`;
+  const rouletteText = todayLine || todayFallback;
+
+  // FIXED template prepended to description
+  const rouletteHeader = `🌍 Daily Random Roulette 🌍
+Every day a random clip from a random country — it can be good, it can be bad, but it'll always be interesting. Start your day with a great video and the rest of the day is blessed. Start with a bad one? Well, the day can't get any worse! Either way, we hope it brings a smile to your face (or at least some confusion).
+
+${rouletteText}
+
+If you want to be surprised every day, make sure to subscribe to ${channelHandle}!`;
+
+  // Prepend FIXED roulette intro to description
+  description = `${rouletteHeader}\n\n---\n\n${description}`;
 
   try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
@@ -844,7 +974,7 @@ async function runType1Pipeline(options = {}) {
   logger.success(`Country: ${country}`);
   logger.success(`Gemini Score: ${bestVideo.geminiScore}/10`);
 
-  return { success: true, videoPath: durableFinalPath, title, description, tags, country, geminiScore: bestVideo.geminiScore, editType: 'combined', hasCaptions: !!subPath, sourceUrl: bestVideo.url };
+  return { success: true, videoPath: durableFinalPath, title, description, tags, country, geminiScore: bestVideo.geminiScore, editType: 'combined', hasCaptions: !!subPath, sourceUrl: bestVideo.url, rouletteIntro: rouletteText };
 }
 
 module.exports = { runType1Pipeline, loadTrendBank, generateQueries, searchYouTube };
