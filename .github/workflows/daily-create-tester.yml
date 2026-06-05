@@ -76,9 +76,26 @@ jobs:
       - name: Install Gemini CLI
         run: npm install -g @google/gemini-cli
 
-      - name: Pre-download whisper model
+      - name: Cache whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: whisper-base-${{ runner.os }}
+
+      - name: Pre-download whisper model (with retries for HF rate limit)
         run: |
-          python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"
+          RETRIES=0
+          MAX_RETRIES=5
+          until python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"; do
+            RETRIES=$((RETRIES + 1))
+            if [ $RETRIES -ge $MAX_RETRIES ]; then
+              echo "whisper download failed after $MAX_RETRIES retries"
+              exit 1
+            fi
+            WAIT=$((RETRIES * 30))
+            echo "Rate limited by HF, retrying in ${WAIT}s (attempt $RETRIES/$MAX_RETRIES)..."
+            sleep $WAIT
+          done
 
       - name: Write cookies file
         run: |
