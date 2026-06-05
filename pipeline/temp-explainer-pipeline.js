@@ -158,9 +158,9 @@ function pickChannel(memory) {
 function findOldShort(channelInfo, memory) {
   logger.info(`Scraping Shorts from @${channelInfo.handle}...`);
 
-  const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  const dateBefore = threeMonthsAgo.toISOString().split('T')[0].replace(/-/g, '');
+  const fourMonthsAgo = new Date();
+  fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
+  const dateBefore = fourMonthsAgo.toISOString().split('T')[0].replace(/-/g, '');
 
   try {
     const cmd = `yt-dlp --flat-playlist --dump-json ` +
@@ -262,7 +262,7 @@ function downloadMaxQuality(video, outputDir) {
       execSync(cmd, { timeout: 300000, maxBuffer: 200 * 1024 * 1024 });
 
       const files = fs.readdirSync(outputDir)
-        .filter(f => (f.endsWith('.mp4') || f.endsWith('.webm')) && fs.statSync(path.join(outputDir, f)).size > 50000)
+.filter(f => (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mkv')) && fs.statSync(path.join(outputDir, f)).size > 50000)
         .sort((a, b) => fs.statSync(path.join(outputDir, b)).mtimeMs - fs.statSync(path.join(outputDir, a)).mtimeMs);
 
       if (files.length > 0) {
