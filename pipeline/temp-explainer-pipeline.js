@@ -1,5 +1,5 @@
 /**
- * Temp Explainer Pipeline  EChannel Shorts Reposter
+ * Temp Explainer Pipeline — Channel Shorts Reposter
  * 
  * Picks a channel from a curated list per region, finds an old Short (>=3 months),
  * downloads it losslessly, uses Gemini to identify the country, overlays a flag
@@ -7,15 +7,18 @@
  * and returns the final video for upload.
  * 
  * Flow:
- *   1. Pick region ↁEpick channel ↁEscrape Shorts feed
+ *   1. Pick region → pick channel → scrape Shorts feed
  *   2. Filter by age (>=3 months) and dedup (memory)
  *   3. Download best quality (no re-encode)
  *   4. Gemini identifies country from video + title + description
  *   5. Download flag emoji PNG (twemoji CDN)
- *   6. YOLO verifies subject position ↁEoverlay flag top-center for first 4s
+ *   6. YOLO verifies subject position → overlay flag top-center for first 4s
  *   7. Gemini generates new title + description
  *   8. Final QA (validateOutput + geminiReview)
- *   9. Save used video ID to memory
+ *   9. Return result (memory saved by runner after successful upload)
+ * 
+ * Retry: Steps 1-4 (dialogue check) are wrapped in a retry loop
+ * so we keep trying different channels until we find one with dialogue.
  */
 const path = require('path');
 const fs = require('fs');
@@ -35,8 +38,15 @@ const CHANNEL_SOURCES_FILE = path.join(__dirname, '..', 'config', 'channel-sourc
 const SHORTS_W = 1080;
 const SHORTS_H = 1920;
 
+// Type 1 matching watermark constants
+const LOGO_SIZE = 80;
+const MARGIN_RIGHT = 20;
+const MARGIN_BOTTOM = 80;
+const FONT_SIZE = 28;
+const TEXT = '@Mr.WorldWideWebster';
+
 /**
- * Convert country name to flag emoji (e.g. "United States" ↁE"�E�E")
+ * Convert country name to flag emoji (e.g. "United States" → "🇺🇸")
  */
 function getFlagEmoji(country) {
   const isoMap = {
@@ -135,7 +145,7 @@ function pickChannel(memory) {
     const handleMatch = channelUrl.match(/@([\w-]+)/);
     const handle = handleMatch ? handleMatch[1] : channelUrl;
 
-    logger.info(`Picked region: ${region} (${regionData.name}) ↁEchannel: @${handle}`);
+    logger.info(`Picked region: ${region} (${regionData.name}) → channel: @${handle}`);
     return { region, regionName: regionData.name, channelUrl, handle };
   }
 
@@ -189,7 +199,7 @@ function findOldShort(channelInfo, memory) {
     logger.info(`After dedup: ${candidates.length} candidates`);
 
     if (candidates.length === 0) {
-      logger.warn('All shorts from this channel have been used  Emarking channel as used');
+      logger.warn('All shorts from this channel have been used — marking channel as used');
       if (!memory.usedChannels) memory.usedChannels = [];
       memory.usedChannels.push(channelInfo.channelUrl);
       saveMemory(memory);
@@ -315,7 +325,7 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
           if (p.country && p.confidence >= 4) {
             country = p.country;
             confidence = p.confidence;
-            logger.success(`Country: ${country} (${confidence}/10)  E${(p.reasoning || '').substring(0, 100)}`);
+            logger.success(`Country: ${country} (${confidence}/10) — ${(p.reasoning || '').substring(0, 100)}`);
             return { country, confidence };
           }
           logger.warn(`Low confidence: ${p.country || 'none'} (${p.confidence}/10)`);
@@ -353,7 +363,7 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
 }
 
 /**
- * Step 5: Download country flag emoji PNG from twemoji CDN, scale to 120x120
+ * Step 5: Download country flag emoji PNG from twemoji CDN, scale to 150x150
  */
 async function downloadFlag(country, tmpDir) {
   const isoMap = {
@@ -474,7 +484,7 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
   // Build FFmpeg filter:
   // If not 9:16, scale+crop first (tag output as [bg]), then overlay flag
   // If already 9:16, just overlay flag directly
-  // No colorkey needed  Etwemoji PNGs have proper alpha transparency
+  // No colorkey needed — twemoji PNGs have proper alpha transparency
   // Uses format=rgba to preserve alpha channel in the filter chain
   let overlayFilter;
   if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
@@ -513,25 +523,26 @@ async function overlayFlag(videoPath, flagPath, outputPath, country, tmpDir) {
 
 /**
  * Step 7: Gemini generates new title and description using the same
- * generateTitle() method as Type 1 pipeline  Ewith full key rotation.
+ * generateTitle() method as Type 1 pipeline — with full key rotation.
  * Falls back to OpenRouter only after all Gemini keys/models exhausted.
+ * Now accepts transcript and metadataContext like Type 1.
  */
-async function generateMetadata(country, originalTitle, gemini) {
+async function generateMetadata(country, transcript, originalTitle, gemini, metadataContext) {
   logger.info('Generating new title and description...');
 
   const flagEmoji = getFlagEmoji(country);
 
-  // Use Type 1's generateTitle which has 2 retry cycles ÁE8 keys ÁE2 models
+  // Use Type 1's generateTitle which has 2 retry cycles — 8 keys — 2 models
   // This exhausts ALL Gemini capacity before falling back
-  const metadataContext = {
+  const context = metadataContext || {
     sourceUrl: null,
     originalTitle: originalTitle,
   };
-  let result = await gemini.generateTitle(country, '', originalTitle, metadataContext);
+  let result = await gemini.generateTitle(country, transcript || '', originalTitle, context);
 
   // If Gemini fully exhausted, try OpenRouter as final fallback
   if (!result || !result.title) {
-    logger.warn('All Gemini keys/models exhausted for metadata  Etrying OpenRouter fallback');
+    logger.warn('All Gemini keys/models exhausted for metadata — trying OpenRouter fallback');
     const { getOpenRouterQA } = require('../core/openrouter-qa');
     const qa = getOpenRouterQA();
 
@@ -581,8 +592,8 @@ Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag
     return { title, description, tags };
   }
 
-  // Ultimate fallback  Eshould never happen
-  logger.error('All LLM providers exhausted for metadata  Eusing fallback');
+  // Ultimate fallback — should never happen
+  logger.error('All LLM providers exhausted for metadata — using fallback');
   return {
     title: `${country} Travel Short 🔥`.substring(0, 50),
     description: `Incredible scenes from ${country}. Follow Mr. WorldWideWebster for global travel content! ${flagEmoji}🌍✈️`,
@@ -593,6 +604,10 @@ Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag
 /**
  * Main Temp Explainer Pipeline Entry Point
  * 
+ * Wraps Steps 1-4 (channel pick → find short → download → dialogue check)
+ * in a retry loop so we keep trying different videos until we find one
+ * with dialogue. Returns failure only after all retries exhausted.
+ * 
  * @param {Object} options
  * @param {string} options.outputDir - Output directory
  * @param {Object} options.memory - Shared memory object (optional)
@@ -600,8 +615,8 @@ Return STRICT JSON: {"title": "...", "description": "...", "tags": ["tag1", "tag
  */
 async function runTempExplainerPipeline(options = {}) {
   const outputDir = options.outputDir || path.join(__dirname, '..', 'output', 'temp-explainer');
-  const tmpDir = path.join(outputDir, `tmp_${Date.now()}`);
-  if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+  const tmpBaseDir = path.join(outputDir, `tmp_${Date.now()}`);
+  if (!fs.existsSync(tmpBaseDir)) fs.mkdirSync(tmpBaseDir, { recursive: true });
 
   logger.header('TEMP EXPLAINER PIPELINE');
   logger.info(`Output: ${outputDir}`);
@@ -610,195 +625,224 @@ async function runTempExplainerPipeline(options = {}) {
   const memory = loadMemory();
   const geminiCLI = getGeminiCLI();
 
-  // ─── Step 1: Pick Channel ──────────────────────────────────────────
-  logger.header('STEP 1: PICK CHANNEL');
-  const channelInfo = pickChannel(memory);
-  if (!channelInfo) {
-    logger.error('No channels available');
-    return { success: false, error: 'No channels' };
-  }
-  logger.info(`Channel: @${channelInfo.handle} (${channelInfo.region})`);
+  // Retry loop: keep trying different channels/videos until we find one with dialogue
+  const MAX_RETRIES = 5;
+  let lastError = '';
 
-  // ─── Step 2: Find Old Short ────────────────────────────────────────
-  logger.header('STEP 2: FIND OLD SHORT');
-  const video = findOldShort(channelInfo, memory);
-  if (!video) {
-    logger.warn('No old shorts  Etrying different channel');
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-    return { success: false, error: 'No old shorts found' };
-  }
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const tmpDir = path.join(tmpBaseDir, `attempt_${attempt}`);
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
-  // ─── Step 3: Download Max Quality ──────────────────────────────────
-  logger.header('STEP 3: DOWNLOAD');
-  const downloadedPath = downloadMaxQuality(video, tmpDir);
-  if (!downloadedPath) {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-    return { success: false, error: 'Download failed' };
-  }
-
-  // ─── Step 4: Explainer Dialogue Filter ──────────────────────────
-  logger.header('STEP 4: EXPLAINER DIALOGUE CHECK');
-  let hasDialogue = false;
-  try {
-    const dialogueCheck = await detectDialogue(downloadedPath);
-    hasDialogue = dialogueCheck.hasDialogue && dialogueCheck.wordCount > 5;
-    if (hasDialogue) {
-      logger.success(`Dialogue detected: ${dialogueCheck.wordCount} words (${dialogueCheck.language})`);
-    } else {
-      logger.warn(`No dialogue detected (${dialogueCheck.wordCount} words)  Enot an explainer video, skipping`);
-      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-      return { success: false, error: 'No dialogue  Enot an explainer video' };
+    logger.header(`ATTEMPT ${attempt}/${MAX_RETRIES}`);
+    logger.header(`STEP 1: PICK CHANNEL`);
+    const channelInfo = pickChannel(memory);
+    if (!channelInfo) {
+      lastError = 'No channels available';
+      logger.warn(`Attempt ${attempt}: ${lastError}`);
+      continue;
     }
-  } catch (e) {
-    logger.warn(`Dialogue check failed: ${(e.message || '').substring(0, 60)}  Eproceeding anyway`);
-  }
+    logger.info(`Channel: @${channelInfo.handle} (${channelInfo.region})`);
 
-  // ─── Step 5: Identify Country ──────────────────────────────────────
-  logger.header('STEP 5: IDENTIFY COUNTRY');
-  const { country, confidence } = await identifyCountry(downloadedPath, video.title, gemini);
-  if (!country || confidence < 4) {
-    logger.warn(`Country not confidently identified (${country || 'none'})  Eusing region`);
-    // Fallback: use region as country
-    const finalCountry = channelInfo.region === 'World' ? 'Global' : channelInfo.region;
-    logger.info(`Using region as country: ${finalCountry}`);
-  }
+    logger.header(`STEP 2: FIND OLD SHORT`);
+    const video = findOldShort(channelInfo, memory);
+    if (!video) {
+      lastError = 'No old shorts found';
+      logger.warn(`Attempt ${attempt}: ${lastError}`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      continue;
+    }
 
-  const finalCountry = country || (channelInfo.region === 'World' ? 'Global' : channelInfo.region);
-  logger.success(`Final country: ${finalCountry}`);
+    logger.header(`STEP 3: DOWNLOAD`);
+    const downloadedPath = downloadMaxQuality(video, tmpDir);
+    if (!downloadedPath) {
+      lastError = 'Download failed';
+      logger.warn(`Attempt ${attempt}: ${lastError}`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      continue;
+    }
 
-  // ─── Step 6: Download Flag ─────────────────────────────────────────
-  logger.header('STEP 6: DOWNLOAD FLAG');
-  const flagPath = await downloadFlag(finalCountry, tmpDir);
-  if (flagPath) logger.success('Flag downloaded for combined render');
-  
-  // ─── Step 7: Combined Render (Flag ↁEWatermark ↁE1440p) ──────────
-  logger.header('STEP 7: COMBINED RENDER (Flag + Watermark + 1440p)');
-  
-  // Build a single ffmpeg filter that does everything
-  const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
-  const hasWatermark = fs.existsSync(wmImagePath);
-  const srcDims = getVideoMetadata(downloadedPath);
-  // Check if source is already close to 9:16 AND at least 1080x1920
-  // If source is already ≥1080x1920, skip scaling to avoid pad dimension error
-  const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05
-    && srcDims.width >= SHORTS_W && srcDims.height >= SHORTS_H;
-  
-  const flagDuration = Math.min(4, (srcDims.duration || 30) - 1);
-  const flagWidth = 150;
-  const flagHeight = 150;
-  const flagX = Math.floor((SHORTS_W - flagWidth) / 2);
-  const flagY = 20;
-  
-  // Build filter
-  const filterParts = [];
-  
-  // Step 1: Scale to 9:16 if needed (pillarbox)
-  let currentLabel = '0:v';
-  if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
-    filterParts.push(`[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[v1]`);
-    currentLabel = 'v1';
-  }
-  
-  // Step 2: Flag overlay (input 1)
-  if (flagPath) {
-    filterParts.push(`[1:v]scale=120:-1,format=rgba[flag]`);
-    filterParts.push(`[${currentLabel}][flag]overlay=${flagX}:${flagY}:enable='between(t,0,${flagDuration})'[v2]`);
-    currentLabel = 'v2';
-  }
-  
-  // Step 3: Watermark (input 2 or last)
-  const wmIdx = flagPath ? 2 : 1;
-  if (hasWatermark) {
-    const logoSize = Math.max(30, Math.round(srcDims.height * 0.04));
-    const marginRight = 20;
-    const marginBottom = Math.floor(srcDims.height * 0.09);
-    const fontSize = Math.max(12, Math.round(srcDims.height * 0.015));
-    const text = '@Mr.WorldWideWebster';
-    filterParts.push(`[${wmIdx}:v]scale=${logoSize}:${logoSize}:flags=lanczos,format=rgba[wm]`);
-    filterParts.push(`[${currentLabel}][wm]overlay=W-w-${marginRight}:H-h-${marginBottom}:format=auto,drawtext=text='${text}':fontcolor=white@0.55:fontsize=${fontSize}:x=W-tw-${marginRight}:y=H-th-${marginRight-10}:shadowcolor=black@0.55:shadowx=1:shadowy=1[v3]`);
-    currentLabel = 'v3';
-  }
-  
-  // Step 4: Upscale to 1440p for VP9
-  filterParts.push(`[${currentLabel}]scale=2560:1440:flags=lanczos[vout]`);
-  
-  const filterComplex = filterParts.join(';');
-  
-  // Build inputs
-  let inputs = `-i "${downloadedPath}"`;
-  if (flagPath) inputs += ` -i "${flagPath}"`;
-  if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
-  
-  const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
-  
-  try {
-    const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${combinedOutput}"`;
-    execSync(cmd, { timeout: 180000 });
-    if (fs.existsSync(combinedOutput) && fs.statSync(combinedOutput).size > 100000) {
-      logger.success(`Combined render: ${(fs.statSync(combinedOutput).size / 1024 / 1024).toFixed(1)}MB`);
-    } else {
-      logger.warn('Combined render produced no output  Eusing original');
+    // ─── STEP 4: EXPLAINER DIALOGUE CHECK ───────────────────────────
+    logger.header(`STEP 4: EXPLAINER DIALOGUE CHECK`);
+    let hasDialogue = false;
+    let dialogueTranscript = '';
+    let originalDescription = video.description || video.title || '';
+    try {
+      const dialogueCheck = await detectDialogue(downloadedPath);
+      hasDialogue = dialogueCheck.hasDialogue && dialogueCheck.wordCount > 5;
+      dialogueTranscript = dialogueCheck.transcript || '';
+      if (hasDialogue) {
+        logger.success(`Dialogue detected: ${dialogueCheck.wordCount} words (${dialogueCheck.language})`);
+      } else {
+        logger.warn(`No dialogue detected (${dialogueCheck.wordCount} words) — not an explainer video`);
+      }
+    } catch (e) {
+      logger.warn(`Dialogue check failed: ${(e.message || '').substring(0, 60)} — proceeding anyway`);
+      hasDialogue = true; // If we can't check, assume it has dialogue
+    }
+
+    if (!hasDialogue) {
+      lastError = 'No dialogue — not an explainer video';
+      logger.warn(`Attempt ${attempt}: ${lastError}`);
+      // Mark video as used so we don't try it again
+      memory.usedVideoIds.push(video.id);
+      memory.lastRun = new Date().toISOString();
+      saveMemory(memory);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      continue; // Try next attempt
+    }
+
+    // ─── If we get here, dialogue was detected — proceed with rest of pipeline ───
+
+    // ─── STEP 5: IDENTIFY COUNTRY ────────────────────────────────────
+    logger.header('STEP 5: IDENTIFY COUNTRY');
+    const { country, confidence } = await identifyCountry(downloadedPath, video.title, gemini);
+    if (!country || confidence < 4) {
+      logger.warn(`Country not confidently identified (${country || 'none'}) — using region`);
+      const finalCountry = channelInfo.region === 'World' ? 'Global' : channelInfo.region;
+      logger.info(`Using region as country: ${finalCountry}`);
+    }
+
+    const finalCountry = country || (channelInfo.region === 'World' ? 'Global' : channelInfo.region);
+    logger.success(`Final country: ${finalCountry}`);
+
+    // ─── STEP 6: DOWNLOAD FLAG ───────────────────────────────────────
+    logger.header('STEP 6: DOWNLOAD FLAG');
+    const flagPath = await downloadFlag(finalCountry, tmpDir);
+    if (flagPath) logger.success('Flag downloaded for combined render');
+    
+    // ─── STEP 7: COMBINED RENDER (Flag → Watermark → FFV1 1080x1920) ─
+    logger.header('STEP 7: COMBINED RENDER (Flag + Watermark + 1080p FFV1)');
+    
+    const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
+    const hasWatermark = fs.existsSync(wmImagePath);
+    const srcDims = getVideoMetadata(downloadedPath);
+    const isShortsSize = Math.abs(srcDims.width / srcDims.height - SHORTS_W / SHORTS_H) < 0.05
+      && srcDims.width >= SHORTS_W && srcDims.height >= SHORTS_H;
+    
+    const flagDuration = Math.min(4, (srcDims.duration || 30) - 1);
+    const flagWidth = 150;
+    const flagHeight = 150;
+    const flagX = Math.floor((SHORTS_W - flagWidth) / 2);
+    const flagY = 20;
+    
+    // Build filter (matching Type 1 style)
+    const filterParts = [];
+    
+    // Step 1: Scale to 9:16 if needed (pillarbox)
+    let currentLabel = '0:v';
+    if (!isShortsSize || srcDims.width !== SHORTS_W || srcDims.height !== SHORTS_H) {
+      filterParts.push(`[0:v]scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos:force_original_aspect_ratio=increase,pad=${SHORTS_W}:${SHORTS_H}:(ow-iw)/2:(oh-ih)/2:color=black[v1]`);
+      currentLabel = 'v1';
+    }
+    
+    // Step 2: Flag overlay (input 1)
+    if (flagPath) {
+      filterParts.push(`[1:v]scale=120:-1,format=rgba[flag]`);
+      filterParts.push(`[${currentLabel}][flag]overlay=${flagX}:${flagY}:enable='between(t,0,${flagDuration})'[v2]`);
+      currentLabel = 'v2';
+    }
+    
+    // Step 3: Watermark matching Type 1 (logo size 80, bottom-right, 40% alpha)
+    const wmIdx = flagPath ? 2 : 1;
+    if (hasWatermark) {
+      filterParts.push(`[${wmIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.4[wm]`);
+      filterParts.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.40:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.40:shadowx=1:shadowy=1[v3]`);
+      currentLabel = 'v3';
+    }
+    
+    // Step 4: Final output at 1080x1920 (no 1440p upscale — matching Type 1)
+    filterParts.push(`[${currentLabel}]null[vout]`);
+    
+    const filterComplex = filterParts.join(';');
+    
+    // Build inputs
+    let inputs = `-i "${downloadedPath}"`;
+    if (flagPath) inputs += ` -i "${flagPath}"`;
+    if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
+    
+    const combinedOutput = path.join(tmpDir, `combined_${Date.now()}.mp4`);
+    
+    try {
+      // Use Type 1's FFV1 rendering settings
+      const cmd = `ffmpeg -y ${inputs} -filter_complex "${filterComplex}" -map "[vout]" -map 0:a -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${combinedOutput}"`;
+      execSync(cmd, { timeout: 180000 });
+      if (fs.existsSync(combinedOutput) && fs.statSync(combinedOutput).size > 100000) {
+        logger.success(`Combined render: ${(fs.statSync(combinedOutput).size / 1024 / 1024).toFixed(1)}MB`);
+      } else {
+        logger.warn('Combined render produced no output — using original');
+        try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
+      }
+    } catch (e) {
+      logger.warn(`Combined render failed: ${(e.message || '').substring(0, 80)} — using original`);
       try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
     }
-  } catch (e) {
-    logger.warn(`Combined render failed: ${(e.message || '').substring(0, 80)}  Eusing original`);
-    try { fs.copyFileSync(downloadedPath, combinedOutput); } catch {}
+    
+    const finalOutputPath = combinedOutput;
+
+    // ─── STEP 8: GENERATE METADATA (Type 1 style: transcript + original description + CTA) ──
+    logger.header('STEP 8: GENERATE METADATA');
+    // Build metadataContext matching Type 1's format
+    const metadataContext = {
+      sourceUrl: video.url || '',
+      sourceTitle: video.title || '',
+      originalDescription: originalDescription,
+      viewCount: video.view_count || 0,
+    };
+    const metadata = await generateMetadata(finalCountry, dialogueTranscript, video.title, gemini, metadataContext);
+
+    // ─── STEP 9: FINAL QA ─────────────────────────────────────────────
+    logger.header('STEP 9: FINAL QA');
+
+    const validation = await validateOutput(finalOutputPath);
+    if (!validation.passed) {
+      logger.warn(`QA issues: ${validation.issues.join(', ')}`);
+    }
+
+    // Gemini CLI visual review (if available)
+    if (geminiCLI.isAvailable()) {
+      const gqa = await geminiReview(finalOutputPath);
+      logger.info(`Gemini QA: ${gqa.score}/10 — ${gqa.recommendation}`);
+    }
+
+    // Copy to output with clean name
+    const finalPath = path.join(outputDir, `temp_${video.id}.mp4`);
+    try {
+      fs.copyFileSync(finalOutputPath, finalPath);
+    } catch (e) {
+      logger.warn(`Copy failed: ${e.message}`);
+    }
+
+    // Cleanup tmp for this attempt
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+
+    // Description is fully generated by Gemini via generateMetadata() above
+    // (generateMetadata already ensures a "Follow Mr. WorldWideWebster" CTA is present)
+    const finalDescription = metadata.description || '';
+
+    logger.header('PIPELINE COMPLETE');
+    logger.success(`Video: ${finalPath}`);
+    logger.success(`Source: @${channelInfo.handle} (${video.id})`);
+    logger.success(`Country: ${finalCountry}`);
+    logger.success(`Title: ${metadata.title}`);
+
+    // Return success — memory is saved by the runner after upload
+    return {
+      success: true,
+      videoPath: finalPath,
+      title: metadata.title,
+      description: finalDescription,
+      tags: metadata.tags,
+      country: finalCountry,
+      sourceId: video.id,
+      sourceChannel: channelInfo.handle,
+      sourceUrl: video.url,
+    };
   }
-  
-  const finalOutputPath = combinedOutput;
 
-  // ─── Step 8: Generate Metadata ─────────────────────────────────────
-  logger.header('STEP 8: GENERATE METADATA');
-  const metadata = await generateMetadata(finalCountry, video.title, gemini);
-
-  // ─── Step 9: Final QA ──────────────────────────────────────────────
-  logger.header('STEP 9: FINAL QA');
-
-  const validation = await validateOutput(finalOutputPath);
-  if (!validation.passed) {
-    logger.warn(`QA issues: ${validation.issues.join(', ')}`);
-  }
-
-  // Gemini CLI visual review (if available)
-  if (geminiCLI.isAvailable()) {
-    const gqa = await geminiReview(finalOutputPath);
-    logger.info(`Gemini QA: ${gqa.score}/10  E${gqa.recommendation}`);
-  }
-
-  // ─── Step 10: Save Memory ─────────────────────────────────────────
-  logger.header('STEP 10: SAVE MEMORY');
-  memory.usedVideoIds.push(video.id);
-  memory.lastRun = new Date().toISOString();
-  saveMemory(memory);
-
-  // Copy to output with clean name
-  const finalPath = path.join(outputDir, `temp_${video.id}.mp4`);
-  try {
-    fs.copyFileSync(finalOutputPath, finalPath);
-  } catch (e) {
-    logger.warn(`Copy failed: ${e.message}`);
-  }
-
-  // Cleanup tmp
-  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
-
-  logger.header('PIPELINE COMPLETE');
-  logger.success(`Video: ${finalPath}`);
-  logger.success(`Source: @${channelInfo.handle} (${video.id})`);
-  logger.success(`Country: ${finalCountry}`);
-  logger.success(`Title: ${metadata.title}`);
-
-  return {
-    success: true,
-    videoPath: finalPath,
-    title: metadata.title,
-    description: metadata.description,
-    tags: metadata.tags,
-    country: finalCountry,
-    sourceId: video.id,
-    sourceChannel: channelInfo.handle,
-    sourceUrl: video.url,
-  };
+  // All retries exhausted — return failure
+  try { fs.rmSync(tmpBaseDir, { recursive: true, force: true }); } catch {}
+  logger.error(`All ${MAX_RETRIES} attempts failed. Last error: ${lastError}`);
+  return { success: false, error: lastError || 'All retries exhausted' };
 }
 
 module.exports = { runTempExplainerPipeline };

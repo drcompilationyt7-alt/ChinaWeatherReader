@@ -1,4 +1,4 @@
-name: Daily Shorts Tester (No Ranking)
+name: Temp Type 2 Tester (Temp Explainer)
 
 on:
   push:
@@ -31,7 +31,7 @@ env:
   GH_PAT: ${{ secrets.GH_PAT }}
 
 jobs:
-  test-shorts:
+  test-temp-type2:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -50,7 +50,7 @@ jobs:
       - name: Clean old test data
         run: |
           rm -rf output/ memory/hermes-memory/
-          mkdir -p output/clips output/assets/voiceovers output/assets/audio memory
+          mkdir -p output/temp-explainer output/assets memory
 
       - name: Install system dependencies
         run: |
@@ -86,9 +86,9 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Run daily pipeline (China, no ranking, test mode)
+      - name: Run temp type 2 pipeline (test mode)
         run: |
-          node core/github-action-runner.js --mode daily --country China --skip-ranking --search-query "viral chinese douyin #shorts"
+          node core/github-action-runner.js --mode temp
 
       - name: Cleanup
         if: always()

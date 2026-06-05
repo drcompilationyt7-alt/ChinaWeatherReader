@@ -42,24 +42,26 @@ async function detectDialogue(videoPath) {
       return { hasDialogue: false, wordCount: 0, language: 'unknown', transcript: '' };
     }
 
-    // Run whisper.cpp
-    const pyPath = audioPath.replace(/\\/g, '\\\\');
-    const output = execSync(
-      `python3 -c "
-from faster_whisper import WhisperModel
-import json
-model = WhisperModel('base', device='cpu', compute_type='int8')
-segments, info = model.transcribe('${pyPath}', word_timestamps=True)
-text = ' '.join(seg.text for seg in segments)
-words = []
-for seg in segments:
-    if seg.words:
-        for w in seg.words:
-            words.append({'word': w.word, 'start': w.start, 'end': w.end})
-print(json.dumps({'text': text[:1000], 'language': info.language, 'word_count': len(text.split()), 'words': words}))
-" 2>&1`,
-      { timeout: 120000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
-    ).toString().trim();
+    // Use standalone whisper transcribe script (more reliable than inline Python)
+    const whisperScript = path.join(__dirname, 'whisper-transcribe.py');
+    let output = null;
+    let retries = 2;
+    while (retries > 0) {
+      try {
+        output = execSync(
+          `python3 "${whisperScript}" "${audioPath}" 2>&1`,
+          { timeout: 120000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 }
+        ).toString().trim();
+        break;
+      } catch (e) {
+        retries--;
+        logger.warn(`Whisper attempt failed (${retries} retries left): ${(e.message || '').substring(0, 60)}`);
+        if (retries > 0) {
+          // Small delay before retry
+          execSync(`sleep 2`, { timeout: 5000, stdio: 'ignore' });
+        }
+      }
+    }
 
     try {
       fs.unlinkSync(audioPath);

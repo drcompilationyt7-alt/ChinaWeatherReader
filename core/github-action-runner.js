@@ -99,7 +99,7 @@ class DailyRunner {
       logger.success(`Uploaded: ${r.url}`);
 
       // Post the full description as a comment (visible on Shorts where descriptions are often hidden)
-      // Type 1 only — videoData.description is only populated by the Type 1 pipeline
+      // Works for both Type 1 and Temp Type 2 pipelines
       if (videoData.description && r.videoId) {
         logger.info('Posting description as comment...');
         const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
@@ -262,42 +262,75 @@ class DailyRunner {
     }
 
     const { runTempExplainerPipeline } = require('../pipeline/temp-explainer-pipeline');
-    let result;
-    try {
-      result = await runTempExplainerPipeline({ outputDir: path.join(__dirname, '..', 'output', 'temp-explainer') });
-    } catch (e) {
-      logger.error(`Temp pipeline crash: ${e.message}`);
-      result = { success: false, error: e.message };
+
+    // Retry loop: try up to 3 full pipeline runs to ensure we post exactly 1 video
+    const MAX_PIPELINE_RETRIES = 3;
+    let lastError = '';
+
+    for (let attempt = 1; attempt <= MAX_PIPELINE_RETRIES; attempt++) {
+      logger.header(`TEMP PIPELINE ATTEMPT ${attempt}/${MAX_PIPELINE_RETRIES}`);
+
+      let result;
+      try {
+        result = await runTempExplainerPipeline({ outputDir: path.join(__dirname, '..', 'output', 'temp-explainer') });
+      } catch (e) {
+        logger.error(`Temp pipeline crash: ${e.message}`);
+        result = { success: false, error: e.message };
+      }
+
+      if (!result.success) {
+        lastError = result.error || 'Pipeline failed';
+        logger.warn(`Attempt ${attempt}: ${lastError}`);
+        continue;
+      }
+
+      logger.info('Uploading temp explainer...');
+      const uploadResult = await this._uploadToYouTube({
+        videoPath: result.videoPath,
+        title: result.title.substring(0, 100),
+        description: result.description,
+        tags: result.tags || ['mr worldwidewebster', 'shorts', result.country.toLowerCase()],
+      });
+
+      if (uploadResult) {
+        // Save video to memory AFTER successful upload
+        try {
+          const memory = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'memory', 'temp-explainer-memory.json'), 'utf8'));
+          if (!memory.usedVideoIds) memory.usedVideoIds = [];
+          if (!memory.usedChannels) memory.usedChannels = [];
+          if (result.sourceId && !memory.usedVideoIds.includes(result.sourceId)) {
+            memory.usedVideoIds.push(result.sourceId);
+          }
+          memory.lastRun = new Date().toISOString();
+          fs.writeFileSync(path.join(__dirname, '..', 'memory', 'temp-explainer-memory.json'), JSON.stringify(memory, null, 2));
+          logger.success(`Memory saved: ${memory.usedVideoIds.length} used video IDs`);
+        } catch (e) {
+          logger.warn(`Memory save failed: ${(e.message || '').substring(0, 60)}`);
+        }
+
+        // Save to channel-memory.json as well
+        const uploaded = [{ title: result.title, url: uploadResult.url, country: result.country, type: 'temp' }];
+        this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+        if (!this.memory.countriesUsedThisWeek) this.memory.countriesUsedThisWeek = [];
+        if (!this.memory.countriesUsedThisWeek.includes(result.country)) this.memory.countriesUsedThisWeek.push(result.country);
+        if (this.memory.countriesUsedThisWeek.length > 7) this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
+        this._saveMemory();
+
+        await this._boostVideo(uploadResult.url);
+
+        logger.header('SUMMARY');
+        logger.success(`✅ Temp video uploaded — "${result.title}"`);
+        logger.success(`🌍 ${result.country} | 📺 Source: @${result.sourceChannel}`);
+
+        return { uploadedVideos: uploaded, errors: [], exitCode: 0 };
+      } else {
+        lastError = 'Upload failed';
+        logger.warn(`Attempt ${attempt}: Upload failed — retrying pipeline`);
+      }
     }
 
-    if (!result.success) {
-      logger.error(`Temp pipeline: ${result.error}`);
-      return { uploadedVideos: [], errors: [result.error] };
-    }
-
-    logger.info('Uploading temp explainer...');
-    const uploadResult = await this._uploadToYouTube({
-      videoPath: result.videoPath,
-      title: result.title.substring(0, 100),
-      description: result.description,
-      tags: result.tags || ['mr worldwidewebster', 'shorts', result.country.toLowerCase()],
-    });
-
-    const uploaded = [];
-    if (uploadResult) {
-      uploaded.push({ title: result.title, url: uploadResult.url, country: result.country, type: 'temp' });
-      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
-      this._saveMemory();
-      await this._boostVideo(uploadResult.url);
-    }
-
-    logger.header('SUMMARY');
-    if (uploaded.length > 0) {
-      logger.success(`✅ Temp video uploaded — "${result.title}"`);
-      logger.success(`🌍 ${result.country} | 📺 Source: @${result.sourceChannel}`);
-    }
-
-    return { uploadedVideos: uploaded, errors: [], exitCode: uploaded.length > 0 ? 0 : 1 };
+    logger.error(`All ${MAX_PIPELINE_RETRIES} pipeline attempts failed. Last error: ${lastError}`);
+    return { uploadedVideos: [], errors: [lastError], exitCode: 1 };
   }
 
   async runNightly() {
