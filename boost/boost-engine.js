@@ -70,8 +70,6 @@ class BoostEngine {
     this._proxyWaitQueue = []; // waiting consumers
     this._startedAt = null;
     this._completed = false;
-    this._viewsPerVideo = {};  // per-video view count
-    this.videoTargets = [];    // target views per video
   }
 
   async run(params = {}) {
@@ -112,8 +110,8 @@ class BoostEngine {
     logger.info(`Videos: ${this.videoUrls.length}`);
     logger.info(`Total target: ${this.targetViews} views`);
 
-    // Start proxy gathering in background (target 100, 20min timeout)
-    const proxyGatherPromise = this._buildProxyPool(20 * 60 * 1000);
+    // Start proxy gathering in background (target 50, 10min timeout)
+    const proxyGatherPromise = this._buildProxyPool(10 * 60 * 1000);
 
     // Start consuming proxies and spawning sessions
     const startTime = Date.now();
@@ -123,18 +121,27 @@ class BoostEngine {
     // Seed for deterministic randomness
     let masterSeed = Date.now();
 
+    let consecutiveFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 30;
+
     while (this.totalViews < this.targetViews && (Date.now() - startTime) < 25 * 60 * 1000) {
-      // Wait for a proxy to become available
-      const proxy = await this._waitForProxy();
+      // Check if too many consecutive failures — fall back to no-proxy mode
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        logger.warn(`${consecutiveFailures} consecutive failures — switching to no-proxy mode`);
+        break;
+      }
+
+      // Wait for a proxy to become available (with 30s timeout)
+      const proxy = await this._waitForProxyWithTimeout(30000);
       if (!proxy) {
-        logger.warn('No more proxies available — stopping');
+        logger.warn('No proxy available within 30s — trying without proxy');
         break;
       }
 
       // Pick a random video weighted by remaining views needed
       const remainingViews = this.videoTargets.map((t, i) => ({
         url: this.videoUrls[i],
-        remaining: t - this._viewsPerVideo[i] || 0,
+        remaining: t - (this._viewsPerVideo[i] || 0),
       })).filter(v => v.remaining > 0);
 
       if (remainingViews.length === 0) break; // all done
@@ -156,23 +163,54 @@ class BoostEngine {
       const proxyStr = proxy ? `http://${proxy.ip}:${proxy.port}` : '';
 
       // Fork child worker
-      const sessionPromise = this._spawnSession(picked.url, proxyStr, ua, vp, masterSeed, watchSec);
+      const sessionPromise = this._spawnSession(picked.url, proxyStr, ua, vp, masterSeed, watchSec)
+        .then(result => {
+          if (result) {
+            consecutiveFailures = 0; // reset on success
+          } else {
+            consecutiveFailures++;
+          }
+          return result;
+        });
       sessionPromises.push(sessionPromise);
 
       // Log progress
-      if (this.totalViews % 50 === 0 || sessionPromises.length % 100 === 0) {
-        logger.info(`Active sessions: ${sessionPromises.length}, total: ${this.totalViews}/${this.targetViews}`);
+      if (this.totalViews % 10 === 0 || sessionPromises.length % 50 === 0) {
+        logger.info(`Active sessions: ${sessionPromises.length}, total: ${this.totalViews}/${this.targetViews}, failures: ${consecutiveFailures}`);
       }
 
       // Stagger spawns 1-3s apart
       await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
     }
 
-    // Wait for proxy gathering to finish (in case still running)
+    // No-proxy fallback: use current IP (GitHub runner) directly
+    if (this.totalViews < this.targetViews) {
+      const remaining = this.targetViews - this.totalViews;
+      const remainingCount = Math.min(remaining, 20); // limit no-proxy attempts
+      logger.info(`No-proxy fallback: trying ${remainingCount} views without proxy...`);
+
+      // Wait a moment for proxy gathering to stop
+      await new Promise(r => setTimeout(r, 2000));
+
+      for (let i = 0; i < remainingCount && this.totalViews < this.targetViews; i++) {
+        masterSeed++;
+        const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
+        const watchSec = randomWatchTime(Math.random);
+
+        sessionPromises.push(
+          this._spawnSession(this.videoUrls[0], '', ua, vp, masterSeed, watchSec)
+        );
+
+        // Longer stagger for no-proxy to avoid bot detection patterns
+        await new Promise(r => setTimeout(r, 3000 + Math.random() * 5000));
+      }
+    }
+
+    // Mark as done and wait for remaining sessions
+    this._completed = true;
     try { await Promise.race([proxyGatherPromise, new Promise(r => setTimeout(r, 5000))]); } catch {}
 
-    // Wait for remaining sessions
-    this._completed = true;
     if (sessionPromises.length > 0) {
       logger.info(`Waiting for ${sessionPromises.length} sessions to finish...`);
       await Promise.allSettled(sessionPromises);
@@ -248,6 +286,23 @@ class BoostEngine {
     return new Promise(resolve => {
       this._proxyWaitQueue.push(resolve);
     });
+  }
+
+  /**
+   * Wait for proxy with a timeout. Returns null if timed out.
+   */
+  async _waitForProxyWithTimeout(timeoutMs) {
+    if (this._proxyPool.length > 0) {
+      return this._proxyPool.shift();
+    }
+    if (this._proxyGatheringDone) return null;
+
+    return Promise.race([
+      new Promise(resolve => {
+        this._proxyWaitQueue.push(resolve);
+      }),
+      new Promise(resolve => setTimeout(() => resolve(null), timeoutMs)),
+    ]);
   }
 
   /**
