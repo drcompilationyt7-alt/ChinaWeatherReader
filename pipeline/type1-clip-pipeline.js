@@ -802,12 +802,8 @@ async function runType1Pipeline(options = {}) {
   }
   const cropOffsetX = getCropOffset(analysisClip, analysisDims.width, analysisDims.height, tmpDir);
 
-  let translatedText = null;
-  if (dialogue.hasDialogue && dialogue.language !== 'en' && dialogue.language !== 'english') {
-    translatedText = await gemini.translate(dialogue.transcript);
-  }
-
   let subPath = null;
+  let translatedText = null;
   if (dialogue.hasDialogue && dialogue.wordCount > 5) {
     const transcript = (dialogue.transcript || '').toLowerCase();
     const words = transcript.split(/\s+/).filter(w => w.length > 0);
@@ -815,11 +811,36 @@ async function runType1Pipeline(options = {}) {
     const isMusic = wordDensity < 1.0 || words.length < 8;
     
     if (!isMusic) {
+      // Translate non-English dialogue using NLLB-200
+      let translateArg = '';
+      if (dialogue.language && !['en', 'en', 'english', 'english'].includes(dialogue.language)) {
+        try {
+          logger.info(`Translating from ${dialogue.language || 'unknown'} with NLLB-200...`);
+          const nllbOut = execSync(
+            `python3 "${path.join(__dirname, '..', 'core', 'nllb-translate.py')}" "${dialogue.transcript}" 2>&1`,
+            { timeout: 30000, encoding: 'utf8' }
+          ).toString().trim();
+          const nllbResult = JSON.parse(nllbOut.split('\n').filter(l => l.startsWith('{'))[0]);
+          if (nllbResult.translated_text) {
+            translatedText = nllbResult.translated_text;
+            translateArg = `--translate "${translatedText.replace(/"/g, '\\"')}"`;
+            logger.success(`Translation: ${translatedText.substring(0, 80)}...`);
+          }
+        } catch (e) {
+          logger.warn(`NLLB translation failed: ${(e.message || '').substring(0, 60)} — using Gemini fallback`);
+          // Fallback to Gemini translation
+          try {
+            translatedText = await gemini.translate(dialogue.transcript);
+            if (translatedText) translateArg = `--translate "${translatedText.replace(/"/g, '\\"')}"`;
+          } catch {}
+        }
+      }
+
       subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
       try {
-        const captionOut = execSync(`python3 "${path.join(__dirname, '..', 'core', 'tiktok_captions.py')}" "${analysisClip}" "${subPath}" 2>&1`, { timeout: 120000, encoding: 'utf8' }).toString().trim();
+        const captionOut = execSync(`python3 "${path.join(__dirname, '..', 'core', 'tiktok_captions.py')}" "${analysisClip}" "${subPath}" ${translateArg} 2>&1`, { timeout: 120000, encoding: 'utf8' }).toString().trim();
         const captionResult = JSON.parse(captionOut);
-        logger.info(`Captions: ${captionResult.word_count} words`);
+        logger.info(`Captions: ${captionResult.word_count} words${translatedText ? ' (dual-language)' : ''}`);
       } catch {
         logger.warn('Captions failed -- proceeding without');
         subPath = null;
