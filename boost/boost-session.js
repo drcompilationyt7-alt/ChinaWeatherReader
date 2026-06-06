@@ -183,7 +183,8 @@ async function runSession() {
 
     // Done - report success if we didn't hit an obvious bot page
     const pageTitle = await page.title().catch(() => '');
-    const pageUrl = page.url().catch(() => '');
+    let pageUrl = '';
+    try { pageUrl = page.url(); } catch {}
     const isBotPage = pageTitle.includes('captcha') || pageTitle.includes('unusual traffic') || pageUrl.includes('consent');
 
     if (page) try { await page.close(); } catch {}

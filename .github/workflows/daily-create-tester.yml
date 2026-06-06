@@ -1,9 +1,6 @@
-name: Temp Tester (On Push)
+name: Temp Tester (Manual Only)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 env:
