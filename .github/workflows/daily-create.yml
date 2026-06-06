@@ -6,6 +6,13 @@ on:
       country:
         description: 'Override country (optional)'
         required: false
+      private:
+        description: 'Upload as private (default: false)'
+        required: false
+        default: 'false'
+      publishAt:
+        description: 'Override publish time (ISO 8601)'
+        required: false
 
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -31,6 +38,8 @@ env:
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   GH_PAT: ${{ secrets.GH_PAT }}
+  PRIVATE: "true"
+  PUBLISH_HOUR_UTC: "12"
 
 jobs:
   create-shorts:
@@ -105,13 +114,25 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
+      - name: Set publishAt (8:00 AM EDT = 12:00 UTC)
+        run: |
+          if [ -n "${{ github.event.inputs.publishAt }}" ]; then
+            echo "PUBLISH_AT=${{ github.event.inputs.publishAt }}" >> $GITHUB_ENV
+          else
+            echo "PUBLISH_AT=$(date -u -d 'today ${PUBLISH_HOUR_UTC}:00:00' +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          fi
+
       - name: Run daily pipeline
         run: |
           COUNTRY_ARG=""
           if [ -n "${{ github.event.inputs.country }}" ]; then
             COUNTRY_ARG="--country ${{ github.event.inputs.country }}"
           fi
-          node core/github-action-runner.js --mode daily $COUNTRY_ARG
+          PRIVATE_ARG=""
+          if [ "${{ github.event.inputs.private }}" = "true" ] || [ "$PRIVATE" = "true" ]; then
+            PRIVATE_ARG="--private"
+          fi
+          node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
 
       - name: Save memory
         run: |

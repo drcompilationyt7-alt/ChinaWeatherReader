@@ -2,6 +2,14 @@ name: Daily Temp Explainer (Type 2)
 
 on:
   workflow_dispatch:
+    inputs:
+      private:
+        description: 'Upload as private (default: false)'
+        required: false
+        default: 'false'
+      publishAt:
+        description: 'Override publish time (ISO 8601)'
+        required: false
 
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -27,6 +35,8 @@ env:
   DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
   DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
   GH_PAT: ${{ secrets.GH_PAT }}
+  PRIVATE: "true"
+  PUBLISH_HOUR_UTC: "20"
 
 jobs:
   temp-explainer:
@@ -101,9 +111,21 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
+      - name: Set publishAt (4:00 PM EDT = 20:00 UTC)
+        run: |
+          if [ -n "${{ github.event.inputs.publishAt }}" ]; then
+            echo "PUBLISH_AT=${{ github.event.inputs.publishAt }}" >> $GITHUB_ENV
+          else
+            echo "PUBLISH_AT=$(date -u -d 'today ${PUBLISH_HOUR_UTC}:00:00' +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+          fi
+
       - name: Run temp type 2 pipeline
         run: |
-          node core/github-action-runner.js --mode temp
+          PRIVATE_ARG=""
+          if [ "${{ github.event.inputs.private }}" = "true" ] || [ "$PRIVATE" = "true" ]; then
+            PRIVATE_ARG="--private"
+          fi
+          node core/github-action-runner.js --mode temp $PRIVATE_ARG --publish-at "$PUBLISH_AT"
 
       - name: Save memory
         run: |

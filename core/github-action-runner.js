@@ -90,12 +90,17 @@ class DailyRunner {
       return null;
     }
     try {
-      const r = await this.youtubeBridge.uploadVideo({
+      const uploadParams = {
         videoPath: videoData.videoPath,
         title: videoData.title,
         description: videoData.description,
         tags: videoData.tags || ['mr worldwidewebster', 'shorts'],
-      });
+      };
+      // Pass publishAt from env if set
+      if (process.env.PUBLISH_AT) {
+        uploadParams.publishAt = process.env.PUBLISH_AT;
+      }
+      const r = await this.youtubeBridge.uploadVideo(uploadParams);
       logger.success(`Uploaded: ${r.url}`);
 
       // Post the full description as a comment (visible on Shorts where descriptions are often hidden)
@@ -368,12 +373,36 @@ class DailyRunner {
     const args = process.argv.slice(2);
     const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'daily';
     const countryArg = args.includes('--country') ? args[args.indexOf('--country') + 1] : null;
+    const publishAt = args.includes('--publish-at') ? args[args.indexOf('--publish-at') + 1] : null;
+    const isPrivate = args.includes('--private');
     let exitCode = 0;
 
     const skipRanking = args.includes('--skip-ranking');
     const searchQuery = args.includes('--search-query') ? args[args.indexOf('--search-query') + 1] : null;
 
     try {
+      // Set privacy status env var if --private is passed
+      if (isPrivate) {
+        process.env.DEFAULT_PRIVACY_STATUS = 'private';
+        logger.info('Privacy set to: private');
+      }
+
+      // Store publishAt for upload steps to consume
+      if (publishAt) {
+        // Check if publish time has already passed — if so, upload public immediately
+        const now = new Date();
+        const publishTime = new Date(publishAt);
+        if (publishTime <= now) {
+          logger.info(`Publish time (${publishAt}) already passed — uploading as public immediately`);
+          process.env.DEFAULT_PRIVACY_STATUS = 'public';
+          // Clear PUBLISH_AT so youtube-bridge doesn't schedule it
+          delete process.env.PUBLISH_AT;
+        } else {
+          process.env.PUBLISH_AT = publishAt;
+          logger.info(`Publish scheduled at: ${publishAt}`);
+        }
+      }
+
       if (mode === 'daily') {
         const result = await this.runDaily(countryArg, skipRanking, searchQuery);
         exitCode = result.exitCode || 0;

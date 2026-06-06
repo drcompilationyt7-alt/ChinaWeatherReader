@@ -354,6 +354,12 @@ async function rankSingleVideo(candidate, country, gemini, geminiCLI, curatorSki
   // ------------------------------------------------------------------
   const originalScore = result.score || 0;
   let finalScore = Math.max(1, originalScore - qualityPenalty);
+
+  // Add shorts boost: +0.5 if video is <= 60s (short-form content is preferred)
+  if (candidate.duration > 0 && candidate.duration <= 60) {
+    finalScore = Math.min(10, finalScore + 0.5);
+    logger.info(`  --> Shorts bonus: +0.5 (duration: ${candidate.duration}s ≤ 60s)`);
+  }
   result.quality_penalty = qualityPenalty;
   result.original_score = originalScore;
   result.score = finalScore;
@@ -392,8 +398,15 @@ async function rankVideos(candidates, country, gemini, geminiCLI, curatorSkill, 
 
 function probeDownloadedVideo(videoPath) {
   try {
-    const out = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration -of csv=p=0 "${videoPath}"`, { timeout: 10000, encoding: 'utf8' }).trim();
-    const [width, height, duration] = out.split(',').map(s => Number.parseFloat(s.trim()));
+    // Use stream for width/height, but format=duration for correct duration (stream=duration can be wrong for MKV with opus)
+    const out = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}"`, { timeout: 10000, encoding: 'utf8' }).trim();
+    const [width, height] = out.split(',').map(s => Number.parseFloat(s.trim()));
+    // Get duration from format level (reliable for all container types including MKV with opus)
+    let duration = 0;
+    try {
+      const durOut = execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`, { timeout: 10000, encoding: 'utf8' }).trim();
+      duration = Number.parseFloat(durOut);
+    } catch {}
     if (Number.isFinite(width) && Number.isFinite(height)) return { width: Math.round(width), height: Math.round(height), duration: Number.isFinite(duration) ? duration : 0 };
   } catch {}
   return { width: 0, height: 0, duration: 0 };
@@ -470,6 +483,25 @@ print(json.dumps({'text': text[:1000], 'language': info.language, 'word_count': 
 function smartCut(videoPath, duration) {
   logger.info('Smart Cut: analyzing video for best segment...');
   
+  // MKV with opus audio causes PySceneDetect to crash. Create a lightweight MP4 probe
+  // for the highlight detector, keeping the MKV for rendering.
+  let probePath = videoPath;
+  const isMkv = videoPath.endsWith('.mkv') || videoPath.endsWith('.webm');
+  if (isMkv) {
+    probePath = videoPath.replace(/\.\w+$/, `_probe_${Date.now()}.mp4`);
+    try {
+      logger.info('Creating MP4 probe for highlight detection (avoids opus/MKV incompatibility)...');
+      execSync(`ffmpeg -y -i "${videoPath}" -t 120 -vf scale=640:-1 -c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 64k "${probePath}"`, { timeout: 60000 });
+      if (!(fs.existsSync(probePath) && fs.statSync(probePath).size > 50000)) {
+        probePath = videoPath; // fallback to original
+      } else {
+        logger.info(`Probe MP4 created: ${(fs.statSync(probePath).size / 1024 / 1024).toFixed(1)}MB`);
+      }
+    } catch {
+      probePath = videoPath; // fallback to original
+    }
+  }
+
   // Use highlight detector if available, else fallback to center
   try {
     const hlPath = path.join(__dirname, '..', 'core', 'highlight-detector.py');
@@ -487,8 +519,8 @@ function smartCut(videoPath, duration) {
       } catch (sdErr) {
         logger.warn(`PySceneDetect not available: ${(sdErr.stderr || sdErr.message || sdErr.stdout || '').toString().substring(0, 200)}`);
       }
-      const hlCmd = `python3 "${hlPath}" "${videoPath}" --output-json 2>&1`;
-      logger.info(`Running: python3 "${hlPath}" "${videoPath}" --output-json`);
+      const hlCmd = `python3 "${hlPath}" "${probePath}" --output-json 2>&1`;
+      logger.info(`Running: python3 "${hlPath}" "${probePath}" --output-json`);
       const hlOut = execSync(hlCmd, { timeout: 300000, maxBuffer: 10 * 1024 * 1024, encoding: 'utf8' }).toString().trim();
       const outLines = hlOut.split('\n').filter(Boolean);
       for (const line of outLines.slice(0, -1)) {
@@ -497,6 +529,8 @@ function smartCut(videoPath, duration) {
       const result = JSON.parse(outLines[outLines.length - 1]);
       if (result.action === 'extract' && result.start >= 0 && result.duration > 0) {
         logger.success(`Smart Cut: best segment ${result.start}s -> ${result.end}s (${result.duration}s, score: ${result.peak_highlight_score || 'N/A'})`);
+        // Cleanup probe MP4
+        if (probePath !== videoPath) try { fs.unlinkSync(probePath); } catch {}
         return { start: result.start, end: result.end };
       }
     } else {
@@ -509,6 +543,9 @@ function smartCut(videoPath, duration) {
     if (e.stdout) logger.warn(`  Stdout: ${e.stdout.toString().substring(0, 500)}`);
   }
   
+  // Cleanup probe MP4 if it was created
+  if (probePath !== videoPath) try { fs.unlinkSync(probePath); } catch {}
+
   if (duration > 120) {
     const mid = duration / 2;
     const fallback = { start: Math.max(0, mid - 30), end: Math.min(duration, mid + 30) };
@@ -738,7 +775,7 @@ async function runType1Pipeline(options = {}) {
   const cut = smartCut(tempDownloadPath, tempDuration);
   
   const analysisClip = path.join(tmpDir, `analysis_${Date.now()}.mp4`);
-  execSync(`ffmpeg -y -ss ${cut.start} -i "${tempDownloadPath}" -to ${cut.end} -c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${analysisClip}"`, { timeout: 120000 });
+  execSync(`ffmpeg -y -ss ${cut.start} -i "${tempDownloadPath}" -to ${cut.end} -c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${analysisClip}"`, { timeout: 240000 });
 
   const analysisDims = probeDownloadedVideo(analysisClip);
   const dialogue = await transcribeAudio(analysisClip, tmpDir);
@@ -899,7 +936,7 @@ async function runType1Pipeline(options = {}) {
 
   logger.info('Running combined render...');
   try {
-    execSync(cmd, { timeout: 300000, maxBuffer: 500 * 1024 * 1024 });
+  execSync(cmd, { timeout: 600000, maxBuffer: 500 * 1024 * 1024 });
     try { fs.unlinkSync(filterScriptPath); } catch {}
     if (fs.existsSync(finalOutput) && fs.statSync(finalOutput).size > 100000) {
       logger.success(`Combined render: ${(fs.statSync(finalOutput).size / 1024 / 1024).toFixed(1)}MB`);

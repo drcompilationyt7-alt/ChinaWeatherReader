@@ -397,18 +397,12 @@ async function downloadFlag(country, tmpDir) {
     const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
     const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
 
-    // Use curl instead of axios to avoid compatibility issues
+    // Use curl to download the raw 72x72 PNG (no pre-scaling — let the overlay filter handle it, matching Type 1's approach)
     execSync(`curl -sL -o "${flagFile}" "${url}"`, { timeout: 10000 });
 
     if (fs.existsSync(flagFile) && fs.statSync(flagFile).size > 100) {
-      const scaledFlag = path.join(tmpDir, `flag_${iso}_scaled.png`);
-      execSync(
-        `ffmpeg -y -i "${flagFile}" -vf "scale=150:150:flags=lanczos" "${scaledFlag}" 2>/dev/null`,
-        { timeout: 10000 }
-      );
-      const result = (fs.existsSync(scaledFlag) && fs.statSync(scaledFlag).size > 100) ? scaledFlag : flagFile;
-      logger.success(`Flag: ${iso} (${(fs.statSync(result).size / 1024).toFixed(1)}KB)`);
-      return result;
+      logger.success(`Flag: ${iso} (${(fs.statSync(flagFile).size / 1024).toFixed(1)}KB)`);
+      return flagFile;
     }
   } catch (e) {
     logger.warn(`Flag download: ${(e.message || '').substring(0, 60)}`);

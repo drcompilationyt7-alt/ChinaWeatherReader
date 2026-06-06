@@ -1,6 +1,9 @@
-name: Temp Type 2 Tester (Manual Only)
+name: Temp Tester (On Push)
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -29,7 +32,88 @@ env:
   GH_PAT: ${{ secrets.GH_PAT }}
 
 jobs:
-  test-temp-type2:
+  test-type1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Clean old test data
+        run: |
+          rm -rf output/ memory/hermes-memory/
+          mkdir -p output/clips output/assets memory
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
+
+      - name: Install Deno (JS runtime for yt-dlp)
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          export DENO_INSTALL="$HOME/.deno"
+          echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] --break-system-packages
+
+      - name: Install Node.js dependencies
+        run: |
+          npm ci || npm install
+          npm install axios
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Cache whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: whisper-base-${{ runner.os }}
+
+      - name: Pre-download whisper model (with retries for HF rate limit)
+        run: |
+          RETRIES=0
+          MAX_RETRIES=5
+          until python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8'); print('faster-whisper model ready')"; do
+            RETRIES=$((RETRIES + 1))
+            if [ $RETRIES -ge $MAX_RETRIES ]; then
+              echo "whisper download failed after $MAX_RETRIES retries"
+              exit 1
+            fi
+            WAIT=$((RETRIES * 30))
+            echo "Rate limited by HF, retrying in ${WAIT}s (attempt $RETRIES/$MAX_RETRIES)..."
+            sleep $WAIT
+          done
+
+      - name: Write cookies file
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then
+            printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
+          fi
+
+      - name: Run type 1 pipeline (test mode, skip ranking)
+        run: |
+          node core/github-action-runner.js --mode daily --skip-ranking --country China
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf /tmp/yt_cookies.txt 2>/dev/null || true
+
+  test-type2:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
