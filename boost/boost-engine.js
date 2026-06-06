@@ -70,6 +70,7 @@ class BoostEngine {
     this._proxyWaitQueue = []; // waiting consumers
     this._startedAt = null;
     this._completed = false;
+    this._viewsPerVideo = []; // per-video view counts, initialized in constructor
   }
 
   async run(params = {}) {
@@ -141,7 +142,7 @@ class BoostEngine {
       // Pick a random video weighted by remaining views needed
       const remainingViews = this.videoTargets.map((t, i) => ({
         url: this.videoUrls[i],
-        remaining: t - (this._viewsPerVideo[i] || 0),
+        remaining: t - (this._viewsPerVideo[this.videoUrls[i]] || 0),
       })).filter(v => v.remaining > 0);
 
       if (remainingViews.length === 0) break; // all done
