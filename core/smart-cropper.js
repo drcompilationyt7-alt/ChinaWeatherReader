@@ -228,6 +228,33 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
     if (!cropDims) return `scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
     if (cropDims.maxCropX <= 0) return `crop=${cropDims.cropW}:${cropDims.cropH}:0:${cropDims.cropY},scale=${SHORTS_W}:${SHORTS_H}:flags=lanczos`;
 
+    // Run TalkNet ASD to identify active speaker positions (adds speaker importance boost)
+    let speakerPositions = {};
+    try {
+      const talknetPath = path.join(__dirname, 'talknet-detect.py');
+      if (fs.existsSync(talknetPath)) {
+        logger.info(`Running TalkNet active speaker detection...`);
+        const talknetOut = execSync(
+          `python3 "${talknetPath}" "${videoPath}" --start ${startTime} --duration ${duration} --output-json 2>&1`,
+          { timeout: 180000, encoding: 'utf8' }
+        ).toString().trim();
+        // Find the JSON output (last JSON line)
+        const talknetLines = talknetOut.split('\n').filter(l => l.startsWith('['));
+        if (talknetLines.length > 0) {
+          const talknetData = JSON.parse(talknetLines[talknetLines.length - 1]);
+          // Build map of time -> speaker center
+          for (const entry of talknetData) {
+            if (entry.active_speaker) {
+              speakerPositions[entry.time] = entry.face_center_x;
+            }
+          }
+          logger.info(`TalkNet: ${Object.keys(speakerPositions).length} frames with active speaker`);
+        }
+      }
+    } catch (e) {
+      // Silently continue without TalkNet data
+    }
+
     logger.info(`Dynamic crop: running object tracker @5 FPS on ${duration.toFixed(1)}s clip...`);
     const trackerOutput = execSync(
       `python3 "${path.join(__dirname, 'object-tracker.py')}" "${videoPath}" --start ${startTime} --duration ${duration} --fps 5 --max-crop-x ${cropDims.maxCropX} --max-crop-y ${cropDims.cropH}`,
@@ -268,11 +295,25 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
       logger.info(`Vertical crop: median cropY=${avgCropY} from ${cropYValues.length} samples`);
     }
 
-    // Convert to crop space X positions
-    const rawCropPositions = rawPositions.map(p => ({
-      time: p.time,
-      cropX: Math.max(0, Math.min(Math.round(p.cropX - (cropDims.cropW / 2)), cropDims.maxCropX)),
-    }));
+    // Convert to crop space X positions, with TalkNet speaker boost if available
+    const rawCropPositions = rawPositions.map(p => {
+      let speakerCropX = p.cropX;
+      // If there's an active speaker at this time, weight toward their position
+      const nearestSpeakerTime = Object.keys(speakerPositions)
+        .map(t => ({ time: parseFloat(t), diff: Math.abs(parseFloat(t) - p.time) }))
+        .filter(t => t.diff < 0.3) // within 0.3s
+        .sort((a, b) => a.diff - b.diff)[0];
+      if (nearestSpeakerTime) {
+        const speakerX = speakerPositions[nearestSpeakerTime.time];
+        // Blend: 60% speaker position, 40% original crop center (weights speaker heavily)
+        speakerCropX = Math.round(speakerX * 0.6 + p.cropX * 0.4);
+        logger.info(`  ASD boost @${p.time.toFixed(1)}s: crop ${Math.round(p.cropX)} → ${speakerCropX} (speaker at ${Math.round(speakerX)})`);
+      }
+      return {
+        time: p.time,
+        cropX: Math.max(0, Math.min(Math.round(speakerCropX - (cropDims.cropW / 2)), cropDims.maxCropX)),
+      };
+    });
 
     // EMA smoothing
     const smoothed = smoothCropPositions(rawCropPositions, cropDims.maxCropX, 8);
