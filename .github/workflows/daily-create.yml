@@ -119,7 +119,7 @@ jobs:
           if [ -n "${{ github.event.inputs.publishAt }}" ]; then
             echo "PUBLISH_AT=${{ github.event.inputs.publishAt }}" >> $GITHUB_ENV
           else
-            echo "PUBLISH_AT=$(date -u -d 'today ${PUBLISH_HOUR_UTC}:00:00' +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+            echo "PUBLISH_AT=$(date -u -d "today ${PUBLISH_HOUR_UTC}:00:00" +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           fi
 
       - name: Run daily pipeline

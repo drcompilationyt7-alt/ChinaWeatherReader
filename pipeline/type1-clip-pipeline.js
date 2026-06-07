@@ -1019,7 +1019,7 @@ async function runType1Pipeline(options = {}) {
   // Only the "Today we have..." line is LLM-generated; the rest is a FIXED template
   const todayLine = await gemini.generateRouletteTodayLine(country, hookDescription, bestVideo.title);
   const todayFallback = `Today we have a viral moment from ${country}!`;
-  const rouletteText = todayLine || todayFallback;
+  const rouletteText = (todayLine && todayLine.trim().length > 20) ? todayLine.trim() : todayFallback;
 
   // FIXED template prepended to description
   const rouletteHeader = `🌍 Daily Random Roulette 🌍

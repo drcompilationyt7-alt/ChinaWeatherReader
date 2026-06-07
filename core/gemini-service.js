@@ -627,7 +627,13 @@ Example: "Today we have a street food vendor in Thailand making the crispiest sp
 
 Keep it under 20 words. Just the one sentence, no extra text, no hashtags.`;
 
-    return this.chat(null, prompt, { temperature: 0.8, maxTokens: 80 });
+    const result = await this.chat(null, prompt, { temperature: 0.8, maxTokens: 150 });
+    // Validate: must be a complete "Today we have..." sentence (>20 chars, starts with "Today we have")
+    if (result && /^today we have/i.test(result.trim()) && result.trim().length > 20) {
+      return result.trim();
+    }
+    logger.warn(`generateRouletteTodayLine returned incomplete/invalid response: "${(result || '').substring(0, 60)}" — using fallback`);
+    return null; // Null triggers the fallback in the pipeline
   }
 
   async generateTitle(country, transcript, origTitle, context = {}) {
