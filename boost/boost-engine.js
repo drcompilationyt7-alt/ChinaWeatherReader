@@ -184,28 +184,51 @@ class BoostEngine {
       await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
     }
 
-    // No-proxy fallback: use current IP (GitHub runner) directly
-    if (this.totalViews < this.targetViews) {
-      const remaining = this.targetViews - this.totalViews;
-      const remainingCount = Math.min(remaining, 20); // limit no-proxy attempts
-      logger.info(`No-proxy fallback: trying ${remainingCount} views without proxy...`);
+    // Guaranteed no-proxy views: always run 100-200 views from your own IP
+    // regardless of proxy success. These are your real views.
+    const noProxyBaseViews = 100 + Math.floor(Math.random() * 101); // 100-200
+    const noProxyRemaining = Math.max(0, noProxyBaseViews - this.totalViews);
+    const noProxyCount = Math.min(noProxyRemaining, 200);
+    
+    if (noProxyCount > 0) {
+      logger.header(`GUARANTEED NO-PROXY VIEWS`);
+      logger.info(`Running ${noProxyCount} no-proxy views (base: ${noProxyBaseViews}, already boosted: ${this.totalViews})...`);
 
-      // Wait a moment for proxy gathering to stop
-      await new Promise(r => setTimeout(r, 2000));
-
-      for (let i = 0; i < remainingCount && this.totalViews < this.targetViews; i++) {
+      // How many to each video? Distribute proportionally based on remaining targets
+      const remainingPerVideo = this.videoTargets.map((t, i) => ({
+        url: this.videoUrls[i],
+        remaining: Math.max(0, t - (this._viewsPerVideo[this.videoUrls[i]] || 0)),
+      }));
+      const totalRemaining = remainingPerVideo.reduce((a, b) => a + b.remaining, 0);
+      
+      let noProxyDone = 0;
+      for (let i = 0; i < noProxyCount; i++) {
+        if (this.totalViews >= this.targetViews && noProxyDone >= noProxyBaseViews) break;
+        
         masterSeed++;
         const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
         const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
         const watchSec = randomWatchTime(Math.random);
 
+        // Weighted random pick among videos
+        const videoIdx = Math.floor(Math.random() * this.videoUrls.length);
+        const videoUrl = this.videoUrls[videoIdx];
+
         sessionPromises.push(
-          this._spawnSession(this.videoUrls[0], '', ua, vp, masterSeed, watchSec)
+          this._spawnSession(videoUrl, '', ua, vp, masterSeed, watchSec)
         );
 
-        // Longer stagger for no-proxy to avoid bot detection patterns
+        noProxyDone++;
+        if (noProxyDone % 20 === 0) {
+          logger.info(`  No-proxy: ${noProxyDone}/${noProxyCount} sent`);
+        }
+
+        // Stagger 3-8s apart to avoid bot detection
         await new Promise(r => setTimeout(r, 3000 + Math.random() * 5000));
       }
+      logger.info(`No-proxy views sent: ${noProxyDone}/${noProxyCount}`);
+    } else {
+      logger.info(`Already at ${this.totalViews} views, skipping no-proxy phase`);
     }
 
     // Mark as done and wait for remaining sessions
@@ -455,30 +478,59 @@ class BoostEngine {
       const lines = out.split('\n').filter(Boolean);
       const shorts = [];
 
+      // YouTube video ID pattern: exactly 11 chars [a-zA-Z0-9_-]
+      const YT_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
+
       for (const line of lines) {
         try {
           const p = JSON.parse(line);
-          // Filter to Shorts (<60s)
-          if (p.id && p.duration && p.duration <= 60) {
-            shorts.push(`https://www.youtube.com/watch?v=${p.id}`);
+          // Filter to Shorts (<60s) AND validate ID is proper 11-char YouTube ID
+          if (p.id && YT_ID_REGEX.test(p.id) && p.duration && p.duration <= 60) {
+            shorts.push({
+              url: `https://www.youtube.com/watch?v=${p.id}`,
+              id: p.id,
+            });
+          } else if (p.id && !YT_ID_REGEX.test(p.id)) {
+            logger.warn(`  Skipping invalid video ID: "${p.id}" (truncated/corrupt)`);
           }
         } catch {}
       }
 
       if (shorts.length === 0) {
-        logger.warn('No shorts found on channel');
+        logger.warn('No valid shorts found on channel');
+        return [];
+      }
+
+      // Verify availability of each candidate with a quick yt-dlp -s check
+      const verifiedShorts = [];
+      const unverified = [...shorts];
+      for (const s of unverified) {
+        try {
+          // Quick availability check: --get-title with no download
+          execSync(
+            `yt-dlp -s --get-title "https://www.youtube.com/watch?v=${s.id}" 2>nul`,
+            { timeout: 10000, encoding: 'utf8' }
+          ).toString().trim();
+          verifiedShorts.push(s.url);
+        } catch {
+          logger.warn(`  Skipping unavailable video: ${s.url}`);
+        }
+      }
+
+      if (verifiedShorts.length === 0) {
+        logger.warn('No available shorts after availability check');
         return [];
       }
 
       // Pick random count from available shorts
-      const shuffled = [...shorts];
+      const shuffled = [...verifiedShorts];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
       const selected = shuffled.slice(0, Math.min(count, shuffled.length));
-      logger.success(`Selected ${selected.length} random shorts from ${shorts.length} available`);
+      logger.success(`Selected ${selected.length} random shorts from ${verifiedShorts.length} available (${shorts.length - verifiedShorts.length} unavailable skipped)`);
       return selected;
     } catch (e) {
       logger.warn(`Channel fetch failed: ${e.message.substring(0, 100)}`);

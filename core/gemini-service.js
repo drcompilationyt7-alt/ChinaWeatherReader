@@ -1,7 +1,7 @@
 /**
  * Gemini Service — Free AI Brain for Mr. WorldWideWebster
- * Uses Google AI Studio (free tier) with 8-key rotation.
- * Free tier: 15 RPM, 1M tokens/day per key, 8 keys = 120 RPM
+ * Uses Google AI Studio (free tier) with 14-key rotation.
+ * Free tier: 15 RPM, 1M tokens/day per key, 14 keys = 210 RPM
  * 
  * Supports:
  * - YouTube URL video analysis (file_data.file_uri)
@@ -89,7 +89,7 @@ class GeminiService {
   get model() { return MODEL_CHAIN[this.currentModelIndex % MODEL_CHAIN.length]; }
 
   _loadKeys() {
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 14; i++) {
       const key = process.env[`GEMINI_API_KEY${i === 1 ? '' : `_${i}`}`];
       if (key) this.keys.push(key);
     }

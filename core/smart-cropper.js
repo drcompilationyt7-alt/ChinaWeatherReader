@@ -87,40 +87,58 @@ function computeCropDimensions(srcW, srcH) {
 }
 
 /**
- * Smooth positions with dead zone, EMA smoothing, and max step clamp.
+ * Smooth positions with dead zone, EMA smoothing, and adaptive max step clamp.
+ * - deadZone (8px): prevents micro-jitter
+ * - Alpha tiers: responsive but not jerky
+ * - Adaptive maxStep: small moves capped at 80px, large jumps at 150px (faster tracking)
  */
 function smoothCropPositions(rawPositions, maxCropX, deadZone = 8) {
   if (rawPositions.length === 0) return [];
   const smoothed = [];
   let prevCropX = rawPositions[0].cropX;
+  // Track cluster switches for rapid transitions
+  let prevCluster = null;
   for (let i = 0; i < rawPositions.length; i++) {
-    const raw = rawPositions[i].cropX;
-    let output = raw;
+    const raw = rawPositions[i];
+    const rawCropX = raw.cropX;
+    const cluster = raw.cluster || null;
+    let output = rawCropX;
     if (i === 0) {
-      smoothed.push({ time: rawPositions[i].time, cropX: Math.round(output) });
+      smoothed.push({ time: raw.time, cropX: Math.round(output) });
       prevCropX = output;
+      prevCluster = cluster;
       continue;
     }
-    const rawDelta = raw - prevCropX;
+    const rawDelta = rawCropX - prevCropX;
     if (Math.abs(rawDelta) < deadZone) {
       output = prevCropX;
     } else {
       const absDelta = Math.abs(rawDelta);
+      // Much more responsive alpha tiers
       let alpha;
-      if (absDelta < 30) alpha = 0.12;
-      else if (absDelta < 80) alpha = 0.25;
-      else alpha = 0.45;
-      const maxStep = 40;
+      if (absDelta < 30) alpha = 0.25;
+      else if (absDelta < 80) alpha = 0.55;
+      else alpha = 0.85;
+      // Adaptive maxStep: small=80px, medium=80px, large jump=150px
+      let maxStep = 80;
+      if (absDelta > 100) maxStep = 150;
+      // If cluster just switched (left→right or right→left), allow very fast pan
+      const clusterChanged = cluster && prevCluster && cluster !== prevCluster;
+      if (clusterChanged) {
+        maxStep = Math.min(absDelta, maxCropX); // allow full jump in one step for cluster switch
+        alpha = 1.0; // snap immediately on cluster switch
+      }
       if (absDelta > maxStep) {
-        const direction = rawDelta > 0 ? 1 : -1;
+        const direction = rawCropX > 0 ? 1 : -1;
         output = prevCropX + direction * maxStep;
       } else {
         output = prevCropX + alpha * rawDelta;
       }
     }
     output = Math.max(0, Math.min(Math.round(output), maxCropX));
-    smoothed.push({ time: rawPositions[i].time, cropX: output });
+    smoothed.push({ time: raw.time, cropX: output });
     prevCropX = output;
+    prevCluster = cluster;
   }
   return smoothed;
 }
@@ -312,6 +330,7 @@ function generateDynamicCropFilter(videoPath, startTime, duration, srcW, srcH, t
       return {
         time: p.time,
         cropX: Math.max(0, Math.min(Math.round(speakerCropX - (cropDims.cropW / 2)), cropDims.maxCropX)),
+        cluster: p.cluster || null,
       };
     });
 

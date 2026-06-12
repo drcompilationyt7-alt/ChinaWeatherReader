@@ -5,8 +5,13 @@ Tracks ANY YOLO class (person, sports ball, animal, vehicle) and
 applies importance scoring to keep the top 1-4 most important
 subjects per frame — like a camera operator focusing on the action.
 
-Output format: same as person-tracker.py
-  [{time, cropX, cropY, subjectCount, primaryId, subjectTypes}, ...]
+Dual-cluster detection: When subjects form two distinct groups
+(left/right halves of frame), tracks which cluster has more activity
+and prioritizes left cluster first, switching to right when its
+motion exceeds threshold. This handles dual-video layouts.
+
+Output format:
+  [{time, cropX, cropY, subjectCount, primaryId, subjectTypes, cluster}, ...]
 
 Usage:
   python3 object-tracker.py <video_path> --start 0 --duration 45 --fps 5
@@ -131,10 +136,79 @@ def compute_group_center(bboxes, frame_w, frame_h):
     return cx, cy
 
 
+def detect_clusters(detected, frame_midpoint):
+    """
+    Split detections into left/right clusters based on frame midpoint.
+    Returns (left_cluster, right_cluster) where each is a list of detections.
+    """
+    left = []
+    right = []
+    for d in detected:
+        bbox = d["bbox"]
+        cx = (bbox[0] + bbox[2]) / 2.0
+        if cx < frame_midpoint:
+            left.append(d)
+        else:
+            right.append(d)
+    return left, right
+
+
+def compute_cluster_activity(cluster):
+    """
+    Compute total activity score for a cluster.
+    Sum of importance scores of all detections in the cluster.
+    Returns 0 if cluster is empty.
+    """
+    if not cluster:
+        return 0.0
+    return sum(d["score"] for d in cluster)
+
+
+def choose_active_cluster(left, right, prev_active, frame_w):
+    """
+    Choose which cluster to focus on.
+    Prioritizes LEFT first. Switches to RIGHT only when its activity
+    significantly exceeds left activity.
+    
+    Args:
+        left: list of detections on left half
+        right: list of detections on right half
+        prev_active: 'left' or 'right' from previous frame
+        frame_w: frame width for midpoint calculation
+        
+    Returns:
+        ('left', left_detections) or ('right', right_detections)
+    """
+    left_activity = compute_cluster_activity(left)
+    right_activity = compute_cluster_activity(right)
+    
+    # If only one cluster has subjects, use that one
+    if not left and not right:
+        return 'left', left  # neither — keep previous
+    if not left and right:
+        return 'right', right
+    if left and not right:
+        return 'left', left
+    
+    # Both clusters have subjects — decide based on activity
+    # Left priority: only switch to right if right activity is ≥1.5x left activity
+    # Or if right has been active for multiple frames and left is quiet
+    if prev_active == 'left':
+        # Stay on left unless right is significantly more active
+        if right_activity > left_activity * 1.5:
+            return 'right', right
+        return 'left', left
+    else:
+        # Stay on right unless left is significantly more active
+        if left_activity > right_activity * 1.5:
+            return 'left', left
+        return 'right', right
+
+
 def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_crop_y=None):
     """
     Track objects in a video clip using YOLO with ByteTrack.
-    Returns array of {time, cropX, cropY, subjectCount, primaryId, subjectTypes}.
+    Returns array of {time, cropX, cropY, subjectCount, primaryId, subjectTypes, cluster}.
     """
     captured = io.StringIO()
     with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
@@ -151,6 +225,7 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
         track_class = {}         # track_id -> cls_id
         track_stability = {}     # track_id -> frame count
         positions = []
+        active_cluster = 'left'  # start with left priority
 
         infer_t0 = time.time()
         for i in range(num_samples):
@@ -224,28 +299,46 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
             # Sort by importance score, keep top MAX_SUBJECTS
             detected.sort(key=lambda d: d["score"], reverse=True)
             kept = detected[:MAX_SUBJECTS]
-            kept_bboxes = [d["bbox"] for d in kept]
 
-            if kept_bboxes:
-                cx, cy = compute_group_center(kept_bboxes, frame_w, frame_h)
-                primary = max(kept, key=lambda d: d["score"])
+            if kept:
+                # Dual-cluster detection
+                frame_midpoint = frame_w / 2.0
+                left_cluster, right_cluster = detect_clusters(kept, frame_midpoint)
+                
+                # Choose which cluster to focus on (left-priority)
+                cluster_name, active_detections = choose_active_cluster(
+                    left_cluster, right_cluster, active_cluster, frame_w
+                )
+                active_cluster = cluster_name
+                
+                # Compute crop center from the active cluster only
+                active_bboxes = [d["bbox"] for d in active_detections]
+                cx, cy = compute_group_center(active_bboxes, frame_w, frame_h)
+                primary = max(active_detections, key=lambda d: d["score"])
+                
+                # Log cluster info
+                if i % (fps * 2) == 0 or i == num_samples - 1:
+                    left_count = len(left_cluster)
+                    right_count = len(right_cluster)
+                    left_act = compute_cluster_activity(left_cluster)
+                    right_act = compute_cluster_activity(right_cluster)
+                    print(
+                        f"  {t:.1f}s: cluster={cluster_name}, "
+                        f"left={left_count}({left_act:.0f}), "
+                        f"right={right_count}({right_act:.0f}), "
+                        f"cx={cx:.0f}",
+                        file=sys.stderr,
+                    )
+                
                 positions.append({
                     "time": round(t, 2),
                     "cropX": cx,
                     "cropY": cy,
-                    "subjectCount": len(kept),
+                    "subjectCount": len(active_detections),
                     "primaryId": primary["track_id"],
-                    "subjectTypes": [d["cls_id"] for d in kept],
+                    "subjectTypes": [d["cls_id"] for d in active_detections],
+                    "cluster": cluster_name,
                 })
-
-                if i % (fps * 2) == 0 or i == num_samples - 1:
-                    types_str = ",".join(str(c) for c in [d["cls_id"] for d in kept])
-                    print(
-                        f"  {t:.1f}s: {len(kept)} subject(s), "
-                        f"cx={cx:.0f}, cy={cy:.0f}, "
-                        f"types=[{types_str}]",
-                        file=sys.stderr,
-                    )
             else:
                 # No detections — hold last position
                 if positions:
@@ -256,6 +349,7 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
                         "subjectCount": 0,
                         "primaryId": -1,
                         "subjectTypes": [],
+                        "cluster": active_cluster,
                     })
 
     print(
