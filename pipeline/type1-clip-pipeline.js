@@ -775,7 +775,7 @@ async function runType1Pipeline(options = {}) {
   const cut = smartCut(tempDownloadPath, tempDuration);
   
   const analysisClip = path.join(tmpDir, `analysis_${Date.now()}.mp4`);
-  execSync(`ffmpeg -y -ss ${cut.start} -i "${tempDownloadPath}" -to ${cut.end} -c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${analysisClip}"`, { timeout: 240000 });
+  execSync(`ffmpeg -y -ss ${cut.start} -i "${tempDownloadPath}" -to ${cut.end} -c:v libx264 -preset fast -crf 0 -pix_fmt yuv444p -c:a aac -b:a 320k "${analysisClip}"`, { timeout: 7200000 });
 
   const analysisDims = probeDownloadedVideo(analysisClip);
   const dialogue = await transcribeAudio(analysisClip, tmpDir);

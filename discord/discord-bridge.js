@@ -25,7 +25,7 @@ class DiscordBridge {
       this.client.on('error', () => {});
       await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Discord login timed out')), 15000);
-        this.client.once('ready', () => { clearTimeout(timeout); this.logger.success(`Discord bot connected: ${this.client.user?.tag || 'Unknown'}`); this.ready = true; resolve(); });
+        this.client.once('clientReady', () => { clearTimeout(timeout); this.logger.success(`Discord bot connected: ${this.client.user?.tag || 'Unknown'}`); this.ready = true; resolve(); });
         this.client.once('error', (e) => { clearTimeout(timeout); reject(e); });
         this.client.login(this.token).catch(reject);
       });

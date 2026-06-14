@@ -93,7 +93,53 @@ class BoostEngine {
       }
       logger.success(`Found ${this.videoUrls.length} videos, boosting with random distribution`);
     } else if (params.url) {
-      this.videoUrls = [params.url];
+      // Verify single video is available before attempting to boost
+      logger.info(`Verifying video availability: ${params.url}`);
+      try {
+        const { execSync } = require('child_process');
+        const out = execSync(
+          `yt-dlp -s --get-title "${params.url}" 2>nul`,
+          { timeout: 15000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+        ).toString().trim();
+        if (out && out.length > 0) {
+          logger.success(`Video is available: "${out.substring(0, 60)}"`);
+          this.videoUrls = [params.url];
+        } else {
+          logger.warn(`Video unavailable at URL: ${params.url}`);
+          // Try to find a channel video as fallback
+          const handle = process.env.YOUTUBE_HANDLE || process.env.YOUTUBE_USERNAME;
+          if (handle) {
+            const cleanHandle = handle.replace(/^@/, '');
+            channelUrl = `https://www.youtube.com/@${cleanHandle}`;
+            logger.info(`Falling back to fetch from channel: ${channelUrl}`);
+            this.videoUrls = await this._fetchRandomVideos(channelUrl, 5);
+            if (this.videoUrls.length === 0) {
+              logger.error('No videos found on channel as fallback');
+              return { success: false, views: 0, error: 'No available videos' };
+            }
+          } else {
+            logger.error('No fallback channel configured and video unavailable');
+            return { success: false, views: 0, error: 'Video unavailable' };
+          }
+        }
+      } catch (e) {
+        logger.warn(`Availability check failed for ${params.url}: ${e.message.substring(0, 80)}`);
+        // Try channel fallback
+        const handle = process.env.YOUTUBE_HANDLE || process.env.YOUTUBE_USERNAME;
+        if (handle) {
+          const cleanHandle = handle.replace(/^@/, '');
+          channelUrl = `https://www.youtube.com/@${cleanHandle}`;
+          logger.info(`Falling back to fetch from channel: ${channelUrl}`);
+          this.videoUrls = await this._fetchRandomVideos(channelUrl, 5);
+          if (this.videoUrls.length === 0) {
+            logger.error('No videos found on channel as fallback');
+            return { success: false, views: 0, error: 'No available videos' };
+          }
+        } else {
+          logger.error(`Video unavailable and no fallback channel: ${e.message.substring(0, 60)}`);
+          return { success: false, views: 0, error: 'Video unavailable' };
+        }
+      }
     }
 
     if (params.views) this.targetViews = parseInt(params.views) || 1000;

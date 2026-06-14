@@ -181,18 +181,32 @@ async function runSession() {
       } catch {}
     }
 
-    // Done - report success if we didn't hit an obvious bot page
+    // Done - report success if we didn't hit an obvious bot page or unavailable video
     const pageTitle = await page.title().catch(() => '');
     let pageUrl = '';
+    let pageContent = '';
     try { pageUrl = page.url(); } catch {}
+    try { pageContent = await page.evaluate(() => document.body?.innerText?.substring(0, 500) || ''); } catch {}
+    
     const isBotPage = pageTitle.includes('captcha') || pageTitle.includes('unusual traffic') || pageUrl.includes('consent');
-
+    const isUnavailable = 
+      pageTitle.includes('Video unavailable') || 
+      pageTitle.includes('This video is unavailable') ||
+      pageContent.includes('Video unavailable') ||
+      pageContent.includes('This video is unavailable') ||
+      pageContent.includes('This video is private') ||
+      pageContent.includes('This video has been removed') ||
+      pageContent.includes('Sign in to confirm') ||
+      pageUrl.includes('unavailable');
+    
     if (page) try { await page.close(); } catch {}
     if (context) try { await context.close(); } catch {}
     if (browser) try { await browser.close(); } catch {}
 
     if (isBotPage) {
       process.send({ success: false, error: 'Bot page detected (consent/captcha)', videoUrl });
+    } else if (isUnavailable) {
+      process.send({ success: false, error: 'Video unavailable (private/removed/restricted)', videoUrl });
     } else {
       process.send({ success: true, watchTime, videoUrl });
     }
