@@ -133,6 +133,17 @@ jobs:
           git add memory/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "Update temp memory $(date +%F)" && git push || true)
 
+      - name: Daily Boost (2 random from posted pool)
+        run: |
+          echo "Running daily boost..."
+          node boost/boost-engine.js --daily-boost --views 1000 2>&1 || echo "Daily boost skipped (pool may be empty on first run)"
+
+      - name: Save boost memory
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add memory/posted-videos.json 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update boost memory $(date +%F)" && git push || true)
+
       - name: Cleanup
         if: always()
         run: |

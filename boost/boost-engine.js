@@ -1,10 +1,24 @@
 #!/usr/bin/env node
 
 /**
- * Mr. WorldWideWebster — Boost Engine v8
+ * Mr. WorldWideWebster — Boost Engine v9
  *
  * Fetches 5 RANDOM shorts from the channel, then boosts them
  * with human-like parallel sessions via child process workers.
+ *
+ * Modes:
+ *   --url "URL"              Boost a single specific video
+ *   --channel "URL"          Boost random videos from a channel
+ *   --daily-boost            Pick 2 random from posted-videos pool and boost them
+ *   --add-posted "URL"       Add a URL to the posted-videos pool (bookkeeping)
+ *   --views N                Total target views (default 1000)
+ *
+ * Posted videos pool (memory/posted-videos.json):
+ *   - Every uploaded video URL is tracked here
+ *   - Each entry has a timestamp
+ *   - Entries older than 30 days are auto-expired
+ *   - --daily-boost picks 2 random active entries
+ *   - Expired entries are cleaned up on each run
  *
  * Target: 1000 TOTAL views distributed randomly across 5 videos
  * Proxy pool: target 100, 20min timeout, stream as validated
@@ -13,12 +27,18 @@
  * Usage:
  *   node boost/boost-engine.js --channel "https://www.youtube.com/@channel"
  *   node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" --views 1000
+ *   node boost/boost-engine.js --daily-boost
+ *   node boost/boost-engine.js --add-posted "https://youtube.com/watch?v=xxx"
  */
 const { execSync, fork } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const { Logger } = require('../core/logger');
 
 const logger = new Logger('BoostEngine');
+
+const POSTED_VIDEOS_FILE = path.join(__dirname, '..', 'memory', 'posted-videos.json');
+const MAX_VIDEO_AGE_DAYS = 30;
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -70,11 +90,98 @@ class BoostEngine {
     this._proxyWaitQueue = []; // waiting consumers
     this._startedAt = null;
     this._completed = false;
-    this._viewsPerVideo = []; // per-video view counts, initialized in constructor
+    this._viewsPerVideo = {}; // per-video view counts
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // POSTED VIDEOS POOL (memory/posted-videos.json)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Load posted videos pool, expires entries older than 30 days
+   */
+  loadPostedVideos() {
+    try {
+      if (fs.existsSync(POSTED_VIDEOS_FILE)) {
+        const raw = fs.readFileSync(POSTED_VIDEOS_FILE, 'utf8');
+        const data = JSON.parse(raw);
+        const videos = Array.isArray(data.videos) ? data.videos : [];
+        // Expire old entries
+        const cutoff = Date.now() - MAX_VIDEO_AGE_DAYS * 24 * 60 * 60 * 1000;
+        const active = videos.filter(v => new Date(v.postedAt).getTime() >= cutoff);
+        const expired = videos.length - active.length;
+        if (expired > 0) {
+          logger.info(`Expired ${expired} old posted video entries (older than ${MAX_VIDEO_AGE_DAYS} days)`);
+        }
+        return { videos: active };
+      }
+    } catch (e) {
+      logger.warn(`Posted videos load: ${e.message}`);
+    }
+    return { videos: [] };
+  }
+
+  savePostedVideos(data) {
+    try {
+      if (!fs.existsSync(path.dirname(POSTED_VIDEOS_FILE))) {
+        fs.mkdirSync(path.dirname(POSTED_VIDEOS_FILE), { recursive: true });
+      }
+      fs.writeFileSync(POSTED_VIDEOS_FILE, JSON.stringify(data, null, 2));
+      logger.success(`Posted videos saved: ${data.videos.length} active entries`);
+    } catch (e) {
+      logger.warn(`Posted videos save: ${e.message}`);
+    }
+  }
+
+  addPostedVideo(url, title, country) {
+    const data = this.loadPostedVideos();
+    // Dedup by URL
+    if (!data.videos.some(v => v.url === url)) {
+      data.videos.push({
+        url,
+        title: title || 'Unknown',
+        country: country || 'Unknown',
+        postedAt: new Date().toISOString(),
+      });
+      logger.info(`Added to posted pool: ${url.substring(0, 50)}`);
+    } else {
+      logger.info(`Video already in posted pool: ${url.substring(0, 50)}`);
+    }
+    this.savePostedVideos(data);
+  }
+
+  pickDailyBoostVideos(count = 2) {
+    const data = this.loadPostedVideos();
+    const videos = data.videos;
+    if (videos.length === 0) {
+      logger.warn('No posted videos in pool — cannot pick daily boost targets');
+      return [];
+    }
+    // Shuffle and pick
+    const shuffled = [...videos];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const picked = shuffled.slice(0, Math.min(count, shuffled.length));
+    logger.info(`Daily boost: picked ${picked.length} videos from pool of ${videos.length}`);
+    for (const v of picked) {
+      logger.info(`  -> ${v.url} (${v.country}, posted ${v.postedAt.substring(0, 10)})`);
+    }
+    return picked;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // MAIN RUN
+  // ─────────────────────────────────────────────────────────────
+
   async run(params = {}) {
-    // Resolve channel URL from YOUTUBE_HANDLE or YOUTUBE_USERNAME
+    // ─── Daily Boost Mode ────────────────────────────────────────
+    if (params.dailyBoost) {
+      return this._runDailyBoost(params);
+    }
+
+    // ─── Resolve channel URL from YOUTUBE_HANDLE or YOUTUBE_USERNAME ──
     let channelUrl = params.channel;
     if (!channelUrl) {
       const handle = process.env.YOUTUBE_HANDLE || process.env.YOUTUBE_USERNAME;
@@ -153,7 +260,7 @@ class BoostEngine {
     if (sum > 0) this.videoTargets[0] += this.targetViews - sum;
     logger.info(`Distribution: ${this.videoUrls.map((v, i) => `${this.videoTargets[i]} views`).join(', ')}`);
 
-    logger.header('BOOST ENGINE v8');
+    logger.header('BOOST ENGINE v9');
     logger.info(`Videos: ${this.videoUrls.length}`);
     logger.info(`Total target: ${this.targetViews} views`);
 
@@ -291,6 +398,139 @@ class BoostEngine {
     return { success: this.totalViews > 0, views: this.totalViews };
   }
 
+  /**
+   * Daily Boost Mode:
+   * - Load posted-videos pool
+   * - Pick 2 random videos
+   * - Boost each with targetViews/2 views
+   * - Do NOT delete them from the pool afterwards (they stay available for future days)
+   */
+  async _runDailyBoost(params = {}) {
+    const targetTotal = parseInt(params.views) || 1000;
+    const videosPerRun = 2;
+    const viewsPerVideo = Math.floor(targetTotal / videosPerRun);
+
+    const picked = this.pickDailyBoostVideos(videosPerRun);
+    if (picked.length === 0) {
+      logger.error('No videos in posted pool to boost');
+      return { success: false, views: 0, error: 'Pool empty' };
+    }
+
+    this.videoUrls = picked.map(v => v.url);
+    this.targetViews = picked.length * viewsPerVideo;
+    this.videoTargets = picked.map(() => viewsPerVideo);
+
+    // Rebalance to hit exact target
+    const sum = this.videoTargets.reduce((a, b) => a + b, 0);
+    if (sum > 0) this.videoTargets[0] += targetTotal - sum;
+
+    logger.header('BOOST ENGINE v9 — DAILY BOOST MODE');
+    logger.info(`Picked ${picked.length} videos from pool`);
+    logger.info(`Boost targets: ${this.videoUrls.map((u, i) => `${u.substring(0, 40)} → ${this.videoTargets[i]} views`).join(', ')}`);
+
+    // Run the same boost loop as run() but without re-fetching
+    const startTime = Date.now();
+    this._startedAt = startTime;
+    const sessionPromises = [];
+
+    const proxyGatherPromise = this._buildProxyPool(10 * 60 * 1000);
+
+    let masterSeed = Date.now();
+    let consecutiveFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 30;
+
+    while (this.totalViews < this.targetViews && (Date.now() - startTime) < 25 * 60 * 1000) {
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        logger.warn(`${consecutiveFailures} consecutive failures — switching to no-proxy mode`);
+        break;
+      }
+
+      const proxy = await this._waitForProxyWithTimeout(30000);
+      if (!proxy) {
+        logger.warn('No proxy available within 30s — trying without proxy');
+        break;
+      }
+
+      const remainingViews = this.videoTargets.map((t, i) => ({
+        url: this.videoUrls[i],
+        remaining: t - (this._viewsPerVideo[this.videoUrls[i]] || 0),
+      })).filter(v => v.remaining > 0);
+
+      if (remainingViews.length === 0) break;
+
+      const totalRemaining = remainingViews.reduce((a, b) => a + b.remaining, 0);
+      let pickRoll = Math.random() * totalRemaining;
+      let picked = remainingViews[0];
+      for (const rv of remainingViews) {
+        pickRoll -= rv.remaining;
+        if (pickRoll <= 0) { picked = rv; break; }
+      }
+
+      masterSeed++;
+      const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+      const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
+      const watchSec = randomWatchTime(Math.random);
+      const proxyStr = proxy ? `http://${proxy.ip}:${proxy.port}` : '';
+
+      const sessionPromise = this._spawnSession(picked.url, proxyStr, ua, vp, masterSeed, watchSec)
+        .then(result => {
+          if (result) {
+            consecutiveFailures = 0;
+          } else {
+            consecutiveFailures++;
+          }
+          return result;
+        });
+      sessionPromises.push(sessionPromise);
+
+      if (this.totalViews % 10 === 0 || sessionPromises.length % 50 === 0) {
+        logger.info(`Active: ${sessionPromises.length}, total: ${this.totalViews}/${this.targetViews}, failures: ${consecutiveFailures}`);
+      }
+
+      await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
+    }
+
+    // No-proxy views
+    const noProxyBaseViews = 100 + Math.floor(Math.random() * 101);
+    const noProxyRemaining = Math.max(0, noProxyBaseViews - this.totalViews);
+    const noProxyCount = Math.min(noProxyRemaining, 200);
+
+    if (noProxyCount > 0) {
+      logger.header(`GUARANTEED NO-PROXY VIEWS (daily boost)`);
+      logger.info(`Running ${noProxyCount} no-proxy views...`);
+      for (let i = 0; i < noProxyCount; i++) {
+        if (this.totalViews >= this.targetViews) break;
+
+        masterSeed++;
+        const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
+        const watchSec = randomWatchTime(Math.random);
+        const videoIdx = Math.floor(Math.random() * this.videoUrls.length);
+        const videoUrl = this.videoUrls[videoIdx];
+
+        sessionPromises.push(this._spawnSession(videoUrl, '', ua, vp, masterSeed, watchSec));
+        if (i % 20 === 0) logger.info(`  No-proxy: ${i}/${noProxyCount} sent`);
+        await new Promise(r => setTimeout(r, 3000 + Math.random() * 5000));
+      }
+    }
+
+    this._completed = true;
+    try { await Promise.race([proxyGatherPromise, new Promise(r => setTimeout(r, 5000))]); } catch {}
+
+    if (sessionPromises.length > 0) {
+      logger.info(`Waiting for ${sessionPromises.length} sessions to finish...`);
+      await Promise.allSettled(sessionPromises);
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
+    logger.success(`Daily boost complete: ${this.totalViews} views in ${elapsed} min`);
+    return { success: this.totalViews > 0, views: this.totalViews };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSION SPAWNING
+  // ─────────────────────────────────────────────────────────────
+
   async _spawnSession(videoUrl, proxyStr, ua, vp, seed, watchSec) {
     const childPath = path.join(__dirname, 'boost-session.js');
     const args = [
@@ -341,6 +581,10 @@ class BoostEngine {
       });
     });
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // PROXY POOL
+  // ─────────────────────────────────────────────────────────────
 
   /**
    * Get the next available proxy, waiting if pool is empty.
@@ -591,23 +835,62 @@ if (require.main === module) {
   const engine = new BoostEngine();
   const args = process.argv.slice(2);
 
-  if (args.includes('--help') || args.includes('-h') || (!args.includes('--url') && !args.includes('--channel') && !process.env.YOUTUBE_HANDLE && !process.env.YOUTUBE_USERNAME)) {
+  // ─── Help ────────────────────────────────────────────────────
+  if (args.includes('--help') || args.includes('-h') || 
+      (!args.includes('--url') && !args.includes('--channel') && !args.includes('--daily-boost') && !args.includes('--add-posted') &&
+       !process.env.YOUTUBE_HANDLE && !process.env.YOUTUBE_USERNAME)) {
     console.log(`
 Usage:
   node boost/boost-engine.js --channel "https://www.youtube.com/@channel"
   node boost/boost-engine.js --url "https://youtube.com/watch?v=xxx" [--views 1000]
+  node boost/boost-engine.js --daily-boost [--views 1000]
+  node boost/boost-engine.js --add-posted "URL" [--title "Title"] [--country "Country"]
 
 Or set YOUTUBE_HANDLE (or YOUTUBE_USERNAME) env var for automatic channel discovery.
 
 Options:
   --channel <url>     YouTube channel to boost (optional, uses env var otherwise)
   --url <url>         Single video URL to boost
+  --daily-boost       Boost 2 random videos from the posted-videos pool
+  --add-posted <url>  Add a URL to the posted-videos pool (bookkeeping)
+  --title <text>      Title for --add-posted (optional)
+  --country <text>    Country for --add-posted (optional)
   --views <number>    Total target views across all videos (default: 1000)
   --help              Show this help
     `);
     process.exit(0);
   }
 
+  // ─── Add posted video (bookkeeping) ──────────────────────────
+  const addIdx = args.indexOf('--add-posted');
+  if (addIdx !== -1) {
+    const url = args[addIdx + 1];
+    const titleIdx = args.indexOf('--title');
+    const title = titleIdx !== -1 ? args[titleIdx + 1] : '';
+    const countryIdx = args.indexOf('--country');
+    const country = countryIdx !== -1 ? args[countryIdx + 1] : '';
+    if (url) {
+      engine.addPostedVideo(url, title, country);
+      process.exit(0);
+    } else {
+      console.error('--add-posted requires a URL argument');
+      process.exit(1);
+    }
+  }
+
+  // ─── Daily boost mode ────────────────────────────────────────
+  if (args.includes('--daily-boost')) {
+    const params = { dailyBoost: true };
+    const viewsIdx = args.indexOf('--views');
+    if (viewsIdx !== -1) params.views = parseInt(args[viewsIdx + 1]);
+    engine.run(params).then(r => {
+      if (r.success) { console.log(`\nDaily boost done: ${r.views} views`); process.exit(0); }
+      else { console.error(`\nDaily boost failed`); process.exit(1); }
+    }).catch(e => { console.error(e.message); process.exit(1); });
+    return;
+  }
+
+  // ─── Traditional boost mode ──────────────────────────────────
   const params = {};
   const urlIdx = args.indexOf('--url');
   if (urlIdx !== -1) params.url = args[urlIdx + 1];

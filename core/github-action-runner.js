@@ -124,23 +124,19 @@ class DailyRunner {
     }
   }
 
-  async _boostVideo(url) {
+  /**
+   * Track a newly uploaded video in the posted-videos pool
+   * so daily-boost can pick it up later.
+   */
+  _trackPostedVideo(url, title, country) {
     if (!url) return;
-    if (config.boost.enabled === false) {
-      logger.info('Boost disabled — skipping view boosting');
-      return;
-    }
     try {
-      const waitSec = 30 + Math.floor(Math.random() * 60);
-      logger.info(`Waiting ${waitSec}s settle before boost...`);
-      await new Promise(r => setTimeout(r, waitSec * 1000));
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
-      const result = await engine.run({ url, views: parseInt(process.env.BOOST_MAX_VIEWS) || 75 });
-      if (result.success) logger.success(`Boosted ${result.views} views`);
-      else logger.warn(`Boost: ${result.error || 'no views'}`);
+      engine.addPostedVideo(url, title, country);
+      logger.success(`Tracked posted video: ${url.substring(0, 50)}`);
     } catch (e) {
-      logger.warn(`Boost error: ${e.message}`);
+      logger.warn(`Track posted video error: ${e.message}`);
     }
   }
 
@@ -189,7 +185,7 @@ class DailyRunner {
       if (!this.memory.countriesUsedThisWeek.includes(country)) this.memory.countriesUsedThisWeek.push(country);
       if (this.memory.countriesUsedThisWeek.length > 7) this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
       this._saveMemory();
-      await this._boostVideo(uploadResult.url);
+      this._trackPostedVideo(uploadResult.url, result.title, country);
     }
 
     await this._sendDiscord({ videos: uploaded, countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [] });
@@ -247,7 +243,7 @@ class DailyRunner {
       uploaded.push({ title, url: uploadResult.url, country: result.country, type: 'explainer' });
       this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
       this._saveMemory();
-      await this._boostVideo(uploadResult.url);
+      this._trackPostedVideo(uploadResult.url, title, result.country);
     }
 
     logger.header('SUMMARY');
@@ -320,8 +316,7 @@ class DailyRunner {
         if (!this.memory.countriesUsedThisWeek.includes(result.country)) this.memory.countriesUsedThisWeek.push(result.country);
         if (this.memory.countriesUsedThisWeek.length > 7) this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
         this._saveMemory();
-
-        await this._boostVideo(uploadResult.url);
+        this._trackPostedVideo(uploadResult.url, result.title, result.country);
 
         logger.header('SUMMARY');
         logger.success(`✅ Temp video uploaded — "${result.title}"`);

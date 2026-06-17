@@ -1,38 +1,58 @@
 {
   "China": {
-    "name": "China / Japan / Korea",
+    "name": "China",
     "channels": [
       "https://www.youtube.com/@Curious-Bloom/shorts",
       "https://www.youtube.com/@TinaaTravel/shorts",
+      "https://www.youtube.com/@Unseen_China/shorts"
+    ]
+  },
+  "Japan-Korea": {
+    "name": "Japan / Korea",
+    "channels": [
       "https://www.youtube.com/@KyoSol_Boy/shorts",
-      "https://www.youtube.com/@EasterAxisEats/shorts",
       "https://www.youtube.com/@tokyotrending/shorts",
-      "https://www.youtube.com/@sakurasquad7/shorts",
-      "https://www.youtube.com/@realya28/shorts",
-      "https://www.youtube.com/@KyoSol_Boy/shorts",
-      "https://www.youtube.com/@kuroseshorts/shorts",
-      "https://www.youtube.com/@japans.wonder/shorts",
+      "https://www.youtube.com/@japans.wonder/shorts"
+    ]
+  },
+  "Southeast-Asia": {
+    "name": "Southeast Asia",
+    "channels": [
       "https://www.youtube.com/@TechnoBites997/shorts",
-      "https://www.youtube.com/@Unseen_China/shorts",
-      "https://www.youtube.com/@JapanFate1/shorts"
+      "https://www.youtube.com/@sakurasquad7/shorts",
+      "https://www.youtube.com/@kuroseshorts/shorts"
     ]
   },
-  "World": {
-    "name": "World / Travel Random",
+  "Europe": {
+    "name": "Europe",
     "channels": [
+      "https://www.youtube.com/@EasterAxisEats/shorts",
       "https://www.youtube.com/@BucketListVacationers/shorts",
-      "https://www.youtube.com/@UniversalTravellingWith__MS/shorts",
-      "https://www.youtube.com/@PlanetEarth0_0/shorts",
-      "https://www.youtube.com/@Travel-Destination-Discoveries/shorts",
-      "https://www.youtube.com/@Theworldoffoods1/shorts",
-      "https://www.youtube.com/@TimeSaver-Shorts/shorts",
-      "https://www.youtube.com/@Cattyyiii/shorts"
+      "https://www.youtube.com/@PlanetEarth0_0/shorts"
     ]
   },
-  "US": {
-    "name": "United States",
+  "Africa-MiddleEast": {
+    "name": "Africa / Middle East",
     "channels": [
-      "https://www.youtube.com/@lifelightsbyhenry/shorts"
+      "https://www.youtube.com/@Theworldoffoods1/shorts",
+      "https://www.youtube.com/@Cattyyiii/shorts",
+      "https://www.youtube.com/@UniversalTravellingWith__MS/shorts"
+    ]
+  },
+  "Americas": {
+    "name": "Americas",
+    "channels": [
+      "https://www.youtube.com/@lifelightsbyhenry/shorts",
+      "https://www.youtube.com/@Travel-Destination-Discoveries/shorts",
+      "https://www.youtube.com/@TimeSaver-Shorts/shorts"
+    ]
+  },
+  "World-Travel": {
+    "name": "World Travel",
+    "channels": [
+      "https://www.youtube.com/@WorldCultureTravel",
+      "https://www.youtube.com/@realya28/shorts",
+      "https://www.youtube.com/@JapanFate1/shorts"
     ]
   }
 }
