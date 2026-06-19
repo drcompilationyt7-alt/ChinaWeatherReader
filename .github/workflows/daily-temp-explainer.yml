@@ -65,6 +65,32 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg jq curl unzip libgl1 libglib2.0-0
 
+      - name: Install Ollama and pull fallback models (Gemma 4, etc.)
+        run: |
+          # Install Ollama for local LLM fallback (title/metadata generation)
+          curl -fsSL https://ollama.com/install.sh | sh
+          # Wait for Ollama to start
+          for i in $(seq 1 10); do
+            if curl -s http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+              echo "Ollama started successfully"
+              break
+            fi
+            echo "Waiting for Ollama to start... ($i/10)"
+            sleep 3
+          done
+          # Pull models in order of preference (gemma4 first, then fallbacks)
+          # gemma4 is the primary fallback for metadata generation
+          for model in gemma4:latest llama3.2:latest phi4:latest; do
+            echo "Pulling Ollama model: $model ..."
+            if ollama pull "$model" 2>&1; then
+              echo "Successfully pulled $model"
+              break
+            else
+              echo "Failed to pull $model, trying next..."
+            fi
+          done
+          echo "Ollama models ready"
+
       - name: Install Deno (JS runtime for yt-dlp)
         run: |
           curl -fsSL https://deno.land/install.sh | sh
