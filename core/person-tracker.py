@@ -10,6 +10,9 @@ Pipeline:
   3. Group-center calculation (all tracked people, weighted toward primary)
   4. Per-frame crop center output with cropX and cropY
 
+Y-axis is biased toward the upper 1/3 of each person's bounding box
+to keep the face and head visible in the 9:16 crop frame.
+
 Usage: python3 person-tracker.py <video_path> [--start 0] [--duration 45] [--fps 5]
 Output: JSON array of [{time, cropX, cropY, personCount, primaryId}]
 """
@@ -48,7 +51,7 @@ def compute_group_center(tracked_boxes, frame_width, frame_height):
     
     - If 1 person: center of that person's bounding box
     - If 2+ people: center of the group (midpoint of leftmost/rightmost edges)
-    - Y axis: center of the tallest person's vertical midpoint (to keep head in frame)
+    - Y axis: tallest person's upper-third point (to keep face/head in frame)
     """
     if not tracked_boxes:
         return -1, -1
@@ -58,7 +61,8 @@ def compute_group_center(tracked_boxes, frame_width, frame_height):
 
     if len(tracked_boxes) == 1:
         cx = (primary[0] + primary[2]) / 2
-        cy = (primary[1] + primary[3]) / 2
+        # Bias Y toward upper third of bounding box for face visibility
+        cy = primary[1] + (primary[3] - primary[1]) * 0.33
         return cx, cy
 
     # Multiple people: compute group bounds for X
@@ -68,9 +72,9 @@ def compute_group_center(tracked_boxes, frame_width, frame_height):
     group_right = max(right_edges)
     group_width = group_right - group_left
 
-    # For Y, use the tallest person's vertical center (keeps head in frame)
+    # For Y, use the tallest person's upper-third point (keeps head/face in frame)
     tallest = max(tracked_boxes, key=lambda b: b[3] - b[1])
-    cy = (tallest[1] + tallest[3]) / 2
+    cy = tallest[1] + (tallest[3] - tallest[1]) * 0.33
 
     # Assume crop window is ~56% of frame width (9:16 in landscape)
     crop_width_ratio = 0.56

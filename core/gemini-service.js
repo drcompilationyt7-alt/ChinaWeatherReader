@@ -15,6 +15,7 @@ const { Logger } = require('./logger');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { getOllamaProvider } = require('../providers/ollama-provider');
 
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
@@ -715,6 +716,38 @@ Return ONLY valid JSON: {"title":"...","description":"...","tags":["tag1","tag2"
       if (cycle < maxCycles - 1) {
         await new Promise(r => setTimeout(r, 15000));
       }
+    }
+
+    // ─── LAST RESORT: Local Ollama fallback (Gemma 4, etc.) ────
+    logger.warn('All Gemini+OpenRouter keys exhausted — trying local Ollama fallback');
+    const ollama = getOllamaProvider();
+    try {
+      if (ollama.isAvailable()) {
+        const ollamaResult = await ollama.generateJSON(systemPrompt, userPrompt, {
+          temperature: 0.8,
+          maxTokens: 512,
+        });
+        if (ollamaResult && ollamaResult.title && ollamaResult.title.length > 5) {
+          logger.success(`Title generated via local Ollama: "${ollamaResult.title.substring(0, 50)}"`);
+          return ollamaResult;
+        }
+        logger.warn('Ollama title generation returned invalid result');
+      } else {
+        logger.info('Ollama not available — checking if we can start it...');
+        await ollama.checkAvailability();
+        if (ollama.isAvailable()) {
+          const ollamaResult = await ollama.generateJSON(systemPrompt, userPrompt, {
+            temperature: 0.8,
+            maxTokens: 512,
+          });
+          if (ollamaResult && ollamaResult.title && ollamaResult.title.length > 5) {
+            logger.success(`Title generated via local Ollama (lazy init): "${ollamaResult.title.substring(0, 50)}"`);
+            return ollamaResult;
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn(`Ollama title gen failed: ${e.message.substring(0, 80)}`);
     }
 
     logger.warn('All keys exhausted for title generation — using fallback');

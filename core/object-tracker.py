@@ -17,6 +17,9 @@ Usage:
   python3 object-tracker.py <video_path> --start 0 --duration 45 --fps 5
 
 CLI interface is identical to person-tracker.py for drop-in replacement.
+
+FIX: Y-axis is biased toward the upper 1/3 of each person's bounding box
+to keep the face and head visible in the 9:16 crop frame.
 """
 import sys
 import json
@@ -117,23 +120,27 @@ def extract_frame(video_path, timestamp):
 def compute_group_center(bboxes, frame_w, frame_h):
     """
     Compute optimal crop center from a list of bounding boxes.
-    - If 1 subject: center of that bbox
+    - If 1 subject: center of that bbox, but Y biased to upper third (face area)
     - If 2+ subjects: midpoint of leftmost/rightmost edges
-    - Y axis: tallest subject's vertical midpoint (keeps head in frame)
+    - Y axis: tallest subject's upper-third point (keeps face in frame)
     Returns (cx, cy) or (-1, -1) if empty.
     """
     if not bboxes:
         return -1, -1
     if len(bboxes) == 1:
         x1, y1, x2, y2 = bboxes[0]
-        return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+        # Bias Y toward upper third of bounding box (y1 + 0.33 * height)
+        # instead of the vertical midpoint. This keeps the face/head visible
+        # in the 9:16 crop window.
+        face_y = y1 + (y2 - y1) * 0.33
+        return (x1 + x2) / 2.0, face_y
     left = min(b[0] for b in bboxes)
     right = max(b[2] for b in bboxes)
     cx = (left + right) / 2.0
-    # Y: tallest bbox vertical center
+    # Y: tallest bbox — bias to upper third for face visibility
     tallest = max(bboxes, key=lambda b: b[3] - b[1])
-    cy = (tallest[1] + tallest[3]) / 2.0
-    return cx, cy
+    face_y = tallest[1] + (tallest[3] - tallest[1]) * 0.33
+    return cx, face_y
 
 
 def detect_clusters(detected, frame_midpoint):
@@ -326,7 +333,7 @@ def track_video(video_path, start_time, duration, fps=5, max_crop_x=None, max_cr
                         f"  {t:.1f}s: cluster={cluster_name}, "
                         f"left={left_count}({left_act:.0f}), "
                         f"right={right_count}({right_act:.0f}), "
-                        f"cx={cx:.0f}",
+                        f"cx={cx:.0f} cy={cy:.0f}",
                         file=sys.stderr,
                     )
                 

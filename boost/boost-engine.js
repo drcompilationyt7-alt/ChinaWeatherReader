@@ -51,8 +51,8 @@ const USER_AGENTS = [
   'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1',
-  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36',
-  'Mozilla/5.0 (Linux; Android 13; Samsung Galaxy S23) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.118 Mobile Safari/537.36',
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile/Safari/537.36',
+  'Mozilla/5.0 (Linux; Android 13; Samsung Galaxy S23) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.118 Mobile/Safari/537.36',
   'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 OPR/109.0.0.0',
 ];
@@ -167,6 +167,28 @@ class BoostEngine {
     logger.info(`Daily boost: picked ${picked.length} videos from pool of ${videos.length}`);
     for (const v of picked) {
       logger.info(`  -> ${v.url} (${v.country}, posted ${v.postedAt.substring(0, 10)})`);
+    }
+    return picked;
+  }
+
+  /**
+   * Weighted random pick from remaining view targets.
+   * Ensures videos with more remaining views get more sessions.
+   */
+  _pickWeightedVideo() {
+    const remainingViews = this.videoTargets.map((t, i) => ({
+      url: this.videoUrls[i],
+      remaining: t - (this._viewsPerVideo[this.videoUrls[i]] || 0),
+    })).filter(v => v.remaining > 0);
+
+    if (remainingViews.length === 0) return null;
+
+    const totalRemaining = remainingViews.reduce((a, b) => a + b.remaining, 0);
+    let pickRoll = Math.random() * totalRemaining;
+    let picked = remainingViews[0];
+    for (const rv of remainingViews) {
+      pickRoll -= rv.remaining;
+      if (pickRoll <= 0) { picked = rv; break; }
     }
     return picked;
   }
@@ -292,22 +314,9 @@ class BoostEngine {
         break;
       }
 
-      // Pick a random video weighted by remaining views needed
-      const remainingViews = this.videoTargets.map((t, i) => ({
-        url: this.videoUrls[i],
-        remaining: t - (this._viewsPerVideo[this.videoUrls[i]] || 0),
-      })).filter(v => v.remaining > 0);
-
-      if (remainingViews.length === 0) break; // all done
-
-      // Weighted random pick
-      const totalRemaining = remainingViews.reduce((a, b) => a + b.remaining, 0);
-      let pickRoll = Math.random() * totalRemaining;
-      let picked = remainingViews[0];
-      for (const rv of remainingViews) {
-        pickRoll -= rv.remaining;
-        if (pickRoll <= 0) { picked = rv; break; }
-      }
+      // Weighted random pick among remaining video targets
+      const picked = this._pickWeightedVideo();
+      if (!picked) break;
 
       // Build session args
       masterSeed++;
@@ -347,28 +356,21 @@ class BoostEngine {
       logger.header(`GUARANTEED NO-PROXY VIEWS`);
       logger.info(`Running ${noProxyCount} no-proxy views (base: ${noProxyBaseViews}, already boosted: ${this.totalViews})...`);
 
-      // How many to each video? Distribute proportionally based on remaining targets
-      const remainingPerVideo = this.videoTargets.map((t, i) => ({
-        url: this.videoUrls[i],
-        remaining: Math.max(0, t - (this._viewsPerVideo[this.videoUrls[i]] || 0)),
-      }));
-      const totalRemaining = remainingPerVideo.reduce((a, b) => a + b.remaining, 0);
-      
       let noProxyDone = 0;
       for (let i = 0; i < noProxyCount; i++) {
         if (this.totalViews >= this.targetViews && noProxyDone >= noProxyBaseViews) break;
+
+        // Use weighted pick to respect per-video targets
+        const picked = this._pickWeightedVideo();
+        if (!picked) break;
         
         masterSeed++;
         const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
         const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
         const watchSec = randomWatchTime(Math.random);
 
-        // Weighted random pick among videos
-        const videoIdx = Math.floor(Math.random() * this.videoUrls.length);
-        const videoUrl = this.videoUrls[videoIdx];
-
         sessionPromises.push(
-          this._spawnSession(videoUrl, '', ua, vp, masterSeed, watchSec)
+          this._spawnSession(picked.url, '', ua, vp, masterSeed, watchSec)
         );
 
         noProxyDone++;
@@ -426,7 +428,11 @@ class BoostEngine {
 
     logger.header('BOOST ENGINE v9 — DAILY BOOST MODE');
     logger.info(`Picked ${picked.length} videos from pool`);
-    logger.info(`Boost targets: ${this.videoUrls.map((u, i) => `${u.substring(0, 40)} → ${this.videoTargets[i]} views`).join(', ')}`);
+    // Show full video IDs for boost targets (not truncated)
+    logger.info(`Boost targets: ${this.videoUrls.map((u, i) => {
+      const vid = u.match(/v=([a-zA-Z0-9_-]{11})/)?.[1] || u.slice(-11);
+      return `${vid} → ${this.videoTargets[i]} views`;
+    }).join(', ')}`);
 
     // Run the same boost loop as run() but without re-fetching
     const startTime = Date.now();
@@ -451,20 +457,9 @@ class BoostEngine {
         break;
       }
 
-      const remainingViews = this.videoTargets.map((t, i) => ({
-        url: this.videoUrls[i],
-        remaining: t - (this._viewsPerVideo[this.videoUrls[i]] || 0),
-      })).filter(v => v.remaining > 0);
-
-      if (remainingViews.length === 0) break;
-
-      const totalRemaining = remainingViews.reduce((a, b) => a + b.remaining, 0);
-      let pickRoll = Math.random() * totalRemaining;
-      let picked = remainingViews[0];
-      for (const rv of remainingViews) {
-        pickRoll -= rv.remaining;
-        if (pickRoll <= 0) { picked = rv; break; }
-      }
+      // Weighted random pick among remaining video targets
+      const pickedVideo = this._pickWeightedVideo();
+      if (!pickedVideo) break;
 
       masterSeed++;
       const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
@@ -472,7 +467,7 @@ class BoostEngine {
       const watchSec = randomWatchTime(Math.random);
       const proxyStr = proxy ? `http://${proxy.ip}:${proxy.port}` : '';
 
-      const sessionPromise = this._spawnSession(picked.url, proxyStr, ua, vp, masterSeed, watchSec)
+      const sessionPromise = this._spawnSession(pickedVideo.url, proxyStr, ua, vp, masterSeed, watchSec)
         .then(result => {
           if (result) {
             consecutiveFailures = 0;
@@ -490,7 +485,7 @@ class BoostEngine {
       await new Promise(r => setTimeout(r, 1000 + Math.random() * 2000));
     }
 
-    // No-proxy views
+    // No-proxy views — use weighted pick to respect per-video targets
     const noProxyBaseViews = 100 + Math.floor(Math.random() * 101);
     const noProxyRemaining = Math.max(0, noProxyBaseViews - this.totalViews);
     const noProxyCount = Math.min(noProxyRemaining, 200);
@@ -501,14 +496,16 @@ class BoostEngine {
       for (let i = 0; i < noProxyCount; i++) {
         if (this.totalViews >= this.targetViews) break;
 
+        // Use weighted pick so no-proxy views respect the per-video targets
+        const pickedVideo = this._pickWeightedVideo();
+        if (!pickedVideo) break;
+
         masterSeed++;
         const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
         const vp = VIEWPORT_PROFILES[Math.floor(Math.random() * VIEWPORT_PROFILES.length)];
         const watchSec = randomWatchTime(Math.random);
-        const videoIdx = Math.floor(Math.random() * this.videoUrls.length);
-        const videoUrl = this.videoUrls[videoIdx];
 
-        sessionPromises.push(this._spawnSession(videoUrl, '', ua, vp, masterSeed, watchSec));
+        sessionPromises.push(this._spawnSession(pickedVideo.url, '', ua, vp, masterSeed, watchSec));
         if (i % 20 === 0) logger.info(`  No-proxy: ${i}/${noProxyCount} sent`);
         await new Promise(r => setTimeout(r, 3000 + Math.random() * 5000));
       }
@@ -565,7 +562,9 @@ class BoostEngine {
           // Track per video (lazy init)
           if (!this._viewsPerVideo) this._viewsPerVideo = {};
           this._viewsPerVideo[msg.videoUrl] = (this._viewsPerVideo[msg.videoUrl] || 0) + 1;
-          logger.info(`  View ${this.totalViews}/${this.targetViews} | ${msg.watchTime}s | ${videoUrl.substring(0, 40)}`);
+          // Show just the video ID in the view log so it exactly matches pool picks
+          const vid = (videoUrl && videoUrl.match(/v=([a-zA-Z0-9_-]{11})/)?.[1]) || 'unknown';
+          logger.info(`  View ${this.totalViews}/${this.targetViews} | ${msg.watchTime}s | ${vid}`);
         } else {
           logger.warn(`  Session failed: ${(msg && msg.error) || 'unknown'}`);
         }
