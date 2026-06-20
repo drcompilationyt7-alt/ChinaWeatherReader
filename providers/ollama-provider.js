@@ -35,10 +35,20 @@ class OllamaProvider {
     const prev = this.model;
     this.currentModelIndex++;
     const next = this.model;
-    if (prev !== next) {
+    // Cap rotation so we don't cycle forever with 1 model
+    const models = this.models || FALLBACK_MODELS;
+    if (models.length > 1 && prev !== next) {
       logger.info(`Ollama: rotating model ${prev} → ${next}`);
+      return true;
     }
-    return prev !== next;
+    return false;
+  }
+
+  /**
+   * Reset back to the first model (e.g. after a successful call or timeout recovery)
+   */
+  _resetModelIndex() {
+    this.currentModelIndex = 0;
   }
 
   /**
@@ -92,9 +102,13 @@ class OllamaProvider {
 
     const maxRetries = Math.min(this.models?.length || 1, 3) + 1;
     let lastError = null;
+    let consecutiveTimeout = 0;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const currentModel = this.model;
+      // Reduce timeout on retries: first attempt uses full TIMEOUT, subsequent attempts use shorter timeout
+      const attemptTimeout = attempt === 0 ? TIMEOUT : Math.min(TIMEOUT, 60000 + attempt * 10000);
+
       try {
         const body = {
           model: currentModel,
@@ -110,30 +124,64 @@ class OllamaProvider {
           },
         };
 
-        logger.info(`Ollama ${currentModel}: generating response...`);
+        logger.info(`Ollama ${currentModel}: generating response (attempt ${attempt + 1}/${maxRetries}, timeout ${attemptTimeout}ms)...`);
         const resp = await axios.post(`${OLLAMA_BASE}/api/chat`, body, {
-          timeout: TIMEOUT,
+          timeout: attemptTimeout,
           headers: { 'Content-Type': 'application/json' },
         });
 
         const content = resp.data?.message?.content;
         if (content && content.trim().length > 0) {
           logger.success(`Ollama ${currentModel}: generated ${content.length} chars`);
+          // Reset model index on success so next call starts with primary model
+          this._resetModelIndex();
           return content.trim();
         }
 
         logger.warn(`Ollama ${currentModel}: empty response`);
         lastError = new Error('Empty response');
+        consecutiveTimeout = 0;
       } catch (e) {
         lastError = e;
         const errText = e.response?.data?.error || e.message || '';
-        logger.warn(`Ollama ${currentModel} error: ${errText.substring(0, 100)}`);
+        const isTimeout = errText.includes('timeout') || errText.includes('TIMEOUT') || errText.includes('ETIMEDOUT') || errText.includes('ECONNABORTED');
+        const isOOM = errText.includes('out of memory') || errText.includes('OOM') || errText.includes('CUDA out of memory');
 
-        // Try next model
+        if (isTimeout) {
+          consecutiveTimeout++;
+          logger.warn(`Ollama ${currentModel}: timeout (${consecutiveTimeout}x in a row)`);
+        } else if (isOOM) {
+          logger.warn(`Ollama ${currentModel}: out of memory — marking unavailable`);
+          this.available = false;
+          logger.error(`Ollama: ${currentModel} OOM — disabling Ollama fallback`);
+          return null;
+        } else {
+          logger.warn(`Ollama ${currentModel} error: ${errText.substring(0, 100)}`);
+          consecutiveTimeout = 0;
+        }
+
+        // Determine if we need to rotate model
+        let shouldRotate = true;
+
+        // If we have multiple timeouts on the same model, skip to next model
+        if (consecutiveTimeout >= 2) {
+          logger.warn(`Ollama ${currentModel}: ${consecutiveTimeout} consecutive timeouts — rotating model`);
+          consecutiveTimeout = 0;
+        } else if (isTimeout) {
+          // Single timeout — don't rotate, just retry with same model
+          shouldRotate = false;
+        }
+
+        // Try next model/attempt
         if (attempt < maxRetries - 1) {
-          this._rotateModel();
-          logger.info(`Ollama: retrying with ${this.model}...`);
-          await new Promise(r => setTimeout(r, 2000));
+          if (shouldRotate) {
+            if (this._rotateModel()) {
+              consecutiveTimeout = 0; // Reset timeout counter on model change
+            }
+          }
+          const cooldown = isTimeout ? 10000 : 2000; // Longer cooldown after timeout
+          logger.info(`Ollama: retrying with ${this.model}... (cooldown ${cooldown}ms)`);
+          await new Promise(r => setTimeout(r, cooldown));
         }
       }
     }

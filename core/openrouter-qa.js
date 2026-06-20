@@ -123,13 +123,28 @@ class OpenRouterQA {
           }
         );
 
-        if (response.data?.choices?.[0]?.message?.content) {
-          const text = response.data.choices[0].message.content;
+        // Check for API-level error in response body
+        const bodyError = response.data?.error;
+        if (bodyError) {
+          const errMsg = bodyError.message || JSON.stringify(bodyError);
+          logger.warn(`QA key ${this.currentKeyIndex + 1} body error: ${errMsg.substring(0, 80)}`);
+          this._rotateKey();
+          continue;
+        }
+
+        const text = response.data?.choices?.[0]?.message?.content;
+        if (text && text.trim().length > 0) {
           const jsonMatch = text.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             return JSON.parse(jsonMatch[0]);
           }
+          logger.warn(`QA key ${this.currentKeyIndex + 1}: non-JSON response: "${text.substring(0, 60)}"`);
+        } else {
+          logger.warn(`QA key ${this.currentKeyIndex + 1}: empty/null response (choices: ${response.data?.choices?.length || 0})`);
         }
+        this._rotateKey();
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
       } catch (error) {
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
@@ -197,9 +212,25 @@ class OpenRouterQA {
           }
         );
 
-        if (response.data?.choices?.[0]?.message?.content) {
-          return response.data.choices[0].message.content;
+        // Check for API-level error in response body (OpenRouter sometimes returns 200 with error)
+        const bodyError = response.data?.error;
+        if (bodyError) {
+          const errMsg = bodyError.message || JSON.stringify(bodyError);
+          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} body error: ${errMsg.substring(0, 80)}`);
+          this._rotateKey();
+          continue;
         }
+
+        const content = response.data?.choices?.[0]?.message?.content;
+        if (content && content.trim().length > 0) {
+          return content.trim();
+        }
+
+        // Empty response — log and rotate
+        logger.warn(`OpenRouter key ${this.currentKeyIndex + 1}: empty/null response (choices: ${response.data?.choices?.length || 0})`);
+        this._rotateKey();
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
       } catch (error) {
         const status = error.response?.status;
         const errText = error.response?.data?.error?.message || error.message;
@@ -217,11 +248,12 @@ class OpenRouterQA {
           continue;
         }
 
-        logger.warn(`OpenRouter chat error: ${errText?.substring(0, 80)}`);
+        logger.warn(`OpenRouter chat error key ${this.currentKeyIndex + 1}: ${errText?.substring(0, 80)}`);
         this._rotateKey();
       }
     }
 
+    logger.error(`OpenRouter chat: all ${this.keys.length} keys exhausted, last successful key: ${this.currentKeyIndex}`);
     return null;
   }
 
