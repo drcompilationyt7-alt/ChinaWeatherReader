@@ -17,7 +17,7 @@ const logger = new Logger('OllamaProvider');
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
 const FALLBACK_MODELS = ['gemma4:latest', 'gemma4', 'llama3.2:latest', 'llama3.2', 'phi4:latest', 'phi4', 'mistral:latest', 'mistral'];
-const TIMEOUT = 120000;
+const TIMEOUT = 3 * 60 * 60 * 1000; // 3 hours
 
 class OllamaProvider {
   constructor() {
@@ -106,8 +106,8 @@ class OllamaProvider {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const currentModel = this.model;
-      // Reduce timeout on retries: first attempt uses full TIMEOUT, subsequent attempts use shorter timeout
-      const attemptTimeout = attempt === 0 ? TIMEOUT : Math.min(TIMEOUT, 60000 + attempt * 10000);
+      // First attempt uses full 3hr timeout; subsequent retries use TIMEOUT minus 20min per attempt
+      const attemptTimeout = TIMEOUT - (attempt * 20 * 60 * 1000);
 
       try {
         const body = {
