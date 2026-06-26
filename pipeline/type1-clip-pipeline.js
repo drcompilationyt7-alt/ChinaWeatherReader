@@ -112,6 +112,19 @@ function buildFallbackMetadata(country, bestVideo, dialogue) {
   const reasoning = (bestVideo.reasoning || '').toLowerCase();
   const sourceTitle = bestVideo.title || '';
   const profile = COUNTRY_METADATA_PROFILES[countryKey(country)] || { titleBase: country, tags: [country.toLowerCase(), 'viral', 'funny'], hashtags: buildCountryHashtags(country) };
+
+  // Use original title as-is if available — far better than any generated default
+  if (sourceTitle && sourceTitle.length > 5) {
+    const fallbackDesc = bestVideo.reasoning
+      ? bestVideo.reasoning.split('.').slice(0, 2).join('.').substring(0, 180)
+      : `A viral ${country} short.`;
+    return {
+      title: sourceTitle.substring(0, 50),
+      description: `${fallbackDesc}\n\nWould you stop and watch this?\n\n${profile.hashtags}`,
+      tags: ['shorts', 'viral', 'mr worldwidewebster'].concat(profile.tags),
+    };
+  }
+
   let hook = `${profile.titleBase} Street Moment`;
   if (reasoning.includes('waiter') || /waiter/i.test(sourceTitle)) hook = 'This Waiter Started Dancing';
   else if (reasoning.includes('dance') || /dance|douyin|kemusan|subject three|amapiano|k-pop|kpop|salsa|cumbia/i.test(sourceTitle)) hook = `${profile.titleBase} Dance Hits Different`;
@@ -811,39 +824,71 @@ async function runType1Pipeline(options = {}) {
     const isMusic = wordDensity < 1.0 || words.length < 8;
     
     if (!isMusic) {
-      // Translate non-English dialogue using NLLB-200
+      // Translate non-English dialogue — OpenRouter first (free, instant, auto-detects language)
       let translateArg = '';
       if (dialogue.language && !['en', 'en', 'english', 'english'].includes(dialogue.language)) {
+        // Step 1: Try OpenRouter free models (instant API, auto-detects language)
         try {
-          logger.info(`Translating from ${dialogue.language || 'unknown'} with NLLB-200...`);
-          const nllbOut = execSync(
-            `python3 "${path.join(__dirname, '..', 'core', 'nllb-translate.py')}" "${dialogue.transcript}" 2>&1`,
-            { timeout: 30000, encoding: 'utf8' }
-          ).toString().trim();
-          const nllbResult = JSON.parse(nllbOut.split('\n').filter(l => l.startsWith('{'))[0]);
-          if (nllbResult.translated_text) {
-            translatedText = nllbResult.translated_text;
-            translateArg = `--translate "${translatedText.replace(/"/g, '\\"')}"`;
-            logger.success(`Translation: ${translatedText.substring(0, 80)}...`);
+          const openrouter = getOpenRouterQA();
+          if (openrouter) {
+            logger.info(`Translating from ${dialogue.language || 'unknown'} with OpenRouter (free models)...`);
+            const orTranslation = await openrouter.translate(dialogue.transcript);
+            if (orTranslation && orTranslation.trim().length > 3) {
+              translatedText = orTranslation;
+              translateArg = `--translate "${orTranslation.replace(/"/g, '\\"')}"`;
+              logger.success(`OpenRouter translation: "${orTranslation.substring(0, 80)}..."`);
+            }
           }
         } catch (e) {
-          logger.warn(`NLLB translation failed: ${(e.message || '').substring(0, 60)} — using Gemini fallback`);
-          // Fallback to Gemini translation
+          logger.warn(`OpenRouter translation failed: ${(e.message || '').substring(0, 60)}`);
+        }
+
+        // Step 2: If OpenRouter failed, try NLLB-200 with 3-hour timeout (for when model is cached)
+        if (!translatedText) {
           try {
-            translatedText = await gemini.translate(dialogue.transcript);
-            if (translatedText) translateArg = `--translate "${translatedText.replace(/"/g, '\\"')}"`;
+            logger.info(`OpenRouter unavailable — trying NLLB-200 (3h timeout)...`);
+            const nllbOut = execSync(
+              `python3 "${path.join(__dirname, '..', 'core', 'nllb-translate.py')}" "${dialogue.transcript}" 2>&1`,
+              { timeout: 10800000, encoding: 'utf8' }
+            ).toString().trim();
+            const nllbResult = JSON.parse(nllbOut.split('\n').filter(l => l.startsWith('{'))[0]);
+            if (nllbResult.translated_text) {
+              translatedText = nllbResult.translated_text;
+              translateArg = `--translate "${translatedText.replace(/"/g, '\\"')}"`;
+              logger.success(`NLLB translation: ${translatedText.substring(0, 80)}...`);
+            }
+          } catch (e) {
+            logger.warn(`NLLB translation failed: ${(e.message || '').substring(0, 60)}`);
+          }
+        }
+
+        // Step 3: Last resort — Gemini API translation
+        if (!translatedText) {
+          try {
+            logger.info('NLLB unavailable — trying Gemini API translation...');
+            const geminiTranslation = await gemini.translate(dialogue.transcript);
+            if (geminiTranslation) {
+              translatedText = geminiTranslation;
+              translateArg = `--translate "${geminiTranslation.replace(/"/g, '\\"')}"`;
+              logger.success(`Gemini translation: ${geminiTranslation.substring(0, 80)}...`);
+            }
           } catch {}
         }
       }
 
-      subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
-      try {
-        const captionOut = execSync(`python3 "${path.join(__dirname, '..', 'core', 'tiktok_captions.py')}" "${analysisClip}" "${subPath}" ${translateArg} 2>&1`, { timeout: 120000, encoding: 'utf8' }).toString().trim();
-        const captionResult = JSON.parse(captionOut);
-        logger.info(`Captions: ${captionResult.word_count} words${translatedText ? ' (dual-language)' : ''}`);
-      } catch {
-        logger.warn('Captions failed -- proceeding without');
-        subPath = null;
+      // If all translation methods failed, skip captions for non-English content
+      if (dialogue.language && !['en', 'en', 'english', 'english'].includes(dialogue.language) && !translatedText && !translateArg) {
+        logger.warn(`All translation methods failed — skipping captions for ${dialogue.language} content`);
+      } else {
+        subPath = path.join(tmpDir, `captions_${Date.now()}.ass`);
+        try {
+          const captionOut = execSync(`python3 "${path.join(__dirname, '..', 'core', 'tiktok_captions.py')}" "${analysisClip}" "${subPath}" ${translateArg || ''} 2>&1`, { timeout: 120000, encoding: 'utf8' }).toString().trim();
+          const captionResult = JSON.parse(captionOut);
+          logger.info(`Captions: ${captionResult.word_count} words${translatedText ? ' (dual-language)' : ''}`);
+        } catch {
+          logger.warn('Captions failed -- proceeding without');
+          subPath = null;
+        }
       }
     }
   }

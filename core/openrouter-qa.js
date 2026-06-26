@@ -21,6 +21,13 @@ const logger = new Logger('OpenRouterQA');
 
 const QA_MODEL = 'openrouter/owl-alpha';  // Cheap, fast, good enough for QA questions
 
+// Free models only — no paid models
+const FREE_TEXT_MODELS = [
+  'google/gemma-4-31b-it:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+];
+
 class OpenRouterQA {
   constructor() {
     this.keys = [];
@@ -29,8 +36,8 @@ class OpenRouterQA {
   }
 
   _loadKeys() {
-    // Start from _7 (biggest/newest key) and work down to base key
-    for (let i = 7; i >= 1; i--) {
+    // Start from _8 (biggest/newest key) and work down to base key
+    for (let i = 8; i >= 1; i--) {
       const suffix = i === 1 ? '' : `_${i}`;
       const key = process.env[`OPENROUTER_API_KEY${suffix}`];
       if (key) this.keys.push(key);
@@ -39,7 +46,7 @@ class OpenRouterQA {
     if (!this.keys.includes(process.env.OPENROUTER_API_KEY) && process.env.OPENROUTER_API_KEY) {
       this.keys.push(process.env.OPENROUTER_API_KEY);
     }
-    logger.info(`Loaded ${this.keys.length} OpenRouter QA keys (order: _7 → _6 → ... → base)`);
+    logger.info(`Loaded ${this.keys.length} OpenRouter keys (order: _8 → _7 → ... → base)`);
   }
 
   _getKey() {
@@ -68,6 +75,95 @@ class OpenRouterQA {
   }
 
   /**
+   * Generic API call to OpenRouter with model fallback.
+   * Tries each free model in sequence with key rotation.
+   */
+  async _call(messages, opts = {}) {
+    const models = opts.models || FREE_TEXT_MODELS;
+    const maxRetries = (this.keys.length || 1) * models.length + 1;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const key = this._getKey();
+      if (!key) {
+        logger.warn('No OpenRouter keys available');
+        return null;
+      }
+
+      const modelIdx = attempt % models.length;
+      const model = models[modelIdx];
+
+      try {
+        const response = await axios.post(
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            model: model,
+            messages: messages,
+            max_tokens: opts.maxTokens || 300,
+            temperature: opts.temperature || 0.7,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${key}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
+              'X-Title': opts.xTitle || 'Mr. WorldWideWebster',
+            },
+            timeout: opts.timeout || 15000,
+          }
+        );
+
+        // Check for API-level error in response body
+        const bodyError = response.data?.error;
+        if (bodyError) {
+          const errMsg = bodyError.message || JSON.stringify(bodyError);
+          // Free models sometimes have "rate limit" or "temporarily unavailable" errors
+          if (errMsg.includes('rate') || errMsg.includes('quota') || errMsg.includes('temporarily') || errMsg.includes('capacity')) {
+            logger.warn(`Model ${model} (key ${this.currentKeyIndex + 1}): ${errMsg.substring(0, 60)} — trying next model`);
+            this._rotateKey();
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          logger.warn(`Model ${model} key ${this.currentKeyIndex + 1} body error: ${errMsg.substring(0, 80)}`);
+          this._rotateKey();
+          continue;
+        }
+
+        const content = response.data?.choices?.[0]?.message?.content;
+        if (content && content.trim().length > 0) {
+          return content.trim();
+        }
+
+        logger.warn(`Model ${model} (key ${this.currentKeyIndex + 1}): empty response`);
+        this._rotateKey();
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      } catch (error) {
+        const status = error.response?.status;
+        const errText = error.response?.data?.error?.message || error.message;
+
+        if (status === 429 || errText?.includes('quota') || errText?.includes('rate') || errText?.includes('capacity')) {
+          logger.warn(`Model ${model} (key ${this.currentKeyIndex + 1}) rate/capacity limited — rotating`);
+          this._rotateKey();
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+
+        if (status === 402) {
+          logger.warn(`Model ${model} (key ${this.currentKeyIndex + 1}) out of credits — rotating`);
+          this._rotateKey();
+          continue;
+        }
+
+        logger.warn(`Model ${model} (key ${this.currentKeyIndex + 1}) error: ${(errText || '').substring(0, 80)}`);
+        this._rotateKey();
+      }
+    }
+
+    logger.error(`OpenRouter: all models + keys exhausted`);
+    return null;
+  }
+
+  /**
    * Send QA check to OpenRouter nano vision model
    * @param {string[]} framePaths - Paths to frames to analyze
    * @param {string} question - The QA question (non-directional)
@@ -75,7 +171,7 @@ class OpenRouterQA {
    */
   async ask(framePaths, question) {
     const maxRetries = this.keys.length + 1;
-    const maxTokens = 150;  // Keep it short — we just need yes/no + brief issues
+    const maxTokens = 150;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const key = this._getKey();
@@ -85,7 +181,6 @@ class OpenRouterQA {
       }
 
       try {
-        // Build message content: text question + image frames
         const content = [{ type: 'text', text: question }];
 
         for (const fp of framePaths) {
@@ -123,7 +218,6 @@ class OpenRouterQA {
           }
         );
 
-        // Check for API-level error in response body
         const bodyError = response.data?.error;
         if (bodyError) {
           const errMsg = bodyError.message || JSON.stringify(bodyError);
@@ -157,7 +251,6 @@ class OpenRouterQA {
         }
 
         if (status === 402) {
-          // Insufficient credits — rotate
           logger.warn(`QA key ${this.currentKeyIndex + 1} out of credits — rotating`);
           this._rotateKey();
           continue;
@@ -172,97 +265,101 @@ class OpenRouterQA {
   }
 
   /**
+   * Translate any text to English using free OpenRouter models.
+   * Auto-detects source language — always returns English.
+   */
+  async translate(text) {
+    if (!text || text.trim().length < 3) return text;
+
+    const messages = [
+      { role: 'system', content: 'Translate the following text to English. If it is already English, return it as-is. Return ONLY the translation, no explanation.' },
+      { role: 'user', content: text }
+    ];
+
+    const result = await this._call(messages, {
+      maxTokens: 512,
+      temperature: 0.2,
+      timeout: 20000,
+      xTitle: 'Mr. WorldWideWebster Translate',
+    });
+
+    if (result && result.trim().length > 0) {
+      logger.success(`OpenRouter translate: "${result.substring(0, 60)}..."`);
+      return result.trim();
+    }
+    return null;
+  }
+
+  /**
    * Generic text-only chat call to OpenRouter (no frames).
-   * Used as fallback for title/metadata generation when Gemini is exhausted.
+   * Uses free model chain.
    * @param {string} systemPrompt - System instruction
    * @param {string} userMessage - User message
    * @param {Object} opts - { temperature, maxTokens }
    * @returns {string|null} - Response text
    */
   async chat(systemPrompt, userMessage, opts = {}) {
-    const maxRetries = this.keys.length + 1;
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ];
+    return this._call(messages, opts);
+  }
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const key = this._getKey();
-      if (!key) {
-        logger.warn('No OpenRouter keys available for chat');
-        return null;
-      }
+  /**
+   * Simple title + hashtags generation via OpenRouter.
+   * Uses original video metadata (no video frames needed).
+   * Uses free models only.
+   */
+  async generateTitleAndHashtags(originalTitle, originalDescription, country) {
+    const userMessage = `Original video title: "${originalTitle || 'Unknown'}"
+Original video description: "${(originalDescription || '').substring(0, 300)}"
+Country: ${country || 'Unknown'}
 
-      try {
-        const response = await axios.post(
-          'https://openrouter.ai/api/v1/chat/completions',
-          {
-            model: opts.model || 'openrouter/auto',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userMessage }
-            ],
-            max_tokens: opts.maxTokens || 512,
-            temperature: opts.temperature || 0.7,
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${key}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': 'https://github.com/mr-worldwidewebster',
-              'X-Title': 'Mr. WorldWideWebster Metadata',
-            },
-            timeout: opts.timeout || 20000,
-          }
-        );
+Return a JSON object with:
+- title: a catchy YouTube Shorts title (max 50 characters, use emojis if helpful)
+- hashtags: 5 relevant hashtags as an array of strings`;
 
-        // Check for API-level error in response body (OpenRouter sometimes returns 200 with error)
-        const bodyError = response.data?.error;
-        if (bodyError) {
-          const errMsg = bodyError.message || JSON.stringify(bodyError);
-          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} body error: ${errMsg.substring(0, 80)}`);
-          this._rotateKey();
-          continue;
-        }
+    const messages = [
+      { role: 'system', content: 'You are a YouTube Shorts metadata writer. Return ONLY valid JSON. No markdown, no explanation.' },
+      { role: 'user', content: userMessage }
+    ];
 
-        const content = response.data?.choices?.[0]?.message?.content;
-        if (content && content.trim().length > 0) {
-          return content.trim();
-        }
+    const result = await this._call(messages, {
+      maxTokens: 300,
+      temperature: 0.7,
+      timeout: 15000,
+      xTitle: 'Mr. WorldWideWebster Title Gen',
+    });
 
-        // Empty response — log and rotate
-        logger.warn(`OpenRouter key ${this.currentKeyIndex + 1}: empty/null response (choices: ${response.data?.choices?.length || 0})`);
-        this._rotateKey();
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      } catch (error) {
-        const status = error.response?.status;
-        const errText = error.response?.data?.error?.message || error.message;
-
-        if (status === 429 || errText?.includes('quota') || errText?.includes('rate')) {
-          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} rate limited — rotating`);
-          this._rotateKey();
-          await new Promise(r => setTimeout(r, 1000));
-          continue;
-        }
-
-        if (status === 402) {
-          logger.warn(`OpenRouter key ${this.currentKeyIndex + 1} out of credits — rotating`);
-          this._rotateKey();
-          continue;
-        }
-
-        logger.warn(`OpenRouter chat error key ${this.currentKeyIndex + 1}: ${errText?.substring(0, 80)}`);
-        this._rotateKey();
-      }
+    if (!result) {
+      logger.warn('OpenRouter title gen: empty response');
+      return null;
     }
 
-    logger.error(`OpenRouter chat: all ${this.keys.length} keys exhausted, last successful key: ${this.currentKeyIndex}`);
+    try {
+      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed && parsed.title && parsed.title.length > 5) {
+          logger.success(`OpenRouter title: "${parsed.title.substring(0, 50)}"`);
+          return parsed;
+        }
+        logger.warn(`OpenRouter title gen: invalid result: ${JSON.stringify(parsed).substring(0, 80)}`);
+      } else {
+        logger.warn(`OpenRouter title gen: non-JSON: "${result.substring(0, 60)}"`);
+      }
+    } catch (e) {
+      logger.warn(`OpenRouter title gen JSON parse: ${e.message.substring(0, 60)}`);
+    }
+
     return null;
   }
 
   /**
    * QA check for crop quality
-   * Non-directional: just asks "does this look correct?"
    */
   async checkCrop(rawFrames, croppedFrames, country) {
-    // Use cropped frames to check — that's what matters
     const frames = croppedFrames.filter(f => fs.existsSync(f));
     if (frames.length === 0) return null;
 
@@ -280,8 +377,7 @@ Rate overall quality 1-10. Respond with JSON only.`;
   }
 
   /**
-   * QA check for edits (captions, watermark removal, visual quality)
-   * Non-directional: just asks "does this look right?"
+   * QA check for edits
    */
   async checkEdit(frames, editType, country) {
     if (frames.length === 0) return null;
@@ -309,8 +405,7 @@ Overall quality rating 1-10. Respond with JSON only.`;
   }
 
   /**
-   * Generic QA check — "are you sure this is good?"
-   * Asks OpenRouter to point out ANY small issues it can spot
+   * Final QA review
    */
   async finalReview(frames, country) {
     if (frames.length === 0) return null;

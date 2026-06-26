@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { getOllamaProvider } = require('../providers/ollama-provider');
+const { getOpenRouterQA } = require('./openrouter-qa');
 
 const logger = new Logger('GeminiService');
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
@@ -748,6 +749,24 @@ Return ONLY valid JSON: {"title":"...","description":"...","tags":["tag1","tag2"
       }
     } catch (e) {
       logger.warn(`Ollama title gen failed: ${e.message.substring(0, 80)}`);
+    }
+
+    // ─── LAST RESORT: OpenRouter fallback ────
+    logger.warn('Ollama unavailable — trying OpenRouter as final fallback');
+    try {
+      const openrouter = getOpenRouterQA();
+      const orResult = await openrouter.generateTitleAndHashtags(origTitle || context.sourceTitle, null, country);
+      if (orResult && orResult.title && orResult.title.length > 5) {
+        logger.success(`Title generated via OpenRouter: "${orResult.title.substring(0, 50)}"`);
+        return {
+          title: orResult.title,
+          description: `${orResult.title}\n\nWhat do you think of this? 👇\n\n${(orResult.hashtags || ['#' + country.toLowerCase().replace(/\s/g, ''), '#shorts', '#viral']).map(t => t.startsWith('#') ? t : '#' + t).join(' ')}`,
+          tags: orResult.hashtags || [],
+        };
+      }
+      logger.warn('OpenRouter title generation returned null');
+    } catch (e) {
+      logger.warn(`OpenRouter title gen failed: ${e.message.substring(0, 80)}`);
     }
 
     logger.warn('All keys exhausted for title generation — using fallback');
