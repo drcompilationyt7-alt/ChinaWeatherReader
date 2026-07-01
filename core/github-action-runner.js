@@ -150,10 +150,12 @@ class DailyRunner {
   }
 
   async runDaily(overrideCountry, skipRanking = false, searchQuery = null) {
-    logger.header('DAILY: Type 1 Clip Pipeline');
+    logger.header('DAILY: Type 1 Clip Pipeline (Channel-Sourced)');
 
+    // The new pipeline picks 10 random channels, classifies countries via Gemini,
+    // and selects the video whose country has been posted the LEAST this week.
     const country = this._pickCountry(overrideCountry);
-    logger.info(`Country: ${country}`);
+    logger.info(`Starting country hint: ${country}`);
 
     for (const dir of [config.paths.clips, config.paths.assets]) {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -162,7 +164,10 @@ class DailyRunner {
     const { runType1Pipeline } = require('../pipeline/type1-clip-pipeline');
     let result;
     try {
-      result = await runType1Pipeline({ country, outputDir: config.paths.clips, skipRanking, searchQuery });
+      result = await runType1Pipeline({
+        outputDir: config.paths.clips,
+        countriesUsedThisWeek: this.memory.countriesUsedThisWeek || [],
+      });
     } catch (e) {
       logger.error(`Pipeline crash: ${e.message}`);
       result = { success: false, error: e.message };
@@ -182,10 +187,10 @@ class DailyRunner {
       uploaded.push({ title: result.title, url: uploadResult.url, country: result.country, geminiScore: result.geminiScore, editType: result.editType });
       this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
       if (!this.memory.countriesUsedThisWeek) this.memory.countriesUsedThisWeek = [];
-      if (!this.memory.countriesUsedThisWeek.includes(country)) this.memory.countriesUsedThisWeek.push(country);
+      if (!this.memory.countriesUsedThisWeek.includes(result.country)) this.memory.countriesUsedThisWeek.push(result.country);
       if (this.memory.countriesUsedThisWeek.length > 7) this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
       this._saveMemory();
-      this._trackPostedVideo(uploadResult.url, result.title, country);
+      this._trackPostedVideo(uploadResult.url, result.title, result.country);
     }
 
     await this._sendDiscord({ videos: uploaded, countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [] });
@@ -193,7 +198,7 @@ class DailyRunner {
     logger.header('SUMMARY');
     if (uploaded.length > 0) {
       logger.success(`✅ 1 short uploaded — "${result.title}"`);
-      logger.success(`🌍 ${country} | ⭐ ${result.geminiScore}/10 | 🎬 ${result.editType}`);
+      logger.success(`🌍 ${result.country} | ⭐ ${result.geminiScore}/10 | 🎬 ${result.editType} | 📺 @${result.sourceChannel || 'channel'}`);
     } else {
       logger.warn('⚠ Upload skipped');
     }
