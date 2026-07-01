@@ -139,6 +139,23 @@ function pickChannel(memory) {
     return null;
   }
 
+  // FIFA mode: always pick from the FIFA region
+  const fifaRegion = 'FIFA';
+  const fifaData = sources[fifaRegion];
+  if (fifaData && fifaData.channels && fifaData.channels.length > 0) {
+    const channels = fifaData.channels;
+    const usableChannels = channels.filter(c => !(memory.usedChannels || []).includes(c));
+    const pool = usableChannels.length > 0 ? usableChannels : channels;
+
+    const channelUrl = pool[Math.floor(Math.random() * pool.length)];
+    const handleMatch = channelUrl.match(/@([\w-]+)/);
+    const handle = handleMatch ? handleMatch[1] : channelUrl;
+
+    logger.info(`FIFA mode: @${handle}`);
+    return { region: fifaRegion, regionName: fifaData.name, channelUrl, handle };
+  }
+
+  // Fallback: random region (shouldn't happen if FIFA is configured)
   const regions = Object.keys(sources);
   const shuffledRegions = [...regions].sort(() => Math.random() - 0.5);
 
@@ -146,7 +163,6 @@ function pickChannel(memory) {
     const regionData = sources[region];
     const channels = regionData.channels;
 
-    // Filter out recently used channels
     const usableChannels = channels.filter(c => !(memory.usedChannels || []).includes(c));
     const pool = usableChannels.length > 0 ? usableChannels : channels;
 
