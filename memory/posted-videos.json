@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Be6yF3ySiOM",
-      "title": "Chinese Comedy Gold! 🤣🇨🇳 #shorts",
-      "country": "China",
-      "postedAt": "2026-07-06T06:49:18.812Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=VKhWQ3Yug6k",
       "title": "Ghana's Magic vs Colombia! 🇬🇭✨ #WorldCup",
       "country": "Ghana",
@@ -335,6 +329,12 @@
       "title": "Worst Football Misses Ever! 💀⚽️",
       "country": "FIFA",
       "postedAt": "2026-08-04T09:55:51.541Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1KszRKD5EtQ",
+      "title": "눈웃음 비타민 발사! 💖 백지헌 미소",
+      "country": "South Korea",
+      "postedAt": "2026-08-05T06:59:27.443Z"
     }
   ]
 }
