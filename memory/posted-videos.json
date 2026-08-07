@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=DlnwLOa_y7I",
-      "title": "POV: Visiting Ronaldo's homeland 🇵🇹",
-      "country": "Portugal",
-      "postedAt": "2026-07-07T09:58:18.366Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=wbj2GNZkd2s",
-      "title": "Nigeria Has Repaid Its $3 4 Billion IMF Loan 1",
-      "country": "Nigeria",
-      "postedAt": "2026-07-08T06:53:23.016Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=SUj2Eywxxwc",
       "title": "Mexico OUT! 🇲🇽 England Wins 3-2! 🏴󠁧󠁢󠁥󠁮󠁧󠁿⚽",
       "country": "Mexico",
@@ -341,6 +329,12 @@
       "title": "Why Olise is built different! 💎⚽️",
       "country": "Germany",
       "postedAt": "2026-08-06T09:51:55.460Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=dUm-8RXM1To",
+      "title": "Niger Crisis: Plan to Restore Democracy! 🇳🇪",
+      "country": "Niger",
+      "postedAt": "2026-08-07T07:06:03.489Z"
     }
   ]
 }
