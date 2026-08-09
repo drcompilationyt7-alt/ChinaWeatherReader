@@ -15,6 +15,7 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const config = require('./config');
 const { Logger } = require('./logger');
 const { getGeminiCLI } = require('./gemini-cli-runner');
 const { getGeminiService } = require('./gemini-service');
@@ -280,6 +281,17 @@ async function smartEdit(videoPath, outputPath, options = {}) {
     }
   } else {
     logger.info('Edit type: NONE (dance/music only — no captions)');
+  }
+
+  // Captions/subtitles are disabled in config → no subtitle generation or burn-in
+  const captionsEnabled = config.captions && config.captions.enabled === true;
+  if (!captionsEnabled) {
+    if (needsCaptions) {
+      logger.info('Subtitles/captions DISABLED by config — visual edit only, skipping subtitle generation');
+    }
+    needsCaptions = false;
+    needsTranslation = false;
+    if (editType === 'tiktok_captions' || editType === 'translation') editType = 'visual_edit';
   }
 
   // Step 2: Detect watermarks via Gemini CLI

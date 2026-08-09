@@ -1,52 +1,501 @@
 {
   "channels": [
-    { "handle": "@AsianCulinaryJourne", "url": "https://www.youtube.com/@AsianCulinaryJourne/shorts", "countryGuess": "World" },
-    { "handle": "@Sweet-Vibe-Dance", "url": "https://www.youtube.com/@Sweet-Vibe-Dance/shorts", "countryGuess": "World" },
-    { "handle": "@VibeX-t9k", "url": "https://www.youtube.com/@VibeX-t9k/shorts", "countryGuess": "World" },
-    { "handle": "@chengyi-v4q", "url": "https://www.youtube.com/@chengyi-v4q/shorts", "countryGuess": "China" },
-    { "handle": "@Dance-p2d", "url": "https://www.youtube.com/@Dance-p2d/shorts", "countryGuess": "World" },
-    { "handle": "@music_elf_10", "url": "https://www.youtube.com/@music_elf_10/shorts", "countryGuess": "World" },
-    { "handle": "@Just_Musical", "url": "https://www.youtube.com/@Just_Musical/shorts", "countryGuess": "World" },
-    { "handle": "@Barneyranks", "url": "https://www.youtube.com/@Barneyranks/shorts", "countryGuess": "World" },
-    { "handle": "@AfricanVibes", "url": "https://www.youtube.com/@AfricanVibes/shorts", "countryGuess": "Africa" },
-    { "handle": "@PinguRanks", "url": "https://www.youtube.com/@PinguRanks/shorts", "countryGuess": "World" },
-    { "handle": "@Viralclips4Life-o9p", "url": "https://www.youtube.com/@Viralclips4Life-o9p/shorts", "countryGuess": "World" },
-    { "handle": "@KPOPHMKShorts", "url": "https://www.youtube.com/@KPOPHMKShorts/shorts", "countryGuess": "South Korea" },
-    { "handle": "@NEKOROSEOFFICIAL", "url": "https://www.youtube.com/@NEKOROSEOFFICIAL/shorts", "countryGuess": "South Korea" },
-    { "handle": "@Crackpink68", "url": "https://www.youtube.com/@Crackpink68/shorts", "countryGuess": "World" },
-    { "handle": "@CelebClique", "url": "https://www.youtube.com/@CelebClique/shorts", "countryGuess": "World" },
-    { "handle": "@JXENM7", "url": "https://www.youtube.com/@JXENM7/shorts", "countryGuess": "World" },
-    { "handle": "@thekpopify", "url": "https://www.youtube.com/@thekpopify/shorts", "countryGuess": "South Korea" },
-    { "handle": "@RUKALICIOUSKPOP", "url": "https://www.youtube.com/@RUKALICIOUSKPOP/shorts", "countryGuess": "South Korea" },
-    { "handle": "@Animeaura1518", "url": "https://www.youtube.com/@Animeaura1518/shorts", "countryGuess": "Japan" },
-    { "handle": "@Sh8de_Edits", "url": "https://www.youtube.com/@Sh8de_Edits/shorts", "countryGuess": "World" },
-    { "handle": "@Anime_Dragons_Den", "url": "https://www.youtube.com/@Anime_Dragons_Den/shorts", "countryGuess": "World" },
-    { "handle": "@kazuya_wat", "url": "https://www.youtube.com/@kazuya_wat/shorts", "countryGuess": "Japan" },
-    { "handle": "@Xenz4nime", "url": "https://www.youtube.com/@Xenz4nime/shorts", "countryGuess": "World" },
-    { "handle": "@Kuraizy", "url": "https://www.youtube.com/@Kuraizy/shorts", "countryGuess": "World" },
-    { "handle": "@badass020", "url": "https://www.youtube.com/@badass020/shorts", "countryGuess": "World" },
-    { "handle": "@BB_BrainBoost", "url": "https://www.youtube.com/@BB_BrainBoost/shorts", "countryGuess": "World" },
-    { "handle": "@cure0721", "url": "https://www.youtube.com/@cure0721/shorts", "countryGuess": "Japan" },
-    { "handle": "@Wenjiang-caihuaxiaoyuan", "url": "https://www.youtube.com/@Wenjiang-caihuaxiaoyuan/shorts", "countryGuess": "China" },
-    { "handle": "@PoliczHouseworth", "url": "https://www.youtube.com/@PoliczHouseworth/shorts", "countryGuess": "World" },
-    { "handle": "@trumview", "url": "https://www.youtube.com/@trumview/shorts", "countryGuess": "World" },
-    { "handle": "@Nikoork", "url": "https://www.youtube.com/@Nikoork/shorts", "countryGuess": "World" },
-    { "handle": "@adven", "url": "https://www.youtube.com/@adven/shorts", "countryGuess": "World" },
-    { "handle": "@lenna_lyvronia", "url": "https://www.youtube.com/@lenna_lyvronia/shorts", "countryGuess": "World" },
-    { "handle": "@Luli_Lush-ENT", "url": "https://www.youtube.com/@Luli_Lush-ENT/shorts", "countryGuess": "World" },
-    { "handle": "@vdouyin06", "url": "https://www.youtube.com/@vdouyin06/shorts", "countryGuess": "China" },
-    { "handle": "@Fourceeiooopp", "url": "https://www.youtube.com/@Fourceeiooopp/shorts", "countryGuess": "World" },
-    { "handle": "@AyisSem", "url": "https://www.youtube.com/@AyisSem/shorts", "countryGuess": "World" },
-    { "handle": "@ShashiRox_SRK", "url": "https://www.youtube.com/@ShashiRox_SRK/shorts", "countryGuess": "India" },
-    { "handle": "@RunRonaldo7", "url": "https://www.youtube.com/@RunRonaldo7/shorts", "countryGuess": "World" },
-    { "handle": "@احمدابوشمس-ذ3و", "url": "https://www.youtube.com/@احمدابوشمس-ذ3و/shorts", "countryGuess": "Middle East" },
-    { "handle": "@PeakRankzz", "url": "https://www.youtube.com/@PeakRankzz/shorts", "countryGuess": "World" },
-    { "handle": "@tiktokcutecouples5283", "url": "https://www.youtube.com/@tiktokcutecouples5283/shorts", "countryGuess": "World" },
-    { "handle": "@TaiHoa2905", "url": "https://www.youtube.com/@TaiHoa2905/shorts", "countryGuess": "Vietnam" },
-    { "handle": "@艺术绘画l", "url": "https://www.youtube.com/@艺术绘画l/shorts", "countryGuess": "China" },
-    { "handle": "@RiNNEyt", "url": "https://www.youtube.com/@RiNNEyt/shorts", "countryGuess": "World" },
-    { "handle": "@M2_ShortsPD", "url": "https://www.youtube.com/@M2_ShortsPD/shorts", "countryGuess": "World" },
-    { "handle": "@MeMeHuB953", "url": "https://www.youtube.com/@MeMeHuB953/shorts", "countryGuess": "World" },
-    { "handle": "@SarcasticNitin", "url": "https://www.youtube.com/@SarcasticNitin/shorts", "countryGuess": "India" }
+    {
+      "handle": "@AsianCulinaryJourne",
+      "url": "https://www.youtube.com/@AsianCulinaryJourne/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Sweet-Vibe-Dance",
+      "url": "https://www.youtube.com/@Sweet-Vibe-Dance/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@VibeX-t9k",
+      "url": "https://www.youtube.com/@VibeX-t9k/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@chengyi-v4q",
+      "url": "https://www.youtube.com/@chengyi-v4q/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Dance-p2d",
+      "url": "https://www.youtube.com/@Dance-p2d/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@music_elf_10",
+      "url": "https://www.youtube.com/@music_elf_10/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Just_Musical",
+      "url": "https://www.youtube.com/@Just_Musical/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Barneyranks",
+      "url": "https://www.youtube.com/@Barneyranks/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@AfricanVibes",
+      "url": "https://www.youtube.com/@AfricanVibes/shorts",
+      "countryGuess": "Africa",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@PinguRanks",
+      "url": "https://www.youtube.com/@PinguRanks/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@Viralclips4Life-o9p",
+      "url": "https://www.youtube.com/@Viralclips4Life-o9p/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@KPOPHMKShorts",
+      "url": "https://www.youtube.com/@KPOPHMKShorts/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@NEKOROSEOFFICIAL",
+      "url": "https://www.youtube.com/@NEKOROSEOFFICIAL/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Crackpink68",
+      "url": "https://www.youtube.com/@Crackpink68/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@CelebClique",
+      "url": "https://www.youtube.com/@CelebClique/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@JXENM7",
+      "url": "https://www.youtube.com/@JXENM7/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@thekpopify",
+      "url": "https://www.youtube.com/@thekpopify/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@RUKALICIOUSKPOP",
+      "url": "https://www.youtube.com/@RUKALICIOUSKPOP/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Animeaura1518",
+      "url": "https://www.youtube.com/@Animeaura1518/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Sh8de_Edits",
+      "url": "https://www.youtube.com/@Sh8de_Edits/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Anime_Dragons_Den",
+      "url": "https://www.youtube.com/@Anime_Dragons_Den/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@kazuya_wat",
+      "url": "https://www.youtube.com/@kazuya_wat/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Xenz4nime",
+      "url": "https://www.youtube.com/@Xenz4nime/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Kuraizy",
+      "url": "https://www.youtube.com/@Kuraizy/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@badass020",
+      "url": "https://www.youtube.com/@badass020/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@BB_BrainBoost",
+      "url": "https://www.youtube.com/@BB_BrainBoost/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "chinese-skit"
+    },
+    {
+      "handle": "@cure0721",
+      "url": "https://www.youtube.com/@cure0721/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Wenjiang-caihuaxiaoyuan",
+      "url": "https://www.youtube.com/@Wenjiang-caihuaxiaoyuan/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@PoliczHouseworth",
+      "url": "https://www.youtube.com/@PoliczHouseworth/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@trumview",
+      "url": "https://www.youtube.com/@trumview/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@Nikoork",
+      "url": "https://www.youtube.com/@Nikoork/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@adven",
+      "url": "https://www.youtube.com/@adven/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@lenna_lyvronia",
+      "url": "https://www.youtube.com/@lenna_lyvronia/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@Luli_Lush-ENT",
+      "url": "https://www.youtube.com/@Luli_Lush-ENT/shorts",
+      "countryGuess": "World",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@vdouyin06",
+      "url": "https://www.youtube.com/@vdouyin06/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Fourceeiooopp",
+      "url": "https://www.youtube.com/@Fourceeiooopp/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@AyisSem",
+      "url": "https://www.youtube.com/@AyisSem/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@ShashiRox_SRK",
+      "url": "https://www.youtube.com/@ShashiRox_SRK/shorts",
+      "countryGuess": "India",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@RunRonaldo7",
+      "url": "https://www.youtube.com/@RunRonaldo7/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@احمدابوشمس-ذ3و",
+      "url": "https://www.youtube.com/@احمدابوشمس-ذ3و/shorts",
+      "countryGuess": "Middle East",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@PeakRankzz",
+      "url": "https://www.youtube.com/@PeakRankzz/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@tiktokcutecouples5283",
+      "url": "https://www.youtube.com/@tiktokcutecouples5283/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@TaiHoa2905",
+      "url": "https://www.youtube.com/@TaiHoa2905/shorts",
+      "countryGuess": "Vietnam",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@艺术绘画l",
+      "url": "https://www.youtube.com/@艺术绘画l/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@RiNNEyt",
+      "url": "https://www.youtube.com/@RiNNEyt/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@M2_ShortsPD",
+      "url": "https://www.youtube.com/@M2_ShortsPD/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@MeMeHuB953",
+      "url": "https://www.youtube.com/@MeMeHuB953/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@SarcasticNitin",
+      "url": "https://www.youtube.com/@SarcasticNitin/shorts",
+      "countryGuess": "India",
+      "enabled": false,
+      "niche": "disabled"
+    },
+    {
+      "handle": "@Kehlzeditz2",
+      "url": "https://www.youtube.com/@Kehlzeditz2/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@SPORTSCOURT817",
+      "url": "https://www.youtube.com/@SPORTSCOURT817/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@footballareayt",
+      "url": "https://www.youtube.com/@footballareayt/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@Footy_Ranks",
+      "url": "https://www.youtube.com/@Footy_Ranks/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@QuickGoal-v5s",
+      "url": "https://www.youtube.com/@QuickGoal-v5s/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@dr1bbling",
+      "url": "https://www.youtube.com/@dr1bbling/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@Football_Moments_01",
+      "url": "https://www.youtube.com/@Football_Moments_01/shorts",
+      "countryGuess": "World",
+      "enabled": false,
+      "niche": "football"
+    },
+    {
+      "handle": "@EnixEditss",
+      "url": "https://www.youtube.com/@EnixEditss/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Jiraiya_sensei1",
+      "url": "https://www.youtube.com/@Jiraiya_sensei1/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Curious-Bloom",
+      "url": "https://www.youtube.com/@Curious-Bloom/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@TinaaTravel",
+      "url": "https://www.youtube.com/@TinaaTravel/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Unseen_China",
+      "url": "https://www.youtube.com/@Unseen_China/shorts",
+      "countryGuess": "China",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@KyoSol_Boy",
+      "url": "https://www.youtube.com/@KyoSol_Boy/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@tokyotrending",
+      "url": "https://www.youtube.com/@tokyotrending/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@japans.wonder",
+      "url": "https://www.youtube.com/@japans.wonder/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@TechnoBites997",
+      "url": "https://www.youtube.com/@TechnoBites997/shorts",
+      "countryGuess": "Thailand",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@sakurasquad7",
+      "url": "https://www.youtube.com/@sakurasquad7/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@kuroseshorts",
+      "url": "https://www.youtube.com/@kuroseshorts/shorts",
+      "countryGuess": "Philippines",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Jasmine-like-nature",
+      "url": "https://www.youtube.com/@Jasmine-like-nature/shorts",
+      "countryGuess": "Japan",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@drama_subho",
+      "url": "https://www.youtube.com/@drama_subho/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@MK916Edits",
+      "url": "https://www.youtube.com/@MK916Edits/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Esther_edit",
+      "url": "https://www.youtube.com/@Esther_edit/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    },
+    {
+      "handle": "@Drama-Castle",
+      "url": "https://www.youtube.com/@Drama-Castle/shorts",
+      "countryGuess": "South Korea",
+      "enabled": true,
+      "niche": "asian-edits"
+    }
   ]
 }

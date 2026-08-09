@@ -69,6 +69,13 @@ const config = {
     spreadMaxMinutes: parseInt(process.env.BOOST_SPREAD_MAX) || 180,
   },
 
+  // ─── Subtitle / caption generation ─────────────────────────────
+  // Burn-in captions/subtitles are DISABLED by default (Asian edits niche).
+  // Set CAPTIONS_ENABLED=true to re-enable TikTok-style burned-in subtitles.
+  captions: {
+    enabled: (process.env.CAPTIONS_ENABLED || 'false') === 'true',
+  },
+
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY,
     clientId: process.env.YOUTUBE_CLIENT_ID,
@@ -79,9 +86,9 @@ const config = {
   },
 
   channel: {
-    name: process.env.CHANNEL_NAME || 'Mr. WorldWideWebster',
-    tagline: process.env.CHANNEL_TAGLINE || 'Bringing the world to you',
-    targetAudience: process.env.TARGET_AUDIENCE || 'Global culture enthusiasts, travelers, people curious about international trends',
+    name: process.env.CHANNEL_NAME || 'Asian Edits',
+    tagline: process.env.CHANNEL_TAGLINE || 'K-pop, anime & Asian edit shorts',
+    targetAudience: process.env.TARGET_AUDIENCE || 'K-pop fans, anime fans and Asian edits enthusiasts',
   },
 
   sourcing: {
@@ -92,10 +99,8 @@ const config = {
   // ─── Country rotation ─────────────────────────────────────────────
   countries: [
     'China', 'Japan', 'South Korea', 'Thailand', 'Vietnam',
-    'India', 'Indonesia', 'Brazil', 'Mexico', 'France',
-    'Germany', 'Italy', 'Spain', 'UK', 'Egypt',
-    'Nigeria', 'Australia',
-    'Turkey', 'Colombia', 'Peru', 'Argentina', 'Chile', 'Portugal', 'Russia', 'Canada',
+    'Indonesia', 'India', 'Philippines', 'Malaysia', 'Taiwan',
+    'Hong Kong', 'Singapore',
   ],
 
   // ─── Pipeline settings ────────────────────────────────────────────

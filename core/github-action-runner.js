@@ -36,7 +36,7 @@ class DailyRunner {
   }
 
   async initialize() {
-    logger.header('MR. WORLDWIDEWEBSTER — Gemini-First Runner v2.0');
+    logger.header('ASIAN EDITS — Gemini-First Runner v2.0');
     this.gemini = getGeminiService();
     const stats = this.gemini.getStats();
     logger.info(`Gemini: ${stats.keysLoaded} API keys loaded`);
@@ -68,7 +68,7 @@ class DailyRunner {
         return;
       }
     } catch {}
-    this.memory = { channelName: 'Mr. WorldWideWebster', totalVideosPosted: 0, countriesUsedThisWeek: [] };
+    this.memory = { channelName: 'Asian Edits', totalVideosPosted: 0, countriesUsedThisWeek: [] };
     this._saveMemory();
   }
 
@@ -94,7 +94,7 @@ class DailyRunner {
         videoPath: videoData.videoPath,
         title: videoData.title,
         description: videoData.description,
-        tags: videoData.tags || ['mr worldwidewebster', 'shorts'],
+        tags: videoData.tags || ['asian edits', 'shorts'],
       };
       // Pass publishAt from env if set
       if (process.env.PUBLISH_AT) {
@@ -233,7 +233,7 @@ class DailyRunner {
     const metadata = await this.gemini.generateTitle(result.country, '', result.title);
     const title = metadata?.title || result.title || `${result.country} Explainer`;
     const description = metadata?.description || `An explainer about ${result.country}. Follow Mr. WorldWideWebster! 🌍`;
-    const tags = metadata?.tags || ['mr worldwidewebster', 'explainer', result.country.toLowerCase(), 'shorts'];
+    const tags = metadata?.tags || ['asian edits', 'explainer', result.country.toLowerCase(), 'shorts'];
 
     logger.info('Uploading explainer...');
     const uploadResult = await this._uploadToYouTube({
@@ -295,7 +295,7 @@ class DailyRunner {
         videoPath: result.videoPath,
         title: result.title.substring(0, 100),
         description: result.description,
-        tags: result.tags || ['mr worldwidewebster', 'shorts', result.country.toLowerCase()],
+        tags: result.tags || ['asian edits', 'shorts', result.country.toLowerCase()],
       });
 
       if (uploadResult) {

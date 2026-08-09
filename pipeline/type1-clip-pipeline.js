@@ -17,6 +17,7 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const config = require('../core/config');
 const { Logger } = require('../core/logger');
 const { getGeminiService } = require('../core/gemini-service');
 const { getGeminiCLI } = require('../core/gemini-cli-runner');
@@ -71,8 +72,12 @@ function loadChannelPool() {
   try {
     if (fs.existsSync(CHANNEL_POOL_FILE)) {
       const data = JSON.parse(fs.readFileSync(CHANNEL_POOL_FILE, 'utf8'));
-      const channels = data.channels || [];
-      logger.info(`Loaded ${channels.length} channels from pool`);
+      const rawChannels = data.channels || [];
+      // Only enabled (Asian edits) channels are active. Non-Asian channels remain in
+      // the file (marked "enabled": false) but are excluded from the active pool.
+      const channels = rawChannels.filter(ch => ch.enabled !== false);
+      const disabledCount = rawChannels.length - channels.length;
+      logger.info(`Loaded ${channels.length} enabled (Asian) channels from pool (${disabledCount} disabled)`);
       return channels;
     }
   } catch (e) {
@@ -358,7 +363,7 @@ function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek) {
 // ═══════════════════════════════════════════════════════════════════
 
 // Universal hashtags for cross-platform reach
-const UNIVERSAL_HASHTAGS = '#shorts #tiktok #reels #instagram';
+const UNIVERSAL_HASHTAGS = '#asianedits #kpop #anime #edits';
 
 function buildCountryHashtags(country) {
   const safe = String(country || '').toLowerCase().replace(/[^a-z0-9]+/g, '').replace(/^(the|a|an)$/, '');
@@ -387,7 +392,7 @@ function buildFallbackMetadata(country, bestVideo, dialogue) {
     return {
       title: sourceTitle.substring(0, 50),
       description: `${fallbackDesc}\n\nWould you stop and watch this?\n\n${profile.hashtags}`,
-      tags: ['shorts', 'viral', 'mr worldwidewebster'].concat(profile.tags),
+      tags: ['shorts', 'viral', 'asian edits', 'kpop', 'anime'].concat(profile.tags),
     };
   }
 
@@ -401,7 +406,7 @@ function buildFallbackMetadata(country, bestVideo, dialogue) {
   else if (reasoning.includes('interview') || /street interview/i.test(sourceTitle)) hook = `${profile.titleBase} Street Interviews Are Unhinged`;
   const shortTranscript = (dialogue?.transcript || '').trim();
   const descriptionHook = bestVideo.reasoning ? bestVideo.reasoning.split('.').slice(0, 2).join('.').substring(0, 180) : `A viral ${country} short with a visual hook from the first seconds.`;
-  return { title: hook.substring(0, 50), description: `${descriptionHook}\n\nWould you stop and watch this?\n\n${profile.hashtags}`, tags: ['shorts', 'viral', 'mr worldwidewebster'].concat(profile.tags).concat(shortTranscript ? ['global trends'] : []) };
+  return { title: hook.substring(0, 50), description: `${descriptionHook}\n\nWould you stop and watch this?\n\n${profile.hashtags}`, tags: ['shorts', 'viral', 'asian edits', 'kpop', 'anime'].concat(profile.tags).concat(shortTranscript ? ['asian edits'] : []) };
 }
 
 // ─── Quality check ──────────────────────────────────────────────
@@ -618,7 +623,7 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     const MARGIN_RIGHT = 20;
     const MARGIN_BOTTOM = 80;
     const FONT_SIZE = 28;
-    const TEXT = '@Mr.WorldWideWebster';
+    const TEXT = '@AsianEdits';
     filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.4[wm]`);
     filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.40:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.40:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
@@ -645,6 +650,10 @@ async function runType1Pipeline(options = {}) {
   const gemini = getGeminiService();
   const geminiCLI = getGeminiCLI();
   const memory = loadChannelMemory();
+
+  // Subtitles/captions are DISABLED by default via config (Asian edits niche)
+  const captionsEnabled = !!(config.captions && config.captions.enabled === true);
+  if (!captionsEnabled) logger.info('Captions/subtitles DISABLED by config — no subtitle generation');
 
   // ─── Phase 1: Pick 10 channels & scrape 1 short each ──────────
   logger.header('Phase 1: Channel Pool → 10 Candidates');
@@ -770,7 +779,10 @@ async function runType1Pipeline(options = {}) {
   // ─── Captions ──────────────────────────────────────────────────
   let subPath = null;
   let translatedText = null;
-  if (dialogue.hasDialogue && dialogue.wordCount > 5) {
+  if (!captionsEnabled && dialogue.hasDialogue && dialogue.wordCount > 5) {
+    logger.info('Captions/subtitles disabled by config — skipping subtitle generation');
+  }
+  if (captionsEnabled && dialogue.hasDialogue && dialogue.wordCount > 5) {
     const transcript = (dialogue.transcript || '').toLowerCase();
     const words = transcript.split(/\s+/).filter(w => w.length > 0);
     const wordDensity = words.length / Math.min(cut.end - cut.start, 30);
@@ -900,7 +912,7 @@ async function runType1Pipeline(options = {}) {
   const ttsPath = path.join(tmpBaseDir, `signature_${Date.now()}.mp3`);
   let hasSignature = false;
   try {
-    execSync(`edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this clip from ${country}" --write-media "${ttsPath}"`, { timeout: 30000 });
+    execSync(`edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this Asian edit from ${country}" --write-media "${ttsPath}"`, { timeout: 30000 });
     if (fs.existsSync(ttsPath) && fs.statSync(ttsPath).size >= 1000) hasSignature = true;
   } catch { logger.warn('TTS failed -- skipping signature'); }
 
@@ -989,7 +1001,7 @@ async function runType1Pipeline(options = {}) {
     sourceTitle: bestVideo.title || '',
     viewCount: bestVideo.view_count || 0,
     comments: '',
-    hookDescription: `A short from ${country}`,
+    hookDescription: `An Asian edit from ${country}`,
   };
   const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title, metadataContext);
   const fallbackMetadata = buildFallbackMetadata(country, bestVideo, dialogue);
@@ -999,18 +1011,18 @@ async function runType1Pipeline(options = {}) {
 
   // ─── Phase 8: Daily Roulette Intro ────────────────────────────
   logger.header('Phase 8: Building Daily Random Roulette intro...');
-  const hookDescription = `A viral short from ${country}`;
-  const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
+  const hookDescription = `An Asian edit from ${country}`;
+  const channelHandle = process.env.YOUTUBE_HANDLE || '@AsianEdits';
   const todayLine = await gemini.generateRouletteTodayLine(country, hookDescription, bestVideo.title);
-  const todayFallback = `Today we have a viral moment from ${country}!`;
+  const todayFallback = `Today we have a fresh Asian edit from ${country}!`;
   const rouletteText = (todayLine && todayLine.trim().length > 20) ? todayLine.trim() : todayFallback;
 
-  const rouletteHeader = `🌍 Daily Random Roulette 🌍
-Every day a random clip from a random country — it can be good, it can be bad, but it'll always be interesting. Start your day with a great video and the rest of the day is blessed. Start with a bad one? Well, the day can't get any worse! Either way, we hope it brings a smile to your face (or at least some confusion).
+  const rouletteHeader = `🎌 Asian Edits Daily 🎌
+Every day a fresh Asian edit — K-pop, anime, dance and aesthetic clips from across Asia. Curated edits that hit different, guaranteed.
 
 ${rouletteText}
 
-If you want to be surprised every day, make sure to subscribe to ${channelHandle}!`;
+If you want daily Asian edits, make sure to subscribe to ${channelHandle}!`;
 
   description = `${rouletteHeader}\n\n---\n\n${description}`;
 

@@ -22,48 +22,5 @@
       "https://www.youtube.com/@sakurasquad7/shorts",
       "https://www.youtube.com/@kuroseshorts/shorts"
     ]
-  },
-  "Europe": {
-    "name": "Europe",
-    "channels": [
-      "https://www.youtube.com/@EasterAxisEats/shorts",
-      "https://www.youtube.com/@BucketListVacationers/shorts",
-      "https://www.youtube.com/@PlanetEarth0_0/shorts"
-    ]
-  },
-  "Africa-MiddleEast": {
-    "name": "Africa / Middle East",
-    "channels": [
-      "https://www.youtube.com/@Theworldoffoods1/shorts",
-      "https://www.youtube.com/@Cattyyiii/shorts",
-      "https://www.youtube.com/@UniversalTravellingWith__MS/shorts"
-    ]
-  },
-  "Americas": {
-    "name": "Americas",
-    "channels": [
-      "https://www.youtube.com/@lifelightsbyhenry/shorts",
-      "https://www.youtube.com/@Travel-Destination-Discoveries/shorts",
-      "https://www.youtube.com/@TimeSaver-Shorts/shorts"
-    ]
-  },
-  "World-Travel": {
-    "name": "World Travel",
-    "channels": [
-      "https://www.youtube.com/@WorldCultureTravel",
-      "https://www.youtube.com/@realya28/shorts",
-      "https://www.youtube.com/@JapanFate1/shorts"
-    ]
-  },
-  "FIFA": {
-    "name": "FIFA / Football",
-    "channels": [
-      "https://www.youtube.com/@SPORTSCOURT817/shorts",
-      "https://www.youtube.com/@footballareayt/shorts",
-      "https://www.youtube.com/@Footy_Ranks/shorts",
-      "https://www.youtube.com/@QuickGoal-v5s/shorts",
-      "https://www.youtube.com/@dr1bbling/shorts",
-      "https://www.youtube.com/@Football_Moments_01/shorts"
-    ]
   }
 }

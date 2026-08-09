@@ -1,8 +1,11 @@
-name: Daily Temp Explainer (Type 2)
+name: Daily Shorts Creation #2 (Asian Edits)
 
 on:
   workflow_dispatch:
     inputs:
+      country:
+        description: 'Override country (optional)'
+        required: false
       private:
         description: 'Upload as private (default: false)'
         required: false
@@ -39,7 +42,7 @@ env:
   PUBLISH_HOUR_UTC: "20"
 
 jobs:
-  temp-explainer:
+  create-shorts-2:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -58,7 +61,7 @@ jobs:
       - name: Clean old test data
         run: |
           rm -rf output/ memory/hermes-memory/
-          mkdir -p output/temp-explainer output/assets memory
+          mkdir -p output/clips output/assets/voiceovers output/assets/audio memory
 
       - name: Install system dependencies
         run: |
@@ -100,7 +103,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] --break-system-packages
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] transformers sentencepiece --break-system-packages
 
       - name: Install Node.js dependencies
         run: |
@@ -137,7 +140,7 @@ jobs:
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
           fi
 
-      - name: Set publishAt (4:00 PM EDT = 20:00 UTC)
+      - name: Set publishAt (8:00 AM EDT = 12:00 UTC)
         run: |
           if [ -n "${{ github.event.inputs.publishAt }}" ]; then
             echo "PUBLISH_AT=${{ github.event.inputs.publishAt }}" >> $GITHUB_ENV
@@ -145,19 +148,23 @@ jobs:
             echo "PUBLISH_AT=$(date -u -d "today ${PUBLISH_HOUR_UTC}:00:00" +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
           fi
 
-      - name: Run temp type 2 pipeline
+      - name: Run daily pipeline
         run: |
+          COUNTRY_ARG=""
+          if [ -n "${{ github.event.inputs.country }}" ]; then
+            COUNTRY_ARG="--country ${{ github.event.inputs.country }}"
+          fi
           PRIVATE_ARG=""
           if [ "${{ github.event.inputs.private }}" = "true" ] || [ "$PRIVATE" = "true" ]; then
             PRIVATE_ARG="--private"
           fi
-          node core/github-action-runner.js --mode temp $PRIVATE_ARG --publish-at "$PUBLISH_AT"
+          node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
 
       - name: Save memory
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/ 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "Update temp memory $(date +%F)" && git push || true)
+          git add memory/channel-memory.json memory/type1-channel-memory.json memory/posted-videos.json config/channel-pool.json config/trend-banks/ 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
 
       - name: Daily Boost (2 random from posted pool)
         run: |
