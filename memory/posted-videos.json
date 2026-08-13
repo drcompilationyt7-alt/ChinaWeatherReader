@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=u-pLEmb1YZg",
-      "title": "Súng bắn keo siêu đỉnh! 🌭✨",
-      "country": "Vietnam",
-      "postedAt": "2026-07-14T06:55:06.139Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=XrmxO4vj07s",
       "title": "Football Headshots That HURT! 😭🏈",
       "country": "Global",
@@ -347,6 +341,12 @@
       "title": "TOP 5 Guy Sensei Moments! 🔥🇯🇵",
       "country": "Japan",
       "postedAt": "2026-08-13T06:49:16.781Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=HC8GlnxUdXk",
+      "title": "They laughed at her hair... then THIS happened! 😳🔥",
+      "country": "Thailand",
+      "postedAt": "2026-08-13T09:56:42.308Z"
     }
   ]
 }
