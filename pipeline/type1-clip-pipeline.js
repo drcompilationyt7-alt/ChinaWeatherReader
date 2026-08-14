@@ -623,7 +623,7 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     const MARGIN_RIGHT = 20;
     const MARGIN_BOTTOM = 80;
     const FONT_SIZE = 28;
-    const TEXT = '@AsianEdits';
+    const TEXT = '@Mr.WorldWideWebster';
     filters.push(`[${wmInputIdx}:v]scale=${LOGO_SIZE}:${LOGO_SIZE}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.4[wm]`);
     filters.push(`[${currentLabel}][wm]overlay=W-w-${MARGIN_RIGHT}:H-h-${MARGIN_BOTTOM}:format=auto,drawtext=text='${TEXT}':fontcolor=white@0.40:fontsize=${FONT_SIZE}:x=W-tw-${MARGIN_RIGHT}:y=H-th-${Math.round(MARGIN_BOTTOM/2)}:shadowcolor=black@0.40:shadowx=1:shadowy=1[v4]`);
     currentLabel = 'v4';
@@ -1012,7 +1012,7 @@ async function runType1Pipeline(options = {}) {
   // ─── Phase 8: Daily Roulette Intro ────────────────────────────
   logger.header('Phase 8: Building Daily Random Roulette intro...');
   const hookDescription = `An Asian edit from ${country}`;
-  const channelHandle = process.env.YOUTUBE_HANDLE || '@AsianEdits';
+  const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
   const todayLine = await gemini.generateRouletteTodayLine(country, hookDescription, bestVideo.title);
   const todayFallback = `Today we have a fresh Asian edit from ${country}!`;
   const rouletteText = (todayLine && todayLine.trim().length > 20) ? todayLine.trim() : todayFallback;

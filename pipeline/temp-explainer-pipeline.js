@@ -43,7 +43,7 @@ const LOGO_SIZE = 80;
 const MARGIN_RIGHT = 20;
 const MARGIN_BOTTOM = 80;
 const FONT_SIZE = 28;
-const TEXT = '@AsianEdits';
+const TEXT = '@Mr.WorldWideWebster';
 
 /**
  * Convert country name to flag emoji (e.g. "United States" → "🇺🇸")
