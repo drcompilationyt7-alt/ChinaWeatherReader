@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=GnR7DdeWzh0",
-      "title": "Why Everyone is Wearing PINK Boots! 💖⚽️",
-      "country": "United States",
-      "postedAt": "2026-07-18T09:53:05.097Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=TEvK8ahv7Go",
       "title": "Anime Moment That Hits Different 😨🫣",
       "country": "Japan",
@@ -341,6 +335,12 @@
       "title": "Geto's Loyalty to Gojo 💔 #jujutsukaisen",
       "country": "Japan",
       "postedAt": "2026-08-17T06:58:26.584Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=8mt01QVo8yI",
+      "title": "Why Japanese People Hide Their Anime Love 🤫🇯🇵",
+      "country": "Japan",
+      "postedAt": "2026-08-17T10:08:12.381Z"
     }
   ]
 }
