@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=x3ojVmDM2bk",
-      "title": "Which outfit is your favorite? 🎀✨",
-      "country": "China",
-      "postedAt": "2026-08-11T06:52:01.579Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=tNoUEyA7Qmo",
       "title": "1997: God's Favorite Year 👑✨",
       "country": "World",
@@ -347,6 +341,12 @@
       "title": "Unexpected Give and Take! 😂💩",
       "country": "Vietnam",
       "postedAt": "2026-09-09T10:10:19.857Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=MTmMUs8JdXY",
+      "title": "3 Reasons Why Renting in Japan Is Basically a Scam",
+      "country": "Japan",
+      "postedAt": "2026-09-10T06:54:12.556Z"
     }
   ]
 }
