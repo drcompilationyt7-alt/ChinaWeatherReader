@@ -451,26 +451,35 @@ function predictTitleScores(candidates, insights, dedup = null) {
 }
 
 /**
- * Rank candidate titles. Returns [{ title, score, heuristic, predicted }] best first.
- * With too little history every candidate gets the same score (order kept).
+ * Rank candidate titles. Returns [{ title, score, heuristic, predicted, extra }] best first.
+ * Components (each 0..1, averaged over the ones available):
+ *   heuristic  learned title patterns            (needs reliable insights)
+ *   knn        similarity-weighted past scores   (needs reliable insights)
+ *   extra      any external 0..1 score per title, e.g. the River predictor
+ * With nothing available every candidate gets the same score (order kept).
  */
-function rankTitles(candidates, insights) {
+function rankTitles(candidates, insights, { extra = null } = {}) {
   const unique = [...new Set((candidates || []).map(t => String(t || '').trim()).filter(t => t.length > 3))];
-  if (unique.length <= 1 || !insights || !insights.reliable) {
-    return unique.map(title => ({ title, score: 0.5, heuristic: 0.5, predicted: null }));
+  const reliable = !!(insights && insights.reliable);
+  if (unique.length <= 1 || (!reliable && !(extra && extra.size))) {
+    return unique.map(title => ({ title, score: 0.5, heuristic: 0.5, predicted: null, extra: null }));
   }
-  const heur = unique.map(t => scoreTitleHeuristic(t, insights));
-  const pred = predictTitleScores(unique, insights);
+  const heur = reliable ? unique.map(t => scoreTitleHeuristic(t, insights)) : null;
+  const pred = reliable ? predictTitleScores(unique, insights) : null;
   const predicted = unique.map(t => {
     const p = pred && pred.predictions.find(x => x.title === t);
-    return p ? p.predicted : null;
+    return p && typeof p.predicted === 'number' ? p.predicted : null;
   });
   const valid = predicted.filter(x => typeof x === 'number');
   const lo = valid.length ? Math.min(...valid) : 0, hi = valid.length ? Math.max(...valid) : 1;
   const ranked = unique.map((title, i) => {
-    const predNorm = typeof predicted[i] === 'number' && hi > lo ? (predicted[i] - lo) / (hi - lo) : 0.5;
-    const score = valid.length ? 0.5 * heur[i] + 0.5 * predNorm : heur[i];
-    return { title, score: Math.round(score * 1000) / 1000, heuristic: Math.round(heur[i] * 1000) / 1000, predicted: predicted[i] };
+    const parts = [];
+    if (heur) parts.push(heur[i]);
+    if (valid.length) parts.push(hi > lo ? (predicted[i] - lo) / (hi - lo) : 0.5);
+    const ex = extra && extra.has(title) ? extra.get(title) : null;
+    if (typeof ex === 'number') parts.push(ex);
+    const score = parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 0.5;
+    return { title, score: Math.round(score * 1000) / 1000, heuristic: heur ? Math.round(heur[i] * 1000) / 1000 : null, predicted: predicted[i], extra: ex };
   });
   ranked.sort((a, b) => b.score - a.score);
   return ranked;
@@ -525,7 +534,7 @@ if (require.main === module) {
 
 module.exports = {
   syncPerformance, fetchChannelVideos, tryFetchAnalytics, computeInsights,
-  loadInsights, loadStats, buildPromptSummary,
+  loadInsights, loadStats, loadPostedIndex, buildPromptSummary,
   countryWeight, channelWeight, categoryWeight, postedDedupList,
   scoreTitleHeuristic, predictTitleScores, rankTitles,
   TITLE_FEATURES, MIN_SAMPLE,

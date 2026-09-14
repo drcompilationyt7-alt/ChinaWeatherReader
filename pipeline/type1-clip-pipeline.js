@@ -33,6 +33,7 @@ const { addWatermark } = require('../core/watermark');
 const { planEasterEggs, buildEasterEggFilters } = require('../core/easter-eggs');
 const { loadInsights, rankTitles, countryWeight, channelWeight, categoryWeight, predictTitleScores, postedDedupList } = require('../core/performance-tracker');
 const { applyWatermarkPass } = require('../core/watermark-cover');
+const learn = require('../core/learning-models');
 
 const logger = new Logger('Type1Pipeline');
 
@@ -366,11 +367,16 @@ function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, insig
     const hw = learning ? channelWeight(insights, c.candidate && c.candidate.channelHandle) : 1;
     const kw = learning ? categoryWeight(insights, c.category) : 1;
     const sim = typeof c.simNorm === 'number' ? c.simNorm : 0.5;
+    // MABWiser sampled expected reward and River predicted views (both 0..1)
+    const bandit = typeof c.banditScore === 'number' ? c.banditScore : null;
+    const river = typeof c.riverNorm === 'number' ? c.riverNorm : null;
     const score = -coverage * 0.8
       + (cw - 1) * 1.0 + (hw - 1) * 0.6 + (kw - 1) * 0.6
-      + (learning ? (sim - 0.5) * 1.2 : 0)
+      + (learning ? (sim - 0.5) * 0.8 : 0)
+      + (bandit !== null ? (bandit - 0.5) * 1.2 : 0)
+      + (river !== null ? (river - 0.5) * 0.8 : 0)
       + (c.confidence || 0) / 40;
-    return { ...c, coverage, cw, hw, kw, sim, score };
+    return { ...c, coverage, cw, hw, kw, sim, bandit, river, score };
   }).sort((a, b) => b.score - a.score);
 
   // softmax sampling (temperature 0.35): best candidate gets the highest odds
@@ -384,7 +390,7 @@ function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, insig
   const winner = scored[idx];
 
   logger.info(`Country coverage this week: ${JSON.stringify(weekCounts)}`);
-  logger.info(`Candidates: ${scored.slice(0, 6).map((s, i) => `${s.country}/@${s.candidate && s.candidate.channelHandle}${s.category ? '/' + s.category : ''} score ${s.score.toFixed(2)} p=${(probs[i] * 100).toFixed(0)}%${learning ? ` (x${s.cw}/x${s.hw}/x${s.kw} sim ${s.sim.toFixed(2)})` : ''}`).join(' | ')}`);
+  logger.info(`Candidates: ${scored.slice(0, 6).map((s, i) => `${s.country}/@${s.candidate && s.candidate.channelHandle}${s.category ? '/' + s.category : ''} score ${s.score.toFixed(2)} p=${(probs[i] * 100).toFixed(0)}%${learning ? ` (x${s.cw}/x${s.hw}/x${s.kw} sim ${s.sim.toFixed(2)})` : ''}${s.bandit !== null ? ` bandit ${s.bandit.toFixed(2)}` : ''}${s.river !== null ? ` river ${s.river.toFixed(2)}` : ''}`).join(' | ')}`);
   logger.success(`Picking: ${winner.country} (${winner.coverage}x this week, confidence ${winner.confidence}/10, score ${winner.score.toFixed(2)}, odds ${(probs[idx] * 100).toFixed(0)}%)`);
   return winner;
 }
@@ -804,6 +810,20 @@ async function runType1Pipeline(options = {}) {
     logger.warn(`Similarity step skipped: ${(e.message || '').substring(0, 80)}`);
   }
 
+  // 3c. Contextual bandit (MABWiser) + online views predictor (River)
+  try {
+    const now = new Date();
+    const bandit = learn.banditScores(eligible.map((c, i) => ({ id: String(i), arm: c.category || 'other', context: { country: c.country, weekday: now.getUTCDay(), hour: now.getUTCHours() } })));
+    const river = learn.normalizeMap(learn.riverPredict(eligible.map((c, i) => ({ id: String(i), features: learn.featuresFor({ country: c.country, category: c.category, channel: c.candidate.channelHandle, duration: c.candidate.duration, eggs: 1, title: null }) }))));
+    eligible.forEach((c, i) => {
+      if (bandit && bandit.has(String(i))) c.banditScore = bandit.get(String(i));
+      if (river && river.has(String(i))) c.riverNorm = river.get(String(i));
+    });
+    if (river) logger.info(`River predictions (normalised): ${eligible.map((c, i) => `${c.country}/${c.category || 'other'}=${(c.riverNorm ?? 0.5).toFixed(2)}`).join(', ')}`);
+  } catch (e) {
+    logger.warn(`Bandit/River step skipped: ${(e.message || '').substring(0, 80)}`);
+  }
+
   const winner = pickLeastCoveredCandidate(eligible, countriesUsedThisWeek, performanceInsights);
 
   if (!winner) {
@@ -1059,18 +1079,33 @@ async function runType1Pipeline(options = {}) {
   const tags = metadata?.tags || fallbackMetadata.tags;
 
   // ─── Self-learning title pick ─────────────────────────────────
-  // Gemini returns a title + alternatives; rank them against what has
-  // performed on OUR channel (k-NN over past titles + learned patterns).
+  // Gemini returns a title + alternatives and the DSPy program (compiled
+  // against our own stats) adds its own; all are ranked by learned patterns,
+  // k-NN over past titles and the River views predictor.
   try {
     const options = [metadata?.title, ...(Array.isArray(metadata?.titleOptions) ? metadata.titleOptions : [])]
       .filter(t => typeof t === 'string' && t.trim().length > 5);
-    if (performanceInsights && performanceInsights.reliable && options.length > 1) {
-      const ranked = rankTitles(options, performanceInsights);
-      logger.info(`Title ranking: ${ranked.map(r => `"${r.title.substring(0, 40)}"=${r.score}`).join(' | ')}`);
-      if (ranked.length && ranked[0].title !== title) {
+    let dspyTitles = [];
+    try {
+      dspyTitles = learn.dspyGenerateTitles(
+        { country, category: winner.category || 'other', summary: winner.summary || '', source_title: bestVideo.title || '', transcript: (dialogue.transcript || '').substring(0, 200) },
+        (performanceInsights && performanceInsights.reliable && performanceInsights.promptSummary) || ''
+      );
+    } catch (e) { logger.warn(`DSPy titles skipped: ${(e.message || '').substring(0, 60)}`); }
+    for (const t of dspyTitles) if (!options.includes(t)) options.push(t);
+    if (options.length > 1) {
+      let extra = null;
+      try {
+        const riverTitle = learn.riverPredict(options.map((t, i) => ({ id: String(i), features: learn.featuresFor({ country, category: winner.category, channel: bestVideo.channelHandle, eggs: eggPlan.eggs.length, duration: clipDuration, title: t }) })));
+        const norm = learn.normalizeMap(riverTitle);
+        if (norm) { extra = new Map(); options.forEach((t, i) => { if (norm.has(String(i))) extra.set(t, norm.get(String(i))); }); }
+      } catch {}
+      const ranked = rankTitles(options, performanceInsights, { extra });
+      logger.info(`Title ranking: ${ranked.map(r => `"${r.title.substring(0, 40)}"=${r.score}${dspyTitles.includes(r.title) ? ' (dspy)' : ''}`).join(' | ')}`);
+      if (ranked.length && ranked[0].score > 0.5 && ranked[0].title !== title) {
         logger.success(`Learned pick: "${ranked[0].title}" over "${title}"`);
         title = ranked[0].title;
-        titleSource = 'ranked';
+        titleSource = dspyTitles.includes(ranked[0].title) ? 'dspy' : 'ranked';
       }
     }
   } catch (e) {

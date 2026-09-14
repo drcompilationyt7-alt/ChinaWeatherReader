@@ -18,6 +18,7 @@ const { Logger } = require('./logger');
 const { getGeminiService } = require('./gemini-service');
 const { getGeminiCLI } = require('./gemini-cli-runner');
 const { syncPerformance, loadInsights } = require('./performance-tracker');
+const learn = require('./learning-models');
 
 const logger = new Logger('GHRunner');
 
@@ -174,6 +175,8 @@ class DailyRunner {
     }
     if (insights) logger.info(`Learning: ${insights.summaryLine}`);
     const learningLine = insights ? insights.summaryLine : undefined;
+    // stream the newly scored shorts into the online views predictor (River)
+    try { learn.riverUpdate(); } catch (e) { logger.warn(`River update skipped: ${(e.message || '').substring(0, 60)}`); }
 
     const { runType1Pipeline } = require('../pipeline/type1-clip-pipeline');
     let result;
@@ -218,6 +221,11 @@ class DailyRunner {
     }
 
     await this._sendDiscord({ videos: uploaded, countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [], learning: learningLine });
+
+    // ─── Weekly: re-compile the DSPy title program against our stats ──
+    // Runs after the upload so it never delays posting; the new program is
+    // used from the next run on.
+    try { learn.dspyOptimizeIfDue({ insights }); } catch (e) { logger.warn(`DSPy optimization skipped: ${(e.message || '').substring(0, 60)}`); }
 
     logger.header('SUMMARY');
     if (uploaded.length > 0) {

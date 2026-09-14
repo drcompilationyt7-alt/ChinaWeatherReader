@@ -112,6 +112,25 @@ applied. Each post stores its summary, category, source title, eggs and how
 the title was chosen in `memory/posted-videos.json`, so the loop gets
 sharper with every upload.
 
+## 4. Third-party learners (all free, run on the Actions runner)
+
+`core/learning-models.js` wraps three Python scripts in `core/learning/`.
+Each one degrades to "no opinion" when its package, model or API key is
+missing, so the pipeline never depends on them.
+
+| Library | What it does here | Where |
+| --- | --- | --- |
+| **MABWiser** (`bandit_pick.py`) | Contextual Thompson sampling (LinTS) over content categories; context = country region, weekday, hour; reward = the short's performance percentile. Refit from the full history every run, samples an expected reward per candidate. | clip pick, weight 1.2 |
+| **River** (`river_views.py`) | Adaptive random forest regressor learning log views/day from country, region, category, channel, title features, eggs, weekday, hour, one video at a time. Streams new scored shorts in after every stats sync (`memory/river-views-model.pkl`, `memory/river-seen.json`); rebuilds itself if the pickle cannot be loaded. | clip pick (weight 0.8) and title ranking |
+| **DSPy** (`dspy_title.py`) | A title-writing program whose few-shot demos are compiled with `BootstrapFewShot` against a proxy metric: MiniLM similarity to the titles that performed for us. Uses the same free Gemini keys (tried in turn) or local Ollama. Re-optimized about weekly after the upload (`memory/dspy-title-program.json`); at generation time its three titles join Gemini's and go through the ranker. | title options |
+
+Knobs: `DSPY_TITLES=off` skips DSPy titles, `DSPY_OPTIMIZE=off|force`
+controls re-compilation, `OLLAMA_MODEL` picks the local fallback model.
+
+`node core/performance-tracker.js --report` still shows the learned
+insights; the bandit and River decisions are printed in the Phase 3 and
+Phase 7 logs of each run.
+
 Check the current state any time:
 
 ```
