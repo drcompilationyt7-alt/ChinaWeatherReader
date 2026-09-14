@@ -27,8 +27,11 @@ const FRAME_H = 1920;
 
 // default (no source watermark) look — same as before
 const DEF = { logo: 80, marginRight: 20, marginBottom: 80, fontSize: 28, alpha: 0.40 };
-// covering badge look
-const COVER = { minW: 360, minH: 84, pad: 10, fontMin: 22, fontMax: 32, logoMax: 96, boxAlpha: 0.62, alpha: 0.95 };
+// covering badge look. The badge stays TIGHT around the detected mark so it
+// never covers subtitles or content next to it: vertically it is the mark
+// plus `pad`, horizontally it may grow up to `growW` times the mark width
+// (capped) when that is needed to fit the handle; otherwise logo only.
+const COVER = { pad: 8, growW: 1.6, maxW: 360, fontMin: 14, fontMax: 30, logoMin: 26, logoMax: 96, charW: 0.52, boxAlpha: 0.58, alpha: 0.95 };
 
 function pythonCommand() {
   for (const cmd of [process.env.PYTHON_BIN, 'python3', 'python'].filter(Boolean)) {
@@ -119,26 +122,34 @@ function buildWatermarkFilter(boxes, fontfile = null) {
     return { filterComplex: filters.join(';'), out: '[vout]' };
   }
   boxes.forEach((b, i) => {
-    // badge geometry: at least big enough for logo + handle, centred on the mark
-    const bw = clamp(Math.max(b.w + 2 * COVER.pad, COVER.minW), 120, FRAME_W - 8);
-    const bh = clamp(Math.max(b.h + 2 * COVER.pad, COVER.minH), 48, FRAME_H - 8);
-    const bx = clamp(Math.round(b.x + b.w / 2 - bw / 2), 4, FRAME_W - bw - 4);
+    // vertical: tight around the mark (never into the lines above / below)
+    const bh = clamp(b.h + 2 * COVER.pad, 2 * COVER.logoMin, FRAME_H - 8);
     const by = clamp(Math.round(b.y + b.h / 2 - bh / 2), 4, FRAME_H - bh - 4);
+    const logo = clamp(Math.round(bh - 2 * COVER.pad), COVER.logoMin, COVER.logoMax);
+    // horizontal: the mark itself, or a little wider when that fits the handle
+    const tight = b.w + 2 * COVER.pad;
+    const wide = clamp(Math.round(b.w * COVER.growW), tight, COVER.maxW);
+    const needW = fs => logo + 3 * COVER.pad + Math.ceil(HANDLE.length * COVER.charW * fs) + COVER.pad;
+    const maxFont = Math.min(COVER.fontMax, Math.floor(bh * 0.5));
+    let fontSize = Math.min(maxFont, Math.floor((wide - logo - 4 * COVER.pad) / (HANDLE.length * COVER.charW)));
+    const withText = fontSize >= COVER.fontMin;
+    const bw = clamp(withText ? Math.max(tight, needW(fontSize)) : Math.max(tight, logo + 2 * COVER.pad), 2 * COVER.logoMin, FRAME_W - 8);
+    const bx = clamp(Math.round(b.x + b.w / 2 - bw / 2), 4, FRAME_W - bw - 4);
     // delogo needs a box strictly inside the frame
     const dx = clamp(b.x, 1, FRAME_W - 3), dy = clamp(b.y, 1, FRAME_H - 3);
     const dw = clamp(b.w, 2, FRAME_W - dx - 1), dh = clamp(b.h, 2, FRAME_H - dy - 1);
-    const logo = clamp(Math.round(bh * 0.72), 40, COVER.logoMax);
-    const fontSize = clamp(Math.round(bh * 0.36), COVER.fontMin, COVER.fontMax);
-    const lx = bx + COVER.pad, ly = Math.round(by + (bh - logo) / 2);
-    const tx = lx + logo + 14, ty = `${by}+(${bh}-th)/2`;
+    const contentW = withText ? logo + 2 * COVER.pad + Math.ceil(HANDLE.length * COVER.charW * fontSize) : logo;
+    const lx = Math.round(bx + (bw - contentW) / 2), ly = Math.round(by + (bh - logo) / 2);
+    const tx = lx + logo + 2 * COVER.pad, ty = `${by}+(${bh}-th)/2`;
     filters.push(`[${i + 1}:v]scale=${logo}:${logo}:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=${COVER.alpha}[wm${i}]`);
     filters.push(
       `[${cur}]delogo=x=${dx}:y=${dy}:w=${dw}:h=${dh},` +
       `drawbox=x=${bx}:y=${by}:w=${bw}:h=${bh}:color=black@${COVER.boxAlpha}:t=fill[b${i}]`
     );
     filters.push(
-      `[b${i}][wm${i}]overlay=${lx}:${ly}:format=auto,` +
-      `drawtext=${font}text='${text}':fontcolor=white@${COVER.alpha}:fontsize=${fontSize}:x=${tx}:y=${ty}:shadowcolor=black@0.6:shadowx=1:shadowy=1[v${i}]`
+      `[b${i}][wm${i}]overlay=${lx}:${ly}:format=auto` +
+      (withText ? `,drawtext=${font}text='${text}':fontcolor=white@${COVER.alpha}:fontsize=${fontSize}:x=${tx}:y=${ty}:shadowcolor=black@0.6:shadowx=1:shadowy=1` : '') +
+      `[v${i}]`
     );
     cur = `v${i}`;
   });

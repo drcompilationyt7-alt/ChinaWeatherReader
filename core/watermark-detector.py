@@ -133,7 +133,7 @@ def detect(path, n_frames):
         score = 0.45 * border_score + 0.25 * mean_persist + 0.15 * size_score + 0.15 * min(1.0, density / 0.35)
         if border_score <= 0.05:
             continue  # sitting in the middle of the frame: much more likely to be content
-        pad = 6
+        pad = 8   # analysis pixels (x2 at 1080p): covers anti-aliased edges of the mark
         cands.append({
             'x': int(max(0, (x - pad) * sx)), 'y': int(max(0, (y - pad) * sy)),
             'w': int(min(width, (w + 2 * pad) * sx)), 'h': int(min(height, (h + 2 * pad) * sy)),
