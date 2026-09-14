@@ -40,53 +40,78 @@ FPS = 24
 # (walks in from the left, exits to the right, ...). When the egg is placed
 # on the other side it gets mirrored so the motion still comes from off-screen.
 # key.lo / key.hi: green-dominance ratio thresholds (see key_frame).
-# feather: soft alpha ramps (fraction of asset width/height) on the edges
-# where the character is cut by the asset frame. The edge that touches the
-# screen edge (nativeSide) never needs one; the others would otherwise show a
-# hard straight cut in the middle of the short.
+# Per egg:
+#   feather   soft alpha ramps (fraction of width/height) on edges where the
+#             character is cut by the asset frame but NOT by the screen edge
+#   anchorY   'edge' = the box sits on the very bottom of the frame (for
+#             characters whose body is cut off at the bottom of their own
+#             clip, so the cut lands on the screen edge); 'safe' = standing
+#             characters float a bit above YouTube's title overlay
+#   motion    keyframes of the box position over the egg's life (asset-local
+#             seconds): left-off / left / center / right / right-off. This is
+#             what makes a chase run in from one screen edge and out the other.
+#             When the egg is mirrored, left and right swap.
+#   enter     fade | rise (slides up from below the frame) | none
+#   exit      fade | sink (slides down out of the frame) | none
 EGGS = [
     dict(id='gwen-popout', match=r'Background_to_Foreground_Pop-Out',
          crop=(0, 0, 940, 768), start=2.4, end=5.875,
-         feather=dict(bottom=0.12, right=0.05),
-         nativeSide='left', mirror=True, widthFrac=0.36, enter='fade', exit='fade',
+         feather=dict(right=0.05),
+         nativeSide='left', mirror=True, widthFrac=0.40, anchorY='edge',
+         motion=[dict(t=0, x='left')], enter='fade', exit='sink',
          desc='Gwen runs up from the distance and pops out at you'),
     dict(id='spidey-popcorn', match=r'spiderman_red_blue_version',
          crop=(0, 0, 880, 768), start=0.0, end=5.875,
-         feather=dict(bottom=0.12, right=0.06, top=0.05),
-         nativeSide='left', mirror=True, widthFrac=0.33, enter='slide', exit='slide',
+         feather=dict(right=0.06, top=0.05),
+         nativeSide='left', mirror=True, widthFrac=0.38, anchorY='edge',
+         motion=[dict(t=0, x='left-off'), dict(t=0.45, x='left'), dict(t=5.45, x='left'), dict(t=5.875, x='left-off')],
+         enter='none', exit='none',
          desc='Chubby Spidey munches popcorn, then turns to look at you'),
     dict(id='gwen-stick', match=r'she_gwen_stacy',
          crop=(300, 0, 800, 740), start=0.5, end=5.3,
-         feather=dict(top=0.06),
-         nativeSide='left', mirror=True, widthFrac=0.36, enter='none', exit='fade',
-         desc='Gwen walks in and pokes at the video with a stick'),
+         feather=dict(top=0.04),
+         nativeSide='left', mirror=True, widthFrac=0.46, anchorY='safe',
+         # walks in from the screen edge to the bottom middle, then pokes up
+         motion=[dict(t=0, x='left-off'), dict(t=1.3, x='center')], enter='none', exit='fade',
+         desc='Gwen walks in to the bottom middle and pokes up at the video with a stick'),
     dict(id='spidey-stick', match=r'he_is_call_mr_webst',
-         crop=(200, 0, 800, 740), start=0.3, end=5.875,
-         feather=dict(top=0.06, right=0.06, bottom=0.05),
-         nativeSide='left', mirror=True, widthFrac=0.36, enter='none', exit='fade',
-         desc='Mr Webster walks in, raises his stick, then jumps at you'),
+         crop=(200, 0, 800, 740), start=0.3, end=5.7,
+         feather=dict(top=0.04, right=0.06),
+         nativeSide='left', mirror=True, widthFrac=0.46, anchorY='safe',
+         motion=[dict(t=0, x='left-off'), dict(t=1.5, x='center')], enter='none', exit='fade',
+         desc='Mr Webster walks in to the bottom middle, raises his stick, then jumps at you'),
     # The flat-colour Vidu clips have noisy outline/green mixes, so key them a
     # little harder (lower hi) than the 3D-rendered ones.
+    # Chases: the box travels across the whole frame so the robber leaves
+    # through the far screen edge (2.0 s / 3.1 s into the clip) and the hero
+    # runs out the same edge at the end.
     dict(id='flash-chase', match=r'3322493870732970',
-         crop=(0, 400, 1080, 1300), start=0.0, end=8.04, key=dict(lo=0.16, hi=0.34, erode=2),
-         feather=dict(right=0.08),
-         nativeSide='left', mirror=True, widthFrac=0.32, enter='fade', exit='fade',
-         desc='Flash chases a robber, loses him, watches for a bit, then runs off'),
+         crop=(0, 400, 1080, 1300), start=0.0, end=7.7, key=dict(lo=0.16, hi=0.34, erode=2),
+         feather=dict(),
+         nativeSide='left', mirror=True, widthFrac=0.40, anchorY='safe',
+         motion=[dict(t=0, x='left-off'), dict(t=3.1, x='right'), dict(t=6.9, x='right'), dict(t=7.7, x='right-off')],
+         enter='none', exit='none',
+         desc='Flash chases a robber across the screen, loses him, watches, then runs off'),
     dict(id='spidey-chase', match=r'3323248650013817',
          crop=(0, 180, 1080, 1416), start=0.0, end=6.6, key=dict(lo=0.16, hi=0.34, erode=2),
-         feather=dict(right=0.08, bottom=0.05),
-         nativeSide='left', mirror=True, widthFrac=0.30, enter='fade', exit='slide',
-         desc='Spidey chases a robber, loses him, and stands there watching with you'),
+         feather=dict(),
+         nativeSide='left', mirror=True, widthFrac=0.40, anchorY='edge',
+         motion=[dict(t=0, x='left-off'), dict(t=2.0, x='right'), dict(t=5.7, x='right'), dict(t=6.6, x='right-off')],
+         enter='none', exit='none',
+         desc='Spidey chases a robber across the screen, loses him, stands watching, then leaves'),
     dict(id='gwen-peek', match=r'3323492487095912',
          crop=(0, 0, 1080, 1840), start=0.0, end=3.05, key=dict(lo=0.18, hi=0.38, erode=2),
-         feather=dict(left=0.20, top=0.08, bottom=0.08),
-         nativeSide='right', mirror=True, widthFrac=0.25, enter='fade', exit='fade',
-         desc='Gwen peeks in, waves, and ducks back out'),
+         feather=dict(left=0.20, top=0.06),
+         nativeSide='right', mirror=True, widthFrac=0.27, anchorY='edge',
+         motion=[dict(t=0, x='right')], enter='rise', exit='none',
+         desc='Gwen rises into the corner, waves, and ducks back out'),
     dict(id='gwen-tap', match=r'3323492487095912',
          crop=(0, 0, 1080, 1840), start=3.4, end=8.3, key=dict(lo=0.18, hi=0.38, erode=2),
-         feather=dict(left=0.20, top=0.08, bottom=0.08),
-         nativeSide='right', mirror=True, widthFrac=0.25, enter='none', exit='slide',
-         desc='Gwen leans in and taps the screen to check you are paying attention'),
+         feather=dict(left=0.20, right=0.06, top=0.06),
+         nativeSide='right', mirror=True, widthFrac=0.28, anchorY='edge',
+         # bottom middle: rises up, waves, taps, then points up at the content
+         motion=[dict(t=0, x='center')], enter='rise', exit='sink',
+         desc='Gwen rises at the bottom middle, taps the screen and points up at the content'),
 ]
 DEFAULT_KEY = dict(lo=0.22, hi=0.42)
 
@@ -210,7 +235,7 @@ def main():
     only = set(args.only.split(',')) if args.only else None
 
     manifest_path = os.path.join(out_dir, 'manifest.json')
-    manifest = {'version': 2, 'layout': 'stacked-alpha', 'generatedAt': datetime.now(timezone.utc).isoformat(), 'eggs': []}
+    manifest = {'version': 3, 'layout': 'stacked-alpha', 'generatedAt': datetime.now(timezone.utc).isoformat(), 'eggs': []}
     if only and os.path.exists(manifest_path):
         # keep the untouched entries when re-running for a subset
         try:
@@ -245,7 +270,9 @@ def main():
             'id': egg['id'], 'file': out_file,
             'width': w, 'height': h, 'duration': round(dur_out, 3),
             'nativeSide': egg['nativeSide'], 'mirror': egg['mirror'],
-            'widthFrac': egg['widthFrac'], 'enter': egg['enter'], 'exit': egg['exit'],
+            'widthFrac': egg['widthFrac'], 'anchorY': egg.get('anchorY', 'safe'),
+            'motion': egg.get('motion') or [dict(t=0, x=egg['nativeSide'])],
+            'enter': egg['enter'], 'exit': egg['exit'],
             'desc': egg['desc'],
         })
 

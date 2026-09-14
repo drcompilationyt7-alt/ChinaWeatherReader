@@ -208,8 +208,12 @@ class DailyRunner {
         videoId: uploadResult.videoId || null,
         sourceChannel: result.sourceChannel || null,
         sourceUrl: result.sourceUrl || null,
+        sourceTitle: result.sourceTitle || null,
+        summary: result.summary || null,
+        category: result.category || null,
         eggs: result.eggs || [],
         titleSource: result.titleSource || null,
+        watermark: result.watermarkMode || null,
       });
     }
 

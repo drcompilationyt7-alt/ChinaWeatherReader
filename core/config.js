@@ -85,7 +85,7 @@ const config = {
     enabled: (process.env.EASTER_EGGS_ENABLED || 'true') !== 'false',
     opacity: parseFloat(process.env.EASTER_EGG_OPACITY) || 0.82,
     sizeScale: parseFloat(process.env.EASTER_EGG_SIZE) || 1.0,
-    safeBottom: parseInt(process.env.EASTER_EGG_SAFE_BOTTOM, 10) || 360,
+    safeBottom: parseInt(process.env.EASTER_EGG_SAFE_BOTTOM, 10) || 260,
     maxPerShort: parseInt(process.env.EASTER_EGG_MAX, 10) || 3,
   },
 

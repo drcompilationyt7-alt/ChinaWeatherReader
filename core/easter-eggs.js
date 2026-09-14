@@ -5,11 +5,15 @@
  * of the screen, losing him, and stopping to watch the video with you.
  *
  * Design rules (so the eggs never fight with the actual content):
- *   - small: each egg is ~27-36% of the frame width, in a bottom corner
+ *   - small: each egg is ~27-46% of the frame width along the bottom
  *   - semi-transparent (default 82% opacity)
- *   - short: 3-8 s each, with a quick fade/slide out
+ *   - short: 3-8 s each, with a quick fade / slide / sink out
  *   - never in the first 1.5 s, never in the last second, never overlapping
- *   - kept above YouTube's bottom title/channel overlay (safeBottom)
+ *   - characters move like they belong: chases run in from one screen edge
+ *     and out the other, walkers stroll in to the bottom middle, close-ups
+ *     rise from the bottom edge (motion keyframes in the manifest)
+ *   - standing characters float above YouTube's title overlay (safeBottom);
+ *     characters cut off by their own clip sit on the frame's bottom edge
  *
  * Assets live in core/easter-eggs/, prepared once by
  * scripts/prepare-easter-eggs.py. Each asset is a plain h264 mp4 holding a
@@ -43,7 +47,7 @@ const DEFAULTS = {
   sizeScale: parseFloat(process.env.EASTER_EGG_SIZE) || 1.0,
   // px between the egg's bottom edge and the frame's bottom edge — keeps
   // the character above the YouTube title / channel-name overlay
-  safeBottom: parseInt(process.env.EASTER_EGG_SAFE_BOTTOM, 10) || 360,
+  safeBottom: parseInt(process.env.EASTER_EGG_SAFE_BOTTOM, 10) || 260,
   // how many eggs per short, by clip length: 1 on short clips, 1 or 2 once
   // the clip is long enough to keep them far apart (never more than 2)
   minClipForTwo: 20,
@@ -145,12 +149,20 @@ function planEasterEggs(options = {}) {
     const mirror = side !== egg.nativeSide;
     const w = Math.round(FRAME_W * egg.widthFrac * opts.sizeScale / 2) * 2;
     const h = Math.round((w * egg.height / egg.width) / 2) * 2;
-    const y = Math.max(0, FRAME_H - h - opts.safeBottom);
+    // 'edge': body is cut off in the clip itself, so it sits on the frame's
+    // bottom edge; 'safe': standing character floats above YouTube's overlay
+    const anchorY = egg.anchorY === 'edge' ? 'edge' : 'safe';
+    const y = Math.max(0, FRAME_H - h - (anchorY === 'edge' ? 0 : opts.safeBottom));
+    // box motion keyframes (mirrored eggs swap left/right)
+    const rawMotion = Array.isArray(egg.motion) && egg.motion.length ? egg.motion : [{ t: 0, x: egg.nativeSide }];
+    const motion = rawMotion
+      .map(k => ({ t: Math.max(0, Math.min(dur, Number(k.t) || 0)), x: mirror ? flipPos(k.x) : k.x }))
+      .sort((a, b) => a.t - b.t);
     placed.push({
       id: egg.id, path: egg.path, desc: egg.desc,
       srcW: egg.width, srcH: egg.height,
       enter: egg.enter, exit: egg.exit,
-      side, mirror, w, h, y,
+      side, mirror, w, h, y, anchorY, motion,
       startAt: Math.round(startAt * 100) / 100,
       duration: Math.round(dur * 100) / 100,
       opacity: opts.opacity,
@@ -216,24 +228,48 @@ function buildEasterEggFilters(plan, firstInputIdx, inLabel, options = {}) {
     const eggLabel = `egg${i}`;
     filters.push(`${chain.join(',')}[${eggLabel}]`);
 
-    // Position: parked at the screen edge; slide terms push it off-screen
-    // during the enter/exit windows. `w` is the overlay width inside ffmpeg.
-    const S = opts.slideDuration;
+    // Position. x follows the egg's motion keyframes (piecewise linear, so a
+    // chase can run in from one screen edge and out the other); y is the
+    // anchor line plus optional rise-in / sink-out slides below the frame.
+    // `W,H,w,h` are frame / overlay sizes inside ffmpeg's overlay filter.
     const rel = `(t-${fmt(T)})`;
-    const dir = egg.side === 'left' ? -1 : 1;
-    const base = egg.side === 'left' ? '0' : `(W-w)`;
-    let xExpr = base;
-    if (egg.enter === 'slide') xExpr += `${dir > 0 ? '+' : '-'}w*pow(max(0\\,1-${rel}/${fmt(S)})\\,1.6)`;
-    if (egg.exit === 'slide') xExpr += `${dir > 0 ? '+' : '-'}w*pow(max(0\\,(${rel}-${fmt(D - S)})/${fmt(S)})\\,1.6)`;
+    const xExpr = motionExpr(egg.motion, rel);
+    const S = opts.slideDuration;
+    let yExpr = `${egg.y}`;
+    if (egg.enter === 'rise') yExpr += `+(H-${egg.y})*pow(max(0\\,1-${rel}/${fmt(S + 0.1)})\\,1.5)`;
+    if (egg.exit === 'sink') yExpr += `+(H-${egg.y})*pow(max(0\\,(${rel}-${fmt(D - S - 0.05)})/${fmt(S + 0.05)})\\,1.5)`;
     const outLabel = `egg_out${i}`;
     filters.push(
-      `[${current}][${eggLabel}]overlay=x='${xExpr}':y=${egg.y}:eof_action=pass:format=auto` +
+      `[${current}][${eggLabel}]overlay=x='${xExpr}':y='${yExpr}':eof_action=pass:format=auto` +
       `:enable='between(t\\,${fmt(T)}\\,${fmt(T + D)})'[${outLabel}]`
     );
     current = outLabel;
   });
 
   return { inputArgs, filters, outLabel: current, inputCount: eggs.length };
+}
+
+// ─── Motion helpers ───────────────────────────────────────────────
+
+const POS_EXPR = { 'left-off': '(-w)', left: '0', center: '((W-w)/2)', right: '(W-w)', 'right-off': 'W' };
+const POS_FLIP = { 'left-off': 'right-off', left: 'right', center: 'center', right: 'left', 'right-off': 'left-off' };
+
+function flipPos(name) { return POS_FLIP[name] || name; }
+function posExpr(name) { return POS_EXPR[name] || POS_EXPR.left; }
+
+/** Piecewise-linear x position over the egg's life as an ffmpeg expression. */
+function motionExpr(keys, rel) {
+  if (!keys || keys.length === 0) return posExpr('left');
+  if (keys.length === 1) return posExpr(keys[0].x);
+  let expr = posExpr(keys[keys.length - 1].x);
+  for (let i = keys.length - 2; i >= 0; i--) {
+    const a = keys[i], b = keys[i + 1];
+    const seg = b.t > a.t
+      ? `(${posExpr(a.x)}+(${posExpr(b.x)}-${posExpr(a.x)})*min(1\\,max(0\\,(${rel}-${fmt(a.t)})/${fmt(b.t - a.t)})))`
+      : posExpr(b.x);
+    expr = `if(lt(${rel}\\,${fmt(b.t)})\\,${seg}\\,${expr})`;
+  }
+  return expr;
 }
 
 module.exports = { planEasterEggs, buildEasterEggFilters, loadEggs, DEFAULTS, EGG_DIR };

@@ -31,12 +31,15 @@ const { smartEdit, detectDialogue } = require('../core/smart-editor');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
 const { addWatermark } = require('../core/watermark');
 const { planEasterEggs, buildEasterEggFilters } = require('../core/easter-eggs');
-const { loadInsights, rankTitles, countryWeight, channelWeight } = require('../core/performance-tracker');
+const { loadInsights, rankTitles, countryWeight, channelWeight, categoryWeight, predictTitleScores, postedDedupList } = require('../core/performance-tracker');
+const { applyWatermarkPass } = require('../core/watermark-cover');
 
 const logger = new Logger('Type1Pipeline');
 
 const SHORTS_W = 1080;
 const SHORTS_H = 1920;
+// content categories Gemini picks from (also learned per category by the performance tracker)
+const NICHE_CATEGORIES = ['kpop', 'jpop', 'cpop', 'dance', 'anime', 'cosplay', 'food', 'street', 'comedy', 'drama', 'cute', 'beauty', 'fashion', 'travel', 'sports', 'music', 'other'];
 const CHANNEL_POOL_FILE = path.join(__dirname, '..', 'config', 'channel-pool.json');
 const CHANNEL_MEMORY_FILE = path.join(__dirname, '..', 'memory', 'type1-channel-memory.json');
 
@@ -265,40 +268,42 @@ async function classifyCountryForCandidate(videoPath, candidate, gemini) {
 
   let country = candidate.countryGuess || null;
   let confidence = 5;
+  // content descriptors used by the niche gate and the similarity-based pick
+  let category = 'other';
+  let summary = '';
+  let asianNiche = null;      // true / false / null (unknown)
+  let nicheConfidence = 0;
+
+  const applyParsed = (p, label) => {
+    if (!p) return;
+    if (p.country) { country = p.country; confidence = p.confidence || 3; }
+    if (typeof p.category === 'string' && p.category.trim()) category = p.category.trim().toLowerCase();
+    if (typeof p.summary === 'string' && p.summary.trim()) summary = p.summary.trim().substring(0, 200);
+    if (typeof p.asianNiche === 'boolean') { asianNiche = p.asianNiche; nicheConfidence = Number(p.nicheConfidence) || 5; }
+    logger.info(`  ${candidate.id}${label}: ${country} (${confidence}/10) ${category} asian=${asianNiche === null ? '?' : asianNiche}${summary ? ` — ${summary.substring(0, 60)}` : ''}`);
+  };
 
   if (frames.length >= 2) {
-    const { extractFrames } = require('../core/smart-cropper');
     const prompt = `Analyze these frames from a YouTube Shorts video.
 
 Video Title: "${candidate.title || 'Unknown'}"
 
-Identify the country or region MOST LIKELY shown in this video. Look at:
-1. Landmarks, architecture, scenery
-2. Signs, writing, language visible
-3. Food, clothing, cultural elements
-4. The video title for hints
-5. People's appearance
+1. Identify the country or region MOST LIKELY shown in this video. Look at landmarks, architecture, scenery, signs and writing, food, clothing, cultural elements, the title, people's appearance. If unsure use "World" with low confidence.
+2. Describe the content in one short English sentence (max 20 words) — what happens, who, where.
+3. Pick ONE category: ${NICHE_CATEGORIES.join(', ')}.
+4. Decide whether it fits an "Asian edits" channel: Asian setting (East / Southeast / South Asia) OR Asian culture, people or media such as k-pop, j-pop, c-pop, anime, manga, k-drama, Chinese/Japanese/Korean/Thai/Vietnamese/Indian/Filipino daily life, food, dance, fashion. Western sports, Western celebrities or generic content with no Asian connection does NOT fit.
 
-If unsure, return {"country": "World", "confidence": 3, "reasoning": "Cannot determine from content"}
-
-Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning": "brief explanation"}`;
+Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning": "brief", "summary": "one sentence", "category": "one of the list", "asianNiche": true|false, "nicheConfidence": 0-10}`;
 
     const result = await gemini.analyzeFrames(frames, prompt,
-      'You are a geography and travel expert. Identify countries from video content.');
+      'You are a geography and pop-culture expert who curates an Asian edits YouTube Shorts channel. Identify countries and content from video frames.');
 
     try { fs.rmSync(frameDir, { recursive: true, force: true }); } catch {}
 
     if (result) {
       try {
         const m = result.match(/\{[\s\S]*\}/);
-        if (m) {
-          const p = JSON.parse(m[0]);
-          if (p.country) {
-            country = p.country;
-            confidence = p.confidence || 3;
-            logger.info(`  ${candidate.id}: ${country} (${confidence}/10)`);
-          }
-        }
+        if (m) applyParsed(JSON.parse(m[0]), '');
       } catch (e) {
         logger.warn(`  Country parse error for ${candidate.id}: ${e.message.substring(0, 50)}`);
       }
@@ -308,23 +313,21 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
   }
 
   // Fallback: text-only Gemini
-  if (!country || confidence < 3) {
+  if (!country || confidence < 3 || asianNiche === null) {
     logger.info(`  Falling back to title-only for ${candidate.id}...`);
     const textResult = await gemini.chat(
-      'You identify countries from YouTube video titles. Return STRICT JSON: {"country": "Country Name", "confidence": 0-10}',
-      `Identify the country from this video title: "${candidate.title || 'Unknown'}"`,
-      { temperature: 0.3, maxTokens: 200 }
+      `You curate an "Asian edits" YouTube Shorts channel. From a video title alone, identify the country, a one-sentence summary, a category (${NICHE_CATEGORIES.join(', ')}) and whether it fits the Asian niche (Asian setting, people, culture or media such as k-pop / anime). Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "summary": "...", "category": "...", "asianNiche": true|false, "nicheConfidence": 0-10}`,
+      `Video title: "${candidate.title || 'Unknown'}"${candidate.channelHandle ? ` (from channel @${candidate.channelHandle})` : ''}`,
+      { temperature: 0.3, maxTokens: 300 }
     );
     if (textResult) {
       try {
         const m = textResult.match(/\{[\s\S]*\}/);
         if (m) {
           const p = JSON.parse(m[0]);
-          if (p.country) {
-            country = p.country;
-            confidence = p.confidence || 3;
-            logger.info(`  ${candidate.id} (text): ${country} (${confidence}/10)`);
-          }
+          // keep the frame-based country if it was confident, but take the niche verdict
+          if (country && confidence >= 3) { delete p.country; delete p.confidence; }
+          applyParsed(p, ' (text)');
         }
       } catch {}
     }
@@ -334,9 +337,10 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
     country = 'World';
     confidence = 1;
   }
+  if (!NICHE_CATEGORIES.includes(category)) category = 'other';
 
-  logger.info(`  → ${candidate.id} classified as: ${country} (${confidence}/10)`);
-  return { country, confidence };
+  logger.info(`  → ${candidate.id} classified as: ${country} (${confidence}/10), ${category}, asianNiche=${asianNiche === null ? 'unknown' : asianNiche}`);
+  return { country, confidence, category, summary, asianNiche, nicheConfidence };
 }
 
 // ─── Step 8: Pick the candidate whose country is least covered this week ──
@@ -349,25 +353,39 @@ function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, insig
     weekCounts[c] = (weekCounts[c] || 0) + 1;
   }
 
-  // Coverage still dominates (integer steps) so countries keep rotating.
-  // Learned weights from our own channel stats (core/performance-tracker.js)
-  // and the classification confidence break ties, and a country / source
-  // channel that clearly out-performs for this channel can win a coverage step.
+  // Coverage keeps countries rotating. Learned weights from our own channel
+  // stats (country / source channel / category) and how similar the clip is
+  // to what has performed (simNorm, 0..1) pull the odds towards proven
+  // content — but the final pick is SAMPLED from a softmax over the scores,
+  // so a strong candidate is likely, never certain, and other clips still
+  // get their turn.
   const learning = !!(insights && insights.reliable);
   const scored = classifications.map(c => {
     const coverage = weekCounts[c.country] || 0;
     const cw = learning ? countryWeight(insights, c.country) : 1;
     const hw = learning ? channelWeight(insights, c.candidate && c.candidate.channelHandle) : 1;
-    const score = -coverage + (cw - 1) * 1.0 + (hw - 1) * 0.6 + (c.confidence || 0) / 40;
-    return { ...c, coverage, cw, hw, score };
+    const kw = learning ? categoryWeight(insights, c.category) : 1;
+    const sim = typeof c.simNorm === 'number' ? c.simNorm : 0.5;
+    const score = -coverage * 0.8
+      + (cw - 1) * 1.0 + (hw - 1) * 0.6 + (kw - 1) * 0.6
+      + (learning ? (sim - 0.5) * 1.2 : 0)
+      + (c.confidence || 0) / 40;
+    return { ...c, coverage, cw, hw, kw, sim, score };
   }).sort((a, b) => b.score - a.score);
 
-  const winner = scored[0];
+  // softmax sampling (temperature 0.35): best candidate gets the highest odds
+  const temp = 0.35;
+  const maxScore = scored[0].score;
+  const weights = scored.map(s => Math.exp((s.score - maxScore) / temp));
+  const total = weights.reduce((a, b) => a + b, 0);
+  const probs = weights.map(w => w / total);
+  let r = Math.random(), idx = 0;
+  for (let i = 0; i < probs.length; i++) { r -= probs[i]; if (r <= 0) { idx = i; break; } idx = i; }
+  const winner = scored[idx];
+
   logger.info(`Country coverage this week: ${JSON.stringify(weekCounts)}`);
-  if (learning) {
-    logger.info(`Learned weights (country/channel): ${scored.slice(0, 5).map(s => `${s.country}${s.candidate && s.candidate.channelHandle ? '/@' + s.candidate.channelHandle : ''} x${s.cw}/x${s.hw}`).join(', ')}`);
-  }
-  logger.success(`Picking: ${winner.country} (${winner.coverage}x this week, confidence ${winner.confidence}/10, score ${winner.score.toFixed(2)})`);
+  logger.info(`Candidates: ${scored.slice(0, 6).map((s, i) => `${s.country}/@${s.candidate && s.candidate.channelHandle}${s.category ? '/' + s.category : ''} score ${s.score.toFixed(2)} p=${(probs[i] * 100).toFixed(0)}%${learning ? ` (x${s.cw}/x${s.hw}/x${s.kw} sim ${s.sim.toFixed(2)})` : ''}`).join(' | ')}`);
+  logger.success(`Picking: ${winner.country} (${winner.coverage}x this week, confidence ${winner.confidence}/10, score ${winner.score.toFixed(2)}, odds ${(probs[idx] * 100).toFixed(0)}%)`);
   return winner;
 }
 
@@ -717,14 +735,16 @@ async function runType1Pipeline(options = {}) {
       continue;
     }
 
-    const { country, confidence } = await classifyCountryForCandidate(dlPath, candidate, gemini);
-    
+    const { country, confidence, category, summary, asianNiche, nicheConfidence } = await classifyCountryForCandidate(dlPath, candidate, gemini);
+
     // Enrich candidate with classification result
     candidate.geminiCountry = country;
     candidate.geminiScore = Math.min(10, Math.max(1, Math.round(confidence)));
     candidate.hookScore = 5;
+    candidate.category = category;
+    candidate.summary = summary;
 
-    classifications.push({ candidate, country, confidence });
+    classifications.push({ candidate, country, confidence, category, summary, asianNiche, nicheConfidence });
 
     // Clean up downloaded file
     try { fs.unlinkSync(dlPath); } catch {}
@@ -738,8 +758,8 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'No classified candidates' };
   }
 
-  // ─── Phase 3: Pick least-covered country this week ────────────
-  logger.header('Phase 3: Select Least-Covered Country');
+  // ─── Phase 3: Niche gate → similarity → weighted pick ─────────
+  logger.header('Phase 3: Select Candidate (niche gate + learned preferences)');
 
   const countriesUsedThisWeek = options.countriesUsedThisWeek || [];
   const performanceInsights = loadInsights();
@@ -748,7 +768,43 @@ async function runType1Pipeline(options = {}) {
   } else {
     logger.info('Not enough channel performance data yet — using coverage-only selection');
   }
-  const winner = pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, performanceInsights);
+
+  // 3a. Niche gate: everything we post must fit the Asian niche
+  const nicheOk = classifications.filter(c => c.asianNiche !== false);
+  const nicheDropped = classifications.length - nicheOk.length;
+  if (nicheDropped > 0) logger.info(`Niche gate: dropped ${nicheDropped} non-Asian candidate(s): ${classifications.filter(c => c.asianNiche === false).map(c => `@${c.candidate.channelHandle} (${c.country})`).join(', ')}`);
+  if (nicheOk.length === 0) {
+    logger.error('No candidate fits the Asian niche today — aborting (nothing off-niche gets posted)');
+    try { fs.rmSync(tmpBaseDir, { recursive: true, force: true }); } catch {}
+    return { success: false, error: 'No Asian-niche candidates' };
+  }
+
+  // 3b. Similarity to what already worked + near-duplicate check against what we posted
+  let eligible = nicheOk;
+  try {
+    const texts = nicheOk.map(c => c.summary || c.candidate.title || '');
+    const pred = predictTitleScores(texts, performanceInsights, postedDedupList());
+    if (pred && Array.isArray(pred.predictions)) {
+      const byText = new Map(pred.predictions.map(p => [p.title, p]));
+      const preds = nicheOk.map((c, i) => byText.get(texts[i]) || null);
+      const vals = preds.map(p => (p && typeof p.predicted === 'number') ? p.predicted : null).filter(v => v !== null);
+      const lo = vals.length ? Math.min(...vals) : 0, hi = vals.length ? Math.max(...vals) : 0;
+      nicheOk.forEach((c, i) => {
+        const p = preds[i];
+        c.dupSim = p ? (p.dupSim || 0) : 0;
+        c.dupOf = p ? p.dupOf : null;
+        c.simNorm = (p && typeof p.predicted === 'number' && hi > lo) ? (p.predicted - lo) / (hi - lo) : 0.5;
+      });
+      const dups = nicheOk.filter(c => c.dupSim >= 0.9);
+      if (dups.length) logger.info(`Dedup: ${dups.length} near-duplicate(s) of earlier posts skipped: ${dups.map(c => `"${(c.summary || c.candidate.title || '').substring(0, 40)}" ~ "${String(c.dupOf || '').substring(0, 40)}"`).join(' | ')}`);
+      const fresh = nicheOk.filter(c => c.dupSim < 0.9);
+      if (fresh.length) eligible = fresh;
+    }
+  } catch (e) {
+    logger.warn(`Similarity step skipped: ${(e.message || '').substring(0, 80)}`);
+  }
+
+  const winner = pickLeastCoveredCandidate(eligible, countriesUsedThisWeek, performanceInsights);
 
   if (!winner) {
     logger.error('No winner selected — aborting');
@@ -899,11 +955,14 @@ async function runType1Pipeline(options = {}) {
   }
 
   // ─── Watermark ─────────────────────────────────────────────────
+  // Applied in a second lossless pass AFTER this render (core/watermark-cover.js):
+  // it first looks for the source's own watermark and covers that spot with
+  // ours, otherwise it uses the usual bottom-right position.
   const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
-  const hasWatermark = fs.existsSync(wmImagePath);
+  const hasWatermark = false;
 
   // ─── Easter eggs (random tiny cartoon overlays) ────────────────
-  // Inputs: 0 = source clip, then the watermark image, then egg clips.
+  // Inputs: 0 = source clip, then egg clips.
   let nextInputIdx = 1;
   let wmInputIdx = -1;
   if (hasWatermark) {
@@ -953,9 +1012,21 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'Render failed' };
   }
 
+  // ─── Watermark pass (cover the source's mark, or default spot) ─
+  let watermarkMode = 'none';
+  let watermarkedOutput = finalOutput;
+  try {
+    const wmOut = path.join(tmpBaseDir, `final_wm_${Date.now()}.mkv`);
+    const wmRes = await applyWatermarkPass(finalOutput, wmOut, { gemini, tmpDir: tmpBaseDir });
+    if (wmRes.ok) { watermarkedOutput = wmOut; watermarkMode = wmRes.mode; }
+    else logger.warn('Watermark pass failed — continuing without watermark');
+  } catch (e) {
+    logger.warn(`Watermark pass error: ${(e.message || '').substring(0, 80)}`);
+  }
+
   const safeCountry = String(country || 'global').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
   const durableFinalPath = path.join(outputDir, `type1_${safeCountry}_${Date.now()}.mkv`);
-  try { fs.copyFileSync(finalOutput, durableFinalPath); } catch (e) { logger.error(`Copy failed: ${e.message}`); try { fs.rmSync(tmpBaseDir, { recursive: true, force: true }); } catch {} return { success: false, error: 'Copy failed' }; }
+  try { fs.copyFileSync(watermarkedOutput, durableFinalPath); } catch (e) { logger.error(`Copy failed: ${e.message}`); try { fs.rmSync(tmpBaseDir, { recursive: true, force: true }); } catch {} return { success: false, error: 'Copy failed' }; }
   if (!fs.existsSync(durableFinalPath) || fs.statSync(durableFinalPath).size < 100000) { logger.error('Final video missing or too small'); try { fs.rmSync(tmpBaseDir, { recursive: true, force: true }); } catch {} return { success: false, error: 'Final video copy failed' }; }
 
   // ─── Phase 6: QA Review ───────────────────────────────────────
@@ -1042,10 +1113,14 @@ If you want daily Asian edits, make sure to subscribe to ${channelHandle}!`;
     success: true, videoPath: durableFinalPath, title, description, tags, country,
     geminiScore: bestVideo.geminiScore || 5, editType: 'combined', hasCaptions: !!subPath,
     sourceUrl: bestVideo.url, sourceChannel: bestVideo.channelHandle, rouletteIntro: rouletteText,
-    // bookkeeping for the performance tracker
+    // bookkeeping for the performance tracker / dedup
+    sourceTitle: bestVideo.title || '',
+    summary: winner.summary || '',
+    category: winner.category || 'other',
     eggs: eggPlan.eggs.map(e => e.id),
     titleSource,
+    watermarkMode,
   };
 }
 
-module.exports = { runType1Pipeline, buildCombinedFilter };
+module.exports = { runType1Pipeline, buildCombinedFilter, pickLeastCoveredCandidate };

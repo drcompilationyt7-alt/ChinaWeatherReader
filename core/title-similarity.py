@@ -3,15 +3,19 @@
 Title similarity / k-NN performance prediction.
 
 Reads JSON on stdin:
-    {"history": [{"title": "...", "score": 12.3}, ...], "candidates": ["...", ...]}
+    {"history": [{"title": "...", "score": 12.3}, ...],
+     "candidates": ["...", ...],
+     "dedup": ["already posted source title / summary", ...]}      (optional)
 Writes one JSON line on stdout:
-    {"backend": "minilm" | "charngram", "predictions": [{"title", "predicted", "neighbors": [...]}, ...]}
+    {"backend": "minilm" | "charngram",
+     "predictions": [{"title", "predicted", "neighbors": [...], "dupSim": 0.31, "dupOf": "..."}, ...]}
 
 For every candidate title the predicted score is the similarity-weighted mean
-of the scores of its k most similar past titles. Embeddings come from the free
-sentence-transformers model `all-MiniLM-L6-v2` (CPU, ~90 MB, cached under
-~/.cache/huggingface); if that is not installed a character n-gram cosine
-similarity is used instead so the pipeline never breaks.
+of the scores of its k most similar past titles; dupSim is the highest cosine
+similarity to any entry of the dedup list (near-duplicate detection).
+Embeddings come from the free sentence-transformers model `all-MiniLM-L6-v2`
+(CPU, ~90 MB, cached under ~/.cache/huggingface); if that is not installed a
+character n-gram cosine similarity is used instead so the pipeline never breaks.
 """
 import json
 import math
@@ -26,7 +30,8 @@ def read_input():
     data = json.loads(raw) if raw.strip() else {}
     history = [h for h in data.get('history', []) if h.get('title')]
     candidates = [c for c in data.get('candidates', []) if isinstance(c, str) and c.strip()]
-    return history, candidates
+    dedup = [d for d in data.get('dedup', []) if isinstance(d, str) and d.strip()]
+    return history, candidates, dedup
 
 
 def embed_minilm(texts):
@@ -62,15 +67,15 @@ def cosine(a, b):
 
 
 def main():
-    history, candidates = read_input()
+    history, candidates, dedup = read_input()
     if not candidates:
         print(json.dumps({'backend': 'none', 'predictions': []}))
         return
-    if not history:
-        print(json.dumps({'backend': 'none', 'predictions': [{'title': c, 'predicted': None, 'neighbors': []} for c in candidates]}))
+    if not history and not dedup:
+        print(json.dumps({'backend': 'none', 'predictions': [{'title': c, 'predicted': None, 'neighbors': [], 'dupSim': 0.0, 'dupOf': None} for c in candidates]}))
         return
 
-    texts = [h['title'] for h in history] + candidates
+    texts = [h['title'] for h in history] + dedup + candidates
     backend = 'minilm'
     try:
         vecs = embed_minilm(texts)
@@ -79,21 +84,27 @@ def main():
         backend = 'charngram'
         vecs = embed_charngram(texts)
 
-    hist_vecs = vecs[:len(history)]
-    cand_vecs = vecs[len(history):]
+    nh, nd = len(history), len(dedup)
+    hist_vecs = vecs[:nh]
+    dedup_vecs = vecs[nh:nh + nd]
+    cand_vecs = vecs[nh + nd:]
     predictions = []
     for ci, cand in enumerate(candidates):
-        sims = [(cosine(cand_vecs[ci], hv), hi) for hi, hv in enumerate(hist_vecs)]
-        sims.sort(reverse=True)
-        top = sims[:K]
-        weights = [math.exp(TEMPERATURE * s) for s, _ in top]
-        wsum = sum(weights) or 1.0
-        predicted = sum(w * float(history[hi].get('score', 0.0)) for w, (_, hi) in zip(weights, top)) / wsum
-        predictions.append({
-            'title': cand,
-            'predicted': round(predicted, 2),
-            'neighbors': [{'title': history[hi]['title'], 'sim': round(s, 3), 'score': history[hi].get('score', 0)} for s, hi in top[:3]],
-        })
+        predicted, neighbors = None, []
+        if hist_vecs:
+            sims = [(cosine(cand_vecs[ci], hv), hi) for hi, hv in enumerate(hist_vecs)]
+            sims.sort(reverse=True)
+            top = sims[:K]
+            weights = [math.exp(TEMPERATURE * s) for s, _ in top]
+            wsum = sum(weights) or 1.0
+            predicted = round(sum(w * float(history[hi].get('score', 0.0)) for w, (_, hi) in zip(weights, top)) / wsum, 2)
+            neighbors = [{'title': history[hi]['title'], 'sim': round(s, 3), 'score': history[hi].get('score', 0)} for s, hi in top[:3]]
+        dup_sim, dup_of = 0.0, None
+        if dedup_vecs:
+            dsims = [(cosine(cand_vecs[ci], dv), di) for di, dv in enumerate(dedup_vecs)]
+            best = max(dsims)
+            dup_sim, dup_of = round(best[0], 3), dedup[best[1]]
+        predictions.append({'title': cand, 'predicted': predicted, 'neighbors': neighbors, 'dupSim': dup_sim, 'dupOf': dup_of})
     print(json.dumps({'backend': backend, 'predictions': predictions}, ensure_ascii=False))
 
 

@@ -28,10 +28,15 @@ Rules (see `core/easter-eggs.js`):
 - 1 egg on clips under 20 s, 1 or 2 on longer clips, never more than 2
 - eggs are at least 6 s (or a quarter of the clip) apart, never in the first
   1.5 s or the last second
-- 25 to 36 percent of the frame width, 82 percent opacity, bottom corner,
-  kept 360 px above the frame bottom so YouTube's title overlay does not
-  cover them
-- random side (mirrored when needed), quick fade or slide out
+- 27 to 46 percent of the frame width, 82 percent opacity, along the bottom
+- characters move like they belong: the chases run in from one screen edge
+  and out the other (the box travels so the robber leaves through the far
+  edge), the stick characters walk in to the bottom middle and poke up at
+  the content, Gwen's tap rises at the bottom middle and points up
+- characters whose body is cropped by their own clip (close-ups, popcorn
+  Spidey, the pop-out) sit on the frame's bottom edge so the crop lands on
+  the screen edge; standing characters float 260 px above it
+- random side (mirrored when needed), quick fade / slide / sink out
 - no audio from the eggs
 
 Env overrides: `EASTER_EGGS_ENABLED=false`, `EASTER_EGG_OPACITY`,
@@ -45,6 +50,22 @@ green-screen clips:
 ```
 python scripts/prepare-easter-eggs.py --src "path/to/raw/clips"
 ```
+
+## 2b. Watermark: cover the source's mark, or the usual corner
+
+`core/watermark-cover.js` runs as a second lossless pass after the render:
+
+1. `core/watermark-detector.py` (OpenCV) samples 32 frames and keeps the
+   edges that stay put in nearly every frame while the content moves;
+   small dense clusters near the border are proposed as static overlays
+   (channel handles, platform logos, "AI generated" tags). Static tripod
+   shots are recognised and skipped.
+2. Gemini looks at two crops of each proposal and confirms it is a
+   watermark and not a caption, sign or object. Only proposals that are
+   present in more than 85 percent of frames are trusted without Gemini.
+3. Confirmed spots get `delogo`, a dark translucent badge and the channel
+   logo + handle on top, sized to cover the mark. If nothing is confirmed
+   the small 40 percent watermark goes bottom-right as before.
 
 ## 3. Self-learning from the channel's own stats
 
@@ -69,12 +90,27 @@ The insights are used in three places:
   prediction over past titles (free `all-MiniLM-L6-v2` sentence
   embeddings via `core/title-similarity.py`, falling back to character
   n-grams if the model is missing) blended with the learned patterns.
-- **Clip pick**: country rotation still dominates, but learned country and
-  source-channel weights break ties and can promote a country that clearly
-  performs better.
+- **Clip pick** (Phase 3 of the pipeline):
+  1. *Niche gate*: Gemini now also returns a one-line summary, a category
+     and whether the clip fits the Asian niche (Asian setting, people,
+     culture or media such as k-pop / anime). Anything marked non-Asian is
+     dropped; if nothing fits, nothing is posted that day.
+  2. *Never the same thing twice*: exact repeats are blocked by the used
+     video ids; near-duplicates are caught by embedding similarity of the
+     clip summary / source title against everything already posted
+     (cosine above 0.9 is skipped).
+  3. *Weighted pick*: each remaining candidate gets a score from country
+     rotation, learned country / source-channel / category weights and how
+     similar its summary is to the channel's best performers. The winner is
+     sampled from a softmax over those scores (temperature 0.35), so
+     content like what already works is likely but never guaranteed and
+     other clips still get their turn.
 
-Weights only apply once a country or channel has 3 or more shorts, and
-patterns once 5 or more; below 8 scored shorts nothing is applied.
+Weights only apply once a country, channel or category has 3 or more
+shorts, and patterns once 5 or more; below 8 scored shorts nothing is
+applied. Each post stores its summary, category, source title, eggs and how
+the title was chosen in `memory/posted-videos.json`, so the loop gets
+sharper with every upload.
 
 Check the current state any time:
 

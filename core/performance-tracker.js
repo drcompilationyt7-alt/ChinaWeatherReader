@@ -303,6 +303,7 @@ function computeInsights(videos, channel = null, now = Date.now()) {
       analytics: v.analytics || null,
       country: p.country || null,
       sourceChannel: p.sourceChannel || null,
+      category: p.category || null,
       eggs: p.eggs || null,
       ...scored,
     });
@@ -325,6 +326,7 @@ function computeInsights(videos, channel = null, now = Date.now()) {
     titlePatterns: titlePatterns(usable),
     countries: groupStats(usable, v => v.country, globalLogMean),
     channels: groupStats(usable, v => v.sourceChannel, globalLogMean),
+    categories: groupStats(usable, v => v.category, globalLogMean),
     eggs: groupStats(usable.filter(v => Array.isArray(v.eggs)), v => (v.eggs.length ? 'with eggs' : 'no eggs'), globalLogMean),
     // k-NN targets are log scores so a single outlier cannot dominate
     history: usable.map(v => ({ title: v.title, score: v.lscore })),
@@ -380,6 +382,25 @@ function channelWeight(insights, handle) {
   return key ? insights.channels[key].weight : 1;
 }
 
+function categoryWeight(insights, category) {
+  if (!insights || !insights.reliable || !category || !insights.categories) return 1;
+  const c = String(category).toLowerCase();
+  const key = Object.keys(insights.categories).find(k => k.toLowerCase() === c);
+  return key ? insights.categories[key].weight : 1;
+}
+
+/** Source titles / summaries of everything already posted (for near-duplicate checks). */
+function postedDedupList(limit = 400) {
+  const posted = readJson(POSTED_FILE, { videos: [] });
+  const out = [];
+  for (const p of (posted.videos || []).slice(-limit)) {
+    if (p.sourceTitle) out.push(String(p.sourceTitle));
+    if (p.summary) out.push(String(p.summary));
+    if (!p.sourceTitle && !p.summary && p.title) out.push(String(p.title));
+  }
+  return out;
+}
+
 /** Heuristic 0..1 score from the learned title patterns. */
 function scoreTitleHeuristic(title, insights) {
   if (!title) return 0;
@@ -404,13 +425,19 @@ function pythonCommand() {
   return null;
 }
 
-/** k-NN prediction of the score for each candidate title (embedding similarity to past titles). */
-function predictTitleScores(candidates, insights) {
-  if (!insights || !insights.reliable || !fs.existsSync(SIMILARITY_SCRIPT)) return null;
+/**
+ * k-NN prediction of the score for each candidate text (embedding similarity
+ * to past titles). `dedup` is an optional list of already-posted source
+ * titles / summaries; each prediction then carries dupSim / dupOf.
+ */
+function predictTitleScores(candidates, insights, dedup = null) {
+  if (!fs.existsSync(SIMILARITY_SCRIPT)) return null;
+  const history = insights && insights.reliable ? insights.history : [];
+  if (history.length === 0 && !(Array.isArray(dedup) && dedup.length)) return null;
   const py = pythonCommand();
   if (!py) return null;
   try {
-    const input = JSON.stringify({ history: insights.history, candidates });
+    const input = JSON.stringify({ history, candidates, dedup: Array.isArray(dedup) ? dedup : [] });
     const out = execFileSync(py, [SIMILARITY_SCRIPT], { input, encoding: 'utf8', timeout: 180000, maxBuffer: 16 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
     const parsed = JSON.parse(out.trim().split('\n').pop());
     if (parsed && Array.isArray(parsed.predictions)) {
@@ -499,6 +526,7 @@ if (require.main === module) {
 module.exports = {
   syncPerformance, fetchChannelVideos, tryFetchAnalytics, computeInsights,
   loadInsights, loadStats, buildPromptSummary,
-  countryWeight, channelWeight, scoreTitleHeuristic, predictTitleScores, rankTitles,
+  countryWeight, channelWeight, categoryWeight, postedDedupList,
+  scoreTitleHeuristic, predictTitleScores, rankTitles,
   TITLE_FEATURES, MIN_SAMPLE,
 };
