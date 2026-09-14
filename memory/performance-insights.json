@@ -1,0 +1,1080 @@
+{
+  "updatedAt": "2026-09-14T02:16:47.451Z",
+  "channel": {
+    "title": "Mr. WorldWideWebster",
+    "subscribers": 5,
+    "totalViews": 2662,
+    "totalVideos": 199
+  },
+  "sampleSize": 197,
+  "reliable": true,
+  "globalMeanScore": 0.8,
+  "typicalScore": 0.5,
+  "topTitles": [
+    {
+      "videoId": "rdPocqkmG9Q",
+      "title": "Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral",
+      "views": 564,
+      "score": 40.9,
+      "country": null,
+      "ageDays": 72.5
+    },
+    {
+      "videoId": "BKBnS1ZOquo",
+      "title": "Jude Bellingham || Bye (Altare Remix) edit",
+      "views": 139,
+      "score": 10.2,
+      "country": null,
+      "ageDays": 28.3
+    },
+    {
+      "videoId": "23hBmU5jB2g",
+      "title": "Real Madrid vs Barcelona was INSANE! 😱🔥",
+      "views": 54,
+      "score": 4.1,
+      "country": null,
+      "ageDays": 65.3
+    },
+    {
+      "videoId": "nlEd25NLm9A",
+      "title": "China Dance Hits Different",
+      "views": 37,
+      "score": 3.3,
+      "country": null,
+      "ageDays": 102.1
+    },
+    {
+      "videoId": "uCv5JdrtzgU",
+      "title": "Eris vs Nina: EPIC Fight! 👊🔥 #MushokuTensei",
+      "views": 42,
+      "score": 3.2,
+      "country": "Japan",
+      "ageDays": 45.6
+    },
+    {
+      "videoId": "zE_qZ_aJ9jc",
+      "title": "Anime characters who rarely smile/never smile 🕊❤‍",
+      "views": 23,
+      "score": 2.5,
+      "country": null,
+      "ageDays": 9.6
+    },
+    {
+      "videoId": "JkS6OVIv230",
+      "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
+      "views": 32,
+      "score": 2.3,
+      "country": null,
+      "ageDays": 110.3
+    },
+    {
+      "videoId": "0PpaB_KfC7E",
+      "title": "His neighbor is a monster😨 #anime #shorts",
+      "views": 30,
+      "score": 2.1,
+      "country": null,
+      "ageDays": 68.6
+    },
+    {
+      "videoId": "Sz0_HNx3_EE",
+      "title": "Jennie was doing so dangerous stunt 😱😭 #jennie #",
+      "views": 3,
+      "score": 2,
+      "country": null,
+      "ageDays": 1.6
+    },
+    {
+      "videoId": "mMBJ-iFPdeo",
+      "title": "Asia's Hardest Revenge Songs Reveal Shocking Truths 🌎😱",
+      "views": 5,
+      "score": 1.9,
+      "country": null,
+      "ageDays": 2.6
+    }
+  ],
+  "bottomTitles": [
+    {
+      "videoId": "QefbAWW-WD4",
+      "title": "Korea Dance Hits Different",
+      "views": 0,
+      "score": 0,
+      "country": null,
+      "ageDays": 94.6
+    },
+    {
+      "videoId": "4g_yvf-_t30",
+      "title": "LIV & KIKI SUI: Real Life Twins? 👯‍♀️✨",
+      "views": 0,
+      "score": 0,
+      "country": "South Korea",
+      "ageDays": 58.6
+    },
+    {
+      "videoId": "vUfp6G5kzDM",
+      "title": "That was too close! 😱😂 #funny",
+      "views": 0,
+      "score": 0,
+      "country": "China",
+      "ageDays": 57.6
+    },
+    {
+      "videoId": "Dmo28CyiD5c",
+      "title": "Do you agree with this? 😂🙌",
+      "views": 0,
+      "score": 0,
+      "country": "India",
+      "ageDays": 50.6
+    },
+    {
+      "videoId": "rgawt3tqrng",
+      "title": "World Cup Chaos! ⚽️🤯 #summerofgoals",
+      "views": 0,
+      "score": 0,
+      "country": "United States",
+      "ageDays": 50.3
+    }
+  ],
+  "titlePatterns": [
+    {
+      "name": "has number",
+      "n": 23,
+      "lift": 1.19
+    },
+    {
+      "name": "mentions place",
+      "n": 39,
+      "lift": 1.18
+    },
+    {
+      "name": "ellipsis / cliffhanger",
+      "n": 5,
+      "lift": 1.06
+    },
+    {
+      "name": "ALL CAPS word",
+      "n": 28,
+      "lift": 0.95
+    },
+    {
+      "name": "has emoji",
+      "n": 153,
+      "lift": 0.87
+    },
+    {
+      "name": "short (<= 40 chars)",
+      "n": 122,
+      "lift": 0.86
+    },
+    {
+      "name": "question",
+      "n": 14,
+      "lift": 0.79
+    }
+  ],
+  "countries": {
+    "Japan": {
+      "n": 8,
+      "meanScore": 0.8,
+      "weight": 1.04
+    },
+    "South Korea": {
+      "n": 5,
+      "meanScore": 0.2,
+      "weight": 0.87
+    },
+    "Thailand": {
+      "n": 1,
+      "meanScore": 0.6,
+      "weight": 1
+    },
+    "World": {
+      "n": 1,
+      "meanScore": 0.6,
+      "weight": 1
+    },
+    "FIFA": {
+      "n": 6,
+      "meanScore": 0.2,
+      "weight": 0.83
+    },
+    "United States": {
+      "n": 8,
+      "meanScore": 0.2,
+      "weight": 0.84
+    },
+    "Vietnam": {
+      "n": 2,
+      "meanScore": 0.4,
+      "weight": 1
+    },
+    "Germany": {
+      "n": 3,
+      "meanScore": 0.3,
+      "weight": 0.91
+    },
+    "China": {
+      "n": 6,
+      "meanScore": 0.1,
+      "weight": 0.82
+    },
+    "France": {
+      "n": 1,
+      "meanScore": 0.4,
+      "weight": 1
+    },
+    "United Kingdom": {
+      "n": 2,
+      "meanScore": 0.3,
+      "weight": 1
+    },
+    "None": {
+      "n": 1,
+      "meanScore": 0.3,
+      "weight": 1
+    },
+    "India": {
+      "n": 4,
+      "meanScore": 0.1,
+      "weight": 0.83
+    },
+    "Qatar": {
+      "n": 1,
+      "meanScore": 0.2,
+      "weight": 1
+    },
+    "Venezuela": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Niger": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Morocco": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Togo": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Brazil": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Argentina": {
+      "n": 1,
+      "meanScore": 0.1,
+      "weight": 1
+    },
+    "Cameroon": {
+      "n": 1,
+      "meanScore": 0,
+      "weight": 1
+    },
+    "Spain": {
+      "n": 1,
+      "meanScore": 0,
+      "weight": 1
+    }
+  },
+  "channels": {},
+  "eggs": {},
+  "history": [
+    {
+      "title": "Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral",
+      "score": 3.734
+    },
+    {
+      "title": "Jude Bellingham || Bye (Altare Remix) edit",
+      "score": 2.417
+    },
+    {
+      "title": "Real Madrid vs Barcelona was INSANE! 😱🔥",
+      "score": 1.638
+    },
+    {
+      "title": "China Dance Hits Different",
+      "score": 1.459
+    },
+    {
+      "title": "Eris vs Nina: EPIC Fight! 👊🔥 #MushokuTensei",
+      "score": 1.445
+    },
+    {
+      "title": "Anime characters who rarely smile/never smile 🕊❤‍",
+      "score": 1.251
+    },
+    {
+      "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
+      "score": 1.19
+    },
+    {
+      "title": "His neighbor is a monster😨 #anime #shorts",
+      "score": 1.145
+    },
+    {
+      "title": "Jennie was doing so dangerous stunt 😱😭 #jennie #",
+      "score": 1.084
+    },
+    {
+      "title": "Asia's Hardest Revenge Songs Reveal Shocking Truths 🌎😱",
+      "score": 1.074
+    },
+    {
+      "title": "Haaland's Secret Family Name! 🇳⚽️ #fifaworldcup2026  #viral",
+      "score": 1.05
+    },
+    {
+      "title": "Vietnam Dance Hits Different",
+      "score": 1.05
+    },
+    {
+      "title": "kpop comebacks after member departure✨ #kpop#kpopd",
+      "score": 1.018
+    },
+    {
+      "title": "Canada’s secret neighbor is... 🤯",
+      "score": 1.019
+    },
+    {
+      "title": "United States Travel Short 🔥",
+      "score": 1.04
+    },
+    {
+      "title": "Japan's Hidden Homeless: Gym Sleepers 🇯",
+      "score": 0.992
+    },
+    {
+      "title": "Three Things Anime Made Famous in Japan 🔥",
+      "score": 0.953
+    },
+    {
+      "title": "Korean Vibes: Life Turns & Jala Beats 🔥",
+      "score": 0.969
+    },
+    {
+      "title": "France Football Fans Are Different",
+      "score": 0.902
+    },
+    {
+      "title": "Amazing Moments from Nigeria You Need to See",
+      "score": 0.911
+    },
+    {
+      "title": "Me Too, Thank You for Watching",
+      "score": 0.911
+    },
+    {
+      "title": "Why Japanese People Hide Their Anime Love 🤫🇯🇵",
+      "score": 0.871
+    },
+    {
+      "title": "Fighting in front of my parents, then kissing righ",
+      "score": 0.854
+    },
+    {
+      "title": "Kpop Songs: Shortest vs Longest! 🎶✨",
+      "score": 0.783
+    },
+    {
+      "title": "Ghana's Magic vs Colombia! 🇬🇭✨ #WorldCup",
+      "score": 0.783
+    },
+    {
+      "title": "Japan's industry secrets are wild 🤯",
+      "score": 0.769
+    },
+    {
+      "title": "Japan is living in 3024 🇯🇵🤯",
+      "score": 0.804
+    },
+    {
+      "title": "Celebrities React To Dido’s Live Performance!",
+      "score": 0.762
+    },
+    {
+      "title": "His Rizz is Unstoppable! 😂❤️",
+      "score": 0.762
+    },
+    {
+      "title": "Celebrities STUNNED by Adele! 😱🎤",
+      "score": 0.762
+    },
+    {
+      "title": "Master This Dance Move! 💃✨",
+      "score": 0.762
+    },
+    {
+      "title": "Takoyaki Disaster in Japan! 🐙🇯🇵 #shorts",
+      "score": 0.749
+    },
+    {
+      "title": "India Has Main Character Energy",
+      "score": 0.749
+    },
+    {
+      "title": "$55,000,000 Mega Yacht In Thailand #shorts",
+      "score": 0.749
+    },
+    {
+      "title": "TOP 5 Guy Sensei Moments! 🔥🇯🇵",
+      "score": 0.676
+    },
+    {
+      "title": "Iceland Travel Short 🔥",
+      "score": 0.676
+    },
+    {
+      "title": "Cha Eunwoo in glasses || My All",
+      "score": 0.64
+    },
+    {
+      "title": "Qatar is actually unreal 🤯",
+      "score": 0.637
+    },
+    {
+      "title": "Insane Gyro Sphere Skills! 🌀✨",
+      "score": 0.657
+    },
+    {
+      "title": "Germany Has Main Character Energy",
+      "score": 0.655
+    },
+    {
+      "title": "Global (US/Japan) Street Moment",
+      "score": 0.619
+    },
+    {
+      "title": "Boy vs Girls",
+      "score": 0.619
+    },
+    {
+      "title": "Jisoo and Kai met in real life 😱🤯 #jisoo #kai #f",
+      "score": 0.58
+    },
+    {
+      "title": "Brazil vs Haiti Prediction! 🇧🇷🔥",
+      "score": 0.58
+    },
+    {
+      "title": "Ariana Grande Is The Greatest Voice Of Our Generation #art #music #viral #vocal",
+      "score": 0.572
+    },
+    {
+      "title": "Places that Are Not Real But Are 🔥",
+      "score": 0.572
+    },
+    {
+      "title": "The secret history of the USS Liberty 🚢",
+      "score": 0.572
+    },
+    {
+      "title": "Brazil Has Main Character Energy",
+      "score": 0.597
+    },
+    {
+      "title": "Ranking Top 10 Disney Channel Songs!",
+      "score": 0.518
+    },
+    {
+      "title": "I Think Yuta Helped Him Copy ✌🏻🥹 #anime #jujutsu",
+      "score": 0.539
+    },
+    {
+      "title": "Why K-pop Idols DON'T use headsets! 🎤🚫",
+      "score": 0.556
+    },
+    {
+      "title": "Mexico OUT! 🇲🇽 England Wins 3-2! 🏴󠁧󠁢󠁥󠁮󠁧󠁿⚽",
+      "score": 0.556
+    },
+    {
+      "title": "#viral #fifa #fifa2026 #fifaworldcup #memes",
+      "score": 0.527
+    },
+    {
+      "title": "FIFA's Biggest Scam? 😱⚽️",
+      "score": 0.512
+    },
+    {
+      "title": "Korea Dance Hits Different",
+      "score": 0.512
+    },
+    {
+      "title": "China Street Moment",
+      "score": 0.556
+    },
+    {
+      "title": "Nigeria Dance Hits Different",
+      "score": 0.539
+    },
+    {
+      "title": "Explore Chinas Moments: Check Out This Clip!",
+      "score": 0.539
+    },
+    {
+      "title": "3 Reasons Why Renting in Japan Is Basically a Scam",
+      "score": 0.457
+    },
+    {
+      "title": "One Piece MOST VIRAL Instagram Edits 🏴‍☠️🔥 | Top",
+      "score": 0.452
+    },
+    {
+      "title": "They laughed at her hair... then THIS happened! 😳🔥",
+      "score": 0.466
+    },
+    {
+      "title": "1997: God's Favorite Year 👑✨",
+      "score": 0.496
+    },
+    {
+      "title": "Violet Evergarden: A Heartbreaking Journey ❤️‍🩹",
+      "score": 0.466
+    },
+    {
+      "title": "Argentina vs Switzerland 🇦🇷🇨🇭 #FIFAWorldCup",
+      "score": 0.496
+    },
+    {
+      "title": "Ghost or S.Coups? 👻 Met Gala Edition ✨",
+      "score": 0.466
+    },
+    {
+      "title": "Brazil vs Japan: Epic World Cup Clash! 🇧🇷🇯🇵",
+      "score": 0.496
+    },
+    {
+      "title": "Chinese Comedy Gold! 🤣🇨🇳 #shorts",
+      "score": 0.466
+    },
+    {
+      "title": "France Dominates the Finals! 🇫🇷⚽️",
+      "score": 0.452
+    },
+    {
+      "title": "3 Ramen Rules in Japan! 🍜🇯🇵",
+      "score": 0.466
+    },
+    {
+      "title": "Where FIFA stars will stay in 2026 🤯",
+      "score": 0.464
+    },
+    {
+      "title": "Explore Life in India 🇮🇳 [Clip]",
+      "score": 0.496
+    },
+    {
+      "title": "This CDrama hit different... 🥹❤️‍🩹",
+      "score": 0.405
+    },
+    {
+      "title": "Germany vs Ecuador ⚽️ World Cup Thriller! 🔥",
+      "score": 0.405
+    },
+    {
+      "title": "coming soon 💓💓💓🔥 #ganeshchaturthi #lalbaughcha",
+      "score": 0.405
+    },
+    {
+      "title": "Marrying in Japan: The Honest Truth 🇯🇵💔",
+      "score": 0.419
+    },
+    {
+      "title": "3 Most Useless Things in Japan! 🇯🇵🤔",
+      "score": 0.419
+    },
+    {
+      "title": "Japan Travel Short 🔥",
+      "score": 0.419
+    },
+    {
+      "title": "Japan's hidden daily life 🤯",
+      "score": 0.419
+    },
+    {
+      "title": "Pakistan Street Moment",
+      "score": 0.405
+    },
+    {
+      "title": "As soon as it’s time to take a picture, forget eve",
+      "score": 0.346
+    },
+    {
+      "title": "Most Viewed 5th gen mvs✨ #kpop##kpopshorts#kpopdan",
+      "score": 0.344
+    },
+    {
+      "title": "Jennie met The Weekend 🔥 #blackpink #블랙핑크 #kpop #",
+      "score": 0.31
+    },
+    {
+      "title": "He knows how to give butterflies 🦋😳🫀 #kdrama #j",
+      "score": 0.305
+    },
+    {
+      "title": "Where is Miguel #anime #shorts #jjk",
+      "score": 0.305
+    },
+    {
+      "title": "He said NO chance... but 💕🇯🇵",
+      "score": 0.305
+    },
+    {
+      "title": "Betrayed by her best friend 💔😭",
+      "score": 0.305
+    },
+    {
+      "title": "Which outfit is your favorite? 🎀✨",
+      "score": 0.357
+    },
+    {
+      "title": "Cam’s Funniest Moments! 😂🔥",
+      "score": 0.305
+    },
+    {
+      "title": "Argentina vs Egypt: A Heartbreaker! ⚽️🇦🇷🇪🇬",
+      "score": 0.305
+    },
+    {
+      "title": "Funniest Jeremy Kyle Moments! 💀😂",
+      "score": 0.369
+    },
+    {
+      "title": "Can You Name These Michael Jackson Hits? 🕺🎶",
+      "score": 0.305
+    },
+    {
+      "title": "Yuha & Stella: Hearts to Hearts 💖✨",
+      "score": 0.369
+    },
+    {
+      "title": "Kiara advani 😩😍😍😍 #kiaraadvani #iphone15 #momm",
+      "score": 0.357
+    },
+    {
+      "title": "Stop Scrolling! 📱😂 #relatable",
+      "score": 0.369
+    },
+    {
+      "title": "Don't Make These Dubai Mistakes! ❌🇦🇪",
+      "score": 0.316
+    },
+    {
+      "title": "J-7 avant le départ! ✈️🏝️",
+      "score": 0.369
+    },
+    {
+      "title": "Sunrise Magic at Machu Picchu! ☀️🇵🇪",
+      "score": 0.305
+    },
+    {
+      "title": "China Travel Short 🔥",
+      "score": 0.316
+    },
+    {
+      "title": "Australia Travel Short 🔥",
+      "score": 0.369
+    },
+    {
+      "title": "Real 😭✌🥀 #viral New Chinese football Kung FU",
+      "score": 0.357
+    },
+    {
+      "title": "Japan Travel Short 🔥",
+      "score": 0.357
+    },
+    {
+      "title": "United States is cold🔥",
+      "score": 0.303
+    },
+    {
+      "title": "A Spicy Way to Check Temperature! 🌡️🔥",
+      "score": 0.267
+    },
+    {
+      "title": "World Street Moment",
+      "score": 0.299
+    },
+    {
+      "title": "The way she ran after him 💔😫 First love 😔 #kdra",
+      "score": 0.281
+    },
+    {
+      "title": "Girls spot a hottie! 😍👀",
+      "score": 0.256
+    },
+    {
+      "title": "Blackpink always treats their staff well!!😍❤️ #bl",
+      "score": 0.236
+    },
+    {
+      "title": "Don't Do This in China! 🚫🇨🇳",
+      "score": 0.238
+    },
+    {
+      "title": "Top 5 One Piece Funny Moments 💀",
+      "score": 0.258
+    },
+    {
+      "title": "Penalty Mind Games That Actually Worked! 🧠⚽️",
+      "score": 0.251
+    },
+    {
+      "title": "The Secret to Making Wishes Come True! ✨",
+      "score": 0.26
+    },
+    {
+      "title": "FIFA: Religion vs Inclusion? ⚽️⚖️",
+      "score": 0.251
+    },
+    {
+      "title": "Russian makeup transition part 2#makeuptransformat",
+      "score": 0.26
+    },
+    {
+      "title": "Jornalista imita sotaque Brasileiro! 😂🇧",
+      "score": 0.251
+    },
+    {
+      "title": "Europe Travel Short 🔥",
+      "score": 0.26
+    },
+    {
+      "title": "Australia Travel Short 🔥",
+      "score": 0.269
+    },
+    {
+      "title": "China Travel Short 🔥",
+      "score": 0.26
+    },
+    {
+      "title": "The UK Street Moment",
+      "score": 0.26
+    },
+    {
+      "title": "Mind-blowing USA facts! 🤯",
+      "score": 0.26
+    },
+    {
+      "title": "Japan's CRAZY school hack?! 🤯",
+      "score": 0.26
+    },
+    {
+      "title": "Unexpected Give and Take! 😂💩",
+      "score": 0.211
+    },
+    {
+      "title": "If you say she’s brainless, she’ll find a way to p",
+      "score": 0.174
+    },
+    {
+      "title": "So......HOW THE H*LL did they even end up HATING t",
+      "score": 0.164
+    },
+    {
+      "title": "Twin Chaos! Who is who? 😂👯‍♀️",
+      "score": 0.148
+    },
+    {
+      "title": "hum bechary kuch krty b nahi 🤣@Jasmine-like-natur",
+      "score": 0.141
+    },
+    {
+      "title": "They are so chaotic and I love it || Perfect Crown",
+      "score": 0.194
+    },
+    {
+      "title": "She was so confused! 😭🤣 #kdrama",
+      "score": 0.201
+    },
+    {
+      "title": "Songs that made me stan my Ults! ✨",
+      "score": 0.208
+    },
+    {
+      "title": "3 Years ➡️ 888 Days?! 😱📉",
+      "score": 0.201
+    },
+    {
+      "title": "Why Olise is built different! 💎⚽️",
+      "score": 0.201
+    },
+    {
+      "title": "Team Rocket's Wildest Moments! 🚀💥",
+      "score": 0.201
+    },
+    {
+      "title": "How FIFA President Sees EVERY Match! ⚽️🇶🇦",
+      "score": 0.194
+    },
+    {
+      "title": "Arjun Kapoor Roast! 😂 #shorts",
+      "score": 0.194
+    },
+    {
+      "title": "Football Headshots That HURT! 😭🏈",
+      "score": 0.201
+    },
+    {
+      "title": "He sees right through the lies! 😌✨",
+      "score": 0.201
+    },
+    {
+      "title": "Real Madrid vs Barcelona: EL CLÁSICO MADNESS! ⚽️🔥",
+      "score": 0.201
+    },
+    {
+      "title": "Nigeria Has Repaid Its $3 4 Billion IMF Loan 1",
+      "score": 0.201
+    },
+    {
+      "title": "Germany Street Moment",
+      "score": 0.201
+    },
+    {
+      "title": "Russia Travel Short 🔥",
+      "score": 0.143
+    },
+    {
+      "title": "Chile Street Moment",
+      "score": 0.194
+    },
+    {
+      "title": "Japan Travel Short 🔥",
+      "score": 0.201
+    },
+    {
+      "title": "Japan Travel Short 🔥",
+      "score": 0.194
+    },
+    {
+      "title": "This Scene 🔥🥵 || CDrama ~ Speed and Love #edit #",
+      "score": 0.09
+    },
+    {
+      "title": "Legendary Bands We'll Never See Again! 🎸😭",
+      "score": 0.073
+    },
+    {
+      "title": "The teacher every student deserves #anime #shorts",
+      "score": 0.069
+    },
+    {
+      "title": "Cô ấy vẫn chưa biết! 😂🥤🫣",
+      "score": 0.069
+    },
+    {
+      "title": "TAIWAN Politician WANTS TO BAN INDIAN WORKER?",
+      "score": 0.069
+    },
+    {
+      "title": "Sweet Vibe Dance 🧋🔥Smooth Moves in a Bubble Tea",
+      "score": 0.134
+    },
+    {
+      "title": "The reason you sleep so much but still feel exhaus",
+      "score": 0.069
+    },
+    {
+      "title": "The crowd screamed hardly 🔥🥵 #blackpink #블랙핑크 #k",
+      "score": 0.139
+    },
+    {
+      "title": "His muscles are TOO STRONG😨 #anime #shorts",
+      "score": 0.069
+    },
+    {
+      "title": "Jennie's Iconic 'Seoul City' Live at Lollapalooza! 🔥",
+      "score": 0.069
+    },
+    {
+      "title": "Angry with Love💕✨ | CDrama Edit #shorts",
+      "score": 0.069
+    },
+    {
+      "title": "Taylor Swift is a BLINK?! 😱💖",
+      "score": 0.139
+    },
+    {
+      "title": "Geto's Loyalty to Gojo 💔 #jujutsukaisen",
+      "score": 0.139
+    },
+    {
+      "title": "I’m not sure if my expectations are too high, or i",
+      "score": 0.139
+    },
+    {
+      "title": "Hikikomori: Japan's Hidden Crisis",
+      "score": 0.134
+    },
+    {
+      "title": "We hit a milestone! Thank you! ❤️✨",
+      "score": 0.072
+    },
+    {
+      "title": "Players vs Sprinklers: Funniest Fails! 💦😂",
+      "score": 0.069
+    },
+    {
+      "title": "Niger Crisis: Plan to Restore Democracy! 🇳🇪",
+      "score": 0.069
+    },
+    {
+      "title": "When tools have a mind of their own! 😂🛠️",
+      "score": 0.072
+    },
+    {
+      "title": "Speed’s 2 Shirts to Break the Curse! ⚽️🔥",
+      "score": 0.069
+    },
+    {
+      "title": "Rengoku's Eating Style is WILD! 🍱🔥",
+      "score": 0.134
+    },
+    {
+      "title": "Morocco vs France! 🇲🇦🔥 World Cup Drama",
+      "score": 0.134
+    },
+    {
+      "title": "That One Friend & Alcohol! 😂🍺 #shorts",
+      "score": 0.139
+    },
+    {
+      "title": "Germany's Striker is carrying the team! 🇩🇪⚽️",
+      "score": 0.072
+    },
+    {
+      "title": "Massive Popcorn Factory in China! 🍿🇨🇳",
+      "score": 0.139
+    },
+    {
+      "title": "Can you guess what this is? 🇹🇬🤔",
+      "score": 0.072
+    },
+    {
+      "title": "Football Lag is Unreal! 😭⚽️",
+      "score": 0.072
+    },
+    {
+      "title": "Vini's glow up is WILD 🤯",
+      "score": 0.139
+    },
+    {
+      "title": "Jisoo's sister is a visual queen! 💖✨",
+      "score": 0.134
+    },
+    {
+      "title": "She can't even open her eyes! 😅👀",
+      "score": 0.069
+    },
+    {
+      "title": "Argentina's Celebration Sparks Controversy! 😱🇦🇷",
+      "score": 0.072
+    },
+    {
+      "title": "He's a total crush! 😍✨ #cdrama",
+      "score": 0.069
+    },
+    {
+      "title": "The Secret Meaning of World Cup Patches! 🏆⚽️",
+      "score": 0.139
+    },
+    {
+      "title": "Anime Moment That Hits Different 😨🫣",
+      "score": 0.069
+    },
+    {
+      "title": "Why Everyone is Wearing PINK Boots! 💖⚽️",
+      "score": 0.069
+    },
+    {
+      "title": "2026 World Cup's Next Big Stars! ⚽️🌟",
+      "score": 0.069
+    },
+    {
+      "title": "Pure Class! France ❤️ Morocco #WorldCup",
+      "score": 0.134
+    },
+    {
+      "title": "Súng bắn keo siêu đỉnh! 🌭✨",
+      "score": 0.134
+    },
+    {
+      "title": "Spain vs Cape Verde: Absolute Chaos! 🇪🇸🇨🇻🔥",
+      "score": 0.139
+    },
+    {
+      "title": "Turkey Street Moment",
+      "score": 0.134
+    },
+    {
+      "title": "Canada Travel Short 🔥",
+      "score": 0.134
+    },
+    {
+      "title": "Singers Who Secretly Hate Each Other!",
+      "score": 0
+    },
+    {
+      "title": "Cameroon Elections: What's Happening? 🇨🇲🗳️",
+      "score": 0
+    },
+    {
+      "title": "Win Every Kickoff! 🧠⚽️ #FIFA",
+      "score": 0
+    },
+    {
+      "title": "3 Ace Trends You Need to Try! 🔥✨",
+      "score": 0
+    },
+    {
+      "title": "Why Argentina Fans Are Taking Over! 🇦🇷🔥",
+      "score": 0
+    },
+    {
+      "title": "눈웃음 비타민 발사! 💖 백지헌 미소",
+      "score": 0
+    },
+    {
+      "title": "Worst Football Misses Ever! 💀⚽️",
+      "score": 0
+    },
+    {
+      "title": "Spain STUNS France! 🇪🇸⚽️ #WorldCup",
+      "score": 0
+    },
+    {
+      "title": "Elvish Yadav Epic Battles! 🔥😂",
+      "score": 0
+    },
+    {
+      "title": "World Cup Chaos! ⚽️🤯 #summerofgoals",
+      "score": 0
+    },
+    {
+      "title": "Do you agree with this? 😂🙌",
+      "score": 0
+    },
+    {
+      "title": "That was too close! 😱😂 #funny",
+      "score": 0
+    },
+    {
+      "title": "LIV & KIKI SUI: Real Life Twins? 👯‍♀️✨",
+      "score": 0
+    },
+    {
+      "title": "Korea Dance Hits Different",
+      "score": 0
+    }
+  ],
+  "promptSummary": "Based on 197 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 0.5/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral\" (564 views, unknown)\n  - \"Jude Bellingham || Bye (Altare Remix) edit\" (139 views, unknown)\n  - \"Real Madrid vs Barcelona was INSANE! 😱🔥\" (54 views, unknown)\n  - \"China Dance Hits Different\" (37 views, unknown)\n  - \"Eris vs Nina: EPIC Fight! 👊🔥 #MushokuTensei\" (42 views, Japan)\n  - \"Anime characters who rarely smile/never smile 🕊❤‍\" (23 views, unknown)\nTitles that performed WORST for us:\n  - \"Korea Dance Hits Different\" (0 views)\n  - \"LIV & KIKI SUI: Real Life Twins? 👯‍♀️✨\" (0 views)\n  - \"That was too close! 😱😂 #funny\" (0 views)\nPatterns that WORK for this channel: has number (x1.19), mentions place (x1.18)\nPatterns that UNDER-perform: question (x0.79)\nBest performing countries: Japan (x1.04, 8 shorts), Germany (x0.91, 3 shorts), South Korea (x0.87, 5 shorts); weakest: India (x0.83), China (x0.82)",
+  "summaryLine": "Best recent: \"Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral\" (564 views, 40.9/day) — typical short 0.5/day over 197 shorts"
+}

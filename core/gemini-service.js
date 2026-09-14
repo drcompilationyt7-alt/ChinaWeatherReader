@@ -668,22 +668,35 @@ Keep it under 20 words. Just the one sentence, no extra text, no hashtags.`;
       visualSummary += `\n\nOriginal title: "${origTitle}"`;
     }
 
-    const systemPrompt = skillContent || 'You are an expert YouTube Shorts metadata writer. Create clickable, engaging titles and descriptions for viral clips. Return JSON: {"title":"...","description":"...","tags":[...]}';
+    // ─── Self-learning: what has worked on OUR channel so far ─────
+    // core/performance-tracker.js distils the channel's own YouTube stats
+    // into a short summary (best/worst titles, patterns, countries).
+    let learningBlock = '';
+    try {
+      const { loadInsights } = require('./performance-tracker');
+      const ins = loadInsights();
+      if (ins && ins.reliable && ins.promptSummary) {
+        learningBlock = `\n\nCHANNEL PERFORMANCE INSIGHTS (learned from our own YouTube stats — imitate what works, avoid what doesn't, but stay specific to THIS clip):\n${ins.promptSummary}`;
+      }
+    } catch {}
+
+    const systemPrompt = skillContent || 'You are an expert YouTube Shorts metadata writer. Create clickable, engaging titles and descriptions for viral clips. Return JSON: {"title":"...","titleOptions":["...","..."],"description":"...","tags":[...]}';
 
     const userPrompt = `Create a YouTube Shorts title, description, and tags for this clip.
 
 VIDEO CONTEXT:
-${visualSummary}
+${visualSummary}${learningBlock}
 
 REQUIREMENTS:
 - Title must be clickable, specific to the actual visual content (not generic like "${country} Clip")
+- Also give 2 alternative titles with a different hook/angle each in "titleOptions" (we pick the best one using our channel's past performance)
 - Description should describe the hook and end with a call to action + hashtags
 - Tags should be 5-10 relevant keywords
 - If transcript is available, use it to understand what's happening
 - If original title is available, use it for context but create a NEW better title
 - If comments are available, understand what viewers found interesting
 
-Return ONLY valid JSON: {"title":"...","description":"...","tags":["tag1","tag2",...]}`;
+Return ONLY valid JSON: {"title":"...","titleOptions":["alt title 1","alt title 2"],"description":"...","tags":["tag1","tag2",...]}`;
 
     // Dedicated retry loop with 10s delay between keys
     const maxCycles = 2;

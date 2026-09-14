@@ -76,6 +76,19 @@ const config = {
     enabled: (process.env.CAPTIONS_ENABLED || 'false') === 'true',
   },
 
+  // ─── Easter egg overlays ───────────────────────────────────────
+  // Tiny semi-transparent cartoon characters (green-screen keyed) that pop
+  // into a bottom corner at random moments and leave again. Assets live in
+  // core/easter-eggs/, see core/easter-eggs.js. Set EASTER_EGGS_ENABLED=false
+  // to turn them off.
+  easterEggs: {
+    enabled: (process.env.EASTER_EGGS_ENABLED || 'true') !== 'false',
+    opacity: parseFloat(process.env.EASTER_EGG_OPACITY) || 0.82,
+    sizeScale: parseFloat(process.env.EASTER_EGG_SIZE) || 1.0,
+    safeBottom: parseInt(process.env.EASTER_EGG_SAFE_BOTTOM, 10) || 360,
+    maxPerShort: parseInt(process.env.EASTER_EGG_MAX, 10) || 3,
+  },
+
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY,
     clientId: process.env.YOUTUBE_CLIENT_ID,

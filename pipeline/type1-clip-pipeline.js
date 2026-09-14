@@ -12,7 +12,10 @@
  * 3. Download all 10 candidates in parallel
  * 4. Gemini classifies each video's country
  * 5. Pick video from the least-covered country this week
- * 6. Smart Cut → Render (flag, watermark, captions, FFV1) → QA → Upload
+ * 6. Smart Cut → Render (easter eggs, watermark, captions, FFV1) → QA → Upload
+ *
+ * Note: no country flag / "edit from {country}" voice line is burned into
+ * the video any more — the country only drives selection and metadata.
  */
 const { execSync } = require('child_process');
 const path = require('path');
@@ -27,6 +30,8 @@ const { smartClipAndCrop } = require('../core/ai-clipper');
 const { smartEdit, detectDialogue } = require('../core/smart-editor');
 const { validateOutput, geminiReview } = require('../core/frame-qa');
 const { addWatermark } = require('../core/watermark');
+const { planEasterEggs, buildEasterEggFilters } = require('../core/easter-eggs');
+const { loadInsights, rankTitles, countryWeight, channelWeight } = require('../core/performance-tracker');
 
 const logger = new Logger('Type1Pipeline');
 
@@ -336,7 +341,7 @@ Return STRICT JSON: {"country": "Country Name", "confidence": 0-10, "reasoning":
 
 // ─── Step 8: Pick the candidate whose country is least covered this week ──
 
-function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek) {
+function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, insights = null) {
   if (classifications.length === 0) return null;
 
   const weekCounts = {};
@@ -344,17 +349,25 @@ function pickLeastCoveredCandidate(classifications, countriesUsedThisWeek) {
     weekCounts[c] = (weekCounts[c] || 0) + 1;
   }
 
-  // Sort: least-covered country first, then by confidence descending (ties)
-  const sorted = [...classifications].sort((a, b) => {
-    const countA = weekCounts[a.country] || 0;
-    const countB = weekCounts[b.country] || 0;
-    if (countA !== countB) return countA - countB;
-    return (b.confidence || 0) - (a.confidence || 0);
-  });
+  // Coverage still dominates (integer steps) so countries keep rotating.
+  // Learned weights from our own channel stats (core/performance-tracker.js)
+  // and the classification confidence break ties, and a country / source
+  // channel that clearly out-performs for this channel can win a coverage step.
+  const learning = !!(insights && insights.reliable);
+  const scored = classifications.map(c => {
+    const coverage = weekCounts[c.country] || 0;
+    const cw = learning ? countryWeight(insights, c.country) : 1;
+    const hw = learning ? channelWeight(insights, c.candidate && c.candidate.channelHandle) : 1;
+    const score = -coverage + (cw - 1) * 1.0 + (hw - 1) * 0.6 + (c.confidence || 0) / 40;
+    return { ...c, coverage, cw, hw, score };
+  }).sort((a, b) => b.score - a.score);
 
-  const winner = sorted[0];
+  const winner = scored[0];
   logger.info(`Country coverage this week: ${JSON.stringify(weekCounts)}`);
-  logger.success(`Picking: ${winner.country} (${weekCounts[winner.country] || 0}x this week, confidence ${winner.confidence}/10)`);
+  if (learning) {
+    logger.info(`Learned weights (country/channel): ${scored.slice(0, 5).map(s => `${s.country}${s.candidate && s.candidate.channelHandle ? '/@' + s.candidate.channelHandle : ''} x${s.cw}/x${s.hw}`).join(', ')}`);
+  }
+  logger.success(`Picking: ${winner.country} (${winner.coverage}x this week, confidence ${winner.confidence}/10, score ${winner.score.toFixed(2)})`);
   return winner;
 }
 
@@ -583,8 +596,17 @@ function getCropOffset(videoPath, srcW, srcH, tmpDir) {
 
 // ─── Build Combined Filter ──────────────────────────────────────
 
-function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, hasFlag, flagPath, hasWatermark, wmPath, startDelay, endTime, delayMs, flagInputIdx, wmInputIdx, dynamicCropFilter) {
+/**
+ * Build the whole video filter graph: crop/scale to 9:16 → (captions) →
+ * easter egg overlays → watermark → final scale.
+ *
+ * @param {Object|null} eggPlan        result of planEasterEggs() (may be empty)
+ * @param {number} eggFirstInputIdx    ffmpeg input index of the first egg file (-1 = none)
+ * @returns {{ filterComplex: string, videoOut: string, eggInputArgs: string }}
+ */
+function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, hasWatermark, wmPath, wmInputIdx, dynamicCropFilter, eggPlan, eggFirstInputIdx) {
   const filters = [];
+  let eggInputArgs = '';
   let currentLabel = '0:v';
   if (dynamicCropFilter) {
     filters.push(`${dynamicCropFilter}[v1]`);
@@ -613,10 +635,13 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
     filters.push(`[${currentLabel}]ass='${escPath}'[v2]`);
     currentLabel = 'v2';
   }
-  if (hasFlag && flagPath && fs.existsSync(flagPath) && flagInputIdx >= 0) {
-    filters.push(`[${flagInputIdx}:v]scale=120:-1,format=rgba[flag]`);
-    filters.push(`[${currentLabel}][flag]overlay=(W-w)/2:20:enable='between(t,${startDelay},${endTime})'[v3]`);
-    currentLabel = 'v3';
+  // Easter eggs go on before the watermark so the watermark always stays on top.
+  // The frame is already 1080x1920 here in both crop modes.
+  if (eggPlan && Array.isArray(eggPlan.eggs) && eggPlan.eggs.length > 0 && eggFirstInputIdx >= 0) {
+    const eggs = buildEasterEggFilters(eggPlan, eggFirstInputIdx, currentLabel);
+    filters.push(...eggs.filters);
+    eggInputArgs = eggs.inputArgs;
+    currentLabel = eggs.outLabel;
   }
   if (hasWatermark && wmPath && fs.existsSync(wmPath) && wmInputIdx >= 0) {
     const LOGO_SIZE = 80;
@@ -633,7 +658,7 @@ function buildCombinedFilter(cropOffsetX, srcW, srcH, hasSubtitles, subPath, has
   } else {
     filters.push(`[${currentLabel}]null[vout]`);
   }
-  return { filterComplex: filters.join(';'), videoOut: '[vout]' };
+  return { filterComplex: filters.join(';'), videoOut: '[vout]', eggInputArgs };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -717,7 +742,13 @@ async function runType1Pipeline(options = {}) {
   logger.header('Phase 3: Select Least-Covered Country');
 
   const countriesUsedThisWeek = options.countriesUsedThisWeek || [];
-  const winner = pickLeastCoveredCandidate(classifications, countriesUsedThisWeek);
+  const performanceInsights = loadInsights();
+  if (performanceInsights && performanceInsights.reliable) {
+    logger.info(`Learning from ${performanceInsights.sampleSize} past shorts (typical ${performanceInsights.typicalScore} views/day)`);
+  } else {
+    logger.info('Not enough channel performance data yet — using coverage-only selection');
+  }
+  const winner = pickLeastCoveredCandidate(classifications, countriesUsedThisWeek, performanceInsights);
 
   if (!winner) {
     logger.error('No winner selected — aborting');
@@ -867,95 +898,41 @@ async function runType1Pipeline(options = {}) {
     return { success: false, error: 'Redownload failed' };
   }
 
-  // ─── Flag ──────────────────────────────────────────────────────
-  const flagIsoMap = {
-    'Nigeria': 'NG', 'Japan': 'JP', 'Germany': 'DE', 'Australia': 'AU',
-    'France': 'FR', 'Brazil': 'BR', 'Thailand': 'TH', 'India': 'IN',
-    'Mexico': 'MX', 'UK': 'GB', 'United Kingdom': 'GB', 'South Korea': 'KR',
-    'Egypt': 'EG', 'Italy': 'IT', 'Spain': 'ES', 'China': 'CN',
-    'Global': 'UN', 'Indonesia': 'ID', 'Vietnam': 'VN', 'United States': 'US',
-    'USA': 'US', 'America': 'US', 'Canada': 'CA', 'Turkey': 'TR',
-    'Russia': 'RU', 'Argentina': 'AR', 'Colombia': 'CO', 'South Africa': 'ZA',
-    'Saudi Arabia': 'SA', 'UAE': 'AE', 'United Arab Emirates': 'AE',
-    'Singapore': 'SG', 'Malaysia': 'MY', 'Philippines': 'PH', 'Taiwan': 'TW',
-    'Hong Kong': 'HK', 'Portugal': 'PT', 'Netherlands': 'NL', 'Sweden': 'SE',
-    'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI', 'Poland': 'PL',
-    'Greece': 'GR', 'Switzerland': 'CH', 'Austria': 'AT', 'Belgium': 'BE',
-    'Ireland': 'IE', 'New Zealand': 'NZ', 'Peru': 'PE', 'Chile': 'CL',
-    'Africa': 'UN', 'Middle East': 'UN', 'World': 'UN',
-  };
-  let flagIso = flagIsoMap[country];
-  if (!flagIso) {
-    for (const [name, code] of Object.entries(flagIsoMap)) {
-      if (country.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(country.toLowerCase())) {
-        flagIso = code; break;
-      }
-    }
-  }
-  let flagPath = null;
-  if (flagIso) {
-    flagPath = path.join(tmpBaseDir, `flag_${Date.now()}.png`);
-    try {
-      const cp1 = 0x1f1e6 + (flagIso.charCodeAt(0) - 65); const cp2 = 0x1f1e6 + (flagIso.charCodeAt(1) - 65);
-      const flagFilename = `${cp1.toString(16)}-${cp2.toString(16)}.png`;
-      const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${flagFilename}`;
-      execSync(`curl -sL -o "${flagPath}" "${url}"`, { timeout: 10000 });
-      if (!(fs.existsSync(flagPath) && fs.statSync(flagPath).size > 100)) { flagPath = null; }
-    } catch { flagPath = null; }
-  }
-
   // ─── Watermark ─────────────────────────────────────────────────
   const wmImagePath = path.join(__dirname, '..', 'core', 'assets', 'mrw-logo.png');
   const hasWatermark = fs.existsSync(wmImagePath);
 
-  // ─── TTS Signature ─────────────────────────────────────────────
-  const ttsPath = path.join(tmpBaseDir, `signature_${Date.now()}.mp3`);
-  let hasSignature = false;
-  try {
-    execSync(`edge-tts --voice "en-US-AvaMultilingualNeural" --text "Enjoy this Asian edit from ${country}" --write-media "${ttsPath}"`, { timeout: 30000 });
-    if (fs.existsSync(ttsPath) && fs.statSync(ttsPath).size >= 1000) hasSignature = true;
-  } catch { logger.warn('TTS failed -- skipping signature'); }
-
-  const ttsDuration = hasSignature ? Math.min(5, (() => { try { return parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${ttsPath}"`, { timeout: 5000, encoding: 'utf8' }).trim()); } catch { return 3 } })()) : 0;
-  const startDelay = 1.0;
-  const endTime = Math.min(startDelay + ttsDuration, clipDuration - 0.5);
-  const delayMs = Math.round(startDelay * 1000);
-
+  // ─── Easter eggs (random tiny cartoon overlays) ────────────────
+  // Inputs: 0 = source clip, then the watermark image, then egg clips.
   let nextInputIdx = 1;
-  let flagInputIdx = -1;
   let wmInputIdx = -1;
-
-  if (hasSignature) nextInputIdx++;
-  if (flagPath && fs.existsSync(flagPath)) {
-    flagInputIdx = nextInputIdx;
-    nextInputIdx++;
-  }
   if (hasWatermark) {
     wmInputIdx = nextInputIdx;
     nextInputIdx++;
   }
 
-  const { filterComplex, videoOut } = buildCombinedFilter(cropOffsetX, analysisDims.width, analysisDims.height, !!subPath, subPath, !!flagPath && fs.existsSync(flagPath), flagPath, hasWatermark, wmImagePath, startDelay, endTime, delayMs, flagInputIdx, wmInputIdx, dynamicCropFilter);
+  let eggPlan = { eggs: [] };
+  try {
+    eggPlan = planEasterEggs({ clipDuration, ...config.easterEggs });
+  } catch (e) {
+    logger.warn(`Easter egg planning failed — rendering without: ${(e.message || '').substring(0, 80)}`);
+  }
+  const eggFirstInputIdx = eggPlan.eggs.length > 0 ? nextInputIdx : -1;
+  nextInputIdx += eggPlan.eggs.length;
+  logger.info(`Easter eggs: ${eggPlan.eggs.length > 0 ? eggPlan.eggs.map(e => `${e.id}@${e.startAt}s`).join(', ') : 'none'}`);
+
+  const { filterComplex, videoOut, eggInputArgs } = buildCombinedFilter(cropOffsetX, analysisDims.width, analysisDims.height, !!subPath, subPath, hasWatermark, wmImagePath, wmInputIdx, dynamicCropFilter, eggPlan, eggFirstInputIdx);
 
   const finalOutput = path.join(tmpBaseDir, `final_${Date.now()}.mkv`);
 
   let inputs = `-ss ${cut.start} -i "${freshPath}"`;
-  let audioFilter = '';
-  let audioMap = '-map "[aout]"';
-
-  if (hasSignature) {
-    inputs += ` -i "${ttsPath}"`;
-    if (flagPath && fs.existsSync(flagPath)) inputs += ` -i "${flagPath}"`;
-    if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
-    audioFilter = `; [0:a]volume=enable='between(t,${startDelay},${endTime})':volume=0.25[ad]; [1:a]adelay=${delayMs}|${delayMs}:all=1[av]; [ad][av]amix=inputs=2:duration=first:dropout_transition=0[aout]`;
-  } else {
-    audioFilter = '';
-    audioMap = '-map 0:a';
-  }
+  if (hasWatermark) inputs += ` -i "${wmImagePath}"`;
+  inputs += eggInputArgs || '';
+  // Original audio only — egg clips are silent and no voice line is mixed in.
+  const audioMap = '-map 0:a?';
 
   const filterScriptPath = path.join(tmpBaseDir, `filter_${Date.now()}.txt`);
-  const fullFilterGraph = `${filterComplex}${audioFilter}`;
-  fs.writeFileSync(filterScriptPath, fullFilterGraph, 'utf8');
+  fs.writeFileSync(filterScriptPath, filterComplex, 'utf8');
 
   const cmd = `ffmpeg -y ${inputs} -to ${clipDuration} -filter_complex_script "${filterScriptPath}" -map "${videoOut}" ${audioMap} -c:v ffv1 -level 3 -coder 1 -context 1 -g 1 -slices 16 -slicecrc 1 -pix_fmt yuv444p10le -c:a flac -ar 48000 -shortest -strict experimental "${finalOutput}"`;
 
@@ -1005,9 +982,29 @@ async function runType1Pipeline(options = {}) {
   };
   const metadata = await gemini.generateTitle(country, dialogue.transcript, bestVideo.title, metadataContext);
   const fallbackMetadata = buildFallbackMetadata(country, bestVideo, dialogue);
-  const title = metadata?.title || fallbackMetadata.title;
+  let title = metadata?.title || fallbackMetadata.title;
+  let titleSource = metadata?.title ? 'gemini' : 'fallback';
   let description = metadata?.description || fallbackMetadata.description;
   const tags = metadata?.tags || fallbackMetadata.tags;
+
+  // ─── Self-learning title pick ─────────────────────────────────
+  // Gemini returns a title + alternatives; rank them against what has
+  // performed on OUR channel (k-NN over past titles + learned patterns).
+  try {
+    const options = [metadata?.title, ...(Array.isArray(metadata?.titleOptions) ? metadata.titleOptions : [])]
+      .filter(t => typeof t === 'string' && t.trim().length > 5);
+    if (performanceInsights && performanceInsights.reliable && options.length > 1) {
+      const ranked = rankTitles(options, performanceInsights);
+      logger.info(`Title ranking: ${ranked.map(r => `"${r.title.substring(0, 40)}"=${r.score}`).join(' | ')}`);
+      if (ranked.length && ranked[0].title !== title) {
+        logger.success(`Learned pick: "${ranked[0].title}" over "${title}"`);
+        title = ranked[0].title;
+        titleSource = 'ranked';
+      }
+    }
+  } catch (e) {
+    logger.warn(`Title ranking skipped: ${(e.message || '').substring(0, 80)}`);
+  }
 
   // ─── Phase 8: Daily Roulette Intro ────────────────────────────
   logger.header('Phase 8: Building Daily Random Roulette intro...');
@@ -1041,7 +1038,14 @@ If you want daily Asian edits, make sure to subscribe to ${channelHandle}!`;
   logger.success(`Country: ${country}`);
   logger.success(`Source: @${bestVideo.channelHandle}`);
 
-  return { success: true, videoPath: durableFinalPath, title, description, tags, country, geminiScore: bestVideo.geminiScore || 5, editType: 'combined', hasCaptions: !!subPath, sourceUrl: bestVideo.url, sourceChannel: bestVideo.channelHandle, rouletteIntro: rouletteText };
+  return {
+    success: true, videoPath: durableFinalPath, title, description, tags, country,
+    geminiScore: bestVideo.geminiScore || 5, editType: 'combined', hasCaptions: !!subPath,
+    sourceUrl: bestVideo.url, sourceChannel: bestVideo.channelHandle, rouletteIntro: rouletteText,
+    // bookkeeping for the performance tracker
+    eggs: eggPlan.eggs.map(e => e.id),
+    titleSource,
+  };
 }
 
-module.exports = { runType1Pipeline };
+module.exports = { runType1Pipeline, buildCombinedFilter };

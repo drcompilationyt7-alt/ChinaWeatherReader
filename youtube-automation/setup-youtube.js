@@ -33,6 +33,9 @@ const SCOPES = [
   'https://www.googleapis.com/auth/youtube.upload',
   'https://www.googleapis.com/auth/youtube',
   'https://www.googleapis.com/auth/youtubepartner',
+  // watch-time / retention metrics for core/performance-tracker.js
+  // (optional: without it the tracker uses public view/like/comment counts)
+  'https://www.googleapis.com/auth/yt-analytics.readonly',
 ];
 
 // ─── Get Credentials ─────────────────────────────────────────────────────

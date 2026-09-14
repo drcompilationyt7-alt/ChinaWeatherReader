@@ -17,6 +17,7 @@ const config = require('./config');
 const { Logger } = require('./logger');
 const { getGeminiService } = require('./gemini-service');
 const { getGeminiCLI } = require('./gemini-cli-runner');
+const { syncPerformance, loadInsights } = require('./performance-tracker');
 
 const logger = new Logger('GHRunner');
 
@@ -128,12 +129,12 @@ class DailyRunner {
    * Track a newly uploaded video in the posted-videos pool
    * so daily-boost can pick it up later.
    */
-  _trackPostedVideo(url, title, country) {
+  _trackPostedVideo(url, title, country, extra = {}) {
     if (!url) return;
     try {
       const { BoostEngine } = require('../boost/boost-engine');
       const engine = new BoostEngine();
-      engine.addPostedVideo(url, title, country);
+      engine.addPostedVideo(url, title, country, extra);
       logger.success(`Tracked posted video: ${url.substring(0, 50)}`);
     } catch (e) {
       logger.warn(`Track posted video error: ${e.message}`);
@@ -161,6 +162,19 @@ class DailyRunner {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     }
 
+    // ─── Self-learning: refresh what works on our channel ────────
+    // Pulls our uploads' stats, scores them and saves insights that the
+    // pipeline uses for candidate selection and title picking.
+    let insights = null;
+    try {
+      insights = await syncPerformance(this.youtubeBridge);
+    } catch (e) {
+      logger.warn(`Performance sync failed: ${(e.message || '').substring(0, 80)}`);
+      insights = loadInsights();
+    }
+    if (insights) logger.info(`Learning: ${insights.summaryLine}`);
+    const learningLine = insights ? insights.summaryLine : undefined;
+
     const { runType1Pipeline } = require('../pipeline/type1-clip-pipeline');
     let result;
     try {
@@ -175,7 +189,7 @@ class DailyRunner {
 
     if (!result.success) {
       logger.error(`Pipeline: ${result.error}`);
-      await this._sendDiscord({ videos: [], countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [result.error] });
+      await this._sendDiscord({ videos: [], countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [result.error], learning: learningLine });
       return { uploadedVideos: [], errors: [result.error] };
     }
 
@@ -190,10 +204,16 @@ class DailyRunner {
       if (!this.memory.countriesUsedThisWeek.includes(result.country)) this.memory.countriesUsedThisWeek.push(result.country);
       if (this.memory.countriesUsedThisWeek.length > 7) this.memory.countriesUsedThisWeek = this.memory.countriesUsedThisWeek.slice(-7);
       this._saveMemory();
-      this._trackPostedVideo(uploadResult.url, result.title, result.country);
+      this._trackPostedVideo(uploadResult.url, result.title, result.country, {
+        videoId: uploadResult.videoId || null,
+        sourceChannel: result.sourceChannel || null,
+        sourceUrl: result.sourceUrl || null,
+        eggs: result.eggs || [],
+        titleSource: result.titleSource || null,
+      });
     }
 
-    await this._sendDiscord({ videos: uploaded, countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [] });
+    await this._sendDiscord({ videos: uploaded, countries: this.memory.countriesUsedThisWeek || [], totalVideos: this.memory.totalVideosPosted || 0, errors: [], learning: learningLine });
 
     logger.header('SUMMARY');
     if (uploaded.length > 0) {

@@ -103,7 +103,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install -U pip
-          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] transformers sentencepiece --break-system-packages
+          python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] transformers sentencepiece sentence-transformers --break-system-packages
 
       - name: Install Node.js dependencies
         run: |
@@ -117,7 +117,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface/hub
-          key: whisper-base-${{ runner.os }}
+          key: hf-models-v2-${{ runner.os }}
 
       - name: Pre-download whisper model (with retries for HF rate limit)
         run: |
@@ -134,6 +134,9 @@ jobs:
             sleep $WAIT
           done
 
+      - name: Pre-download title embedding model (self-learning)
+        run: |
+          python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu'); print('MiniLM ready')" || echo "MiniLM unavailable - title ranking falls back to char n-grams"
       - name: Write cookies file
         run: |
           if [ -n "$YOUTUBE_COOKIES" ]; then
@@ -163,7 +166,7 @@ jobs:
       - name: Save memory
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/channel-memory.json memory/type1-channel-memory.json memory/posted-videos.json config/channel-pool.json config/trend-banks/ 2>/dev/null || true
+          git add memory/channel-memory.json memory/type1-channel-memory.json memory/posted-videos.json memory/performance-stats.json memory/performance-insights.json config/channel-pool.json config/trend-banks/ 2>/dev/null || true
           git diff --staged --quiet || (git commit -m "Update $(date +%F)" && git push || true)
 
       - name: Daily Boost (2 random from posted pool)

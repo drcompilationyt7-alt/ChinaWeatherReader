@@ -133,7 +133,7 @@ class BoostEngine {
     }
   }
 
-  addPostedVideo(url, title, country) {
+  addPostedVideo(url, title, country, extra = {}) {
     const data = this.loadPostedVideos();
     // Dedup by URL
     if (!data.videos.some(v => v.url === url)) {
@@ -142,6 +142,9 @@ class BoostEngine {
         title: title || 'Unknown',
         country: country || 'Unknown',
         postedAt: new Date().toISOString(),
+        // extra bookkeeping used by core/performance-tracker.js
+        // (sourceChannel, sourceUrl, eggs, titleSource, ...)
+        ...(extra && typeof extra === 'object' ? extra : {}),
       });
       logger.info(`Added to posted pool: ${url.substring(0, 50)}`);
     } else {

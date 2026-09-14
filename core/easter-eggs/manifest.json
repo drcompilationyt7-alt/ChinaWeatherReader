@@ -1,0 +1,111 @@
+{
+  "version": 2,
+  "layout": "stacked-alpha",
+  "generatedAt": "2026-09-14T01:53:22.156722+00:00",
+  "eggs": [
+    {
+      "id": "gwen-popout",
+      "file": "gwen-popout.mp4",
+      "width": 720,
+      "height": 588,
+      "duration": 3.458,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.36,
+      "enter": "fade",
+      "exit": "fade",
+      "desc": "Gwen runs up from the distance and pops out at you"
+    },
+    {
+      "id": "spidey-popcorn",
+      "file": "spidey-popcorn.mp4",
+      "width": 720,
+      "height": 628,
+      "duration": 5.875,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.33,
+      "enter": "slide",
+      "exit": "slide",
+      "desc": "Chubby Spidey munches popcorn, then turns to look at you"
+    },
+    {
+      "id": "gwen-stick",
+      "file": "gwen-stick.mp4",
+      "width": 720,
+      "height": 666,
+      "duration": 4.792,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.36,
+      "enter": "none",
+      "exit": "fade",
+      "desc": "Gwen walks in and pokes at the video with a stick"
+    },
+    {
+      "id": "spidey-stick",
+      "file": "spidey-stick.mp4",
+      "width": 720,
+      "height": 666,
+      "duration": 5.542,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.36,
+      "enter": "none",
+      "exit": "fade",
+      "desc": "Mr Webster walks in, raises his stick, then jumps at you"
+    },
+    {
+      "id": "flash-chase",
+      "file": "flash-chase.mp4",
+      "width": 720,
+      "height": 866,
+      "duration": 8.042,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.32,
+      "enter": "fade",
+      "exit": "fade",
+      "desc": "Flash chases a robber, loses him, watches for a bit, then runs off"
+    },
+    {
+      "id": "spidey-chase",
+      "file": "spidey-chase.mp4",
+      "width": 720,
+      "height": 944,
+      "duration": 6.583,
+      "nativeSide": "left",
+      "mirror": true,
+      "widthFrac": 0.3,
+      "enter": "fade",
+      "exit": "slide",
+      "desc": "Spidey chases a robber, loses him, and stands there watching with you"
+    },
+    {
+      "id": "gwen-peek",
+      "file": "gwen-peek.mp4",
+      "width": 720,
+      "height": 1226,
+      "duration": 3.042,
+      "nativeSide": "right",
+      "mirror": true,
+      "widthFrac": 0.25,
+      "enter": "fade",
+      "exit": "fade",
+      "desc": "Gwen peeks in, waves, and ducks back out"
+    },
+    {
+      "id": "gwen-tap",
+      "file": "gwen-tap.mp4",
+      "width": 720,
+      "height": 1226,
+      "duration": 4.917,
+      "nativeSide": "right",
+      "mirror": true,
+      "widthFrac": 0.25,
+      "enter": "none",
+      "exit": "slide",
+      "desc": "Gwen leans in and taps the screen to check you are paying attention"
+    }
+  ]
+}

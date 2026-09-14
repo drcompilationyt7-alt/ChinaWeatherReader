@@ -70,6 +70,10 @@ class DiscordBridge {
       embed.addFields({ name: '🎬 Videos Created', value: 'No videos created today', inline: false });
     }
 
+    if (data.learning) {
+      embed.addFields({ name: '📈 Learning (from our channel stats)', value: String(data.learning).substring(0, 1024), inline: false });
+    }
+
     if (totalViews > 0) {
       embed.addFields({ name: '👁️ Total Views Today', value: `${totalViews.toLocaleString()}`, inline: true });
     }
