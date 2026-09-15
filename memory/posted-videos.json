@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=BKBnS1ZOquo",
-      "title": "Jude Bellingham || Bye (Altare Remix) edit",
-      "country": "Spain",
-      "postedAt": "2026-08-16T10:01:51.813Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=1Chu7RLab1o",
       "title": "Geto's Loyalty to Gojo 💔 #jujutsukaisen",
       "country": "Japan",
@@ -351,6 +345,24 @@
         "spidey-popcorn"
       ],
       "titleSource": "gemini",
+      "watermark": "cover"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=fe0RiOcwuE0",
+      "title": "Top 5 Chibi Naruto Funniest Moments",
+      "country": "Japan",
+      "postedAt": "2026-09-15T11:16:53.612Z",
+      "videoId": "fe0RiOcwuE0",
+      "sourceChannel": "kazuya_wat",
+      "sourceUrl": "https://www.youtube.com/watch?v=U_JWPh_UBgE",
+      "sourceTitle": "Top 5 Chibi Naruto Funniest Moments",
+      "summary": "This video showcases a countdown of funny moments featuring chibi characters from the popular Japanese anime series, Naruto.",
+      "category": "anime",
+      "eggs": [
+        "spidey-chase",
+        "gwen-tap"
+      ],
+      "titleSource": "fallback",
       "watermark": "cover"
     }
   ]
