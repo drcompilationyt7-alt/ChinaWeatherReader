@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=fQrLk8y8Us0",
-      "title": "Kpop Songs: Shortest vs Longest! 🎶✨",
-      "country": "South Korea",
-      "postedAt": "2026-08-15T10:07:25.377Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=gvcXyR80Ofg",
-      "title": "Betrayed by her best friend 💔😭",
-      "country": "China",
-      "postedAt": "2026-08-16T06:48:25.453Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=BKBnS1ZOquo",
       "title": "Jude Bellingham || Bye (Altare Remix) edit",
       "country": "Spain",
@@ -347,6 +335,23 @@
       "title": "Bubble Tea Shop Dance Vibes! 🧋✨",
       "country": "China",
       "postedAt": "2026-09-14T09:53:55.995Z"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=4PHljPZE59U",
+      "title": "Bought a Mountain of Glue When Bored! 😱🖌️",
+      "country": "China",
+      "postedAt": "2026-09-15T07:39:36.169Z",
+      "videoId": "4PHljPZE59U",
+      "sourceChannel": "BB_BrainBoost",
+      "sourceUrl": "https://www.youtube.com/watch?v=ACq6Vp-cbQ0",
+      "sourceTitle": "I Bought a Ton of Glue Because I Was Bored",
+      "summary": "A Chinese creator pours glue on the floor, causing friends to get hilariously stuck in a pile.",
+      "category": "comedy",
+      "eggs": [
+        "spidey-popcorn"
+      ],
+      "titleSource": "gemini",
+      "watermark": "cover"
     }
   ]
 }
