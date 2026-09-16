@@ -364,6 +364,23 @@
       ],
       "titleSource": "fallback",
       "watermark": "cover"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=hzmtUuvSoMc",
+      "title": "#trending #dance",
+      "country": "China",
+      "postedAt": "2026-09-16T06:57:42.874Z",
+      "videoId": "hzmtUuvSoMc",
+      "sourceChannel": "Dance-p2d",
+      "sourceUrl": "https://www.youtube.com/watch?v=L-Wwu6j4kos",
+      "sourceTitle": "#trending #dance",
+      "summary": "A young woman performs a dance routine in front of a decorative gold screen.",
+      "category": "dance",
+      "eggs": [
+        "gwen-stick"
+      ],
+      "titleSource": "fallback",
+      "watermark": "default"
     }
   ]
 }
