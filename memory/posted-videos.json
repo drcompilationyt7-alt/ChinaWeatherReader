@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=1Chu7RLab1o",
-      "title": "Geto's Loyalty to Gojo 💔 #jujutsukaisen",
-      "country": "Japan",
-      "postedAt": "2026-08-17T06:58:26.584Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=8mt01QVo8yI",
-      "title": "Why Japanese People Hide Their Anime Love 🤫🇯🇵",
-      "country": "Japan",
-      "postedAt": "2026-08-17T10:08:12.381Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=6gPAuTr8Tis",
       "title": "Taylor Swift is a BLINK?! 😱💖",
       "country": "United States",
@@ -381,6 +369,23 @@
       ],
       "titleSource": "fallback",
       "watermark": "default"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=7YLLlQ6sWy0",
+      "title": "Insane Sketch Transformation! 🎨✨",
+      "country": "China",
+      "postedAt": "2026-09-16T10:12:09.622Z",
+      "videoId": "7YLLlQ6sWy0",
+      "sourceChannel": "艺术绘画l",
+      "sourceUrl": "https://www.youtube.com/watch?v=PTSW_xyCSfM",
+      "sourceTitle": "The power of sketch 🎨🖌️ #shorts #usa #tiktok #trollface #edit #viral #trend",
+      "summary": "Artists demonstrate their skills by creating highly realistic 3D drawings of candies, birds, and paint.",
+      "category": "other",
+      "eggs": [
+        "gwen-stick"
+      ],
+      "titleSource": "gemini",
+      "watermark": "cover"
     }
   ]
 }
