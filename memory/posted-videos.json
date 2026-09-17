@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=6gPAuTr8Tis",
-      "title": "Taylor Swift is a BLINK?! 😱💖",
-      "country": "United States",
-      "postedAt": "2026-08-18T06:45:12.040Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=gqIFkvp6K98",
       "title": "She was so confused! 😭🤣 #kdrama",
       "country": "South Korea",
@@ -386,6 +380,23 @@
       ],
       "titleSource": "gemini",
       "watermark": "cover"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=fikwfU11qgU",
+      "title": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap",
+      "country": "Japan",
+      "postedAt": "2026-09-17T07:19:38.854Z",
+      "videoId": "fikwfU11qgU",
+      "sourceChannel": "tokyotrending",
+      "sourceUrl": "https://www.youtube.com/watch?v=-jfj09ETtF0",
+      "sourceTitle": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #japan #shorts",
+      "summary": "A commentary video exploring why Japan might reduce welfare benefits for foreign residents.",
+      "category": "other",
+      "eggs": [
+        "gwen-popout"
+      ],
+      "titleSource": "fallback",
+      "watermark": "default"
     }
   ]
 }
