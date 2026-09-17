@@ -397,6 +397,23 @@
       ],
       "titleSource": "fallback",
       "watermark": "default"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Zv127E4-uUo",
+      "title": "some loves like this 🫣@Jasmine-like-nature #viral",
+      "country": "China",
+      "postedAt": "2026-09-17T10:06:58.542Z",
+      "videoId": "Zv127E4-uUo",
+      "sourceChannel": "Jasmine-like-nature",
+      "sourceUrl": "https://www.youtube.com/watch?v=KeffVOWQFgQ",
+      "sourceTitle": "some loves like this 🫣@Jasmine-like-nature #viral #trending #chinese #foryou #shorts #ytshorts",
+      "summary": "Two people walk under an umbrella, revealing a backpack with a keychain featuring an East Asian idol's picture.",
+      "category": "cute",
+      "eggs": [
+        "spidey-chase"
+      ],
+      "titleSource": "fallback",
+      "watermark": "default"
     }
   ]
 }
