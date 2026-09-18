@@ -16,7 +16,7 @@ on:
         required: false
         default: ''
       format:
-        description: 'Force a format (optional: emoji, trivia, wyr, city, flag, shape)'
+        description: 'Force a format (optional: character, idol, opening, emoji, trivia, wyr, city, flag, shape)'
         required: false
         default: ''
       dry_run:
@@ -43,9 +43,13 @@ env:
   YOUTUBE_CLIENT_ID: ${{ secrets.QUIZ_YOUTUBE_CLIENT_ID }}
   YOUTUBE_CLIENT_SECRET: ${{ secrets.QUIZ_YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.QUIZ_YOUTUBE_REFRESH_TOKEN }}
+  # cookies for yt-dlp (anime opening clips); same secret the main channel uses
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  YT_COOKIES: /tmp/yt_cookies.txt
+  QUIZ_MEDIA_CACHE: /home/runner/.cache/quiz-media
   MEMORY_DIR: memory/quiz-channel
   # Asian pop culture formats + Asia editions of the geography quizzes
-  QUIZ_FORMATS: emoji,trivia,wyr,city,flag,shape
+  QUIZ_FORMATS: character,idol,opening,emoji,trivia,wyr,city,flag,shape
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
@@ -86,9 +90,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          python3 -m pip install pillow numpy edge-tts --break-system-packages
+          python3 -m pip install pillow numpy edge-tts yt-dlp yt-dlp-ejs --break-system-packages
+          curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
           npm ci || npm install
-          mkdir -p output/quiz "$MEMORY_DIR"
+          mkdir -p output/quiz "$MEMORY_DIR" "$QUIZ_MEDIA_CACHE"
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > "$YT_COOKIES"; fi
+
+      - name: Cache quiz media (images, opening clips)
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/quiz-media
+          key: quiz-media-${{ github.run_id }}
+          restore-keys: quiz-media-
 
       - name: Make and upload quiz shorts
         if: steps.gate.outputs.ready == 'true'
@@ -107,6 +122,10 @@ jobs:
           name: quiz-channel-dry-run
           path: output/quiz/*.mp4
           retention-days: 7
+
+      - name: Remove cookies
+        if: always()
+        run: rm -f /tmp/yt_cookies.txt
 
       - name: Save memory
         if: always() && steps.gate.outputs.ready == 'true'

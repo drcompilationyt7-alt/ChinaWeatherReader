@@ -1,0 +1,563 @@
+{
+ "source": "Wikidata / Wikimedia Commons (see credit per photo)",
+ "idols": [
+  {
+   "name": "RM",
+   "group": "BTS",
+   "wikidata": "Q20514446",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/RM_at_W_Korea_Love_Your_W%2C_November_2023.jpg/960px-RM_at_W_Korea_Love_Your_W%2C_November_2023.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:RM_at_W_Korea_Love_Your_W,_November_2023.jpg",
+   "difficulty": 1
+  },
+  {
+   "name": "Suga",
+   "group": "BTS",
+   "wikidata": "Q21075020",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Min_Yoon-gi_May_2018.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Dispatch, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Min_Yoon-gi_May_2018.jpg",
+   "difficulty": 1
+  },
+  {
+   "name": "J-Hope",
+   "group": "BTS",
+   "wikidata": "Q16236223",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/J-Hope_at_W_Korea_Breast_Cancer_Campaign%2C_15_October_2025.png/960px-J-Hope_at_W_Korea_Breast_Cancer_Campaign%2C_15_October_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "TV10, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:J-Hope_at_W_Korea_Breast_Cancer_Campaign,_15_October_2025.png",
+   "difficulty": 1
+  },
+  {
+   "name": "Jimin",
+   "group": "BTS",
+   "wikidata": "Q20947093",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/3/33/Jimin_on_the_way_to_SBS_Radio%2C_31_March_2023_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇 TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jimin_on_the_way_to_SBS_Radio,_31_March_2023_(2).jpg",
+   "difficulty": 1
+  },
+  {
+   "name": "Jungkook",
+   "group": "BTS",
+   "wikidata": "Q22338877",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Jung_Kook_of_BTS%2C_February_12%2C_2026_%281%29.png/960px-Jung_Kook_of_BTS%2C_February_12%2C_2026_%281%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jung_Kook_of_BTS,_February_12,_2026_(1).png",
+   "difficulty": 1
+  },
+  {
+   "name": "Jisoo",
+   "group": "BLACKPINK",
+   "wikidata": "Q27655361",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Jisoo_at_Boyfriend_on_Demand_press_conference_on_26022026_%2812%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐 TV10, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jisoo_at_Boyfriend_on_Demand_press_conference_on_26022026_(12).png",
+   "difficulty": 1
+  },
+  {
+   "name": "Jennie",
+   "group": "BLACKPINK",
+   "wikidata": "Q26262599",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/7/78/Jennie_2026_GDA_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐 TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jennie_2026_GDA_1.jpg",
+   "difficulty": 1
+  },
+  {
+   "name": "Rosé",
+   "group": "BLACKPINK",
+   "wikidata": "Q27655344",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Blackpink_Ros%C3%A9_Rimowa_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Blackpink_Ros%C3%A9_Rimowa_1.jpg",
+   "difficulty": 1
+  },
+  {
+   "name": "Nayeon",
+   "group": "TWICE",
+   "wikidata": "Q22804243",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Nayeon_in_November_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Nayeon_in_November_2025.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Jihyo",
+   "group": "TWICE",
+   "wikidata": "Q22774055",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Jihyo_at_Gucci_Ancora_on_05032024_%28cropped%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "https://www.youtube.com/@_TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jihyo_at_Gucci_Ancora_on_05032024_(cropped).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Tzuyu",
+   "group": "TWICE",
+   "wikidata": "Q20688219",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/5/58/20240305_Chou_Tzuyu_%E5%91%A8%E5%AD%90%E7%91%9C_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:20240305_Chou_Tzuyu_%E5%91%A8%E5%AD%90%E7%91%9C_02.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Momo",
+   "group": "TWICE",
+   "wikidata": "Q23779926",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/TWICE_MOMO_April_2024.jpg/960px-TWICE_MOMO_April_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:TWICE_MOMO_April_2024.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Dahyun",
+   "group": "TWICE",
+   "wikidata": "Q22773838",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/8/85/Dahyun_at_press_conference_for_You_Are_the_Apple_of_My_Eye_02_%28cropped%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "https://www.youtube.com/@_TV10/videos, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Dahyun_at_press_conference_for_You_Are_the_Apple_of_My_Eye_02_(cropped).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Chaeyoung",
+   "group": "TWICE",
+   "wikidata": "Q24043625",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/5/52/Chaeyoung_at_Gaon_Awards_red_carpet_on_January_23%2C_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "시간은금!, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Chaeyoung_at_Gaon_Awards_red_carpet_on_January_23,_2019.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Jeongyeon",
+   "group": "TWICE",
+   "wikidata": "Q25374501",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/4/41/TWICE_Jeongyeon_VETERAN_2_September_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:TWICE_Jeongyeon_VETERAN_2_September_2024.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Danielle",
+   "group": "NewJeans",
+   "wikidata": "Q113455624",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/d/de/Danielle_Marsh_for_Marie_Claire_Korea_April_2024_F.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Marie Claire Korea, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Danielle_Marsh_for_Marie_Claire_Korea_April_2024_F.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Haerin",
+   "group": "NewJeans",
+   "wikidata": "Q113508917",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/20230905_Haerin_%28NewJeans%29.jpg/960px-20230905_Haerin_%28NewJeans%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:20230905_Haerin_(NewJeans).jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Hyein",
+   "group": "NewJeans",
+   "wikidata": "Q113561413",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/Hyein_%28NewJeans%29_220819.jpg/960px-Hyein_%28NewJeans%29_220819.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Hyein_(NewJeans)_220819.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Jang Won-young",
+   "group": "IVE",
+   "wikidata": "Q56476186",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/051226_Jang_Won-young_airport_departure_%282%29.jpg/960px-051226_Jang_Won-young_airport_departure_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Ten Asia, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:051226_Jang_Won-young_airport_departure_(2).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "An Yu-jin",
+   "group": "IVE",
+   "wikidata": "Q55694622",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/%EC%95%84%EC%9D%B4%EB%B8%8C%28IVE%29_Yujin_at_the_40th_Golden_Disc_Awards.png/960px-%EC%95%84%EC%9D%B4%EB%B8%8C%28IVE%29_Yujin_at_the_40th_Golden_Disc_Awards.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "티비텐 TV10, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:%EC%95%84%EC%9D%B4%EB%B8%8C(IVE)_Yujin_at_the_40th_Golden_Disc_Awards.png",
+   "difficulty": 3
+  },
+  {
+   "name": "Leeseo",
+   "group": "IVE",
+   "wikidata": "Q109572155",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Leeseo_of_Ive%2C_March_19%2C_2026_%283%29.png/960px-Leeseo_of_Ive%2C_March_19%2C_2026_%283%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Leeseo_of_Ive,_March_19,_2026_(3).png",
+   "difficulty": 3
+  },
+  {
+   "name": "Kim Chae-won",
+   "group": "LE SSERAFIM",
+   "wikidata": "Q56660174",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_%2854797154470%29.jpg/960px-Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_%2854797154470%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "David Lee from Redmond, WA, USA, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_(54797154470).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Sakura",
+   "group": "LE SSERAFIM",
+   "wikidata": "Q869966",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/20241018_Le_Sserafim%27s_Sakura_Miyawaki_03.jpg/960px-20241018_Le_Sserafim%27s_Sakura_Miyawaki_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:20241018_Le_Sserafim%27s_Sakura_Miyawaki_03.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Huh Yun-jin",
+   "group": "LE SSERAFIM",
+   "wikidata": "Q111537648",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_%2854849516999%29.jpg/960px-Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_%2854849516999%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "David Lee from Redmond, WA, USA, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Easy_Crazy_Hot_Tour_in_Seattle_-_le_sserafim_(54849516999).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Hong Eun-chae",
+   "group": "LE SSERAFIM",
+   "wikidata": "Q111544444",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/221013_Hong_Eun_Chae_%28LE_SSERAFIM%29_Airport_Departure.jpg/960px-221013_Hong_Eun_Chae_%28LE_SSERAFIM%29_Airport_Departure.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:221013_Hong_Eun_Chae_(LE_SSERAFIM)_Airport_Departure.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Bang Chan",
+   "group": "Stray Kids",
+   "wikidata": "Q59670293",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/Bang_Chan_of_Stray_Kids%2C_February_23%2C_2026_%281%29.png/960px-Bang_Chan_of_Stray_Kids%2C_February_23%2C_2026_%281%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Bang_Chan_of_Stray_Kids,_February_23,_2026_(1).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Hyunjin",
+   "group": "Stray Kids",
+   "wikidata": "Q48893612",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Hyunjin_Loossemble_Airport_Departure_20230913.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "https://www.youtube.com/@_TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Hyunjin_Loossemble_Airport_Departure_20230913.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Lee Know",
+   "group": "Stray Kids",
+   "wikidata": "Q59260597",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Lee_Know_at_the_Incheon_Airport%2C_February_25%2C_2026_%284%29.png/960px-Lee_Know_at_the_Incheon_Airport%2C_February_25%2C_2026_%284%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Lee_Know_at_the_Incheon_Airport,_February_25,_2026_(4).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Changbin",
+   "group": "Stray Kids",
+   "wikidata": "Q61100669",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Changbin_of_Stray_Kids%2C_December_4%2C_2024.png/960px-Changbin_of_Stray_Kids%2C_December_4%2C_2024.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Changbin_of_Stray_Kids,_December_4,_2024.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Seungmin",
+   "group": "Stray Kids",
+   "wikidata": "Q60467634",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Seungmin_of_Stray_Kids%2C_October_15%2C_2025.png/960px-Seungmin_of_Stray_Kids%2C_October_15%2C_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Seungmin_of_Stray_Kids,_October_15,_2025.png",
+   "difficulty": 2
+  },
+  {
+   "name": "I.N",
+   "group": "Stray Kids",
+   "wikidata": "Q59831589",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/I.N_of_Stray_Kids_at_the_Incheon_Airport%2C_February_25%2C_2026_%281%29.png/960px-I.N_of_Stray_Kids_at_the_Incheon_Airport%2C_February_25%2C_2026_%281%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "K-POPIT 케이팝잇, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:I.N_of_Stray_Kids_at_the_Incheon_Airport,_February_25,_2026_(1).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Baekhyun",
+   "group": "EXO",
+   "wikidata": "Q4688701",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/0/02/%ED%95%98%EC%96%80%EB%A8%B8%EB%A6%AC_%EB%B0%B1%ED%98%84_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "DonutB_56, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:%ED%95%98%EC%96%80%EB%A8%B8%EB%A6%AC_%EB%B0%B1%ED%98%84_3.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "D.O.",
+   "group": "EXO",
+   "wikidata": "Q15111667",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/D.O._modeling_for_Marie_Claire_Korea%2C_August_issue%2C_2023_%283%29.jpg/960px-D.O._modeling_for_Marie_Claire_Korea%2C_August_issue%2C_2023_%283%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Marie Claire Korea, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:D.O._modeling_for_Marie_Claire_Korea,_August_issue,_2023_(3).jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Chanyeol",
+   "group": "EXO",
+   "wikidata": "Q7137681",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Chanyeol_at_a_Dynamic_Duo_concert_on_December_8%2C_2019.jpg/960px-Chanyeol_at_a_Dynamic_Duo_concert_on_December_8%2C_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "ggbye1127, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Chanyeol_at_a_Dynamic_Duo_concert_on_December_8,_2019.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Sehun",
+   "group": "EXO",
+   "wikidata": "Q10802388",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Sehun_for_L%27Officiel_Korea_2020_02.png/960px-Sehun_for_L%27Officiel_Korea_2020_02.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "L'OFFICIEL KOREA, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Sehun_for_L%27Officiel_Korea_2020_02.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Suho",
+   "group": "EXO",
+   "wikidata": "Q10822003",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Suho_at_24th_Busan_Internation_Film_Festival_red_carpet_on_October_3%2C_2019.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Dispatch, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Suho_at_24th_Busan_Internation_Film_Festival_red_carpet_on_October_3,_2019.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Xiumin",
+   "group": "EXO",
+   "wikidata": "Q10834841",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/0/05/Xiumin_at_Billboard_K_POWER_100_on_August_27%2C_2024.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Xiumin_at_Billboard_K_POWER_100_on_August_27,_2024.png",
+   "difficulty": 2
+  },
+  {
+   "name": "G-Dragon",
+   "group": "BIGBANG",
+   "wikidata": "Q495577",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/d/d1/G-Dragon_in_February_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:G-Dragon_in_February_2025.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Taeyang",
+   "group": "BIGBANG",
+   "wikidata": "Q482991",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Taeyang_-_MADE_THE_MOVIE_Premiere_%28Chopped%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "GOM, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Taeyang_-_MADE_THE_MOVIE_Premiere_(Chopped).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Daesung",
+   "group": "BIGBANG",
+   "wikidata": "Q194798",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Daesung_-_MADE_THE_MOVIE_Premiere.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "GOM, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Daesung_-_MADE_THE_MOVIE_Premiere.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "T.O.P",
+   "group": "BIGBANG",
+   "wikidata": "Q495571",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/c/cd/T.O.P_-_MADE_THE_MOVIE_Premiere_-_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "GOM, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:T.O.P_-_MADE_THE_MOVIE_Premiere_-_2.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Irene",
+   "group": "Red Velvet",
+   "wikidata": "Q12605358",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/Irene_Bae_at_GMP-KIX_Airport_on_January_22%2C_2020.png/960px-Irene_Bae_at_GMP-KIX_Airport_on_January_22%2C_2020.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "SeulRene 'IS' LOVE❤️, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Irene_Bae_at_GMP-KIX_Airport_on_January_22,_2020.png",
+   "difficulty": 3
+  },
+  {
+   "name": "Seulgi",
+   "group": "Red Velvet",
+   "wikidata": "Q15934116",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Kang_Seul-gi_at_Coca-Cola_Event_on_January_18%2C_2020_03.jpg/960px-Kang_Seul-gi_at_Coca-Cola_Event_on_January_18%2C_2020_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "SeulRene 'IS' LOVE❤️, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Kang_Seul-gi_at_Coca-Cola_Event_on_January_18,_2020_03.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Wendy",
+   "group": "Red Velvet",
+   "wikidata": "Q17478642",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Wendy_Son_at_Dream_Concert_on_May_12%2C_2018.jpg/960px-Wendy_Son_at_Dream_Concert_on_May_12%2C_2018.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "오늘의 소녀, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Wendy_Son_at_Dream_Concert_on_May_12,_2018.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Joy",
+   "group": "Red Velvet",
+   "wikidata": "Q17484113",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Joy_Park_at_INK_Concert_in_September_01%2C_2018_%288%29.jpg/960px-Joy_Park_at_INK_Concert_in_September_01%2C_2018_%288%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Hey Day, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Joy_Park_at_INK_Concert_in_September_01,_2018_(8).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Yeri",
+   "group": "Red Velvet",
+   "wikidata": "Q19940498",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/8/80/240511_Red_Velvet_Yeri.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:240511_Red_Velvet_Yeri.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Yeji",
+   "group": "ITZY",
+   "wikidata": "Q60870268",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Yeji_at_Tommy_Hilfiger_PhotoCall_on_October_28%2C_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐 TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Yeji_at_Tommy_Hilfiger_PhotoCall_on_October_28,_2025.png",
+   "difficulty": 3
+  },
+  {
+   "name": "Ryujin",
+   "group": "ITZY",
+   "wikidata": "Q60870265",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/ITZY%27s_Shin_Ryujin_in_August_2023_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:ITZY%27s_Shin_Ryujin_in_August_2023_01.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Chaeryeong",
+   "group": "ITZY",
+   "wikidata": "Q60829936",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/2/2c/241023_ITZY_Chaeryeong.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:241023_ITZY_Chaeryeong.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "S.Coups",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21824968",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Glasto24_28_300624_%2872_of_545%29_%2853838093145%29_%28cropped%29.jpg/960px-Glasto24_28_300624_%2872_of_545%29_%2853838093145%29_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Raph_PH, CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Glasto24_28_300624_(72_of_545)_(53838093145)_(cropped).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Jeonghan",
+   "group": "SEVENTEEN",
+   "wikidata": "Q24566664",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/f/fd/Jeonghan_Follow_240330.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Seventeen, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Jeonghan_Follow_240330.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Mingyu",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21824887",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Mingyu_Bvlgari_240314.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "TV Ten, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Mingyu_Bvlgari_240314.png",
+   "difficulty": 3
+  },
+  {
+   "name": "Wonwoo",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21623339",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Wonwoo_Follow_240330.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Seventeen, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Wonwoo_Follow_240330.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Hoshi",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21825470",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/2/23/240415_Hoshi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "K-POPIT 케이팝잇, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:240415_Hoshi.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Woozi",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21824990",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Glasto24_28_300624_%2841_of_545%29_%2853837907513%29_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Raph_PH, CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Glasto24_28_300624_(41_of_545)_(53837907513)_(cropped).jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "Seungkwan",
+   "group": "SEVENTEEN",
+   "wikidata": "Q21824947",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Seungkwan_Caratland_2025.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Seventeen, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Seungkwan_Caratland_2025.jpg",
+   "difficulty": 3
+  },
+  {
+   "name": "IU",
+   "group": null,
+   "wikidata": "Q20145",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/250718_Lee_Ji-eun_%28%EC%9D%B4%EC%A7%80%EC%9D%80%29.png/960px-250718_Lee_Ji-eun_%28%EC%9D%B4%EC%A7%80%EC%9D%80%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "티비텐 TV10, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:250718_Lee_Ji-eun_(%EC%9D%B4%EC%A7%80%EC%9D%80).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Taeyeon",
+   "group": null,
+   "wikidata": "Q233371",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ad/250807_%ED%83%9C%EC%97%B0_%27%EC%95%85%EB%A7%88%EA%B0%80_%EC%9D%B4%EC%82%AC%EC%99%94%EB%8B%A4%27_VIP_Premiere_04_%28cropped%29.jpg/960px-250807_%ED%83%9C%EC%97%B0_%27%EC%95%85%EB%A7%88%EA%B0%80_%EC%9D%B4%EC%82%AC%EC%99%94%EB%8B%A4%27_VIP_Premiere_04_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "sublimitas_spes, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:250807_%ED%83%9C%EC%97%B0_%27%EC%95%85%EB%A7%88%EA%B0%80_%EC%9D%B4%EC%82%AC%EC%99%94%EB%8B%A4%27_VIP_Premiere_04_(cropped).jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "Chungha",
+   "group": null,
+   "wikidata": "Q26214034",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/5/51/Chung_Ha_in_March_2025.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Marie Claire Korea, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Chung_Ha_in_March_2025.png",
+   "difficulty": 2
+  },
+  {
+   "name": "Sunmi",
+   "group": null,
+   "wikidata": "Q624995",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/6/64/Lee_Sunmi_%EC%9D%B4%EC%84%A0%EB%AF%B8_2024_06.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "티비텐, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Lee_Sunmi_%EC%9D%B4%EC%84%A0%EB%AF%B8_2024_06.jpg",
+   "difficulty": 2
+  },
+  {
+   "name": "BoA",
+   "group": null,
+   "wikidata": "Q232449",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/0/0e/BoA_at_Incheon_Airport_on_May_15%2C_2019_%282%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Dispatch, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:BoA_at_Incheon_Airport_on_May_15,_2019_(2).png",
+   "difficulty": 2
+  },
+  {
+   "name": "Hwasa",
+   "group": null,
+   "wikidata": "Q19603912",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/4/42/Hwasa_in_January_2026.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "TV10, CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Hwasa_in_January_2026.png",
+   "difficulty": 2
+  }
+ ]
+}

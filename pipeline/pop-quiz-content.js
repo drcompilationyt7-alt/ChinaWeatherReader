@@ -18,14 +18,22 @@ const ROOT = path.join(__dirname, '..');
 const SEED_FILE = path.join(ROOT, 'core', 'quiz', 'assets', 'pop-bank.json');
 const BANK_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'pop-bank.json');
 const REUSE_AFTER_DAYS = 60;
+// snapshots from scripts/build-pop-media.py (AniList, Wikidata/Commons)
+const MEDIA = {
+  character: ['anime-characters.json', 'characters'],
+  idol: ['kpop-idols.json', 'idols'],
+  opening: ['anime-list.json', 'anime'],
+};
 
 const TOPICS = {
   emoji: ['anime', 'kpop song'],
   trivia: ['kpop', 'anime', 'vtubers', 'cdrama', 'cities'],
   wyr: ['anime', 'kpop', 'food', 'cities'],
   city: ['CN', 'JP', 'KR'],
+  character: ['anime'], idol: ['kpop'], opening: ['anime'],
 };
 const TOPIC_WEIGHTS = {
+  character: { anime: 1 }, idol: { kpop: 1 }, opening: { anime: 1 },
   emoji: { anime: 0.6, 'kpop song': 0.4 },
   trivia: { kpop: 0.3, anime: 0.3, vtubers: 0.15, cdrama: 0.1, cities: 0.15 },
   wyr: { anime: 0.4, kpop: 0.25, food: 0.2, cities: 0.15 },
@@ -45,6 +53,8 @@ function key(fmt, it) {
   if (fmt === 'emoji') return `emoji:${String(it.answer).toLowerCase()}`;
   if (fmt === 'trivia') return `trivia:${String(it.question).toLowerCase()}`;
   if (fmt === 'wyr') return `wyr:${String(it.a).toLowerCase()}|${String(it.b).toLowerCase()}`;
+  if (fmt === 'character' || fmt === 'idol') return `${fmt}:${String(it.name).toLowerCase()}`;
+  if (fmt === 'opening') return `opening:${it.id}`;
   return `city:${it.iso2}:${String(it.name).toLowerCase()}`;
 }
 
@@ -62,6 +72,12 @@ function loadBank() {
     }
   }
   bank.city = (seed.cities || []).map(c => ({ ...c, topic: c.iso2 }));
+  for (const [fmt, [file, field]] of Object.entries(MEDIA)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'core', 'quiz', 'assets', file), 'utf8'))[field] || [];
+      bank[fmt] = data.map(x => ({ ...x, topic: TOPICS[fmt][0] }));
+    } catch { bank[fmt] = []; }
+  }
   bank.generated = (mem.items) || { emoji: [], trivia: [], wyr: [] };
   return bank;
 }
@@ -193,7 +209,7 @@ async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
   topic = topic || pickWeighted(TOPIC_WEIGHTS[fmt]);
   const n = rounds || (fmt === 'wyr' ? 4 : 5);
   const fresh = () => bank[fmt].filter(i => i.topic === topic && isFresh(bank, fmt, i));
-  if (fmt !== 'city' && fresh().length < n + 4) {
+  if (!['city', ...Object.keys(MEDIA)].includes(fmt) && fresh().length < n + 4) {
     try { await generate(bank, fmt, topic); } catch (e) { logger.warn(`Generation failed: ${(e.message || '').slice(0, 100)}`); }
   }
   let pool = fresh();
@@ -202,11 +218,13 @@ async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
       .sort((a, b) => String(bank.used[key(fmt, a)] || '').localeCompare(String(bank.used[key(fmt, b)] || '')));
   }
   const chosen = [];
+  // openings can fail to download: plan spare candidates, the renderer keeps the first n that work
+  const target = fmt === 'opening' ? n + 3 : n;
   if (fmt === 'wyr') {
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     chosen.push(...shuffled.slice(0, n));
   } else {
-    const ramp = { 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] }[n] || [1, 1, 2, 2, 3];
+    const ramp = [...({ 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] }[n] || [1, 1, 2, 2, 3]), ...Array(target - n).fill(1)];
     for (const d of ramp) {
       const c = pool.filter(i => !chosen.includes(i) && (i.difficulty || 2) === d);
       const any = pool.filter(i => !chosen.includes(i));
@@ -216,8 +234,9 @@ async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
     }
   }
   const plan = {
-    format: fmt, topic,
-    rounds: chosen.map(i => (fmt === 'city' ? { ...i, answer: i.name } : fmt === 'trivia' ? { ...i, answerText: i.options[i.answer] } : i)),
+    format: fmt, topic, want: fmt === 'opening' ? n : undefined,
+    rounds: chosen.map(i => (fmt === 'city' || fmt === 'character' || fmt === 'idol' ? { ...i, answer: i.name }
+      : fmt === 'opening' ? { ...i, answer: i.title } : fmt === 'trivia' ? { ...i, answerText: i.options[i.answer] } : i)),
   };
   return { plan, keys: chosen.map(i => key(fmt, i)) };
 }

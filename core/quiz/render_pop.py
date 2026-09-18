@@ -6,6 +6,9 @@ engine as render_quiz.py:
   trivia  multiple choice, question read out loud            (5 rounds)
   wyr     would you rather, split screen, "but..." twists    (4 rounds)
   city    guess the city from a dot on the country map       (5 rounds)
+  character  guess the anime character: blurred, zoomed image that sharpens
+  idol       guess the K-pop idol from a photo (same reveal)
+  opening    guess the anime from 3.5 s of its opening (vinyl + visualizer)
 
 A plan is a dict {format, topic, theme, rounds: [...]} built by
 pipeline/pop-quiz-content.js (or plan_from_bank() below for local tests).
@@ -21,14 +24,17 @@ from PIL import Image, ImageDraw
 
 import quiz_emoji as emj
 import geo
+import media
 import sound
+from PIL import ImageFilter
 from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_back, ease_out_cubic, font, pill,
                          put, ring, text_layer, with_shadow, flag_card, fmt_num, draw_watermark)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BANK = os.path.join(HERE, 'assets', 'pop-bank.json')
 
-POP_FORMATS = ('emoji', 'trivia', 'wyr', 'city')
+POP_FORMATS = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening')
+MEDIA_FORMATS = ('character', 'idol', 'opening')
 GOLD = (255, 214, 0)
 GREEN = (46, 204, 113)
 PINK = (255, 92, 170)
@@ -38,6 +44,9 @@ PALETTE = {  # (top, bottom, accent)
     'trivia': ((18, 10, 58), (72, 32, 150), (0, 229, 255)),
     'wyr': ((150, 22, 40), (20, 70, 170), WHITE),
     'city': ((70, 6, 16), (150, 24, 36), GOLD),
+    'character': ((22, 8, 44), (96, 24, 96), GOLD),
+    'idol': ((44, 6, 52), (170, 40, 120), (255, 170, 220)),
+    'opening': ((6, 10, 40), (30, 44, 130), (0, 229, 255)),
 }
 CITY_COUNTRY = {'CN': ('CHINA', '156', (160, 20, 30), GOLD), 'JP': ('JAPAN', '392', (150, 20, 50), WHITE),
                 'KR': ('KOREA', '410', (18, 50, 130), (255, 90, 90))}
@@ -48,16 +57,21 @@ TOPIC_TITLE = {
     'trivia': {'kpop': ('K-POP QUIZ', 'ONLY REAL FANS GET 5/5'), 'anime': ('ANIME QUIZ', 'EASY TO IMPOSSIBLE'),
                'vtubers': ('VTUBER QUIZ', 'HOW MANY CAN YOU GET?'), 'cdrama': ('C-DRAMA & MOVIE QUIZ', 'EASY TO IMPOSSIBLE'),
                'cities': ('ASIA CITY QUIZ', 'EASY TO IMPOSSIBLE'), 'mixed': ('ASIAN POP QUIZ', 'EASY TO IMPOSSIBLE')},
+    'character': {'anime': ('GUESS THE CHARACTER', 'ANIME EDITION')},
+    'idol': {'kpop': ('GUESS THE K-POP IDOL', 'EASY TO IMPOSSIBLE')},
+    'opening': {'anime': ('GUESS THE ANIME', 'FROM ITS OPENING')},
     'wyr': {'anime': ('WOULD YOU RATHER', 'ANIME EDITION'), 'kpop': ('WOULD YOU RATHER', 'K-POP EDITION'),
             'food': ('WOULD YOU RATHER', 'ASIAN FOOD EDITION'), 'cities': ('WOULD YOU RATHER', 'ASIA TRAVEL EDITION'),
             'mixed': ('WOULD YOU RATHER', 'ASIA EDITION')},
 }
 INTRO = {'emoji': {'anime': 'Guess the anime from the emojis!', 'kpop song': 'Guess the K-pop song from the emojis!',
                    'kdrama': 'Guess the K-drama from the emojis!', 'anime character': 'Guess the character from the emojis!'},
-         'trivia': 'How many can you get right?', 'wyr': None, 'city': 'Guess the city from the map!'}
+         'trivia': 'How many can you get right?', 'wyr': None, 'city': 'Guess the city from the map!',
+         'character': 'Guess the anime character!', 'idol': 'Guess the K-pop idol!', 'opening': 'Guess the anime from its opening!'}
 
-Q_MIN = {'emoji': 4.0, 'trivia': 4.5, 'wyr': 4.2, 'city': 3.0}
-R_MIN = {'emoji': 1.9, 'trivia': 1.6, 'wyr': 2.0, 'city': 1.8}
+Q_MIN = {'emoji': 4.0, 'trivia': 4.5, 'wyr': 4.2, 'city': 3.0, 'character': 4.0, 'idol': 4.0, 'opening': 4.3}
+R_MIN = {'emoji': 1.9, 'trivia': 1.6, 'wyr': 2.0, 'city': 1.8, 'character': 1.9, 'idol': 1.9, 'opening': 2.1}
+CARD_W, CARD_H = 580, 640
 
 
 def wrap_lines(text, size, max_w, max_lines=3, min_size=40):
@@ -153,10 +167,15 @@ class PopRenderer(QuizRenderer):
                 ask.append(f"Would you rather {r['a'][0].lower() + r['a'][1:]}, or {r['b'][0].lower() + r['b'][1:]}?")
                 tw = r.get('twistA') or r.get('twistB') or ''
                 ans.append(f"{tw[0].upper() + tw[1:]}!" if tw else None)
+            elif self.fmt == 'opening':
+                ask.append(None)
+                ans.append(f"{r['title']}!")
             else:
                 ask.append(None)
-                ans.append(f"{r['answer'].split(' (')[0]}!")
+                ans.append(f"{(r.get('answer') or r.get('name')).split(' (')[0]}!")
         outro = 'Which would you pick? Comment below!' if self.fmt == 'wyr' else 'How many did you get? Comment your score!'
+        if self.fmt == 'opening':
+            ans = [f"{r['title']}!" for r in rounds]
         return intro, ask, ans, outro
 
     def build_pop_timeline(self, ask_d, ans_d):
@@ -252,6 +271,143 @@ class PopRenderer(QuizRenderer):
         t = text_layer('OR', 76, fill=NAVY)
         img.alpha_composite(t, ((size - t.size[0]) // 2, (size - t.size[1]) // 2 + 2))
         return with_shadow(img, blur=10, offset=(0, 6))
+
+    # ── media formats ──
+    def _photo_card(self):
+        """White rounded frame + shadow, drawn once; the (animated) photo is pasted inside."""
+        if not hasattr(self, '_frame_card'):
+            b = 14
+            card = Image.new('RGBA', (CARD_W + 2 * b, CARD_H + 2 * b), (0, 0, 0, 0))
+            ImageDraw.Draw(card).rounded_rectangle([0, 0, card.size[0] - 1, card.size[1] - 1], radius=30, fill=WHITE + (255,))
+            self._frame_card = with_shadow(card)
+            m = Image.new('L', (CARD_W, CARD_H), 0)
+            ImageDraw.Draw(m).rounded_rectangle([0, 0, CARD_W - 1, CARD_H - 1], radius=20, fill=255)
+            self._photo_mask = m
+        return self._frame_card
+
+    @staticmethod
+    def _fit_photo(img, top_bias):
+        """Crop to the card's aspect (faces sit high in photos) and resize."""
+        w, h = img.size
+        ar = CARD_W / CARD_H
+        if w / h > ar:
+            nw = int(h * ar)
+            img = img.crop(((w - nw) // 2, 0, (w - nw) // 2 + nw, h))
+        else:
+            nh = int(w / ar)
+            y0 = int(max(0, min(h - nh, (h - nh) * top_bias)))
+            img = img.crop((0, y0, w, y0 + nh))
+        return img.convert('RGB').resize((CARD_W, CARD_H), Image.LANCZOS)
+
+    def _prep_character(self, r):
+        self._photo_card()
+        photo = self._fit_photo(media.fetch_image(r['image']), 0.15)
+        name = r.get('name') or r['answer']
+        ans, _ = self._answer_pill(name)
+        sub = r.get('anime') if self.fmt == 'character' else r.get('group')
+        subl = text_layer(sub.upper(), 50, fill=self.accent, stroke=6, max_w=960) if sub else None
+        return {'photo': photo, 'answer': ans, 'sub': subl}
+
+    _prep_idol = _prep_character
+
+    def _prep_opening(self, r):
+        cover = self._fit_photo(media.fetch_image(r['cover']), 0.0) if r.get('cover') else None
+        ans, _ = self._answer_pill(r['title'])
+        sub = text_layer(str(r.get('year') or '').upper() or 'ANIME OPENING', 46, fill=self.accent, stroke=6, max_w=900)
+        # per-frame spectrum bars of the snippet (computed once)
+        a = r['_audio']
+        hop = sound.SR // 30
+        bands = []
+        for k in range(0, len(a) - 2048, hop):
+            spec = np.abs(np.fft.rfft(a[k:k + 2048] * np.hanning(2048)))[:600]
+            edges = np.geomspace(3, 600, 29).astype(int)
+            edges = np.maximum(edges, np.arange(29) + 3)  # log spacing collapses at the low end
+            bands.append([float(spec[edges[i]:max(edges[i] + 1, edges[i + 1])].mean()) for i in range(28)])
+        bands = np.nan_to_num(np.array(bands)) if bands else np.zeros((1, 28))
+        bands = np.clip(bands / (float(np.percentile(bands, 95)) or 1.0), 0, 1.2)
+        return {'cover': cover, 'answer': ans, 'sub': sub, 'bands': bands}
+
+    def _vinyl(self, size, angle):
+        if not hasattr(self, '_disc'):
+            ss = 2
+            S = size * ss
+            d0 = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+            d = ImageDraw.Draw(d0)
+            d.ellipse([0, 0, S - 1, S - 1], fill=(16, 16, 20, 255))
+            for k in range(8, 46, 3):
+                rr = S / 2 * k / 50
+                d.ellipse([S / 2 - rr, S / 2 - rr, S / 2 + rr, S / 2 + rr], outline=(40, 40, 48, 255), width=2)
+            lr = S * 0.2
+            d.ellipse([S / 2 - lr, S / 2 - lr, S / 2 + lr, S / 2 + lr], fill=self.accent + (255,))
+            self._disc_q = text_layer('?', int(size * 0.2), fill=NAVY)  # pasted upright, the record spins under it
+            # a highlight so the spin is visible
+            hl = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+            ImageDraw.Draw(hl).pieslice([0, 0, S - 1, S - 1], -30, 10, fill=(255, 255, 255, 28))
+            d0.alpha_composite(hl)
+            self._disc = d0.resize((size, size), Image.LANCZOS)
+        disc = self._disc.rotate(-angle, resample=Image.BICUBIC)
+        q = self._disc_q
+        disc.alpha_composite(q, ((size - q.size[0]) // 2, (size - q.size[1]) // 2))
+        return disc
+
+    def _draw_character(self, frame, i, tl, q, pop, L):
+        cx, cy = W / 2, 900
+        card = self._photo_card()
+        put(frame, card, cx, cy, s=0.92 + 0.08 * pop)
+        if tl < q:
+            p = clamp(tl / q)
+            z = 2.1 - 1.1 * ease_out_cubic(p)
+            radius = 26 * (1 - p) ** 1.3 + 1.5
+        else:
+            z, radius = 1.0, 0
+        ph = L['photo']
+        if z > 1.001:
+            cw, ch = CARD_W / z, CARD_H / z
+            x0, y0 = (CARD_W - cw) / 2, (CARD_H - ch) * (0.12 if self.fmt == 'idol' else 0.3)  # zoom towards the face
+            ph = ph.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch))).resize((CARD_W, CARD_H), Image.BILINEAR)
+        if radius > 0.5:
+            f = max(1, int(radius / 3))
+            small = ph.resize((CARD_W // f, CARD_H // f), Image.BILINEAR).filter(ImageFilter.GaussianBlur(radius / f))
+            ph = small.resize((CARD_W, CARD_H), Image.BILINEAR)
+        ph = ph.convert('RGBA')
+        ph.putalpha(self._photo_mask)
+        put(frame, ph, cx, cy, s=0.92 + 0.08 * pop)
+        if tl < q:
+            self.draw_timer(frame, q - tl, q, y=1345)
+        else:
+            rt = tl - q
+            put(frame, L['answer'], W / 2, 1335, s=max(0.01, ease_out_back(rt / 0.3)))
+            if L['sub'] is not None:
+                put(frame, L['sub'], W / 2, 1440, a=clamp((rt - 0.15) / 0.2))
+
+    _draw_idol = _draw_character
+
+    def _draw_opening(self, frame, i, tl, q, pop, L):
+        cx, cy = W / 2, 840
+        if tl < q:
+            disc = self._vinyl(560, tl * 200)
+            put(frame, disc, cx, cy, s=0.9 + 0.1 * pop)
+            k = min(len(L['bands']) - 1, max(0, int((tl - 0.25) * 30)))
+            vals = L['bands'][k] if 0.25 <= tl <= 0.25 + len(L['bands']) / 30 else np.zeros(28)
+            d = ImageDraw.Draw(frame)
+            bw, gap, base = 22, 10, 1215
+            x = W / 2 - (28 * bw + 27 * gap) / 2
+            for v in vals:
+                h = 12 + 150 * float(v)
+                d.rounded_rectangle([x, base - h, x + bw, base], radius=8, fill=self.accent + (230,))
+                x += bw + gap
+            self.draw_timer(frame, q - tl, q, y=1345)
+        else:
+            rt = tl - q
+            if L['cover'] is not None:
+                card = self._photo_card()
+                ph = L['cover'].convert('RGBA')
+                ph.putalpha(self._photo_mask)
+                s = 0.85 + 0.15 * ease_out_back(rt / 0.35)
+                put(frame, card, cx, cy + 50, s=s)
+                put(frame, ph, cx, cy + 50, s=s)
+            put(frame, L['answer'], W / 2, 1335, s=max(0.01, ease_out_back(rt / 0.3)))
+            put(frame, L['sub'], W / 2, 1440, a=clamp((rt - 0.15) / 0.2))
 
     def _prep_city(self, r):
         if not hasattr(self, '_city_map'):
@@ -384,9 +540,19 @@ class PopRenderer(QuizRenderer):
         self.draw_round(frame, i, tl, seg)
         return frame
 
+    def _load_openings(self):
+        want = self.plan.get('want') or min(5, len(self.plan['rounds']))
+        rounds = _opening_rounds(self.plan['rounds'], want)
+        if len(rounds) < 3:
+            raise RuntimeError(f'only {len(rounds)} openings could be fetched')
+        self.plan['rounds'] = rounds
+
     def make_pop_audio(self, clips, n):
         intro, asks, anss, outro = clips[0], clips[1:1 + n], clips[1 + n:1 + 2 * n], clips[1 + 2 * n]
         voice = []
+        if self.fmt == 'opening':  # the opening snippet plays during each question
+            for s, r in zip(self.segs, self.plan['rounds']):
+                voice.append((s['start'] + 0.25, r['_audio'] * 0.55))
         if intro is not None:
             voice.append((0.15, intro))
         for i, s in enumerate(self.segs):
@@ -411,13 +577,16 @@ class PopRenderer(QuizRenderer):
             fx.append((s['reveal'] + 0.02, sound.pop(), 0.35))
         fx.append((self.outro_start, wh, 0.4))
         fx.append((self.outro_start + 0.1, sound.chime(), 0.5))
-        m = sound.music(self.duration, seed=self.plan.get('seed') or 0, bpm=self.rng.choice([100, 108, 116, 124])) if self.use_music else None
+        m = sound.music(self.duration, seed=self.plan.get('seed') or 0, bpm=self.rng.choice([100, 108, 116, 124])) \
+            if self.use_music and self.fmt != 'opening' else None
         return sound.mix(self.duration, fx, voice, m)
 
     def render(self, out_path):
         import subprocess
         import time
         t0 = time.time()
+        if self.fmt == 'opening':
+            self._load_openings()
         intro, asks, anss, outro = self.voice_lines()
         n = len(self.plan['rounds'])
         lines = [intro] + asks + anss + [outro]
@@ -459,10 +628,49 @@ class PopRenderer(QuizRenderer):
                 'voice': sum(c is not None for c in clips), 'voiceLines': len(idx)}
 
 
+def _opening_rounds(rounds, want):
+    """Fetch openings in parallel; keep plan order, drop the ones that fail."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    ex = ThreadPoolExecutor(max_workers=4)
+    futs = {ex.submit(media.fetch_opening, r['title'], r.get('romaji')): k for k, r in enumerate(rounds)}
+    got = {}
+    for f in as_completed(futs):
+        k = futs[f]
+        try:
+            audio, info = f.result()
+        except Exception as e:
+            audio, info = None, str(e)
+        if audio is None:
+            print(f'opening skipped: {rounds[k]["title"]}: {info}', file=__import__('sys').stderr)
+        else:
+            got[k] = {**rounds[k], '_audio': audio, 'source': info}
+        if len(got) >= want:
+            break
+    ex.shutdown(wait=False, cancel_futures=True)
+    return [got[k] for k in sorted(got)][:want]
+
+
 # ── local plans from the starter bank (the pipeline builds plans itself) ──
+
+MEDIA_FILES = {'character': ('anime-characters.json', 'characters'), 'idol': ('kpop-idols.json', 'idols'),
+               'opening': ('anime-list.json', 'anime')}
+
 
 def plan_from_bank(fmt, topic=None, seed=None, n=None, country=None):
     rng = random.Random(seed)
+    if fmt in MEDIA_FILES:
+        f, k = MEDIA_FILES[fmt]
+        pool = json.load(open(os.path.join(HERE, 'assets', f), encoding='utf-8'))[k]
+        n = n or 5
+        ramp = {3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3]}.get(n, [1, 1, 2, 2, 3])
+        extra = 3 if fmt == 'opening' else 0  # spare candidates: some openings can't be fetched
+        rounds, used = [], set()
+        for d in ramp + [1] * extra:
+            cand = [x for x in pool if x.get('difficulty', 2) == d and id(x) not in used] or [x for x in pool if id(x) not in used]
+            it = rng.choice(cand)
+            used.add(id(it))
+            rounds.append({**it, 'answer': it.get('name') or it.get('title')})
+        return {'format': fmt, 'topic': 'kpop' if fmt == 'idol' else 'anime', 'seed': seed, 'rounds': rounds, 'want': n}
     bank = json.load(open(BANK, encoding='utf-8'))
     if fmt == 'city':
         country = country or rng.choice(['CN', 'JP', 'KR'])

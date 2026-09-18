@@ -597,7 +597,7 @@ def main():
     except Exception:
         pass
     ap = argparse.ArgumentParser()
-    ap.add_argument('--format', default='flag', choices=planner.FORMATS + ('emoji', 'trivia', 'wyr', 'city'))
+    ap.add_argument('--format', default='flag', choices=planner.FORMATS + ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'))
     ap.add_argument('--plan-file', default=None, help='render this plan (JSON) instead of planning one')
     ap.add_argument('--topic', default=None, help='pop formats: topic (anime, kpop song, kpop, vtubers, ...)')
     ap.add_argument('--country', default=None, help='city format: CN, JP or KR')
@@ -618,22 +618,25 @@ def main():
         with open(args.plan_file, encoding='utf-8') as f:
             pop_plan = json.load(f)
         pop_plan.setdefault('seed', seed)
-    elif args.format in ('emoji', 'trivia', 'wyr', 'city'):
+    elif args.format in ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'):
         from render_pop import plan_from_bank
         pop_plan = plan_from_bank(args.format, topic=args.topic, seed=seed, n=args.rounds, country=args.country)
-    if pop_plan is not None and pop_plan['format'] in ('emoji', 'trivia', 'wyr', 'city'):
+    if pop_plan is not None and pop_plan['format'] in ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'):
         from render_pop import PopRenderer, gradient_bg
         r = PopRenderer(pop_plan, voice=not args.no_voice, music=not args.no_music, voice_name=args.voice)
         if args.frame is not None:
-            n = len(pop_plan['rounds'])
+            if r.fmt == 'opening':
+                r._load_openings()
+            n = len(r.plan['rounds'])
             r.build_pop_timeline([2.0] * n, [1.0] * n)
             r.prepare_pop()
             r.bg = gradient_bg(*r.pal, split=r.fmt == 'wyr')
             r.frame_at(args.frame).convert('RGB').save(args.out)
-            print(json.dumps({'ok': True, 'path': args.out, 'plan': pop_plan}, ensure_ascii=False))
+            print(json.dumps({'ok': True, 'path': args.out}, ensure_ascii=False))
             return
         info = r.render(args.out)
-        print(json.dumps({'ok': True, 'path': os.path.abspath(args.out), **info, 'plan': pop_plan}, ensure_ascii=False))
+        clean = {**r.plan, 'rounds': [{k: v for k, v in x.items() if not k.startswith('_')} for x in r.plan['rounds']]}
+        print(json.dumps({'ok': True, 'path': os.path.abspath(args.out), **info, 'plan': clean}, ensure_ascii=False))
         return
     if pop_plan is not None:
         args.format = pop_plan['format']

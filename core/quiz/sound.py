@@ -161,10 +161,76 @@ def decode_audio(path):
 
 
 DEFAULT_VOICES = ['en-US-AndrewNeural', 'en-US-GuyNeural', 'en-US-ChristopherNeural']
+KOKORO_URL = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/'
+_kokoro = None
+
+
+def _kokoro_model():
+    """Kokoro-82M (Apache-2.0) via kokoro-onnx; model files are downloaded once to KOKORO_DIR."""
+    global _kokoro
+    if _kokoro is None:
+        from kokoro_onnx import Kokoro
+        import urllib.request
+        d = os.environ.get('KOKORO_DIR') or os.path.join(os.path.expanduser('~'), '.cache', 'kokoro')
+        os.makedirs(d, exist_ok=True)
+        for f in ('kokoro-v1.0.onnx', 'voices-v1.0.bin'):
+            p = os.path.join(d, f)
+            if not os.path.exists(p) or os.path.getsize(p) < 1_000_000:
+                urllib.request.urlretrieve(KOKORO_URL + f, p)
+        _kokoro = Kokoro(os.path.join(d, 'kokoro-v1.0.onnx'), os.path.join(d, 'voices-v1.0.bin'))
+    return _kokoro
+
+
+def kokoro_lines(lines, voice=None, speed=None, pitch=None):
+    """Natural-sounding narration with Kokoro. KOKORO_PITCH (semitones) deepens the voice."""
+    k = _kokoro_model()
+    voice = voice or os.environ.get('KOKORO_VOICE', 'am_onyx')
+    speed = float(speed or os.environ.get('KOKORO_SPEED', '1.0'))
+    semis = float(pitch if pitch is not None else os.environ.get('KOKORO_PITCH', '0'))
+    lang = 'en-gb' if voice.startswith('b') else 'en-us'
+    out = []
+    for text in lines:
+        try:
+            a, sr = k.create(text, voice=voice, speed=speed, lang=lang)
+            a = np.asarray(a, dtype=np.float64)
+            f = 2 ** (semis / 12.0)
+            # resample to SR and apply the pitch shift in one go, then restore the tempo
+            n_out = int(len(a) * SR / sr / f)
+            a = np.interp(np.linspace(0, len(a) - 1, n_out), np.arange(len(a)), a)
+            if abs(f - 1) > 1e-3:
+                a = _stretch(a, f)
+            nz = np.where(np.abs(a) > 0.01)[0]
+            out.append(a[max(0, nz[0] - 400):nz[-1] + 1600] if len(nz) else a)
+        except Exception:
+            out.append(None)
+    return out
+
+
+def _stretch(a, rate):
+    """Overlap-add time stretch (keeps pitch): rate > 1 lengthens."""
+    win = int(0.04 * SR)
+    hop_out = win // 2
+    hop_in = hop_out / rate
+    w = np.hanning(win)
+    n = int((len(a) - win) / hop_in)
+    out = np.zeros(n * hop_out + win)
+    norm = np.zeros_like(out)
+    for i in range(max(0, n)):
+        s = int(i * hop_in)
+        out[i * hop_out:i * hop_out + win] += a[s:s + win] * w
+        norm[i * hop_out:i * hop_out + win] += w
+    return out / np.maximum(norm, 1e-3)
 
 
 def tts_lines(lines, voices=None, rate='+8%', workdir=None):
-    """Synthesise each line with edge-tts. Returns list of arrays (None on failure)."""
+    """Synthesise each line (Kokoro when TTS_ENGINE=kokoro, else edge-tts). None on failure."""
+    if os.environ.get('TTS_ENGINE', 'edge').lower() == 'kokoro':
+        try:
+            got = kokoro_lines(lines)
+            if any(g is not None for g in got):
+                return got
+        except Exception as e:
+            print(f'kokoro unavailable ({str(e)[:80]}), using edge-tts', file=sys.stderr)
     voices = [v for v in (voices or []) if v] + DEFAULT_VOICES
     try:
         import edge_tts

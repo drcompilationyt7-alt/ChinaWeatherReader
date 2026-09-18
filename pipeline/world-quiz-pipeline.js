@@ -26,7 +26,7 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
-const { buildPopPlan, markUsed } = require('./pop-quiz-content');
+const { buildPopPlan, markUsed, key: popKey } = require('./pop-quiz-content');
 const pop = require('./pop-quiz-meta');
 
 const logger = new Logger('WorldQuiz');
@@ -36,12 +36,15 @@ const RENDERER = path.join(ROOT, 'core', 'quiz', 'render_quiz.py');
 const HISTORY_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'quiz-history.json');
 
 const GEO_FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
-const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city'];
+const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'];
 // QUIZ_FORMATS picks the channel's formats (the quiz channel runs the pop set + Asia geography)
 const FORMATS = (process.env.QUIZ_FORMATS || GEO_FORMATS.join(','))
   .split(',').map(f => f.trim()).filter(f => GEO_FORMATS.includes(f) || POP_FORMATS.includes(f));
-const FALLBACK_WEIGHTS = { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15, emoji: 0.3, trivia: 0.3, wyr: 0.25, city: 0.15 };
 const isPop = f => POP_FORMATS.includes(f);
+// exploration weights; on the pop channel the geography formats are only a side dish
+const FALLBACK_WEIGHTS = FORMATS.some(isPop)
+  ? { emoji: 0.25, trivia: 0.2, wyr: 0.2, city: 0.1, character: 0.3, idol: 0.2, opening: 0.3, flag: 0.06, shape: 0.05 }
+  : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];
 const THEMED_FORMATS = new Set(['flag', 'shape', 'capital']);
 
@@ -428,7 +431,9 @@ async function runWorldQuizPipeline(opts = {}) {
   const res = await renderQuiz({ format, theme, seed, avoid, outPath, rounds: LENGTHS[length], planFile });
   if (planFile) { try { fs.unlinkSync(planFile); } catch {} }
   const plan = { ...res.plan, theme };
-  const label = r => r.answer != null && typeof r.answer === 'string' ? r.answer : r.question ? r.options[r.answer] : r.a ? `${r.a} / ${r.b}` : '';
+  // the renderer may drop candidates (openings that fail to download): only mark what was shown
+  if (isPop(format)) popKeys = plan.rounds.map(r => popKey(format, r));
+  const label = r => (typeof r.answer === 'string' ? r.answer : r.question ? r.options[r.answer] : r.a ? `${r.a} / ${r.b}` : r.name || r.title || '');
   logger.success(`Rendered ${res.duration}s in ${Math.round((Date.now() - t0) / 1000)}s (voice ${res.voice}/${res.voiceLines}): ${plan.rounds.map(label).join(', ')}`);
   if (res.voice === 0) logger.warn('No voice lines were generated (edge-tts unreachable) — the short uses music and SFX only');
 
@@ -454,7 +459,7 @@ async function runWorldQuizPipeline(opts = {}) {
   const hook = isPop(format) ? pop.popHook(plan) : hookLine(plan);
   const description = isPop(format) ? pop.popDescription(plan) : buildDescription(plan, hook);
   const answersText = isPop(format) ? pop.popAnswers(plan) : answersBlock(plan);
-  const hashtags = isPop(format) ? (pop.HASHTAG[plan.topic] || '#quiz') : HASHTAGS[format];
+  const hashtags = isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format];
   let localizations = null;
   if (gemini && !geminiDown && process.env.QUIZ_TRANSLATE !== 'off') {
     const tr = await translateMeta(gemini, title, hook).catch(() => null);

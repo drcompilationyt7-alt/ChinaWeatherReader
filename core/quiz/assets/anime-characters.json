@@ -1,0 +1,3205 @@
+{
+ "source": "AniList (anilist.co)",
+ "characters": [
+  {
+   "id": 127691,
+   "name": "Satoru Gojo",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
+   "favourites": 39390,
+   "difficulty": 1
+  },
+  {
+   "id": 45627,
+   "name": "Levi",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b45627-CR68RyZmddGG.png",
+   "favourites": 38328,
+   "difficulty": 1
+  },
+  {
+   "id": 40,
+   "name": "Monkey D. Luffy",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+   "favourites": 36000,
+   "difficulty": 1
+  },
+  {
+   "id": 27,
+   "name": "Killua Zoldyck",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b27-Z5O02kQUydpT.jpg",
+   "favourites": 34795,
+   "difficulty": 1
+  },
+  {
+   "id": 40882,
+   "name": "Eren Yeager",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg",
+   "favourites": 31845,
+   "difficulty": 1
+  },
+  {
+   "id": 62,
+   "name": "Roronoa Zoro",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png",
+   "favourites": 28862,
+   "difficulty": 1
+  },
+  {
+   "id": 417,
+   "name": "Leloch Lamperoge",
+   "anime": "Code Geass: Lelouch of the Rebellion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b417-gVLmIJu9phcK.png",
+   "favourites": 28236,
+   "difficulty": 1
+  },
+  {
+   "id": 88572,
+   "name": "Emilia",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88572-IzTwXEHSobRs.jpg",
+   "favourites": 27685,
+   "difficulty": 1
+  },
+  {
+   "id": 71,
+   "name": "L Lawliet",
+   "anime": "Death Note",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71-1W4panC53vfs.png",
+   "favourites": 26478,
+   "difficulty": 1
+  },
+  {
+   "id": 87275,
+   "name": "Ken Kaneki",
+   "anime": "Tokyo Ghoul",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87275-mb13EWZBdbh3.png",
+   "favourites": 26035,
+   "difficulty": 1
+  },
+  {
+   "id": 40881,
+   "name": "Mikasa Ackerman",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40881-F3gr1PkreDvj.png",
+   "favourites": 25572,
+   "difficulty": 1
+  },
+  {
+   "id": 89334,
+   "name": "Arataka Reigen",
+   "anime": "Mob Psycho 100",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89334-OPj1hCzvrt7X.png",
+   "favourites": 24536,
+   "difficulty": 1
+  },
+  {
+   "id": 422,
+   "name": "Guts",
+   "anime": "Berserk",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b422-XTaiTuvRohsV.png",
+   "favourites": 23767,
+   "difficulty": 1
+  },
+  {
+   "id": 176754,
+   "name": "Frieren",
+   "anime": "Frieren: Beyond Journey’s End",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png",
+   "favourites": 22481,
+   "difficulty": 1
+  },
+  {
+   "id": 126824,
+   "name": "Maomao",
+   "anime": "The Apothecary Diaries",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126824-MqsCncTO1qpv.png",
+   "favourites": 22367,
+   "difficulty": 1
+  },
+  {
+   "id": 34470,
+   "name": "Kurisu Makise",
+   "anime": "Steins;Gate",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b34470-Jw2LXZBL5R8i.png",
+   "favourites": 22354,
+   "difficulty": 1
+  },
+  {
+   "id": 10138,
+   "name": "Thorfinn Karlsefni",
+   "anime": "Vinland Saga",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b10138-zOPrka0ddZOR.png",
+   "favourites": 22302,
+   "difficulty": 1
+  },
+  {
+   "id": 137080,
+   "name": "Makima",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137080-UHcynYNjb5ZU.png",
+   "favourites": 22256,
+   "difficulty": 1
+  },
+  {
+   "id": 14,
+   "name": "Itachi Uchiha",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b14-9Kb1E5oel1ke.png",
+   "favourites": 21439,
+   "difficulty": 1
+  },
+  {
+   "id": 127212,
+   "name": "Yuji Itadori",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127212-FVm2tD0erQ5B.png",
+   "favourites": 21286,
+   "difficulty": 1
+  },
+  {
+   "id": 35252,
+   "name": "Rintaro Okabe",
+   "anime": "Steins;Gate",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b35252-DY9TW6pusqeh.png",
+   "favourites": 21227,
+   "difficulty": 1
+  },
+  {
+   "id": 127222,
+   "name": "Mai Sakurajima",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127222-Jh5hhP7vZ7s1.png",
+   "favourites": 21185,
+   "difficulty": 1
+  },
+  {
+   "id": 130102,
+   "name": "Denji",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b130102-FO1VHNnEnLlB.png",
+   "favourites": 21019,
+   "difficulty": 1
+  },
+  {
+   "id": 28,
+   "name": "Kurapika",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b28-ivA7UGnfE40a.png",
+   "favourites": 20683,
+   "difficulty": 1
+  },
+  {
+   "id": 137079,
+   "name": "Power",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137079-6yLEUYR3bmpr.png",
+   "favourites": 20544,
+   "difficulty": 1
+  },
+  {
+   "id": 89616,
+   "name": "Mob",
+   "anime": "Mob Psycho 100",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89616-dXmdOc7L6SDi.png",
+   "favourites": 20544,
+   "difficulty": 1
+  },
+  {
+   "id": 85,
+   "name": "Kakashi Hatake",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b85-mkVBh2yjxjmx.png",
+   "favourites": 20524,
+   "difficulty": 1
+  },
+  {
+   "id": 120649,
+   "name": "Kaguya Shinomiya",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b120649-NPaWaIpWy60E.png",
+   "favourites": 20489,
+   "difficulty": 1
+  },
+  {
+   "id": 90169,
+   "name": "Violet Evergarden",
+   "anime": "Violet Evergarden",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b90169-4wr1Zehnsac8.png",
+   "favourites": 20383,
+   "difficulty": 1
+  },
+  {
+   "id": 80,
+   "name": "Light Yagami",
+   "anime": "Death Note",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b80-26EhwSsSqQ50.png",
+   "favourites": 20312,
+   "difficulty": 1
+  },
+  {
+   "id": 11,
+   "name": "Edward Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11-TA5Nuk7EDUZG.jpg",
+   "favourites": 19225,
+   "difficulty": 1
+  },
+  {
+   "id": 17,
+   "name": "Naruto Uzumaki",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png",
+   "favourites": 18183,
+   "difficulty": 1
+  },
+  {
+   "id": 126071,
+   "name": "Tanjiro Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126071-BTNEc1nRIv68.png",
+   "favourites": 18037,
+   "difficulty": 1
+  },
+  {
+   "id": 500,
+   "name": "Sakura Mato",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b500-NQrLbnBr1sDv.png",
+   "favourites": 17770,
+   "difficulty": 1
+  },
+  {
+   "id": 126635,
+   "name": "Megumi Fushiguro",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126635-L0y3I92JSUkN.png",
+   "favourites": 17410,
+   "difficulty": 1
+  },
+  {
+   "id": 133676,
+   "name": "Marin Kitagawa",
+   "anime": "My Dress-Up Darling",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133676-kV2czE3C8Qls.png",
+   "favourites": 17296,
+   "difficulty": 1
+  },
+  {
+   "id": 6356,
+   "name": "Joseph Joestar",
+   "anime": "JoJo's Bizarre Adventure (TV)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6356-RImEfUfHpC58.png",
+   "favourites": 17015,
+   "difficulty": 1
+  },
+  {
+   "id": 89220,
+   "name": "Shoto Todoroki",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89220-KNBwaVFAR8FD.png",
+   "favourites": 16810,
+   "difficulty": 1
+  },
+  {
+   "id": 89361,
+   "name": "Megumin",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89361-tq8PQQ4MmF0M.png",
+   "favourites": 16681,
+   "difficulty": 1
+  },
+  {
+   "id": 13020,
+   "name": "Askeladd",
+   "anime": "Vinland Saga",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13020-ZdiYlNmpRUNS.png",
+   "favourites": 16571,
+   "difficulty": 1
+  },
+  {
+   "id": 89198,
+   "name": "Osamu Dazai",
+   "anime": "Bungo Stray Dogs",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89198-qKmRTw4Y3PRC.png",
+   "favourites": 16329,
+   "difficulty": 1
+  },
+  {
+   "id": 88575,
+   "name": "Rem",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88575-Ayu8UPDA8NS6.png",
+   "favourites": 16229,
+   "difficulty": 1
+  },
+  {
+   "id": 88892,
+   "name": "Katsuki Bakugo",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88892-bdOha3lNcaN6.png",
+   "favourites": 16220,
+   "difficulty": 1
+  },
+  {
+   "id": 121103,
+   "name": "Chika Fujiwara",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121103-UGLxT8utLPnq.png",
+   "favourites": 16165,
+   "difficulty": 1
+  },
+  {
+   "id": 672,
+   "name": "Gintoki Sakata",
+   "anime": "Gintama",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b672-cP5VPriN67xJ.png",
+   "favourites": 16090,
+   "difficulty": 1
+  },
+  {
+   "id": 126375,
+   "name": "Itsuki Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126375-dEe9IyQ9By09.png",
+   "favourites": 16028,
+   "difficulty": 1
+  },
+  {
+   "id": 123212,
+   "name": "Kiyotaka Ayanokoji",
+   "anime": "Classroom of the Elite",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123212-ewZgUQr9vvEM.png",
+   "favourites": 15826,
+   "difficulty": 1
+  },
+  {
+   "id": 124382,
+   "name": "Ichigo",
+   "anime": "DARLING in the FRANXX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124382-bSBkjtYjJQtr.png",
+   "favourites": 15767,
+   "difficulty": 1
+  },
+  {
+   "id": 124142,
+   "name": "Senku Ishigami",
+   "anime": "Dr. STONE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124142-XUO1g7wRqkaT.png",
+   "favourites": 15474,
+   "difficulty": 1
+  },
+  {
+   "id": 88573,
+   "name": "Subaru Natsuki",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88573-F8yMTK9GhnTA.png",
+   "favourites": 15414,
+   "difficulty": 1
+  },
+  {
+   "id": 30,
+   "name": "Gon Freecss",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b30-lyFExKyDhefc.jpg",
+   "favourites": 15388,
+   "difficulty": 1
+  },
+  {
+   "id": 129928,
+   "name": "Jin-U Seong",
+   "anime": "Solo Leveling",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129928-BCEjVaP0AQSw.png",
+   "favourites": 15239,
+   "difficulty": 1
+  },
+  {
+   "id": 305,
+   "name": "Sanji",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b305-6lisPmHtCnLT.png",
+   "favourites": 15220,
+   "difficulty": 1
+  },
+  {
+   "id": 125886,
+   "name": "Miko Iino",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125886-TQbmqAaSgBLS.png",
+   "favourites": 15179,
+   "difficulty": 1
+  },
+  {
+   "id": 73935,
+   "name": "Saitama",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b73935-ON5d0mAcrItd.jpg",
+   "favourites": 15105,
+   "difficulty": 1
+  },
+  {
+   "id": 61,
+   "name": "Robin Nico",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+   "favourites": 14814,
+   "difficulty": 1
+  },
+  {
+   "id": 66173,
+   "name": "Izumi Miyamura",
+   "anime": "Horimiya",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b66173-g8eU1LGWPB8O.png",
+   "favourites": 14798,
+   "difficulty": 1
+  },
+  {
+   "id": 22037,
+   "name": "Hitagi Senjogahara",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22037-sY7GWSKYr2Nl.jpg",
+   "favourites": 14776,
+   "difficulty": 1
+  },
+  {
+   "id": 137081,
+   "name": "Aki Hayakawa",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137081-TSrUR3mUJL6r.png",
+   "favourites": 14736,
+   "difficulty": 1
+  },
+  {
+   "id": 124381,
+   "name": "Zero Two",
+   "anime": "DARLING in the FRANXX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124381-2gAVq76HPfL2.png",
+   "favourites": 14715,
+   "difficulty": 1
+  },
+  {
+   "id": 90107,
+   "name": "Kusuo Saiki",
+   "anime": "Assassination Classroom Second Season",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b90107-ZULW5HlPX1uU.png",
+   "favourites": 14714,
+   "difficulty": 2
+  },
+  {
+   "id": 121102,
+   "name": "Yu Ishigami",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121102-tiQFxnSEIAwm.png",
+   "favourites": 14678,
+   "difficulty": 2
+  },
+  {
+   "id": 94,
+   "name": "Asuka Langley Souryu",
+   "anime": "Neon Genesis Evangelion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b94-d631a3Z2KPvd.png",
+   "favourites": 14664,
+   "difficulty": 2
+  },
+  {
+   "id": 129130,
+   "name": "Inosuke Hashibira",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n129130-SJC0Kn1DU39E.jpg",
+   "favourites": 14659,
+   "difficulty": 2
+  },
+  {
+   "id": 64769,
+   "name": "Shoyo Hinata",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b64769-WoWlCMLLgJ14.png",
+   "favourites": 14651,
+   "difficulty": 2
+  },
+  {
+   "id": 127518,
+   "name": "Nezuko Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127518-NRlq1CQ1v1ro.png",
+   "favourites": 14632,
+   "difficulty": 2
+  },
+  {
+   "id": 5,
+   "name": "Ichigo Kurosaki",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5-a7bkJgjhhigE.png",
+   "favourites": 14544,
+   "difficulty": 2
+  },
+  {
+   "id": 68,
+   "name": "Roy Mustang",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
+   "favourites": 14463,
+   "difficulty": 2
+  },
+  {
+   "id": 138102,
+   "name": "Yor Forger",
+   "anime": "SPY x FAMILY",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b138102-ZOAu9jI2d5ke.png",
+   "favourites": 14402,
+   "difficulty": 2
+  },
+  {
+   "id": 1,
+   "name": "Spike Spiegel",
+   "anime": "Cowboy Bebop",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1-ChxaldmieFlQ.png",
+   "favourites": 14319,
+   "difficulty": 2
+  },
+  {
+   "id": 4003,
+   "name": "Joutaro Kujo",
+   "anime": "JoJo's Bizarre Adventure (TV)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4003-gWDSEGbeOAll.png",
+   "favourites": 14224,
+   "difficulty": 2
+  },
+  {
+   "id": 31,
+   "name": "Hisoka",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b31-FZckOuu7L1un.png",
+   "favourites": 14145,
+   "difficulty": 2
+  },
+  {
+   "id": 46494,
+   "name": "Armin Arlert",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b46494-g7xYYuBtYPnO.png",
+   "favourites": 14140,
+   "difficulty": 2
+  },
+  {
+   "id": 89028,
+   "name": "Izuku Midoriya",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89028-8w1I9o1ISHMg.png",
+   "favourites": 14054,
+   "difficulty": 2
+  },
+  {
+   "id": 23602,
+   "name": "Shinobu Oshino",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23602-Z4MDNYcoAWZu.png",
+   "favourites": 13919,
+   "difficulty": 2
+  },
+  {
+   "id": 71121,
+   "name": "Hange Zoe",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71121-7R7CnQd3lHgt.png",
+   "favourites": 13864,
+   "difficulty": 2
+  },
+  {
+   "id": 123962,
+   "name": "Rimuru Tempest",
+   "anime": "That Time I Got Reincarnated as a Slime",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123962-eL9yGV0NLMF7.png",
+   "favourites": 13804,
+   "difficulty": 2
+  },
+  {
+   "id": 129131,
+   "name": "Zenitsu Agatsuma",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129131-FZrQ7lSlxmEr.png",
+   "favourites": 13783,
+   "difficulty": 2
+  },
+  {
+   "id": 133700,
+   "name": "Nobara Kugisaki",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133700-f6sOO3TcgLV6.png",
+   "favourites": 13734,
+   "difficulty": 2
+  },
+  {
+   "id": 133704,
+   "name": "Kento Nanami",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133704-8wLTGjc234q2.png",
+   "favourites": 13729,
+   "difficulty": 2
+  },
+  {
+   "id": 138100,
+   "name": "Anya Forger",
+   "anime": "SPY x FAMILY",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b138100-4Li0tWRCa5bQ.png",
+   "favourites": 13282,
+   "difficulty": 2
+  },
+  {
+   "id": 134167,
+   "name": "Maki Zenin",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b134167-5TCytk45YByD.png",
+   "favourites": 13067,
+   "difficulty": 2
+  },
+  {
+   "id": 13,
+   "name": "Sasuke Uchiha",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
+   "favourites": 13043,
+   "difficulty": 2
+  },
+  {
+   "id": 46496,
+   "name": "Erwin Smith",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b46496-Mu86MENd5wNB.png",
+   "favourites": 12898,
+   "difficulty": 2
+  },
+  {
+   "id": 84677,
+   "name": "Yato",
+   "anime": "Noragami",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b84677-PFmohzIXD1ud.png",
+   "favourites": 12888,
+   "difficulty": 2
+  },
+  {
+   "id": 498,
+   "name": "Rin Toosaka",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b498-lwawtSpLyATL.png",
+   "favourites": 12844,
+   "difficulty": 2
+  },
+  {
+   "id": 67065,
+   "name": "Hachiman Hikigaya",
+   "anime": "My Teen Romantic Comedy SNAFU",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67065-Dhec6tE2yWA9.png",
+   "favourites": 12715,
+   "difficulty": 2
+  },
+  {
+   "id": 64771,
+   "name": "Tobio Kageyama",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b64771-BuCVs7B8bBdh.png",
+   "favourites": 12567,
+   "difficulty": 2
+  },
+  {
+   "id": 22036,
+   "name": "Koyomi Araragi",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22036-Ed3CjwPlDLp4.png",
+   "favourites": 12544,
+   "difficulty": 2
+  },
+  {
+   "id": 130050,
+   "name": "Giyu Tomioka",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b130050-qsLThJs5VIbz.png",
+   "favourites": 12479,
+   "difficulty": 2
+  },
+  {
+   "id": 257562,
+   "name": "Hitori Goto",
+   "anime": "BOCCHI THE ROCK!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b257562-Ru35NYPfsqhY.png",
+   "favourites": 12410,
+   "difficulty": 2
+  },
+  {
+   "id": 38005,
+   "name": "Homura Akemi",
+   "anime": "Puella Magi Madoka Magica",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b38005-T3NR8p2f021x.jpg",
+   "favourites": 12274,
+   "difficulty": 2
+  },
+  {
+   "id": 497,
+   "name": "Artoria Pendragon",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b497-Yg5pNmC8kxzs.png",
+   "favourites": 12131,
+   "difficulty": 2
+  },
+  {
+   "id": 126373,
+   "name": "Miku Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126373-CWeyXb822uDN.png",
+   "favourites": 11974,
+   "difficulty": 2
+  },
+  {
+   "id": 133701,
+   "name": "Sukuna",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133701-rCQuDpHr3UZL.png",
+   "favourites": 11944,
+   "difficulty": 2
+  },
+  {
+   "id": 66171,
+   "name": "Kyoko Hori",
+   "anime": "Horimiya",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b66171-o2vk3689wWFK.png",
+   "favourites": 11929,
+   "difficulty": 2
+  },
+  {
+   "id": 188783,
+   "name": "Kana Arima",
+   "anime": "OSHI NO KO",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b188783-77orwP7vNuNg.png",
+   "favourites": 11806,
+   "difficulty": 2
+  },
+  {
+   "id": 129571,
+   "name": "Yuta Okkotsu",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129571-GHJk7gviHOOw.jpg",
+   "favourites": 11666,
+   "difficulty": 2
+  },
+  {
+   "id": 80243,
+   "name": "Shoko Nishimiya",
+   "anime": "A Silent Voice",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b80243-RzxE51iUU5eq.png",
+   "favourites": 11622,
+   "difficulty": 2
+  },
+  {
+   "id": 86,
+   "name": "Rei Ayanami",
+   "anime": "Neon Genesis Evangelion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/86-cA1zL7fyls8E.jpg",
+   "favourites": 11534,
+   "difficulty": 2
+  },
+  {
+   "id": 88350,
+   "name": "Roxy Migurdia",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88350-QU1iwgZ887U8.png",
+   "favourites": 11528,
+   "difficulty": 2
+  },
+  {
+   "id": 129133,
+   "name": "Kyojuro Rengoku",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129133-VlTPowwt68rJ.png",
+   "favourites": 11524,
+   "difficulty": 2
+  },
+  {
+   "id": 89,
+   "name": "Shinji Ikari",
+   "anime": "Neon Genesis Evangelion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89-ZtZhXkh1rITn.png",
+   "favourites": 11352,
+   "difficulty": 2
+  },
+  {
+   "id": 719,
+   "name": "Johan Liebert",
+   "anime": "Monster",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b719-y984mDWyGf5n.jpg",
+   "favourites": 11328,
+   "difficulty": 2
+  },
+  {
+   "id": 126372,
+   "name": "Nino Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126372-DtorHRgQaYUJ.png",
+   "favourites": 10998,
+   "difficulty": 2
+  },
+  {
+   "id": 1259,
+   "name": "Misato Katsuragi",
+   "anime": "Neon Genesis Evangelion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1259-afTQkZ5SVMOn.png",
+   "favourites": 10978,
+   "difficulty": 2
+  },
+  {
+   "id": 1111,
+   "name": "C.C.",
+   "anime": "Code Geass: Lelouch of the Rebellion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1111-UhmlFtRFrnWa.png",
+   "favourites": 10923,
+   "difficulty": 2
+  },
+  {
+   "id": 121104,
+   "name": "Ai Hayasaka",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121104-7TYRl3EEsDYU.png",
+   "favourites": 10922,
+   "difficulty": 2
+  },
+  {
+   "id": 124440,
+   "name": "Yami Sukehiro",
+   "anime": "Black Clover",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124440-Lpdo6y8cljV6.png",
+   "favourites": 10848,
+   "difficulty": 2
+  },
+  {
+   "id": 80491,
+   "name": "Shoya Ishida",
+   "anime": "A Silent Voice",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b80491-NK6pxb6oH61P.png",
+   "favourites": 10698,
+   "difficulty": 2
+  },
+  {
+   "id": 127221,
+   "name": "Sakuta Azusagawa",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n127221-Wxg4xFtW4kaJ.png",
+   "favourites": 10675,
+   "difficulty": 2
+  },
+  {
+   "id": 67327,
+   "name": "Yu Nishinoya",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67327-zQb1dlC7joPb.jpg",
+   "favourites": 10642,
+   "difficulty": 2
+  },
+  {
+   "id": 71933,
+   "name": "Karma Akabane",
+   "anime": "Assassination Classroom",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71933-HQ1TSjlrJ8Hv.jpg",
+   "favourites": 10563,
+   "difficulty": 2
+  },
+  {
+   "id": 209,
+   "name": "Kyo Souma",
+   "anime": "Fruits Basket (2019)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b209-NOAbiLvJt1QA.png",
+   "favourites": 10410,
+   "difficulty": 2
+  },
+  {
+   "id": 13767,
+   "name": "Trafalgar Law",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13767-U604OJN9dxCn.jpg",
+   "favourites": 10334,
+   "difficulty": 2
+  },
+  {
+   "id": 148740,
+   "name": "Reze",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b148740-ceAibPxLW8rR.png",
+   "favourites": 10322,
+   "difficulty": 2
+  },
+  {
+   "id": 723,
+   "name": "Nami",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b723-vp5hPptgnNEC.png",
+   "favourites": 10204,
+   "difficulty": 2
+  },
+  {
+   "id": 141061,
+   "name": "Vladilena Milizé",
+   "anime": "86 EIGHTY-SIX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141061-jqIhB9jmClQ3.png",
+   "favourites": 10182,
+   "difficulty": 2
+  },
+  {
+   "id": 145341,
+   "name": "Manjiro Sano",
+   "anime": "Tokyo Revengers",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b145341-CuPldCLZMvvf.png",
+   "favourites": 10179,
+   "difficulty": 2
+  },
+  {
+   "id": 138101,
+   "name": "Loid Forger",
+   "anime": "SPY x FAMILY",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b138101-7NCB0Md8zA6G.png",
+   "favourites": 10169,
+   "difficulty": 2
+  },
+  {
+   "id": 36828,
+   "name": "Asuna Yuki",
+   "anime": "Sword Art Online",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
+   "favourites": 10156,
+   "difficulty": 2
+  },
+  {
+   "id": 123385,
+   "name": "Phosphophyllite",
+   "anime": "Land of the Lustrous",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123385-ild8gXk13xcO.png",
+   "favourites": 10083,
+   "difficulty": 2
+  },
+  {
+   "id": 11772,
+   "name": "Gyro Zeppeli",
+   "anime": "JoJo's Bizarre Adventure: Part 7–Steel Ball Run",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11772-p7MO37Mk0f5g.png",
+   "favourites": 10037,
+   "difficulty": 2
+  },
+  {
+   "id": 67067,
+   "name": "Yukino Yukinoshita",
+   "anime": "My Teen Romantic Comedy SNAFU",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67067-gqhgjlni0Bcf.png",
+   "favourites": 9871,
+   "difficulty": 2
+  },
+  {
+   "id": 121724,
+   "name": "Ray",
+   "anime": "The Promised Neverland",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121724-SJTdODjeO7e6.jpg",
+   "favourites": 9864,
+   "difficulty": 2
+  },
+  {
+   "id": 157115,
+   "name": "Toge Inumaki",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b157115-kdhRYQdVhH95.png",
+   "favourites": 9850,
+   "difficulty": 2
+  },
+  {
+   "id": 6194,
+   "name": "Musashi Miyamoto",
+   "anime": "Vagabond",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6194-HOyr8E7FCFHJ.png",
+   "favourites": 9827,
+   "difficulty": 2
+  },
+  {
+   "id": 71267,
+   "name": "Kenma Kozume",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71267-q44J2MXMinXD.jpg",
+   "favourites": 9816,
+   "difficulty": 2
+  },
+  {
+   "id": 174873,
+   "name": "Kurena Kukumila",
+   "anime": "86 EIGHTY-SIX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b174873-FNf08aPYTVXY.jpg",
+   "favourites": 9801,
+   "difficulty": 2
+  },
+  {
+   "id": 154224,
+   "name": "Mami Nanami",
+   "anime": "Rent-a-Girlfriend",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b154224-7dJ09BKEnG3v.png",
+   "favourites": 9746,
+   "difficulty": 2
+  },
+  {
+   "id": 65643,
+   "name": "Koro-sensei",
+   "anime": "Assassination Classroom",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65643-jimrOw0RGtoB.png",
+   "favourites": 9731,
+   "difficulty": 2
+  },
+  {
+   "id": 246,
+   "name": "Goku Son",
+   "anime": "Dragon Ball Z",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/246-wsRRr6z1kii8.png",
+   "favourites": 9605,
+   "difficulty": 2
+  },
+  {
+   "id": 125659,
+   "name": "Gabi Braun",
+   "anime": "Attack on Titan Final Season",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125659-O37MZQWibV7g.png",
+   "favourites": 9604,
+   "difficulty": 2
+  },
+  {
+   "id": 58,
+   "name": "Chrollo Lucilfer",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b58-USOmsz3nursi.jpg",
+   "favourites": 9556,
+   "difficulty": 2
+  },
+  {
+   "id": 4004,
+   "name": "Dio Brando",
+   "anime": "JoJo's Bizarre Adventure (TV)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4004-w0OtWuvjhftG.png",
+   "favourites": 9548,
+   "difficulty": 2
+  },
+  {
+   "id": 13580,
+   "name": "Ash Lynx",
+   "anime": "BANANA FISH",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13580-1J7PwIB8kTpu.png",
+   "favourites": 9475,
+   "difficulty": 2
+  },
+  {
+   "id": 123285,
+   "name": "Asta",
+   "anime": "Black Clover",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123285-tKijiuQErDS0.png",
+   "favourites": 9469,
+   "difficulty": 2
+  },
+  {
+   "id": 89364,
+   "name": "Kazuma Sato",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89364-7Th8Tv1XKJtt.png",
+   "favourites": 9466,
+   "difficulty": 2
+  },
+  {
+   "id": 136070,
+   "name": "Shinobu Kocho",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136070-MC9LLxJsHyHE.png",
+   "favourites": 9400,
+   "difficulty": 2
+  },
+  {
+   "id": 23277,
+   "name": "Meruem",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+   "favourites": 9368,
+   "difficulty": 2
+  },
+  {
+   "id": 71611,
+   "name": "Tooru Oikawa",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71611-cUZwVfzeNXD9.png",
+   "favourites": 9341,
+   "difficulty": 2
+  },
+  {
+   "id": 69411,
+   "name": "Kaori Miyazono",
+   "anime": "Your lie in April",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69411-lxM0FRvWHqlv.png",
+   "favourites": 9317,
+   "difficulty": 2
+  },
+  {
+   "id": 2075,
+   "name": "Kamina",
+   "anime": "Gurren Lagann",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2075-sWb5Xz76JWdX.png",
+   "favourites": 9245,
+   "difficulty": 2
+  },
+  {
+   "id": 121101,
+   "name": "Miyuki Shirogane",
+   "anime": "Kaguya-sama: Love is War",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121101-Q8HzKP15At2d.png",
+   "favourites": 9125,
+   "difficulty": 2
+  },
+  {
+   "id": 2072,
+   "name": "Portgas D. Ace",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2072-Lc6jEdsueJUK.jpg",
+   "favourites": 9049,
+   "difficulty": 2
+  },
+  {
+   "id": 207,
+   "name": "Tooru Honda",
+   "anime": "Fruits Basket (2019)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b207-RQ4EUdTD0K62.png",
+   "favourites": 8966,
+   "difficulty": 2
+  },
+  {
+   "id": 36765,
+   "name": "Kazuto Kirigaya",
+   "anime": "Sword Art Online",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
+   "favourites": 8870,
+   "difficulty": 2
+  },
+  {
+   "id": 81929,
+   "name": "Tatsumaki",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+   "favourites": 8783,
+   "difficulty": 2
+  },
+  {
+   "id": 284157,
+   "name": "Lucy",
+   "anime": "Cyberpunk: Edgerunners",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b284157-cqYawN7XCNJx.jpg",
+   "favourites": 8778,
+   "difficulty": 2
+  },
+  {
+   "id": 89225,
+   "name": "Shota Aizawa",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89225-XBgvUhI9naVI.png",
+   "favourites": 8772,
+   "difficulty": 2
+  },
+  {
+   "id": 121889,
+   "name": "Yumeko Jabami",
+   "anime": "Kakegurui",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121889-ABsurpy5SjOW.png",
+   "favourites": 8735,
+   "difficulty": 2
+  },
+  {
+   "id": 309,
+   "name": "Chopper Tony Tony",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b309-H64NhbJ2ywIQ.jpg",
+   "favourites": 8735,
+   "difficulty": 2
+  },
+  {
+   "id": 13085,
+   "name": "Jousuke Higashikata",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13085-CkmgXL7SSLxL.jpg",
+   "favourites": 8705,
+   "difficulty": 2
+  },
+  {
+   "id": 183965,
+   "name": "Fern",
+   "anime": "Frieren: Beyond Journey’s End",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b183965-uGFohBjlFoTp.png",
+   "favourites": 8661,
+   "difficulty": 2
+  },
+  {
+   "id": 128651,
+   "name": "Hanako",
+   "anime": "Toilet-bound Hanako-kun",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128651-GaZImkP2Of1R.png",
+   "favourites": 8653,
+   "difficulty": 2
+  },
+  {
+   "id": 718,
+   "name": "Kenzo Tenma",
+   "anime": "Monster",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b718-b6ZZVp822lw0.png",
+   "favourites": 8596,
+   "difficulty": 2
+  },
+  {
+   "id": 12055,
+   "name": "Yoshikage Kira",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12055-eCEkIVV4qoCu.png",
+   "favourites": 8518,
+   "difficulty": 2
+  },
+  {
+   "id": 88348,
+   "name": "Rudeus Greyrat",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88348-bIe5XnXdRpmX.png",
+   "favourites": 8490,
+   "difficulty": 2
+  },
+  {
+   "id": 507,
+   "name": "Howl",
+   "anime": "Howl‘s Moving Castle",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b507-g9yz1GTLtPla.jpg",
+   "favourites": 8473,
+   "difficulty": 2
+  },
+  {
+   "id": 12064,
+   "name": "Taiga Aisaka",
+   "anime": "Toradora!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12064-7PDN3ylIeAZn.png",
+   "favourites": 8438,
+   "difficulty": 2
+  },
+  {
+   "id": 2007,
+   "name": "Shikamaru Nara",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2007-QaesJlIZDifj.jpg",
+   "favourites": 8435,
+   "difficulty": 2
+  },
+  {
+   "id": 210,
+   "name": "Kisuke Urahara",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b210-mw01NrQfRjzT.png",
+   "favourites": 8390,
+   "difficulty": 2
+  },
+  {
+   "id": 424,
+   "name": "Griffith",
+   "anime": "Berserk",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b424-Jfrsf8I7zBps.png",
+   "favourites": 8388,
+   "difficulty": 2
+  },
+  {
+   "id": 87277,
+   "name": "Touka Kirishima",
+   "anime": "Tokyo Ghoul",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87277-oUaqrI1iBzu6.png",
+   "favourites": 8273,
+   "difficulty": 2
+  },
+  {
+   "id": 89362,
+   "name": "Aqua",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89362-ibkc0eoECaW1.png",
+   "favourites": 8262,
+   "difficulty": 2
+  },
+  {
+   "id": 133699,
+   "name": "Suguru Geto",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133699-FCnXaISgazAi.png",
+   "favourites": 8232,
+   "difficulty": 2
+  },
+  {
+   "id": 83797,
+   "name": "Ryuko Matoi",
+   "anime": "Kill la Kill",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b83797-ix0Cl5OMfV22.png",
+   "favourites": 8166,
+   "difficulty": 2
+  },
+  {
+   "id": 458,
+   "name": "Revy",
+   "anime": "Black Lagoon",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b458-tlKqPcuR287U.png",
+   "favourites": 8154,
+   "difficulty": 2
+  },
+  {
+   "id": 45887,
+   "name": "Sasha Blose",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b45887-QPtJH0KwqthW.jpg",
+   "favourites": 8141,
+   "difficulty": 2
+  },
+  {
+   "id": 2257,
+   "name": "Simon",
+   "anime": "Gurren Lagann",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2257-jnalsdnIX1vN.jpg",
+   "favourites": 8087,
+   "difficulty": 2
+  },
+  {
+   "id": 70069,
+   "name": "Kurumi Tokisaki",
+   "anime": "Date A Live",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b70069-DEV7X6o2L7oG.jpg",
+   "favourites": 8049,
+   "difficulty": 2
+  },
+  {
+   "id": 121956,
+   "name": "Shoko Komi",
+   "anime": "Komi Can’t Communicate",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121956-5FbIbcd6gAZW.png",
+   "favourites": 8035,
+   "difficulty": 2
+  },
+  {
+   "id": 136071,
+   "name": "Tengen Uzui",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136071-99Kexnnn2PiV.png",
+   "favourites": 8011,
+   "difficulty": 2
+  },
+  {
+   "id": 67329,
+   "name": "Kei Tsukishima",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67329-k7mDdqQ6rJ4w.png",
+   "favourites": 8000,
+   "difficulty": 2
+  },
+  {
+   "id": 2219,
+   "name": "Lain Iwakura",
+   "anime": "Serial Experiments Lain",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2219-K3wzEOVwdUhL.png",
+   "favourites": 7985,
+   "difficulty": 2
+  },
+  {
+   "id": 702,
+   "name": "Nana Oosaki",
+   "anime": "NANA",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b702-qqO3zbj5hp1l.png",
+   "favourites": 7955,
+   "difficulty": 2
+  },
+  {
+   "id": 11222,
+   "name": "Jolyne Kujo",
+   "anime": "JoJo's Bizarre Adventure: STONE OCEAN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11222-Se9QoJHDSeYY.png",
+   "favourites": 7939,
+   "difficulty": 2
+  },
+  {
+   "id": 65865,
+   "name": "Rikka Takanashi",
+   "anime": "Love, Chunibyo & Other Delusions",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65865-AC0ru7cDXUgK.png",
+   "favourites": 7930,
+   "difficulty": 2
+  },
+  {
+   "id": 141060,
+   "name": "Shinei Nouzen",
+   "anime": "86 EIGHTY-SIX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141060-ZJFvHqBBSvhN.png",
+   "favourites": 7924,
+   "difficulty": 2
+  },
+  {
+   "id": 22055,
+   "name": "Tsubasa Hanekawa",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22055-EaTsy30ihdgb.png",
+   "favourites": 7853,
+   "difficulty": 2
+  },
+  {
+   "id": 162722,
+   "name": "Touji Fushiguro",
+   "anime": "JUJUTSU KAISEN Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162722-btzdghBizxKS.jpg",
+   "favourites": 7717,
+   "difficulty": 3
+  },
+  {
+   "id": 2514,
+   "name": "Gilgamesh",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2514-hnE6LEdqm7Su.png",
+   "favourites": 7707,
+   "difficulty": 3
+  },
+  {
+   "id": 46484,
+   "name": "Reiner Braun",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b46484-P6A2GjNQn49F.png",
+   "favourites": 7705,
+   "difficulty": 3
+  },
+  {
+   "id": 77605,
+   "name": "Ban",
+   "anime": "The Seven Deadly Sins",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b77605-NrjhQwZwgJ3l.png",
+   "favourites": 7536,
+   "difficulty": 3
+  },
+  {
+   "id": 434,
+   "name": "Eikichi Onizuka",
+   "anime": "GTO: Great Teacher Onizuka",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b434-Q0K9e4HukawA.png",
+   "favourites": 7425,
+   "difficulty": 3
+  },
+  {
+   "id": 6,
+   "name": "Rukia Kuchiki",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+   "favourites": 7389,
+   "difficulty": 3
+  },
+  {
+   "id": 89201,
+   "name": "Ranpo Edogawa",
+   "anime": "Bungo Stray Dogs",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89201-K0X5HNq88Oub.png",
+   "favourites": 7379,
+   "difficulty": 3
+  },
+  {
+   "id": 19492,
+   "name": "Johnny Joestar",
+   "anime": "JoJo's Bizarre Adventure: Part 7–Steel Ball Run",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b19492-gvMnKxhUhT9V.jpg",
+   "favourites": 7355,
+   "difficulty": 3
+  },
+  {
+   "id": 222594,
+   "name": "Momo Ayase",
+   "anime": "DAN DA DAN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b222594-24Jn7qlI5spH.png",
+   "favourites": 7350,
+   "difficulty": 3
+  },
+  {
+   "id": 12,
+   "name": "Alphonse Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12-tCKu8yK5kFL5.jpg",
+   "favourites": 7330,
+   "difficulty": 3
+  },
+  {
+   "id": 88412,
+   "name": "Juzo Suzuya",
+   "anime": "Tokyo Ghoul",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88412-sIOJUnIkyFRe.png",
+   "favourites": 7329,
+   "difficulty": 3
+  },
+  {
+   "id": 913,
+   "name": "Vegeta",
+   "anime": "Dragon Ball Z",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b913-NIFkKazWM8VO.png",
+   "favourites": 7323,
+   "difficulty": 3
+  },
+  {
+   "id": 1662,
+   "name": "Gaara",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1662-4E5J0LX9jZKZ.png",
+   "favourites": 7296,
+   "difficulty": 3
+  },
+  {
+   "id": 55131,
+   "name": "Houtaro Oreki",
+   "anime": "Hyouka",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b55131-ypodHQCyHbzD.png",
+   "favourites": 7284,
+   "difficulty": 3
+  },
+  {
+   "id": 137975,
+   "name": "Aoi Toudo",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137975-6TH7PiLWJaqy.png",
+   "favourites": 7280,
+   "difficulty": 3
+  },
+  {
+   "id": 88349,
+   "name": "Eris Boreas Greyrat",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88349-5dsNUah3oBj8.png",
+   "favourites": 7200,
+   "difficulty": 3
+  },
+  {
+   "id": 260329,
+   "name": "Chisato Nishikigi",
+   "anime": "Lycoris Recoil",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b260329-1Z5n1QgViEBI.png",
+   "favourites": 7153,
+   "difficulty": 3
+  },
+  {
+   "id": 5189,
+   "name": "Erza Scarlet",
+   "anime": "Fairy Tail",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5189-GR1xdok9SFsN.jpg",
+   "favourites": 7091,
+   "difficulty": 3
+  },
+  {
+   "id": 75,
+   "name": "Ryuk",
+   "anime": "Death Note",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b75-IkEpzO21LgFy.jpg",
+   "favourites": 7068,
+   "difficulty": 3
+  },
+  {
+   "id": 145344,
+   "name": "Chifuyu Matsuno",
+   "anime": "Tokyo Revengers",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b145344-q4BqRljEBYNc.png",
+   "favourites": 7065,
+   "difficulty": 3
+  },
+  {
+   "id": 7373,
+   "name": "Holo",
+   "anime": "Eromanga Sensei",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b7373-1BH0gELuZmHD.jpg",
+   "favourites": 7064,
+   "difficulty": 3
+  },
+  {
+   "id": 908,
+   "name": "Yoruichi Shihouin",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b908-JSYUkJLCw1f0.png",
+   "favourites": 7060,
+   "difficulty": 3
+  },
+  {
+   "id": 145345,
+   "name": "Ken Ryuguji",
+   "anime": "Tokyo Revengers",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b145345-zyirrSsKIDCb.png",
+   "favourites": 7034,
+   "difficulty": 3
+  },
+  {
+   "id": 1086,
+   "name": "Sousuke Aizen",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+   "favourites": 7030,
+   "difficulty": 3
+  },
+  {
+   "id": 63351,
+   "name": "Akame",
+   "anime": "Akame ga Kill!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b63351-0WmsDENpiscp.png",
+   "favourites": 7023,
+   "difficulty": 3
+  },
+  {
+   "id": 75216,
+   "name": "Souma Yukihira",
+   "anime": "Food Wars!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b75216-KDU8333eIcqf.jpg",
+   "favourites": 7015,
+   "difficulty": 3
+  },
+  {
+   "id": 136837,
+   "name": "Cid Kageno",
+   "anime": "The Eminence in Shadow",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136837-3WR22FYet8Hv.jpg",
+   "favourites": 6998,
+   "difficulty": 3
+  },
+  {
+   "id": 835,
+   "name": "Misa Amane",
+   "anime": "Death Note",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b835-CiZa8y2z2gCz.png",
+   "favourites": 6987,
+   "difficulty": 3
+  },
+  {
+   "id": 3096,
+   "name": "Wolfgang Grimmer",
+   "anime": "Monster",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3096-qCXXA8G0J8rk.png",
+   "favourites": 6977,
+   "difficulty": 3
+  },
+  {
+   "id": 88937,
+   "name": "Koutaro Bokuto",
+   "anime": "HAIKYU!! 2nd Season",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88937-2GSqkX9TIzYy.png",
+   "favourites": 6974,
+   "difficulty": 3
+  },
+  {
+   "id": 10010,
+   "name": "Kiritsugu Emiya",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b10010-fNspzan5MzNk.png",
+   "favourites": 6907,
+   "difficulty": 3
+  },
+  {
+   "id": 65645,
+   "name": "Nagisa Shiota",
+   "anime": "Assassination Classroom",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65645-nWH4mBMW5lYw.png",
+   "favourites": 6886,
+   "difficulty": 3
+  },
+  {
+   "id": 89224,
+   "name": "Toshinori Yagi",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89224-K6KEuQAuYKzq.jpg",
+   "favourites": 6852,
+   "difficulty": 3
+  },
+  {
+   "id": 88889,
+   "name": "Raphtalia",
+   "anime": "The Rising of the Shield Hero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88889-CWYytVbCOPsV.png",
+   "favourites": 6848,
+   "difficulty": 3
+  },
+  {
+   "id": 12659,
+   "name": "Rohan Kishibe",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12659-hgT3g7q7oHnU.png",
+   "favourites": 6840,
+   "difficulty": 3
+  },
+  {
+   "id": 89853,
+   "name": "Chuya Nakahara",
+   "anime": "Bungo Stray Dogs",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89853-06qMPkrGlgP1.png",
+   "favourites": 6827,
+   "difficulty": 3
+  },
+  {
+   "id": 168774,
+   "name": "Nazuna Nanakusa",
+   "anime": "Call of the Night",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b168774-zoB9InjmXYq2.png",
+   "favourites": 6817,
+   "difficulty": 3
+  },
+  {
+   "id": 128106,
+   "name": "Chizuru Ichinose",
+   "anime": "Rent-a-Girlfriend",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128106-zSTsuULvz6PX.png",
+   "favourites": 6812,
+   "difficulty": 3
+  },
+  {
+   "id": 10529,
+   "name": "Giorno Giovanna",
+   "anime": "JoJo's Bizarre Adventure: Golden Wind",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b10529-AloL8jjZwjsg.png",
+   "favourites": 6811,
+   "difficulty": 3
+  },
+  {
+   "id": 261674,
+   "name": "Nijika Ijichi",
+   "anime": "BOCCHI THE ROCK!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b261674-a8tJYvtzqWgC.png",
+   "favourites": 6799,
+   "difficulty": 3
+  },
+  {
+   "id": 121700,
+   "name": "Norman",
+   "anime": "The Promised Neverland",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121700-CRwKIlcBcjbv.jpg",
+   "favourites": 6793,
+   "difficulty": 3
+  },
+  {
+   "id": 2,
+   "name": "Faye Valentine",
+   "anime": "Cowboy Bebop",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2-0Iszg6Izgt4p.png",
+   "favourites": 6781,
+   "difficulty": 3
+  },
+  {
+   "id": 130848,
+   "name": "Benimaru Shinmon",
+   "anime": "Fire Force",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b130848-AuuIm6GR8ody.jpg",
+   "favourites": 6778,
+   "difficulty": 3
+  },
+  {
+   "id": 218648,
+   "name": "Hina Chono",
+   "anime": "Blue Box",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b218648-kXxXy8lPkeGV.png",
+   "favourites": 6733,
+   "difficulty": 3
+  },
+  {
+   "id": 71269,
+   "name": "Tetsuro Kuroo",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71269-pi9vjyxKPFAu.jpg",
+   "favourites": 6694,
+   "difficulty": 3
+  },
+  {
+   "id": 724,
+   "name": "Usopp",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b724-GFGgI9AJQkfy.jpg",
+   "favourites": 6687,
+   "difficulty": 3
+  },
+  {
+   "id": 13045,
+   "name": "Bruno Bucciarati",
+   "anime": "JoJo's Bizarre Adventure: Golden Wind",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13045-TIpIF82cMkG9.png",
+   "favourites": 6679,
+   "difficulty": 3
+  },
+  {
+   "id": 136072,
+   "name": "Mitsuri Kanroji",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136072-xVwyRUKdpybi.png",
+   "favourites": 6583,
+   "difficulty": 3
+  },
+  {
+   "id": 65239,
+   "name": "Esdeath",
+   "anime": "Akame ga Kill!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65239-2S3t2vSyUew9.png",
+   "favourites": 6542,
+   "difficulty": 3
+  },
+  {
+   "id": 8455,
+   "name": "Death the Kid",
+   "anime": "Soul Eater",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b8455-0Ztel4ew5bNd.png",
+   "favourites": 6537,
+   "difficulty": 3
+  },
+  {
+   "id": 162213,
+   "name": "Meguru Bachira",
+   "anime": "BLUE LOCK",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162213-4czykzdxmWG6.png",
+   "favourites": 6534,
+   "difficulty": 3
+  },
+  {
+   "id": 21044,
+   "name": "Rei Kiriyama",
+   "anime": "March comes in like a lion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21044-K0pEhdOEmAwG.png",
+   "favourites": 6532,
+   "difficulty": 3
+  },
+  {
+   "id": 2423,
+   "name": "Jiraiya",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2423-RO5MyoXSA9OL.png",
+   "favourites": 6511,
+   "difficulty": 3
+  },
+  {
+   "id": 125168,
+   "name": "Legoshi",
+   "anime": "BEASTARS",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125168-cOydxRHEbAYb.png",
+   "favourites": 6510,
+   "difficulty": 3
+  },
+  {
+   "id": 89277,
+   "name": "Garo",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89277-xBGb4B5YISXg.png",
+   "favourites": 6508,
+   "difficulty": 3
+  },
+  {
+   "id": 89243,
+   "name": "Eijiro Kirishima",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89243-R2WJlNuj3aEs.jpg",
+   "favourites": 6496,
+   "difficulty": 3
+  },
+  {
+   "id": 73979,
+   "name": "Genos",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b73979-tVi9maPID881.jpg",
+   "favourites": 6480,
+   "difficulty": 3
+  },
+  {
+   "id": 14864,
+   "name": "Hyakkimaru",
+   "anime": "Dororo",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b14864-MMntDWi2EkyR.png",
+   "favourites": 6480,
+   "difficulty": 3
+  },
+  {
+   "id": 172759,
+   "name": "Ai Hoshino",
+   "anime": "OSHI NO KO",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b172759-cccVhJ2fQA92.png",
+   "favourites": 6463,
+   "difficulty": 3
+  },
+  {
+   "id": 121052,
+   "name": "Tanya Degurechaff",
+   "anime": "Saga of Tanya the Evil",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121052-bQZT3nIvaryX.png",
+   "favourites": 6444,
+   "difficulty": 3
+  },
+  {
+   "id": 29,
+   "name": "Leorio Paradinight",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b29-RgzoSeKmDYzl.jpg",
+   "favourites": 6437,
+   "difficulty": 3
+  },
+  {
+   "id": 203384,
+   "name": "Akane Kurokawa",
+   "anime": "OSHI NO KO",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b203384-YuSppFDMw2wn.png",
+   "favourites": 6429,
+   "difficulty": 3
+  },
+  {
+   "id": 157116,
+   "name": "Choso",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b157116-2jYQf3y8NeTZ.png",
+   "favourites": 6364,
+   "difficulty": 3
+  },
+  {
+   "id": 50389,
+   "name": "Rias Gremory",
+   "anime": "High School DxD",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b50389-gIhJkyk8xj1P.png",
+   "favourites": 6359,
+   "difficulty": 3
+  },
+  {
+   "id": 264529,
+   "name": "Ryo Yamada",
+   "anime": "BOCCHI THE ROCK!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b264529-BvEusZnJLD2Y.png",
+   "favourites": 6349,
+   "difficulty": 3
+  },
+  {
+   "id": 67069,
+   "name": "Yui Yuigahama",
+   "anime": "My Teen Romantic Comedy SNAFU",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67069-6B3xnHfJUO0F.png",
+   "favourites": 6327,
+   "difficulty": 3
+  },
+  {
+   "id": 53641,
+   "name": "Deishu Kaiki",
+   "anime": "Nisemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b53641-F3GYG0k2xCBj.png",
+   "favourites": 6284,
+   "difficulty": 3
+  },
+  {
+   "id": 19565,
+   "name": "Yui Hirasawa",
+   "anime": "K-ON!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b19565-7gMiEAm7NGNK.png",
+   "favourites": 6250,
+   "difficulty": 3
+  },
+  {
+   "id": 46498,
+   "name": "Jean Kirstein",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b46498-ritqAj9FW6jX.png",
+   "favourites": 6210,
+   "difficulty": 3
+  },
+  {
+   "id": 674,
+   "name": "Kagura",
+   "anime": "Gintama",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b674-w8wCh0A5Qa8R.png",
+   "favourites": 6203,
+   "difficulty": 3
+  },
+  {
+   "id": 601,
+   "name": "Alucard",
+   "anime": "Hellsing Ultimate",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n601-CVySkaFQgsPW.jpg",
+   "favourites": 6203,
+   "difficulty": 3
+  },
+  {
+   "id": 122445,
+   "name": "Nanachi",
+   "anime": "Made in Abyss",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122445-5uDu8wMy8Jxi.png",
+   "favourites": 6187,
+   "difficulty": 3
+  },
+  {
+   "id": 162969,
+   "name": "Seishiro Nagi",
+   "anime": "BLUE LOCK",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162969-WGnGyVQrFi0X.png",
+   "favourites": 6175,
+   "difficulty": 3
+  },
+  {
+   "id": 2535,
+   "name": "Minato Namikaze",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
+   "favourites": 6173,
+   "difficulty": 3
+  },
+  {
+   "id": 909,
+   "name": "Kenpachi Zaraki",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b909-slhoFBon7oiH.jpg",
+   "favourites": 6163,
+   "difficulty": 3
+  },
+  {
+   "id": 19566,
+   "name": "Mio Akiyama",
+   "anime": "K-ON!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b19566-XKsMgf370b4m.png",
+   "favourites": 6148,
+   "difficulty": 3
+  },
+  {
+   "id": 125619,
+   "name": "Himiko Toga",
+   "anime": "My Hero Academia Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125619-iQxQoGHJvjRJ.png",
+   "favourites": 6141,
+   "difficulty": 3
+  },
+  {
+   "id": 245466,
+   "name": "Aira Shiratori",
+   "anime": "DAN DA DAN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b245466-rd5I5mchZ3bv.png",
+   "favourites": 6130,
+   "difficulty": 3
+  },
+  {
+   "id": 140856,
+   "name": "Yoichi Isagi",
+   "anime": "BLUE LOCK",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b140856-wVzKSyvU7R5B.png",
+   "favourites": 6058,
+   "difficulty": 3
+  },
+  {
+   "id": 89363,
+   "name": "Darkness",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89363-mm21Ll4NegUD.png",
+   "favourites": 6044,
+   "difficulty": 3
+  },
+  {
+   "id": 282389,
+   "name": "Asa Mitaka",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b282389-Mr4vAa8Du2Jx.jpg",
+   "favourites": 6005,
+   "difficulty": 3
+  },
+  {
+   "id": 89122,
+   "name": "Albedo",
+   "anime": "Overlord",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89122-Gj7MBs7F5cMJ.png",
+   "favourites": 5974,
+   "difficulty": 3
+  },
+  {
+   "id": 184313,
+   "name": "Stark",
+   "anime": "Frieren: Beyond Journey’s End",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b184313-CQl6GSt4RSny.jpg",
+   "favourites": 5973,
+   "difficulty": 3
+  },
+  {
+   "id": 129330,
+   "name": "Echidna",
+   "anime": "Re:ZERO -Starting Life in Another World- Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129330-ZUtYw4n7N0uH.png",
+   "favourites": 5970,
+   "difficulty": 3
+  },
+  {
+   "id": 130716,
+   "name": "Iris",
+   "anime": "Fire Force",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n130716-5564jUgQxK9a.png",
+   "favourites": 5969,
+   "difficulty": 3
+  },
+  {
+   "id": 1555,
+   "name": "Hinata Hyuga",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1555-Q41GLTV3FvYF.png",
+   "favourites": 5943,
+   "difficulty": 3
+  },
+  {
+   "id": 4963,
+   "name": "Yuno Gasai",
+   "anime": "The Future Diary",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4963-7ZMcCtXW5hkY.png",
+   "favourites": 5939,
+   "difficulty": 3
+  },
+  {
+   "id": 120974,
+   "name": "Kanna Kamui",
+   "anime": "Miss Kobayashi's Dragon Maid",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b120974-cZHsjS8DX9WW.png",
+   "favourites": 5901,
+   "difficulty": 3
+  },
+  {
+   "id": 268676,
+   "name": "Kaoruko Waguri",
+   "anime": "The Fragrant Flower Blooms With Dignity",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b268676-aQmqvqj0DNoJ.png",
+   "favourites": 5878,
+   "difficulty": 3
+  },
+  {
+   "id": 35253,
+   "name": "Mayuri Shiina",
+   "anime": "Steins;Gate",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b35253-u6QVgLLyHq2W.png",
+   "favourites": 5877,
+   "difficulty": 3
+  },
+  {
+   "id": 82525,
+   "name": "Shiro",
+   "anime": "No Game, No Life",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b82525-sKk2FGRKN4aK.png",
+   "favourites": 5858,
+   "difficulty": 3
+  },
+  {
+   "id": 120462,
+   "name": "Shinra Kusakabe",
+   "anime": "Fire Force",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n120462-oSWdz2MhkbDE.png",
+   "favourites": 5856,
+   "difficulty": 3
+  },
+  {
+   "id": 727,
+   "name": "Shanks",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b727-wUJx7M1z5xON.png",
+   "favourites": 5815,
+   "difficulty": 3
+  },
+  {
+   "id": 89590,
+   "name": "Vanitas",
+   "anime": "The Case Study of Vanitas",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89590-K3RdKR4VnYM4.png",
+   "favourites": 5795,
+   "difficulty": 3
+  },
+  {
+   "id": 88817,
+   "name": "Naofumi Iwatani",
+   "anime": "The Rising of the Shield Hero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88817-Aku5CuN6wO2z.png",
+   "favourites": 5780,
+   "difficulty": 3
+  },
+  {
+   "id": 183885,
+   "name": "Aquamarine Hoshino",
+   "anime": "OSHI NO KO",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b183885-HOmw8CqcJdv3.jpg",
+   "favourites": 5771,
+   "difficulty": 3
+  },
+  {
+   "id": 13701,
+   "name": "Mikoto Misaka",
+   "anime": "A Certain Magical Index",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13701-aFJLRPGAWAae.png",
+   "favourites": 5744,
+   "difficulty": 3
+  },
+  {
+   "id": 24482,
+   "name": "Rin Okumura",
+   "anime": "Blue Exorcist",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b24482-E6087V4uAVqL.jpg",
+   "favourites": 5741,
+   "difficulty": 3
+  },
+  {
+   "id": 1120,
+   "name": "Shirley Fenette",
+   "anime": "Code Geass: Lelouch of the Rebellion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1120-hjOjinw5j4FE.png",
+   "favourites": 5705,
+   "difficulty": 3
+  },
+  {
+   "id": 90112,
+   "name": "Shun Kaido",
+   "anime": "The Disastrous Life of Saiki K.",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b90112-KVRcvbKBKLxY.png",
+   "favourites": 5701,
+   "difficulty": 3
+  },
+  {
+   "id": 88951,
+   "name": "Nao Tomori",
+   "anime": "Charlotte",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/88951-bRm610RrrXp9.jpg",
+   "favourites": 5674,
+   "difficulty": 3
+  },
+  {
+   "id": 162,
+   "name": "Vash the Stampede",
+   "anime": "Trigun",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162-kfdfqsX7Xjf0.png",
+   "favourites": 5674,
+   "difficulty": 3
+  },
+  {
+   "id": 121725,
+   "name": "Emma",
+   "anime": "The Promised Neverland",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121725-LQciVJOjnMVh.png",
+   "favourites": 5634,
+   "difficulty": 3
+  },
+  {
+   "id": 195120,
+   "name": "Reki Kyan",
+   "anime": "SK8 the Infinity",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b195120-ndTbU0TpVLWw.png",
+   "favourites": 5630,
+   "difficulty": 3
+  },
+  {
+   "id": 5187,
+   "name": "Natsu Dragneel",
+   "anime": "Fairy Tail",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5187-y1OEdRu9sPN2.png",
+   "favourites": 5623,
+   "difficulty": 3
+  },
+  {
+   "id": 17706,
+   "name": "Punpun Onodera",
+   "anime": "Goodnight Punpun",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b17706-9OF3wt3wnO6s.png",
+   "favourites": 5591,
+   "difficulty": 3
+  },
+  {
+   "id": 18344,
+   "name": "Tomoe",
+   "anime": "Kamisama Kiss",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b18344-2d8Ao1wHDZ7U.png",
+   "favourites": 5574,
+   "difficulty": 3
+  },
+  {
+   "id": 125736,
+   "name": "Elaina",
+   "anime": "Wandering Witch: The Journey of Elaina",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125736-LIaof9PjXvH3.png",
+   "favourites": 5566,
+   "difficulty": 3
+  },
+  {
+   "id": 89103,
+   "name": "Momonga",
+   "anime": "Overlord",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89103-ZsnA0r77GHsR.png",
+   "favourites": 5555,
+   "difficulty": 3
+  },
+  {
+   "id": 67321,
+   "name": "Koushi Sugawara",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67321-cxP7NdI0JC3H.png",
+   "favourites": 5533,
+   "difficulty": 3
+  },
+  {
+   "id": 14523,
+   "name": "Takumi Usui",
+   "anime": "Maid-Sama!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b14523-yFjXVeK6c6IE.png",
+   "favourites": 5528,
+   "difficulty": 3
+  },
+  {
+   "id": 89221,
+   "name": "Ochako Uraraka",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89221-gSF2a4gPbG4m.png",
+   "favourites": 5524,
+   "difficulty": 3
+  },
+  {
+   "id": 126378,
+   "name": "Dabi",
+   "anime": "My Hero Academia Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126378-RFSljq5koy5U.png",
+   "favourites": 5517,
+   "difficulty": 3
+  },
+  {
+   "id": 137260,
+   "name": "Gabimaru",
+   "anime": "Hell’s Paradise",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137260-xmSis8FmwhEE.png",
+   "favourites": 5496,
+   "difficulty": 3
+  },
+  {
+   "id": 89226,
+   "name": "Tomura Shigaraki",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89226-qGXqFthO4SM3.jpg",
+   "favourites": 5481,
+   "difficulty": 3
+  },
+  {
+   "id": 136844,
+   "name": "Mafuyu Sato",
+   "anime": "given",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136844-UoqciaLvz5Jf.png",
+   "favourites": 5474,
+   "difficulty": 3
+  },
+  {
+   "id": 10863,
+   "name": "Sebastian Michaelis",
+   "anime": "Black Butler",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b10863-DsfonbP2CATa.png",
+   "favourites": 5461,
+   "difficulty": 3
+  },
+  {
+   "id": 87655,
+   "name": "Ais Wallenstein",
+   "anime": "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87655-50i1Y554Vs3z.png",
+   "favourites": 5459,
+   "difficulty": 3
+  },
+  {
+   "id": 1261,
+   "name": "Kaworu Nagisa",
+   "anime": "Neon Genesis Evangelion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1261-HYRv3HpsSL92.jpg",
+   "favourites": 5457,
+   "difficulty": 3
+  },
+  {
+   "id": 43815,
+   "name": "Hak Son",
+   "anime": "Yona of the Dawn",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b43815-WRbln8jA1mPk.jpg",
+   "favourites": 5455,
+   "difficulty": 3
+  },
+  {
+   "id": 51347,
+   "name": "Akeno Himejima",
+   "anime": "High School DxD",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b51347-YMb9fndAriXd.png",
+   "favourites": 5443,
+   "difficulty": 3
+  },
+  {
+   "id": 126374,
+   "name": "Yotsuba Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126374-Aal36iSQ5nKz.png",
+   "favourites": 5441,
+   "difficulty": 3
+  },
+  {
+   "id": 170266,
+   "name": "Pochita",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b170266-bBXPkNJnd3mg.png",
+   "favourites": 5427,
+   "difficulty": 3
+  },
+  {
+   "id": 37832,
+   "name": "Madoka Kaname",
+   "anime": "Puella Magi Madoka Magica",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b37832-lzVj5IkUciLd.jpg",
+   "favourites": 5410,
+   "difficulty": 3
+  },
+  {
+   "id": 3180,
+   "name": "Pain",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3180-ITMGBLWNBOgV.png",
+   "favourites": 5396,
+   "difficulty": 3
+  },
+  {
+   "id": 43814,
+   "name": "Yona",
+   "anime": "Yona of the Dawn",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b43814-M0nlr2AP7vY0.png",
+   "favourites": 5369,
+   "difficulty": 3
+  },
+  {
+   "id": 127633,
+   "name": "Rio Futaba",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127633-FcCwWK5sQRhK.png",
+   "favourites": 5360,
+   "difficulty": 3
+  },
+  {
+   "id": 284163,
+   "name": "Rebecca",
+   "anime": "Cyberpunk: Edgerunners",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b284163-tt8smoAXl24x.jpg",
+   "favourites": 5359,
+   "difficulty": 3
+  },
+  {
+   "id": 139038,
+   "name": "Kanao Tsuyuri",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b139038-OcOoDUyLEsRn.png",
+   "favourites": 5352,
+   "difficulty": 3
+  },
+  {
+   "id": 284158,
+   "name": "David Martinez",
+   "anime": "Cyberpunk: Edgerunners",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b284158-z1uGKC3IYVa1.png",
+   "favourites": 5332,
+   "difficulty": 3
+  },
+  {
+   "id": 52723,
+   "name": "Kosaki Onodera",
+   "anime": "Nisekoi",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b52723-YbLFn4JmoAVQ.png",
+   "favourites": 5320,
+   "difficulty": 3
+  },
+  {
+   "id": 144594,
+   "name": "Kobeni Higashiyama",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b144594-0dbO1NSYeZ12.png",
+   "favourites": 5306,
+   "difficulty": 3
+  },
+  {
+   "id": 496,
+   "name": "Shiro Emiya",
+   "anime": "Fate/stay night: Unlimited Blade Works",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b496-GI0waavDjyk3.png",
+   "favourites": 5275,
+   "difficulty": 3
+  },
+  {
+   "id": 127445,
+   "name": "Gen Asagiri",
+   "anime": "Dr. STONE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127445-oUCyS7Tl8l5D.png",
+   "favourites": 5249,
+   "difficulty": 3
+  },
+  {
+   "id": 120970,
+   "name": "Tohru",
+   "anime": "Miss Kobayashi's Dragon Maid",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b120970-knjWLdlQIs1y.jpg",
+   "favourites": 5235,
+   "difficulty": 3
+  },
+  {
+   "id": 83017,
+   "name": "Shinoa Hiiragi",
+   "anime": "Seraph of the End: Vampire Reign",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b83017-XXdnbunnBdTd.png",
+   "favourites": 5225,
+   "difficulty": 3
+  },
+  {
+   "id": 306,
+   "name": "Rock Lee",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b306-oUTOO45xInXt.png",
+   "favourites": 5211,
+   "difficulty": 3
+  },
+  {
+   "id": 88708,
+   "name": "Kumiko Oumae",
+   "anime": "Sound! Euphonium",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88708-ZiVPl8LjIjaK.jpg",
+   "favourites": 5148,
+   "difficulty": 3
+  },
+  {
+   "id": 136069,
+   "name": "Muichiro Tokito",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136069-6PLglx4tETUX.png",
+   "favourites": 5112,
+   "difficulty": 3
+  },
+  {
+   "id": 124696,
+   "name": "Hayase Nagatoro",
+   "anime": "DON'T TOY WITH ME, MISS NAGATORO",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124696-du2Kszxelh1S.png",
+   "favourites": 5095,
+   "difficulty": 3
+  },
+  {
+   "id": 5627,
+   "name": "Brook",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5627-av8oD3zhKvDl.png",
+   "favourites": 5064,
+   "difficulty": 3
+  },
+  {
+   "id": 89199,
+   "name": "Ryunosuke Akutagawa",
+   "anime": "Bungo Stray Dogs",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89199-h8tHKG8vKPNZ.png",
+   "favourites": 5050,
+   "difficulty": 3
+  },
+  {
+   "id": 130715,
+   "name": "Arthur Boyle",
+   "anime": "Fire Force",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n130715-IYNBAHBQa14y.png",
+   "favourites": 5019,
+   "difficulty": 3
+  },
+  {
+   "id": 390,
+   "name": "Mugen",
+   "anime": "Samurai Champloo",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b390-30DZg8NvIrVk.png",
+   "favourites": 5005,
+   "difficulty": 3
+  },
+  {
+   "id": 195116,
+   "name": "Langa Hasegawa",
+   "anime": "SK8 the Infinity",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b195116-C2Y5jRPiTSng.png",
+   "favourites": 4973,
+   "difficulty": 3
+  },
+  {
+   "id": 124586,
+   "name": "Rin Shima",
+   "anime": "Laid-Back Camp",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124586-9lGoHg1zZkFr.png",
+   "favourites": 4967,
+   "difficulty": 3
+  },
+  {
+   "id": 2087,
+   "name": "Archer",
+   "anime": "Fate/stay night: Unlimited Blade Works",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2087-l5WP4W4vmfJJ.png",
+   "favourites": 4952,
+   "difficulty": 3
+  },
+  {
+   "id": 8945,
+   "name": "Noriaki Kakyouin",
+   "anime": "JoJo's Bizarre Adventure: Stardust Crusaders",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/8945-gyPfrVpCb5CF.jpg",
+   "favourites": 4948,
+   "difficulty": 3
+  },
+  {
+   "id": 87287,
+   "name": "Mikaela Hyakuya",
+   "anime": "Seraph of the End: Vampire Reign",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87287-cBUVUJNbvfvT.png",
+   "favourites": 4926,
+   "difficulty": 3
+  },
+  {
+   "id": 84781,
+   "name": "Aguero Agnis Khun",
+   "anime": "Tower of God",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b84781-sNnhOZ1SZ66f.png",
+   "favourites": 4926,
+   "difficulty": 3
+  },
+  {
+   "id": 123283,
+   "name": "Noelle Silva",
+   "anime": "Black Clover",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123283-7nJHtKha0LSm.png",
+   "favourites": 4917,
+   "difficulty": 3
+  },
+  {
+   "id": 701,
+   "name": "Nana Komatsu",
+   "anime": "NANA",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b701-gNKbnxT6dbrf.png",
+   "favourites": 4901,
+   "difficulty": 3
+  },
+  {
+   "id": 144674,
+   "name": "Yatora Yaguchi",
+   "anime": "Blue Period",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b144674-Y2Y6BlAPu22v.png",
+   "favourites": 4885,
+   "difficulty": 3
+  },
+  {
+   "id": 22050,
+   "name": "Nadeko Sengoku",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22050-RUw3vyGYdr9W.jpg",
+   "favourites": 4880,
+   "difficulty": 3
+  },
+  {
+   "id": 8439,
+   "name": "Maka Albarn",
+   "anime": "Soul Eater",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b8439-5TIyWlfClnMs.png",
+   "favourites": 4878,
+   "difficulty": 3
+  },
+  {
+   "id": 46490,
+   "name": "Annie Leonhart",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b46490-tan274Ifc1Jf.jpg",
+   "favourites": 4828,
+   "difficulty": 3
+  },
+  {
+   "id": 55147,
+   "name": "Shino Asada",
+   "anime": "Sword Art Online II",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b55147-1fCU8lONEuZQ.png",
+   "favourites": 4813,
+   "difficulty": 3
+  },
+  {
+   "id": 16342,
+   "name": "Hancock Boa",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b16342-kVOF6V5Q94go.png",
+   "favourites": 4812,
+   "difficulty": 3
+  },
+  {
+   "id": 69407,
+   "name": "Kousei Arima",
+   "anime": "Your lie in April",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69407-eyIvpsFPeARS.png",
+   "favourites": 4811,
+   "difficulty": 3
+  },
+  {
+   "id": 2456,
+   "name": "Akira Fudo",
+   "anime": "Devilman Crybaby",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2456-rTjIXMLPHTu2.jpg",
+   "favourites": 4799,
+   "difficulty": 3
+  },
+  {
+   "id": 22052,
+   "name": "Mayoi Hachikuji",
+   "anime": "Bakemonogatari",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22052-beyfl4AyMGhn.png",
+   "favourites": 4778,
+   "difficulty": 3
+  },
+  {
+   "id": 53901,
+   "name": "Madara Uchiha",
+   "anime": "Naruto: Shippuden",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b53901-HnRKSoHMG5Vg.png",
+   "favourites": 4776,
+   "difficulty": 3
+  },
+  {
+   "id": 138789,
+   "name": "Hae-In Cha",
+   "anime": "Solo Leveling",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b138789-AhE8m0LWjE7E.png",
+   "favourites": 4726,
+   "difficulty": 3
+  },
+  {
+   "id": 19,
+   "name": "Tamaki Suo",
+   "anime": "Ouran High School Host Club",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b19-7Ot7WSWZ7LKF.png",
+   "favourites": 4726,
+   "difficulty": 3
+  },
+  {
+   "id": 180887,
+   "name": "Dok-Ja Kim",
+   "anime": "Omniscient Reader",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b180887-s9sJWFuO18J8.png",
+   "favourites": 4725,
+   "difficulty": 3
+  },
+  {
+   "id": 151486,
+   "name": "William Moriarty",
+   "anime": "Moriarty the Patriot",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b151486-rAFZZZm0Byu0.png",
+   "favourites": 4712,
+   "difficulty": 3
+  },
+  {
+   "id": 222593,
+   "name": "Ken Takakura",
+   "anime": "DAN DA DAN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b222593-qBqUvpodooAI.png",
+   "favourites": 4701,
+   "difficulty": 3
+  },
+  {
+   "id": 18,
+   "name": "Haruhi Fujioka",
+   "anime": "Ouran High School Host Club",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b18-4mPQwygwffNJ.jpg",
+   "favourites": 4695,
+   "difficulty": 3
+  },
+  {
+   "id": 90181,
+   "name": "Beatrice",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b90181-wRPm0OEaucmw.png",
+   "favourites": 4667,
+   "difficulty": 3
+  },
+  {
+   "id": 208,
+   "name": "Yuki Souma",
+   "anime": "Fruits Basket (2019)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b208-5TmAqqh82wNe.png",
+   "favourites": 4667,
+   "difficulty": 3
+  },
+  {
+   "id": 4368,
+   "name": "Jean-Pierre Polnareff",
+   "anime": "JoJo's Bizarre Adventure: Stardust Crusaders",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4368-1KToX8uSi1U1.png",
+   "favourites": 4663,
+   "difficulty": 3
+  },
+  {
+   "id": 127278,
+   "name": "Jinshi",
+   "anime": "The Apothecary Diaries",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127278-0qCQciTkPOMS.jpg",
+   "favourites": 4657,
+   "difficulty": 3
+  },
+  {
+   "id": 310,
+   "name": "Hanamichi Sakuragi",
+   "anime": "Slam Dunk",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b310-3GLKM2I3EiRf.png",
+   "favourites": 4654,
+   "difficulty": 3
+  },
+  {
+   "id": 82523,
+   "name": "Sora",
+   "anime": "No Game, No Life",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b82523-JB9oevKyXWfc.png",
+   "favourites": 4649,
+   "difficulty": 3
+  },
+  {
+   "id": 55133,
+   "name": "Eru Chitanda",
+   "anime": "Hyouka",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b55133-S7lRrP0gKXpX.png",
+   "favourites": 4649,
+   "difficulty": 3
+  },
+  {
+   "id": 131106,
+   "name": "Tsukasa Yuzaki",
+   "anime": "TONIKAWA: Over The Moon For You",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b131106-ZJOpYOpurcYS.png",
+   "favourites": 4642,
+   "difficulty": 3
+  },
+  {
+   "id": 152231,
+   "name": "Tenshi no Akuma",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b152231-jiMRx9je7H6y.png",
+   "favourites": 4641,
+   "difficulty": 3
+  },
+  {
+   "id": 4606,
+   "name": "Tomoya Okazaki",
+   "anime": "Clannad",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4606-61r9h3WUrkA9.png",
+   "favourites": 4640,
+   "difficulty": 3
+  },
+  {
+   "id": 6977,
+   "name": "Sawako Kuronuma",
+   "anime": "Kimi ni Todoke: From Me to You",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6977-rCtlFRoYgE07.png",
+   "favourites": 4638,
+   "difficulty": 3
+  },
+  {
+   "id": 184311,
+   "name": "Himmel",
+   "anime": "Frieren: Beyond Journey’s End",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b184311-wQFySqYXEqf1.png",
+   "favourites": 4634,
+   "difficulty": 3
+  },
+  {
+   "id": 61371,
+   "name": "Mashiro Shiina",
+   "anime": "The Pet Girl of Sakurasou",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b61371-rhWX0wz2DDs3.jpg",
+   "favourites": 4623,
+   "difficulty": 3
+  },
+  {
+   "id": 75284,
+   "name": "Erina Nakiri",
+   "anime": "Food Wars!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b75284-4Hiyq7DOwvy7.png",
+   "favourites": 4595,
+   "difficulty": 3
+  },
+  {
+   "id": 121514,
+   "name": "Mitsuha Miyamizu",
+   "anime": "Your Name.",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121514-MGI7JRluscpz.png",
+   "favourites": 4562,
+   "difficulty": 3
+  },
+  {
+   "id": 123213,
+   "name": "Suzune Horikita",
+   "anime": "Classroom of the Elite",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123213-jUfrGBXfW7BL.png",
+   "favourites": 4558,
+   "difficulty": 3
+  },
+  {
+   "id": 423,
+   "name": "Casca",
+   "anime": "Berserk",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b423-AmVFCaJJOBsc.png",
+   "favourites": 4554,
+   "difficulty": 3
+  },
+  {
+   "id": 5186,
+   "name": "Lucy Heartfilia",
+   "anime": "Fairy Tail",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5186-izgXf2S86K9u.png",
+   "favourites": 4549,
+   "difficulty": 3
+  },
+  {
+   "id": 13084,
+   "name": "Guido Mista",
+   "anime": "JoJo's Bizarre Adventure: Golden Wind",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13084-DMCv7SP1uRBq.png",
+   "favourites": 4541,
+   "difficulty": 3
+  },
+  {
+   "id": 63845,
+   "name": "Kyoko Kirigiri",
+   "anime": "Danganronpa: The Animation",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b63845-43rWjycWhYFF.png",
+   "favourites": 4539,
+   "difficulty": 3
+  },
+  {
+   "id": 81931,
+   "name": "Fubuki",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81931-fmouMoprPVbV.png",
+   "favourites": 4526,
+   "difficulty": 3
+  },
+  {
+   "id": 72921,
+   "name": "Meliodas",
+   "anime": "The Seven Deadly Sins",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b72921-XDHNd1wflN6P.png",
+   "favourites": 4523,
+   "difficulty": 3
+  },
+  {
+   "id": 1081,
+   "name": "Ulquiorra Cifer",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1081-xLTqHfLL2I2W.png",
+   "favourites": 4515,
+   "difficulty": 3
+  },
+  {
+   "id": 89249,
+   "name": "Denki Kaminari",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89249-Ygc30RlYoFta.png",
+   "favourites": 4509,
+   "difficulty": 3
+  },
+  {
+   "id": 3195,
+   "name": "Feitan Portor",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/3195.jpg",
+   "favourites": 4501,
+   "difficulty": 3
+  },
+  {
+   "id": 3105,
+   "name": "Shiki Ryogi",
+   "anime": "the Garden of sinners Chapter 1: Thanatos. (Overlooking View)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3105-lI0m8vJ3JQK1.png",
+   "favourites": 4487,
+   "difficulty": 3
+  },
+  {
+   "id": 425,
+   "name": "Ginko",
+   "anime": "MUSHI-SHI",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b425-khK03T5n9Umq.png",
+   "favourites": 4453,
+   "difficulty": 3
+  },
+  {
+   "id": 145343,
+   "name": "Keisuke Baji",
+   "anime": "Tokyo Revengers",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b145343-vRrkdWEUXwYM.jpg",
+   "favourites": 4428,
+   "difficulty": 3
+  },
+  {
+   "id": 88346,
+   "name": "Sylphiette",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88346-h8kCL93AXj4n.png",
+   "favourites": 4424,
+   "difficulty": 3
+  },
+  {
+   "id": 144596,
+   "name": "Himeno",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b144596-kvL6SD2litJu.png",
+   "favourites": 4389,
+   "difficulty": 3
+  },
+  {
+   "id": 21928,
+   "name": "Eiji Okumura",
+   "anime": "BANANA FISH",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21928-4zjiuRL3omAo.jpg",
+   "favourites": 4355,
+   "difficulty": 3
+  },
+  {
+   "id": 87886,
+   "name": "Ougi Oshino",
+   "anime": "Monogatari Series Second Season",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87886-ZRBtKp5Sjoaa.png",
+   "favourites": 4337,
+   "difficulty": 3
+  },
+  {
+   "id": 122189,
+   "name": "Hirotaka Nifuji",
+   "anime": "Wotakoi: Love is Hard for Otaku",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122189-ai5CYyRv1CAH.png",
+   "favourites": 4333,
+   "difficulty": 3
+  },
+  {
+   "id": 122064,
+   "name": "Yuichi Katagiri",
+   "anime": "Tomodachi Game",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122064-p5x9pgsdjj4W.jpg",
+   "favourites": 4326,
+   "difficulty": 3
+  },
+  {
+   "id": 2754,
+   "name": "Doflamingo Donquixote",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2754-B4gGSlNYgsyh.jpg",
+   "favourites": 4324,
+   "difficulty": 3
+  },
+  {
+   "id": 87511,
+   "name": "Mako Mankanshoku",
+   "anime": "Kill la Kill",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b87511-T8lwlQKd6SoK.png",
+   "favourites": 4321,
+   "difficulty": 3
+  },
+  {
+   "id": 1533,
+   "name": "Kotaro Katsura",
+   "anime": "Gintama",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1533-tSqUrj2DOK5p.png",
+   "favourites": 4313,
+   "difficulty": 3
+  },
+  {
+   "id": 122687,
+   "name": "Mary Saotome",
+   "anime": "Kakegurui",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122687-jl1wk9rjO57e.png",
+   "favourites": 4276,
+   "difficulty": 3
+  },
+  {
+   "id": 1080,
+   "name": "Grimmjow Jaegerjaquez",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1080-JUNo2Or0UGZg.jpg",
+   "favourites": 4263,
+   "difficulty": 3
+  },
+  {
+   "id": 209532,
+   "name": "Bojji",
+   "anime": "Ranking of Kings",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b209532-s7ciwKqKrIw7.png",
+   "favourites": 4249,
+   "difficulty": 3
+  },
+  {
+   "id": 127292,
+   "name": "Marcille Donato",
+   "anime": "Delicious in Dungeon",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127292-MAWgxbS0Cbrs.png",
+   "favourites": 4241,
+   "difficulty": 3
+  },
+  {
+   "id": 21173,
+   "name": "Azusa Nakano",
+   "anime": "K-ON!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21173-0RB5dOJdGt9y.png",
+   "favourites": 4236,
+   "difficulty": 3
+  },
+  {
+   "id": 24596,
+   "name": "Izaya Orihara",
+   "anime": "Durarara!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b24596-IKSguezbPH9D.png",
+   "favourites": 4227,
+   "difficulty": 3
+  },
+  {
+   "id": 89223,
+   "name": "Tsuyu Asui",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89223-5762vburxnlz.png",
+   "favourites": 4215,
+   "difficulty": 3
+  },
+  {
+   "id": 141694,
+   "name": "Akaza",
+   "anime": "Demon Slayer -Kimetsu no Yaiba- The Movie: Mugen Train",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141694-0COi0GVXPuEn.png",
+   "favourites": 4207,
+   "difficulty": 3
+  },
+  {
+   "id": 128299,
+   "name": "Keigo Takami",
+   "anime": "My Hero Academia Season 4",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128299-eMEsWazNXE56.png",
+   "favourites": 4191,
+   "difficulty": 3
+  },
+  {
+   "id": 123328,
+   "name": "Isaac Foster",
+   "anime": "Angels of Death",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123328-NZApzipm9Qwy.png",
+   "favourites": 4177,
+   "difficulty": 3
+  },
+  {
+   "id": 36820,
+   "name": "Daiki Aomine",
+   "anime": "Kuroko's Basketball",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b36820-bW2c6TbIqgKO.jpg",
+   "favourites": 4177,
+   "difficulty": 3
+  },
+  {
+   "id": 68315,
+   "name": "Shinya Kougami",
+   "anime": "PSYCHO-PASS",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b68315-f9RBjyJCoj95.jpg",
+   "favourites": 4154,
+   "difficulty": 3
+  },
+  {
+   "id": 63,
+   "name": "Winry Rockbell",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/63-xloedtYxiJ2E.jpg",
+   "favourites": 4152,
+   "difficulty": 3
+  },
+  {
+   "id": 136843,
+   "name": "Ritsuka Uenoyama",
+   "anime": "given",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136843-z6IjhOi636WT.png",
+   "favourites": 4146,
+   "difficulty": 3
+  },
+  {
+   "id": 67325,
+   "name": "Ryunosuke Tanaka",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67325-yPkbZJkofp5w.jpg",
+   "favourites": 4144,
+   "difficulty": 3
+  }
+ ]
+}
