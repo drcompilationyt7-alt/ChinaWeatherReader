@@ -270,7 +270,7 @@ async function runMemePipeline(opts = {}) {
   const options = CLIP_THEMES[song.theme] || ['funny', 'cute'];
   const theme = options[Math.floor(Math.random() * options.length)];
   logger.info(`Clip theme: ${theme}`);
-  const finderArgs = [path.join(ROOT, 'core', 'meme', 'clip_finder.py'), '--out-dir', path.join(work, 'clips'), '--count', '16',
+  const finderArgs = [path.join(ROOT, 'core', 'meme', 'clip_finder.py'), '--out-dir', path.join(work, 'clips'),
     '--theme', theme, '--used', usedFile, '--block', blockFile];
   if (process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES)) finderArgs.push('--cookies', process.env.YT_COOKIES);
   const clips = await run(python(), finderArgs, 12);
