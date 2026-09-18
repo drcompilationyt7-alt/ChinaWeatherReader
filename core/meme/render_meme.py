@@ -258,6 +258,9 @@ def render(args):
                 frames[(i, (w, h))] = ClipFrames(tl['clip'], w, h, work)
             frame.paste(frames[(i, (w, h))].frame(clip_t), (x, y))
             cap = tl['clip'].get('caption')
+            # the caption font is Latin-only: never draw CJK text as empty boxes
+            if cap and any('぀' <= ch <= '鿿' or '가' <= ch <= '힯' for ch in cap):
+                cap = None
             if cap and not tl['clip'].get('has_caption'):
                 if (i, w) not in captions:
                     captions[(i, w)] = caption_image(cap, w)

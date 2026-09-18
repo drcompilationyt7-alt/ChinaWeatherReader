@@ -178,12 +178,14 @@ function run(cmd, args, timeoutMin) {
  * Clips that already carry burned-in captions keep their own.
  */
 function cleanTitle(t) {
-  const words = String(t)
-    .replace(/#[^\s#]+/g, ' ')                         // hashtags
-    .replace(/[\[(【「].*?[\])】」]/g, ' ')              // bracketed tags
-    .replace(/(shorts?|funny|viral|fyp|foryou|tiktok|douyin|compilation|part \d+|ep\.? ?\d+)/gi, ' ')
-    .replace(/[|~_*]+/g, ' ')
-    .replace(/\s+/g, ' ').trim().toLowerCase().split(' ');
+  // keep the first meaningful chunk ("Levi vs Beast Titan - Attack on Titan S3" -> "levi vs beast titan")
+  const chunk = String(t).replace(/#[^\s#]+/g, ' ').replace(/[\[(【「].*?[\])】」]/g, ' ')
+    .split(/\s[-|–—:]\s|\s*\|\s*|｜/).map(x => x.trim()).find(x => x.length >= 4) || '';
+  // captions are drawn in a Latin font for a global audience: CJK-only titles need the LLM
+  if (/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(chunk)) return '';
+  const words = chunk
+    .replace(/\b(shorts?|funny|viral|fyp|foryou|tiktok|douyin|compilation|part \d+|ep\.? ?\d+|season \d+|s\d+)\b/gi, ' ')
+    .replace(/[|~_*]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase().split(' ');
   const out = words.slice(0, 7).join(' ');
   return out.length >= 6 ? out : '';
 }
