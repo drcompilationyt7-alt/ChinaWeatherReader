@@ -83,3 +83,4 @@ youtube-credentials.json
 youtube-credentials-*.json
 # Claude Code worktrees and local state
 .claude/
+branding/meme-channel/previous-branding.json

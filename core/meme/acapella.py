@@ -3,7 +3,7 @@
 Acapella engine for the "<song> acapella" meme shorts.
 
     python core/meme/acapella.py --audio song.mp3 --out-dir work/ [--start SEC]
-        [--length 20] [--heatmap heatmap.json] [--threads N] [--debug]
+        [--length 20] [--drop 14] [--heatmap heatmap.json] [--threads N] [--debug]
 
 Picks a ~20 s hook (--start, else the yt-dlp "most replayed" heatmap, else the
 loudest vocal stretch), snaps it to a downbeat, pulls the real lead vocal out
@@ -11,6 +11,7 @@ with Demucs (htdemucs, CPU, that window only) and stacks our own mouth-made
 layers on it, one more per section:
 
     vocal  ->  + hummed "doom" bass  ->  + beatbox  ->  + ooh/aah harmony
+           ->  (--drop) the original song, on from where the stack stopped
 
 Bass, beatbox and harmony are synthesised here (glottal-pulse harmonics shaped
 by vowel formants, filtered noise bursts for the mouth drums); nothing is
@@ -786,7 +787,77 @@ def _quiet_point(env, et, a, b):
     return float(et[sel][np.argmin(env[sel])])
 
 
-def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, debug=False):
+def add_drop(x, acap, we, off, per, want, dur):
+    """
+    The original song picks up where the stack stops: from the window's last
+    downbeat for about `want` seconds of whole bars, a touch louder than the
+    acapella so it lands like a drop, while the stacked layers ring out under
+    its first hit. Returns the new mix and the drop's timing (output seconds)
+    for the editor's beat-cut edit, or (acap, None) when the song runs out.
+    """
+    import librosa
+    bar = 4 * per
+    n_bars = int(round(want / bar))
+    while n_bars >= 2 and we + n_bars * bar + 0.5 > dur:
+        n_bars -= 1
+    if n_bars < 2:
+        return acap, None
+    # the song's own grid over the drop (the tempo can sit a hair off the window's)
+    r0, r1 = max(0.0, we - bar), min(dur, we + (n_bars + 1) * bar)
+    grid, P, _ = fit_grid(x[:, int(r0 * SR):int(r1 * SR)], per, 0.0, r1 - r0)
+    grid = grid + r0
+    k = int(np.argmin(np.abs(grid - we)))
+    ds = float(grid[k]) if abs(grid[k] - we) < 0.08 else we
+    beats = ds + np.arange(n_bars * 4 + 1) * P
+    de = float(beats[-1])
+    pre, tail = 0.008, 0.35
+    seg = x[:, int((ds - pre) * SR):int((de + tail) * SR)].copy()
+    n = seg.shape[1]
+    tt = np.arange(n) / SR
+    seg *= np.clip(tt / pre, 0, 1) * np.clip((n / SR - tt) / tail, 0, 1)
+    body = seg[:, int(pre * SR):int((de - ds + pre) * SR)]
+    seg *= 10 ** ((-13.0 - lufs(body)) / 20)
+
+    d0 = int(round((ds - off - pre) * SR))
+    y = np.zeros((2, d0 + n))
+    a = acap[:, :min(acap.shape[1], y.shape[1])]
+    ta = np.arange(a.shape[1]) / SR
+    y[:, :a.shape[1]] += a * np.clip(1 - (ta - (ds - off)) / 0.25, 0, 1)
+    y[:, d0:] += seg
+    ceil = 10 ** (-1.5 / 20)
+    y = limit(y, ceil)
+    tp = true_peak(y)
+    if tp > ceil:
+        y *= ceil / tp
+
+    # accents for the edit: the strongest attacks and how hard each beat hits
+    yb = _to_asr(body)
+    env = librosa.onset.onset_strength(y=yb, sr=ASR, hop_length=256)
+    on = librosa.onset.onset_detect(onset_envelope=env, sr=ASR, hop_length=256, units='frames')
+    thr = np.percentile(env, 85) if len(env) else 0
+    hits = []
+    for f in sorted(on, key=lambda f: -env[f]):
+        if env[f] < thr:
+            break
+        t = f * 256 / ASR
+        if all(abs(t - h) >= 0.18 for h in hits):
+            hits.append(t)
+    rms = librosa.feature.rms(y=yb, frame_length=1024, hop_length=256)[0]
+    rt = np.arange(len(rms)) * 256 / ASR
+    energy = [float(rms[(rt >= b - ds) & (rt < b - ds + P)].mean()) if ((rt >= b - ds) & (rt < b - ds + P)).any() else 0.0
+              for b in beats[:-1]]
+    peak = max(energy) or 1.0
+    o = ds - off
+    info = {'start': round(o, 4), 'end': round(de - off, 4), 'source_start': round(ds, 4), 'source_end': round(de, 4),
+            'bars': n_bars, 'bpm': round(60.0 / P, 2),
+            'beats': [round(float(b - off), 4) for b in beats],
+            'downbeats': [round(float(b - off), 4) for b in beats[::4]],
+            'hits': sorted(round(o + h, 4) for h in hits),
+            'energy': [round(e / peak, 3) for e in energy]}
+    return y, info
+
+
+def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, debug=False, drop=0.0):
     import librosa
     t_start = time.time()
     threads = threads or os.cpu_count() or 2
@@ -806,7 +877,7 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     else:
         s0 = pick_window(song_features(x, bt), n_bars * 4, dur, L, centre=tp)
         how = 'heatmap' if tp is not None else 'energy (no heatmap data)' if heatmap else 'energy'
-    s0 = float(np.clip(s0, 0, max(0.0, dur - L - 0.5)))
+    s0 = float(np.clip(s0, 0, max(0.0, dur - L - drop - 0.5)))  # leave room for the drop
     log(f'[acapella] {dur:.0f}s song, ~{60 / per0:.1f} bpm, {n_bars} bars from ~{s0:.1f}s ({how}) '
         f'[{time.time() - t_start:.1f}s]')
 
@@ -909,6 +980,12 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     out, g = master(mix)
     for k in st:
         st[k] = st[k] * g * endfade
+    drop_info = None
+    if drop > 0:
+        out, drop_info = add_drop(x, out, we, off, per, drop, dur)
+        if drop_info:
+            log(f'[acapella] drop: original song {drop_info["source_start"]:.1f}-{drop_info["source_end"]:.1f}s '
+                f'({drop_info["bars"]} bars) [{time.time() - t_start:.1f}s]')
 
     paths = {'mix': os.path.join(out_dir, 'acapella.wav')}
     write_wav(paths['mix'], out)
@@ -948,7 +1025,7 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         'source': {'path': os.path.abspath(audio), 'window_start': round(ws, 4), 'window_end': round(we, 4),
                    'offset': round(off, 4), 'picked_by': how},
         'bpm': round(bpm, 2),
-        'duration': round(n_out / SR, 4),
+        'duration': round(out.shape[1] / SR, 4),
         'preroll': round(pre, 4),
         'beats': [round(float(b), 4) for b in beats_out[:nb_all]],
         'downbeats': [round(float(b), 4) for b in beats_out[:nb_all:4]],
@@ -956,6 +1033,7 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         'chords_per_beat': [chord_name(c) for c in chords[:n_bars * 4]],
         'sections': sections,
         'end_hit': end_hit,
+        'drop': drop_info,
         'layers': {
             'vocal': {'file': 'vocal.wav', 'onsets': von},
             'bass': {'file': 'bass.wav', 'notes': ev['bass']},
@@ -971,11 +1049,12 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     paths['timeline'] = os.path.join(out_dir, 'timeline.json')
     with open(paths['timeline'], 'w', encoding='utf-8') as f:
         json.dump(timeline, f, indent=1)
-    log(f'[acapella] done: {bpm:.1f} bpm, {n_out / SR:.1f}s, chords {" ".join(b["chord"] for b in bars)} '
+    log(f'[acapella] done: {bpm:.1f} bpm, {out.shape[1] / SR:.1f}s, chords {" ".join(b["chord"] for b in bars)} '
         f'[{time.time() - t_start:.1f}s]')
     return {'ok': True, 'mix': os.path.abspath(paths['mix']), 'stems': {k: os.path.abspath(v) for k, v in stems_out.items()},
-            'timeline': os.path.abspath(paths['timeline']), 'bpm': round(bpm, 2), 'duration': round(n_out / SR, 3),
-            'window_start': round(ws, 3), 'picked_by': how}
+            'timeline': os.path.abspath(paths['timeline']), 'bpm': round(bpm, 2), 'duration': round(out.shape[1] / SR, 3),
+            'window_start': round(ws, 3), 'window_end': round(we, 3), 'picked_by': how,
+            'drop': {k: drop_info[k] for k in ('start', 'end', 'source_start', 'source_end')} if drop_info else None}
 
 
 def main():
@@ -985,12 +1064,14 @@ def main():
     ap.add_argument('--start', type=float, help='window start in the song (s); snapped to a downbeat')
     ap.add_argument('--length', type=float, default=20.0, help='target length (s), rounded to whole bars')
     ap.add_argument('--heatmap', help='yt-dlp heatmap JSON (list of {start_time, end_time, value}) or -J dump')
+    ap.add_argument('--drop', type=float, default=0.0,
+                    help='then play the original song on from where the stack ends, about this many seconds (whole bars)')
     ap.add_argument('--threads', type=int, help='torch threads (default: all cores)')
     ap.add_argument('--debug', action='store_true', help='also write accomp/drums/source windows')
     args = ap.parse_args()
     os.environ.setdefault('HF_HUB_DISABLE_SYMLINKS_WARNING', '1')
     try:
-        res = run(args.audio, args.out_dir, args.start, args.length, args.heatmap, args.threads, args.debug)
+        res = run(args.audio, args.out_dir, args.start, args.length, args.heatmap, args.threads, args.debug, args.drop)
     except Exception as e:
         import traceback
         traceback.print_exc()

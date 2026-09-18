@@ -165,6 +165,15 @@ def main():
     if isinstance(manifest, dict):
         manifest.update(out if isinstance(out, dict) else {'clips': out})
         out = manifest
+        # the drop edit's shots: same safety, quality and anime/real checks (no vibe), order kept
+        if manifest.get('edit'):
+            ok_edit = []
+            for c in manifest['edit']:
+                c['judge'] = judge.judge(c, args.theme)
+                bad = [r for r in c['judge'].get('reason', '').split(', ') if r and not r.startswith('does not look like')]
+                (rejected if bad else ok_edit).append(c)
+            manifest['edit'] = ok_edit
+            manifest['rejected'] = rejected
     json.dump(out, open(args.clips, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(json.dumps({'ok': True, 'kept': len(kept), 'rejected': [(c.get('source_id'), c['judge'].get('reason')) for c in rejected]},
                      ensure_ascii=False))

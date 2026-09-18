@@ -20,13 +20,26 @@ the layer, and every clip keeps looping once it is on screen:
 - A quick glow marks only the tile that has just appeared; the big layer label
   pops up on top; all tiles bounce together with the beat (harder on downbeats).
 - Clips are shown whole: fitted over a blurred copy of themselves, never cropped.
-- Clip audio is never used; the acapella is the only soundtrack.
+
+Then the drop (timeline "drop", from acapella.py --drop): the original song
+comes in where the stack stopped and the short turns into a full-screen
+AMV-style edit of the same anime / group (manifest "edit" shots):
+- a white flash and a zoom punch on the drop, a shot held for the first bar,
+  then cuts on the beat (every 2 beats, every beat as a stutter into each new
+  phrase, holds where the song is quiet)
+- shots of the same song (K-pop stages, the anime's opening) play in sync
+  with it; the others get a velocity ramp (fast into each beat, slow after)
+  or, when they carry a clean impact sound, play at speed with that sound
+  mixed on the beat ("sound edit")
+- beat pumps, a shake on phrase starts, RGB split and a flash on downbeats,
+  graded, sharpened and vignetted like the 4K edits it copies.
 
 Inputs
   --audio      acapella mix from core/meme/acapella.py
   --timeline   its timeline.json (beats, downbeats, sections, onsets per layer)
   --clips      clips.json from core/meme/clip_finder.py (vibe, peak, hook-ranked)
   --title      top caption, e.g. "yara yara acapella"
+  --subtitle   smaller line under it: the anime / group every clip is from
 
     python core/meme/render_meme.py --audio acapella.wav --timeline timeline.json \
         --clips clips.json --title "yara yara acapella" --out meme.mp4
@@ -45,8 +58,9 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', 'quiz'))
-from render_quiz import text_layer, pill, put, with_shadow, clamp, ease_out_back  # noqa: E402
+from render_quiz import text_layer, pill, put, with_shadow, clamp, ease_out_back, ease_out_cubic  # noqa: E402
 import quiz_emoji  # noqa: E402
+import acapella as audio_io  # noqa: E402  (same folder: wav io and the limiter)
 
 W, H, FPS = 1080, 1920, 30
 LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']
@@ -60,6 +74,7 @@ LAYOUT = {
 }
 GLOW = (255, 214, 0)
 GLOW_SEC = 0.5
+EDIT_LABEL = ('FULL SONG', '🔊')
 
 
 def probe_duration(path):
@@ -79,14 +94,20 @@ class ClipFrames:
     letterbox bars (content_box from clip_finder) are trimmed first.
     """
 
-    def __init__(self, clip, w, h, workdir):
+    def __init__(self, clip, w, h, workdir, fill=False, cx=0.5):
         x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
         trim = f'crop=iw*{x1 - x0:.4f}:ih*{y1 - y0:.4f}:iw*{x0:.4f}:ih*{y0:.4f},' if (x1 - x0) * (y1 - y0) < 0.97 else ''
-        vf = (f'[0:v]{trim}split[a][b];'
-              f'[a]scale={w // 4}:{h // 4}:force_original_aspect_ratio=increase,crop={w // 4}:{h // 4},'
-              f'boxblur=6:2,eq=brightness=-0.18:saturation=1.2,scale={w}:{h}[bg];'
-              f'[b]scale={w}:{h}:force_original_aspect_ratio=decrease[fg];'
-              f'[bg][fg]overlay=(W-w)/2:(H-h)/2,fps={FPS}')
+        if fill:
+            # the edit: fill the screen around where the action is, graded and sharpened like a 4K edit
+            vf = (f'[0:v]{trim}scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,'
+                  f'crop={w}:{h}:max(0\\,min(iw-{w}\\,{cx:.3f}*iw-{w // 2})):(ih-{h})/2,'
+                  f'eq=contrast=1.10:saturation=1.30:brightness=0.01,unsharp=5:5:0.8:5:5:0.0,fps={FPS}')
+        else:
+            vf = (f'[0:v]{trim}split[a][b];'
+                  f'[a]scale={w // 4}:{h // 4}:force_original_aspect_ratio=increase,crop={w // 4}:{h // 4},'
+                  f'boxblur=6:2,eq=brightness=-0.18:saturation=1.2,scale={w}:{h}[bg];'
+                  f'[b]scale={w}:{h}:force_original_aspect_ratio=decrease[fg];'
+                  f'[bg][fg]overlay=(W-w)/2:(H-h)/2,fps={FPS}')
         self.dir = tempfile.mkdtemp(prefix=f'tile{w}x{h}-', dir=workdir)
         subprocess.run(['ffmpeg', '-v', 'error', '-i', clip['path'], '-an', '-filter_complex', vf, '-q:v', '3',
                         os.path.join(self.dir, '%05d.jpg')], check=False)
@@ -146,6 +167,278 @@ def time_map(period, offset, hits, onsets, lo=0.8, hi=1.25):
     return anchors
 
 
+def focus_x(clip):
+    """Where the action sits across the frame (0..1): the densest detail, pulled towards the centre."""
+    x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', clip['path'], '-an', '-vf', 'fps=2,scale=192:108,format=gray',
+                        '-f', 'rawvideo', '-'], capture_output=True)
+    a = np.frombuffer(r.stdout, dtype=np.uint8)
+    if a.size < 192 * 108:
+        return 0.5
+    g = a[:a.size // (192 * 108) * 192 * 108].reshape(-1, 108, 192).astype(np.float32)
+    g = g[:, int(y0 * 108):max(int(y0 * 108) + 2, int(y1 * 108)), int(x0 * 192):max(int(x0 * 192) + 2, int(x1 * 192))]
+    n = g.shape[2]
+    col = (np.abs(np.diff(g, axis=2))[:, :-1, :] + np.abs(np.diff(g, axis=1))[:, :, :-1]).mean(axis=(0, 1))
+    x = (np.arange(len(col)) + 0.5) / len(col)
+    col = col * np.exp(-0.5 * ((x - 0.5) / 0.28) ** 2)
+    ar = (x1 - x0) * 16 / max(1e-3, (y1 - y0) * 9)  # clip aspect over a 16:9 frame
+    cw = min(1.0, (9 / 16) / max(1e-3, ar * 9 / 16 * 16 / 9))  # share of the width a 9:16 crop keeps
+    k = max(1, int(round(cw * len(col))))
+    if k >= len(col):
+        return 0.5
+    win = np.convolve(col, np.ones(k), mode='valid')
+    c = (int(np.argmax(win)) + k / 2) / n
+    return float(np.clip(0.5 + 0.8 * (c - 0.5), 0.0, 1.0))
+
+
+def clip_audio(path):
+    """The clip's own sound as (2, n) float at the mix rate, or None."""
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-vn', '-ac', '2', '-ar', str(audio_io.SR), '-f', 'f32le', '-'],
+                       capture_output=True)
+    a = np.frombuffer(r.stdout, dtype=np.float32)
+    return a.reshape(-1, 2).T.astype(np.float64) if a.size > audio_io.SR // 4 else None
+
+
+def _vel_raw(x, lo=0.3, hi=3.0, tau=0.12):
+    # speed lo + (hi - lo) * (e^(-x/tau) + e^(-(1-x)/tau)), integrated: ~3x on the hit, ~0.3x slow-mo between
+    return lo * x + (hi - lo) * tau * ((1 - np.exp(-x / tau)) + (np.exp(-(1 - x) / tau) - np.exp(-1 / tau)))
+
+
+def velocity(x):
+    """Clip progress through one beat of a velocity edit (0..1 -> 0..1, mean speed 1)."""
+    return _vel_raw(x) / _vel_raw(1.0)
+
+
+def edit_shots(drop, pool):
+    """
+    The cut list for the drop: a held first bar, then a shot every 2 beats
+    (every 4 where the song is quiet, every beat as a stutter into each new
+    4-bar phrase, the second of each stutter pair a punch-in on the same
+    shot). Shots of the same song play in sync; the rest start on a motion
+    hit (velocity ramp) or on an impact sound (sound edit, at speed).
+    """
+    beats = drop['beats']
+    P = 60.0 / drop['bpm']
+    energy = drop.get('energy') or []
+    nb = len(beats) - 1
+    step = 2 if 2 * P >= 0.55 else 4
+    cuts, k = [0], (4 if nb >= 8 else 2)
+    while k < nb:
+        cuts.append(k)
+        bar = k // 4
+        e = float(np.mean(energy[bar * 4:bar * 4 + 4])) if energy[bar * 4:bar * 4 + 4] else 1.0
+        if bar % 4 == 3 and P >= 0.24:
+            k += 1
+        elif e < 0.55:
+            k = (k // 4 + 1) * 4
+        else:
+            k += step
+    cuts = sorted(set(c for c in cuts if c < nb)) + [nb]
+
+    aligned = sorted([c for c in pool if c.get('aligned')], key=lambda c: -(c.get('align_score') or 0))
+    others = [c for c in pool if not c.get('aligned')] or aligned
+    if len(aligned) >= 2:
+        # stage mix: switch between synced performances of the song every bar (every 2 beats into a phrase)
+        cuts = [0]
+        k = 4
+        while k < nb:
+            cuts.append(k)
+            k += 2 if (k // 4) % 4 == 3 else 4
+        cuts = sorted(set(c for c in cuts if c < nb)) + [nb]
+    cursor = {id(c): 0 for c in pool}
+    shots, prev, ai, oi = [], None, 0, 0
+    for j in range(len(cuts) - 1):
+        k0, k1 = cuts[j], cuts[j + 1]
+        t0, t1 = float(beats[k0]), float(beats[k1])
+        stutter = k1 - k0 == 1
+        if stutter and shots and shots[-1].get('stutter') and shots[-1].get('pair') == 1:
+            s = dict(shots[-1], t0=t0, t1=t1, zoom=1.32, pair=2, sfx=None)  # punch-in on the same shot
+            if s['mode'] != 'aligned':
+                s['c0'] = s['c0'] + (shots[-1]['t1'] - shots[-1]['t0'])
+            shots.append(s)
+            continue
+        if aligned and (j == 0 or len(aligned) >= 2 or (j % 2 == 0 and not stutter)):
+            clip = aligned[ai % len(aligned)]
+            ai += 1
+            off = t0 - drop['start'] + drop['source_start'] - float(clip['song_offset'])
+            dur = float(clip.get('duration') or 0)
+            if 0 <= off and off + (t1 - t0) <= dur + 0.05:
+                shots.append({'t0': t0, 't1': t1, 'clip': clip, 'mode': 'aligned', 'c0': off, 'zoom': 1.0,
+                              'stutter': stutter, 'pair': 1})
+                prev = clip
+                continue
+        cands = [c for c in others if c is not prev] or others
+        clip = cands[oi % len(cands)]
+        oi += 1
+        dur = float(clip.get('duration') or probe_duration(clip['path']))
+        need = t1 - t0
+        sfx = [h for h in (clip.get('sfx_hits') or []) if h >= 0.02]
+        use_sfx = clip.get('has_audio') and (clip.get('sfx_score') or 0) >= 0.45 and sfx
+        hits = sorted(clip.get('_hits') or [])
+        if use_sfx:
+            h = sfx[cursor[id(clip)] % len(sfx)]
+            c0, mode = h - 0.02, 'sfx'
+        elif hits:
+            h = hits[cursor[id(clip)] % len(hits)]
+            c0, mode = h - 0.06, 'velocity'
+        else:
+            c0, mode = (cursor[id(clip)] * 1.3) % max(0.1, dur - need), 'velocity'
+        cursor[id(clip)] += 1
+        c0 = float(np.clip(c0, 0.0, max(0.0, dur - need - 0.03)))
+        shots.append({'t0': t0, 't1': t1, 'clip': clip, 'mode': mode, 'c0': c0, 'zoom': 1.0, 'stutter': stutter,
+                      'pair': 1, 'sfx': (c0, min(need, 0.9)) if mode == 'sfx' else None})
+        prev = clip
+    return shots
+
+
+def shot_time(shot, t, P):
+    """Clip time shown at output time t inside a shot (never before the shot's first frame)."""
+    u = max(0.0, t - shot['t0'])
+    if shot['mode'] in ('aligned', 'sfx'):
+        return shot['c0'] + u
+    n, x = divmod(u / P, 1.0)
+    return shot['c0'] + P * (n + velocity(x))
+
+
+def mix_sfx(song_path, shots, out_path):
+    """The song with each sound-edit shot's own impact mixed in on its cut (music ducked a touch under it)."""
+    song = audio_io.load_audio(song_path)
+    SR = audio_io.SR
+    n_sfx = 0
+    cache = {}
+    for s in shots:
+        if not s.get('sfx'):
+            continue
+        path = s['clip']['path']
+        if path not in cache:
+            cache[path] = clip_audio(path)
+        a = cache[path]
+        if a is None:
+            continue
+        c0, L = s['sfx']
+        seg = a[:, int(c0 * SR):int((c0 + L) * SR)].copy()
+        if seg.shape[1] < SR // 20:
+            continue
+        m = seg.shape[1]
+        tt = np.arange(m) / SR
+        seg *= np.clip(tt / 0.005, 0, 1) * np.clip((m / SR - tt) / 0.15, 0, 1)
+        pk = np.abs(seg).max()
+        if pk < 1e-4:
+            continue
+        seg *= 0.5 / pk
+        i0 = int(s['t0'] * SR)
+        m = min(m, song.shape[1] - i0)
+        if m <= 0:
+            continue
+        duck = 1 - 0.25 * np.clip(1 - tt[:m] / 0.3, 0, 1)
+        song[:, i0:i0 + m] = song[:, i0:i0 + m] * duck + seg[:, :m]
+        n_sfx += 1
+    ceil = 10 ** (-1.5 / 20)
+    song = audio_io.limit(song, ceil)
+    tp = audio_io.true_peak(song)
+    if tp > ceil:
+        song *= ceil / tp
+    audio_io.write_wav(out_path, song)
+    return n_sfx
+
+
+def vignette(w, h, strength=80):
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h / 2) / (h / 2)) ** 2) / np.sqrt(2)
+    a = (np.clip((r - 0.45) / 0.55, 0, 1) ** 1.6 * strength).astype(np.uint8)
+    im = np.zeros((h, w, 4), dtype=np.uint8)
+    im[..., 3] = a
+    return Image.fromarray(im, 'RGBA')
+
+
+def rgb_split(img, px):
+    a = np.asarray(img).copy()
+    if px > 0:
+        a[:, px:, 0] = a[:, :-px, 0]
+        a[:, :-px, 2] = a[:, px:, 2]
+    return Image.fromarray(a)
+
+
+class Edit:
+    """The drop: a full-screen beat-cut edit of the source's shots over the original song."""
+
+    def __init__(self, drop, pool, workdir):
+        self.drop = drop
+        self.P = 60.0 / drop['bpm']
+        for c in pool:
+            c['_hits'] = motion_hits(c)
+        self.shots = edit_shots(drop, pool)
+        self.frames = {}
+        self.workdir = workdir
+        self.beats = drop['beats']
+        self.downbeats = drop['downbeats']
+        self.phrases = drop['downbeats'][::4]
+        self.cut_times = [s['t0'] for s in self.shots]
+        self.hits = drop.get('hits') or []
+        energy = drop.get('energy') or []
+        # how hard each beat hits: its energy, and whether a strong attack sits on it
+        self.beat_gain = [(energy[i] if i < len(energy) else 1.0) * (1.0 if any(abs(h - b) < 0.06 for h in self.hits) else 0.4)
+                          for i, b in enumerate(self.beats)]
+        self.vig = vignette(W, H)
+        self.label = label_image(None, EDIT_LABEL)
+
+    def _frames(self, clip):
+        key = clip['path']
+        if key not in self.frames:
+            self.frames[key] = ClipFrames(clip, W, H, self.workdir, fill=True, cx=focus_x(clip))
+        return self.frames[key]
+
+    def frame(self, t):
+        # picture cuts land a frame ahead of the beat, which reads as exactly on it
+        shot = next((s for s in reversed(self.shots) if s['t0'] <= t + 1.0 / FPS + 1e-6), self.shots[0])
+        ct = shot_time(shot, t, self.P)
+        img = self._frames(shot['clip']).frame(ct)
+        since = lambda ts: min([t - b for b in ts if b <= t + 1e-6] or [9.0])  # noqa: E731
+        sd, sb, sdb, sph, scut = (t - self.drop['start'], since(self.beats), since(self.downbeats),
+                                  since(self.phrases), since(self.cut_times))
+        span = max(0.3, shot['t1'] - shot['t0'])
+        z = shot['zoom'] * (1 + 0.05 * clamp((t - shot['t0']) / span))           # slow push-in
+        if sd < 0.5:
+            z *= 1 + 0.22 * (1 - ease_out_cubic(sd / 0.5))                      # the drop punch
+        if sb < 0.18:
+            bi = max(0, int(np.searchsorted(self.beats, t + 1e-6)) - 1)
+            g = self.beat_gain[bi] if bi < len(self.beat_gain) else 0.5
+            z *= 1 + (0.08 if sdb < 0.18 else 0.045) * g * (1 - sb / 0.18) ** 2  # beat pump, by how hard it hits
+        amp = 0.0
+        if sd < 0.3:
+            amp = 24 * (1 - sd / 0.3)
+        elif sph < 0.22:
+            amp = 14 * (1 - sph / 0.22)                                         # phrase starts shake
+        dx, dy = amp * np.sin(t * 62.0), amp * np.cos(t * 75.0)                # ~10-12 Hz
+        if z > 1.001 or amp > 0.5:
+            zw, zh = int(W * z), int(H * z)
+            img = img.resize((zw, zh), Image.BILINEAR)
+            x = int(np.clip((zw - W) / 2 + dx, 0, zw - W))
+            y = int(np.clip((zh - H) / 2 + dy, 0, zh - H))
+            img = img.crop((x, y, x + W, y + H))
+        if sdb < 0.1 and sd > 0.25:
+            img = rgb_split(img, int(12 * (1 - sdb / 0.1)))
+        frame = img.convert('RGBA')
+        frame.alpha_composite(self.vig)
+        flash = 0
+        if sd < 0.22:
+            flash = int(255 * (1 - sd / 0.22))
+        elif scut < 0.08 and sdb < 0.08:
+            flash = int(110 * (1 - scut / 0.08))
+        if flash:
+            frame.alpha_composite(Image.new('RGBA', (W, H), (255, 255, 255, flash)))
+        # a two-frame dip to black right before each new phrase
+        nxt = min([p - t for p in self.phrases if p > t + 1e-6] or [9.0])
+        if nxt < 2.0 / FPS and sd > 0.5:
+            frame.alpha_composite(Image.new('RGBA', (W, H), (0, 0, 0, 200)))
+        return frame
+
+    def stats(self):
+        modes = [s['mode'] for s in self.shots]
+        return {'editShots': len(self.shots), 'editAligned': modes.count('aligned'), 'editSfx': modes.count('sfx'),
+                'editClips': [s['clip'].get('source_id') for s in self.shots]}
+
+
 def choose_clips(clips, n):
     """One clip per layer, matching the layer's vibe (manifest order = hook rank); different source videos."""
     chosen, used_src = [], set()
@@ -185,9 +478,9 @@ def plan(timeline, clips):
     return tiles
 
 
-def label_image(layer):
+def label_image(layer, override=None):
     """Big layer label ("VOCALS", "+ BASS", ...) that pops up on top."""
-    text, emo = LAYER_LABEL.get(layer, (layer.upper(), '🎵'))
+    text, emo = override or LAYER_LABEL.get(layer, (layer.upper(), '🎵'))
     p = pill(text, 58, (255, 214, 0), max_w=700)
     e = quiz_emoji.image(emo, 72)
     if e is not None:
@@ -230,21 +523,52 @@ def render(args):
     tiles = plan(timeline, clips)
     starts = [tl['start'] for tl in tiles]
     downbeats = timeline.get('downbeats') or timeline['beats'][::4]
+    work = tempfile.mkdtemp(prefix='meme-tiles-')
+
+    # the drop: an edit of the source's own shots on the original song (tile clips fill in if there are few)
+    drop = timeline.get('drop')
+    edit = None
+    audio = args.audio
+    if drop:
+        pool = list((manifest.get('edit') if isinstance(manifest, dict) else None) or [])
+        tile_ids = {id(tl['clip']) for tl in tiles}
+        if len(pool) < 4:
+            pool += [c for c in clips if id(c) not in tile_ids][:4 - len(pool)]
+        if len(pool) < 3:
+            pool += [tl['clip'] for tl in tiles][:3 - len(pool)]
+        edit = Edit(drop, pool, work)
+        if any(sh.get('sfx') for sh in edit.shots):
+            audio = os.path.join(work, 'mix.wav')
+            edit.n_sfx = mix_sfx(args.audio, edit.shots, audio)
 
     title = title_image(args.title, args.emoji) if args.title else None
+    subtitle = text_layer(args.subtitle.lower(), 44, fill=(255, 214, 0), stroke=6, stroke_fill=(0, 0, 0), max_w=900,
+                          min_size=26) if args.subtitle else None
     labels = [label_image(tl['layer']) for tl in tiles]
     captions = {}
     wm = text_layer(args.watermark, 38, fill=(255, 255, 255, 170), stroke=3, stroke_fill=(0, 0, 0, 120)) if args.watermark else None
 
     cmd = ['ffmpeg', '-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
-           '-i', args.audio, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
+           '-i', audio, '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
            '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', args.out]
     enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    work = tempfile.mkdtemp(prefix='meme-tiles-')
     frames = {}  # (tile, size) -> ClipFrames
     beats = timeline['beats']
     for f in range(int(dur * FPS)):
         t = f / FPS
+        if edit is not None and t >= drop['start'] - 0.5 / FPS:
+            frame = edit.frame(t)
+            age = t - drop['start']
+            if age < 1.6:
+                put(frame, edit.label, W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.6 - age) / 0.3))
+            if title is not None:
+                put(frame, title, W / 2, 250)
+            if subtitle is not None:
+                put(frame, subtitle, W / 2, 330)
+            if wm is not None:
+                put(frame, wm, W / 2, 150)
+            enc.stdin.write(frame.convert('RGB').tobytes())
+            continue
         n = max(1, sum(1 for s in starts if s <= t))
         layout = LAYOUT[n]
         frame = Image.new('RGBA', (W, H), (0, 0, 0, 255))
@@ -293,8 +617,16 @@ def render(args):
                 frame = frame.resize((zw, zh), Image.BILINEAR).crop(((zw - W) // 2, (zh - H) // 2, (zw - W) // 2 + W, (zh - H) // 2 + H))
         if age < 1.8:
             put(frame, labels[n - 1], W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.8 - age) / 0.3))
+        # the last half beat before the drop fades to black: the drop hits out of the dark
+        if edit is not None:
+            to_drop = drop['start'] - t
+            half = 30.0 / drop['bpm']
+            if 0 < to_drop < half:
+                frame.alpha_composite(Image.new('RGBA', (W, H), (0, 0, 0, int(230 * (1 - to_drop / half)))))
         if title is not None:
             put(frame, title, W / 2, 250)
+        if subtitle is not None:
+            put(frame, subtitle, W / 2, 330)
         if wm is not None:
             put(frame, wm, W / 2, 150)
         enc.stdin.write(frame.convert('RGB').tobytes())
@@ -303,9 +635,14 @@ def render(args):
         raise SystemExit('ffmpeg failed')
     shutil.rmtree(work, ignore_errors=True)
     used = [tl['clip'] for tl in tiles]
-    return {'duration': round(dur, 2), 'cuts': len(used), 'clipsUsed': [c.get('source_id') for c in used],
+    everything = used + ([sh['clip'] for sh in edit.shots] if edit else [])
+    info = {'duration': round(dur, 2), 'cuts': len(used) + (len(edit.shots) if edit else 0),
+            'clipsUsed': list(dict.fromkeys(c.get('source_id') for c in everything if c.get('source_id'))),
             'vibes': [c.get('vibe') for c in used], 'stemSyncedHits': [tl['synced'] for tl in tiles],
-            'channelsUsed': sorted({c.get('source_channel') for c in used if c.get('source_channel')})}
+            'channelsUsed': sorted({c.get('source_channel') for c in everything if c.get('source_channel')})}
+    if edit:
+        info.update(edit.stats(), soundEditHits=getattr(edit, 'n_sfx', 0))
+    return info
 
 
 def main():
@@ -319,6 +656,7 @@ def main():
     ap.add_argument('--clips', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--title', default='')
+    ap.add_argument('--subtitle', default='', help='the anime / group the clips are from, under the title')
     ap.add_argument('--emoji', default='😭,✌️', help='comma-separated emoji after the title, or "none"')
     ap.add_argument('--watermark', default=os.environ.get('WATERMARK', ''))
     ap.add_argument('--seed', type=int, default=None)
