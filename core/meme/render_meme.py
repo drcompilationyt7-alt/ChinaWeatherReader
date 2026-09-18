@@ -53,6 +53,9 @@ import subprocess
 import sys
 import tempfile
 
+import math
+
+import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -61,8 +64,10 @@ sys.path.insert(0, os.path.join(HERE, '..', 'quiz'))
 from render_quiz import text_layer, pill, put, with_shadow, clamp, ease_out_back, ease_out_cubic  # noqa: E402
 import quiz_emoji  # noqa: E402
 import acapella as audio_io  # noqa: E402  (same folder: wav io and the limiter)
+import edit_fx as fx  # noqa: E402
 
-W, H, FPS = 1080, 1920, 30
+W, H, FPS = 1080, 1920, 60
+AFPS = 30  # motion analysis rate
 LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']
 VIBE = {'vocal': 'dance', 'bass': 'cool', 'beatbox': 'fight', 'harmony': 'cute'}
 LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'bass': ('+ BASS', '🗣️'), 'beatbox': ('+ BEATBOX', '🥁'), 'harmony': ('+ HARMONY', '🎶')}
@@ -129,7 +134,7 @@ def motion_hits(clip):
     """Times of the clip's strongest motion hits (frame-difference peaks), unless clip_finder gave them."""
     if clip.get('hits'):
         return sorted(float(h) for h in clip['hits'])
-    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', clip['path'], '-an', '-vf', f'fps={FPS},scale=64:114,format=gray',
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', clip['path'], '-an', '-vf', f'fps={AFPS},scale=64:114,format=gray',
                         '-f', 'rawvideo', '-'], capture_output=True)
     a = np.frombuffer(r.stdout, dtype=np.uint8)
     if a.size < 64 * 114 * 3:
@@ -140,8 +145,8 @@ def motion_hits(clip):
     thr = energy.mean() + 0.6 * energy.std()
     hits, last = [], -1e9
     for k in range(1, len(energy) - 1):
-        if energy[k] >= thr and energy[k] >= energy[k - 1] and energy[k] >= energy[k + 1] and k - last >= 0.25 * FPS:
-            hits.append((k + 1) / FPS)
+        if energy[k] >= thr and energy[k] >= energy[k - 1] and energy[k] >= energy[k + 1] and k - last >= 0.25 * AFPS:
+            hits.append((k + 1) / AFPS)
             last = k
     return hits
 
@@ -200,7 +205,7 @@ def clip_audio(path):
     return a.reshape(-1, 2).T.astype(np.float64) if a.size > audio_io.SR // 4 else None
 
 
-def _vel_raw(x, lo=0.3, hi=3.0, tau=0.12):
+def _vel_raw(x, lo=0.45, hi=2.2, tau=0.14):
     # speed lo + (hi - lo) * (e^(-x/tau) + e^(-(1-x)/tau)), integrated: ~3x on the hit, ~0.3x slow-mo between
     return lo * x + (hi - lo) * tau * ((1 - np.exp(-x / tau)) + (np.exp(-(1 - x) / tau) - np.exp(-1 / tau)))
 
@@ -343,101 +348,127 @@ def mix_sfx(song_path, shots, out_path):
     return n_sfx
 
 
-def vignette(w, h, strength=80):
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h / 2) / (h / 2)) ** 2) / np.sqrt(2)
-    a = (np.clip((r - 0.45) / 0.55, 0, 1) ** 1.6 * strength).astype(np.uint8)
-    im = np.zeros((h, w, 4), dtype=np.uint8)
-    im[..., 3] = a
-    return Image.fromarray(im, 'RGBA')
-
-
-def rgb_split(img, px):
-    a = np.asarray(img).copy()
-    if px > 0:
-        a[:, px:, 0] = a[:, :-px, 0]
-        a[:, :-px, 2] = a[:, px:, 2]
-    return Image.fromarray(a)
-
-
 class Edit:
-    """The drop: a full-screen beat-cut edit of the source's shots over the original song."""
+    """
+    The drop: a full-screen beat-cut edit of the source's shots over the original song, at 60 fps.
+    Shots are graded and sharpened once (edit_fx.prepare_shot); every frame then gets a sub-pixel
+    camera (push-in, beat punches, shakes, whips) with motion blur, transitions, the palette
+    gradient, grain and vignette, and the anime's name as a glowing title card when the song drops.
+    """
 
-    def __init__(self, drop, pool, workdir):
+    def __init__(self, drop, pool, workdir, layout='letterbox', look='cinematic', title=''):
         self.drop = drop
         self.P = 60.0 / drop['bpm']
+        self.layout, self.look = layout, look
         for c in pool:
             c['_hits'] = motion_hits(c)
         self.shots = edit_shots(drop, pool)
-        self.frames = {}
-        self.workdir = workdir
         self.beats = drop['beats']
         self.downbeats = drop['downbeats']
         self.phrases = drop['downbeats'][::4]
         self.cut_times = [s['t0'] for s in self.shots]
-        self.hits = drop.get('hits') or []
+        hits = drop.get('hits') or []
         energy = drop.get('energy') or []
-        # how hard each beat hits: its energy, and whether a strong attack sits on it
-        self.beat_gain = [(energy[i] if i < len(energy) else 1.0) * (1.0 if any(abs(h - b) < 0.06 for h in self.hits) else 0.4)
-                          for i, b in enumerate(self.beats)]
-        self.vig = vignette(W, H)
-        self.label = label_image(None, EDIT_LABEL)
+        strong = []
+        for i, b in enumerate(self.beats):
+            on_hit = any(abs(h - b) < 0.06 for h in hits)
+            if b in self.downbeats or on_hit:
+                strong.append((b, (energy[i] if i < len(energy) else 1.0) * (1.0 if b in self.downbeats else 0.6)))
+        self.cam = fx.Camera(self.beats, self.downbeats, self.phrases, strong, drop['start'])
+        # prepare each distinct clip once
+        self.frames = {}
+        for s in self.shots:
+            key = s['clip']['path']
+            if key not in self.frames:
+                cx = focus_x(s['clip']) if layout == 'fill' else 0.5
+                self.frames[key] = fx.prepare_shot(s['clip'], workdir, layout=layout, look=look, cx=cx)
+        # transitions: phrase starts zoom-blur in, other downbeats alternate whip / flash, the rest hard cuts
+        whip = 1
+        for j, s in enumerate(self.shots):
+            s['fx'] = 'cut'
+            s['push'] = 0.05 + 0.03 * (j % 3 == 0)
+            s['drift'] = 0.02 * (1 if j % 2 else -1)
+            if j == 0 or s.get('pair') == 2:
+                continue
+            if any(abs(s['t0'] - p) < 0.03 for p in self.phrases):
+                s['fx'] = 'zoomblur'
+            elif any(abs(s['t0'] - d) < 0.03 for d in self.downbeats):
+                s['fx'] = 'whip' if j % 2 else 'flash'
+                if s['fx'] == 'whip':
+                    s['whip_in'] = whip
+                    whip = -whip
+        mids = []
+        for sf in self.frames.values():
+            if sf.paths:
+                mids.append(cv2.imread(sf.paths[len(sf.paths) // 2]))
+        self.colors = fx.palette(mids)
+        self.over = {}
+        self.title = fx.title_card(title or 'FULL SONG') if title is not None else None
 
-    def _frames(self, clip):
-        key = clip['path']
-        if key not in self.frames:
-            self.frames[key] = ClipFrames(clip, W, H, self.workdir, fill=True, cx=focus_x(clip))
-        return self.frames[key]
+    def _overlays(self, size):
+        if size not in self.over:
+            self.over[size] = fx.Overlays(self.colors, size=size)
+        return self.over[size]
 
     def frame(self, t):
+        dt = 1.0 / FPS
         # picture cuts land a frame ahead of the beat, which reads as exactly on it
-        shot = next((s for s in reversed(self.shots) if s['t0'] <= t + 1.0 / FPS + 1e-6), self.shots[0])
-        ct = shot_time(shot, t, self.P)
-        img = self._frames(shot['clip']).frame(ct)
-        since = lambda ts: min([t - b for b in ts if b <= t + 1e-6] or [9.0])  # noqa: E731
-        sd, sb, sdb, sph, scut = (t - self.drop['start'], since(self.beats), since(self.downbeats),
-                                  since(self.phrases), since(self.cut_times))
-        span = max(0.3, shot['t1'] - shot['t0'])
-        z = shot['zoom'] * (1 + 0.05 * clamp((t - shot['t0']) / span))           # slow push-in
-        if sd < 0.5:
-            z *= 1 + 0.22 * (1 - ease_out_cubic(sd / 0.5))                      # the drop punch
-        if sb < 0.18:
-            bi = max(0, int(np.searchsorted(self.beats, t + 1e-6)) - 1)
-            g = self.beat_gain[bi] if bi < len(self.beat_gain) else 0.5
-            z *= 1 + (0.08 if sdb < 0.18 else 0.045) * g * (1 - sb / 0.18) ** 2  # beat pump, by how hard it hits
-        amp = 0.0
-        if sd < 0.3:
-            amp = 24 * (1 - sd / 0.3)
-        elif sph < 0.22:
-            amp = 14 * (1 - sph / 0.22)                                         # phrase starts shake
-        dx, dy = amp * np.sin(t * 62.0), amp * np.cos(t * 75.0)                # ~10-12 Hz
-        if z > 1.001 or amp > 0.5:
-            zw, zh = int(W * z), int(H * z)
-            img = img.resize((zw, zh), Image.BILINEAR)
-            x = int(np.clip((zw - W) / 2 + dx, 0, zw - W))
-            y = int(np.clip((zh - H) / 2 + dy, 0, zh - H))
-            img = img.crop((x, y, x + W, y + H))
-        if sdb < 0.1 and sd > 0.25:
-            img = rgb_split(img, int(12 * (1 - sdb / 0.1)))
-        frame = img.convert('RGBA')
-        frame.alpha_composite(self.vig)
-        flash = 0
-        if sd < 0.22:
-            flash = int(255 * (1 - sd / 0.22))
-        elif scut < 0.08 and sdb < 0.08:
-            flash = int(110 * (1 - scut / 0.08))
-        if flash:
-            frame.alpha_composite(Image.new('RGBA', (W, H), (255, 255, 255, flash)))
-        # a two-frame dip to black right before each new phrase
+        shot = next((s for s in reversed(self.shots) if s['t0'] <= t + dt + 1e-6), self.shots[0])
+        sf = self.frames[shot['clip']['path']]
+        src = sf.frame(shot_time(shot, t, self.P))
+        size = (src.shape[1], src.shape[0])
+        img = fx.motion_blurred(src, lambda tt: self.cam.params(tt, shot), t, dt, size)
+        since = t - shot['t0']
+        if shot['fx'] == 'zoomblur' and since < 0.3:
+            img = fx.zoom_blur(img, 0.3 * (1 - since / 0.3) ** 1.5)
+        img = self._overlays(size).apply(img, t)
+        sd = t - self.drop['start']
+        flash = 0.0
+        if 0 <= sd < 0.25:
+            flash = 1 - sd / 0.25
+        elif shot['fx'] == 'flash' and since < 0.14:
+            flash = 0.7 * (1 - since / 0.14)
+        if (shot['fx'] == 'flash' and since < 0.45) or 0 <= sd < 0.6:
+            k = since if shot['fx'] == 'flash' else sd
+            img = fx.screen(img, fx.light_leak(size, t, hash(shot['clip']['path']) % 97 / 97.0), 0.55 * (1 - k / 0.6))
+        if flash > 0:
+            img = cv2.addWeighted(img, 1 - flash, np.full_like(img, 255), flash, 0)
+        # a short dip to black right before each new phrase
         nxt = min([p - t for p in self.phrases if p > t + 1e-6] or [9.0])
-        if nxt < 2.0 / FPS and sd > 0.5:
-            frame.alpha_composite(Image.new('RGBA', (W, H), (0, 0, 0, 200)))
+        if nxt < 0.05 and sd > 0.5:
+            img = (img * 0.25).astype(np.uint8)
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if size == (W, H):
+            frame = Image.fromarray(rgb).convert('RGBA')
+        else:  # letterbox: the whole shot, over a dark blurred copy of itself filling the screen
+            sw, sh = W // 10, max(2, int(W // 10 * size[1] / size[0]))
+            small = cv2.resize(rgb, (sw, sh), interpolation=cv2.INTER_AREA)
+            k = (H // 10) / sh
+            cover = cv2.resize(small, (int(sw * k) + 2, H // 10), interpolation=cv2.INTER_LINEAR)
+            x0 = (cover.shape[1] - sw) // 2
+            cover = cv2.GaussianBlur(cover[:, x0:x0 + sw], (0, 0), 2.5)
+            bg = (cv2.resize(cover, (W, H), interpolation=cv2.INTER_LINEAR).astype(np.float32) * 0.38)
+            y = int((H - size[1]) * 0.48)
+            # soft shadow above and below the shot
+            ramp = np.linspace(1.0, 0.55, 40, dtype=np.float32)[:, None, None]
+            bg[max(0, y - 40):y] *= ramp[::-1][-(y - max(0, y - 40)):] if y > 0 else 1
+            bg[y + size[1]:y + size[1] + 40] *= ramp[:max(0, min(40, H - y - size[1]))]
+            bg = bg.astype(np.uint8)
+            bg[y:y + size[1]] = rgb
+            frame = Image.fromarray(bg).convert('RGBA')
+        # the anime's name hits with the drop, pulses on the beats, then fades
+        if self.title is not None and 0 <= sd < 1.8:
+            since_b = min([t - b for b in self.beats if b <= t + 1e-6] or [9.0])
+            pulse = 1 + 0.06 * math.exp(-since_b / 0.12)
+            put(frame, self.title, W / 2, H * 0.5, s=max(0.01, ease_out_back(min(1.0, sd / 0.3)) * pulse),
+                a=clamp((1.8 - sd) / 0.4))
         return frame
 
     def stats(self):
         modes = [s['mode'] for s in self.shots]
         return {'editShots': len(self.shots), 'editAligned': modes.count('aligned'), 'editSfx': modes.count('sfx'),
-                'editClips': [s['clip'].get('source_id') for s in self.shots]}
+                'editClips': [s['clip'].get('source_id') for s in self.shots], 'layout': self.layout, 'look': self.look,
+                'transitions': [s['fx'] for s in self.shots]}
 
 
 def choose_clips(clips, n):
@@ -537,7 +568,7 @@ def render(args):
             pool += [c for c in clips if id(c) not in tile_ids][:4 - len(pool)]
         if len(pool) < 3:
             pool += [tl['clip'] for tl in tiles][:3 - len(pool)]
-        edit = Edit(drop, pool, work)
+        edit = Edit(drop, pool, work, layout=args.layout, look=args.look, title=args.subtitle or 'FULL SONG')
         if any(sh.get('sfx') for sh in edit.shots):
             audio = os.path.join(work, 'mix.wav')
             edit.n_sfx = mix_sfx(args.audio, edit.shots, audio)
@@ -559,9 +590,6 @@ def render(args):
         t = f / FPS
         if edit is not None and t >= drop['start'] - 0.5 / FPS:
             frame = edit.frame(t)
-            age = t - drop['start']
-            if age < 1.6:
-                put(frame, edit.label, W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.6 - age) / 0.3))
             if title is not None:
                 put(frame, title, W / 2, 250)
             if subtitle is not None:
@@ -613,9 +641,9 @@ def render(args):
                 z = 1 + 0.07 * (1 - since_db / 0.18)
             elif since_b < 0.14:
                 z = 1 + 0.035 * (1 - since_b / 0.14)
-            if z > 1.001:
-                zw, zh = int(W * z), int(H * z)
-                frame = frame.resize((zw, zh), Image.BILINEAR).crop(((zw - W) // 2, (zh - H) // 2, (zw - W) // 2 + W, (zh - H) // 2 + H))
+            if z > 1.001:  # sub-pixel scale about the centre (integer crops judder at 60 fps)
+                arr = fx.warp(np.asarray(frame.convert('RGB')), z, 0.0, 0.0, 0.0, (W, H))
+                frame = Image.fromarray(arr).convert('RGBA')
         if age < 1.8:
             put(frame, labels[n - 1], W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.8 - age) / 0.3))
         # the last half beat before the drop fades to black: the drop hits out of the dark
@@ -658,6 +686,8 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--title', default='')
     ap.add_argument('--subtitle', default='', help='the anime / group the clips are from, under the title')
+    ap.add_argument('--layout', default='letterbox', choices=['letterbox', 'fill'], help='drop edit: whole 16:9 shot, or fill the screen')
+    ap.add_argument('--look', default='cinematic', choices=sorted(fx.LOOKS), help='drop edit colour grade')
     ap.add_argument('--emoji', default='😭,✌️', help='comma-separated emoji after the title, or "none"')
     ap.add_argument('--watermark', default=os.environ.get('WATERMARK', ''))
     ap.add_argument('--seed', type=int, default=None)

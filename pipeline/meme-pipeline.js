@@ -191,6 +191,7 @@ const SETTINGS = {
   edit: [4, 6, 8],               // shots gathered for the drop edit
   hashtag: [true, false],        // #source in the title
   hook: ['layers', 'drop', 'question'],
+  look: ['cinematic', 'dreamy', 'hype'],  // the drop edit's colour grade (core/meme/edit_fx.py LOOKS)
 };
 const HOOKS = {
   layers: (caption, e, src) => `${caption} but it's layer by layer ${e}${src ? ` (${src} edit at the end)` : ''}`,
@@ -382,7 +383,7 @@ async function runMemePipeline(opts = {}) {
   logger.info(`Song: ${song.name} (${song.why})`);
 
   const settings = pickSettings();
-  logger.info(`Settings: drop ${settings.drop}s, ${settings.edit} edit shots, hashtag ${settings.hashtag ? 'on' : 'off'}, hook ${settings.hook}`);
+  logger.info(`Settings: drop ${settings.drop}s, ${settings.edit} edit shots, hashtag ${settings.hashtag ? 'on' : 'off'}, hook ${settings.hook}, look ${settings.look}`);
   const t0 = Date.now();
   const src = await downloadSong(song, work);
   logger.info(`Source audio: ${src.sourceTitle}`);
@@ -447,6 +448,7 @@ async function runMemePipeline(opts = {}) {
   const renderArgs = [path.join(ROOT, 'core', 'meme', 'render_meme.py'), '--audio', audio, '--timeline', timeline,
     '--clips', clips.manifest, '--title', caption, '--emoji', emoji, '--out', outPath];
   if (clips.source) renderArgs.push('--subtitle', song.source);
+  renderArgs.push('--look', settings.look, '--layout', 'letterbox');
   const res = await run(python(), renderArgs, 20);
   logger.success(`Rendered ${res.duration}s, ${res.cuts} cuts (${res.editShots || 0} in the drop edit, ${res.editAligned || 0} synced, `
     + `${res.soundEditHits || 0} sound hits) in ${Math.round((Date.now() - t0) / 1000)}s`);

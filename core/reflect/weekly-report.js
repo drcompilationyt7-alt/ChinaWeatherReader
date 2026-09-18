@@ -49,6 +49,7 @@ const FACTORS = {
     'edit shots': u => u.settings && u.settings.edit,
     'hashtag in title': u => u.settings && (u.settings.hashtag ? 'yes' : 'no'),
     'description hook': u => u.settings && u.settings.hook,
+    'colour look': u => u.settings && u.settings.look,
   },
   quiz: {
     'format': u => u.format,
