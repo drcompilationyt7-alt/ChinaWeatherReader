@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Layered meme edit for "<song> acapella" shorts (Mr. WorldWideWebster).
+Layered meme edit for "<song> acapella" shorts (Zero Yen Otaku).
 
 Every acapella layer brings in one new tile with one clip whose vibe matches
 the layer, and every clip keeps looping once it is on screen:

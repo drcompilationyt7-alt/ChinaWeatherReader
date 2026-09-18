@@ -52,7 +52,7 @@ env:
   # format, switch the default to 'meme' once the samples are approved);
   # quiz = World Quiz shorts; daily = the old clip re-upload pipeline
   CONTENT_MODE: ${{ github.event.inputs.mode || 'pause' }}
-  WATERMARK: '@mr.worldwidewebster'
+  WATERMARK: '@zeroyenotaku'
   YT_COOKIES: /tmp/yt_cookies.txt
   MEME_PYTHON: python3
   # quiz shorts made by this run, scheduled QUIZ_SPACING_HOURS apart from PUBLISH_HOUR_UTC

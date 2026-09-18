@@ -56,8 +56,8 @@ function credentials() {
   const ch = me.data.items && me.data.items[0];
   if (!ch) throw new Error('This token has no YouTube channel');
   console.log(`Token belongs to: "${ch.snippet.title}" (${ch.snippet.customUrl || 'no handle yet'}, ${ch.statistics.videoCount} videos)`);
-  if (/worldwidewebster/i.test(`${ch.snippet.title} ${ch.snippet.customUrl}`)) {
-    throw new Error('That is the Mr. WorldWideWebster channel, not the new quiz channel. Re-run setup-youtube.js and pick the new channel.');
+  if (ch.id === 'UC2_aNJgemODOCsOLsYwaelg' || /worldwidewebster|zero ?yen ?otaku/i.test(`${ch.snippet.title} ${ch.snippet.customUrl}`)) {
+    throw new Error('That is the Zero Yen Otaku (ex Mr. WorldWideWebster) channel, not the quiz channel. Re-run setup-youtube.js and pick the new channel.');
   }
 
   const branding = ch.brandingSettings || {};

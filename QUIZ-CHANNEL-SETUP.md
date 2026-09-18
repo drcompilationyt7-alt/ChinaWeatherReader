@@ -29,7 +29,7 @@ node youtube-automation/setup-youtube.js --out youtube-credentials-quiz.json
 ```
 
 - Paste the client ID and secret when asked.
-- In the browser, pick your Gmail and then **Asian Pop Quiz**. Don't pick Mr. WorldWideWebster.
+- In the browser, pick your Gmail and then **Asian Pop Quiz**. Don't pick Zero Yen Otaku (the old Mr. WorldWideWebster channel).
 - The token is saved to `youtube-credentials-quiz.json`. That file is gitignored and is never committed.
 
 ## 4. Branding

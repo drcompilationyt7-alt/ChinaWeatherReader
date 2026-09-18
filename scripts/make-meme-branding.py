@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Profile picture (800x800) and banner (2560x1440) for Mr. WorldWideWebster:
+Profile picture (800x800) and banner (2560x1440) for Zero Yen Otaku (formerly
+Mr. WorldWideWebster):
 a broke NEET who makes fan edits for his hobby and his oshi. Drawn from
 scratch: Noto emoji (Apache-2.0), the OFL Lilita One font, and a Japanese
 system font for the headband (Yu Gothic / Meiryo on Windows, Noto CJK on
@@ -144,7 +145,7 @@ def banner():
             img.alpha_composite(im, (x - im.size[0] // 2, y - im.size[1] // 2))
     # safe area (1546 x 423, centred): mascot + name + the story in one line
     m = mascot(380)
-    title = text_layer('MR. WORLDWIDEWEBSTER', 120, stroke=11, stroke_fill=NAVY, max_w=1000)
+    title = text_layer('ZERO YEN OTAKU', 132, stroke=11, stroke_fill=NAVY, max_w=1000)
     sub = text_layer('broke NEET  ·  daily fan edits for my oshi', 54, fill=GOLD, stroke=7, stroke_fill=NAVY, max_w=1080)
     tags = text_layer('ANIME  ·  K-POP  ·  J-POP  ·  C-POP  ACAPELLA EDITS', 40, fill=(255, 255, 255), stroke=5,
                       stroke_fill=NAVY, max_w=1080)

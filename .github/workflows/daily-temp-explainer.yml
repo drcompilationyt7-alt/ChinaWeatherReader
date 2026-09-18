@@ -54,7 +54,7 @@ env:
   # The channel posts once a day from daily-create.yml; this second daily run
   # stays paused unless a mode is dispatched by hand.
   CONTENT_MODE: ${{ github.event.inputs.mode || 'pause' }}
-  WATERMARK: '@mr.worldwidewebster'
+  WATERMARK: '@zeroyenotaku'
   YT_COOKIES: /tmp/yt_cookies.txt
   MEME_PYTHON: python3
   # quiz shorts made by this run, scheduled QUIZ_SPACING_HOURS apart from PUBLISH_HOUR_UTC

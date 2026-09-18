@@ -1,5 +1,5 @@
 /**
- * Meme acapella pipeline (Mr. WorldWideWebster): "<song> acapella" shorts in
+ * Meme acapella pipeline (Zero Yen Otaku, formerly Mr. WorldWideWebster): "<song> acapella" shorts in
  * the style of the fastest-growing meme channels, with an Asian / anime twist.
  *
  *   1. song: live trends ("<song> acapella" titles on YouTube in the last two
