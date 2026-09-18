@@ -1,0 +1,46 @@
+name: Weekly reflection
+
+# Sunday: a report per channel of what each choice (anime / group, song, settings,
+# quiz format, length, title style) has earned so far, from the rewards the daily
+# syncs record. Reads memory only (no YouTube calls); Gemini adds a short read.
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: memory-writers
+  cancel-in-progress: false
+
+jobs:
+  reflect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci --omit=dev || npm install --omit=dev
+      - name: Meme channel (Zero Yen Otaku)
+        run: MEMORY_DIR=memory node core/reflect/weekly-report.js --channel meme
+      - name: Quiz channel (Asian Pop Quiz)
+        run: MEMORY_DIR=memory/quiz-channel node core/reflect/weekly-report.js --channel quiz
+      - name: Commit reports
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add reports/weekly memory/lessons.json memory/quiz-channel/lessons.json 2>/dev/null || true
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Weekly reflection $(date +%G-W%V)"
+          for i in 1 2 3; do
+            git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break
+            sleep 5
+          done
