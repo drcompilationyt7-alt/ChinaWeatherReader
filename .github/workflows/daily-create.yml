@@ -126,7 +126,7 @@ jobs:
         run: |
           python3 -m pip install -U pip
           python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu --break-system-packages
-          python3 -m pip install demucs librosa yt-dlp yt-dlp-ejs opencv-python-headless numpy pillow --break-system-packages
+          python3 -m pip install demucs librosa yt-dlp yt-dlp-ejs opencv-python-headless numpy pillow transformers sentencepiece protobuf --break-system-packages
 
       - name: Cache meme models (Demucs, face / nudity filters)
         if: env.CONTENT_MODE == 'meme'

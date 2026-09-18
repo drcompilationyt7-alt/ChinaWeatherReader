@@ -275,6 +275,14 @@ async function runMemePipeline(opts = {}) {
   if (process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES)) finderArgs.push('--cookies', process.env.YT_COOKIES);
   const clips = await run(python(), finderArgs, 12);
   logger.success(`Clips: ${clips.count}`);
+  // second opinion from a small vision model (SigLIP): vibe, theme, quality, safety
+  try {
+    const judged = await run(python(), [path.join(ROOT, 'core', 'meme', 'clip_judge.py'), '--clips', clips.manifest, '--theme', theme], 8);
+    if (judged.skipped) logger.warn(`Clip judge skipped: ${judged.skipped}`);
+    else logger.info(`Clip judge kept ${judged.kept}, dropped ${(judged.rejected || []).length}: ${(judged.rejected || []).map(r => r[1]).join('; ')}`);
+  } catch (e) {
+    logger.warn(`Clip judge failed (clips used unjudged): ${(e.message || '').slice(0, 120)}`);
+  }
   const captioned = await captionClips(clips.manifest, theme);
   if (captioned) logger.info(`Captioned ${captioned} clips`);
 
