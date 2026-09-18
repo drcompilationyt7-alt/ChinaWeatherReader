@@ -259,7 +259,10 @@ function gaussian() {
 }
 
 function pickTitleTemplate(plan, stats, history, llmAvailable) {
-  const options = TITLE_TEMPLATES[plan.format].filter(t => !t.when || t.when(plan));
+  // "Easy to IMPOSSIBLE" only when an impossible round made it into the video (hard clips fail to download most)
+  const levels = (plan.rounds || []).map(r => Number(r.difficulty)).filter(Number.isFinite);
+  const noHard = levels.length && Math.max(...levels) < 3;
+  const options = TITLE_TEMPLATES[plan.format].filter(t => (!t.when || t.when(plan)) && !(noHard && /-ramp$/.test(t.id)));
   if (llmAvailable) options.push({ id: `${plan.format}-llm`, llm: true });
   const scored = scoredQuizUploads(stats, history).filter(u => u.format === plan.format);
   const prior = scored.length ? scored.reduce((a, u) => a + u.stat.lscore, 0) / scored.length : 0;
@@ -385,6 +388,9 @@ function renderQuiz({ format, theme, seed, avoid, outPath, rounds, planFile }) {
       let res = null;
       try { res = line ? JSON.parse(line) : null; } catch {}
       if (err || !res || !res.ok) return reject(new Error((res && res.reason) || (stderr || err?.message || 'render failed').toString().slice(-300)));
+      // rounds whose clip or photo could not be fetched (a spare took their place)
+      for (const l of String(stderr || '').split('
+').filter(x => /skipped:/.test(x)).slice(0, 8)) logger.warn(l.slice(0, 200));
       resolve(res);
     });
   });

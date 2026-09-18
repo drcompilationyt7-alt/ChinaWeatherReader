@@ -1129,8 +1129,9 @@ def same_series(a, b):
 
 
 def media_pool(fmt, items):
-    """What each format may draw from: nothing flagged nsfw, one entry (the most popular) per series for scenes."""
-    if fmt == 'scene':
+    """What each format may draw from: nothing flagged nsfw, one entry (the most popular) per series for scenes
+    and openings (a guess is the show's name, and sequel openings often match the first season's upload)."""
+    if fmt in ('scene', 'opening'):
         keep = []
         for a in sorted(items, key=lambda a: -(a.get('popularity') or 0)):
             if (not a.get('nsfw') and not is_sequel(a['title']) and not any(same_series(a['title'], s) for s in SCENE_SKIP)

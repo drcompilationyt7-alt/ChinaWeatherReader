@@ -110,7 +110,9 @@ function sameSeries(a, b) {
 
 /** What each media format draws from: nothing flagged nsfw (Ecchi / sexual-content tags), one entry per series for scenes. */
 function mediaPool(fmt, items) {
-  if (fmt === 'scene') {
+  // one entry per series, first seasons only: a guess is the show's name, and sequel openings often
+  // match the first season's upload (a wrong answer)
+  if (fmt === 'scene' || fmt === 'opening') {
     const keep = [];
     for (const a of [...items].sort((p, q) => (q.popularity || 0) - (p.popularity || 0))) {
       if (!a.nsfw && !isSequel(a.title) && !SCENE_SKIP.some(s => sameSeries(a.title, s)) && !keep.some(k => sameSeries(a.title, k.title))) keep.push(a);
