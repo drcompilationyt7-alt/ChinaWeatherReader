@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=20GWQZ7C4h0",
-      "title": "Angry with Love💕✨ | CDrama Edit #shorts",
-      "country": "China",
-      "postedAt": "2026-08-19T06:54:40.163Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=LAeKM4zWj_0",
       "title": "Jennie's Iconic 'Seoul City' Live at Lollapalooza! 🔥",
       "country": "World",
@@ -426,6 +420,24 @@
       ],
       "titleSource": "dspy",
       "watermark": "default"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Vc2RDLJNyyg",
+      "title": "Things to Check Before Dating Someone These Days",
+      "country": "China",
+      "postedAt": "2026-09-18T10:11:12.992Z",
+      "videoId": "Vc2RDLJNyyg",
+      "sourceChannel": "BB_BrainBoost",
+      "sourceUrl": "https://www.youtube.com/watch?v=S9zXJnM0J38",
+      "sourceTitle": "Things to Check Before Dating Someone These Days",
+      "summary": "A young Chinese woman shares advice on what to check before dating someone while sitting in her kitchen.",
+      "category": "comedy",
+      "eggs": [
+        "gwen-stick",
+        "gwen-tap"
+      ],
+      "titleSource": "fallback",
+      "watermark": "cover"
     }
   ]
 }
