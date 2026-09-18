@@ -8,6 +8,8 @@
  *   --mode explainer = Type 2 explainer pipeline (8am)  
  *   --mode nightly   = Trend bank updates
  *   --mode temp      = Temp Explainer - channel shorts reposter
+ *   --mode quiz      = World Quiz: original geography quiz shorts
+ *   --count N        = (quiz) shorts per run, scheduled QUIZ_SPACING_HOURS apart
  *   --country X      = Override country pick
  */
 
@@ -97,20 +99,27 @@ class DailyRunner {
         title: videoData.title,
         description: videoData.description,
         tags: videoData.tags || ['asian edits', 'shorts'],
+        categoryId: videoData.categoryId,
+        localizations: videoData.localizations,
       };
-      // Pass publishAt from env if set
-      if (process.env.PUBLISH_AT) {
-        uploadParams.publishAt = process.env.PUBLISH_AT;
+      // Pass publishAt (per video, else from env) if set
+      if (videoData.publishAt || process.env.PUBLISH_AT) {
+        uploadParams.publishAt = videoData.publishAt || process.env.PUBLISH_AT;
       }
       const r = await this.youtubeBridge.uploadVideo(uploadParams);
       logger.success(`Uploaded: ${r.url}`);
 
+      if (videoData.playlistTitle && r.videoId) {
+        await this.youtubeBridge.addToPlaylist(r.videoId, videoData.playlistTitle,
+          'A new world quiz every day from Mr. WorldWideWebster. How many can you get?');
+      }
+
       // Post the full description as a comment (visible on Shorts where descriptions are often hidden)
-      // Works for both Type 1 and Temp Type 2 pipelines
-      if (videoData.description && r.videoId) {
+      // Works for both Type 1 and Temp Type 2 pipelines; quiz shorts post a short question instead
+      if ((videoData.comment || videoData.description) && r.videoId) {
         logger.info('Posting description as comment...');
         const channelHandle = process.env.YOUTUBE_HANDLE || '@Mr.WorldWideWebster';
-        const commentText = `${videoData.description}\n\n— ${channelHandle}`;
+        const commentText = videoData.comment || `${videoData.description}\n\n— ${channelHandle}`;
         const commentResult = await this.youtubeBridge.postComment(r.videoId, commentText);
         if (commentResult) {
           logger.success(`Comment posted: ${commentResult.commentId}`);
@@ -236,6 +245,63 @@ class DailyRunner {
     }
 
     return { uploadedVideos: uploaded, errors: [], exitCode: uploaded.length > 0 ? 0 : 1 };
+  }
+
+  /**
+   * World Quiz: render and upload `count` original quiz shorts, scheduled
+   * QUIZ_SPACING_HOURS apart starting at PUBLISH_AT (or immediately).
+   */
+  async runQuiz(count = 1) {
+    logger.header(`WORLD QUIZ: ${count} short(s)`);
+    const outDir = path.join(__dirname, '..', 'output', 'quiz');
+    fs.mkdirSync(outDir, { recursive: true });
+
+    // refresh our own stats first: the format / title learners read them
+    let insights = null;
+    try {
+      insights = await syncPerformance(this.youtubeBridge);
+    } catch (e) {
+      logger.warn(`Performance sync failed: ${(e.message || '').substring(0, 80)}`);
+      insights = loadInsights();
+    }
+    if (insights) logger.info(`Learning: ${insights.summaryLine}`);
+
+    const { runWorldQuizPipeline, recordUpload } = require('../pipeline/world-quiz-pipeline');
+    const spacing = parseFloat(process.env.QUIZ_SPACING_HOURS || '4');
+    const base = process.env.PUBLISH_AT ? new Date(process.env.PUBLISH_AT) : null;
+    const uploaded = [];
+    const errors = [];
+
+    for (let k = 0; k < count; k++) {
+      let result = null;
+      for (let attempt = 1; attempt <= 2 && !result; attempt++) {
+        try {
+          result = await runWorldQuizPipeline({ outputDir: outDir });
+        } catch (e) {
+          logger.warn(`Quiz render attempt ${attempt} failed: ${(e.message || '').substring(0, 200)}`);
+        }
+      }
+      if (!result) { errors.push('quiz render failed'); continue; }
+
+      const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
+      const up = await this._uploadToYouTube({ ...result, publishAt });
+      if (!up) { errors.push('upload failed'); continue; }
+      try { recordUpload(result, { ...up, publishAt }); } catch (e) { logger.warn(`Quiz history save failed: ${e.message}`); }
+      this._trackPostedVideo(up.url, result.title, result.country, {
+        videoId: up.videoId || null, category: result.category, titleSource: result.quiz.titleTemplate,
+        quizFormat: result.quiz.format, quizTheme: result.quiz.theme,
+      });
+      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+      this._saveMemory();
+      uploaded.push({ title: result.title, url: up.url, country: result.country, editType: 'quiz', geminiScore: null });
+      logger.success(`✅ ${result.quiz.format} quiz uploaded${publishAt ? ` (publishes ${publishAt})` : ''}: "${result.title}"`);
+      try { fs.unlinkSync(result.videoPath); } catch {}
+    }
+
+    await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
+    logger.header('SUMMARY');
+    logger.info(`${uploaded.length}/${count} quiz shorts uploaded`);
+    return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
   }
 
   async runExplainer(overrideCountry) {
@@ -410,6 +476,7 @@ class DailyRunner {
     let exitCode = 0;
 
     const skipRanking = args.includes('--skip-ranking');
+    const count = args.includes('--count') ? Math.max(1, parseInt(args[args.indexOf('--count') + 1], 10) || 1) : 1;
     const searchQuery = args.includes('--search-query') ? args[args.indexOf('--search-query') + 1] : null;
 
     try {
@@ -441,13 +508,16 @@ class DailyRunner {
       } else if (mode === 'explainer') {
         const result = await this.runExplainer(countryArg);
         exitCode = result.exitCode || 0;
+      } else if (mode === 'quiz') {
+        const result = await this.runQuiz(count);
+        exitCode = result.exitCode || 0;
       } else if (mode === 'nightly') {
         await this.runNightly();
       } else if (mode === 'temp') {
         const result = await this.runTempExplainer(countryArg);
         exitCode = result.exitCode || 0;
       } else {
-        console.log(`Unknown: ${mode}. Use daily, explainer, nightly, or temp`);
+        console.log(`Unknown: ${mode}. Use daily, quiz, explainer, nightly, or temp`);
         exitCode = 1;
       }
     } catch (e) {

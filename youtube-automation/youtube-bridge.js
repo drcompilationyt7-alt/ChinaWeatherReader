@@ -162,7 +162,7 @@ class YouTubeBridge {
       throw new Error('YouTube not authenticated. Run: node youtube-automation/setup-youtube');
     }
 
-    const { videoPath, title, description, tags, thumbnailPath, captionsPath } = params;
+    const { videoPath, title, description, tags, thumbnailPath, captionsPath, categoryId, localizations } = params;
 
     this.logger.info(`Uploading: "${title?.substring(0, 60) || 'Untitled'}"`);
 
@@ -196,7 +196,7 @@ class YouTubeBridge {
         title: title || 'Mr. WorldWideWebster - Global Content',
         description: description || `${title}\n\n🌍 Bringing the world to you\n\nFollow Mr. WorldWideWebster for more global content!`,
         tags: tags || ['mr worldwidewebster', 'global', 'culture', 'international'],
-        categoryId: '22',
+        categoryId: categoryId || '22',
         defaultLanguage: 'en',
         defaultAudioLanguage: 'en',
       },
@@ -214,9 +214,13 @@ class YouTubeBridge {
     }
 
     try {
-      // Upload the video
-      const parts = isScheduled ? ['snippet', 'status'] : ['snippet', 'status'];
-      const response = await this.youtube.videos.insert({
+      // Upload the video (translated titles/descriptions ride along as localizations)
+      const parts = ['snippet', 'status'];
+      if (localizations && Object.keys(localizations).length) {
+        videoMetadata.localizations = localizations;
+        parts.push('localizations');
+      }
+      const insert = () => this.youtube.videos.insert({
         part: parts,
         requestBody: videoMetadata,
         media: {
@@ -224,6 +228,17 @@ class YouTubeBridge {
           mimeType: 'video/mp4',
         },
       });
+      let response;
+      try {
+        response = await insert();
+      } catch (e) {
+        // a rejected translation must never cost us the upload itself
+        if (!videoMetadata.localizations || !/localiz|language|invalid/i.test(e.message || '')) throw e;
+        this.logger.warn(`Upload with localizations rejected (${e.message}) — retrying without them`);
+        delete videoMetadata.localizations;
+        parts.splice(parts.indexOf('localizations'), 1);
+        response = await insert();
+      }
 
       const videoId = response.data.id;
       this.logger.success(`Video uploaded: https://www.youtube.com/watch?v=${videoId}`);
@@ -266,6 +281,7 @@ class YouTubeBridge {
         videoId,
         url: `https://www.youtube.com/watch?v=${videoId}`,
         publishedAt: new Date().toISOString(),
+        publishAt: isScheduled ? params.publishAt : null,
         title: title,
       };
     } catch (error) {
@@ -366,6 +382,49 @@ class YouTubeBridge {
       return { commentId, text };
     } catch (error) {
       this.logger.warn(`Failed to post comment: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Add a video to the playlist with this title, creating the playlist the
+   * first time. Playlist ids are cached in memory/playlists.json.
+   * @returns {Promise<string|null>} playlist id
+   */
+  async addToPlaylist(videoId, playlistTitle, description = '') {
+    if (!this.authenticated || !videoId || !playlistTitle) return null;
+    const cacheFile = path.join(__dirname, '..', 'memory', 'playlists.json');
+    let cache = {};
+    try { cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8')); } catch {}
+    try {
+      let playlistId = cache[playlistTitle];
+      if (!playlistId) {
+        let pageToken;
+        do {
+          const r = await this.youtube.playlists.list({ part: ['snippet'], mine: true, maxResults: 50, pageToken });
+          const hit = (r.data.items || []).find(p => p.snippet && p.snippet.title === playlistTitle);
+          if (hit) playlistId = hit.id;
+          pageToken = r.data.nextPageToken;
+        } while (!playlistId && pageToken);
+      }
+      if (!playlistId) {
+        const r = await this.youtube.playlists.insert({
+          part: ['snippet', 'status'],
+          requestBody: { snippet: { title: playlistTitle, description, defaultLanguage: 'en' }, status: { privacyStatus: 'public' } },
+        });
+        playlistId = r.data.id;
+        this.logger.success(`Created playlist "${playlistTitle}"`);
+      }
+      cache[playlistTitle] = playlistId;
+      try { fs.writeFileSync(cacheFile, JSON.stringify(cache, null, 2)); } catch {}
+      await this.youtube.playlistItems.insert({
+        part: ['snippet'],
+        requestBody: { snippet: { playlistId, resourceId: { kind: 'youtube#video', videoId } } },
+      });
+      this.logger.info(`Added to playlist "${playlistTitle}"`);
+      return playlistId;
+    } catch (error) {
+      this.logger.warn(`Playlist add failed: ${error.message}`);
       return null;
     }
   }
