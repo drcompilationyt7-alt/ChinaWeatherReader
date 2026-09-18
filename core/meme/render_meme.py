@@ -2,25 +2,28 @@
 """
 Layered meme edit for "<song> acapella" shorts (Mr. WorldWideWebster).
 
-Layout grows with the acapella layers (the big layer label pops up on top):
+Every acapella layer brings in one new tile with one clip whose vibe matches
+the layer, and every clip keeps looping once it is on screen:
 
-  vocals      1 tile, full screen
-  + bass      2 tiles stacked
-  + beatbox   2x2 grid
-  + harmony   2x2 grid
+  vocals      tile 1: a dance clip, full screen
+  + bass      tile 2: a cool / aura clip        (2 tiles)
+  + beatbox   tile 3: a fight / action clip     (3 tiles)
+  + harmony   tile 4: a cute clip               (2x2)
 
-- Each tile is its own compilation: a clip plays 3-4 s (time to get the joke),
-  then the tile moves to the next one; tiles switch on different beats.
-- Every new clip gets a quick glow on its tile so the eye finds it.
-- No clip is shown twice in one short; each has a short context caption
-  unless it carries its own.
+- A clip plays for its section and then loops with the same length (whole
+  bars), so the viewer has already seen the old tiles while the new one is fresh.
+- Each clip starts at the offset that puts its peak (the punch, the dance hit)
+  on a beat; fight clips land on a drum hit. The loop is a whole number of
+  bars, so the hit stays on the beat every time round.
+- A quick glow marks only the tile that has just appeared; the big layer label
+  pops up on top; all tiles bounce together on the downbeat.
 - Clips are shown whole: fitted over a blurred copy of themselves, never cropped.
 - Clip audio is never used; the acapella is the only soundtrack.
 
 Inputs
   --audio      acapella mix from core/meme/acapella.py
-  --timeline   its timeline.json (beats, sections, onsets per layer)
-  --clips      clips.json from core/meme/clip_finder.py (strongest hook first)
+  --timeline   its timeline.json (beats, downbeats, sections, onsets per layer)
+  --clips      clips.json from core/meme/clip_finder.py (vibe, peak, hook-ranked)
   --title      top caption, e.g. "yara yara acapella"
 
     python core/meme/render_meme.py --audio acapella.wav --timeline timeline.json \
@@ -28,7 +31,6 @@ Inputs
 """
 import argparse
 import json
-import math
 import os
 import subprocess
 import sys
@@ -43,15 +45,16 @@ import quiz_emoji  # noqa: E402
 
 W, H, FPS = 1080, 1920, 30
 LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']
+VIBE = {'vocal': 'dance', 'bass': 'cool', 'beatbox': 'fight', 'harmony': 'cute'}
 LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'bass': ('+ BASS', '🗣️'), 'beatbox': ('+ BEATBOX', '🥁'), 'harmony': ('+ HARMONY', '🎶')}
 LAYOUT = {
     1: [(0, 0, W, H)],
     2: [(0, 0, W, H // 2), (0, H // 2, W, H // 2)],
+    3: [(0, 0, W, H // 2), (0, H // 2, W // 2, H // 2), (W // 2, H // 2, W // 2, H // 2)],
     4: [(0, 0, W // 2, H // 2), (W // 2, 0, W // 2, H // 2), (0, H // 2, W // 2, H // 2), (W // 2, H // 2, W // 2, H // 2)],
 }
-HOLD_MIN, HOLD_MAX = 3.0, 4.0
-GLOW_SEC = 0.5
 GLOW = (255, 214, 0)
+GLOW_SEC = 0.5
 
 
 def probe_duration(path):
@@ -68,7 +71,7 @@ class ClipStream:
     One clip at a fixed tile size, the WHOLE picture visible: fitted over a
     blurred, darkened copy of itself. Letterbox bars in the source
     (content_box from clip_finder) are trimmed first. Starts `offset` seconds
-    in and loops.
+    in and loops the file if it runs out.
     """
 
     def __init__(self, clip, w, h, offset=0.0):
@@ -109,85 +112,39 @@ class ClipStream:
             self.proc = None
 
 
-def dedupe(clips):
-    """Drop repeated segments (same source and overlapping window)."""
-    out = []
-    for c in clips:
-        if any(o.get('source_id') == c.get('source_id') and o.get('source_id')
-               and min(o.get('end', 0), c.get('end', 0)) > max(o.get('start', 0), c.get('start', 0)) for o in out):
-            continue
-        out.append(c)
-    return out
+def choose_clips(clips, n):
+    """One clip per layer, matching the layer's vibe (manifest order = hook rank); different source videos."""
+    chosen, used_src = [], set()
+    for i in range(n):
+        want = VIBE[LAYERS[i]]
+        pool = [c for c in clips if c.get('vibe') == want] + [c for c in clips if c.get('vibe') != want]
+        pick = next((c for c in pool if (c.get('source_id') or c['path']) not in used_src and c not in chosen), None)
+        if pick is None:
+            pick = next((c for c in clips if c not in chosen), clips[i % len(clips)])
+        chosen.append(pick)
+        used_src.add(pick.get('source_id') or pick['path'])
+    return chosen
 
 
-def tiles_for(n_layers):
-    return 1 if n_layers <= 1 else 2 if n_layers == 2 else 4
-
-
-def schedule(timeline, clips):
-    """
-    [(t0, t1, n_tiles, tile, clip index)]: every tile runs its own sequence of
-    clips, each held 3-4 s (snapped to the beat grid), tiles staggered by a
-    beat so they never switch together. A tile that exists in the next section
-    carries its clip over (it keeps playing); new tiles get new clips. No clip
-    is used twice; if the clips run out, a tile keeps its clip looping.
-    """
+def plan(timeline, clips):
+    """Per tile: section start, loop period (its section's length) and the clip offset that puts the peak on a beat."""
     beats = np.array(timeline['beats'])
-    beat = float(np.median(np.diff(beats))) if len(beats) > 1 else 0.5
-    queue = list(range(len(clips)))
-    out = []
-    carry = {}  # tile -> (clip, planned end of that clip)
-    taken = []  # switch times already used by some tile
-
-    def snap(t):
-        k = np.searchsorted(beats, t - 0.05)
-        return float(beats[k]) if k < len(beats) else t
-
-    def free(t):
-        """The first beat at or after t that no other tile switches on."""
-        t = snap(t)
-        while any(abs(t - x) < beat * 0.5 for x in taken):
-            t = snap(t + beat)
-        taken.append(t)
-        return t
-
-    def hold(c):
-        return min(HOLD_MAX, max(HOLD_MIN, float(clips[c].get('duration') or HOLD_MIN)))
-
-    for sec in timeline['sections']:
+    onsets = timeline.get('onsets') or {}
+    sections = timeline['sections'][:4]
+    chosen = choose_clips(clips, len(sections))
+    tiles = []
+    for i, (sec, clip) in enumerate(zip(sections, chosen)):
         s0, s1 = float(sec['start']), float(sec['end'])
-        n = tiles_for(len(sec['layers']))
-        new_carry = {}
-        for ti in range(n):
-            if ti in carry:
-                c, end = carry[ti]
-                if end > s0 and end not in taken:
-                    end = free(end)
-            elif queue:
-                c = queue.pop(0)
-                end = free(s0 + hold(c))
-            elif carry:  # out of clips: reuse a clip that is not on screen right now
-                c = next((cc for cc, _ in carry.values()), 0)
-                end = s1
-            else:
-                break
-            t = s0
-            while True:
-                nxt = min(end, s1)
-                if s1 - nxt < 1.2:  # don't start a clip that would only flash by
-                    nxt = s1
-                out.append((t, nxt, n, ti, c))
-                if nxt >= s1 - 1e-3:
-                    new_carry[ti] = (c, max(end, s1 + 1.2) if end > s1 else s1 + hold(c))
-                    break
-                if not queue:  # keep this clip to the section end
-                    out[-1] = (t, s1, n, ti, c)
-                    new_carry[ti] = (c, s1 + hold(c))
-                    break
-                t, c = nxt, queue.pop(0)
-                end = free(t + hold(c))
-        carry = new_carry
-    return out
+        period = s1 - s0
+        dur = float(clip.get('duration') or probe_duration(clip['path']))
+        peak = float(clip.get('peak') if clip.get('peak') is not None else dur / 2)
+        # the hit we aim at: a drum hit for fight clips, otherwise a beat, ~1 s into the section
+        grid = sorted(onsets.get('beatbox') or []) if VIBE[LAYERS[i]] == 'fight' and i >= 2 else list(beats)
+        targets = [b - s0 for b in grid if s0 + 0.6 <= b < s1 - 0.3] or [min(1.0, period / 2)]
+        target = next((tg for tg in targets if peak - tg >= 0), targets[0])
+        offset = max(0.0, peak - target)
+        tiles.append({'clip': clip, 'start': s0, 'period': period, 'offset': offset, 'layer': LAYERS[i]})
+    return tiles
 
 
 def label_image(layer):
@@ -228,100 +185,81 @@ def caption_image(text, tile_w):
 def render(args):
     timeline = json.load(open(args.timeline, encoding='utf-8'))
     manifest = json.load(open(args.clips, encoding='utf-8'))
-    clips = dedupe(manifest['clips'] if isinstance(manifest, dict) else manifest)
+    clips = manifest['clips'] if isinstance(manifest, dict) else manifest
     if len(clips) < 4:
-        raise SystemExit('need at least 4 different clips')
-    for c in clips:
-        if not c.get('duration'):
-            c['duration'] = (c.get('end', 0) - c.get('start', 0)) or probe_duration(c['path'])
+        raise SystemExit('need at least 4 clips')
     dur = float(timeline.get('duration') or timeline['sections'][-1]['end'])
-    plan = schedule(timeline, clips)
-    sections = timeline['sections']
+    tiles = plan(timeline, clips)
+    starts = [tl['start'] for tl in tiles]
     downbeats = timeline.get('downbeats') or timeline['beats'][::4]
 
     title = title_image(args.title, args.emoji) if args.title else None
-    labels = [label_image(sec['layers'][-1]) for sec in sections]
+    labels = [label_image(tl['layer']) for tl in tiles]
+    captions = {}
     wm = text_layer(args.watermark, 38, fill=(255, 255, 255, 170), stroke=3, stroke_fill=(0, 0, 0, 120)) if args.watermark else None
 
     cmd = ['ffmpeg', '-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
            '-i', args.audio, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
            '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', args.out]
     enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    streams = {}   # tile -> (plan entry, ClipStream)
-    cap_cache = {}
+    streams = {}  # tile -> (loop number, size, ClipStream)
     for f in range(int(dur * FPS)):
         t = f / FPS
-        si = max(0, sum(1 for sec in sections if sec['start'] <= t) - 1)
-        n = tiles_for(len(sections[si]['layers']))
+        n = max(1, sum(1 for s in starts if s <= t))
         layout = LAYOUT[n]
         frame = Image.new('RGBA', (W, H), (0, 0, 0, 255))
-        live = [e for e in plan if e[2] == n and e[0] <= t < e[1]] or [e for e in plan if e[2] == n and e[1] >= t - 0.05]
-        new_tiles = []
-        for e in live:
-            t0, t1, _, ti, ci = e
-            if ti >= n:
-                continue
-            x, y, w, h = layout[ti]
-            if ti not in streams or streams[ti][0] != e:
-                if ti in streams:
-                    streams[ti][1].close()
-                # the clip that carries over a layout change keeps playing where it was
-                into = 0.0
-                prev = [p for p in plan if p[3] == ti and p[4] == ci and p[0] < t0]
-                if prev:
-                    into = (t - prev[0][0]) % max(0.5, float(clips[ci]['duration']))
-                streams[ti] = (e, ClipStream(clips[ci], w, h, offset=into))
-            frame.paste(Image.fromarray(streams[ti][1].next()), (x, y))
-            # quick glow on a tile whose clip just changed (not on a carried-over clip)
-            first_show = not [p for p in plan if p[4] == ci and p[0] < t0]
-            if first_show and t0 > 0 and t - t0 < GLOW_SEC:  # frame 0 is the thumbnail: no glow there
-                new_tiles.append((layout[ti], t - t0))
-            cap = clips[ci].get('caption')
-            if cap and not clips[ci].get('has_caption'):
-                key = (ci, w)
-                if key not in cap_cache:
-                    cap_cache[key] = caption_image(cap, w)
-                im = cap_cache[key]
+        for i in range(n):
+            x, y, w, h = layout[i]
+            tl = tiles[i]
+            loop, local = divmod(t - tl['start'], tl['period'])
+            key = (int(loop), (w, h))
+            if i not in streams or streams[i][:2] != key:
+                if i in streams:
+                    streams[i][2].close()
+                streams[i] = (key[0], key[1], ClipStream(tl['clip'], w, h, offset=tl['offset'] + local))
+            frame.paste(Image.fromarray(streams[i][2].next()), (x, y))
+            cap = tl['clip'].get('caption')
+            if cap and not tl['clip'].get('has_caption'):
+                if (i, w) not in captions:
+                    captions[(i, w)] = caption_image(cap, w)
+                im = captions[(i, w)]
                 put(frame, im, x + w / 2, y + h - im.size[1] / 2 - (150 if n == 1 else 70))
-        for ti in [k for k in streams if k >= n]:
-            streams.pop(ti)[1].close()
         d = ImageDraw.Draw(frame)
         for x, y, w, h in layout:
             d.rectangle([x, y, x + w - 1, y + h - 1], outline=(0, 0, 0, 255), width=4)
-        for (x, y, w, h), age in new_tiles:
+        # quick glow on the tile that has just appeared (the new layer), nowhere else
+        age = t - starts[n - 1]
+        if n > 1 and age < GLOW_SEC:
+            x, y, w, h = layout[n - 1]
             a = 1 - age / GLOW_SEC
             if age < 0.08:
                 frame.alpha_composite(Image.new('RGBA', (w, h), (255, 255, 255, int(90 * a))), (x, y))
             for k in range(3):
                 d.rectangle([x + k * 5, y + k * 5, x + w - 1 - k * 5, y + h - 1 - k * 5],
                             outline=GLOW + (int(255 * a * (1 - k * 0.3)),), width=6)
-        # every clip bounces together on the downbeat once the beat is in (v2 style)
-        if len(sections[si]['layers']) >= 3:
+        # all tiles bounce together on the downbeat once the beat is in
+        if n >= 3:
             since_db = min([t - b for b in downbeats if b <= t] or [9])
             if since_db < 0.18:
                 z = 1 + 0.07 * (1 - since_db / 0.18)
                 zw, zh = int(W * z), int(H * z)
                 frame = frame.resize((zw, zh), Image.BILINEAR).crop(((zw - W) // 2, (zh - H) // 2, (zw - W) // 2 + W, (zh - H) // 2 + H))
-        # big layer label on top as each layer comes in
-        since_sec = t - sections[si]['start']
-        if since_sec < 1.8:
-            put(frame, labels[si], W / 2, 400, s=max(0.01, ease_out_back(since_sec / 0.25)), a=clamp((1.8 - since_sec) / 0.3))
+        if age < 1.8:
+            put(frame, labels[n - 1], W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.8 - age) / 0.3))
         if title is not None:
             put(frame, title, W / 2, 250)
         if wm is not None:
             put(frame, wm, W / 2, 150)
         enc.stdin.write(frame.convert('RGB').tobytes())
-    for _, st in streams.values():
+    for *_, st in streams.values():
         st.close()
     enc.stdin.close()
     if enc.wait() != 0:
         raise SystemExit('ffmpeg failed')
-    used = []
-    for e in plan:
-        if e[4] not in used:
-            used.append(e[4])
-    return {'duration': round(dur, 2), 'cuts': len(used), 'clipsUsed': [clips[i].get('source_id') for i in used],
-            'channelsUsed': sorted({clips[i].get('source_channel') for i in used if clips[i].get('source_channel')})}
+    used = [tl['clip'] for tl in tiles]
+    return {'duration': round(dur, 2), 'cuts': len(used), 'clipsUsed': [c.get('source_id') for c in used],
+            'vibes': [c.get('vibe') for c in used],
+            'channelsUsed': sorted({c.get('source_channel') for c in used if c.get('source_channel')})}
 
 
 def main():
