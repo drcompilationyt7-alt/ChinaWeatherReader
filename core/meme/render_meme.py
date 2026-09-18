@@ -188,6 +188,12 @@ def title_image(title, emoji):
     return row
 
 
+def caption_image(text, tile_w):
+    """Meme caption for one clip (lowercase, white with a black outline)."""
+    size = 52 if tile_w >= W else 40
+    return text_layer(text.lower(), size, stroke=6, stroke_fill=(0, 0, 0), max_w=tile_w - 60, min_size=26)
+
+
 def pulse_at(t, onsets):
     """1 right after a hit, decaying to 0 within ~0.2 s."""
     if not onsets:
@@ -220,6 +226,7 @@ def render(args):
            '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', args.out]
     enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     streams = {}  # tile -> (entry index, size, ClipStream)
+    cap_cache = {}
     for f in range(int(dur * FPS)):
         t = f / FPS
         n = max(1, sum(1 for s in starts if s <= t))
@@ -249,6 +256,14 @@ def render(args):
                     bg.paste(big, ((w - sw) // 2, (h - sh) // 2))
                     tile = bg
             frame.paste(tile, (x, y))
+            # what is this clip? its caption, unless the clip carries its own burned-in one
+            cap = clips[ci].get('caption')
+            if cap and not clips[ci].get('has_caption'):
+                key = (ci, w)
+                if key not in cap_cache:
+                    cap_cache[key] = caption_image(cap, w)
+                im = cap_cache[key]
+                put(frame, im, x + w / 2, y + h - im.size[1] / 2 - (150 if n == 1 else 70))
         d = ImageDraw.Draw(frame)
         for i in range(n):
             x, y, w, h = layout[i]

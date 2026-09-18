@@ -172,6 +172,51 @@ function run(cmd, args, timeoutMin) {
   });
 }
 
+/**
+ * One short meme caption per clip, written from the source video's title, so
+ * the viewer knows what they are looking at ("bro did not see that coming 😭").
+ * Clips that already carry burned-in captions keep their own.
+ */
+function cleanTitle(t) {
+  const words = String(t)
+    .replace(/#[^\s#]+/g, ' ')                         // hashtags
+    .replace(/[\[(【「].*?[\])】」]/g, ' ')              // bracketed tags
+    .replace(/(shorts?|funny|viral|fyp|foryou|tiktok|douyin|compilation|part \d+|ep\.? ?\d+)/gi, ' ')
+    .replace(/[|~_*]+/g, ' ')
+    .replace(/\s+/g, ' ').trim().toLowerCase().split(' ');
+  const out = words.slice(0, 7).join(' ');
+  return out.length >= 6 ? out : '';
+}
+
+async function captionClips(manifestPath, theme) {
+  let clips;
+  try { clips = JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch { return 0; }
+  const list = Array.isArray(clips) ? clips : clips.clips;
+  const need = list.map((c, i) => ({ i, title: c.source_title || '', ch: c.source_channel || '' })).filter(x => !list[x.i].has_caption && x.title);
+  if (!need.length) return 0;
+  let out = null;
+  try {
+    const { getGeminiService } = require('../core/gemini-service');
+    const g = getGeminiService();
+    if (g && g.getStats().keysLoaded > 0) {
+      const sys = 'You write tiny meme captions for clips in a YouTube Shorts meme compilation (theme: ' + theme + '). '
+        + 'Lowercase, 2-7 words, Gen-Z meme voice, max one emoji, describe the funny/cute moment so a viewer instantly gets it. '
+        + 'Never sexual, never mocking accents, looks or ethnicity. If the title is unclear, write a neutral reaction caption.';
+      const msg = need.map(x => `${x.i}. "${x.title}" (channel: ${x.ch})`).join('\n') + '\nReturn JSON: {"captions": {"<index>": "caption"}}';
+      out = await Promise.race([g.chatJSON(sys, msg), new Promise(r => setTimeout(() => r(null), 60000))]);
+    }
+  } catch {}
+  let n = 0;
+  const caps = (out && out.captions) || {};
+  for (const x of need) {
+    let c = String(caps[x.i] || '').trim();
+    if (!c || c.length > 60) c = cleanTitle(x.title);  // no LLM: a tidied source title still gives context
+    if (c) { list[x.i].caption = c; n++; }
+  }
+  fs.writeFileSync(manifestPath, JSON.stringify(clips, null, 1));
+  return n;
+}
+
 function python() { return process.env.MEME_PYTHON || (process.platform === 'win32' ? 'python' : 'python3'); }
 
 async function downloadSong(song, workDir) {
@@ -230,6 +275,8 @@ async function runMemePipeline(opts = {}) {
   if (process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES)) finderArgs.push('--cookies', process.env.YT_COOKIES);
   const clips = await run(python(), finderArgs, 12);
   logger.success(`Clips: ${clips.count}`);
+  const captioned = await captionClips(clips.manifest, theme);
+  if (captioned) logger.info(`Captioned ${captioned} clips`);
 
   const emoji = EMOJI_PAIRS[Math.floor(Math.random() * EMOJI_PAIRS.length)];
   const caption = `${song.name} acapella`;
@@ -263,4 +310,4 @@ async function runMemePipeline(opts = {}) {
   };
 }
 
-module.exports = { runMemePipeline, recordUpload, loadHistory, pickSong, trendingSongs, SONGS };
+module.exports = { runMemePipeline, recordUpload, loadHistory, pickSong, trendingSongs, cleanTitle, SONGS };
