@@ -39,6 +39,38 @@ ok is false when a vibe got no clip. --used: ids as a list, {id: date}, or
 [{"id"/"source_id", "date"}]; entries dated older than --used-days are
 ignored. --block: channel ids, @handles, names or URLs as a list, or
 {"channels": [...]}.
+
+Source mode: every clip from the song's own anime or K-pop group
+  python core/meme/clip_finder.py --out-dir work/clips \
+      --source "Oshi no Ko" --source-kind anime --aliases "oshi no ko,推しの子,ai hoshino,aqua,ruby" \
+      [--edit 6] [--song-audio song.mp3 --song-start 50 --song-len 14 --song-name "idol"]
+The tiles are searched as "<source> dance / cool scene / fight scene / cute moments"
+(for a group: dance practice / fancam / dance break / cute moments; an idol's "fight"
+is their hardest-hitting choreography). A video counts only when its title names the
+source or a distinctive alias; a short or common alias ("winter", "aqua") needs the
+tags, channel or description to name the source too; an official channel counts on
+its own. Covers, reactions, fan art, parodies and crossovers ("X but it's Y",
+"Naruto x Chainsaw Man"), comment overlays and MADs are skipped; for an anime,
+live action too (concert / dance-video titles, and a frame check: cameras never
+repeat a frame, anime holds its drawings). The safety filters stay; the source's own
+names are exempt from the unsafe-show list: mainstream shows on it (Chainsaw Man,
+Dandadan...) and FranXX / DanMachi / Overlord... run as fan-service-risk sources
+(stricter NudeNet, fan-service title words skipped, "funny" instead of "cute"
+queries), the rest of it (ecchi-first shows, teen idol groups) is refused. Official
+broadcaster / label fancams (직캠) are allowed for a group. A vibe the source cannot
+fill takes the best spare clip of the source, tagged "vibe_fallback": true; ok is
+false only when fewer than one clip per vibe could be found.
+--edit N adds N shots for the full-song edit after the tiles: clean, high-motion
+3-8 s shots of the source (4K / twixtor / raw scenes / creditless OP for anime;
+stages, performances, dance practices and stage mixes of the song for a group), at
+most 2 per video, other videos than the tiles where possible. They keep their audio
+(AAC) and carry "motion", "has_audio", "sfx_hits" (clip times of short broadband
+impacts, best first) and "sfx_score" (0-1, how usable their sound is for a sound
+edit). With --song-audio, shots whose video plays the same song window
+[song-start, song-start + song-len] are cut exactly to it (core/meme/align.py) and
+marked "aligned": true, "align_score", "song_offset" (song time at clip t=0); they
+come first. The manifest is then {"source": {...}, "song": {...}, "clips": [...],
+"edit": [...]} and the stdout line adds "source", "edit_count", "aligned_count".
 """
 import argparse
 import concurrent.futures as cf
@@ -67,6 +99,9 @@ from datetime import datetime, timedelta, timezone
 
 import cv2
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import align  # noqa: E402  (core/meme/align.py: song-window alignment, sound hits)
 
 THEMES = ('funny', 'cute', 'anime', 'kpop', 'chinese', 'japanese')
 VIBES = ('dance', 'cool', 'fight', 'cute')
@@ -128,6 +163,7 @@ VIBE_QUERIES = {
     },
 }
 SP_SHORT = 'EgQQARgB'  # search filter: type=video, duration under 4 min
+SP_VIDEO = 'EgIQAQ%3D%3D'  # type=video, any duration (edit material: raw scene packs run long)
 
 # Sexual / suggestive terms: matched on title, description and tags (whole words).
 NSFW_WORDS = [
@@ -304,14 +340,119 @@ VIBE_REQUIRED = ('dance', 'fight', 'cute')
 GENERIC_WORDS = ['compilation', 'full episode', 'episode', 'ep', 'full', 'reaction', 'reacts', 'review',
                  'explained', 'ranking', 'top 10', 'top 5']
 
+# ---- Source mode (--source): every clip shows one anime or one K-pop group.
+# {s} is the source name, {song} the song (queries with {song} only when --song-name is given).
+SOURCE_QUERIES = {
+    'anime': {
+        'dance': ['{s} dance', '{s} ending dance', '{s} dance scene', '{s} {song} dance scene'],
+        'cool': ['{s} cool scene', '{s} aura edit', '{s} badass moment', '{s} aura moment'],
+        'fight': ['{s} fight scene', '{s} best fight', '{s} action scene'],
+        'cute': ['{s} cute moments', '{s} funny moments', '{s} cute scene'],
+        'edit': ['{s} 4k twixtor', '{s} raw scenes for edits', '{s} 4k scenes', '{s} best animation',
+                 '{s} creditless opening', '{s} opening NCOP', '{s} {song} scene', '{s} {song} opening 4k'],
+    },
+    'group': {   # idols don't fight: their "fight" tile is the hardest-hitting choreography
+        'dance': ['{s} dance practice', '{s} dance challenge', '{s} relay dance'],
+        'cool': ['{s} fancam', '{s} visual', '{s} walking', '{s} aura'],
+        'fight': ['{s} powerful dance break', '{s} intense stage', '{s} dance break'],
+        'cute': ['{s} cute moments', '{s} funny moments'],
+        'edit': ['{s} {song} stage', '{s} {song} performance 4k', '{s} {song} fancam', '{s} {song} dance practice',
+                 '{s} {song} stage mix', '{s} {song} 4k', '{s} stage mix', '{s} stage 4k'],
+    },
+}
+# One native-script query per vibe with a native alias ({n}), by the alias's script.
+SOURCE_NATIVE = {
+    'ja': {'dance': '{n} ダンス', 'cool': '{n} かっこいい', 'fight': '{n} 戦闘シーン', 'cute': '{n} かわいい',
+           'edit': '{n} ノンクレジット'},
+    'ko': {'dance': '{n} 안무', 'cool': '{n} 무대', 'fight': '{n} 댄스브레이크', 'cute': '{n} 귀여운',
+           'edit': '{n} {song} 교차편집'},
+    'zh': {'dance': '{n} 舞蹈', 'cool': '{n} 帅气', 'fight': '{n} 打斗', 'cute': '{n} 可爱', 'edit': '{n} 4K 混剪'},
+}
+# Single-word aliases that are also everyday words: they need the source named elsewhere.
+COMMON_NAMES = {
+    'rose', 'winter', 'aqua', 'ruby', 'twice', 'joy', 'hope', 'key', 'rain', 'crush', 'star', 'sunny', 'ivy',
+    'may', 'june', 'april', 'summer', 'autumn', 'angel', 'honey', 'candy', 'cherry', 'lucky', 'happy', 'luna',
+    'hana', 'kana', 'lisa', 'momo', 'sana', 'mina', 'mark', 'kai', 'leo', 'max', 'sky', 'blue', 'red', 'gold',
+    'golden', 'idol', 'kiss', 'baby', 'akane', 'mem', 'gin', 'yuki', 'sora', 'hikari', 'rin', 'ken', 'jin', 'suga',
+    'dream', 'magic', 'shine', 'lucy', 'eve', 'ash', 'ace', 'nova', 'wave', 'love', 'heart', 'power',
+}
+# Not the source itself: covers, reactions, fan art, games, re-edits with other audio.
+NOT_SOURCE_WORDS = [
+    'cover', 'covers', 'covered', 'dance cover', 'cover dance', 'reaction', 'reactions', 'react', 'reacts',
+    'reacting', 'parody', 'fanmade', 'fan made', 'fan animation', 'ai cover', 'ai generated', 'ai art', 'lookalike',
+    'look alike', 'impression', 'impressions', 'tutorial', 'lesson', 'in public', 'busking', 'random play',
+    'random dance', 'unboxing', 'photocard', 'merch', 'haul', 'figure', 'figures', 'plush', 'fanart', 'fan art',
+    'drawing', 'speedpaint', 'speed paint', 'minecraft', 'roblox', 'fortnite', 'gacha', 'sims', 'lego', 'tier list',
+    'ranking', 'ranked', 'trivia', 'quiz', 'guess', 'explained', 'review', 'analysis', 'theory', 'theories', 'news',
+    'piano', 'guitar', 'violin', 'drum', 'instrumental', 'vocal coach', 'mmd', 'vrchat', 'vtuber', 'nightcore',
+    'sped up', 'slowed', 'reverb', '8d', 'mashup', 'mash up', 'recap', 'recaps', 'summary', 'cosplay', 'irl',
+    # parodies and crossovers: the source's song over another show's footage
+    "but it's", 'but its', 'but it’s', 'but it is', 'in the style of', 'crossover', 'if it was', 'if it were',
+    # scrolling viewer comments over the picture; MADs (Japanese fan music videos, like "amv")
+    'コメ付き', 'コメント付き', '弾幕', 'danmaku', 'with comments', '【mad', 'mad】', '[mad]', 'mad動画',
+    '커버', '반응', '리액션', 'カバー', '踊ってみた', '歌ってみた', '弾いてみた', 'リアクション', '翻跳', '翻唱', '反应',
+]
+NOT_SOURCE_KIND = {
+    'anime': ['live action', 'liveaction', 'real life', 'in real life', 'concert', 'live at', 'live in', 'live ver',
+              'live version', 'live stage', 'live tour', 'live with', 'live from', 'live performance', 'live video',
+              'live concert', 'tour', 'festival', 'budokan', 'first take', 'beat saber', 'osu', 'rhythm game',
+              'voice actor', 'voice actress', 'seiyuu', 'ライブ映像',
+              'behind the scenes', 'manga', 'manhwa', 'webtoon', 'light novel', 'gameplay', 'game', 'vs real',
+              'animatic', '実写', '声優',
+              # real people doing the anime's dance
+              'dance practice', 'choreography', 'choreo', 'dance video', 'dance challenge', 'challenge',
+              'ダンス映像', 'ダンス動画', '振付', '振り付け', '踊ってみた', 'チャレンジ'],
+    'group': ['animation', 'animated', 'cartoon', 'anime', 'kid', 'kids', 'child', 'children', 'lyrics', 'ai'],
+}
+# More off-brand topics for a named source (its sad arcs are famous): matched on the title.
+SOURCE_DARK_WORDS = ['death', 'dies', 'died', 'dying', 'die', 'stab', 'stabbed', 'stabs', 'kill', 'kills',
+                     'killed', 'corpse', 'suicide', 'funeral', 'grave', '死', '殺', '사망', '죽음']
+# UNSAFE_SHOWS entries that are mainstream enough to be a song's source (Chainsaw Man for
+# "KICK BACK", Dandadan for "Otonoke"): as the --source they run as fan-service-risk sources.
+# Every other UNSAFE_SHOWS entry (ecchi-first shows, shows sexualising minors, teen idol
+# groups with gravure work) is refused as a source.
+MAINSTREAM_RISKY = [
+    'chainsaw man', 'dandadan', 'konosuba', 'fire force', 'food wars', 'shokugeki', 'dress up darling',
+    'sono bisque', 'seven deadly sins', 'nanatsu no taizai', 'fairy tail', 'kill la kill', 'rent a girlfriend',
+    'kanokari', 'quintuplets', 'bunny girl', 'nagatoro', 'uzaki', 'shin chan', 'shinchan', 'crayon shin',
+    'masamune kun', 'girlfriend girlfriend', 'sanji', 'jiraiya', 'pervy sage', 'roshi', 'mineta', 'happosai',
+]
+# Not on UNSAFE_SHOWS (fine in theme mode) but with fan-service moments.
+RISKY_SOURCES = ['franxx', 'darling in the franxx', 'danmachi', 'dungeon ni deai', 'pick up girls in a dungeon',
+                 'overlord', 'shield hero', 'tate no yuusha', 'eminence in shadow', 'kage no jitsuryokusha']
+# Titles skipped for a risk source: fan-service framing.
+RISKY_TITLE_WORDS = ['hot', 'hottest', 'best girl', 'best girls', 'girls', 'girl moments', 'waifu', 'waifus', 'thicc',
+                     'fanservice', 'fan service', 'body', 'curves', 'beach', 'pool', 'towel', 'kiss', 'kissing',
+                     'flirt', 'flirting', 'romance', 'romantic', 'bed', 'bedroom', 'outfit', 'costume', 'bunny',
+                     'nurse', 'maid', 'step on', 'simp', 'simping', 'rizz', 'attractive', 'beautiful', 'pretty',
+                     'mommy', 'daddy', 'wife', 'girlfriend', 'date', 'dating', 'love', 'couple']
+# Broadcaster, label and idol-channel uploads: their 직캠 / fancams are official focus cams.
+OFFICIAL_CHANNELS = [
+    'mnet k pop', 'mnet kpop', 'mnet', 'm2', 'mbckpop', 'mbc kpop', 'sbs kpop', 'sbskpop', 'kbs kpop', 'kbs world tv',
+    'kbs', 'sbs', 'mbc', 'jtbc', 'the k pop', '1thek', 'studio choom', 'dingo music', 'dingo', 'arirang', 'hybe labels',
+    'smtown', 'jyp entertainment', 'yg entertainment', 'starship', 'pledis', 'belift lab', 'ador', 'source music',
+    'kq entertainment', 'the black label', 'genie music', 'stone music', 'kocowa', 'show champion', 'music bank',
+    'inkigayo', 'm countdown', 'the show', 'ubc', 'mbc entertainment', 'kbs entertain', 'sbs entertainment',
+]
+FANCAM_WORDS = ['fancam', 'fan cam', 'fancams', '직캠']
+EDIT_GOOD_WORDS = ['4k', '8k', '1080p', '1440p', '2160p', '60fps', 'twixtor', 'raw', 'raw scenes', 'clean',
+                   'no text', 'textless', 'creditless', 'ncop', 'nced', 'scenes', 'scene pack', 'for edits',
+                   'stage', 'performance', 'dance practice', 'choreography', 'focus', 'stage mix', 'one take',
+                   'k choreo', '교차편집', '무대', 'ノンクレジット', '4k60']
+OP_WORDS = ['opening', 'op', 'ncop', 'creditless', 'ending', 'ed', 'nced', 'ノンクレジット', 'オープニング',
+            'エンディング', 'theme song', 'full song']
+
 FPS = 10            # analysis frame rate
 SAMPLE = 3          # text / face checks on every 3rd analysis frame
 NUDE_EVERY = 2      # nudity check on every 2nd sample (~1.7 per second)
 GRID = 24           # coverage grid for the text mask
 AN = 320            # analysis frame long side
 MIN_SEG, TARGET_SEG, MAX_SEG = 4.0, 5.0, 6.0
+EDIT_MIN, EDIT_TARGET, EDIT_MAX = 3.0, 5.0, 8.0     # edit shots (aligned ones: the song window)
 WHOLE_MAX = 240     # download whole videos up to this long, else only a section
 ANALYZE_MAX = 90    # seconds analysed per video, centred on the heatmap peak
+EDIT_MAX_DUR = 1200     # edit material may be a long scene pack (only a section is fetched)
+ALIGN_MAX_DUR = 600     # audio fetched for alignment only up to this long
 MODELS = {
     'face': ('face_detection_yunet_2023mar.onnx', 100_000,
              'https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/'
@@ -322,6 +463,9 @@ MODELS = {
 # NudeNet 320n classes used: exposed buttocks, female breast, female genitalia, anus, male genitalia
 NUDE_EXPOSED = [2, 3, 4, 6, 14]
 NUDE_G_COV, NUDE_BELLY, NUDE_BREAST_COV, NUDE_BUTT_COV = 0, 13, 16, 17
+# frame thresholds, and how many hit frames drop a whole source
+NUDE_T = {'exposed': 0.45, 'g_cov': 0.45, 'butt_cov': 0.75, 'breast_cov': 9.0, 'combo': (0.5, 0.45), 'drop': 3}
+NUDE_STRICT = {'exposed': 0.35, 'g_cov': 0.4, 'butt_cov': 0.4, 'breast_cov': 0.4, 'combo': (0.35, 0.35), 'drop': 2}
 
 T0 = time.time()
 NOW = datetime.now(timezone.utc)
@@ -422,9 +566,9 @@ class YT:
                 os.remove(tmp)
 
 
-def search(yt, query, theme, vibe, n=25):
+def search(yt, query, theme, vibe, n=25, sp=SP_SHORT):
     url = ('https://www.youtube.com/results?search_query=' + urllib.parse.quote_plus(query)
-           + '&sp=' + SP_SHORT)
+           + '&sp=' + sp)
     rc, out, err = yt(['--flat-playlist', '-J', '--playlist-end', str(n), url], 45)
     if rc != 0:
         log(f'search failed "{query}": {err_line(err)}')
@@ -537,6 +681,174 @@ def vibe_match(meta, vibe):
     return bool(VIBE_RE[vibe].search(_text(meta.get('title'), meta.get('tags'), meta.get('description'))))
 
 
+# ---------------------------------------------------------------- source mode
+
+def _snorm(s):
+    """Name matching form: NFKC, accents off Latin letters (ROSÉ -> rose), lower case,
+    apostrophes dropped, other punctuation to single spaces (【推しの子】 -> 推しの子)."""
+    out = []
+    for ch in unicodedata.normalize('NFKD', unicodedata.normalize('NFKC', s or '')):
+        if unicodedata.combining(ch) and out and out[-1].isascii():
+            continue
+        out.append(ch)
+    s = re.sub(r"['’`]", '', unicodedata.normalize('NFC', ''.join(out)).lower())
+    return ' '.join(re.sub(r'[\W_]+', ' ', s).split())
+
+
+def _split_digits(s):
+    return re.sub(r'(?<=[a-z])(?=[0-9])|(?<=[0-9])(?=[a-z])', ' ', s)
+
+
+def _script(s):
+    if KANA_RE.search(s):
+        return 'ja'
+    if HANGUL_RE.search(s):
+        return 'ko'
+    return 'zh' if HAN_RE.search(s) else None
+
+
+FANCAM_RE = _word_re(FANCAM_WORDS)
+SOURCE_DARK_RE = _word_re(SOURCE_DARK_WORDS)
+REFUSED_SOURCE_RE = _word_re([w for w in UNSAFE_SHOWS if w not in MAINSTREAM_RISKY])
+RISKY_SOURCE_RE = _word_re(MAINSTREAM_RISKY + RISKY_SOURCES)
+EDIT_GOOD_RE = _word_re(EDIT_GOOD_WORDS)
+OP_RE = _word_re(OP_WORDS)
+
+
+class Source:
+    """--source: the anime or K-pop group every clip must show."""
+
+    def __init__(self, name, kind, aliases=(), song=''):
+        self.name, self.kind, self.song = name.strip(), kind, (song or '').strip()
+        raw = [self.name] + [a.strip() for a in aliases if a and a.strip()]
+        self.strong, self.weak, seen = [], [], set()
+        for r in raw:
+            k = _snorm(r)
+            if k and k not in seen:
+                seen.add(k)
+                (self.weak if self._is_weak(k) else self.strong).append(k)
+        if not self.strong:             # "PSY" alone: the name itself has to do
+            self.strong = [_snorm(self.name)]
+            self.weak = [w for w in self.weak if w not in self.strong]
+        self._strong = [self._pattern(k, True) for k in self.strong]
+        self._weak = [self._pattern(k, False) for k in self.weak]
+        names = ' '.join(self.strong + self.weak)
+
+        def without_names(words):
+            return _word_re([w for w in words if not _word_re([w]).search(names)])
+        self.not_re = without_names(NOT_SOURCE_WORDS + NOT_SOURCE_KIND[kind])
+        self.song_pat = self._pattern(_snorm(self.song), True) if _snorm(self.song) else None
+        self.native = [r for r in raw if not r.isascii() and _script(r)]
+        self.official_set = [_snorm(c) for c in OFFICIAL_CHANNELS]
+        # the source's own names are exempt from the unsafe-show title check (other shows are not)
+        flat = [re.sub(r'[^a-z0-9+#]+', ' ', k).strip() for k in self.strong + self.weak]
+        flat = [k for k in flat if k]
+        self._own = [re.compile(r'(?<![a-z0-9])' + r'\s*'.join(map(re.escape, k.split())) + r'(?![a-z0-9])')
+                     for k in flat]
+        both = flat + [_split_digits(k) for k in flat]      # "nogizaka46" -> also "nogizaka 46"
+        self.refused = any(REFUSED_SOURCE_RE.search(k) or NSFW_RE.search(k) for k in both) or any(
+            c in k for k in self.strong + self.weak for c in NSFW_CHARS)
+        self.risky = not self.refused and any(SHOW_RE.search(k) or RISKY_SOURCE_RE.search(k) for k in both)
+        self.risky_re = without_names(RISKY_TITLE_WORDS)
+
+    @staticmethod
+    def _is_weak(k):
+        if not k.isascii():
+            return len(k.replace(' ', '')) < 2
+        return ' ' not in k and (len(k) <= 3 or k in COMMON_NAMES)
+
+    @staticmethod
+    def _pattern(k, compact):
+        """Matcher for one normalised name: ASCII names as whole words (spaces optional, so
+        "new jeans" == "newjeans"), long ones also inside hashtags; others as substrings."""
+        c = k.replace(' ', '')
+        if not k.isascii():
+            return lambda text, ctext: c in ctext
+        rx = re.compile(r'(?<![a-z0-9])' + r'\s*'.join(map(re.escape, k.split())) + r'(?![a-z0-9])')
+        return lambda text, ctext: bool(rx.search(text) or (compact and len(c) >= 6 and c in ctext))
+
+    @staticmethod
+    def _any(pats, text):
+        ctext = text.replace(' ', '')
+        return any(p(text, ctext) for p in pats)
+
+    def level(self, meta):
+        """2: the title names the source; 1: an official / source-named channel, or a short or
+        common alias in the title backed by the tags, channel or description; 0: not the source."""
+        title = _snorm(meta.get('title'))
+        if self._any(self._strong, title):
+            return 2
+        chan = _snorm(meta.get('channel') or meta.get('uploader') or '')
+        if chan and (self._any(self._strong, chan) or chan in self.weak):
+            return 1
+        if self._weak and self._any(self._weak, title):
+            rest = _snorm(' '.join([str(t) for t in meta.get('tags') or []] + [meta.get('description') or '']))
+            if self._any(self._strong, rest):
+                return 1
+        return 0
+
+    def weak_title(self, meta):
+        return bool(self._weak) and self._any(self._weak, _snorm(meta.get('title')))
+
+    def has_song(self, meta):
+        return bool(self.song_pat) and self._any([self.song_pat], _snorm(meta.get('title')))
+
+    def official(self, meta):
+        chan = _snorm(meta.get('channel') or meta.get('uploader') or '')
+        return bool(chan) and (any(chan == o or chan.startswith(o + ' ') for o in self.official_set)
+                               or self._any(self._strong, chan))
+
+    def reason(self, meta, vibe):
+        """Reject reason for a candidate's text in source mode, or None. Safety checks as in
+        theme mode (fancams allowed from official channels; the source's own names exempt from
+        the unsafe-show list); off-type / not-the-source words and violence words are matched
+        on the title (and tags), where they describe the video."""
+        official = self.official(meta)
+        title = meta.get('title') or ''
+        t = _text(title, meta.get('description'), meta.get('tags'), meta.get('categories'))
+        head = _text(title, meta.get('tags'))
+        if official:
+            t, head = FANCAM_RE.sub(' ', t), FANCAM_RE.sub(' ', head)
+            t, head = t.replace('직캠', ' '), head.replace('직캠', ' ')
+        flat = re.sub(r'[^a-z0-9+#]+', ' ', t)
+        other = flat
+        for rx in self._own:
+            other = rx.sub(' ', other)
+        if (NSFW_RE.search(t) or any(c in t for c in NSFW_CHARS) or SHOW_RE.search(other)
+                or SHOW_RE.search(_split_digits(other)) or RISKY_RE.search(flat)):
+            return 'nsfw'
+        if channel_nsfw(meta):
+            return 'nsfw'
+        if self.risky and self.risky_re.search(_norm(title)):
+            return 'nsfw'
+        dance_text = t if vibe == 'dance' else head
+        if (vibe == 'dance' or self.kind == 'group') and VIBE_RISK_RE['dance'].search(
+                re.sub(r'stray[\s_\-]*kids', 'skz', dance_text)):
+            return 'nsfw'
+        if vibe != 'cute' and SCHOOL_KID_RE.search(t):
+            return 'kids'
+        tt = _norm(title)
+        if DARK_RE.search(t) or VIBE_RISK_RE['fight'].search(head) or SOURCE_DARK_RE.search(tt):
+            return 'dark'
+        if OFFTYPE_RE.search(tt):
+            return 'offtype'
+        if self.not_re.search(tt):
+            return 'notsource'
+        # "Naruto x Chainsaw Man OP", 【ちいかわ×チェンソーマン】: another show in it ("Spy x Family"
+        # itself is fine: the source's own names are taken out first)
+        rest = _snorm(title.replace('×', ' x ').replace('✕', ' x '))
+        for k in sorted(self.strong + self.weak, key=len, reverse=True):
+            if k.isascii():
+                rest = re.sub(r'(?<![a-z0-9])' + r'\s*'.join(map(re.escape, k.split())) + r'(?![a-z0-9])',
+                              ' qqownqq ', rest)
+            else:
+                rest = rest.replace(k, ' qqownqq ')
+        for a, b in re.findall(r'(\S+)\s+x\s+(\S+)', rest):     # "Denji x Power" pairs its own names
+            if self.kind == 'anime' and 'qqownqq' in (a, b) and (a, b) != ('qqownqq', 'qqownqq'):
+                return 'notsource'
+        return None
+
+
 def _ids_from(obj, days):
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -611,7 +923,7 @@ def is_blocked(e, block):
     return False
 
 
-def prefilter(e, used, block, min_views, max_dur):
+def prefilter(e, used, block, min_views, max_dur, src=None):
     if e['id'] in used:
         return 'used'
     if is_blocked(e, block):
@@ -626,10 +938,16 @@ def prefilter(e, used, block, min_views, max_dur):
         return 'offtheme'
     if channel_nsfw(e):
         return 'nsfw'
+    if src:
+        why = src.reason(e, e['vibe'])
+        if why:
+            return why
+        # a common alias alone may still be backed by the tags: probe decides
+        return None if src.level(e) or src.weak_title(e) else 'offsource'
     return text_reason(e['title'], e['description'], vibe=e['vibe'])
 
 
-def probe(yt, e, used, block, max_dur, min_views):
+def probe(yt, e, used, block, max_dur, min_views, src=None):
     """Full metadata for a candidate, or (None, reason)."""
     rc, out, err = yt(['-J', '--no-playlist', '--skip-download',
                        f'https://www.youtube.com/watch?v={e["id"]}'], 45)
@@ -655,10 +973,20 @@ def probe(yt, e, used, block, max_dur, min_views):
         return None, 'length'
     if (info.get('view_count') or 0) < min_views:
         return None, 'views'
-    if min(info.get('width') or 999, info.get('height') or 999) < 320:
+    if min(info.get('width') or 999, info.get('height') or 999) < (360 if e['vibe'] == 'edit' else 320):
         return None, 'lowres'
     if offtheme(info.get('title'), info.get('tags')):
         return None, 'offtheme'
+    if src:
+        why = src.reason(info, e['vibe'])
+        if why:
+            return None, why
+        lvl = src.level(info)
+        if not lvl:
+            log(f'not {src.name}, skipped {info["id"]}: {(info.get("title") or "")[:60]!r}')
+            return None, 'offsource'
+        info['_level'] = lvl
+        return info, None
     why = text_reason(info.get('title'), info.get('description'), info.get('tags'),
                       info.get('categories'), vibe=e['vibe'])
     if why:
@@ -686,34 +1014,61 @@ def window(info):
     return b - ANALYZE_MAX, b
 
 
-def download(yt, info, src_dir, timeout):
-    """(path, offset): offset is where the file starts in the source video."""
+def download(yt, info, src_dir, timeout, section=None, tag=''):
+    """(path, offset): offset is where the file starts in the source video. section=(a, b)
+    fetches just that part; tag keeps several files of one video apart."""
     vid = info['id']
+    name = f'{vid}__{tag}' if tag else vid
     ij = os.path.join(src_dir, f'{vid}.info.json')
     with open(ij, 'w', encoding='utf-8') as f:
         json.dump({k: v for k, v in info.items() if not k.startswith('_')}, f)
     args = ['-f', 'bv*+ba/b', '-S', 'res:720,vcodec:h264,acodec:aac', '--merge-output-format', 'mkv',
-            '--no-part', '-o', os.path.join(src_dir, f'{vid}.%(ext)s')]
+            '--no-part', '-o', os.path.join(src_dir, f'{name}.%(ext)s')]
     offset = 0.0
-    if (info.get('duration') or 0) > WHOLE_MAX:
+    if section:
+        offset, b = section
+        args += ['--download-sections', f'*{offset:.2f}-{b:.2f}']
+    elif (info.get('duration') or 0) > WHOLE_MAX:
         # ffmpeg-based section download: slow on some videos, so only for long ones
         offset, b = window(info)
         args += ['--download-sections', f'*{offset:.1f}-{b:.1f}']
     end = time.time() + timeout
     err = ''
+    outs = [os.path.join(src_dir, f'{name}.{ext}') for ext in ('mkv', 'mp4', 'webm')]
     for src in (['--load-info-json', ij], [f'https://www.youtube.com/watch?v={vid}']):
         rc, _, err = yt(src + args, end - time.time())
-        files = [p for p in glob.glob(os.path.join(src_dir, f'{vid}.*'))
-                 if p.rsplit('.', 1)[-1] in ('mkv', 'mp4', 'webm') and os.path.getsize(p) > 50000]
+        files = [p for p in outs if os.path.exists(p) and os.path.getsize(p) > 50000]
         if rc == 0 and files:
             return files[0], offset
-        for p in glob.glob(os.path.join(src_dir, f'{vid}.*')):
+        for p in glob.glob(os.path.join(src_dir, f'{name}.*')):
             if not p.endswith('.info.json'):
                 os.remove(p)
         if rc is None or end - time.time() < 20:
             break
     log(f'download failed {vid}: {err_line(err)}')
     return None, 0.0
+
+
+def download_audio(yt, info, src_dir, timeout):
+    """A small audio-only copy of the whole video (for alignment), or None."""
+    vid = info['id']
+    ij = os.path.join(src_dir, f'{vid}.info.json')
+    with open(ij, 'w', encoding='utf-8') as f:
+        json.dump({k: v for k, v in info.items() if not k.startswith('_')}, f)
+    out = os.path.join(src_dir, f'{vid}__aud.%(ext)s')
+    end = time.time() + timeout
+    err = ''
+    for src in (['--load-info-json', ij], [f'https://www.youtube.com/watch?v={vid}']):
+        rc, _, err = yt(src + ['-f', 'ba[abr<=80]/wa/ba/b', '--no-part', '-o', out], end - time.time())
+        files = [p for p in glob.glob(os.path.join(src_dir, f'{vid}__aud.*')) if os.path.getsize(p) > 20000]
+        if rc == 0 and files:
+            return files[0]
+        for p in glob.glob(os.path.join(src_dir, f'{vid}__aud.*')):
+            os.remove(p)
+        if rc is None or end - time.time() < 10:
+            break
+    log(f'audio download failed {vid}: {err_line(err)}')
+    return None
 
 
 def velocity(info):
@@ -744,17 +1099,35 @@ def length_bonus(dur):
     return 0.0 if dur <= 120 else -0.7
 
 
-def title_bonus(meta, vibe):
+def title_bonus(meta, vibe, soft=False):
     t = _text(meta.get('title'))
-    b = 0.8 if VIBE_RE[vibe].search(t) else (-1.0 if vibe in VIBE_REQUIRED else 0.0)
+    b = 0.8 if VIBE_RE[vibe].search(t) else (-(0.3 if soft else 1.0) if vibe in VIBE_REQUIRED else 0.0)
     return b - (0.4 if GENERIC_RE.search(t) else 0.0)
 
 
-def pre_rank(entries, rng):
-    """Order search results before probing: views, shortness, vibe words, Asia signal."""
+def edit_bonus(meta, src):
+    """Edit material: clean 4K / raw / creditless / stage words, the song, resolution."""
+    t = _text(meta.get('title'))
+    b = 0.8 * bool(EDIT_GOOD_RE.search(t)) - 0.5 * bool(GENERIC_RE.search(t))
+    if src and src.has_song(meta):
+        b += 1.2
+    if min(meta.get('width') or 0, meta.get('height') or 0) >= 1080:
+        b += 0.4
+    return b
+
+
+def pre_rank(entries, rng, src=None):
+    """Order search results before probing: views, shortness, vibe words, Asia signal
+    (source mode: how clearly the title names the source)."""
     def key(e):
-        sc = math.log10((e['views'] or 100000) + 1) + length_bonus(e['duration']) + title_bonus(e, e['vibe'])
-        if not relevant(e, e['theme'], e['query']):
+        if e['vibe'] == 'edit':
+            sc = 0.5 * math.log10((e['views'] or 100000) + 1) + edit_bonus(e, src)
+        else:
+            sc = (math.log10((e['views'] or 100000) + 1) + length_bonus(e['duration'])
+                  + title_bonus(e, e['vibe'], soft=src is not None))
+        if src:
+            sc -= 0.7 * (src.level(e) < 2)
+        elif not relevant(e, e['theme'], e['query']):
             sc -= 0.7   # tags may still carry it, so probe later rather than drop
         return sc + rng.uniform(0, 0.5)
     by_q = {}
@@ -770,12 +1143,17 @@ def pre_rank(entries, rng):
     return out
 
 
-def source_rank(info, rng):
+def source_rank(info, rng, src=None):
     """Order probed sources for download: views, view velocity, Shorts, vertical, vibe words."""
+    if info['_vibe'] == 'edit':
+        sc = 0.5 * math.log10((info.get('view_count') or 0) + 1) + edit_bonus(info, src)
+        return sc + 0.5 * (info.get('_level') == 2) + rng.uniform(0, 0.3)
     sc = math.log10((info.get('view_count') or 0) + 1) + 0.6 * math.log10(velocity(info) + 1)
-    sc += length_bonus(info.get('duration')) + title_bonus(info, info['_vibe'])
+    sc += length_bonus(info.get('duration')) + title_bonus(info, info['_vibe'], soft=src is not None)
     if (info.get('height') or 0) > (info.get('width') or 0):
         sc += 0.5
+    if src:
+        sc += 0.5 * (info.get('_level') == 2)
     return sc + rng.uniform(0, 0.3)
 
 
@@ -833,6 +1211,60 @@ def faces(img):
     return []
 
 
+def held_frames(path, ss, span, each=2.0):
+    """Per short stretch of the span (up to 6, apart): the share of consecutive frames (native
+    rate) that repeat the previous one: identical at 160x90, or, at 32x18 where a film-grain
+    overlay (Chainsaw Man) averages out, far smaller than the stretch's typical change. Anime
+    holds each drawing for 2-3 frames (still so in 60 fps interpolated uploads): ~0.15-0.9,
+    pans animated on ones aside. A camera almost never repeats a frame: ~0."""
+    w, h = 160, 90
+    out_ratios = []
+    chunks = int(min(6, max(1, span // (2 * each))))
+    for k in range(chunks):
+        t = max(0.0, ss + (k + 0.5) * span / chunks - each / 2)
+        _, out, _ = run(['ffmpeg', '-v', 'error', '-ss', f'{t:.2f}', '-t', f'{each:.2f}', '-i', path, '-map', '0:v:0',
+                         '-vf', f'scale={w}:{h}:flags=area', '-fps_mode', 'passthrough', '-f', 'rawvideo',
+                         '-pix_fmt', 'gray', '-'], 30)
+        f = np.frombuffer(out[:len(out) // (w * h) * (w * h)], np.uint8).reshape(-1, h, w).astype(np.float32)
+        if len(f) >= 20:
+            d = np.abs(np.diff(f, axis=0)).mean((1, 2))
+            c = f.reshape(len(f), h // 5, 5, w // 5, 5).mean((2, 4))
+            dc = np.abs(np.diff(c, axis=0)).mean((1, 2))
+            out_ratios.append(float(max((d < 0.3).mean(), (dc < 0.15 * np.percentile(dc, 90)).mean())))
+    return out_ratios
+
+
+def live_action(path, ss, span, n=10):
+    """For an anime source: True when the file looks like live action (a dance-practice video,
+    a school sports clip under the anime's song, a cosplayer): half of the sampled stretches
+    never repeat a frame (a camera; a CG show animated on ones is sacrificed), or, when the
+    footage is not clearly animated, several real faces in a quarter of the sampled frames
+    (YuNet finds at most one face in most anime frames)."""
+    held = held_frames(path, ss, span)
+    if held and sum(r < 0.06 for r in held) >= max(min(2, len(held)), len(held) / 2):
+        return True
+    if (held and np.median(held) >= 0.12) or ('face' not in PATHS and not HAAR):
+        return False
+    size = 640 * 360 * 3
+    vf = ['-map', '0:v:0', '-vf', 'scale=640:360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2',
+          '-f', 'rawvideo', '-pix_fmt', 'bgr24']
+
+    def grab(args, timeout):
+        _, out, _ = run(['ffmpeg', '-v', 'error'] + args + vf + ['-'], timeout)
+        return [np.frombuffer(out[i:i + size], np.uint8).reshape(360, 640, 3) for i in range(0, len(out) - size + 1, size)]
+
+    # keyframes only: cheap to decode, and YouTube files have one every 1-4 s
+    frames = grab(['-skip_frame', 'nokey', '-ss', f'{ss:.2f}', '-t', f'{span:.2f}', '-i', path, '-fps_mode', 'passthrough'], 60)
+    if len(frames) < 6:
+        frames = [f for k in range(n) for f in grab(['-ss', f'{ss + (k + 0.5) * span / n:.2f}', '-i', path,
+                                                      '-frames:v', '1'], 20)]
+    if len(frames) < 3:
+        return False
+    frames = frames[::max(1, len(frames) // n)][:n]
+    counts = np.array([sum(1 for f in faces(img) if f[4] >= 0.8) for img in frames])
+    return bool((counts >= 2).mean() >= 0.25)
+
+
 def nude(img):
     """True if NudeNet sees exposed private parts or swimwear/underwear-level coverage."""
     if 'nude' not in PATHS:
@@ -848,8 +1280,11 @@ def nude(img):
     # A covered chest on its own is just a fitted outfit (idol stage dresses scored
     # >= 0.7 and cost a quarter of K-pop sources); with a bare midriff it is
     # swimwear-like and still rejected. clip_judge.py re-checks for suggestive frames.
-    return bool(sc[NUDE_EXPOSED].max() >= 0.45 or sc[NUDE_G_COV] >= 0.45 or sc[NUDE_BUTT_COV] >= 0.75
-                or (sc[NUDE_BREAST_COV] >= 0.5 and sc[NUDE_BELLY] >= 0.45))
+    # A fan-service-risk --source uses the stricter NUDE_STRICT.
+    t = NUDE_T
+    return bool(sc[NUDE_EXPOSED].max() >= t['exposed'] or sc[NUDE_G_COV] >= t['g_cov']
+                or sc[NUDE_BUTT_COV] >= t['butt_cov'] or sc[NUDE_BREAST_COV] >= t['breast_cov']
+                or (sc[NUDE_BREAST_COV] >= t['combo'][0] and sc[NUDE_BELLY] >= t['combo'][1]))
 
 
 _K3 = np.ones((3, 3), np.uint8)
@@ -949,15 +1384,14 @@ def heat_curve(info, t):
     return out / max(rest)
 
 
-def analyze(path, info, offset, theme, vibe):
-    """Up to 3 non-overlapping 4-6 s moments of one video for a vibe, best first."""
+def _decode(path, info, offset, ss, span, min_n):
+    """Frames of the file from ss (file seconds) for span seconds at FPS with the per-frame
+    measures every clip kind uses; None when unreadable, under min_n frames or nude."""
     mi = media_info(path)
     if not mi:
-        return []
+        return None
     W, H, fdur, has_audio = mi
-    a, b = window(info)
-    ss = max(0.0, a - offset)
-    span = min(fdur - ss, b - a) if fdur else b - a
+    span = min(fdur - ss, span) if fdur else span
     vdur = info.get('duration') or 0
     at_start, at_end = offset + ss < 0.5, offset + ss + span > vdur - 0.5
     if W >= H:
@@ -972,7 +1406,7 @@ def analyze(path, info, offset, theme, vibe):
     thumbs, hsv_d, samples = [], [], []
     prev = None
     i = 0
-    while i < FPS * (ANALYZE_MAX + 5):
+    while i < FPS * (max(ANALYZE_MAX, span) + 5):
         buf = proc.stdout.read(size)
         if len(buf) < size:
             break
@@ -994,13 +1428,13 @@ def analyze(path, info, offset, theme, vibe):
     proc.wait()
     _procs.discard(proc)
     n = len(thumbs)
-    if n < FPS * MIN_SEG:
-        return []
+    if n < min_n:
+        return None
     s_nude = np.array([s['nude'] for s in samples])
-    if s_nude.sum() >= 3:
+    if s_nude.sum() >= NUDE_T['drop']:
         log(f'{info["id"]}: nudity check hit on {int(s_nude.sum())} frames, dropping source')
         _bump('rejected', 'nsfw_frames')
-        return []
+        return None
 
     x0, y0, x1, y1 = content_box(thumbs)
     cy0, cx0 = int(y0 * th), int(x0 * tw)
@@ -1035,25 +1469,61 @@ def analyze(path, info, offset, theme, vibe):
     # motion impacts (hits): sudden motion, helped by a loudness onset
     hit = np.minimum(1, spike / 0.05) + 0.6 * np.minimum(1, onset / 6)
     smooth = np.convolve(mot, np.ones(10) / 10, mode='same')
+    c = {
+        'n': n, 'crop': crop, 'mot': mot, 'spike': spike, 'loud': loud, 'heat': heat, 'cuts': cuts,
+        'hit': hit, 'smooth': smooth,
+        'luma': crop.mean((1, 2)), 'detail': crop.std((1, 2)),
+        'black': (crop < 20).mean((1, 2)),                                # small picture on a black canvas
+        'uniform': (np.abs(flat - modes[:, None]) <= 8).mean(1),          # plain text / logo cards
+        'text': np.array([float(s['text'][gy0:gy1, gx0:gx1].mean()) for s in samples]),
+        'tgrid': np.stack([s['text'][gy0:gy1, gx0:gx1] for s in samples]),
+        'face': s_face, 'nude': s_nude, 'sharp': np.array([s['sharp'] for s in samples]),
+        'lowres': min(W, H) < 480, 'vertical': H > W,
+        # not per-frame
+        'W': W, 'H': H, 'has_audio': has_audio, 'ss': ss, 'span': span, 't': t, 'vdur': vdur,
+        'at_start': at_start, 'at_end': at_end, 'box': (x0, y0, x1, y1), 'cbox': (cy0, cy1, cx0, cx1),
+        'thumbs': thumbs,
+    }
+    return c
+
+
+def _segment(c, info, path, theme, vibe, s, e, sc, extra, pop):
+    """Manifest entry (plus private _keys) for frames s..e of a decoded file."""
+    W, H, t, (cy0, cy1, cx0, cx1) = c['W'], c['H'], c['t'], c['cbox']
+    return {
+        'source_id': info['id'], 'source_channel': info.get('channel') or info.get('uploader') or '',
+        'source_channel_id': info.get('channel_id') or '',
+        'source_title': info.get('title') or '', 'theme': theme, 'vibe': vibe,
+        'views': info.get('view_count') or 0,
+        'start': round(float(t[s]), 2), 'end': round(float(t[s]) + (e - s) / FPS, 2),
+        'duration': round((e - s) / FPS, 2), 'peak': extra['peak'], 'hits': extra['hits'],
+        'hook': round(float(extra['hook']), 3), 'score': round(float(0.65 * sc + 0.35 * pop), 4),
+        'loop': extra['loop'], 'cuts': extra['cuts'],
+        'has_face': extra['has_face'], 'has_caption': extra['has_caption'],
+        'motion': extra['motion'], 'width': W - W % 2, 'height': H - H % 2,
+        'content_box': [round(v, 3) for v in c['box']],
+        '_src': path, '_local': c['ss'] + s / FPS, '_dur': (e - s) / FPS, '_s': s, '_e': e,
+        '_hash': dhash(c['thumbs'][(s + e) // 2][cy0:cy1, cx0:cx1]),
+    }
+
+
+def analyze(path, info, offset, theme, vibe):
+    """Up to 3 non-overlapping 4-6 s moments of one video for a vibe, best first."""
+    a, b = window(info)
+    c = _decode(path, info, offset, max(0.0, a - offset), b - a, FPS * MIN_SEG)
+    if not c:
+        return []
+    n, cuts, spike, heat, hit, smooth, loud = c['n'], c['cuts'], c['spike'], c['heat'], c['hit'], c['smooth'], c['loud']
     if vibe == 'dance':     # sustained movement, then the sharpest move
         ev = np.minimum(1, smooth / 0.05) + 0.5 * np.minimum(1, spike / 0.05) + 0.5 * heat
     elif vibe == 'fight':
         ev = hit + heat
     else:
         ev = np.minimum(1, spike / 0.06) + np.minimum(1, loud / 9) + 1.2 * heat
-    c = {
-        'n': n, 'crop': crop, 'mot': mot, 'spike': spike, 'loud': loud, 'heat': heat, 'cuts': cuts,
-        'hit': hit, 'ev': np.convolve(ev, np.ones(5) / 5, mode='same'), 'vibe': vibe,
-        'luma': crop.mean((1, 2)), 'detail': crop.std((1, 2)),
-        'black': (crop < 20).mean((1, 2)),                                # small picture on a black canvas
-        'uniform': (np.abs(flat - modes[:, None]) <= 8).mean(1),          # plain text / logo cards
-        'text': np.array([float(s['text'][gy0:gy1, gx0:gx1].mean()) for s in samples]),
-        'face': s_face, 'nude': s_nude, 'sharp': np.array([s['sharp'] for s in samples]),
-        'lowres': min(W, H) < 480, 'vertical': H > W,
-    }
-    short = vdur <= 60
-    lo = 1 if short or not at_start else 5
-    hi = n - ((3 if short else 25) if at_end else 1)        # Shorts loop, long videos end on cards
+    c['ev'], c['vibe'] = np.convolve(ev, np.ones(5) / 5, mode='same'), vibe
+    short = c['vdur'] <= 60
+    lo = 1 if short or not c['at_start'] else 5
+    hi = n - ((3 if short else 25) if c['at_end'] else 1)   # Shorts loop, long videos end on cards
     if hi - lo < MIN_SEG * FPS:
         _bump('seg_rejected', 'short')
         return []
@@ -1078,21 +1548,7 @@ def analyze(path, info, offset, theme, vibe):
     for sc, s, e, extra in scored:
         if any(s < o['_e'] and o['_s'] < e for o in segs):
             continue
-        segs.append({
-            'source_id': info['id'], 'source_channel': info.get('channel') or info.get('uploader') or '',
-            'source_channel_id': info.get('channel_id') or '',
-            'source_title': info.get('title') or '', 'theme': theme, 'vibe': vibe,
-            'views': info.get('view_count') or 0,
-            'start': round(float(t[s]), 2), 'end': round(float(t[s]) + (e - s) / FPS, 2),
-            'duration': round((e - s) / FPS, 2), 'peak': extra['peak'], 'hits': extra['hits'],
-            'hook': round(float(extra['hook']), 3), 'score': round(float(0.65 * sc + 0.35 * pop), 4),
-            'loop': extra['loop'], 'cuts': extra['cuts'],
-            'has_face': extra['has_face'], 'has_caption': extra['has_caption'],
-            'motion': extra['motion'], 'width': W - W % 2, 'height': H - H % 2,
-            'content_box': [round(v, 3) for v in (x0, y0, x1, y1)],
-            '_src': path, '_local': ss + s / FPS, '_dur': (e - s) / FPS, '_s': s, '_e': e,
-            '_hash': dhash(thumbs[(s + e) // 2][cy0:cy1, cx0:cx1]),
-        })
+        segs.append(_segment(c, info, path, theme, vibe, s, e, sc, extra, pop))
         if len(segs) == 3:
             break
     _bump('analyzed')
@@ -1111,10 +1567,10 @@ def _peaks(evs, lo, hi, k=4, gap=40):
     return picks
 
 
-def _build(p, lo, hi, cuts):
+def _build(p, lo, hi, cuts, target=TARGET_SEG, shortest=MIN_SEG):
     """(start, end) frames of a 4-6 s moment around peak p: inside its shot when the shot is long
     enough, else across shots starting and ending on cuts where possible."""
-    L, lmin = int(TARGET_SEG * FPS), int(MIN_SEG * FPS)
+    L, lmin = int(target * FPS), int(shortest * FPS)
     s0 = max([lo] + [k + 1 for k in cuts if k <= p])
     e0 = min([hi] + [k for k in cuts if k > p])
     if e0 - s0 >= lmin:
@@ -1213,6 +1669,137 @@ def _score(c, s, e):
         'has_face': bool((face >= 0.004).mean() >= 0.5), 'motion': round(float(nm), 3)}
 
 
+# ---------------------------------------------------------------- edit material
+
+def analyze_edit(path, info, offset, ss, span, theme, force=False):
+    """Shots for the full-song edit from one file section, best first: up to 2 non-overlapping
+    3-8 s shots around the strongest motion, re-centred on a strong sound hit next to it when
+    there is one. force: the whole section is the one shot (an aligned song window)."""
+    c = _decode(path, info, offset, ss, span, int(FPS * EDIT_MIN))
+    if not c:
+        return []
+    n = c['n']
+    fx = None
+    if c['has_audio']:
+        y = align.decode(path, c['ss'], c['span'], runner=run, sr=align.SR_FX, pad=True)
+        fx = align.sfx_frames(y) if y is not None else None
+    snd = np.zeros(n)
+    for t, st in (align.sfx_hits(fx, 0, n / FPS, max_hits=40) if fx and not force else []):
+        k = int(round(t * FPS))
+        if 0 <= k < n:
+            snd[k] = max(snd[k], st)
+    ev = (np.minimum(1, c['smooth'] / 0.05) + 0.6 * np.minimum(1, c['spike'] / 0.05) + 0.5 * c['heat']
+          + 0.8 * np.convolve(snd, np.ones(3), mode='same'))
+    c['ev'], c['vibe'] = np.convolve(ev, np.ones(5) / 5, mode='same'), 'edit'
+    if force:
+        wins = [(0, n)]
+    else:
+        short = c['vdur'] <= 60
+        lo = 1 if short or not c['at_start'] else 5
+        hi = n - ((3 if short else 25) if c['at_end'] else 1)
+        if hi - lo < EDIT_MIN * FPS:
+            _bump('seg_rejected', 'short')
+            return []
+        peaks = []
+        for p in _peaks(c['ev'], lo, hi, k=6, gap=30):
+            near = [k for k in range(max(lo, p - 6), min(hi, p + 7)) if snd[k] >= 0.5]
+            peaks.append(max(near, key=lambda k: snd[k]) if near else p)
+        wins = [w for w in (_build(p, lo, hi, c['cuts'], EDIT_TARGET, EDIT_MIN) for p in peaks) if w]
+    scored, whys = [], Counter()
+    for s, e in wins:
+        sc, why, extra = _score_edit(c, s, e, fx, force)
+        if why:
+            whys[why] += 1
+        else:
+            scored.append((sc, s, e, extra))
+    if not scored:
+        if whys:
+            _bump('seg_rejected', 'edit_' + whys.most_common(1)[0][0])
+        return []
+    scored.sort(key=lambda r: -r[0])
+    pop = popularity(info)
+    segs = []
+    for sc, s, e, extra in scored:
+        if any(s < o['_e'] and o['_s'] < e for o in segs):
+            continue
+        seg = _segment(c, info, path, theme, 'edit', s, e, sc, extra, pop)
+        seg.update({k: extra[k] for k in ('has_audio', 'sfx_hits', 'sfx_score', 'watermark')})
+        seg['score'] = round(float(0.8 * sc + 0.2 * pop), 4)
+        segs.append(seg)
+        if len(segs) == (1 if force else 2):
+            break
+    _bump('analyzed')
+    return segs
+
+
+def _score_edit(c, s, e, fx, forced):
+    """(score, reject_reason, extras) of frames s..e as edit material: striking motion, sharp,
+    clean (no big text, no watermark), few cuts; plus its sound hits."""
+    js = _samples(s, e, len(c['text']))
+    near = range(max(0, js[0] - NUDE_EVERY * 2), min(len(c['nude']), js[-1] + NUDE_EVERY * 2 + 1))
+    if c['nude'][near].any():
+        return 0, 'nsfw', None
+    lm, dt = c['luma'][s:e].mean(), c['detail'][s:e].mean()
+    m = c['mot'][s + 1:e].mean()
+    text, sharp = c['text'][js], float(np.median(c['sharp'][js]))
+    if lm < 25 or c['black'][s:e].mean() > 0.7:
+        return 0, 'dark', None
+    if dt < 12 or (c['uniform'][s:e] > 0.8).mean() > 0.2:
+        return 0, 'blank', None
+    if (m < 0.003 if forced else (m < 0.006 and c['spike'][s:e].max() < 0.015)):
+        return 0, 'static', None
+    if (c['crop'][s:e].std(0) < 2.5).mean() > 0.6:
+        return 0, 'still', None
+    if text.mean() > (0.45 if forced else 0.3):
+        return 0, 'text', None
+    if sharp < 40:
+        return 0, 'blurry', None
+    dur = (e - s) / FPS
+    n_cuts = sum(1 for k in c['cuts'] if s < k < e)
+    if not forced and n_cuts / dur > 2.5:
+        return 0, 'strobe', None        # flashing / rapid-fire cuts: unusable and hard on the eyes
+    hit = c['hit'][s:e]
+    hits = _local_peaks(hit, max(0.5, 0.4 * hit.max()))
+    p = int(np.argmax(hit)) / FPS
+    t0, t1 = s / FPS, e / FPS
+    fh = align.sfx_hits(fx, t0, t1) if fx else []
+    fs = align.sfx_score(fx, t0, t1, fh) if fx else 0.0
+    sfx = [round(t - t0, 2) for t, _ in fh]
+    if sfx and (abs(sfx[0] - p) <= 0.5 or fh[0][1] >= 0.6):
+        p = sfx[0]                      # the sound hit is the moment to land on the beat
+    nm = min(1, m / 0.05)
+    steady = float((c['mot'][s + 1:e] > 0.012).mean())
+    hj = _samples(s, s + 6, len(c['face']))
+    hook = (0.4 * min(1, c['mot'][s + 1:s + 5].mean() / 0.04)
+            + 0.35 * min(1, c['face'][hj].max() / 0.03)
+            + 0.25 * min(1, c['detail'][s:s + 5].mean() / 60))
+    persist = (c['tgrid'][js] > 0.3).mean(0)
+    watermark = bool((persist >= 0.8).any())
+    has_caption = bool(np.median(text) >= 0.02)
+    sc = (0.3 * nm + 0.15 * steady + 0.15 * min(1, hit.max()) + 0.1 * min(1, len(hits) / 4) + 0.1 * hook
+          + 0.1 * min(1, dt / 60) + 0.1 * fs)
+    if not forced and n_cuts / dur > 0.8:
+        sc *= 0.7                       # already someone else's fast edit
+    if sharp < 150:
+        sc *= 0.8
+    if c['lowres']:
+        sc *= 0.8
+    if has_caption:
+        sc *= 0.75
+    if watermark:
+        sc *= 0.9
+    if lm < 45:
+        sc *= 0.85
+    loop = 1 - min(1, float(np.abs(c['crop'][s] - c['crop'][e - 1]).mean()) / 40)
+    return sc, None, {
+        'hook': hook, 'peak': round(p, 2), 'hits': [round(h / FPS, 2) for h in hits][:12],
+        'loop': round(loop, 3), 'cuts': n_cuts, 'has_caption': has_caption,
+        # uncapped here (1.0 = strong motion) so the editor can order shots by it
+        'has_face': bool((c['face'][js] >= 0.004).mean() >= 0.5), 'motion': round(float(m / 0.05), 3),
+        'has_audio': bool(c['has_audio']), 'sfx_hits': sfx, 'sfx_score': round(float(fs), 3),
+        'watermark': watermark}
+
+
 # ---------------------------------------------------------------- output
 
 TITLE_JUNK_RE = re.compile(_chars((0x30, 0x39), (0x61, 0x7A), KANA, HAN, HANGUL, neg=True) + '+')
@@ -1227,11 +1814,14 @@ def _series(title):
     return ' '.join(_norm(title).split()[:2])
 
 
-def spread_channels(infos):
-    """Keep rank order but put each channel's / series' first video ahead of its repeats."""
+def spread_channels(infos, series=True):
+    """Keep rank order but put each channel's / series' first video ahead of its repeats
+    (series=False in source mode, where every title starts with the source's name)."""
     seen, first, rest = set(), [], []
     for i in infos:
-        keys = {i.get('channel_id') or i.get('channel') or i['id'], _series(i.get('title'))}
+        keys = {i.get('channel_id') or i.get('channel') or i['id']}
+        if series:
+            keys.add(_series(i.get('title')))
         (rest if keys & seen else first).append(i)
         seen |= keys
     return first + rest
@@ -1275,9 +1865,91 @@ def select(segs, wanted, mixed=False):
     return [s for v in wanted for s in chosen[v]]
 
 
-def cut(seg, out_path):
+# Source mode: which other vibes stand in best for a vibe the source cannot fill.
+FALLBACK_W = {'dance': {'fight': 0.9, 'cool': 0.8, 'cute': 0.7}, 'cool': {'fight': 0.9, 'dance': 0.85, 'cute': 0.7},
+              'fight': {'dance': 0.95, 'cool': 0.9, 'cute': 0.6}, 'cute': {'cool': 0.8, 'dance': 0.8, 'fight': 0.6}}
+
+
+def select_source(segs, wanted):
+    """select() for source mode: every clip from a different video, other channels first. A vibe
+    the source could not fill takes the best spare moment of another vibe, relabelled and
+    tagged vibe_fallback (found_as: its own vibe); each round fills every vibe's own pool first."""
+    pools = {v: sorted([s for s in segs if s['vibe'] == v], key=lambda s: -s['score']) for v in wanted}
+    chosen = {v: [] for v in wanted}
+    picked = []
+
+    def ok(s, same_channel_ok):
+        chan = s['source_channel_id'] or s['source_channel']
+        for c in picked:
+            if c['source_id'] == s['source_id']:
+                return False
+            if not same_channel_ok and chan and (c['source_channel_id'] or c['source_channel']) == chan:
+                return False
+            if bin(c['_hash'] ^ s['_hash']).count('1') <= 10 or (_title_key(c) and _title_key(c) == _title_key(s)):
+                return False
+        return True
+
+    def first(cands):
+        for same_channel_ok in (False, True):
+            s = next((s for s in cands if ok(s, same_channel_ok)), None)
+            if s:
+                return s
+        return None
+
+    for rnd in range(max(wanted.values(), default=0)):
+        short = []
+        for v, k in wanted.items():
+            if len(chosen[v]) > rnd or len(chosen[v]) >= k:
+                continue
+            s = first(pools[v])
+            if s:
+                chosen[v].append(dict(s, vibe_fallback=False))
+                picked.append(s)
+            else:
+                short.append(v)
+        for v in short:
+            spare = sorted([s for s in segs if s['vibe'] != v],
+                           key=lambda s: -s['score'] * FALLBACK_W[v].get(s['vibe'], 0.5))
+            s = first(spare)
+            if s:
+                chosen[v].append(dict(s, vibe=v, vibe_fallback=True, found_as=s['vibe']))
+                picked.append(s)
+    return [s for v in wanted for s in chosen[v]]
+
+
+def select_edit(shots, n, tiles):
+    """Up to n edit shots, aligned ones first, then by score. Other videos than the tiles where
+    possible; at most 2 shots per video (one aligned), never overlapping each other or a tile
+    clip of the same video, no near-duplicate frames."""
+    tile_ids = {c['source_id'] for c in tiles}
+    order = sorted(shots, key=lambda s: (not s.get('aligned'), -(s.get('align_score', 0) + s['score'])))
+    picked = []
+
+    def overlaps(a, b):
+        return a['source_id'] == b['source_id'] and a['start'] < b['end'] and b['start'] < a['end']
+
+    for allow_tile_videos in (False, True):
+        for s in order:
+            if len(picked) >= n:
+                break
+            if s in picked or (not allow_tile_videos and s['source_id'] in tile_ids):
+                continue
+            same = [p for p in picked if p['source_id'] == s['source_id']]
+            if len(same) >= 2 or (s.get('aligned') and any(p.get('aligned') for p in same)):
+                continue
+            if any(overlaps(s, p) for p in picked) or any(overlaps(s, c) for c in tiles):
+                continue
+            if any(bin(p['_hash'] ^ s['_hash']).count('1') <= 8 for p in picked):
+                continue
+            picked.append(s)
+    return picked
+
+
+def cut(seg, out_path, audio=False):
+    """Clip file for a segment: h264, no audio (audio=True keeps the first audio track as AAC)."""
+    amap = ['-map', '0:a:0?', '-c:a', 'aac', '-b:a', '160k', '-ac', '2', '-ar', '44100'] if audio else ['-an']
     rc, _, _ = run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{seg["_local"]:.3f}', '-i', seg['_src'],
-                    '-t', f'{seg["_dur"]:.3f}', '-map', '0:v:0', '-an', '-sn', '-dn',
+                    '-t', f'{seg["_dur"]:.3f}', '-map', '0:v:0'] + amap + ['-sn', '-dn',
                     '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'veryfast',
                     '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out_path], 60)
     return rc == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 1000
@@ -1297,10 +1969,17 @@ def contact_sheet(clips, path, cell=240, cols=4):
             img = cv2.resize(img, (max(1, int(img.shape[1] * s)), max(1, int(img.shape[0] * s))))
             y, x = oy + (cell - img.shape[0]) // 2, ox + (cell - img.shape[1]) // 2
             sheet[y:y + img.shape[0], x:x + img.shape[1]] = img
-        label = (f'{k} {c["vibe"]} {c["duration"]:.1f}s pk{c["peak"]:.1f} {len(c["hits"])}hits '
-                 f'h{c["hook"]:.2f} s{c["score"]:.2f}')
-        cv2.putText(sheet, label, (ox + 4, oy + cell + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.37, (230, 230, 230), 1, cv2.LINE_AA)
-        cv2.putText(sheet, f'{c["source_id"]} {c["theme"]}', (ox + 4, oy + cell + 29), cv2.FONT_HERSHEY_SIMPLEX, 0.37,
+        if c['vibe'] == 'edit':
+            label = (f'{k} edit {c["duration"]:.1f}s pk{c["peak"]:.1f} m{c["motion"]:.2f} '
+                     + (f'AL{c["align_score"]:.2f}' if c.get('aligned') else f'sfx{c["sfx_score"]:.2f}'))
+            sub = f'{c["source_id"]} {len(c["sfx_hits"])}fx' + (' wm' if c.get('watermark') else '')
+        else:
+            label = (f'{k} {c["vibe"]} {c["duration"]:.1f}s pk{c["peak"]:.1f} {len(c["hits"])}hits '
+                     f'h{c["hook"]:.2f} s{c["score"]:.2f}')
+            sub = f'{c["source_id"]} {c["theme"]}' + (f' fb:{c["found_as"]}' if c.get('vibe_fallback') else '')
+        color = (120, 255, 160) if c.get('aligned') else (230, 230, 230)
+        cv2.putText(sheet, label, (ox + 4, oy + cell + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.37, color, 1, cv2.LINE_AA)
+        cv2.putText(sheet, sub, (ox + 4, oy + cell + 29), cv2.FONT_HERSHEY_SIMPLEX, 0.37,
                     (150, 200, 255), 1, cv2.LINE_AA)
     cv2.imwrite(path, sheet)
 
@@ -1334,6 +2013,36 @@ def pick_queries(theme, vibes, rng):
     return out
 
 
+def pick_source_queries(src, vibes, n_edit, theme, rng):
+    """(query, theme, vibe, search filter): 3 per tile vibe plus one native-script query when
+    there is a native alias; 5 (+1 native) for the edit material. Queries naming the song
+    first; a fan-service-risk source searches "funny" rather than "cute" moments."""
+    table = SOURCE_QUERIES[src.kind]
+    native = src.native[0] if src.native else None
+    script = _script(native) if native else None
+    out = []
+    for v in list(vibes) + (['edit'] if n_edit else []):
+        pool = [q for q in table[v] if src.song or '{song}' not in q]
+        if v == 'cute' and src.risky:
+            pool = ['{s} funny moments', '{s} funny scene', '{s} comedy scene']
+        k = 5 if v == 'edit' else 3
+        pick = [q for q in pool if '{song}' in q][:k if v == 'edit' else 1]
+        rest = [q for q in pool if q not in pick]
+        pick += [pool[0]] if pool[0] not in pick and len(pick) < k else []     # the plainest query always
+        rest = [q for q in rest if q not in pick]
+        pick += rng.sample(rest, max(0, min(k - len(pick), len(rest))))
+        qs = [q.format(s=src.name, song=src.song) for q in pick]
+        if script and v in SOURCE_NATIVE[script]:
+            nq = SOURCE_NATIVE[script][v]
+            if v == 'fight' and script == 'ko' and src.kind == 'anime':
+                nq = '{n} 액션'
+            if v == 'cute' and src.risky:
+                nq = {'ja': '{n} 面白いシーン', 'ko': '{n} 웃긴 장면', 'zh': '{n} 搞笑'}[script]
+            qs.append(' '.join(nq.format(n=native, song=src.song).split()))
+        out += [(q, theme, v, SP_VIDEO if v == 'edit' else SP_SHORT) for q in dict.fromkeys(qs)]
+    return out
+
+
 def main():
     for s in (sys.stdout, sys.stderr):
         try:
@@ -1345,12 +2054,20 @@ def main():
     ap.add_argument('--theme', choices=list(THEMES) + ['mixed', 'asian'], default='mixed',
                     help='asian is an old name for funny')
     ap.add_argument('--vibes', default='dance:2,cool:2,fight:2,cute:2', help='vibe:count pairs')
+    ap.add_argument('--source', help='anime title or K-pop group / artist: every clip shows it')
+    ap.add_argument('--source-kind', choices=['anime', 'group'], help='default: anime when the name is a known anime')
+    ap.add_argument('--aliases', default='', help='comma list of other names: characters, members, native titles')
+    ap.add_argument('--edit', type=int, default=0, help='also collect N shots for the full-song edit (--source)')
+    ap.add_argument('--song-audio', help='the song (for aligning edit shots that play it)')
+    ap.add_argument('--song-start', type=float, default=0.0, help='song seconds where the full-mix part starts')
+    ap.add_argument('--song-len', type=float, default=15.0, help='seconds of song the full-mix part plays')
+    ap.add_argument('--song-name', default='', help='song title, to find stages / openings of it')
     ap.add_argument('--used', help='JSON of video ids used recently')
     ap.add_argument('--used-days', type=int, default=30)
     ap.add_argument('--block', help='JSON of blocked channels')
     ap.add_argument('--cookies', help='Netscape cookies file for YouTube')
     ap.add_argument('--js-runtimes', default='auto', help='yt-dlp JS runtime: auto, deno, node, bun, none')
-    ap.add_argument('--budget', type=float, default=330, help='total seconds')
+    ap.add_argument('--budget', type=float, help='total seconds (default 330; with --source 360, +5 per --edit shot)')
     ap.add_argument('--min-views', type=int, default=30000)
     ap.add_argument('--max-duration', type=int, default=240)
     ap.add_argument('--workers', type=int, default=3)
@@ -1362,43 +2079,86 @@ def main():
     a = ap.parse_args()
     theme = 'funny' if a.theme == 'asian' else a.theme
     wanted = parse_vibes(a.vibes)
+    src = None
+    if a.source and a.source.strip():
+        kind = a.source_kind or ('anime' if THEME_RE['anime'].search(_norm(a.source)) else 'group')
+        src = Source(a.source, kind, a.aliases.split(','), a.song_name)
+        if theme == 'mixed':
+            theme = 'anime' if kind == 'anime' else 'kpop'
+    n_edit = max(0, a.edit) if src else 0
+    if a.edit and not src:
+        log('--edit needs --source; no edit material in theme mode')
+    budget = a.budget or (330 if not src else 360 + 5 * min(n_edit, 10))
 
     def left():
-        return a.budget - (time.time() - T0)
+        return budget - (time.time() - T0)
 
     out_dir = os.path.abspath(a.out_dir)
     src_dir = os.path.join(out_dir, '_src')
     os.makedirs(src_dir, exist_ok=True)
-    for old in glob.glob(os.path.join(out_dir, 'clip_*.mp4')):
+    for old in glob.glob(os.path.join(out_dir, 'clip_*.mp4')) + glob.glob(os.path.join(out_dir, 'edit_*.mp4')):
         os.remove(old)
     manifest = os.path.join(out_dir, 'clips.json')
+    if src and src.refused:
+        log(f'source {src.name!r} is on the unsafe-show list; refusing it (use theme mode)')
+        print(json.dumps({'ok': False, 'count': 0, 'manifest': manifest, 'vibes': {v: 0 for v in wanted},
+                          'source': src.name, 'edit_count': 0, 'aligned_count': 0, 'error': 'unsafe source'}))
+        sys.stdout.flush()
+        os._exit(1)
+    if src and src.risky:
+        NUDE_T.update(NUDE_STRICT)
     rng = random.Random(a.seed if a.seed is not None else int(time.time() // 86400))
     used = _ids_from(load_json(a.used), a.used_days) if a.used else set()
     block = load_block(a.block)
     yt = YT(a.cookies, a.js_runtimes)
-    log(f'theme={theme} vibes={wanted} used={len(used)} blocked={len(block)} '
-        f'cookies={"yes" if yt.cookies else "no"}')
+    if src:
+        STATS.update({'align_tried': 0, 'align_found': 0, 'edit_shots': 0})
+        log(f'source={src.name!r} ({src.kind}{", fan-service risk: strict nudity checks" if src.risky else ""}) '
+            f'names={src.strong} weak={src.weak} edit={n_edit} vibes={wanted} used={len(used)} '
+            f'blocked={len(block)} cookies={"yes" if yt.cookies else "no"} budget={budget:.0f}s')
+    else:
+        log(f'theme={theme} vibes={wanted} used={len(used)} blocked={len(block)} '
+            f'cookies={"yes" if yt.cookies else "no"}')
     models = threading.Thread(target=load_models, daemon=True)
     models.start()
+    ref = None
+    if src and n_edit and a.song_audio:
+        try:
+            ref = align.SongRef(a.song_audio, a.song_start, a.song_len, runner=run)
+            log(f'song window {ref.start:.1f}-{ref.start + ref.length:.1f}s of {ref.dur:.0f}s for alignment')
+        except Exception as err:
+            log(f'song audio unusable, no alignment: {err!r}')
 
     # 1. search every vibe at once
-    queries = pick_queries(theme, wanted, rng)
+    if src:
+        # edit queries first: a video both find (the song's stage) is worth more as edit material
+        queries = sorted(pick_source_queries(src, wanted, n_edit, theme, rng), key=lambda q: q[2] != 'edit')
+    else:
+        queries = [(q, th, v, SP_SHORT) for q, th, v in pick_queries(theme, wanted, rng)]
     found, seen = [], set()
-    with cf.ThreadPoolExecutor(4) as ex:
-        for res in ex.map(lambda q: search(yt, *q), queries):
+    with cf.ThreadPoolExecutor(6 if src else 4) as ex:
+        for res in ex.map(lambda q: search(yt, q[0], q[1], q[2], 20 if q[2] == 'edit' else 25, q[3]), queries):
             for e in res:
                 if e['id'] not in seen:
                     seen.add(e['id'])
                     found.append(e)
     STATS['searched'] = len(found)
-    cands = {v: [] for v in wanted}
+
+    def limits(v):
+        """(min views, max duration) for a candidate of vibe v."""
+        if v == 'edit':
+            return max(1000, a.min_views // 10), EDIT_MAX_DUR
+        return (max(3000, a.min_views // 3) if src else a.min_views), a.max_duration
+
+    kinds = list(wanted) + (['edit'] if n_edit else [])
+    cands = {v: [] for v in kinds}
     for e in found:
-        why = prefilter(e, used, block, a.min_views, a.max_duration)
+        why = prefilter(e, used, block, *limits(e['vibe']), src=src)
         if why:
             _bump('rejected', why)
         else:
             cands[e['vibe']].append(e)
-    cands = {v: pre_rank(c, rng) for v, c in cands.items()}
+    cands = {v: pre_rank(c, rng, src) for v, c in cands.items()}
     STATS['candidates'] = sum(len(c) for c in cands.values())
     log(f'{len(queries)} searches -> {len(found)} results; candidates '
         + ', '.join(f'{v} {len(c)}' for v, c in cands.items()))
@@ -1407,7 +2167,8 @@ def main():
     def do_probe(e):
         if left() < 90:
             return None
-        info, why = probe(yt, e, used, block, a.max_duration, a.min_views)
+        min_views, max_dur = limits(e['vibe'])
+        info, why = probe(yt, e, used, block, max_dur, min_views, src)
         _bump('probed')
         if not info:
             _bump('rejected', why)
@@ -1415,38 +2176,163 @@ def main():
         info['_theme'], info['_vibe'] = e['theme'], e['vibe']
         return info
 
-    batch = [e for v, k in wanted.items() for e in cands[v][:k * 4 + 6]]
-    infos = {v: [] for v in wanted}
+    if src:
+        batch = [e for v, k in wanted.items() for e in cands[v][:k * 3 + 5]] + cands.get('edit', [])[:n_edit * 2 + 6]
+    else:
+        batch = [e for v, k in wanted.items() for e in cands[v][:k * 4 + 6]]
+    infos = {v: [] for v in kinds}
     with cf.ThreadPoolExecutor(6) as ex:
         for info in ex.map(do_probe, batch):
             if info:
                 infos[info['_vibe']].append(info)
     for v in infos:
-        infos[v] = spread_channels(sorted(infos[v], key=lambda i: -source_rank(i, rng)))
+        infos[v] = spread_channels(sorted(infos[v], key=lambda i: -source_rank(i, rng, src)), series=not src)
+    if n_edit:
+        for i in infos['edit']:
+            t = _norm(i.get('title'))
+            i['_align'] = bool(ref) and (i.get('duration') or 0) <= ALIGN_MAX_DUR and (
+                src.has_song(i) or (src.kind == 'anime' and bool(OP_RE.search(t)))
+                or (src.kind == 'group' and not src.song))
+        infos['edit'].sort(key=lambda i: not i['_align'])      # stable: rank order within each group
     STATS['kept'] = sum(len(i) for i in infos.values())
-    log(f'{STATS["probed"]} probed; kept ' + ', '.join(f'{v} {len(i)}' for v, i in infos.items()))
+    log(f'{STATS["probed"]} probed; kept ' + ', '.join(f'{v} {len(i)}' for v, i in infos.items())
+        + (f'; {sum(i["_align"] for i in infos["edit"])} edit sources to align' if n_edit and ref else ''))
     models.join(timeout=60)
 
     # 3. download + analyse, vibes interleaved so the time budget is shared
     need = {v: k + 1 for v, k in wanted.items()}      # sources with a usable moment
+    edit_need = n_edit + 2 if n_edit else 0            # shots, a couple spare for de-duplication
+    align_need = min(n_edit, 4) if ref else 0
+    reserve = 45 if n_edit else 30                     # seconds kept for cutting and the manifest
     good = Counter()
+    align_left = [sum(1 for i in infos.get('edit', []) if i['_align'])]
     stop = threading.Event()
-    segs = []
+    segs, shots = [], []
+
+    def not_anime(info, path, ss, span):
+        """Anime source: the video is live action (real dancers, a school show, a cosplayer)."""
+        if src and src.kind == 'anime' and live_action(path, ss, span):
+            log(f'{info["id"]} {info.get("title", "")[:45]!r}: live action, not the anime; skipped')
+            _bump('rejected', 'live_action')
+            return True
+        return False
 
     def work(info):
         v = info['_vibe']
         # keep ~30 s at the end for cutting and the manifest
-        if stop.is_set() or good[v] >= need[v] or left() < 50:
+        if stop.is_set() or good[v] >= need[v] or left() < reserve + 20:
             return None
-        path, offset = download(yt, info, src_dir, min(60, left() - 35))
+        path, offset = download(yt, info, src_dir, min(60, left() - reserve - 5))
         if not path:
             _bump('rejected', 'download')
             return None
         _bump('downloaded')
-        found_segs = analyze(path, info, offset, info['_theme'], v)
+        wa, wb = window(info)
+        if not_anime(info, path, max(0.0, wa - offset), wb - wa):
+            return None
+        found_segs = analyze(path, info, offset, theme if src else info['_theme'], v)
         log(f'{v}: {info["id"]} {info.get("title", "")[:45]!r} ({info.get("duration")}s, '
             f'{info.get("view_count")} views): {len(found_segs)} moments')
         return found_segs
+
+    def aligned(info):
+        """(shots, file): the shot of a video that plays our song window, cut exactly to it ([] if
+        none), and the downloaded video when it can be reused for unaligned shots."""
+        _bump('align_tried')
+        dur = info.get('duration') or 0
+        S = ref.start
+        if dur <= WHOLE_MAX:
+            # stages / practices / openings are short: fetch the whole video (chunked, fast) and
+            # align on its own audio track, so the offset is measured on the file that gets cut
+            path, offset = download(yt, info, src_dir, min(60, left() - reserve - 5))
+            if not path:
+                _bump('rejected', 'download')
+                return [], None
+            _bump('downloaded')
+            ya = align.decode(path, runner=run, pad=True)
+            loc = hit = ref.locate(ya)
+            keep = (path, offset)
+        else:
+            # long videos: a small audio-only copy first, then just the matching section (section
+            # downloads stream at about playback speed, so only for these)
+            aud = download_audio(yt, info, src_dir, min(45, left() - reserve - 5))
+            hit = ref.locate(align.decode(aud, runner=run, pad=True)) if aud else None
+            keep = None
+        if not hit or hit.get('weak'):
+            log(f'align: {info["id"]} {info.get("title", "")[:40]!r}: no match'
+                + (f' (weak: score {hit["score"]} z {hit["z"]} ratio {hit["ratio"]})' if hit else ''))
+            return [], keep
+        if keep is None:
+            v0, v1 = hit['t0'] + hit['song_from'] - S, hit['t0'] + hit['song_to'] - S
+            path, offset = download(yt, info, src_dir, min(90, left() - reserve - 5),
+                                    section=(max(0.0, v0 - 3), min(dur, v1 + 3)), tag='al')
+            if not path:
+                return [], None
+            _bump('downloaded')
+            # the section starts on a keyframe up to several seconds before the request, and its
+            # audio track may differ from the audio-only one by tens of ms: find the window again
+            ya = align.decode(path, runner=run, pad=True)
+            loc = ref.locate(ya, around=hit['t0'] - offset, search=12.0)
+            if not loc:
+                log(f'align: {info["id"]}: window lost in the downloaded section')
+                return [], None
+        lv0 = max(0.0, loc['t0'] + loc['song_from'] - S)
+        lv1 = min(len(ya) / align.SR, loc['t0'] + loc['song_to'] - S)
+        if lv1 - lv0 < align.MIN_COVER:
+            return [], keep
+        # live-action check on the same stretch the unaligned path uses (a 14 s window alone is
+        # too little to tell fast animation on ones from a camera)
+        wa, wb = window(info) if keep else (offset, offset + len(ya) / align.SR)
+        if not_anime(info, path, max(0.0, wa - offset), wb - wa):
+            return [], 'skip'
+        found_shots = analyze_edit(path, info, offset, lv0, lv1 - lv0, theme, force=True)
+        for s in found_shots:
+            s.update({'aligned': True, 'align_score': hit['score'], 'song_offset': round(S + lv0 - loc['t0'], 3),
+                      'audio_is_song': True, 'sfx_hits': [], 'sfx_score': 0.0, '_local': lv0, '_dur': lv1 - lv0,
+                      'duration': round(lv1 - lv0, 2)})
+        log(f'align: {info["id"]} {info.get("title", "")[:40]!r}: song {loc["song_from"]:.1f}-{loc["song_to"]:.1f}s '
+            f'at {offset + loc["t0"]:.2f}s (score {hit["score"]}, z {hit["z"]}, ratio {hit["ratio"]}): '
+            f'{"kept" if found_shots else "rejected on frames"}')
+        if found_shots:
+            _bump('align_found')
+        return found_shots, (path, offset)
+
+    def edit_work(info):
+        if stop.is_set() or left() < reserve + 20:
+            return None
+        found_shots, have = [], None
+        if info.get('_align'):
+            try:
+                if good['_aligned'] < align_need:
+                    found_shots, have = aligned(info)
+            finally:
+                with _lock:
+                    align_left[0] -= 1
+            if found_shots:
+                return found_shots
+        if have == 'skip' or good['_edit'] >= edit_need or stop.is_set() or left() < reserve + 20:
+            return None
+        if have:            # the video fetched for alignment: its best shots are still edit material
+            path, offset = have
+        else:
+            path, offset = download(yt, info, src_dir, min(60, left() - reserve - 5))
+            if not path:
+                _bump('rejected', 'download')
+                return None
+            _bump('downloaded')
+        wa, wb = window(info)
+        if not_anime(info, path, max(0.0, wa - offset), wb - wa):
+            return None
+        found_shots = analyze_edit(path, info, offset, max(0.0, wa - offset), wb - wa, theme)
+        for s in found_shots:
+            s['aligned'] = False
+        log(f'edit: {info["id"]} {info.get("title", "")[:45]!r} ({info.get("duration")}s): {len(found_shots)} shots')
+        return found_shots
+
+    def done():
+        tiles = all(good[v] >= need[v] for v in wanted)
+        edits = good['_edit'] >= edit_need and (good['_aligned'] >= align_need or align_left[0] <= 0)
+        return tiles and edits
 
     order = []
     queues = [list(infos[v]) for v in wanted]
@@ -1454,19 +2340,29 @@ def main():
         for q in queues:
             if q:
                 order.append(q.pop(0))
+    if n_edit:      # one edit source after every two tile sources, aligned candidates first
+        tiles_order, order = order, []
+        edits = list(infos['edit'])
+        while tiles_order or edits:
+            order += tiles_order[:2] + edits[:1]
+            tiles_order, edits = tiles_order[2:], edits[1:]
     ex = cf.ThreadPoolExecutor(a.workers)
-    futs = [ex.submit(work, i) for i in order]
+    futs = [ex.submit(edit_work if i['_vibe'] == 'edit' else work, i) for i in order]
     try:
-        for fut in cf.as_completed(futs, timeout=max(10, left() - 30)):
+        for fut in cf.as_completed(futs, timeout=max(10, left() - reserve)):
             try:
                 r = fut.result()
             except Exception as err:
                 log(f'candidate error: {err!r}')
                 continue
-            if r:
+            if r and r[0]['vibe'] == 'edit':
+                shots += r
+                good['_edit'] += len(r)
+                good['_aligned'] += sum(1 for s in r if s.get('aligned'))
+            elif r:
                 segs += r
                 good[r[0]['vibe']] += 1
-            if all(good[v] >= need[v] for v in wanted):
+            if done():
                 break
     except cf.TimeoutError:
         log('time budget reached, using what is ready')
@@ -1478,7 +2374,7 @@ def main():
         kill_tree(p)
 
     # 4. select and cut
-    chosen = select(segs, wanted, mixed=theme == 'mixed')
+    chosen = select_source(segs, wanted) if src else select(segs, wanted, mixed=theme == 'mixed')
     clips = []
 
     def do_cut(k_s):
@@ -1492,10 +2388,45 @@ def main():
                 c = {'path': p}
                 c.update({k: v for k, v in s.items() if not k.startswith('_')})
                 clips.append(c)
+    edits = []
+    if n_edit:
+        picked = select_edit(shots, n_edit, chosen)
+
+        def do_edit(k_s):
+            k, s = k_s
+            p = os.path.join(out_dir, f'edit_{k:03d}.mp4')
+            if not cut(s, p, audio=True):
+                return s, None
+            if s.get('aligned'):    # measure the song time at clip t=0 on the file itself
+                exp = ref.start - s['song_offset']
+                loc = ref.locate(align.decode(p, runner=run), around=exp, search=0.6)
+                if loc:
+                    s['song_offset'] = round(ref.start - loc['t0'], 3)
+                    s['align_check'] = loc['score']
+                else:
+                    log(f'align: {s["source_id"]}: the cut clip does not match the song, marked unaligned')
+                    s.update({'aligned': False, 'audio_is_song': False})
+            return s, p
+
+        with cf.ThreadPoolExecutor(2) as cx:
+            for s, p in cx.map(do_edit, enumerate(picked)):
+                if p:
+                    c = {'path': p}
+                    c.update({k: v for k, v in s.items() if not k.startswith('_')})
+                    edits.append(c)
+        edits.sort(key=lambda c: not c.get('aligned'))
+        STATS['edit_shots'] = len(shots)
     with open(manifest, 'w', encoding='utf-8') as f:
-        json.dump(clips, f, ensure_ascii=False, indent=1)
-    if a.sheet and clips:
-        contact_sheet(clips, a.sheet)
+        if src:
+            json.dump({'source': {'name': src.name, 'kind': src.kind, 'aliases': src.strong + src.weak,
+                                  'risky': src.risky},
+                       'song': ({'name': src.song, 'audio': os.path.abspath(a.song_audio), 'start': ref.start,
+                                 'len': ref.length} if ref else None),
+                       'clips': clips, 'edit': edits}, f, ensure_ascii=False, indent=1)
+        else:
+            json.dump(clips, f, ensure_ascii=False, indent=1)
+    if a.sheet and (clips or edits):
+        contact_sheet(clips + edits, a.sheet)
     if not a.keep_src:
         shutil.rmtree(src_dir, ignore_errors=True)
     shutil.rmtree(yt.workdir, ignore_errors=True)
@@ -1504,8 +2435,13 @@ def main():
     stats = dict(STATS, rejected=dict(STATS['rejected']), seg_rejected=dict(STATS['seg_rejected']),
                  sources=len(set(c['source_id'] for c in clips)), seconds=round(time.time() - T0, 1))
     log(f'stats {json.dumps(stats)}')
-    print(json.dumps({'ok': bool(clips) and all(per_vibe.values()), 'count': len(clips), 'manifest': manifest,
-                      'vibes': per_vibe, 'stats': stats}))
+    line = {'ok': bool(clips) and all(per_vibe.values()), 'count': len(clips), 'manifest': manifest,
+            'vibes': per_vibe, 'stats': stats}
+    if src:
+        line.update({'source': src.name, 'source_kind': src.kind, 'edit_count': len(edits),
+                     'aligned_count': sum(1 for c in edits if c.get('aligned')),
+                     'fallbacks': sum(1 for c in clips if c.get('vibe_fallback'))})
+    print(json.dumps(line))
     sys.stdout.flush()
     os._exit(0 if clips else 1)  # don't wait on straggling worker threads
 
