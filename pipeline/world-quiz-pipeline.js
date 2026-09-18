@@ -26,15 +26,22 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
+const { buildPopPlan, markUsed } = require('./pop-quiz-content');
+const pop = require('./pop-quiz-meta');
 
 const logger = new Logger('WorldQuiz');
 
 const ROOT = path.join(__dirname, '..');
 const RENDERER = path.join(ROOT, 'core', 'quiz', 'render_quiz.py');
-const HISTORY_FILE = path.join(ROOT, 'memory', 'quiz-history.json');
+const HISTORY_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'quiz-history.json');
 
-const FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
-const FALLBACK_WEIGHTS = { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
+const GEO_FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
+const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city'];
+// QUIZ_FORMATS picks the channel's formats (the quiz channel runs the pop set + Asia geography)
+const FORMATS = (process.env.QUIZ_FORMATS || GEO_FORMATS.join(','))
+  .split(',').map(f => f.trim()).filter(f => GEO_FORMATS.includes(f) || POP_FORMATS.includes(f));
+const FALLBACK_WEIGHTS = { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15, emoji: 0.3, trivia: 0.3, wyr: 0.25, city: 0.15 };
+const isPop = f => POP_FORMATS.includes(f);
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];
 const THEMED_FORMATS = new Set(['flag', 'shape', 'capital']);
 
@@ -109,6 +116,7 @@ const TITLE_TEMPLATES = {
     { id: 'crowd-guess', text: () => 'Guess Which Country Has More People 🌍' },
     { id: 'crowd-casual', text: () => 'i did not expect #1 😭👥' },
   ],
+  ...pop.POP_TITLE_TEMPLATES,
 };
 
 const LOCALES = ['es', 'pt', 'fr', 'de', 'it', 'hi', 'id', 'ar', 'ru', 'ja', 'ko', 'tr', 'vi', 'pl'];
@@ -134,6 +142,7 @@ function recordUpload(result, upload) {
     titleTemplate: result.quiz.titleTemplate, title: result.title, answers: result.quiz.iso2s,
   });
   saveHistory(h);
+  if (result.quiz.keys) markUsed(result.quiz.keys);
 }
 
 function recentIso(history, format, days) {
@@ -288,13 +297,13 @@ async function llmTitle(gemini, plan, stats, history) {
   const top = scoredQuizUploads(stats, history).sort((a, b) => b.stat.lscore - a.stat.lscore).slice(0, 5).map(u => `"${u.title}" (${u.stat.views} views)`);
   const sys = 'You write titles for a geography quiz YouTube Shorts channel. Titles are short (max 60 characters), '
     + 'a question or a challenge, honest (no false claims, no invented statistics), never reveal answers, and use at most one emoji.';
-  const rounds = plan.rounds.map((r, i) => (r.left ? `${i + 1}. ${r.left.name} vs ${r.right.name}` : `${i + 1}. ${r.levelLabel}`)).join('\n');
-  const msg = `Quiz format: ${plan.format} (theme: ${plan.theme})\nRounds:\n${rounds}\n`
+  const rounds = plan.rounds.map((r, i) => `${i + 1}. ${r.left ? `${r.left.name} vs ${r.right.name}` : r.question || (r.a ? `${r.a} OR ${r.b}` : r.levelLabel || 'hidden answer')}`).join('\n');
+  const msg = `Quiz format: ${plan.format} (${plan.topic ? `topic: ${plan.topic}` : `theme: ${plan.theme}`})\nRounds:\n${rounds}\n`
     + (top.length ? `Our best performing quiz titles so far:\n${top.join('\n')}\n` : '')
     + 'Return JSON: {"title": "..."}';
   const r = await withTimeout(gemini.chatJSON(sys, msg), 60000);
   const t = r && typeof r.title === 'string' ? r.title.trim().replace(/^["']|["']$/g, '') : '';
-  const answers = plan.rounds.map(r => (r.answer || '').toLowerCase()).filter(Boolean);
+  const answers = plan.rounds.map(r => (typeof r.answer === 'string' ? r.answer.split(' (')[0] : '').toLowerCase()).filter(Boolean);
   if (!t || t.length > 80 || answers.some(a => a.length > 3 && t.toLowerCase().includes(a) && !plan.rounds[0].left)) return null;
   return t;
 }
@@ -359,10 +368,11 @@ function buildTags(plan) {
 
 // ─── render ──────────────────────────────────────────────────────
 
-function renderQuiz({ format, theme, seed, avoid, outPath, rounds }) {
+function renderQuiz({ format, theme, seed, avoid, outPath, rounds, planFile }) {
   const py = learn.pythonCommand();
   if (!py) return Promise.reject(new Error('python not found'));
   const args = [RENDERER, '--format', format, '--theme', theme, '--seed', String(seed), '--out', outPath];
+  if (planFile) args.push('--plan-file', planFile);
   if (avoid && avoid.length) args.push('--avoid', avoid.join(','));
   if (rounds) args.push('--rounds', String(rounds));
   return new Promise((resolve, reject) => {
@@ -389,7 +399,7 @@ async function runWorldQuizPipeline(opts = {}) {
   const forcedFormat = opts.format || process.env.QUIZ_FORMAT;
   const hit = !forcedFormat && Math.random() < 0.5 ? findHit(stats, history) : null;
   let format, why, theme, length;
-  if (hit) {
+  if (hit && FORMATS.includes(hit.format)) {
     ({ format, theme } = hit);
     length = hit.length || 'standard';
     why = `follow-up to hit "${hit.title}" (${hit.stat.views} views)`;
@@ -405,9 +415,21 @@ async function runWorldQuizPipeline(opts = {}) {
   const seed = Math.floor(Math.random() * 1e9);
   const outPath = path.join(outputDir, `quiz-${format}-${Date.now()}.mp4`);
   const t0 = Date.now();
-  const res = await renderQuiz({ format, theme, seed, avoid, outPath, rounds: LENGTHS[length] });
-  const plan = res.plan;
-  logger.success(`Rendered ${res.duration}s in ${Math.round((Date.now() - t0) / 1000)}s (voice ${res.voice}/${res.voiceLines}): ${plan.rounds.map(r => r.answer).join(', ')}`);
+  let planFile = null;
+  let popKeys = null;
+  if (isPop(format)) {
+    const built = await buildPopPlan(format, { topic: hit ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null });
+    theme = built.plan.topic;
+    popKeys = built.keys;
+    planFile = path.join(outputDir, `plan-${Date.now()}.json`);
+    fs.writeFileSync(planFile, JSON.stringify({ ...built.plan, seed }, null, 1));
+    logger.info(`Topic: ${theme}, ${built.plan.rounds.length} rounds`);
+  }
+  const res = await renderQuiz({ format, theme, seed, avoid, outPath, rounds: LENGTHS[length], planFile });
+  if (planFile) { try { fs.unlinkSync(planFile); } catch {} }
+  const plan = { ...res.plan, theme };
+  const label = r => r.answer != null && typeof r.answer === 'string' ? r.answer : r.question ? r.options[r.answer] : r.a ? `${r.a} / ${r.b}` : '';
+  logger.success(`Rendered ${res.duration}s in ${Math.round((Date.now() - t0) / 1000)}s (voice ${res.voice}/${res.voiceLines}): ${plan.rounds.map(label).join(', ')}`);
   if (res.voice === 0) logger.warn('No voice lines were generated (edge-tts unreachable) — the short uses music and SFX only');
 
   const gemini = getGemini();
@@ -429,15 +451,17 @@ async function runWorldQuizPipeline(opts = {}) {
   title = title.substring(0, 100);
   logger.info(`Title [${titleTemplate}]: ${title}`);
 
-  const hook = hookLine(plan);
-  const description = buildDescription(plan, hook);
+  const hook = isPop(format) ? pop.popHook(plan) : hookLine(plan);
+  const description = isPop(format) ? pop.popDescription(plan) : buildDescription(plan, hook);
+  const answersText = isPop(format) ? pop.popAnswers(plan) : answersBlock(plan);
+  const hashtags = isPop(format) ? (pop.HASHTAG[plan.topic] || '#quiz') : HASHTAGS[format];
   let localizations = null;
   if (gemini && !geminiDown && process.env.QUIZ_TRANSLATE !== 'off') {
     const tr = await translateMeta(gemini, title, hook).catch(() => null);
     if (tr) {
       localizations = {};
       for (const [lang, v] of Object.entries(tr)) {
-        localizations[lang] = { title: v.title, description: `${v.line || hook} 👇\n\n${answersBlock(plan)}\n\n${HASHTAGS[format]}` };
+        localizations[lang] = { title: v.title, description: `${v.line || hook} 👇\n\n${answersText}\n\n${hashtags}` };
       }
       logger.info(`Localized titles: ${Object.keys(localizations).join(', ')}`);
     }
@@ -448,11 +472,11 @@ async function runWorldQuizPipeline(opts = {}) {
     videoPath: res.path,
     title,
     description,
-    tags: buildTags(plan),
-    categoryId: '27',
+    tags: isPop(format) ? pop.popTags(plan) : buildTags(plan),
+    categoryId: isPop(format) ? '24' : '27',
     localizations,
-    playlistTitle: PLAYLISTS[format],
-    comment: format === 'bigger' || format === 'crowd'
+    playlistTitle: isPop(format) ? pop.popPlaylist(plan) : PLAYLISTS[format],
+    comment: isPop(format) ? pop.popComment(plan) : format === 'bigger' || format === 'crowd'
       ? 'Which one surprised you the most? 🤯 Tell me your score 👇'
       : `What did you score out of ${plan.rounds.length}? 🏆 Which one got you? 👇`,
     country: 'Global',
@@ -462,8 +486,9 @@ async function runWorldQuizPipeline(opts = {}) {
     sourceChannel: null,
     quiz: {
       format, theme, seed: plan.seed, titleTemplate, length, followUpOf: hit ? hit.videoId : null,
-      iso2s: plan.rounds.flatMap(r => (r.left ? [r.left.iso2, r.right.iso2] : [r.iso2])),
-      answers: plan.rounds.map(r => r.answer),
+      iso2s: popKeys || plan.rounds.flatMap(r => (r.left ? [r.left.iso2, r.right.iso2] : [r.iso2])),
+      keys: popKeys,
+      answers: plan.rounds.map(label),
       duration: res.duration,
     },
   };

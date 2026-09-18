@@ -393,7 +393,7 @@ class YouTubeBridge {
    */
   async addToPlaylist(videoId, playlistTitle, description = '') {
     if (!this.authenticated || !videoId || !playlistTitle) return null;
-    const cacheFile = path.join(__dirname, '..', 'memory', 'playlists.json');
+    const cacheFile = path.resolve(__dirname, '..', process.env.MEMORY_DIR || 'memory', 'playlists.json');
     let cache = {};
     try { cache = JSON.parse(fs.readFileSync(cacheFile, 'utf8')); } catch {}
     try {

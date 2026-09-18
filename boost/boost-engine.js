@@ -37,7 +37,7 @@ const { Logger } = require('../core/logger');
 
 const logger = new Logger('BoostEngine');
 
-const POSTED_VIDEOS_FILE = path.join(__dirname, '..', 'memory', 'posted-videos.json');
+const POSTED_VIDEOS_FILE = path.resolve(__dirname, '..', process.env.MEMORY_DIR || 'memory', 'posted-videos.json');
 const MAX_VIDEO_AGE_DAYS = 30;
 
 const USER_AGENTS = [

@@ -80,3 +80,4 @@ memory/trending-log.json
 memory/sessions/
 memory/skills/
 youtube-credentials.json  
+youtube-credentials-*.json

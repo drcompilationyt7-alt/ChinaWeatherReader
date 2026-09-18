@@ -37,7 +37,8 @@ const { Logger } = require('./logger');
 
 const logger = new Logger('Performance');
 
-const MEMORY_DIR = path.join(__dirname, '..', 'memory');
+// MEMORY_DIR (relative to the repo root) gives a second channel its own memory
+const MEMORY_DIR = path.resolve(__dirname, '..', process.env.MEMORY_DIR || 'memory');
 const STATS_FILE = path.join(MEMORY_DIR, 'performance-stats.json');
 const INSIGHTS_FILE = path.join(MEMORY_DIR, 'performance-insights.json');
 const POSTED_FILE = path.join(MEMORY_DIR, 'posted-videos.json');

@@ -1,0 +1,121 @@
+name: Quiz Channel (Asian pop culture quizzes)
+
+# Second YouTube channel: quiz + would-you-rather shorts. It has its own OAuth
+# secrets (QUIZ_YOUTUBE_*) and its own memory folder (memory/quiz-channel), so
+# nothing here touches the Mr. WorldWideWebster channel. Until the secrets
+# exist every run exits early without doing anything.
+
+on:
+  schedule:
+    - cron: '17 5 * * *'    # 05:17 UTC -> shorts at 12:00 and 16:00 UTC
+    - cron: '47 13 * * *'   # 13:47 UTC -> short at 20:00 UTC
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Shorts to make in this run'
+        required: false
+        default: ''
+      format:
+        description: 'Force a format (optional: emoji, trivia, wyr, city, flag, shape)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Render only, attach the mp4s to the run, upload nothing'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: quiz-channel
+  cancel-in-progress: false
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
+  GEMINI_API_KEY_6: ${{ secrets.GEMINI_API_KEY_6 }}
+  GEMINI_API_KEY_7: ${{ secrets.GEMINI_API_KEY_7 }}
+  GEMINI_API_KEY_8: ${{ secrets.GEMINI_API_KEY_8 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+  OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.QUIZ_YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.QUIZ_YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.QUIZ_YOUTUBE_REFRESH_TOKEN }}
+  MEMORY_DIR: memory/quiz-channel
+  # Asian pop culture formats + Asia editions of the geography quizzes
+  QUIZ_FORMATS: emoji,trivia,wyr,city,flag,shape
+  QUIZ_THEME: asia
+  WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
+  QUIZ_SPACING_HOURS: "4"
+  QUIZ_FORMAT: ${{ github.event.inputs.format }}
+  DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+jobs:
+  quiz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check channel secrets
+        id: gate
+        run: |
+          if [ -z "$YOUTUBE_REFRESH_TOKEN" ] && [ "$DRY_RUN" != "true" ]; then
+            echo "QUIZ_YOUTUBE_REFRESH_TOKEN is not set yet - see QUIZ-CHANNEL-SETUP.md. Nothing to do."
+            echo "ready=false" >> $GITHUB_OUTPUT
+          else
+            echo "ready=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python3 -m pip install pillow numpy edge-tts --break-system-packages
+          npm ci || npm install
+          mkdir -p output/quiz "$MEMORY_DIR"
+
+      - name: Make and upload quiz shorts
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          # the morning run schedules two shorts (12:00 and 16:00 UTC), the afternoon one (20:00 UTC)
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" -lt 12 ]; then PUBLISH_HOUR=12; COUNT=2; else PUBLISH_HOUR=20; COUNT=1; fi
+          if [ -n "${{ github.event.inputs.count }}" ]; then COUNT="${{ github.event.inputs.count }}"; fi
+          export PUBLISH_AT=$(date -u -d "today ${PUBLISH_HOUR}:00:00" +%Y-%m-%dT%H:%M:%SZ)
+          node core/github-action-runner.js --mode quiz --count "$COUNT" --private --publish-at "$PUBLISH_AT"
+
+      - name: Keep dry-run renders
+        if: steps.gate.outputs.ready == 'true' && env.DRY_RUN == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-channel-dry-run
+          path: output/quiz/*.mp4
+          retention-days: 7
+
+      - name: Save memory
+        if: always() && steps.gate.outputs.ready == 'true'
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          if [ -d "$MEMORY_DIR" ]; then git add "$MEMORY_DIR"; fi
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Quiz channel memory $(date +%F)"
+          for i in 1 2 3; do
+            git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break
+            sleep 5
+          done

@@ -117,9 +117,9 @@ def text_layer(text, size, fill=WHITE, stroke=0, stroke_fill=NAVY, max_w=None, m
     return img
 
 
-def pill(text, size, bg, fg=NAVY, pad_x=34, pad_y=16, max_w=None, radius=None):
+def pill(text, size, bg, fg=NAVY, pad_x=34, pad_y=16, max_w=None, radius=None, min_w=0):
     t = text_layer(text, size, fill=fg, max_w=(max_w - 2 * pad_x) if max_w else None)
-    w, h = t.size[0] + 2 * pad_x, t.size[1] + 2 * pad_y
+    w, h = max(min_w, t.size[0] + 2 * pad_x), t.size[1] + 2 * pad_y
     img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     ImageDraw.Draw(img).rounded_rectangle([0, 0, w - 1, h - 1], radius=radius or h // 2, fill=bg)
     img.alpha_composite(t, ((w - t.size[0]) // 2, (h - t.size[1]) // 2))
@@ -223,6 +223,20 @@ def _put_clipped(frame, im, cx, cy):
     frame.alpha_composite(im.crop((sx, sy, ex, ey)), (x + sx, y + sy))
 
 
+_wm = {}
+
+
+def draw_watermark(frame):
+    """Channel handle (env WATERMARK, e.g. @asianpopquiz), small and translucent at the top."""
+    text = os.environ.get('WATERMARK', '').strip()
+    if not text:
+        return
+    if text not in _wm:
+        t = text_layer(text, 40, fill=(255, 255, 255, 150), stroke=3, stroke_fill=(0, 0, 0, 90))
+        _wm[text] = t
+    put(frame, _wm[text], W / 2, 150)
+
+
 def check_mark(size, color):
     ss = 3
     img = Image.new('RGBA', (size * ss, size * ss), (0, 0, 0, 0))
@@ -282,8 +296,8 @@ class QuizRenderer:
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
             t += q + rev
         self.segs = segs
-        self.outro_start = t
-        self.duration = t + OUTRO
+        self.outro_start = segs[-1]['end'] if segs else t  # exactly the last round's end (float sums differ)
+        self.duration = self.outro_start + OUTRO
 
     # ── static layers ──
     def prepare(self):
@@ -531,11 +545,12 @@ class QuizRenderer:
     def frame_at(self, t):
         off = int(t * 14) % self.map_w
         frame = self.bg.crop((off, 0, off + W, H))
+        draw_watermark(frame)
         if t >= self.outro_start:
             put(frame, self.title, W / 2, 262, a=1 - clamp((t - self.outro_start) / 0.25))
             self.draw_outro(frame, t - self.outro_start)
             return frame
-        seg = next(s for s in self.segs if t < s['end'])
+        seg = next((s for s in self.segs if t < s['end']), self.segs[-1])
         i = seg['i']
         tl = t - seg['start']
         self.pop_offset = 0.35 if i == 0 else 0.0  # frame 0 is the feed thumbnail: no pop-in
@@ -582,7 +597,10 @@ def main():
     except Exception:
         pass
     ap = argparse.ArgumentParser()
-    ap.add_argument('--format', default='flag', choices=planner.FORMATS)
+    ap.add_argument('--format', default='flag', choices=planner.FORMATS + ('emoji', 'trivia', 'wyr', 'city'))
+    ap.add_argument('--plan-file', default=None, help='render this plan (JSON) instead of planning one')
+    ap.add_argument('--topic', default=None, help='pop formats: topic (anime, kpop song, kpop, vtubers, ...)')
+    ap.add_argument('--country', default=None, help='city format: CN, JP or KR')
     ap.add_argument('--out', required=True)
     ap.add_argument('--seed', type=int, default=None)
     ap.add_argument('--theme', default='world')
@@ -595,6 +613,30 @@ def main():
     args = ap.parse_args()
     seed = args.seed if args.seed is not None else random.randint(1, 10 ** 9)
     avoid = [x.strip().upper() for x in args.avoid.split(',') if x.strip()]
+    pop_plan = None
+    if args.plan_file:
+        with open(args.plan_file, encoding='utf-8') as f:
+            pop_plan = json.load(f)
+        pop_plan.setdefault('seed', seed)
+    elif args.format in ('emoji', 'trivia', 'wyr', 'city'):
+        from render_pop import plan_from_bank
+        pop_plan = plan_from_bank(args.format, topic=args.topic, seed=seed, n=args.rounds, country=args.country)
+    if pop_plan is not None and pop_plan['format'] in ('emoji', 'trivia', 'wyr', 'city'):
+        from render_pop import PopRenderer, gradient_bg
+        r = PopRenderer(pop_plan, voice=not args.no_voice, music=not args.no_music, voice_name=args.voice)
+        if args.frame is not None:
+            n = len(pop_plan['rounds'])
+            r.build_pop_timeline([2.0] * n, [1.0] * n)
+            r.prepare_pop()
+            r.bg = gradient_bg(*r.pal, split=r.fmt == 'wyr')
+            r.frame_at(args.frame).convert('RGB').save(args.out)
+            print(json.dumps({'ok': True, 'path': args.out, 'plan': pop_plan}, ensure_ascii=False))
+            return
+        info = r.render(args.out)
+        print(json.dumps({'ok': True, 'path': os.path.abspath(args.out), **info, 'plan': pop_plan}, ensure_ascii=False))
+        return
+    if pop_plan is not None:
+        args.format = pop_plan['format']
     p = planner.make_plan(args.format, seed=seed, avoid=avoid, theme=args.theme, rounds=args.rounds)
     if len(p['rounds']) < 3:
         print(json.dumps({'ok': False, 'reason': 'not enough questions', 'plan': p}))

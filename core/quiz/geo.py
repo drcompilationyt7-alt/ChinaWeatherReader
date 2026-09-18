@@ -186,6 +186,29 @@ def fit_mask(numeric_id, box_w, box_h):
     return shape_mask(proj, bbox, kmpp), kmpp
 
 
+def fit_mask_points(numeric_id, box_w, box_h, points, pad=4):
+    """Like fit_mask, plus the pixel position of each (lon, lat) point on the mask."""
+    parts = country_parts(numeric_id)
+    proj, bbox = project(parts)
+    if not proj:
+        return None, []
+    kmpp = max((bbox[2] - bbox[0]) / (box_w - 8), (bbox[3] - bbox[1]) / (box_h - 8))
+    mask = shape_mask(proj, bbox, kmpp, pad=pad)
+    # same centre as project()
+    w = np.array([_approx_area_km2(p[0]) for p in parts])
+    cx = np.array([p[0][:, 0].mean() for p in parts])
+    cy = np.array([p[0][:, 1].mean() for p in parts])
+    lon0, lat0 = math.radians(float((cx * w).sum() / w.sum())), math.radians(float((cy * w).sum() / w.sum()))
+    out = []
+    for lon, lat in points:
+        lo, la = math.radians(lon), math.radians(lat)
+        k = math.sqrt(2 / (1 + math.sin(lat0) * math.sin(la) + math.cos(lat0) * math.cos(la) * math.cos(lo - lon0)))
+        x = EARTH_R * k * math.cos(la) * math.sin(lo - lon0)
+        y = -EARTH_R * k * (math.cos(lat0) * math.sin(la) - math.sin(lat0) * math.cos(la) * math.cos(lo - lon0))
+        out.append(((x - bbox[0]) / kmpp + pad, (y - bbox[1]) / kmpp + pad))
+    return mask, out
+
+
 def mask_at_scale(numeric_id, km_per_px):
     proj, bbox = project(country_parts(numeric_id))
     if not proj:

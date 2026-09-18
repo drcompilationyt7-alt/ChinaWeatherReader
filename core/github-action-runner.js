@@ -34,7 +34,7 @@ const ALL_COUNTRIES = config.countries || [
 class DailyRunner {
   constructor() {
     this.memory = {};
-    this.memoryPath = path.join(__dirname, '..', 'memory');
+    this.memoryPath = path.resolve(__dirname, '..', process.env.MEMORY_DIR || 'memory');
     this.youtubeBridge = null;
     this.gemini = null;
   }

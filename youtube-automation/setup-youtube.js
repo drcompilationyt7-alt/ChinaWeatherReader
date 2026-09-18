@@ -9,6 +9,7 @@
  * Usage:
  *   npm install
  *   node youtube-automation/setup-youtube.js
+ *   node youtube-automation/setup-youtube.js --out youtube-credentials-quiz.json   (a second channel)
  *
  * Environment variables needed (or you'll be prompted):
  *   YOUTUBE_CLIENT_ID
@@ -158,8 +159,11 @@ async function startOAuthFlow(credentials) {
           console.log('   YOUTUBE_CLIENT_SECRET = ' + clientSecret);
           console.log('\n   (Optional) YOUTUBE_API_KEY = from Google Cloud Console\n');
 
-          // Save to a local file as backup
-          const outputPath = path.join(__dirname, '..', 'youtube-credentials.json');
+          // Save to a local file as backup (--out keeps a second channel's
+          // token from overwriting the first one's)
+          const outArg = process.argv.indexOf('--out');
+          const outputPath = path.resolve(path.join(__dirname, '..'),
+            outArg > -1 && process.argv[outArg + 1] ? process.argv[outArg + 1] : 'youtube-credentials.json');
           const creds = {
             client_id: clientId,
             client_secret: clientSecret,
