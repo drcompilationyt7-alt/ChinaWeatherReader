@@ -8,7 +8,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16498-buvcRTBx4NSm.jpg",
    "year": 2013,
    "popularity": 1055279,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 101922,
@@ -17,7 +18,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101922-WBsBl0ClmgYL.jpg",
    "year": 2019,
    "popularity": 995138,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 113415,
@@ -26,7 +28,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113415-LHBAeoZDIsnF.jpg",
    "year": 2020,
    "popularity": 973530,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 1535,
@@ -35,7 +38,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1535-kUgkcrfOrkUM.jpg",
    "year": 2006,
    "popularity": 962424,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21459,
@@ -44,7 +48,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21459-nYh85uj2Fuwr.jpg",
    "year": 2016,
    "popularity": 874677,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 11061,
@@ -53,7 +58,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11061-y5gsT1hoHuHw.png",
    "year": 2011,
    "popularity": 841489,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21087,
@@ -62,7 +68,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21087-B5DHjqZ3kW4b.jpg",
    "year": 2015,
    "popularity": 767682,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21,
@@ -71,7 +78,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg",
    "year": 1999,
    "popularity": 751513,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20605,
@@ -80,7 +88,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b20605-k665mVkSug8D.jpg",
    "year": 2014,
    "popularity": 740642,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20958,
@@ -89,7 +98,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20958-HuFJyr54Mmir.jpg",
    "year": 2017,
    "popularity": 734274,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 5114,
@@ -98,7 +108,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5114-nSWCgQlmOMtj.jpg",
    "year": 2009,
    "popularity": 729452,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20,
@@ -107,7 +118,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20-dE6UHbFFg1A5.jpg",
    "year": 2002,
    "popularity": 726161,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 11757,
@@ -116,7 +128,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11757-SxYDUzdr9rh2.jpg",
    "year": 2012,
    "popularity": 719811,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 99147,
@@ -125,7 +138,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx99147-AiPDD8cwlCfi.jpg",
    "year": 2018,
    "popularity": 687148,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21856,
@@ -134,7 +148,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21856-gutauxhWAwn6.png",
    "year": 2017,
    "popularity": 655951,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 110277,
@@ -143,7 +158,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx110277-sKUNXAsWMNFw.jpg",
    "year": 2021,
    "popularity": 643478,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 101759,
@@ -152,7 +168,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101759-8UR7r9MNVpz2.jpg",
    "year": 2019,
    "popularity": 633845,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 127230,
@@ -161,7 +178,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx127230-DdP4vAdssLoz.png",
    "year": 2022,
    "popularity": 633690,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20755,
@@ -170,7 +188,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20755-dWrhs569YGUO.jpg",
    "year": 2015,
    "popularity": 628918,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21507,
@@ -179,7 +198,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21507-6YUSbh2m0N1p.jpg",
    "year": 2016,
    "popularity": 627091,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21355,
@@ -188,7 +208,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21355-wRVUrGxpvIQQ.jpg",
    "year": 2016,
    "popularity": 622840,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20665,
@@ -197,7 +218,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20665-TLgkL8T8IRFd.png",
    "year": 2014,
    "popularity": 614091,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 104578,
@@ -206,7 +228,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx104578-k61nx3LPjvgd.jpg",
    "year": 2019,
    "popularity": 611646,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 1735,
@@ -215,7 +238,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1735-kGfVm0YqCPcu.png",
    "year": 2007,
    "popularity": 610781,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21234,
@@ -224,7 +248,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21234-XmqW39aQ9o7O.jpg",
    "year": 2016,
    "popularity": 605970,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 100166,
@@ -233,7 +258,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100166-jUCZYbzn2XLw.jpg",
    "year": 2018,
    "popularity": 601318,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 9253,
@@ -242,7 +268,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9253-tIUXF2gfU8Sg.jpg",
    "year": 2011,
    "popularity": 595401,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 97940,
@@ -251,7 +278,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97940-fyh8o7gNbha0.png",
    "year": 2017,
    "popularity": 584363,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20464,
@@ -260,7 +288,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20464-ooZUyBe4ptp9.png",
    "year": 2014,
    "popularity": 583910,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 101291,
@@ -269,7 +298,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101291-wfEdgPqtfU0l.jpg",
    "year": 2018,
    "popularity": 580440,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 140960,
@@ -278,7 +308,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx140960-Kb6R5nYQfjmP.jpg",
    "year": 2022,
    "popularity": 570893,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 101921,
@@ -287,7 +318,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101921-ufrjLzhSz7L1.jpg",
    "year": 2019,
    "popularity": 559535,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 105333,
@@ -296,7 +328,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx105333-GybuoSoOZfpH.jpg",
    "year": 2019,
    "popularity": 555453,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21827,
@@ -305,7 +338,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21827-ubzq619ZA2E9.png",
    "year": 2018,
    "popularity": 548069,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 101348,
@@ -314,7 +348,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101348-2fhDFPCuMNiz.jpg",
    "year": 2019,
    "popularity": 546613,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 4224,
@@ -323,7 +358,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx4224-PXVMBLNwy2aF.jpg",
    "year": 2008,
    "popularity": 542871,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 124080,
@@ -332,7 +368,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx124080-3i22mRVPBS0T.jpg",
    "year": 2021,
    "popularity": 542128,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 19815,
@@ -341,7 +378,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b19815-sEOQ9yQaPKlk.jpg",
    "year": 2014,
    "popularity": 541495,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 20613,
@@ -350,7 +388,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20613-HXHpec4bemk5.jpg",
    "year": 2014,
    "popularity": 539923,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20447,
@@ -359,7 +398,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20447-EoQXeygHaVCK.jpg",
    "year": 2014,
    "popularity": 539563,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 104276,
@@ -368,7 +408,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx104276-SnEowMvesWIE.png",
    "year": 2019,
    "popularity": 532976,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 20789,
@@ -377,7 +418,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20789-Ma5ouSYPkru9.jpg",
    "year": 2014,
    "popularity": 529673,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 269,
@@ -386,7 +428,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx269-d2GmRkJbMopq.png",
    "year": 2004,
    "popularity": 521987,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 21202,
@@ -395,7 +438,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21202-mPOr80AEjUcZ.png",
    "year": 2016,
    "popularity": 518788,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 20623,
@@ -404,7 +448,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20623-dUARfggnNDOe.jpg",
    "year": 2014,
    "popularity": 501180,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 1575,
@@ -413,7 +458,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1575-hsmWM2ydNm1m.jpg",
    "year": 2006,
    "popularity": 501016,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 99423,
@@ -422,7 +468,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx99423-8MBxtwCeHf8B.png",
    "year": 2018,
    "popularity": 500859,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 30,
@@ -431,7 +478,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx30-AI1zr74Dh4ye.jpg",
    "year": 1995,
    "popularity": 495322,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": true
   },
   {
    "id": 145064,
@@ -440,7 +488,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx145064-hSNRJM03pvv1.jpg",
    "year": 2023,
    "popularity": 492290,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 142329,
@@ -449,7 +498,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx142329-kET1PIXJv2eW.jpg",
    "year": 2022,
    "popularity": 484700,
-   "difficulty": 1
+   "difficulty": 1,
+   "nsfw": false
   },
   {
    "id": 105310,
@@ -458,7 +508,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx105310-2PKUvoaA6fTn.jpg",
    "year": 2019,
    "popularity": 484210,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 154587,
@@ -467,7 +518,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx154587-qQTzQnEJJ3oB.jpg",
    "year": 2023,
    "popularity": 481044,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 14719,
@@ -476,7 +528,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx14719-VT5dRzTBSZ0w.jpg",
    "year": 2012,
    "popularity": 478697,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 1,
@@ -485,7 +538,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1-GCsPm7waJ4kS.png",
    "year": 1998,
    "popularity": 468077,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 97668,
@@ -494,7 +548,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97668-nC8gQrXVxt7k.png",
    "year": 2019,
    "popularity": 467850,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20931,
@@ -503,7 +558,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx20931-bktYqOcxPERi.jpg",
    "year": 2015,
    "popularity": 467729,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 101280,
@@ -512,7 +568,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101280-tDxCVJm714nt.jpg",
    "year": 2018,
    "popularity": 463484,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 9919,
@@ -521,7 +578,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9919-nXS7JOZrWHfS.jpg",
    "year": 2011,
    "popularity": 461724,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 99263,
@@ -530,7 +588,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx99263-LcazQwdlWzMy.jpg",
    "year": 2019,
    "popularity": 461292,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 108465,
@@ -539,7 +598,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108465-1ANspF1EWyFx.jpg",
    "year": 2021,
    "popularity": 458273,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 98314,
@@ -548,7 +608,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b98314-TSJykxVwCCQN.jpg",
    "year": 2017,
    "popularity": 456678,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 20594,
@@ -557,7 +618,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx20594-FhRgZ1H9Istt.jpg",
    "year": 2014,
    "popularity": 452209,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 101338,
@@ -566,7 +628,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101338-rokVscjRYzdP.jpg",
    "year": 2019,
    "popularity": 449679,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 98659,
@@ -575,7 +638,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98659-WNyPLIZDpGGY.jpg",
    "year": 2017,
    "popularity": 448137,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 151807,
@@ -584,7 +648,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx151807-it355ZgzquUd.png",
    "year": 2024,
    "popularity": 447024,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 120120,
@@ -593,7 +658,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx120120-cWDmnmeEntSe.jpg",
    "year": 2021,
    "popularity": 446225,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 6547,
@@ -602,7 +668,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx6547-SYexAn5aFyss.png",
    "year": 2010,
    "popularity": 443623,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 131681,
@@ -611,7 +678,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx131681-5ooUqvqNtee1.jpg",
    "year": 2022,
    "popularity": 441228,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 112641,
@@ -620,7 +688,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx112641-zoGC8d6FaPXU.jpg",
    "year": 2020,
    "popularity": 435086,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20997,
@@ -629,7 +698,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20997-axVYrsIfjtYJ.jpg",
    "year": 2015,
    "popularity": 434333,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 10620,
@@ -638,7 +708,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx10620-dUZeNej0W4QN.png",
    "year": 2011,
    "popularity": 431570,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 132405,
@@ -647,7 +718,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx132405-qP7FQYGmNI3d.jpg",
    "year": 2022,
    "popularity": 430233,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 21311,
@@ -656,7 +728,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21311-hAXyT8Yoh6G9.jpg",
    "year": 2016,
    "popularity": 421423,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 117193,
@@ -665,7 +738,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx117193-E75BlZmDh1aB.jpg",
    "year": 2021,
    "popularity": 415244,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 18679,
@@ -674,7 +748,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b18679-lbkq7iYESoFW.png",
    "year": 2013,
    "popularity": 415192,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 20850,
@@ -683,7 +758,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20850-glDf9EMKeCwe.jpg",
    "year": 2015,
    "popularity": 407128,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 97986,
@@ -692,7 +768,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97986-TQ7dCgbS3y5s.jpg",
    "year": 2017,
    "popularity": 405664,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 20832,
@@ -701,7 +778,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20832-vUNm5zrYWifc.jpg",
    "year": 2015,
    "popularity": 404868,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20923,
@@ -710,7 +788,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20923-pNT38pjW3RFH.jpg",
    "year": 2015,
    "popularity": 403550,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 20992,
@@ -719,7 +798,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20992-aHgNbcalVEqk.png",
    "year": 2015,
    "popularity": 399169,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20920,
@@ -728,7 +808,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20920-MTREwZOG4BAD.jpg",
    "year": 2015,
    "popularity": 397213,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 15809,
@@ -737,7 +818,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx15809-ECv3HyOYJKrk.jpg",
    "year": 2013,
    "popularity": 396518,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 9989,
@@ -746,7 +828,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9989-hImMg6kCMm6I.jpg",
    "year": 2011,
    "popularity": 394667,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 3588,
@@ -755,7 +838,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx3588-fSMggQoFSbUI.png",
    "year": 2008,
    "popularity": 393539,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 120377,
@@ -764,7 +848,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx120377-ayZPoxiWt4Li.jpg",
    "year": 2022,
    "popularity": 387965,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 171018,
@@ -773,7 +858,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx171018-60q1B6GK2Ghb.jpg",
    "year": 2024,
    "popularity": 385907,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 11111,
@@ -782,7 +868,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11111-gvvE5bBYsyFo.png",
    "year": 2012,
    "popularity": 385387,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 14813,
@@ -791,7 +878,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx14813-3mNvcKNEQcDs.jpg",
    "year": 2013,
    "popularity": 382233,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 108632,
@@ -800,7 +888,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108632-lQWnmw7XaNOK.jpg",
    "year": 2020,
    "popularity": 380434,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 6702,
@@ -809,7 +898,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b6702-KI4qgSMyI8Pm.png",
    "year": 2009,
    "popularity": 380242,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 2001,
@@ -818,7 +908,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx2001-XwRnjzGeFWRQ.png",
    "year": 2007,
    "popularity": 380113,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21699,
@@ -827,7 +918,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21699-Fkbnkl9ZC6fW.png",
    "year": 2017,
    "popularity": 377185,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 101347,
@@ -836,7 +928,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101347-TGaDwEYqLfm1.jpg",
    "year": 2019,
    "popularity": 375208,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 145139,
@@ -845,7 +938,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx145139-rRimpHGWLhym.png",
    "year": 2023,
    "popularity": 373655,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21170,
@@ -854,7 +948,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21170-kbcfTTZGSaFt.jpg",
    "year": 2016,
    "popularity": 370029,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 2904,
@@ -863,7 +958,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx2904-Fet9Q33suC7G.jpg",
    "year": 2008,
    "popularity": 363393,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21698,
@@ -872,7 +968,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21698-RL71mr1YU5Io.png",
    "year": 2016,
    "popularity": 362776,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 128893,
@@ -881,7 +978,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx128893-Gc2t8b8M0mVu.jpg",
    "year": 2023,
    "popularity": 362352,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 129874,
@@ -890,7 +988,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx129874-g6ZKXB94Hui1.jpg",
    "year": 2021,
    "popularity": 361425,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21804,
@@ -899,7 +998,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21804-As6tDLAvEvNY.jpg",
    "year": 2016,
    "popularity": 359122,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 13601,
@@ -908,7 +1008,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx13601-i42VFuHpqEOJ.jpg",
    "year": 2012,
    "popularity": 356740,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 14741,
@@ -917,7 +1018,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx14741-CGXEIeUe2roA.jpg",
    "year": 2012,
    "popularity": 353701,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 98460,
@@ -926,7 +1028,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98460-bLtH2c3jd6sV.png",
    "year": 2018,
    "popularity": 353162,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 12189,
@@ -935,7 +1038,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx12189-zj5AWUYO53Fv.jpg",
    "year": 2012,
    "popularity": 352506,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 10087,
@@ -944,7 +1048,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx10087-M4Hd9qrHGrXk.png",
    "year": 2011,
    "popularity": 348436,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20474,
@@ -953,7 +1058,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20474-xuqem5GBlBtb.jpg",
    "year": 2014,
    "popularity": 344872,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 5081,
@@ -962,7 +1068,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5081-9GocceQ5Z865.jpg",
    "year": 2009,
    "popularity": 342568,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 19,
@@ -971,7 +1078,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx19-gtMC64182sm4.jpg",
    "year": 2004,
    "popularity": 342252,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 115230,
@@ -980,7 +1088,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx115230-QHOdSN7yt8ab.jpg",
    "year": 2020,
    "popularity": 336052,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 113936,
@@ -989,7 +1098,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113936-D4eYd4XwslVI.jpg",
    "year": 2021,
    "popularity": 335737,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21776,
@@ -998,7 +1108,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21776-bwPaYKhnKfUs.png",
    "year": 2017,
    "popularity": 330210,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 150672,
@@ -1007,7 +1118,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx150672-WqmmwZ4nMzAy.png",
    "year": 2023,
    "popularity": 329803,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 142838,
@@ -1016,7 +1128,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx142838-26JrqcFU1ljB.jpg",
    "year": 2022,
    "popularity": 329401,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20829,
@@ -1025,7 +1138,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20829-pgsXVjrfyI5V.png",
    "year": 2015,
    "popularity": 329076,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 99578,
@@ -1034,7 +1148,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx99578-oO5KChtfhzln.png",
    "year": 2018,
    "popularity": 328664,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 9756,
@@ -1043,7 +1158,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx9756-QnUGwlwwnsuN.jpg",
    "year": 2011,
    "popularity": 326957,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 161645,
@@ -1052,7 +1168,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx161645-QLbzHXiYRgV2.jpg",
    "year": 2023,
    "popularity": 326153,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 137822,
@@ -1061,7 +1178,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx137822-U8naszP96vzC.png",
    "year": 2022,
    "popularity": 325848,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 116589,
@@ -1070,7 +1188,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx116589-KawXHB6sApFt.jpg",
    "year": 2021,
    "popularity": 324469,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 127720,
@@ -1079,7 +1198,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx127720-ADJgIrUVMdU9.jpg",
    "year": 2021,
    "popularity": 324421,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 103572,
@@ -1088,7 +1208,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx103572-cchriAdH95cQ.png",
    "year": 2019,
    "popularity": 323597,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 108725,
@@ -1097,7 +1218,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108725-ZKivuyr4Jtc9.jpg",
    "year": 2021,
    "popularity": 321995,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 108511,
@@ -1106,7 +1228,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108511-PufFordLNyIb.jpg",
    "year": 2021,
    "popularity": 321863,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 133965,
@@ -1115,7 +1238,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx133965-9TZBS4m4yvED.png",
    "year": 2021,
    "popularity": 321415,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 114535,
@@ -1124,7 +1248,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx114535-y3NnjexcqKG1.jpg",
    "year": 2021,
    "popularity": 317838,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21450,
@@ -1133,7 +1258,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21450-D7XFwEQjZ5GA.jpg",
    "year": 2016,
    "popularity": 315791,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 130298,
@@ -1142,7 +1268,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx130298-YMdcKHytpWNH.jpg",
    "year": 2022,
    "popularity": 314780,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 11617,
@@ -1151,7 +1278,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx11617-nmxMU9Zh3H5R.jpg",
    "year": 2012,
    "popularity": 314452,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 105334,
@@ -1160,7 +1288,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx105334-AZwEdMu4KFtV.jpg",
    "year": 2019,
    "popularity": 311658,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 21128,
@@ -1169,7 +1298,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21128-eQgH3TG4nngo.jpg",
    "year": 2015,
    "popularity": 311414,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 176496,
@@ -1178,7 +1308,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176496-9BDMjAZGEbq4.png",
    "year": 2025,
    "popularity": 309985,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 100388,
@@ -1187,7 +1318,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100388-hjkg1AnlJR5z.jpg",
    "year": 2018,
    "popularity": 309669,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 113813,
@@ -1196,7 +1328,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113813-SnljeXpU3Pw7.jpg",
    "year": 2020,
    "popularity": 309072,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 100240,
@@ -1205,7 +1338,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx100240-vJNaKd5HwPJ2.jpg",
    "year": 2018,
    "popularity": 308231,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 119661,
@@ -1214,7 +1348,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx119661-GDbUZxrZMz01.png",
    "year": 2021,
    "popularity": 308115,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 101165,
@@ -1223,7 +1358,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101165-v5NwPXWPFDuD.jpg",
    "year": 2018,
    "popularity": 303522,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 114236,
@@ -1232,7 +1368,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx114236-wfQOWF0Ii3h2.png",
    "year": 2020,
    "popularity": 301250,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 2167,
@@ -1241,7 +1378,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx2167-pSDBcyc0vjej.jpg",
    "year": 2007,
    "popularity": 300542,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 102883,
@@ -1250,7 +1388,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx102883-S9KzdMJhDswJ.png",
    "year": 2018,
    "popularity": 300435,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 116006,
@@ -1259,7 +1398,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx116006-Wt8JSA1ZQxlM.png",
    "year": 2020,
    "popularity": 299423,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 918,
@@ -1268,7 +1408,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx918-iOaeBVUn4uK7.jpg",
    "year": 2006,
    "popularity": 296444,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 6746,
@@ -1277,7 +1418,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx6746-3LTwM95Uqeoa.png",
    "year": 2010,
    "popularity": 294354,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 106625,
@@ -1286,7 +1428,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx106625-UR22wB2NuNVi.png",
    "year": 2020,
    "popularity": 294230,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 125367,
@@ -1295,7 +1438,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx125367-1yuq9NFcQuLI.png",
    "year": 2022,
    "popularity": 292728,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20799,
@@ -1304,7 +1448,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20799-S1eyqBDlx51E.jpg",
    "year": 2015,
    "popularity": 291503,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 20661,
@@ -1313,7 +1458,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20661-aCR7QgzDfOSI.png",
    "year": 2014,
    "popularity": 291291,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 100182,
@@ -1322,7 +1468,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx100182-KctPmCJ2smHQ.jpg",
    "year": 2018,
    "popularity": 289430,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 151801,
@@ -1331,7 +1478,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx151801-XxVf22Le6C8o.png",
    "year": 2023,
    "popularity": 289351,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 7054,
@@ -1340,7 +1488,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx7054-GW4D7VAZG19W.png",
    "year": 2010,
    "popularity": 288591,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": false
   },
   {
    "id": 8074,
@@ -1349,7 +1498,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx8074-YB63Ik96fjPj.png",
    "year": 2010,
    "popularity": 287107,
-   "difficulty": 2
+   "difficulty": 2,
+   "nsfw": true
   },
   {
    "id": 99539,
@@ -1358,7 +1508,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx99539-caPX28RSsgRP.jpg",
    "year": 2018,
    "popularity": 286718,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 11771,
@@ -1367,7 +1518,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11771-uvr44RAwRxPw.jpg",
    "year": 2012,
    "popularity": 286709,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 124845,
@@ -1376,7 +1528,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx124845-JXORhqCTGt04.jpg",
    "year": 2021,
    "popularity": 285283,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 153288,
@@ -1385,7 +1538,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx153288-25FBfFJzEQ5O.jpg",
    "year": 2024,
    "popularity": 283167,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 141391,
@@ -1394,7 +1548,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx141391-M3ZgUKTPENUk.jpg",
    "year": 2022,
    "popularity": 282972,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 205,
@@ -1403,7 +1558,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx205-7tHVFu6dPBm9.png",
    "year": 2004,
    "popularity": 280674,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 18153,
@@ -1412,7 +1568,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx18153-oDqA9zQzQPOq.png",
    "year": 2013,
    "popularity": 280166,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 5680,
@@ -1421,7 +1578,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx5680-r3AI3Cwfv0Aq.png",
    "year": 2009,
    "popularity": 279401,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21613,
@@ -1430,7 +1588,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21613-qT3NiwYP5dYc.png",
    "year": 2017,
    "popularity": 278900,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 13759,
@@ -1439,7 +1598,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx13759-xNf0gJK4Axt2.jpg",
    "year": 2012,
    "popularity": 277564,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 166240,
@@ -1448,7 +1608,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx166240-PBV7zukIHW7V.png",
    "year": 2024,
    "popularity": 277423,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20698,
@@ -1457,7 +1618,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20698-YZIYor2zW3Ta.png",
    "year": 2015,
    "popularity": 276989,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 226,
@@ -1466,7 +1628,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx226-MibyRKhIrnTe.png",
    "year": 2004,
    "popularity": 276147,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 136430,
@@ -1475,7 +1638,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx136430-gsBsJjA7hGh9.jpg",
    "year": 2023,
    "popularity": 275600,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 116742,
@@ -1484,7 +1648,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx116742-jn0dW23ftehq.jpg",
    "year": 2021,
    "popularity": 270796,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 139630,
@@ -1493,7 +1658,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx139630-3v4gxWtNZxLV.jpg",
    "year": 2022,
    "popularity": 270501,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 18897,
@@ -1502,7 +1668,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx18897-G2Fx2ZACsXBU.jpg",
    "year": 2014,
    "popularity": 268563,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 120697,
@@ -1511,7 +1678,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx120697-BA2TqxB1I5bJ.jpg",
    "year": 2021,
    "popularity": 268130,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 112301,
@@ -1520,7 +1688,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx112301-f88Fs2es4pSr.jpg",
    "year": 2020,
    "popularity": 267420,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 98437,
@@ -1529,7 +1698,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98437-5q0GWqHhNAgJ.jpg",
    "year": 2018,
    "popularity": 266691,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 121,
@@ -1538,7 +1708,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx121-zjmixZ428Mwv.png",
    "year": 2003,
    "popularity": 266528,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 17895,
@@ -1547,7 +1718,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx17895-M8yjOyMxHf5X.jpg",
    "year": 2013,
    "popularity": 266272,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 130003,
@@ -1556,7 +1728,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx130003-HTDmeL4RGeJ4.png",
    "year": 2022,
    "popularity": 266183,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 19603,
@@ -1565,7 +1738,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx19603-ycT0pyEgDVQu.jpg",
    "year": 2014,
    "popularity": 265622,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 140439,
@@ -1574,7 +1748,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx140439-bPKmhe1wNxc9.jpg",
    "year": 2022,
    "popularity": 264925,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 146065,
@@ -1583,7 +1758,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx146065-IjirxRK26O03.png",
    "year": 2023,
    "popularity": 263647,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 145545,
@@ -1592,7 +1768,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx145545-DGl3LVvFlnHi.png",
    "year": 2022,
    "popularity": 262132,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 14227,
@@ -1601,7 +1778,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx14227-VGxPG1xDZG7v.jpg",
    "year": 2012,
    "popularity": 262000,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 4898,
@@ -1610,7 +1788,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx4898-mW4gabZvwmLC.jpg",
    "year": 2008,
    "popularity": 261176,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21518,
@@ -1619,7 +1798,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21518-uBqzDGIuSxJ5.jpg",
    "year": 2016,
    "popularity": 260678,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 20458,
@@ -1628,7 +1808,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20458-tGh343Ew10yU.jpg",
    "year": 2014,
    "popularity": 259872,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21049,
@@ -1637,7 +1818,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21049-4AHSLeiDE9eg.png",
    "year": 2016,
    "popularity": 259763,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 813,
@@ -1646,7 +1828,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx813-ZhnFNOeCU5dQ.png",
    "year": 1989,
    "popularity": 259460,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 172463,
@@ -1655,7 +1838,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx172463-LnXqHzt74SJL.jpg",
    "year": 2026,
    "popularity": 259458,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20872,
@@ -1664,7 +1848,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20872-j5PBzzVtrYDM.jpg",
    "year": 2015,
    "popularity": 259351,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 107660,
@@ -1673,7 +1858,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx107660-hgknnyaLchJW.png",
    "year": 2019,
    "popularity": 258700,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 853,
@@ -1682,7 +1868,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx853-fiUtW8yohsSF.jpg",
    "year": 2006,
    "popularity": 258124,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 178025,
@@ -1691,7 +1878,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx178025-cWJKEsZynkil.jpg",
    "year": 2025,
    "popularity": 256736,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 113538,
@@ -1700,7 +1888,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113538-tHVE8j5mOPLu.jpg",
    "year": 2020,
    "popularity": 255397,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 339,
@@ -1709,7 +1898,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx339-xF2wp1NQuQ4r.png",
    "year": 1998,
    "popularity": 253314,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 889,
@@ -1718,7 +1908,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx889-4S7N2ciq2cwA.png",
    "year": 2006,
    "popularity": 252363,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 6045,
@@ -1727,7 +1918,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx6045-JujXjoWtslUM.jpg",
    "year": 2009,
    "popularity": 251269,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 6880,
@@ -1736,7 +1928,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx6880-qZ1jIqIYpST2.png",
    "year": 2011,
    "popularity": 250144,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20807,
@@ -1745,7 +1938,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20807-8nFoO0AUdGsy.jpg",
    "year": 2015,
    "popularity": 248574,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 15583,
@@ -1754,7 +1948,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx15583-Sxd2J4RJdRhj.jpg",
    "year": 2013,
    "popularity": 247371,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 116267,
@@ -1763,7 +1958,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx116267-Eo1biPBTlL4i.jpg",
    "year": 2020,
    "popularity": 246875,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 101474,
@@ -1772,7 +1968,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101474-tGRyvSAWMjU9.jpg",
    "year": 2018,
    "popularity": 246874,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 98436,
@@ -1781,7 +1978,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx98436-n7sK6POCd0XV.png",
    "year": 2017,
    "popularity": 246248,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 111321,
@@ -1790,7 +1988,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx111321-dIr3dEKOIPer.png",
    "year": 2022,
    "popularity": 246144,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21092,
@@ -1799,7 +1998,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx21092-1NML6TdngmBq.jpg",
    "year": 2015,
    "popularity": 245884,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 20596,
@@ -1808,7 +2008,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20596-fJdMHV8xRMgY.png",
    "year": 2014,
    "popularity": 245087,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 101167,
@@ -1817,7 +2018,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101167-Yasvj97UR9ue.png",
    "year": 2019,
    "popularity": 244439,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21857,
@@ -1826,7 +2028,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx21857-haPDVD7DKDpg.jpg",
    "year": 2017,
    "popularity": 244202,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 11741,
@@ -1835,7 +2038,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx11741-oEy1fJHYm2zJ.jpg",
    "year": 2012,
    "popularity": 242555,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 159831,
@@ -1844,7 +2048,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx159831-cJUNqCqzuApc.png",
    "year": 2023,
    "popularity": 241458,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 10793,
@@ -1853,7 +2058,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx10793-KCysCbrVNqK9.jpg",
    "year": 2011,
    "popularity": 241444,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 10165,
@@ -1862,7 +2068,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx10165-tw8Cz7K9tfVJ.png",
    "year": 2011,
    "popularity": 241015,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21679,
@@ -1871,7 +2078,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21679-9MKdz1A7YLV7.jpg",
    "year": 2016,
    "popularity": 239096,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 108463,
@@ -1880,7 +2088,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108463-u03vrYnyB3L9.jpg",
    "year": 2020,
    "popularity": 238961,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 158927,
@@ -1889,7 +2098,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/b158927-lfO85WVguYgc.png",
    "year": 2023,
    "popularity": 238416,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 17265,
@@ -1898,7 +2108,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx17265-RyErURYesjJt.jpg",
    "year": 2013,
    "popularity": 238013,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 100876,
@@ -1907,7 +2118,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100876-RfvmpW1B8bDQ.png",
    "year": 2019,
    "popularity": 237824,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 102351,
@@ -1916,7 +2128,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx102351-yD3Ty9YZFMsf.jpg",
    "year": 2018,
    "popularity": 237706,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21647,
@@ -1925,7 +2138,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21647-zMUXNhcVyRyv.png",
    "year": 2016,
    "popularity": 236147,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 100922,
@@ -1934,7 +2148,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100922-uxEhaCsqMMp3.png",
    "year": 2018,
    "popularity": 235855,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 124153,
@@ -1943,7 +2158,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx124153-uEBI764OSavB.png",
    "year": 2021,
    "popularity": 235512,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 223,
@@ -1952,7 +2168,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx223-scE5uJfXqqj8.png",
    "year": 1986,
    "popularity": 234518,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 109261,
@@ -1961,7 +2178,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx109261-65rKxMDlcU9r.png",
    "year": 2021,
    "popularity": 233748,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 16592,
@@ -1970,7 +2188,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx16592-mFn1gfMXlKtw.jpg",
    "year": 2013,
    "popularity": 233468,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 14513,
@@ -1979,7 +2198,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx14513-HuUdrFFYftA7.jpg",
    "year": 2012,
    "popularity": 232689,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21709,
@@ -1988,7 +2208,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21709-aqPBDxJPruYR.png",
    "year": 2016,
    "popularity": 231909,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 110349,
@@ -1997,7 +2218,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx110349-59hhZ9CNHVdk.png",
    "year": 2020,
    "popularity": 231114,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 100668,
@@ -2006,7 +2228,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100668-DvOn5bMOt4cy.jpg",
    "year": 2019,
    "popularity": 230230,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20727,
@@ -2015,7 +2238,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20727-jgVnxLCHAKqZ.jpg",
    "year": 2015,
    "popularity": 230194,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 99255,
@@ -2024,7 +2248,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx99255-heGTtj5b4owl.jpg",
    "year": 2017,
    "popularity": 228029,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 185660,
@@ -2033,7 +2258,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx185660-uB8RUMBGovGr.jpg",
    "year": 2025,
    "popularity": 227188,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 129201,
@@ -2042,7 +2268,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx129201-HJBauga2be8I.png",
    "year": 2022,
    "popularity": 226333,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 153518,
@@ -2051,7 +2278,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx153518-IVXPDY5ph3kO.jpg",
    "year": 2024,
    "popularity": 226072,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 147105,
@@ -2060,7 +2288,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx147105-rwOX8qyUy8gV.jpg",
    "year": 2026,
    "popularity": 225766,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 97938,
@@ -2069,7 +2298,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97938-BnF6M5yTaNB1.jpg",
    "year": 2017,
    "popularity": 225425,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 182255,
@@ -2078,7 +2308,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx182255-butzrqd4I0aC.jpg",
    "year": 2026,
    "popularity": 225209,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 108489,
@@ -2087,7 +2318,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108489-yGmYCE6dhFta.png",
    "year": 2020,
    "popularity": 224892,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 113717,
@@ -2096,7 +2328,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx113717-9sNnN8WRgK15.jpg",
    "year": 2021,
    "popularity": 224437,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 4181,
@@ -2105,7 +2338,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx4181-zUKE7BZC62OF.png",
    "year": 2008,
    "popularity": 223785,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 103139,
@@ -2114,7 +2348,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx103139-2TfvRyGTE1qp.jpg",
    "year": 2019,
    "popularity": 223323,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 20668,
@@ -2123,7 +2358,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20668-6UslJY5NDYNh.png",
    "year": 2014,
    "popularity": 223224,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21127,
@@ -2132,7 +2368,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21127-7ARWZkDXKiiD.jpg",
    "year": 2018,
    "popularity": 222849,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 108759,
@@ -2141,7 +2378,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108759-jcXbDf9BJTcb.jpg",
    "year": 2019,
    "popularity": 221759,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 177709,
@@ -2150,7 +2388,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx177709-e5Qx6RlsBgD5.png",
    "year": 2025,
    "popularity": 220915,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 99629,
@@ -2159,7 +2398,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx99629-BXyAJ6PDq4sr.jpg",
    "year": 2018,
    "popularity": 218500,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21175,
@@ -2168,7 +2408,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21175-EH06qlfF8TnB.jpg",
    "year": 2015,
    "popularity": 218291,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20770,
@@ -2177,7 +2418,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20770-brCDvhTXlums.png",
    "year": 2014,
    "popularity": 217835,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 127911,
@@ -2186,7 +2428,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx127911-qfJDzUt0qCna.jpg",
    "year": 2022,
    "popularity": 216731,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 21366,
@@ -2195,7 +2438,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21366-0wrYK0kjKeFn.jpg",
    "year": 2016,
    "popularity": 214209,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 155783,
@@ -2204,7 +2448,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx155783-YosKbsmZzuDE.jpg",
    "year": 2023,
    "popularity": 213251,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 108430,
@@ -2213,7 +2458,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108430-UdruJPro4vDK.jpg",
    "year": 2019,
    "popularity": 211525,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 143270,
@@ -2222,7 +2468,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx143270-rfkyiYXhek5w.jpg",
    "year": 2022,
    "popularity": 211392,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 131646,
@@ -2231,7 +2478,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx131646-cuyGfKcekZ62.jpg",
    "year": 2021,
    "popularity": 210514,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 181444,
@@ -2240,7 +2488,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx181444-Ut9DDUZdfHwg.jpg",
    "year": 2025,
    "popularity": 210244,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 166873,
@@ -2249,7 +2498,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx166873-xO0BRPkmwFll.png",
    "year": 2024,
    "popularity": 209513,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 877,
@@ -2258,7 +2508,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx877-6BUYEWp8By8j.png",
    "year": 2006,
    "popularity": 208108,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 116674,
@@ -2267,7 +2518,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx116674-p3zK4PUX2Aag.jpg",
    "year": 2022,
    "popularity": 207716,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20910,
@@ -2276,7 +2528,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20910-U7txwG3o9gma.jpg",
    "year": 2015,
    "popularity": 207343,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 154965,
@@ -2285,7 +2538,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx154965-vZbBRjtmLp7S.jpg",
    "year": 2023,
    "popularity": 206378,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 101004,
@@ -2294,7 +2548,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx101004-rJLBIWGypbYK.png",
    "year": 2018,
    "popularity": 206233,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 162804,
@@ -2303,7 +2558,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx162804-TBeptcAfvqTd.jpg",
    "year": 2024,
    "popularity": 205296,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 20792,
@@ -2312,7 +2568,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20792-Q53sZsUAh5FF.jpg",
    "year": 2015,
    "popularity": 204714,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 176301,
@@ -2321,7 +2578,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx176301-TIGmldLffQGX.jpg",
    "year": 2025,
    "popularity": 204610,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 129898,
@@ -2330,7 +2588,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx129898-FRUzDtPhRigt.jpg",
    "year": 2021,
    "popularity": 203614,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 1210,
@@ -2339,7 +2598,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1210-2XotjcgqdcaX.jpg",
    "year": 2006,
    "popularity": 203334,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 108928,
@@ -2348,7 +2608,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx108928-DuyUzi0JyPIr.jpg",
    "year": 2019,
    "popularity": 202997,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 21421,
@@ -2357,7 +2618,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21421-5y8ryXsMB7aJ.jpg",
    "year": 2016,
    "popularity": 202861,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 100977,
@@ -2366,7 +2628,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx100977-nH1J2dR7GGAk.jpg",
    "year": 2018,
    "popularity": 202435,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 131518,
@@ -2375,7 +2638,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx131518-RU7RoUmGb2sP.jpg",
    "year": 2023,
    "popularity": 202274,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 849,
@@ -2384,7 +2648,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx849-wQM3GqLvl62P.png",
    "year": 2006,
    "popularity": 201047,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21700,
@@ -2393,7 +2658,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21700-HhTEXPZKxupP.jpg",
    "year": 2017,
    "popularity": 200637,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 105156,
@@ -2402,7 +2668,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx105156-ZVtxISdoUqnY.png",
    "year": 2019,
    "popularity": 200227,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 112124,
@@ -2411,7 +2678,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx112124-ZmoOntBuiSUU.jpg",
    "year": 2020,
    "popularity": 199949,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 21711,
@@ -2420,7 +2688,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21711-EQN4sCIXRhKf.png",
    "year": 2016,
    "popularity": 199093,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 103223,
@@ -2429,7 +2698,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx103223-bfdnnKWxE4YE.jpg",
    "year": 2019,
    "popularity": 198344,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20993,
@@ -2438,7 +2708,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20993-c34UTma2bCcv.jpg",
    "year": 2015,
    "popularity": 198068,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 20631,
@@ -2447,7 +2718,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20631-LdCiy3goitcT.png",
    "year": 2014,
    "popularity": 197844,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   },
   {
    "id": 20994,
@@ -2456,7 +2728,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx20994-pSDk4I58jAK5.jpg",
    "year": 2015,
    "popularity": 197762,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": false
   },
   {
    "id": 15451,
@@ -2465,7 +2738,8 @@
    "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/nx15451-A5T54vmxUq9t.jpg",
    "year": 2013,
    "popularity": 197380,
-   "difficulty": 3
+   "difficulty": 3,
+   "nsfw": true
   }
  ]
 }

@@ -596,6 +596,10 @@ class QuizRenderer:
                 'voice': sum(c is not None for c in clips), 'voiceLines': len(clips)}
 
 
+# the Asian pop culture formats (render_pop.py); kept here so the CLI does not import it for geography runs
+POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice')
+
+
 def main():
     # JSON result must survive non-UTF-8 consoles (Windows cp932/cp1252)
     try:
@@ -603,7 +607,7 @@ def main():
     except Exception:
         pass
     ap = argparse.ArgumentParser()
-    ap.add_argument('--format', default='flag', choices=planner.FORMATS + ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'))
+    ap.add_argument('--format', default='flag', choices=planner.FORMATS + POP)
     ap.add_argument('--plan-file', default=None, help='render this plan (JSON) instead of planning one')
     ap.add_argument('--topic', default=None, help='pop formats: topic (anime, kpop song, kpop, vtubers, ...)')
     ap.add_argument('--country', default=None, help='city format: CN, JP or KR')
@@ -624,15 +628,15 @@ def main():
         with open(args.plan_file, encoding='utf-8') as f:
             pop_plan = json.load(f)
         pop_plan.setdefault('seed', seed)
-    elif args.format in ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'):
+    elif args.format in POP:
         from render_pop import plan_from_bank
         pop_plan = plan_from_bank(args.format, topic=args.topic, seed=seed, n=args.rounds, country=args.country)
-    if pop_plan is not None and pop_plan['format'] in ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening'):
+    if pop_plan is not None and pop_plan['format'] in POP:
         from render_pop import PopRenderer, gradient_bg
         r = PopRenderer(pop_plan, voice=not args.no_voice, music=not args.no_music, voice_name=args.voice)
         if args.frame is not None:
-            if r.fmt == 'opening':
-                r._load_openings()
+            if r.fmt in ('opening', 'scene', 'voice'):
+                r._load_clips()
             n = len(r.plan['rounds'])
             r.build_pop_timeline([2.0] * n, [1.0] * n)
             r.prepare_pop()

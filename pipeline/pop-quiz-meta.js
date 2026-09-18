@@ -1,6 +1,7 @@
 /**
- * Titles, hashtags, tags, playlists and description text for the Asian pop
- * culture formats (emoji, trivia, wyr, city). The world-quiz pipeline picks a
+ * Titles, hashtags, tags, playlists, credits and description text for the Asian pop
+ * culture formats (emoji, trivia, wyr, city, character, idol, opening, cityphoto, vtuber,
+ * duel, scene, voice). The world-quiz pipeline picks a
  * title template with the same Thompson sampling it uses for the geography
  * formats; `when` limits a template to the plan's topic.
  */
@@ -57,6 +58,40 @@ const POP_TITLE_TEMPLATES = {
     { id: 'op-casual', text: () => 'guess the anime opening 😭✌️' },
     { id: 'op-ramp', text: () => 'Anime Opening Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
+  cityphoto: [
+    { id: 'cphoto-guess', text: () => 'Guess the Asian City From One Photo 📸' },
+    { id: 'cphoto-name', text: p => `Can You Name These ${n(p)} Asian Cities? 🏙️` },
+    { id: 'cphoto-casual', text: () => 'guess the city from the photo 😭✌️' },
+    { id: 'cphoto-ramp', text: () => 'Asia City Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'cphoto-travel', text: p => `Only Travel Nerds Get ${n(p)}/${n(p)} ✈️` },
+  ],
+  vtuber: [
+    { id: 'vt-guess', text: () => 'Guess the VTuber 🤔' },
+    { id: 'vt-fans', text: p => `Only Real VTuber Fans Get ${n(p)}/${n(p)} 😭` },
+    { id: 'vt-casual', text: () => 'guess the vtuber 😭✌️' },
+    { id: 'vt-blur', text: () => 'Name the VTuber Before It Unblurs 👀' },
+    { id: 'vt-ramp', text: () => 'VTuber Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'vt-holo', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.rounds.filter(r => /hololive/i.test(r.agency || '')).length >= 3 },
+  ],
+  duel: [
+    { id: 'duel-pick', text: () => 'Who Would You Pick? Anime Edition ⚔️' },
+    { id: 'duel-vs', text: p => `${p.rounds[0].a.name} or ${p.rounds[0].b.name}? Fans Voted 🤔`, when: p => (p.rounds[0].a.name + p.rounds[0].b.name).length <= 30 },
+    { id: 'duel-casual', text: () => 'who would you pick? (anime edition) 😭✌️' },
+    { id: 'duel-agree', text: () => 'Do You Agree With Anime Fans? 🔥' },
+    { id: 'duel-fans', text: () => 'Anime Fans Picked... Do You Agree? 😳' },
+  ],
+  scene: [
+    { id: 'scene-4sec', text: () => 'Guess the Anime From One Scene 🎬' },
+    { id: 'scene-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎬` },
+    { id: 'scene-casual', text: () => 'guess the anime from 4 seconds 😭✌️' },
+    { id: 'scene-ramp', text: () => 'Anime Scene Quiz: Easy to IMPOSSIBLE 🔥' },
+  ],
+  voice: [
+    { id: 'voice-guess', text: () => 'Guess the Anime Character by Their Voice 🎧' },
+    { id: 'voice-fans', text: p => `Only Real Fans Know All ${n(p)} Voices 😭` },
+    { id: 'voice-casual', text: () => 'guess the anime character by voice 😭✌️' },
+    { id: 'voice-ramp', text: () => 'Anime Voice Quiz: Easy to IMPOSSIBLE 🔥' },
+  ],
   city: [
     { id: 'city-guess', text: p => `Guess the ${CITY_ADJ[p.topic]} City From the Map ${CITY_FLAG[p.topic]}` },
     { id: 'city-find', text: p => `Can You Find These ${CITY_ADJ[p.topic]} Cities? 🗺️` },
@@ -67,7 +102,10 @@ const POP_TITLE_TEMPLATES = {
 
 const FORMAT_HASHTAG = {
   character: '#anime #animequiz #quiz', idol: '#kpop #kpopquiz #quiz', opening: '#anime #animeopening #quiz',
+  cityphoto: '#asia #travel #quiz', vtuber: '#vtuber #hololive #quiz', duel: '#anime #wouldyourather #quiz',
+  scene: '#anime #animequiz #quiz', voice: '#anime #animequiz #quiz',
 };
+const COUNTRY = { CN: 'China', JP: 'Japan', KR: 'South Korea' };
 const HASHTAG = {
   anime: '#anime #animequiz #quiz', 'kpop song': '#kpop #kpopquiz #quiz', kpop: '#kpop #kpopquiz #quiz',
   vtubers: '#vtuber #hololive #quiz', cdrama: '#cdrama #chinesedrama #quiz', cities: '#asia #travel #quiz',
@@ -84,10 +122,16 @@ const TOPIC_TAGS = {
   CN: ['china map quiz', 'chinese cities', 'china geography', 'guess the city'],
   JP: ['japan map quiz', 'japanese cities', 'japan geography', 'guess the city'],
   KR: ['korea map quiz', 'korean cities', 'korea geography', 'guess the city'],
+  asia: ['asia quiz', 'guess the city', 'city quiz', 'travel quiz', 'china', 'japan', 'korea'],
 };
 const BASE_TAGS = ['asian pop quiz', 'quiz', 'trivia', 'shorts quiz', 'asian pop culture'];
 
 function popPlaylist(p) {
+  if (p.format === 'cityphoto') return 'Guess the Asian City From a Photo';
+  if (p.format === 'vtuber') return 'Guess the VTuber';
+  if (p.format === 'duel') return 'Anime Duels: Who Would You Pick?';
+  if (p.format === 'scene') return 'Guess the Anime From a Scene';
+  if (p.format === 'voice') return 'Guess the Anime Character by Voice';
   if (p.format === 'character') return 'Guess the Anime Character';
   if (p.format === 'idol') return 'Guess the K-Pop Idol';
   if (p.format === 'opening') return 'Guess the Anime Opening';
@@ -98,6 +142,11 @@ function popPlaylist(p) {
 }
 
 function popHook(p) {
+  if (p.format === 'cityphoto') return `Can you name all ${n(p)} Asian cities from a single photo?`;
+  if (p.format === 'vtuber') return `Can you name all ${n(p)} VTubers before the picture gets sharp?`;
+  if (p.format === 'duel') return 'Pick one each round, then see who anime fans actually picked on AniList.';
+  if (p.format === 'scene') return `Can you name all ${n(p)} anime from 4 seconds of their opening?`;
+  if (p.format === 'voice') return `Can you name all ${n(p)} anime characters just from their voice?`;
   if (p.format === 'wyr') return 'Pick one for each round.';
   if (p.format === 'city') return `Can you place all ${n(p)} ${CITY_ADJ[p.topic]} cities on the map?`;
   if (p.format === 'emoji') return `Can you guess all ${n(p)} from just 4 emojis?`;
@@ -113,25 +162,49 @@ function popAnswers(p) {
     if (p.format === 'trivia') return `${i + 1}. ${r.question} → ${r.options[r.answer]}`;
     if (p.format === 'character') return `${i + 1}. ${r.name} (${r.anime})`;
     if (p.format === 'idol') return `${i + 1}. ${r.name}${r.group ? ` (${r.group})` : ''}`;
-    if (p.format === 'opening') return `${i + 1}. ${r.title}`;
+    if (p.format === 'opening' || p.format === 'scene') return `${i + 1}. ${r.title}`;
+    if (p.format === 'cityphoto') return `${i + 1}. ${r.name}, ${COUNTRY[r.iso2] || r.iso2}${r.fact ? ` (${r.fact})` : ''}`;
+    if (p.format === 'vtuber') return `${i + 1}. ${r.name} (${r.agency}${r.graduated ? ', graduated' : ''})`;
+    if (p.format === 'voice') return `${i + 1}. ${r.name} (${r.anime})`;
+    if (p.format === 'duel') {
+      const [w, l] = r.winner === 'a' ? [r.a, r.b] : [r.b, r.a];
+      return `${i + 1}. ${r.question} ${r.a.name} or ${r.b.name}: fans picked ${w.name} `
+        + `(${w.favourites.toLocaleString('en-US')} vs ${l.favourites.toLocaleString('en-US')} AniList favorites)`;
+    }
     return `${i + 1}. ${r.answer}${r.fact ? ` (${r.fact})` : ''}`;
   }).join('\n');
 }
 
+const yt = id => `https://youtu.be/${id}`;
+
+function popCredits(p) {
+  switch (p.format) {
+    case 'idol': return `Photos (Wikimedia Commons): ${p.rounds.map(r => `${r.name}: ${r.credit}`).join('; ')}\n`;
+    case 'cityphoto': return `Photos (Wikimedia Commons, licences as listed): ${p.rounds.map(r => `${r.name}: ${r.credit}${r.page ? ` ${r.page}` : ''}`).join('; ')}\n`;
+    case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
+      + 'All characters belong to their agencies and creators.\n';
+    case 'duel': return 'Character art and favorite counts via AniList (anilist.co).\n';
+    case 'scene': return `Clips from the creditless openings: ${p.rounds.map(r => (r.source && r.source.video ? `${r.title} ${yt(r.source.video)}` : r.title)).join('; ')}. Covers via AniList.\n`;
+    case 'voice': return `Voice clips from: ${p.rounds.map(r => (r.source && r.source.video ? `${r.name} ${yt(r.source.video)}` : r.name)).join('; ')}. Character art via AniList.\n`;
+    case 'character': case 'opening': return 'Character art and covers via AniList.\n';
+    case 'city': return 'Map data: Natural Earth. Emoji art: Noto Emoji (Apache-2.0).\n';
+    default: return 'Emoji art: Noto Emoji (Apache-2.0).\n';
+  }
+}
+
 function popDescription(p) {
-  const head = p.format === 'wyr' ? `${popHook(p)} Comment A or B for each 👇` : `${popHook(p)} Comment your score 👇`;
-  const label = p.format === 'wyr' ? 'The choices' : 'Answers (no peeking!)';
-  const credits = p.format === 'idol'
-    ? `Photos (Wikimedia Commons): ${p.rounds.map(r => `${r.name}: ${r.credit}`).join('; ')}\n`
-    : p.format === 'character' || p.format === 'opening' ? 'Character art and covers via AniList.\n'
-      : p.format === 'city' ? 'Map data: Natural Earth. Emoji art: Noto Emoji (Apache-2.0).\n' : 'Emoji art: Noto Emoji (Apache-2.0).\n';
+  const head = p.format === 'wyr' ? `${popHook(p)} Comment A or B for each 👇`
+    : p.format === 'duel' ? `${popHook(p)} Comment your picks 👇` : `${popHook(p)} Comment your score 👇`;
+  const label = p.format === 'wyr' ? 'The choices' : p.format === 'duel' ? 'The fans picked' : 'Answers (no peeking!)';
   return `${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
-    + `${label}:\n${popAnswers(p)}\n\n${credits}`
+    + `${label}:\n${popAnswers(p)}\n\n${popCredits(p)}`
     + (FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz');
 }
 
 function popTags(p) {
-  const names = ['emoji', 'city', 'character', 'idol', 'opening'].includes(p.format) ? p.rounds.map(r => String(r.answer || r.name || r.title).split(' (')[0]) : [];
+  const names = p.format === 'duel' ? p.rounds.flatMap(r => [r.a.name, r.b.name])
+    : ['emoji', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'scene', 'voice'].includes(p.format)
+      ? p.rounds.map(r => String(r.answer || r.name || r.title).split(' (')[0]) : [];
   const out = [];
   let len = 0;
   for (const t of [...(TOPIC_TAGS[p.topic] || []), ...BASE_TAGS, ...names]) {
@@ -143,6 +216,7 @@ function popTags(p) {
 }
 
 function popComment(p) {
+  if (p.format === 'duel') return 'Did the fans get it right? Who would you have picked? 👇';
   return p.format === 'wyr'
     ? 'Which would you pick? Drop your A/B answers 👇'
     : `What did you score out of ${n(p)}? 🏆 Which one got you? 👇`;
