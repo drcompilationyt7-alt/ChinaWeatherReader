@@ -107,6 +107,8 @@ function normalizeVideo(v) {
     views: parseInt(v.statistics?.viewCount || 0, 10),
     likes: parseInt(v.statistics?.likeCount || 0, 10),
     comments: parseInt(v.statistics?.commentCount || 0, 10),
+    // countries where a Content ID claim blocks the video (the meme pipeline learns from this)
+    regionBlocked: (v.contentDetails?.regionRestriction?.blocked || []).length,
   };
 }
 
@@ -301,6 +303,7 @@ function computeInsights(videos, channel = null, now = Date.now()) {
       publishedAt: v.publishedAt,
       views: v.views, likes: v.likes, comments: v.comments,
       durationSec: v.durationSec,
+      regionBlocked: v.regionBlocked || 0,
       analytics: v.analytics || null,
       country: p.country || null,
       sourceChannel: p.sourceChannel || null,

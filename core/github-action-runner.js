@@ -9,6 +9,7 @@
  *   --mode nightly   = Trend bank updates
  *   --mode temp      = Temp Explainer - channel shorts reposter
  *   --mode quiz      = World Quiz: original geography quiz shorts
+ *   --mode meme      = "<song> acapella" meme shorts (beat-cut Asian / anime clips)
  *   --count N        = (quiz) shorts per run, scheduled QUIZ_SPACING_HOURS apart
  *   --country X      = Override country pick
  */
@@ -313,6 +314,59 @@ class DailyRunner {
     return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
   }
 
+  /**
+   * Meme acapella shorts ("<song> acapella" over beat-cut Asian / anime clips).
+   */
+  async runMeme(count = 1) {
+    logger.header(`MEME ACAPELLA: ${count} short(s)`);
+    const outDir = path.join(__dirname, '..', 'output', 'meme');
+    fs.mkdirSync(outDir, { recursive: true });
+    let insights = null;
+    try {
+      insights = await syncPerformance(this.youtubeBridge);
+    } catch (e) {
+      logger.warn(`Performance sync failed: ${(e.message || '').substring(0, 80)}`);
+      insights = loadInsights();
+    }
+    const { runMemePipeline, recordUpload } = require('../pipeline/meme-pipeline');
+    const spacing = parseFloat(process.env.QUIZ_SPACING_HOURS || '4');
+    const base = process.env.PUBLISH_AT ? new Date(process.env.PUBLISH_AT) : null;
+    const uploaded = [];
+    const errors = [];
+    for (let k = 0; k < count; k++) {
+      let result = null;
+      for (let attempt = 1; attempt <= 2 && !result; attempt++) {
+        try {
+          result = await runMemePipeline({ outputDir: outDir, youtube: this.youtubeBridge && this.youtubeBridge.youtube });
+        } catch (e) {
+          logger.warn(`Meme attempt ${attempt} failed: ${(e.message || '').substring(0, 300)}`);
+        }
+      }
+      if (!result) { errors.push('meme render failed'); continue; }
+      const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
+      if (process.env.DRY_RUN === 'true') {
+        logger.success(`[dry run] ${result.meme.song}: "${result.title}" -> ${result.videoPath}`);
+        uploaded.push({ title: result.title, url: result.videoPath, country: result.country, editType: 'meme', geminiScore: null });
+        continue;
+      }
+      const up = await this._uploadToYouTube({ ...result, publishAt });
+      if (!up) { errors.push('upload failed'); continue; }
+      try { recordUpload(result, { ...up, publishAt }); } catch (e) { logger.warn(`Meme history save failed: ${e.message}`); }
+      this._trackPostedVideo(up.url, result.title, result.country, { videoId: up.videoId || null, category: result.category, titleSource: result.meme.song });
+      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+      this._saveMemory();
+      uploaded.push({ title: result.title, url: up.url, country: result.country, editType: 'meme', geminiScore: null });
+      logger.success(`✅ meme uploaded${publishAt ? ` (publishes ${publishAt})` : ''}: "${result.title}"`);
+      try { fs.rmSync(result.workDir, { recursive: true, force: true }); fs.unlinkSync(result.videoPath); } catch {}
+    }
+    if (process.env.DRY_RUN !== 'true') {
+      await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
+    }
+    logger.header('SUMMARY');
+    logger.info(`${uploaded.length}/${count} meme shorts ${process.env.DRY_RUN === 'true' ? 'rendered (dry run)' : 'uploaded'}`);
+    return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
+  }
+
   async runExplainer(overrideCountry) {
     logger.header('EXPLAINER: Type 2 Pipeline');
 
@@ -520,13 +574,16 @@ class DailyRunner {
       } else if (mode === 'quiz') {
         const result = await this.runQuiz(count);
         exitCode = result.exitCode || 0;
+      } else if (mode === 'meme') {
+        const result = await this.runMeme(count);
+        exitCode = result.exitCode || 0;
       } else if (mode === 'nightly') {
         await this.runNightly();
       } else if (mode === 'temp') {
         const result = await this.runTempExplainer(countryArg);
         exitCode = result.exitCode || 0;
       } else {
-        console.log(`Unknown: ${mode}. Use daily, quiz, explainer, nightly, or temp`);
+        console.log(`Unknown: ${mode}. Use daily, quiz, meme, explainer, nightly, or temp`);
         exitCode = 1;
       }
     } catch (e) {
