@@ -53,13 +53,20 @@ env:
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
+  # narrator: Chatterbox "deep hype" (falls back to Kokoro am_onyx -2 st, then edge-tts)
+  TTS_ENGINE: chatterbox
+  CHATTERBOX_EXAGGERATION: "0.7"
+  CHATTERBOX_CFG: "0.3"
+  KOKORO_VOICE: am_onyx
+  KOKORO_PITCH: "-2"
+  KOKORO_DIR: /home/runner/.cache/kokoro
   QUIZ_FORMAT: ${{ github.event.inputs.format }}
   DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
 
 jobs:
   quiz:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
 
     steps:
       - name: Check channel secrets
@@ -90,12 +97,23 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          python3 -m pip install pillow numpy edge-tts yt-dlp yt-dlp-ejs --break-system-packages
+          python3 -m pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu --break-system-packages
+          python3 -m pip install chatterbox-tts --break-system-packages
+          python3 -m pip install pillow edge-tts yt-dlp yt-dlp-ejs kokoro-onnx soundfile --break-system-packages
           curl -fsSL https://deno.land/install.sh | sh
           echo "$HOME/.deno/bin" >> $GITHUB_PATH
           npm ci || npm install
           mkdir -p output/quiz "$MEMORY_DIR" "$QUIZ_MEDIA_CACHE"
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > "$YT_COOKIES"; fi
+
+      - name: Cache voice models (Chatterbox, Kokoro)
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.cache/huggingface
+            /home/runner/.cache/kokoro
+          key: voice-models-chatterbox-v1
 
       - name: Cache quiz media (images, opening clips)
         if: steps.gate.outputs.ready == 'true'

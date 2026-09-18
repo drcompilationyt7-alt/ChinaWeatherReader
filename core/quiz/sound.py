@@ -206,6 +206,41 @@ def kokoro_lines(lines, voice=None, speed=None, pitch=None):
     return out
 
 
+_chatterbox = None
+VOICE_REF = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'voice', 'narrator-ref.wav')
+
+
+def chatterbox_lines(lines):
+    """
+    Most natural narration: Chatterbox (Resemble AI, MIT) on CPU, voiced after
+    assets/voice/narrator-ref.wav (a synthetic Kokoro voice, not a real person).
+    CHATTERBOX_EXAGGERATION / CHATTERBOX_CFG tune the delivery ("deep hype" = 0.7 / 0.3).
+    """
+    global _chatterbox
+    import torch
+    from chatterbox.tts import ChatterboxTTS
+    torch.set_num_threads(max(1, os.cpu_count() or 1))
+    if _chatterbox is None:
+        _chatterbox = ChatterboxTTS.from_pretrained(device='cpu')
+    ref = os.environ.get('CHATTERBOX_REF') or VOICE_REF
+    exag = float(os.environ.get('CHATTERBOX_EXAGGERATION', '0.7'))
+    cfg = float(os.environ.get('CHATTERBOX_CFG', '0.3'))
+    out = []
+    for text in lines:
+        try:
+            with torch.inference_mode():
+                wav = _chatterbox.generate(text, audio_prompt_path=ref, exaggeration=exag, cfg_weight=cfg)
+            a = wav.squeeze().cpu().numpy().astype(np.float64)
+            sr = _chatterbox.sr
+            a = np.interp(np.linspace(0, len(a) - 1, int(len(a) * SR / sr)), np.arange(len(a)), a)
+            nz = np.where(np.abs(a) > 0.01)[0]
+            out.append(a[max(0, nz[0] - 400):nz[-1] + 1600] if len(nz) else a)
+        except Exception as e:
+            print(f'chatterbox line failed: {str(e)[:80]}', file=sys.stderr)
+            out.append(None)
+    return out
+
+
 def _stretch(a, rate):
     """Overlap-add time stretch (keeps pitch): rate > 1 lengthens."""
     win = int(0.04 * SR)
@@ -223,8 +258,25 @@ def _stretch(a, rate):
 
 
 def tts_lines(lines, voices=None, rate='+8%', workdir=None):
-    """Synthesise each line (Kokoro when TTS_ENGINE=kokoro, else edge-tts). None on failure."""
-    if os.environ.get('TTS_ENGINE', 'edge').lower() == 'kokoro':
+    """Synthesise each line: TTS_ENGINE=chatterbox | kokoro | edge (default), falling back in that order."""
+    engine = os.environ.get('TTS_ENGINE', 'edge').lower()
+    if engine == 'chatterbox':
+        try:
+            got = chatterbox_lines(lines)
+            if all(g is not None for g in got):
+                return got
+            # patch the lines Chatterbox missed with Kokoro so the voice stays close
+            try:
+                fill = kokoro_lines([l for l, g in zip(lines, got) if g is None])
+                it = iter(fill)
+                return [g if g is not None else next(it) for g in got]
+            except Exception:
+                if any(g is not None for g in got):
+                    return got
+        except Exception as e:
+            print(f'chatterbox unavailable ({str(e)[:80]}), trying kokoro', file=sys.stderr)
+        engine = 'kokoro'
+    if engine == 'kokoro':
         try:
             got = kokoro_lines(lines)
             if any(g is not None for g in got):
