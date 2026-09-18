@@ -56,7 +56,7 @@ env:
   YT_COOKIES: /tmp/yt_cookies.txt
   MEME_PYTHON: python3
   # quiz shorts made by this run, scheduled QUIZ_SPACING_HOURS apart from PUBLISH_HOUR_UTC
-  QUIZ_COUNT: "2"
+  QUIZ_COUNT: "1"
   QUIZ_SPACING_HOURS: "4"
   DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
 

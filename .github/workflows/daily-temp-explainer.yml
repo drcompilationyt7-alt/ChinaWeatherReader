@@ -51,6 +51,8 @@ env:
   # pause = no upload; meme = "<song> acapella" meme shorts (this channel's new
   # format, switch the default to 'meme' once the samples are approved);
   # quiz = World Quiz shorts; daily = the old clip re-upload pipeline
+  # The channel posts once a day from daily-create.yml; this second daily run
+  # stays paused unless a mode is dispatched by hand.
   CONTENT_MODE: ${{ github.event.inputs.mode || 'pause' }}
   WATERMARK: '@mr.worldwidewebster'
   YT_COOKIES: /tmp/yt_cookies.txt
