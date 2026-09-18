@@ -81,3 +81,5 @@ memory/sessions/
 memory/skills/
 youtube-credentials.json  
 youtube-credentials-*.json
+# Claude Code worktrees and local state
+.claude/
