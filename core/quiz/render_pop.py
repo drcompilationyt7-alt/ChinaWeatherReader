@@ -1012,10 +1012,12 @@ class PopRenderer(QuizRenderer):
         # AAC can push a sharp transient back over -1 dBTP: measure the upload and, if so, lower the audio a touch
         lufs_i, tp = sound.measure_file(out_path)
         if tp is not None and tp > -1.2:
+            # re-master under a lower peak ceiling rather than turning the whole mix down (keeps -14 LUFS)
+            wav2 = os.path.join(self.workdir, 'audio-tp.wav')
+            sound.write_wav(wav2, sound.master(audio, -14.0, tp_ceiling=max(-8.0, -3.0 - (tp + 1.5))))
             fixed = out_path + '.tp.mp4'
-            r = subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', out_path, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
-                                '-af', f'volume={-(tp + 1.5):.2f}dB', '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest',
-                                '-movflags', '+faststart', fixed])
+            r = subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', out_path, '-i', wav2, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
+                                '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest', '-movflags', '+faststart', fixed])
             if r.returncode == 0:
                 os.replace(fixed, out_path)
                 lufs_i, tp = sound.measure_file(out_path)
@@ -1097,7 +1099,7 @@ MEDIA_FILES = {'character': ('anime-characters.json', 'characters'), 'idol': ('k
                'vtuber': ('vtubers.json', 'vtubers')}
 MEDIA_TOPIC = {'idol': 'kpop', 'cityphoto': 'asia', 'vtuber': 'vtubers'}
 # clips can fail to download: spare candidates per level (hard shows fail most often: fewer uploads)
-SPARES = {'opening': [1, 1, 1], 'scene': [3, 3, 2, 3, 1], 'voice': [3, 2, 3, 1, 2, 1]}
+SPARES = {'opening': [2, 3, 2, 3, 1], 'scene': [3, 3, 2, 3, 1], 'voice': [3, 2, 3, 1, 2, 1]}
 RAMPS = {3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3]}
 DUEL_SKIP = {'bakemonogatari'}  # fan-service heavy even where AniList does not tag it
 # openings with fan-service shots, although AniList does not flag the show (the scene quiz plays video)

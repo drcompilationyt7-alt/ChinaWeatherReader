@@ -32,7 +32,7 @@ const MEDIA = {
   duel: ['anime-characters.json', 'characters'],
 };
 // clips can fail to download: spare candidates per level (hard shows fail most often: fewer uploads)
-const SPARES = { opening: [1, 1, 1], scene: [3, 3, 2, 3, 1], voice: [3, 2, 3, 1, 2, 1] };
+const SPARES = { opening: [2, 3, 2, 3, 1], scene: [3, 3, 2, 3, 1], voice: [3, 2, 3, 1, 2, 1] };
 const RAMPS = { 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] };
 // duel questions (mirrors core/quiz/render_pop.py): neutral ones fit any pair, the rest need both characters 16+
 const DUEL_NEUTRAL = ['Who would you trust to protect you?', 'Who wins in a fight?', "Who's the better teacher?",

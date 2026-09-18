@@ -19,6 +19,8 @@ import os
 import re
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 
 import numpy as np
@@ -26,6 +28,7 @@ from PIL import Image
 
 CACHE = os.environ.get('QUIZ_MEDIA_CACHE') or os.path.join(os.path.expanduser('~'), '.cache', 'quiz-media')
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+BOT_UA = 'AsianPopQuizRenderer/1.0 (quiz video renderer; python-urllib)'  # what Wikimedia's UA policy asks for
 SR = 44100
 
 
@@ -34,12 +37,24 @@ def _cache_path(key, ext):
     return os.path.join(CACHE, hashlib.sha1(key.encode()).hexdigest()[:20] + ext)
 
 
-def fetch_image(url):
+def fetch_image(url, tries=5):
     p = _cache_path(url, '.img')
     if not (os.path.exists(p) and os.path.getsize(p) > 1000):
-        req = urllib.request.Request(url, headers={'User-Agent': UA})
-        with urllib.request.urlopen(req, timeout=30) as r, open(p, 'wb') as f:
-            f.write(r.read())
+        # Wikimedia throttles browser-looking clients (HTTP 429): name the tool, and back off when told to
+        ua = BOT_UA if 'wikimedia.org' in url or 'wikipedia.org' in url else UA
+        for k in range(tries):
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': ua})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    data = r.read()
+                break
+            except urllib.error.HTTPError as e:
+                if e.code not in (429, 500, 502, 503, 504) or k == tries - 1:
+                    raise
+                wait = e.headers.get('Retry-After') if e.headers else None
+                time.sleep(min(30.0, float(wait)) if wait and str(wait).isdigit() else 2.0 * 2 ** k)
+        with open(p, 'wb') as f:
+            f.write(data)
     return Image.open(p).convert('RGBA')
 
 
