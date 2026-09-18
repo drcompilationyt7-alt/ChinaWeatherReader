@@ -1,11 +1,23 @@
 """
-Clip sourcing for the "<song> acapella" meme Shorts: searches YouTube for
-funny Asian (Douyin, Korean variety, Japanese TV) or anime clips, downloads a
-few, and cuts them into 0.6-2.5 s single-shot segments that the editor lays
-over the beat. Segments are ranked on sudden motion, faces, loud peaks in the
-original audio and YouTube's "most replayed" heatmap, and black, static,
-caption-covered or nude/swimwear frames are skipped. Clips keep the source
-aspect and have no audio.
+Clip sourcing for the "<song> acapella" meme Shorts. Each short has four
+tiles, one per acapella layer, and each tile loops one clip of a vibe:
+  vocals -> dance, bass -> cool, beatbox/drums -> fight, harmony -> cute.
+For every requested vibe this finds short, viral, Asia-related YouTube clips
+(Shorts first) of the chosen theme and cuts a 4-6 s continuous moment around
+its strongest hit: a punch for fight, the key move for dance, the reaction
+for cute. Each clip reports `peak` (its strongest hit) and `hits` (all motion
+impacts), so the editor can land them on the beat, plus a `hook` score for
+its first 0.5 s. Clips keep the source aspect, have no audio, and all come
+from different videos.
+
+Themes (every clip in a manifest matches it, all Asia-related):
+  funny     Asian pranks, fails, variety shows
+  cute      Asian kids, idols being cute, pandas / shibas / Douyin pets
+  anime     anime moments
+  kpop      idols, K-variety, K-drama
+  chinese   Douyin, Chinese variety, street moments, kung fu (Chinese queries too)
+  japanese  Japanese variety, pranks, street moments, pets (not anime)
+  mixed     a blend of all of them
 
 Install (GitHub ubuntu-latest; ffmpeg/ffprobe on PATH):
   python3 -m pip install yt-dlp yt-dlp-ejs opencv-python-headless numpy --break-system-packages
@@ -13,19 +25,20 @@ YouTube also needs a JS runtime: deno on PATH (yt-dlp's default), or node,
 which is used automatically when deno is missing. Two small ONNX models are
 fetched once into ~/.cache/clip_finder (override with CLIP_FINDER_CACHE):
 YuNet faces (230 KB) and NudeNet 320n (12 MB, exposed/swimwear body parts).
-Scene cuts come from the same decoding pass (a PySceneDetect-style HSV
-content detector), so scenedetect is not needed.
 
 Usage:
-  python core/meme/clip_finder.py --out-dir work/clips --count 16 \
-      [--theme asian|anime|mixed] [--used used.json] [--cookies cookies.txt] \
-      [--block blocked.json] [--sheet contact.png]
+  python core/meme/clip_finder.py --out-dir work/clips \
+      [--theme funny|cute|anime|kpop|chinese|japanese|mixed] \
+      [--vibes dance:2,cool:2,fight:2,cute:2] [--used used.json] \
+      [--cookies cookies.txt] [--block blocked.json] [--sheet contact.png]
 
-Writes <out-dir>/clip_NNN.mp4 and <out-dir>/clips.json, then prints one line:
-  {"ok": true, "count": N, "manifest": "...", "stats": {...}}
---used: ids as a list, {id: date}, or [{"id"/"source_id", "date"}]; entries
-dated older than --used-days are ignored. --block: channel ids, @handles,
-names or URLs as a list, or {"channels": [...]}.
+Writes <out-dir>/clip_NNN.mp4 and <out-dir>/clips.json (grouped by vibe in
+--vibes order, best first), then prints one line:
+  {"ok": true, "count": N, "manifest": "...", "vibes": {...}, "stats": {...}}
+ok is false when a vibe got no clip. --used: ids as a list, {id: date}, or
+[{"id"/"source_id", "date"}]; entries dated older than --used-days are
+ignored. --block: channel ids, @handles, names or URLs as a list, or
+{"channels": [...]}.
 """
 import argparse
 import concurrent.futures as cf
@@ -55,32 +68,65 @@ from datetime import datetime, timedelta, timezone
 import cv2
 import numpy as np
 
-QUERIES = {
-    'asian': [
-        'douyin funny moments', 'douyin funny videos {year}', 'chinese funny video',
-        'funny chinese kids', 'chinese mom funny', 'asian mom meme', 'asian parents be like',
-        'chinese grandma funny', 'funny china moments', 'douyin try not to laugh',
-        'chinese prank funny', 'douyin comedy skit', 'korean variety show funny',
-        'running man funny moments', 'knowing bros funny moments', 'korean game show funny',
-        'korean prank funny', 'the return of superman funny', '2 days 1 night funny moments',
-        'workman jang sung kyu funny', 'japanese prank show', 'japanese variety show funny',
-        'gaki no tsukai funny', 'japanese tv show funny moments', 'funny asian reactions',
-    ],
-    'anime': [
-        'anime funny moments', 'anime funny scenes', 'anime funny moments {year}',
-        'anime reaction meme', 'one piece funny moments', 'jjk funny moments',
-        'jujutsu kaisen funny moments', 'naruto funny moments', 'spy x family funny moments',
-        'demon slayer funny moments', 'haikyuu funny moments', 'gintama funny moments',
-        'mob psycho 100 funny moments', 'one punch man funny moments', 'saiki k funny moments',
-        'bocchi the rock funny moments', 'dragon ball super funny moments',
-        'sakamoto days funny moments', 'frieren funny moments', 'blue lock funny moments',
-        'kaiju no 8 funny moments', 'hunter x hunter funny moments', 'solo leveling funny moments',
-        'anime dub funny moments', 'anime out of context', 'attack on titan funny moments',
-        'pokemon anime funny moments', 'kaguya sama funny moments', 'wind breaker anime funny',
-    ],
+THEMES = ('funny', 'cute', 'anime', 'kpop', 'chinese', 'japanese')
+VIBES = ('dance', 'cool', 'fight', 'cute')
+# Queries per vibe and theme; the non-ASCII ones search in the local language.
+VIBE_QUERIES = {
+    'dance': {
+        'anime': ['anime dance scene', 'anime characters dancing shorts', 'anime ending dance scene',
+                  'anime dance shorts', 'アニメ ダンス シーン'],
+        'kpop': ['kpop dance practice', 'kpop dance challenge shorts', 'kpop idol dance shorts',
+                 'kpop relay dance', 'kpop random play dance idols', '아이돌 댄스 챌린지'],
+        'chinese': ['douyin dance challenge', 'chinese street dance shorts', 'chinese classical dance shorts',
+                    '抖音 手势舞', '中国舞 shorts'],
+        'japanese': ['japanese dance trend shorts', 'otagei dance', 'japanese street dance shorts',
+                     'japanese tiktok dance trend', 'ヲタ芸'],
+        'funny': ['funny dance asian variety show', 'running man dance funny', 'kpop idols funny dance',
+                  'japanese variety show dance funny'],
+        'cute': ['panda dancing shorts', 'shiba inu dancing', 'douyin cat dancing', 'kpop idol cute dance',
+                 'anime cute dance scene'],
+    },
+    'cool': {
+        'anime': ['anime aura moment shorts', 'anime badass entrance scene', 'anime cool walk scene',
+                  'anime aura scene shorts', 'アニメ かっこいい シーン'],
+        'kpop': ['kpop idol aura moments', 'kpop killing part stage', 'kpop idol stage presence shorts',
+                 'kpop idol charisma moment', '아이돌 카리스마 무대'],
+        'chinese': ['douyin cool skills shorts', 'chinese street skills shorts', 'chinese parkour shorts',
+                    'chinese kung fu master cool', '抖音 帅气'],
+        'japanese': ['japanese amazing skills shorts', 'japanese street performance shorts',
+                     'japanese samurai sword skills', 'japanese kendama skills', 'かっこいい 技 ショート'],
+        'funny': ['asian amazing skills shorts', 'asian street skills shorts', 'asian cool moments shorts',
+                  'korean street performance cool'],
+        'cute': ['shiba inu cool', 'japanese cat cool moment', 'panda cool moments', 'douyin cool dog'],
+    },
+    'fight': {
+        'anime': ['anime fight scene', 'anime best fight moments shorts', 'anime punch scene shorts',
+                  'jjk fight scene shorts', 'demon slayer fight scene shorts', 'one punch man serious punch',
+                  'アニメ 戦闘シーン'],
+        'kpop': ['kpop idol taekwondo', 'idol martial arts', 'kdrama action scene shorts',
+                 'korean action movie fight scene', 'korea taekwondo demonstration shorts'],
+        'chinese': ['kung fu shorts', 'chinese kung fu master shorts', 'wushu shorts', 'shaolin kung fu shorts',
+                    '功夫 shorts', '中国功夫', '武术 表演'],
+        'japanese': ['japanese karate shorts', 'kendo shorts', 'samurai fight scene', 'judo throw shorts',
+                     'japanese martial arts shorts', '空手 ショート'],
+        'funny': ['funny kung fu shorts', 'asian martial arts shorts', 'muay thai shorts',
+                  'sepak takraw kick shorts', 'taekwondo kick shorts'],
+        'cute': ['douyin cat fight funny', 'japanese cats play fighting', 'panda fight cute',
+                 'shiba inu play fight', 'panda cubs play fighting'],
+    },
+    'cute': {
+        'anime': ['cute anime moments shorts', 'anya cute moments', 'anime wholesome moments', 'chibi anime cute',
+                  'アニメ かわいい シーン'],
+        'kpop': ['kpop idol cute moments', 'kpop idol aegyo', 'kpop idols with puppies', 'kpop idol laughing cute',
+                 '아이돌 귀여운 순간'],
+        'chinese': ['douyin cute pet', 'chinese cute panda', 'douyin cute baby', '可爱 萌宠', '熊猫 可爱', '抖音 可爱'],
+        'japanese': ['japanese cute cat shorts', 'shiba inu cute', 'japanese kids cute', 'かわいい猫', '柴犬 かわいい'],
+        'funny': ['cute funny asian baby', 'cute pets douyin funny', 'variety show cute moments',
+                  'the return of superman cute'],
+        'cute': ['cute panda shorts', 'fu bao cute', 'douyin cute kitten', 'shiba inu puppy cute', 'cute baby panda',
+                 'かわいい猫', '熊猫 可爱'],
+    },
 }
-# Shorts hashtag feeds (asian only: the anime tags are mostly cosplay and edits)
-HASHTAGS = ['douyinfunny', 'chinesefunny', 'funnychinese', 'koreanvariety', 'japanesefunny']
 SP_SHORT = 'EgQQARgB'  # search filter: type=video, duration under 4 min
 
 # Sexual / suggestive terms: matched on title, description and tags (whole words).
@@ -102,6 +148,7 @@ NSFW_WORDS = [
     'cosplayer', 'egirl', 'e-girl', 'gyaru', 'maid', 'fancam', 'schoolgirl', 'school girl',
     'cute girl', 'cute girls', 'pretty girl', 'beautiful girl', 'beauty girl', 'chinese girl',
     'korean girl', 'japanese girl', 'asian girl', 'sexy jutsu', 'harem jutsu', 'oiroke',
+    'hot guy', 'hot guys', 'hot boy', 'hot boys', 'crotch', 'groin',
 ]
 NSFW_CHARS = [
     '性感', '美女', '福利', '擦边', '诱惑', '内衣', '比基尼', '泳装', '泳衣', '丝袜', '黑丝',
@@ -130,51 +177,139 @@ UNSAFE_SHOWS = [
     'akb48', 'nmb48', 'ske48', 'hkt48', 'ngt48', 'stu48', 'nogizaka', 'keyakizaka', 'sakurazaka',
     'hinatazaka',
 ]
+# Channel names run words together ("waifuonfire"), so these match anywhere in them
+CHANNEL_NSFW = ['hentai', 'ecchi', 'nsfw', 'waifu', 'sexy', 'lewd', 'oppai', 'bikini', 'nude', 'thicc',
+                'onlyfans', 'booty', 'gravure', 'fanservice']
 # Japanese game shows are a common source of sexualised "funny" clips
 RISKY_RE = re.compile(r'(?=.*\bjapan)(?=.*\bgame\s?shows?\b)')
-# South Asian / Arabic scripts in the title: off-theme for this channel
-OFFTHEME_RE = re.compile('[؀-ۿݐ-ݿऀ-෿]')
-# An "asian" candidate needs one of these in its title/tags/description/channel, or CJK text
-ASIA_WORDS = [
-    'china', 'chinese', 'douyin', 'korea', 'korean', 'kpop', 'k-pop', 'kdrama', 'k-drama',
-    'running man', 'knowing bros', 'kocowa', 'sbs', 'kbs', 'mbc', 'jtbc', 'tvn', 'japan',
-    'japanese', 'gaki', 'batsu', 'asian', 'asia', 'taiwan', 'hong kong', 'variety show',
-    '2 days 1 night', '1 night 2 days', 'workman', 'return of superman', 'tokyo', 'osaka', 'seoul',
-    'beijing', 'shanghai',
-]
-CJK_RE = re.compile('[぀-ヿ一-鿿가-힯]')
 # Off-brand for a meme channel: tragedy, violence, politics, racist framing.
 DARK_WORDS = [
     'dead body', 'killed', 'murder', 'accident', 'crash', 'funeral', 'tragic', 'tragedy',
     'suicide', 'abuse', 'abused', 'gore', 'bloody', 'injured', 'ccp', 'xi jinping', 'tiananmen',
     'uyghur', 'ching chong', 'chingchong', 'racist', 'racism',
 ]
-# Ranking hints from the title: comedy up, fights / drama down.
-FUNNY_WORDS = [
-    'funny', 'funniest', 'meme', 'memes', 'lol', 'lmao', 'comedy', 'comedic', 'hilarious', 'joke',
-    'jokes', 'prank', 'pranks', 'pranked', 'laugh', 'laughing', 'gag', 'troll', 'trolling', 'crack',
-    'out of context', 'chaos', 'chaotic', 'silly', 'dumb', 'idiot', 'idiots', 'derp', 'reaction',
-    'reactions', 'batsu', 'try not to laugh', 'being',
-]
-FUNNY_CHARS = ['😂', '🤣', '😭', '💀', '笑', '搞笑', '爆笑', '웃긴', 'ㅋㅋ', '面白', 'おもしろ']
-ACTION_WORDS = [
-    'fight', 'full fight', 'battle', 'vs', 'versus', 'epic', 'badass', 'sad', 'emotional',
-    'death', 'dies', 'died', 'episode', 'ep', 'revealed', 'amv',
-]
+# Extra caution where a vibe invites it. Dance: no kids, no body-focused moves.
+# Fight: staged / sport / animated fights only, no real violence.
+VIBE_RISK_WORDS = {
+    'dance': ['belly dance', 'pole dance', 'lap dance', 'body wave', 'body roll', 'hip roll', 'waist',
+              'sexy dance', 'hot dance', 'girl dance', 'girls dance', 'shake', 'shaking', 'kid', 'kids',
+              'child', 'children', 'little girl', 'little boy', 'baby', 'babies', 'student', 'students',
+              'school', 'teen', 'teens', 'teenage', '儿童', '小孩', '小学生', '中学生', '学生', '萌娃',
+              '腰', '子供', '女子高生', '女子中学生', '아기', '어린이', '학생', '초등학생', '중학생'],
+    'fight': ['street fight', 'street fighter', 'street fighters', 'real fight', 'real footage', 'thug', 'thugs',
+              'robber', 'robbery', 'brawl', 'school fight', 'bully', 'bullying', 'stabbing', 'knife',
+              'gun', 'guns', 'shooting', 'war', 'police', 'arrest', 'road rage', 'caught on camera', 'cctv',
+              'blood', 'mma', 'ufc', 'cage', 'bare knuckle', 'fight club', 'kids fight', 'kid fight',
+              'children fight', 'girls fight', 'girl fight'],
+}
+# Family uploads of school kids (sports days, class videos): not ours to repost outside the cute tile
+SCHOOL_KID_WORDS = ['sports day', 'elementary school', 'primary school', '運動会', '小学', '幼稚園', '초등', '小学生']
 # Not clip material.
 OFFTYPE_WORDS = [
     'asmr', 'mukbang', 'podcast', 'full episode', 'lyrics', 'official mv', 'music video',
     'trailer', 'karaoke', 'tutorial', 'recipe', 'live stream', 'livestream', 'amv', 'phonk',
     '#edit', 'edit audio', 'trollface', 'troll face', 'prank call', 'prank calls',
-    'dance', 'dancing', 'dancer', 'dancers', 'choreography', '舞蹈', '跳舞', '댄스', 'ダンス',
 ]
+DANCE_WORDS = ['dance', 'dancing', 'dancer', 'dancers', 'choreography', '舞蹈', '跳舞', '댄스', 'ダンス']
+
+# ---- Asia relevance: every source must show one of these (title, tags, channel, description)
+def _chars(*ranges, neg=False):
+    """Regex character class from (first, last) code points."""
+    return '[' + '^' * neg + ''.join(f'{chr(a)}-{chr(b)}' for a, b in ranges) + ']'
+
+
+ARABIC, INDIC = (0x0600, 0x06FF), (0x0900, 0x0DFF)
+KANA, HAN, HANGUL, THAI = (0x3040, 0x30FF), (0x4E00, 0x9FFF), (0xAC00, 0xD7AF), (0x0E00, 0x0E7F)
+OFFTHEME_RE = re.compile(_chars(ARABIC, (0x0750, 0x077F), INDIC))  # South Asian / Arabic scripts
+OFFTHEME_WORDS = [
+    'hindi', 'bangla', 'bengali', 'telugu', 'tamil', 'desi', 'urdu', 'punjabi', 'marathi',
+    'kannada', 'malayalam', 'bhojpuri', 'nepali', 'pakistani', 'indian',
+    'caine', 'carradine', 'kwai chang',     # the 1970s US "Kung Fu" series
+    # Western studios and cartoons that borrow Asian settings
+    'kung fu panda', 'dreamworks', 'disney', 'pixar', 'nickelodeon', 'cartoon network', 'spongebob',
+    'looney tunes', 'tom and jerry', 'minions', 'shrek', 'amazing digital circus', 'tadc', 'miraculous',
+    'doofenshmirtz', 'phineas', 'simpsons', 'family guy',
+]
+ANIME_WORDS = [
+    'anime', 'manga', 'donghua', 'アニメ', 'jjk', 'jujutsu kaisen', 'gojo', 'one piece', 'luffy',
+    'zoro', 'naruto', 'boruto', 'sasuke', 'spy x family', 'anya', 'frieren', 'haikyuu', 'bokuto',
+    'blue lock', 'bachira', 'demon slayer', 'kimetsu', 'tanjiro', 'zenitsu', 'inosuke',
+    'sakamoto days', 'bocchi', 'mob psycho', 'saiki', 'one punch man', 'saitama', 'pokemon',
+    'pikachu', 'kaiju no 8', 'dragon ball', 'goku', 'vegeta', 'hunter x hunter', 'killua',
+    'attack on titan', 'solo leveling', 'jinwoo', 'doraemon', 'ghibli', 'totoro', 'gintama',
+    'kaguya', 'oshi no ko', 'bleach', 'my hero academia', 'tokyo revengers', 'nichijou',
+    'wind breaker', 'kpop demon hunters', 'k-pop demon hunters', 'huntrix', 'jojo', 'kabaneri', 'magi',
+    'kuroko', 'tokyo ghoul', 'evangelion', 'gundam', 'sailor moon', 'death note', 'fullmetal', 'code geass',
+    'steins gate', 're zero', 'overlord', 'your name', 'kimi no na wa', 'suzume', 'violet evergarden',
+    'bungo stray dogs', 'blue exorcist', 'black clover', 'mashle', 'dr stone', 'apothecary diaries',
+    'dungeon meshi', 'lycoris recoil', 'shikanoko', 'zom 100', 'call of the night', 'shirobako', 'k-on',
+    'vinland saga', 'toradora', 'haruhi', 'ジョジョ', 'ワンピース', 'ナルト', '呪術', '鬼滅', '進撃', 'ハイキュー',
+    'ポケモン', 'ドラゴンボール', 'ガンダム', 'エヴァ', 'しかのこ', 'ブルーロック', 'スパイファミリー', '推しの子',
+    'フリーレン', 'ヒロアカ', '銀魂',
+]
+KPOP_WORDS = [
+    'kpop', 'k-pop', 'idol', 'idols', 'aegyo', 'bts', 'bangtan', 'blackpink', 'twice',
+    'stray kids', 'skz', 'seventeen', 'svt', 'newjeans', 'aespa', 'le sserafim', 'lesserafim',
+    'enhypen', 'txt', 'tomorrow x together', 'itzy', 'nct', 'exo', 'red velvet', 'bigbang',
+    'ateez', 'illit', 'babymonster', 'riize', 'zerobaseone', 'boynextdoor', 'mamamoo', 'shinee',
+    'got7', 'monsta x', 'super junior', 'snsd', 'nmixx', 'stayc', 'kiss of life', 'cortis',
+    'hearts2hearts', 'jungkook', 'taehyung', 'jimin', 'jennie', 'jisoo', 'wonyoung', 'hyunjin',
+    'bang chan', 'weekly idol', 'knowing bros', 'running man', 'korean variety',
+    'kpop demon hunters', 'k-pop demon hunters', 'huntrix', '아이돌', '케이팝', '방탄', '블랙핑크',
+    '트와이스', '세븐틴', '스트레이 키즈', '뉴진스', '에스파', '르세라핌', '엔하이픈', '런닝맨', '아는형님',
+    '주간아이돌', '놀면 뭐하니', '나혼자산다', 'kdrama', 'k-drama', 'korean drama', 'korean movie',
+    'korean action', 'taekwondo', '태권도',
+]
+CHINESE_WORDS = [
+    'china', 'chinese', 'douyin', 'bilibili', 'kuaishou', 'xiaohongshu', 'weibo', 'tiktok china',
+    'mandarin', 'cantonese', 'taiwan', 'taiwanese', 'hong kong', 'beijing', 'shanghai', 'shenzhen',
+    'chengdu', 'chongqing', 'guangzhou', 'cdrama', 'c-drama', 'cpop', 'c-pop', 'panda', 'pandas',
+    'kung fu', 'kungfu', 'wushu', 'shaolin', '抖音', '中国', '搞笑', '功夫', '武术',
+]
+JAPANESE_WORDS = [
+    'japan', 'japanese', 'nihon', 'nippon', 'tokyo', 'osaka', 'kyoto', 'hokkaido', 'okinawa',
+    'shibuya', 'gaki', 'batsu', 'owarai', 'jpop', 'j-pop', 'jdrama', 'shiba', 'shiba inu', 'akita',
+    'karate', 'kendo', 'judo', 'samurai', 'otagei', 'kendama', '日本', 'ドッキリ', 'おもしろ', '面白',
+    'ヲタ芸', '空手', '剣道',
+]
+ASIA_WORDS = ANIME_WORDS + KPOP_WORDS + CHINESE_WORDS + JAPANESE_WORDS + [
+    'asia', 'asian', 'japan', 'japanese', 'korea', 'korean', 'thailand', 'thai', 'vietnam',
+    'vietnamese', 'indonesia', 'indonesian', 'philippines', 'filipino', 'pinoy', 'malaysia',
+    'malaysian', 'singapore', 'mongolia', 'tokyo', 'osaka', 'kyoto', 'seoul', 'busan', 'bangkok',
+    'hanoi', 'saigon', 'manila', 'jakarta', 'bali', 'jpop', 'j-pop', 'jdrama', 'kdrama', 'k-drama',
+    'variety show', 'gaki', 'batsu', 'owarai', 'kocowa', 'sbs', 'kbs', 'mbc', 'jtbc', 'tvn',
+    '2 days 1 night', '1 night 2 days', 'workman', 'return of superman', 'shiba', 'shiba inu',
+    'akita', 'fu bao', 'muay thai', 'sepak takraw',
+]
+HAN_RE, KANA_RE, HANGUL_RE = re.compile(_chars(HAN)), re.compile(_chars(KANA)), re.compile(_chars(HANGUL))
+ASIAN_SCRIPT_RE = re.compile(_chars(KANA, HAN, HANGUL, THAI))
+
+# ---- Vibe match: dance / fight / cute sources must say so in title, tags or description.
+VIBE_WORDS = {
+    'dance': ['dance', 'dances', 'dancing', 'dancer', 'choreo', 'choreography', 'challenge', 'dance practice',
+              'dance cover', 'relay dance', 'random dance', 'otagei', '舞蹈', '跳舞', '舞', '手势舞', '댄스', '춤',
+              'ダンス', '踊', 'ヲタ芸'],
+    'cool': ['aura', 'cool', 'badass', 'swag', 'swagger', 'sigma', 'entrance', 'walk', 'charisma', 'killing part',
+             'stage presence', 'skills', 'skill', 'amazing', 'master', 'parkour', 'epic', 'legendary', 'goat',
+             '帅', '酷', 'かっこいい', '카리스마', '🔥', '🗿', '😎'],
+    'fight': ['fight', 'fights', 'fighting', 'battle', 'punch', 'kick', 'kung fu', 'kungfu', 'martial arts',
+              'karate', 'taekwondo', 'wushu', 'shaolin', 'judo', 'kendo', 'boxing', 'muay thai', 'action', 'vs',
+              'sword', 'samurai', 'takraw', '功夫', '武术', '打斗', '戦闘', '空手', '剣道', '태권도', '액션'],
+    'cute': ['cute', 'cutie', 'adorable', 'wholesome', 'aegyo', 'baby', 'puppy', 'puppies', 'kitten', 'kitty',
+             'cat', 'cats', 'panda', 'shiba', 'chibi', 'laugh', 'laughing', 'giggle', 'smile', 'smiling', 'sweet',
+             'healing', 'aww', '可爱', '萌', '熊猫', 'かわいい', '可愛い', '猫', '귀여', '힐링', '🥹', '🥰'],
+}
+VIBE_REQUIRED = ('dance', 'fight', 'cute')
+# Ranking: standalone moments over compilations and reaction videos.
+GENERIC_WORDS = ['compilation', 'full episode', 'episode', 'ep', 'full', 'reaction', 'reacts', 'review',
+                 'explained', 'ranking', 'top 10', 'top 5']
 
 FPS = 10            # analysis frame rate
 SAMPLE = 3          # text / face checks on every 3rd analysis frame
 NUDE_EVERY = 2      # nudity check on every 2nd sample (~1.7 per second)
 GRID = 24           # coverage grid for the text mask
 AN = 320            # analysis frame long side
-MIN_SEG, WIN = 0.6, 2.2
+MIN_SEG, TARGET_SEG, MAX_SEG = 4.0, 5.0, 6.0
 WHOLE_MAX = 240     # download whole videos up to this long, else only a section
 ANALYZE_MAX = 90    # seconds analysed per video, centred on the heatmap peak
 MODELS = {
@@ -189,13 +324,14 @@ NUDE_EXPOSED = [2, 3, 4, 6, 14]
 NUDE_G_COV, NUDE_BELLY, NUDE_BREAST_COV, NUDE_BUTT_COV = 0, 13, 16, 17
 
 T0 = time.time()
+NOW = datetime.now(timezone.utc)
 PATHS = {}
 HAAR = None
 _tls = threading.local()
 _lock = threading.Lock()
 _procs = set()
-STATS = {'searched': 0, 'rejected': Counter(), 'probed': 0, 'downloaded': 0, 'analyzed': 0,
-         'segments': 0, 'seg_rejected': Counter()}
+STATS = {'searched': 0, 'candidates': 0, 'probed': 0, 'kept': 0, 'downloaded': 0, 'analyzed': 0,
+         'segments': 0, 'rejected': Counter(), 'seg_rejected': Counter()}
 try:
     cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_ERROR)
 except AttributeError:
@@ -286,12 +422,9 @@ class YT:
                 os.remove(tmp)
 
 
-def search(yt, query, theme, n=20):
-    if query.startswith('#'):
-        url = f'https://www.youtube.com/hashtag/{query[1:]}/shorts'
-    else:
-        url = ('https://www.youtube.com/results?search_query=' + urllib.parse.quote_plus(query)
-               + '&sp=' + SP_SHORT)
+def search(yt, query, theme, vibe, n=25):
+    url = ('https://www.youtube.com/results?search_query=' + urllib.parse.quote_plus(query)
+           + '&sp=' + SP_SHORT)
     rc, out, err = yt(['--flat-playlist', '-J', '--playlist-end', str(n), url], 45)
     if rc != 0:
         log(f'search failed "{query}": {err_line(err)}')
@@ -309,7 +442,7 @@ def search(yt, query, theme, n=20):
                     'channel': e.get('channel') or e.get('uploader') or '',
                     'channel_id': e.get('channel_id') or '', 'uploader_id': e.get('uploader_id') or '',
                     'live': e.get('live_status') in ('is_live', 'is_upcoming'),
-                    'query': query, 'theme': theme})
+                    'query': query, 'theme': theme, 'vibe': vibe})
     return res
 
 
@@ -320,30 +453,88 @@ def _norm(text):
 
 
 def _word_re(words):
-    alt = '|'.join(sorted((r'[\s_\-]*'.join(map(re.escape, w.split())) for w in words), key=len, reverse=True))
-    return re.compile(r'(?<![a-z0-9])(?:' + alt + r')(?![a-z0-9])')
+    """Whole-word match; word edges only matter for ASCII letters/digits (not CJK)."""
+    def one(w):
+        body = r'[\s_\-]*'.join(map(re.escape, w.split()))
+        head = r'(?<![a-z0-9])' if w[0].isascii() and w[0].isalnum() else ''
+        tail = r'(?![a-z0-9])' if w[-1].isascii() and w[-1].isalnum() else ''
+        return head + body + tail
+    return re.compile('|'.join(one(w) for w in sorted(words, key=len, reverse=True)))
 
 
 NSFW_RE = _word_re(NSFW_WORDS)
 SHOW_RE = _word_re(UNSAFE_SHOWS)
 DARK_RE = _word_re(DARK_WORDS)
 OFFTYPE_RE = _word_re(OFFTYPE_WORDS)
-FUNNY_RE = _word_re(FUNNY_WORDS)
-ACTION_RE = _word_re(ACTION_WORDS)
+DANCE_RE = _word_re(DANCE_WORDS)
+VIBE_RISK_RE = {v: _word_re(w) for v, w in VIBE_RISK_WORDS.items()}
+SCHOOL_KID_RE = _word_re(SCHOOL_KID_WORDS)
+VIBE_RE = {v: _word_re(w) for v, w in VIBE_WORDS.items()}
+GENERIC_RE = _word_re(GENERIC_WORDS)
+OFFTHEME_WORD_RE = _word_re(OFFTHEME_WORDS)
+THEME_RE = {'anime': _word_re(ANIME_WORDS), 'kpop': _word_re(KPOP_WORDS), 'chinese': _word_re(CHINESE_WORDS),
+            'japanese': _word_re(JAPANESE_WORDS)}
 ASIA_RE = _word_re(ASIA_WORDS)
 
 
-def text_reason(*parts):
+def _text(*parts):
+    return _norm(' '.join(p if isinstance(p, str) else ' '.join(map(str, p or [])) for p in parts))
+
+
+def text_reason(*parts, vibe=None):
     """Reject reason for title/description/tags text, or None."""
-    t = _norm(' '.join(p if isinstance(p, str) else ' '.join(map(str, p or [])) for p in parts))
+    t = _text(*parts)
     flat = re.sub(r'[^a-z0-9+#]+', ' ', t)
     if NSFW_RE.search(t) or any(c in t for c in NSFW_CHARS) or SHOW_RE.search(flat) or RISKY_RE.search(flat):
         return 'nsfw'
-    if DARK_RE.search(t):
+    if vibe == 'dance' and VIBE_RISK_RE['dance'].search(re.sub(r'stray[\s_\-]*kids', 'skz', t)):
+        return 'nsfw'
+    if vibe in ('cool', 'fight') and SCHOOL_KID_RE.search(t):
+        return 'kids'
+    if DARK_RE.search(t) or (vibe == 'fight' and VIBE_RISK_RE['fight'].search(t)):
         return 'dark'
-    if OFFTYPE_RE.search(t):
+    if OFFTYPE_RE.search(t) or (vibe != 'dance' and DANCE_RE.search(t)):
         return 'offtype'
     return None
+
+
+def channel_nsfw(meta):
+    name = _norm(' '.join(str(meta.get(k) or '') for k in ('channel', 'uploader', 'uploader_id')))
+    return any(w in name for w in CHANNEL_NSFW)
+
+
+def offtheme(title, tags=()):
+    t = ' '.join([title or ''] + list(tags or []))
+    return bool(OFFTHEME_RE.search(t) or OFFTHEME_WORD_RE.search(_norm(t)))
+
+
+def relevant(meta, theme, query=''):
+    """True if title / tags / channel / description tie the video to the theme's part of Asia."""
+    head = ' '.join([meta.get('title') or '', meta.get('channel') or meta.get('uploader') or '']
+                    + list(meta.get('tags') or []))
+    text = _norm(head + ' ' + (meta.get('description') or ''))
+    # a native-script title from a theme-specific search belongs to it
+    q = _norm(query)
+    title = meta.get('title') or ''
+    if theme == 'anime' and ('anime' in q or 'アニメ' in q) and KANA_RE.search(title):
+        return True
+    if theme == 'kpop' and any(w in q for w in ('kpop', 'idol', '아이돌', '케이팝')) and HANGUL_RE.search(title):
+        return True
+
+    if theme == 'kpop':     # idols and K-variety, not just any Korean video
+        return bool(THEME_RE['kpop'].search(text))
+    if theme == 'chinese':  # Han characters without kana: Chinese rather than Japanese
+        return bool(THEME_RE['chinese'].search(text) or (HAN_RE.search(head) and not KANA_RE.search(head)))
+    if theme == 'anime':
+        return bool(THEME_RE['anime'].search(text))
+    if theme == 'japanese':  # live-action Japan; anime has its own theme
+        return bool((THEME_RE['japanese'].search(text) or KANA_RE.search(head))
+                    and not THEME_RE['anime'].search(_norm(head)))
+    return bool(ASIA_RE.search(text) or ASIAN_SCRIPT_RE.search(head))
+
+
+def vibe_match(meta, vibe):
+    return bool(VIBE_RE[vibe].search(_text(meta.get('title'), meta.get('tags'), meta.get('description'))))
 
 
 def _ids_from(obj, days):
@@ -427,16 +618,18 @@ def prefilter(e, used, block, min_views, max_dur):
         return 'blocked'
     if e['live']:
         return 'live'
-    if e['duration'] and (e['duration'] > max_dur or e['duration'] < 5):
+    if e['duration'] and (e['duration'] > max_dur or e['duration'] < MIN_SEG + 0.5):
         return 'length'
     if e['views'] is not None and e['views'] < min_views:
         return 'views'
-    if OFFTHEME_RE.search(e['title']):
+    if offtheme(e['title']):
         return 'offtheme'
-    return text_reason(e['title'], e['description'])
+    if channel_nsfw(e):
+        return 'nsfw'
+    return text_reason(e['title'], e['description'], vibe=e['vibe'])
 
 
-def probe(yt, e, used, block, max_dur, theme):
+def probe(yt, e, used, block, max_dur, min_views):
     """Full metadata for a candidate, or (None, reason)."""
     rc, out, err = yt(['-J', '--no-playlist', '--skip-download',
                        f'https://www.youtube.com/watch?v={e["id"]}'], 45)
@@ -458,20 +651,27 @@ def probe(yt, e, used, block, max_dur, theme):
     if is_blocked(info, block):
         return None, 'blocked'
     dur = info.get('duration') or 0
-    if dur > max_dur or dur < 5:
+    if dur > max_dur or dur < MIN_SEG + 0.5:
         return None, 'length'
+    if (info.get('view_count') or 0) < min_views:
+        return None, 'views'
     if min(info.get('width') or 999, info.get('height') or 999) < 320:
         return None, 'lowres'
-    if OFFTHEME_RE.search(info.get('title') or ''):
+    if offtheme(info.get('title'), info.get('tags')):
         return None, 'offtheme'
-    if theme == 'asian':
-        head = ' '.join([info.get('title') or '', info.get('channel') or ''] + list(info.get('tags') or []))
-        if not (CJK_RE.search(head) or ASIA_RE.search(_norm(head + ' ' + (info.get('description') or '')))):
-            return None, 'offtheme'
     why = text_reason(info.get('title'), info.get('description'), info.get('tags'),
-                      info.get('categories'))
+                      info.get('categories'), vibe=e['vibe'])
     if why:
         return None, why
+    if channel_nsfw(info):
+        return None, 'nsfw'
+    title = (info.get('title') or '')[:60]
+    if not relevant(info, e['theme'], e['query']):
+        log(f'not {e["theme"]}-related, skipped {info["id"]}: {title!r}')
+        return None, 'offtheme'
+    if e['vibe'] in VIBE_REQUIRED and not vibe_match(info, e['vibe']):
+        log(f'not {e["vibe"]}, skipped {info["id"]}: {title!r}')
+        return None, 'offvibe'
     return info, None
 
 
@@ -491,7 +691,7 @@ def download(yt, info, src_dir, timeout):
     vid = info['id']
     ij = os.path.join(src_dir, f'{vid}.info.json')
     with open(ij, 'w', encoding='utf-8') as f:
-        json.dump(info, f)
+        json.dump({k: v for k, v in info.items() if not k.startswith('_')}, f)
     args = ['-f', 'bv*+ba/b', '-S', 'res:720,vcodec:h264,acodec:aac', '--merge-output-format', 'mkv',
             '--no-part', '-o', os.path.join(src_dir, f'{vid}.%(ext)s')]
     offset = 0.0
@@ -514,6 +714,69 @@ def download(yt, info, src_dir, timeout):
             break
     log(f'download failed {vid}: {err_line(err)}')
     return None, 0.0
+
+
+def velocity(info):
+    """Views per day since upload."""
+    try:
+        up = datetime.strptime(info.get('upload_date') or '', '%Y%m%d').replace(tzinfo=timezone.utc)
+        days = max(1.0, (NOW - up).total_seconds() / 86400)
+    except ValueError:
+        days = 365.0
+    return (info.get('view_count') or 0) / days
+
+
+def popularity(info):
+    """0-1 from views and view velocity."""
+    v, vel = info.get('view_count') or 0, velocity(info)
+    return (0.6 * min(1, max(0, (math.log10(v + 1) - 4.5) / 3))
+            + 0.4 * min(1, max(0, (math.log10(vel + 1) - 2) / 3)))
+
+
+def length_bonus(dur):
+    """Standalone Shorts first, long compilations last."""
+    if not dur:
+        return 0.6
+    if 6 <= dur <= 40:
+        return 1.0
+    if dur <= 60:
+        return 0.7
+    return 0.0 if dur <= 120 else -0.7
+
+
+def title_bonus(meta, vibe):
+    t = _text(meta.get('title'))
+    b = 0.8 if VIBE_RE[vibe].search(t) else (-1.0 if vibe in VIBE_REQUIRED else 0.0)
+    return b - (0.4 if GENERIC_RE.search(t) else 0.0)
+
+
+def pre_rank(entries, rng):
+    """Order search results before probing: views, shortness, vibe words, Asia signal."""
+    def key(e):
+        sc = math.log10((e['views'] or 100000) + 1) + length_bonus(e['duration']) + title_bonus(e, e['vibe'])
+        if not relevant(e, e['theme'], e['query']):
+            sc -= 0.7   # tags may still carry it, so probe later rather than drop
+        return sc + rng.uniform(0, 0.5)
+    by_q = {}
+    for e in sorted(entries, key=key, reverse=True):
+        by_q.setdefault(e['query'], []).append(e)
+    queues = list(by_q.values())
+    rng.shuffle(queues)
+    out = []
+    while any(queues):
+        for q in queues:
+            if q:
+                out.append(q.pop(0))
+    return out
+
+
+def source_rank(info, rng):
+    """Order probed sources for download: views, view velocity, Shorts, vertical, vibe words."""
+    sc = math.log10((info.get('view_count') or 0) + 1) + 0.6 * math.log10(velocity(info) + 1)
+    sc += length_bonus(info.get('duration')) + title_bonus(info, info['_vibe'])
+    if (info.get('height') or 0) > (info.get('width') or 0):
+        sc += 0.5
+    return sc + rng.uniform(0, 0.3)
 
 
 # ---------------------------------------------------------------- analysis
@@ -669,8 +932,22 @@ def dhash(g):
     return int(''.join('1' if b else '0' for b in (s[:, 1:] > s[:, :-1]).flatten()), 2)
 
 
-def analyze(path, info, offset, theme):
-    """Score the usable single-shot windows of one downloaded video."""
+def heat_curve(info, t):
+    """Most-replayed value per analysis frame, or zeros when it is only a retention curve."""
+    hm, dur = info.get('heatmap') or [], info.get('duration') or 0
+    out = np.zeros(len(t))
+    rest = [m['value'] for m in hm if m.get('start_time', 0) >= 0.12 * dur]
+    # the start is always "most replayed"; Shorts only give a decaying curve with no bump
+    if dur < 8 or not rest or max(rest) < rest[0] + 0.1:
+        return out
+    for m in hm:
+        out[(t >= m['start_time']) & (t < m['end_time'])] = m.get('value', 0)
+    out[t < 0.12 * dur] = 0
+    return out / max(rest)
+
+
+def analyze(path, info, offset, theme, vibe):
+    """Up to 3 non-overlapping 4-6 s moments of one video for a vibe, best first."""
     mi = media_info(path)
     if not mi:
         return []
@@ -714,7 +991,7 @@ def analyze(path, info, offset, theme):
     proc.wait()
     _procs.discard(proc)
     n = len(thumbs)
-    if n < FPS * MIN_SEG * 2:
+    if n < FPS * MIN_SEG:
         return []
     s_nude = np.array([s['nude'] for s in samples])
     if s_nude.sum() >= 3:
@@ -726,12 +1003,8 @@ def analyze(path, info, offset, theme):
     cy0, cx0 = int(y0 * th), int(x0 * tw)
     cy1, cx1 = max(cy0 + 1, int(round(y1 * th))), max(cx0 + 1, int(round(x1 * tw)))
     crop = np.stack([t[cy0:cy1, cx0:cx1] for t in thumbs]).astype(np.float32)
-    luma = crop.mean((1, 2))
-    detail = crop.std((1, 2))
-    black = (crop < 20).mean((1, 2))  # small picture on a black canvas
     flat = crop.reshape(n, -1).astype(np.int16)
     modes = np.array([np.bincount(r, minlength=256).argmax() for r in flat])
-    uniform = (np.abs(flat - modes[:, None]) <= 8).mean(1)  # logo / title cards on a plain background
     mot = np.zeros(n)
     mot[1:] = np.abs(np.diff(crop, axis=0)).mean((1, 2)) / 255
     hd = np.array(hsv_d)
@@ -745,74 +1018,115 @@ def analyze(path, info, offset, theme):
     db = loudness(path, ss, span, n) if has_audio else np.full(n, -80.0)
     loud = np.clip(db - rolling_median(db, 61), 0, None)
     loud[db < -45] = 0
-
+    onset = np.zeros(n)
+    onset[2:] = np.maximum(0, db[2:] - db[:-2])
+    onset[db < -45] = 0
     t = offset + ss + np.arange(n) / FPS
-    heat = np.zeros(n)
-    if vdur >= 60 and info.get('heatmap'):
-        for m in info['heatmap']:
-            heat[(t >= m['start_time']) & (t < m['end_time'])] = m.get('value', 0)
-        heat[t < 0.05 * vdur] = 0
+    heat = heat_curve(info, t)
 
     gy0, gx0 = int(y0 * GRID), int(x0 * GRID)
     gy1, gx1 = max(gy0 + 1, int(round(y1 * GRID))), max(gx0 + 1, int(round(x1 * GRID)))
     carea = max(1e-6, (x1 - x0) * (y1 - y0))
-    s_text = np.array([float(s['text'][gy0:gy1, gx0:gx1].mean()) for s in samples])
     s_face = np.array([max([fw * fh / carea for _, _, fw, fh, _ in s['faces']] + [0.0]) for s in samples])
     s_face[s_face < 0.002] = 0
-    s_sharp = np.array([s['sharp'] for s in samples])
-    res_k = 0.8 if min(W, H) < 480 else 1.0
-
-    event = np.minimum(1, spike / 0.06) + np.minimum(1, loud / 9)
-    head = 5 if at_start else 2
-    tail = (25 if vdur > 20 else 10) if at_end else 2   # skip end cards
-    bounds = [0] + cuts + [n]
-    segs = []
-    win = int(WIN * FPS)
-    for si in range(len(bounds) - 1):
-        lo = bounds[si] + (2 if si else head)
-        hi = bounds[si + 1] - (1 if si + 1 < len(bounds) - 1 else tail)
-        if hi - lo < MIN_SEG * FPS:
-            _bump('seg_rejected', 'short')
-            continue
-        L = min(win, hi - lo)
-        scored, whys = [], Counter()
-        for st in range(lo, hi - L + 1, 3):
-            sc, why = _window(st, st + L, mot, spike, loud, heat, luma, detail, black, uniform,
-                              s_text, s_face, s_nude, s_sharp)
-            if why:
-                whys[why] += 1
-            else:
-                scored.append((sc * res_k, st))
-        if not scored:
+    # motion impacts (hits): sudden motion, helped by a loudness onset
+    hit = np.minimum(1, spike / 0.05) + 0.6 * np.minimum(1, onset / 6)
+    smooth = np.convolve(mot, np.ones(10) / 10, mode='same')
+    if vibe == 'dance':     # sustained movement, then the sharpest move
+        ev = np.minimum(1, smooth / 0.05) + 0.5 * np.minimum(1, spike / 0.05) + 0.5 * heat
+    elif vibe == 'fight':
+        ev = hit + heat
+    else:
+        ev = np.minimum(1, spike / 0.06) + np.minimum(1, loud / 9) + 1.2 * heat
+    c = {
+        'n': n, 'crop': crop, 'mot': mot, 'spike': spike, 'loud': loud, 'heat': heat, 'cuts': cuts,
+        'hit': hit, 'ev': np.convolve(ev, np.ones(5) / 5, mode='same'), 'vibe': vibe,
+        'luma': crop.mean((1, 2)), 'detail': crop.std((1, 2)),
+        'black': (crop < 20).mean((1, 2)),                                # small picture on a black canvas
+        'uniform': (np.abs(flat - modes[:, None]) <= 8).mean(1),          # plain text / logo cards
+        'text': np.array([float(s['text'][gy0:gy1, gx0:gx1].mean()) for s in samples]),
+        'face': s_face, 'nude': s_nude, 'sharp': np.array([s['sharp'] for s in samples]),
+        'lowres': min(W, H) < 480, 'vertical': H > W,
+    }
+    short = vdur <= 60
+    lo = 1 if short or not at_start else 5
+    hi = n - ((3 if short else 25) if at_end else 1)        # Shorts loop, long videos end on cards
+    if hi - lo < MIN_SEG * FPS:
+        _bump('seg_rejected', 'short')
+        return []
+    if hi - lo <= MAX_SEG * FPS:
+        wins = [(lo, hi)]                                    # the whole clip is the moment
+    else:
+        wins = [w for w in (_build(p, lo, hi, cuts) for p in _peaks(c['ev'], lo, hi)) if w]
+    scored, whys = [], Counter()
+    for s, e in wins:
+        sc, why, extra = _score(c, s, e)
+        if why:
+            whys[why] += 1
+        else:
+            scored.append((sc, s, e, extra))
+    if not scored:
+        if whys:
             _bump('seg_rejected', whys.most_common(1)[0][0])
+        return []
+    scored.sort(key=lambda r: -r[0])
+    pop = popularity(info)
+    segs = []
+    for sc, s, e, extra in scored:
+        if any(s < o['_e'] and o['_s'] < e for o in segs):
             continue
-        scored.sort(reverse=True)
-        picked = []
-        for sc, st in scored:
-            if len(picked) >= 1 + (hi - lo) // (6 * FPS):
-                break
-            if all(abs(st - p) >= L + FPS for _, p in picked):
-                picked.append((sc, st))
-        for sc, st in picked:
-            e = st + L
-            js = _samples(st, e, len(samples))
-            pk = st + int(np.argmax(event[st:e]))
-            segs.append({
-                'source_id': info['id'], 'source_channel': info.get('channel') or info.get('uploader') or '',
-                'source_channel_id': info.get('channel_id') or '',
-                'source_title': info.get('title') or '', 'theme': theme,
-                'start': round(float(t[st]), 2), 'end': round(float(t[st]) + L / FPS, 2),
-                'peak': round((pk - st) / FPS, 2), 'score': round(sc, 4),
-                'has_face': bool((s_face[js] >= 0.004).mean() >= 0.5),
-                'motion': round(float(min(1, mot[st + 1:e].mean() / 0.05)), 3),
-                'width': W - W % 2, 'height': H - H % 2,
-                'content_box': [round(v, 3) for v in (x0, y0, x1, y1)],
-                '_src': path, '_local': ss + st / FPS, '_dur': L / FPS,
-                '_hash': dhash(thumbs[(st + e) // 2][cy0:cy1, cx0:cx1]),
-            })
+        segs.append({
+            'source_id': info['id'], 'source_channel': info.get('channel') or info.get('uploader') or '',
+            'source_channel_id': info.get('channel_id') or '',
+            'source_title': info.get('title') or '', 'theme': theme, 'vibe': vibe,
+            'views': info.get('view_count') or 0,
+            'start': round(float(t[s]), 2), 'end': round(float(t[s]) + (e - s) / FPS, 2),
+            'duration': round((e - s) / FPS, 2), 'peak': extra['peak'], 'hits': extra['hits'],
+            'hook': round(float(extra['hook']), 3), 'score': round(float(0.65 * sc + 0.35 * pop), 4),
+            'loop': extra['loop'], 'cuts': extra['cuts'],
+            'has_face': extra['has_face'], 'has_caption': extra['has_caption'],
+            'motion': extra['motion'], 'width': W - W % 2, 'height': H - H % 2,
+            'content_box': [round(v, 3) for v in (x0, y0, x1, y1)],
+            '_src': path, '_local': ss + s / FPS, '_dur': (e - s) / FPS, '_s': s, '_e': e,
+            '_hash': dhash(thumbs[(s + e) // 2][cy0:cy1, cx0:cx1]),
+        })
+        if len(segs) == 3:
+            break
     _bump('analyzed')
     _bump('segments', n=len(segs))
     return segs
+
+
+def _peaks(evs, lo, hi, k=4, gap=40):
+    """Frames of the k strongest event peaks, at least gap frames apart."""
+    picks = []
+    for i in np.argsort(-evs[lo:hi]) + lo:
+        if all(abs(i - j) >= gap for j in picks):
+            picks.append(int(i))
+            if len(picks) == k:
+                break
+    return picks
+
+
+def _build(p, lo, hi, cuts):
+    """(start, end) frames of a 4-6 s moment around peak p: inside its shot when the shot is long
+    enough, else across shots starting and ending on cuts where possible."""
+    L, lmin = int(TARGET_SEG * FPS), int(MIN_SEG * FPS)
+    s0 = max([lo] + [k + 1 for k in cuts if k <= p])
+    e0 = min([hi] + [k for k in cuts if k > p])
+    if e0 - s0 >= lmin:
+        L = min(L, e0 - s0)
+        s = min(max(p - int(0.4 * L), s0), e0 - L)     # peak ~40 % in: setup, hit, follow-through
+        return s, s + L
+    s = p - 18
+    near = [k + 1 for k in cuts if abs(k + 1 - s) <= 6]
+    s = max(lo, near[0] if near else s)
+    e = min(hi, s + L)
+    ends = [k for k in cuts if abs(k - e) <= 6 and k - s >= lmin]
+    e = ends[-1] if ends else e
+    if e - s < lmin:
+        s = max(lo, e - lmin)
+    return (s, e) if e - s >= lmin else None
 
 
 def _samples(a, b, n):
@@ -820,75 +1134,142 @@ def _samples(a, b, n):
     return js or [min(n - 1, ((a + b) // 2) // SAMPLE)]
 
 
-def _window(a, b, mot, spike, loud, heat, luma, detail, black, uniform, s_text, s_face, s_nude, s_sharp):
-    """(score, reject_reason) for frames a..b of one shot."""
-    js = _samples(a, b, len(s_text))
-    near = range(max(0, js[0] - NUDE_EVERY * 2), min(len(s_nude), js[-1] + NUDE_EVERY * 2 + 1))
-    if s_nude[near].any():
-        return 0, 'nsfw'
-    lm, dt = luma[a:b].mean(), detail[a:b].mean()
-    m = mot[a + 1:b].mean() if b - a > 1 else 0.0
-    text, sharp = s_text[js].mean(), float(np.median(s_sharp[js]))
-    if lm < 25 or black[a:b].mean() > 0.45:
-        return 0, 'dark'
-    if dt < 12 or uniform[a:b].max() > 0.8:
-        return 0, 'blank'
-    if m < 0.004 and spike[a:b].max() < 0.01:
-        return 0, 'static'
-    if text > 0.10:
-        return 0, 'text'
+def _local_peaks(x, floor, gap=3):
+    """Indices of local maxima above floor, strongest first, at least gap apart."""
+    idx = [i for i in range(1, len(x) - 1) if x[i] >= floor and x[i] >= x[i - 1] and x[i] >= x[i + 1]]
+    out = []
+    for i in sorted(idx, key=lambda i: -x[i]):
+        if all(abs(i - j) >= gap for j in out):
+            out.append(i)
+    return sorted(out)
+
+
+def _score(c, s, e):
+    """(score, reject_reason, extras) of window frames s..e for the vibe in c."""
+    js = _samples(s, e, len(c['text']))
+    near = range(max(0, js[0] - NUDE_EVERY * 2), min(len(c['nude']), js[-1] + NUDE_EVERY * 2 + 1))
+    if c['nude'][near].any():
+        return 0, 'nsfw', None
+    lm, dt = c['luma'][s:e].mean(), c['detail'][s:e].mean()
+    m = c['mot'][s + 1:e].mean()
+    text, sharp = c['text'][js], float(np.median(c['sharp'][js]))
+    if lm < 25 or c['black'][s:e].mean() > 0.7:
+        return 0, 'dark', None
+    if dt < 12 or (c['uniform'][s:e] > 0.8).mean() > 0.2:
+        return 0, 'blank', None
+    if m < 0.004 and c['spike'][s:e].max() < 0.01:
+        return 0, 'static', None
+    if (c['crop'][s:e].std(0) < 2.5).mean() > 0.6:   # chat screenshots / stills with a small moving inset
+        return 0, 'still', None
+    if text.mean() > 0.45:          # captions are welcome, text cards are not
+        return 0, 'text', None
     if sharp < 40:
-        return 0, 'blurry'
+        return 0, 'blurry', None
+    vibe = c['vibe']
+    hit = c['hit'][s:e]
+    hits = _local_peaks(hit, max(0.5, 0.4 * hit.max()))
+    key = hit if vibe in ('fight', 'dance') else c['ev'][s:e]
+    p = int(np.argmax(key))
+    face = c['face'][js]
+    nf = float(np.minimum(1, face / 0.03).mean())
+    hj = _samples(s, s + 6, len(c['face']))
+    hook = (0.4 * min(1, c['mot'][s + 1:s + 5].mean() / 0.04)
+            + 0.35 * min(1, c['face'][hj].max() / 0.03)
+            + 0.25 * min(1, c['detail'][s:s + 5].mean() / 60))
+    loop = 1 - min(1, float(np.abs(c['crop'][s] - c['crop'][e - 1]).mean()) / 40)
+    punch = min(1, c['ev'][s + p] / 1.2)
     nm = min(1, m / 0.05)
-    ns = min(1, spike[a:b].max() / 0.06)
-    nl = min(1, loud[a:b].max() / 9)
-    nf = float(np.minimum(1, s_face[js] / 0.02).mean())
-    nh = float(heat[a:b].mean())
-    sc = 0.22 * nm + 0.2 * ns + 0.23 * nl + 0.2 * nf + 0.15 * nh
-    sc *= 1 - max(0, text - 0.03) * 4
-    if lm < 45:
-        sc *= 0.7
-    if dt < 25:
-        sc *= 0.7
+    n_cuts = sum(1 for k in c['cuts'] if s < k < e)
+    if vibe == 'dance':
+        steady = float((c['mot'][s + 1:e] > 0.012).mean())
+        sc = (0.3 * nm + 0.25 * steady + 0.1 * min(1, len(hits) / 6) + 0.15 * hook + 0.1 * loop
+              + 0.1 * min(1, dt / 60))
+        sc *= (1.0, 0.8, 0.65)[min(n_cuts, 2)]          # dance reads best as one continuous shot
+    elif vibe == 'fight':
+        sc = (0.3 * min(1, hit.max()) + 0.2 * min(1, len(hits) / 4) + 0.15 * nm + 0.15 * hook
+              + 0.1 * min(1, c['loud'][s:e].max() / 9) + 0.1 * float(c['heat'][s:e].max()))
+        sc *= 1.0 if n_cuts <= 3 else 0.8 if n_cuts <= 6 else 0.6
+    elif vibe == 'cool':
+        sc = (0.25 * punch + 0.2 * min(1, dt / 60) + 0.15 * nf + 0.15 * hook + 0.1 * loop + 0.15 * nm)
+        sc *= (1.0, 0.9, 0.8, 0.7)[min(n_cuts, 3)]
+    else:  # cute
+        sc = (0.25 * nf + 0.2 * punch + 0.15 * hook + 0.15 * min(1, lm / 120) + 0.1 * loop
+              + 0.15 * min(1, m / 0.03))
+        sc *= (1.0, 0.9, 0.8, 0.7)[min(n_cuts, 3)]
     if sharp < 150:
-        sc *= 0.7
-    if b - a < 1.2 * FPS:
+        sc *= 0.8
+    if lm < 45 and vibe != 'cool':
+        sc *= 0.8
+    if c['lowres']:
         sc *= 0.85
-    return sc, None
+    has_caption = bool(np.median(text) >= 0.02)
+    sc += 0.05 * c['vertical'] + 0.02 * has_caption
+    return sc, None, {
+        'hook': hook, 'peak': round(p / FPS, 2), 'hits': [round(h / FPS, 2) for h in hits][:12],
+        'loop': round(loop, 3), 'cuts': n_cuts, 'has_caption': has_caption,
+        'has_face': bool((face >= 0.004).mean() >= 0.5), 'motion': round(float(nm), 3)}
 
 
 # ---------------------------------------------------------------- output
 
-def select(segs, count, per_source):
-    segs = sorted(segs, key=lambda s: -s['score'])
-    chosen = []
+TITLE_JUNK_RE = re.compile(_chars((0x30, 0x39), (0x61, 0x7A), KANA, HAN, HANGUL, neg=True) + '+')
 
-    def ok(s, cap):
-        if sum(c['source_id'] == s['source_id'] for c in chosen) >= cap:
+
+def _title_key(s):
+    return TITLE_JUNK_RE.sub('', _norm(s['source_title']))[:30]
+
+
+def _series(title):
+    """"Chibi Titans 2" and "Chibi Titans 4" are one series: treat them like one channel."""
+    return ' '.join(_norm(title).split()[:2])
+
+
+def spread_channels(infos):
+    """Keep rank order but put each channel's / series' first video ahead of its repeats."""
+    seen, first, rest = set(), [], []
+    for i in infos:
+        keys = {i.get('channel_id') or i.get('channel') or i['id'], _series(i.get('title'))}
+        (rest if keys & seen else first).append(i)
+        seen |= keys
+    return first + rest
+
+
+def select(segs, wanted, mixed=False):
+    """Per vibe, the best segments; every clip from a different video, other channels (and for
+    mixed, other themes) first. Returns clips grouped by vibe in `wanted` order, best first."""
+    pools = {v: sorted([s for s in segs if s['vibe'] == v], key=lambda s: -s['score']) for v in wanted}
+    chosen = {v: [] for v in wanted}
+    picked = []
+
+    def series(s):
+        return _series(s['source_title'])
+
+    def ok(s, same_channel_ok, new_theme):
+        chan = s['source_channel_id'] or s['source_channel']
+        if new_theme and any(c['theme'] == s['theme'] for c in picked):
             return False
-        for c in chosen:
-            if bin(c['_hash'] ^ s['_hash']).count('1') <= 10:
+        for c in picked:
+            if c['source_id'] == s['source_id']:
                 return False
-            if c['source_id'] == s['source_id'] and s['start'] < c['end'] + 0.3 and c['start'] < s['end'] + 0.3:
+            if not same_channel_ok and ((chan and (c['source_channel_id'] or c['source_channel']) == chan)
+                                        or series(c) == series(s)):
                 return False
+            if bin(c['_hash'] ^ s['_hash']).count('1') <= 10 or (_title_key(c) and _title_key(c) == _title_key(s)):
+                return False    # the same viral clip re-uploaded by another channel
         return True
 
-    for cap in (per_source, per_source * 3):
-        for s in segs:
-            if len(chosen) >= count:
-                break
-            if s not in chosen and ok(s, cap):
-                chosen.append(s)
-    # interleave sources so neighbouring clips differ
-    by_src = {}
-    for s in chosen:
-        by_src.setdefault(s['source_id'], []).append(s)
-    out, queues = [], list(by_src.values())
-    while any(queues):
-        for q in queues:
-            if q:
-                out.append(q.pop(0))
-    return out
+    passes = ((False, True), (False, False), (True, False)) if mixed else ((False, False), (True, False))
+    for rnd in range(max(wanted.values(), default=0)):
+        for v, k in wanted.items():
+            if len(chosen[v]) > rnd or len(chosen[v]) >= k:
+                continue
+            for same_channel_ok, new_theme in passes:
+                s = next((s for s in pools[v] if s not in picked and ok(s, same_channel_ok, new_theme)), None)
+                if s:
+                    chosen[v].append(s)
+                    picked.append(s)
+                    break
+    return [s for v in wanted for s in chosen[v]]
 
 
 def cut(seg, out_path):
@@ -903,8 +1284,7 @@ def contact_sheet(clips, path, cell=240, cols=4):
     rows = -(-len(clips) // cols)
     sheet = np.full((rows * (cell + 34), cols * cell, 3), 24, np.uint8)
     for k, c in enumerate(clips):
-        mid = (c['end'] - c['start']) / 2
-        _, out, _ = run(['ffmpeg', '-v', 'error', '-ss', f'{mid:.2f}', '-i', c['path'], '-frames:v', '1',
+        _, out, _ = run(['ffmpeg', '-v', 'error', '-ss', f'{c["peak"]:.2f}', '-i', c['path'], '-frames:v', '1',
                          '-f', 'image2pipe', '-vcodec', 'png', '-'], 30)
         img = cv2.imdecode(np.frombuffer(out, np.uint8), cv2.IMREAD_COLOR) if out else None
         r, q = divmod(k, cols)
@@ -914,47 +1294,40 @@ def contact_sheet(clips, path, cell=240, cols=4):
             img = cv2.resize(img, (max(1, int(img.shape[1] * s)), max(1, int(img.shape[0] * s))))
             y, x = oy + (cell - img.shape[0]) // 2, ox + (cell - img.shape[1]) // 2
             sheet[y:y + img.shape[0], x:x + img.shape[1]] = img
-        label = f'{k} {c["theme"][:5]} s{c["score"]:.2f} {"F" if c["has_face"] else "-"} {c["end"] - c["start"]:.1f}s'
-        cv2.putText(sheet, label, (ox + 4, oy + cell + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (230, 230, 230), 1, cv2.LINE_AA)
-        cv2.putText(sheet, c['source_id'], (ox + 4, oy + cell + 29), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (150, 200, 255), 1, cv2.LINE_AA)
+        label = (f'{k} {c["vibe"]} {c["duration"]:.1f}s pk{c["peak"]:.1f} {len(c["hits"])}hits '
+                 f'h{c["hook"]:.2f} s{c["score"]:.2f}')
+        cv2.putText(sheet, label, (ox + 4, oy + cell + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.37, (230, 230, 230), 1, cv2.LINE_AA)
+        cv2.putText(sheet, f'{c["source_id"]} {c["theme"]}', (ox + 4, oy + cell + 29), cv2.FONT_HERSHEY_SIMPLEX, 0.37,
+                    (150, 200, 255), 1, cv2.LINE_AA)
     cv2.imwrite(path, sheet)
 
 
 # ---------------------------------------------------------------- main
 
-def pick_queries(theme, rng):
-    year = datetime.now().year
-    n = {'asian': 4, 'anime': 3} if theme == 'mixed' else {theme: 6}
-    out = [(q.format(year=year), g) for g, k in n.items() for q in rng.sample(QUERIES[g], k)]
-    if theme != 'anime':
-        out.append(('#' + rng.choice(HASHTAGS), 'asian'))
+def parse_vibes(spec):
+    out = {}
+    for part in spec.split(','):
+        name, _, k = part.strip().partition(':')
+        if name not in VIBES:
+            raise SystemExit(f'unknown vibe {name!r}; use {", ".join(VIBES)}')
+        out[name] = max(1, int(k or 1))
     return out
 
 
-def rank(entries, rng):
-    """Most-viewed first per query (with jitter), round-robin across queries."""
-    by_q = {}
-    for e in entries:
-        pop = math.log10((e['views'] or 30000) + 1) + rng.uniform(0, 0.8)
-        if e['duration'] and e['duration'] > 180:
-            pop -= 0.5
-        title = _norm(e['title'])
-        if FUNNY_RE.search(title) or any(c in title for c in FUNNY_CHARS):
-            pop += 0.7
-        if ACTION_RE.search(title):
-            pop -= 1.0
-        if e['theme'] == 'asian':  # probe checks tags too; explicit signals go first
-            head = f'{e["title"]} {e["channel"]} {e["description"]}'
-            if not (CJK_RE.search(head) or ASIA_RE.search(_norm(head))):
-                pop -= 1.0
-        by_q.setdefault(e['query'], []).append((pop, e))
-    queues = [[e for _, e in sorted(v, key=lambda p: -p[0])] for v in by_q.values()]
-    rng.shuffle(queues)
+def pick_queries(theme, vibes, rng):
+    """(query, theme, vibe): 4 per vibe (5 for mixed), at least one in the local language when there is one."""
     out = []
-    while any(queues):
-        for q in queues:
-            if q:
-                out.append(q.pop(0))
+    for v in vibes:
+        if theme == 'mixed':
+            pool = [(q, th) for th in THEMES for q in VIBE_QUERIES[v][th]]
+            k = 5
+        else:
+            pool = [(q, theme) for q in VIBE_QUERIES[v][theme]]
+            k = 4
+        native = [x for x in pool if not x[0].isascii()]
+        pick = rng.sample(native, min(1, len(native)))
+        pick += rng.sample([x for x in pool if x not in pick], min(k - len(pick), len(pool) - len(pick)))
+        out += [(q, th, v) for q, th in pick]
     return out
 
 
@@ -964,24 +1337,28 @@ def main():
             s.reconfigure(encoding='utf-8', errors='replace')
         except AttributeError:
             pass
-    ap = argparse.ArgumentParser(description='Find and cut funny Asian / anime clips for meme Shorts')
+    ap = argparse.ArgumentParser(description='Find and cut short Asia-related clips per vibe for meme Shorts')
     ap.add_argument('--out-dir', required=True)
-    ap.add_argument('--count', type=int, default=16)
-    ap.add_argument('--theme', choices=['asian', 'anime', 'mixed'], default='mixed')
+    ap.add_argument('--theme', choices=list(THEMES) + ['mixed', 'asian'], default='mixed',
+                    help='asian is an old name for funny')
+    ap.add_argument('--vibes', default='dance:2,cool:2,fight:2,cute:2', help='vibe:count pairs')
     ap.add_argument('--used', help='JSON of video ids used recently')
     ap.add_argument('--used-days', type=int, default=30)
     ap.add_argument('--block', help='JSON of blocked channels')
     ap.add_argument('--cookies', help='Netscape cookies file for YouTube')
     ap.add_argument('--js-runtimes', default='auto', help='yt-dlp JS runtime: auto, deno, node, bun, none')
     ap.add_argument('--budget', type=float, default=330, help='total seconds')
-    ap.add_argument('--per-source', type=int, default=3)
-    ap.add_argument('--min-views', type=int, default=20000)
+    ap.add_argument('--min-views', type=int, default=30000)
     ap.add_argument('--max-duration', type=int, default=240)
     ap.add_argument('--workers', type=int, default=3)
     ap.add_argument('--seed', type=int, help='query rotation seed (default: day number)')
     ap.add_argument('--sheet', help='also write a contact sheet PNG of the clips')
     ap.add_argument('--keep-src', action='store_true', help='keep downloaded sources')
+    ap.add_argument('--count', type=int, help=argparse.SUPPRESS)       # old options, ignored
+    ap.add_argument('--per-source', type=int, help=argparse.SUPPRESS)
     a = ap.parse_args()
+    theme = 'funny' if a.theme == 'asian' else a.theme
+    wanted = parse_vibes(a.vibes)
 
     def left():
         return a.budget - (time.time() - T0)
@@ -996,59 +1373,86 @@ def main():
     used = _ids_from(load_json(a.used), a.used_days) if a.used else set()
     block = load_block(a.block)
     yt = YT(a.cookies, a.js_runtimes)
-    log(f'theme={a.theme} count={a.count} used={len(used)} blocked={len(block)} '
+    log(f'theme={theme} vibes={wanted} used={len(used)} blocked={len(block)} '
         f'cookies={"yes" if yt.cookies else "no"}')
     models = threading.Thread(target=load_models, daemon=True)
     models.start()
 
-    # 1. search
-    queries = pick_queries(a.theme, rng)
+    # 1. search every vibe at once
+    queries = pick_queries(theme, wanted, rng)
     found, seen = [], set()
     with cf.ThreadPoolExecutor(4) as ex:
-        for res in ex.map(lambda qt: search(yt, qt[0], qt[1]), queries):
+        for res in ex.map(lambda q: search(yt, *q), queries):
             for e in res:
                 if e['id'] not in seen:
                     seen.add(e['id'])
                     found.append(e)
     STATS['searched'] = len(found)
-    cands = []
+    cands = {v: [] for v in wanted}
     for e in found:
         why = prefilter(e, used, block, a.min_views, a.max_duration)
         if why:
             _bump('rejected', why)
         else:
-            cands.append(e)
-    cands = rank(cands, rng)
-    log(f'{len(queries)} searches -> {len(found)} results, {len(cands)} pass the prefilter')
-    models.join(timeout=60)
+            cands[e['vibe']].append(e)
+    cands = {v: pre_rank(c, rng) for v, c in cands.items()}
+    STATS['candidates'] = sum(len(c) for c in cands.values())
+    log(f'{len(queries)} searches -> {len(found)} results; candidates '
+        + ', '.join(f'{v} {len(c)}' for v, c in cands.items()))
 
-    # 2. probe, download, analyze in parallel until there are enough sources
-    need = max(4, min(12, -(-a.count // a.per_source) + 2))
-    stop = threading.Event()
-    segs, good = [], []
-
-    def work(e):
-        # keep ~30 s at the end for cutting and the manifest
-        if stop.is_set() or left() < 60:
+    # 2. probe the best candidates of each vibe, then rank by views, velocity, shortness
+    def do_probe(e):
+        if left() < 90:
             return None
-        info, why = probe(yt, e, used, block, a.max_duration, e['theme'])
+        info, why = probe(yt, e, used, block, a.max_duration, a.min_views)
         _bump('probed')
         if not info:
             _bump('rejected', why)
             return None
-        if stop.is_set() or left() < 50:
+        info['_theme'], info['_vibe'] = e['theme'], e['vibe']
+        return info
+
+    batch = [e for v, k in wanted.items() for e in cands[v][:k * 4 + 6]]
+    infos = {v: [] for v in wanted}
+    with cf.ThreadPoolExecutor(6) as ex:
+        for info in ex.map(do_probe, batch):
+            if info:
+                infos[info['_vibe']].append(info)
+    for v in infos:
+        infos[v] = spread_channels(sorted(infos[v], key=lambda i: -source_rank(i, rng)))
+    STATS['kept'] = sum(len(i) for i in infos.values())
+    log(f'{STATS["probed"]} probed; kept ' + ', '.join(f'{v} {len(i)}' for v, i in infos.items()))
+    models.join(timeout=60)
+
+    # 3. download + analyse, vibes interleaved so the time budget is shared
+    need = {v: k + 1 for v, k in wanted.items()}      # sources with a usable moment
+    good = Counter()
+    stop = threading.Event()
+    segs = []
+
+    def work(info):
+        v = info['_vibe']
+        # keep ~30 s at the end for cutting and the manifest
+        if stop.is_set() or good[v] >= need[v] or left() < 50:
             return None
         path, offset = download(yt, info, src_dir, min(60, left() - 35))
         if not path:
             _bump('rejected', 'download')
             return None
         _bump('downloaded')
-        found_segs = analyze(path, info, offset, e['theme'])
-        log(f'{info["id"]} {info.get("title", "")[:50]!r}: {len(found_segs)} segments')
+        found_segs = analyze(path, info, offset, info['_theme'], v)
+        log(f'{v}: {info["id"]} {info.get("title", "")[:45]!r} ({info.get("duration")}s, '
+            f'{info.get("view_count")} views): {len(found_segs)} moments')
         return found_segs
 
+    order = []
+    queues = [list(infos[v]) for v in wanted]
+    while any(queues):
+        for q in queues:
+            if q:
+                order.append(q.pop(0))
     ex = cf.ThreadPoolExecutor(a.workers)
-    futs = [ex.submit(work, e) for e in cands[:need * 3]]
+    futs = [ex.submit(work, i) for i in order]
     try:
         for fut in cf.as_completed(futs, timeout=max(10, left() - 30)):
             try:
@@ -1058,8 +1462,8 @@ def main():
                 continue
             if r:
                 segs += r
-                good.append(r[0]['source_id'])
-            if len(good) >= need and len(segs) >= a.count * 2:
+                good[r[0]['vibe']] += 1
+            if all(good[v] >= need[v] for v in wanted):
                 break
     except cf.TimeoutError:
         log('time budget reached, using what is ready')
@@ -1070,8 +1474,8 @@ def main():
     for p in list(_procs):
         kill_tree(p)
 
-    # 3. select and cut
-    chosen = select(segs, a.count, a.per_source)
+    # 4. select and cut
+    chosen = select(segs, wanted, mixed=theme == 'mixed')
     clips = []
 
     def do_cut(k_s):
@@ -1093,10 +1497,12 @@ def main():
         shutil.rmtree(src_dir, ignore_errors=True)
     shutil.rmtree(yt.workdir, ignore_errors=True)
 
+    per_vibe = {v: sum(1 for c in clips if c['vibe'] == v) for v in wanted}
     stats = dict(STATS, rejected=dict(STATS['rejected']), seg_rejected=dict(STATS['seg_rejected']),
                  sources=len(set(c['source_id'] for c in clips)), seconds=round(time.time() - T0, 1))
     log(f'stats {json.dumps(stats)}')
-    print(json.dumps({'ok': bool(clips), 'count': len(clips), 'manifest': manifest, 'stats': stats}))
+    print(json.dumps({'ok': bool(clips) and all(per_vibe.values()), 'count': len(clips), 'manifest': manifest,
+                      'vibes': per_vibe, 'stats': stats}))
     sys.stdout.flush()
     os._exit(0 if clips else 1)  # don't wait on straggling worker threads
 

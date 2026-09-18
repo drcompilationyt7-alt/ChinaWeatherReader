@@ -1,8 +1,20 @@
 # Meme clip finder
 
-`clip_finder.py` sources the funny clips for the "<song> acapella" Shorts.
-It searches YouTube, downloads a few videos, and cuts 0.6-2.5 s single-shot
-segments with no audio, keeping the source aspect ratio.
+`clip_finder.py` sources the clips for the "<song> acapella" Shorts. A short
+has 4 tiles, one per acapella layer. Each tile loops one clip of a vibe:
+
+| layer | vibe | what it looks for |
+|---|---|---|
+| vocals | `dance` | K-pop dance practice, anime dance scenes, Douyin / Japanese dance trends |
+| bass | `cool` | aura, walk-ins, stage presence, street skills |
+| beatbox / drums | `fight` | anime fights, kung fu, karate, taekwondo, K-drama action (staged or sport only) |
+| harmony | `cute` | idols being cute, pets, pandas, cute anime moments |
+
+Every clip is a 4-6 s continuous moment (one shot when possible) around its
+strongest hit. All clips come from different videos, and other channels are
+preferred. Everything is Asia-related and matches `--theme`:
+
+`funny`, `cute`, `anime`, `kpop`, `chinese`, `japanese` (not anime), or `mixed`.
 
 ## Workflow step (ubuntu-latest)
 
@@ -11,42 +23,60 @@ segments with no audio, keeping the source aspect ratio.
 - run: curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH
 - uses: actions/cache@v4          # optional: skips the 12 MB model download
   with: { path: ~/.cache/clip_finder, key: clip-finder-models-v1 }
-- run: python3 core/meme/clip_finder.py --out-dir work/clips --count 16 --theme mixed
+- run: python3 core/meme/clip_finder.py --out-dir work/clips --theme kpop
+       --vibes dance:2,cool:2,fight:2,cute:2
        --used memory/meme-used.json --block memory/meme-blocked.json --cookies /tmp/yt_cookies.txt
 ```
 
-The last stdout line is `{"ok": true, "count": N, "manifest": ".../clips.json", "stats": {...}}`.
-The exit code is 1 when no clips were produced. It stops starting new work
-around `--budget` seconds (default 330, so under 6 min on 2 cores).
+The last stdout line is
+`{"ok": true, "count": 8, "manifest": ".../clips.json", "vibes": {"dance": 2, ...}, "stats": {...}}`.
+`ok` is false when some vibe got no clip. The exit code is 1 only when there
+are no clips at all. It stops starting new work around `--budget` seconds
+(default 330, which is under 6 min on 2 cores). The budget is shared across
+the vibes.
 
 ## clips.json
 
-A list in playback order (sources interleaved). Each entry has:
+A list grouped by vibe in `--vibes` order, best first within each vibe (the
+first clip of a vibe is the one to use, the second is the spare).
 
 | field | meaning |
 |---|---|
-| `path` | absolute path of the mp4 (h264, no audio) |
-| `source_id`, `source_channel`, `source_channel_id`, `source_title` | where it came from; record `source_id` in `--used` and `source_channel_id` in `--block` |
-| `start`, `end` | seconds in the source video |
-| `peak` | seconds from the clip start to its biggest motion/loudness hit: put the beat drop here |
-| `score` | 0-1 ranking score (motion, spike, loud peak, face, most-replayed heatmap) |
-| `has_face`, `motion` | face in most sampled frames; mean motion 0-1 |
-| `width`, `height` | clip size (source aspect, at most 720p) |
-| `content_box` | `[x0, y0, x1, y1]` (0-1) active picture, without static black or flat bars |
-| `theme` | `asian` or `anime` |
+| `path` | absolute path of the mp4 (h264, no audio, source aspect, at most 720p) |
+| `vibe`, `theme` | which tile it is for, and the theme it matched |
+| `duration` | 4.0-6.0 s |
+| `peak` | seconds into the clip of its strongest hit: the punch for fight, the sharpest move for dance, the reaction for cute and cool. Put it on a beat. |
+| `hits` | seconds of every motion impact in the clip (up to 12), for beat alignment |
+| `hook` | 0-1: strength of the first 0.5 s (motion, face, contrast) |
+| `score` | 0-1 ranking: vibe fit, hook, loop seam, views and view velocity |
+| `loop` | 0-1: how closely the last frame matches the first (seamless loop) |
+| `cuts` | shot changes inside the clip (0 is one continuous shot) |
+| `has_face`, `has_caption`, `motion` | face in most frames, burned-in caption text, mean motion 0-1 |
+| `width`, `height`, `content_box` | clip size; `[x0, y0, x1, y1]` (0-1) picture area without static bars |
+| `source_id`, `source_channel`, `source_channel_id`, `source_title`, `views`, `start`, `end` | where it came from. Record `source_id` in `--used` and `source_channel_id` in `--block` |
 
 ## What gets skipped
 
-- Title, description or tag hits for sexual or suggestive words (EN/ZH/JA/KO),
-  known fanservice shows, Japanese game shows and idol groups, tragedy and
-  politics, and non-clip formats (ASMR, prank calls, dance, AMVs).
-- Age-restricted, live, over 4 min, under 20k views, used ids and blocked
-  channels. Off-theme: South Asian or Arabic titles, and `asian` candidates
-  with no China/Korea/Japan signal (keyword or CJK text in title, tags,
-  channel or description).
-- Frames: NudeNet flags exposed or swimwear-level body parts. 3 or more hits
-  drop the whole source, and windows near a single hit are dropped. It is tuned
-  to over-reject.
-- Segments that are dark or mostly black canvas, blank, logo or title cards
-  (plain background), static, covered in captions (more than 10 % text),
-  blurry, or shorter than 0.6 s.
+- **Safety (unchanged from v1):**
+  - Sexual or suggestive words in title, tags or description (EN/ZH/JA/KO).
+  - Fanservice shows, Japanese game shows and idol groups.
+  - Age-restricted videos.
+  - A NudeNet check on frames: 3 or more hits drop the source, and windows near a single hit are dropped. It is tuned to over-reject.
+- **Stricter additions in v2:**
+  - "hot guy(s)/boy(s)", "crotch" and "groin" in titles.
+  - Channel names are screened for NSFW terms.
+- **Stricter per vibe:**
+  - `dance` rejects kids, students, waist or body-roll moves and "sexy/hot dance".
+  - `fight` rejects street fights ("real footage"), bullying, MMA/UFC, weapons and blood.
+  - `cool` and `fight` also reject family uploads of school kids (sports days, elementary school).
+- **Relevance:**
+  - Dance, fight and cute sources must say so in their title, tags or description.
+  - Every source must show a theme signal: show, group or place names, CJK text, or a native-script title from a theme search (kana for anime, Hangul for kpop).
+  - Off-theme: South Asian or Arabic titles, and Western studios and cartoons (Kung Fu Panda, Disney, DreamWorks, SpongeBob...).
+- **Other:** used ids, blocked channels, and videos that are live, over 4 min, under 30k views or low resolution.
+- **Windows:**
+  - dark or mostly black canvas
+  - logo and title cards
+  - still screenshots with a small moving inset
+  - text covering more than 45 % of the frame (captions are fine)
+  - blurry
