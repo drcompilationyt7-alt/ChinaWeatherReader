@@ -26,18 +26,14 @@ const ROOT = path.join(__dirname, '..');
 const MEM = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory');
 const HISTORY_FILE = path.join(MEM, 'meme-history.json');
 
-// name shown in the title -> YouTube search for the original song
+// name shown in the title -> YouTube search for the original song. Asia only:
+// anime / J-pop, K-pop and Asian viral songs (the channel's niche).
 const SONGS = [
-  // viral meme sounds
-  { name: 'waka waka', query: 'Shakira Waka Waka official audio', theme: 'mixed' },
-  { name: 'pokemon theme', query: 'Pokemon theme song original English', theme: 'anime' },
-  { name: 'linggang guli guli', query: 'linggang guli guli guli wacha song', theme: 'asian' },
-  { name: 'driving in my car', query: 'Madness Driving in My Car official audio', theme: 'mixed' },
-  { name: 'fairly oddparents', query: 'Fairly OddParents theme song', theme: 'mixed' },
-  // anime openings
+  // anime openings / J-pop
   { name: 'idol', query: 'YOASOBI Idol official audio', theme: 'anime' },
   { name: 'bling bang bang born', query: 'Creepy Nuts Bling-Bang-Bang-Born official audio', theme: 'anime' },
   { name: 'otonoke', query: 'Creepy Nuts Otonoke official audio', theme: 'anime' },
+  { name: 'kick back', query: 'Kenshi Yonezu KICK BACK official audio', theme: 'anime' },
   { name: 'unravel', query: 'TK from Ling tosite sigure unravel official audio', theme: 'anime' },
   { name: 'gurenge', query: 'LiSA Gurenge official audio', theme: 'anime' },
   { name: 'blue bird', query: 'Ikimonogakari Blue Bird official audio', theme: 'anime' },
@@ -45,15 +41,31 @@ const SONGS = [
   { name: 'specialz', query: 'King Gnu SPECIALZ official audio', theme: 'anime' },
   { name: 'cha la head cha la', query: 'Cha-La Head-Cha-La Dragon Ball Z opening', theme: 'anime' },
   { name: 'we are', query: 'One Piece opening We Are Hiroshi Kitadani', theme: 'anime' },
+  { name: 'pokemon theme', query: 'Pokemon theme song original English', theme: 'anime' },
+  { name: 'night dancer', query: 'imase NIGHT DANCER official audio', theme: 'jpop' },
+  { name: 'shinunoga e-wa', query: 'Fujii Kaze Shinunoga E-Wa official audio', theme: 'jpop' },
   // K-pop
-  { name: 'apt', query: 'ROSE Bruno Mars APT official audio', theme: 'asian' },
-  { name: 'gangnam style', query: 'PSY Gangnam Style official audio', theme: 'asian' },
-  { name: 'golden', query: 'HUNTR/X Golden KPop Demon Hunters official audio', theme: 'asian' },
-  { name: 'soda pop', query: 'Saja Boys Soda Pop KPop Demon Hunters official audio', theme: 'asian' },
-  { name: 'super shy', query: 'NewJeans Super Shy official audio', theme: 'asian' },
-  { name: 'magnetic', query: 'ILLIT Magnetic official audio', theme: 'asian' },
-  { name: 'supernova', query: 'aespa Supernova official audio', theme: 'asian' },
+  { name: 'apt', query: 'ROSE Bruno Mars APT official audio', theme: 'kpop' },
+  { name: 'gangnam style', query: 'PSY Gangnam Style official audio', theme: 'kpop' },
+  { name: 'golden', query: 'HUNTR/X Golden KPop Demon Hunters official audio', theme: 'kpop' },
+  { name: 'soda pop', query: 'Saja Boys Soda Pop KPop Demon Hunters official audio', theme: 'kpop' },
+  { name: 'super shy', query: 'NewJeans Super Shy official audio', theme: 'kpop' },
+  { name: 'hype boy', query: 'NewJeans Hype Boy official audio', theme: 'kpop' },
+  { name: 'magnetic', query: 'ILLIT Magnetic official audio', theme: 'kpop' },
+  { name: 'supernova', query: 'aespa Supernova official audio', theme: 'kpop' },
+  { name: 'how you like that', query: 'BLACKPINK How You Like That official audio', theme: 'kpop' },
+  { name: 'dynamite', query: 'BTS Dynamite official audio', theme: 'kpop' },
+  // Chinese
+  { name: 'yi jian mei', query: 'Fei Yu-ching Yi Jian Mei 一剪梅 费玉清', theme: 'chinese' },
+  { name: 'mo li hua', query: '茉莉花 Mo Li Hua Jasmine Flower Chinese folk song', theme: 'chinese' },
+  { name: 'gong xi gong xi', query: '恭喜恭喜 Gong Xi Gong Xi Chinese New Year song', theme: 'chinese' },
+  // Asian viral
+  { name: 'linggang guli guli', query: 'linggang guli guli guli wacha song', theme: 'asian' },
 ];
+// one theme per short, chosen from the song: every clip in it follows that theme
+const CLIP_THEMES = {
+  anime: ['anime'], jpop: ['anime', 'japanese'], kpop: ['kpop'], chinese: ['chinese'], asian: ['funny', 'cute'],
+};
 const EMOJI_PAIRS = ['😭,✌️', '🥹,🥹', '😭,😭', '✌️,😭', '😳,😳', '🥲,🥲', '🗣️,🗣️', '😭,🥀'];
 
 function loadHistory() {
@@ -109,8 +121,10 @@ async function trendingSongs(youtube) {
       const name = m[1].trim().replace(/\s+/g, ' ');
       counts.set(name, (counts.get(name) || 0) + 1);
     }
-    return [...counts.entries()].filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8)
-      .map(([name, c]) => ({ name, query: `${name} song`, theme: 'trend', trendCount: c }));
+    // the channel is Asia-only: trends just boost songs already on our Asian list
+    return [...counts.entries()].filter(([name, c]) => c >= 2 && SONGS.some(x => x.name === name))
+      .sort((a, b) => b[1] - a[1]).slice(0, 8)
+      .map(([name, c]) => ({ ...SONGS.find(x => x.name === name), trendCount: c }));
   } catch (e) {
     logger.warn(`Trend search failed: ${(e.message || '').slice(0, 80)}`);
     return [];
@@ -132,8 +146,10 @@ function pickSong(stats, history, trends) {
   const recent = new Set(history.uploads.slice(-4).map(u => u.song));
   const prior = done.length ? done.reduce((a, u) => a + u.stat.lscore, 0) / done.length : 0;
   let best = null;
+  const seen = new Set();
   for (const s of [...trends, ...SONGS]) {
-    if (recent.has(s.name)) continue;
+    if (recent.has(s.name) || seen.has(s.name)) continue;
+    seen.add(s.name);
     const mine = done.filter(u => u.song === s.name).map(u => u.stat.lscore);
     const n = mine.length;
     const mean = n ? (mine.reduce((a, b) => a + b, 0) + prior) / (n + 1) : prior + (s.trendCount ? 0.4 : 0);
@@ -186,7 +202,9 @@ async function runMemePipeline(opts = {}) {
 
   const trends = await trendingSongs(opts.youtube);
   if (trends.length) logger.info(`Trending acapellas: ${trends.map(t => `${t.name} (${t.trendCount})`).join(', ')}`);
-  const song = process.env.MEME_SONG ? { name: process.env.MEME_SONG, query: `${process.env.MEME_SONG} song`, theme: 'mixed', why: 'forced' } : pickSong(stats, history, trends);
+  const forced = process.env.MEME_SONG && (SONGS.find(x => x.name === process.env.MEME_SONG.toLowerCase())
+    || { name: process.env.MEME_SONG, query: `${process.env.MEME_SONG} song`, theme: 'mixed' });
+  const song = forced ? { ...forced, why: 'forced' } : pickSong(stats, history, trends);
   logger.info(`Song: ${song.name} (${song.why})`);
 
   const t0 = Date.now();
@@ -204,7 +222,9 @@ async function runMemePipeline(opts = {}) {
   const blocked = blockedChannels(stats, history);
   fs.writeFileSync(blockFile, JSON.stringify(blocked));
   if (blocked.length) logger.info(`Skipping ${blocked.length} clip channels that got videos blocked`);
-  const theme = song.theme === 'anime' ? 'anime' : song.theme === 'asian' ? 'asian' : 'mixed';
+  const options = CLIP_THEMES[song.theme] || ['funny', 'cute'];
+  const theme = options[Math.floor(Math.random() * options.length)];
+  logger.info(`Clip theme: ${theme}`);
   const finderArgs = [path.join(ROOT, 'core', 'meme', 'clip_finder.py'), '--out-dir', path.join(work, 'clips'), '--count', '16',
     '--theme', theme, '--used', usedFile, '--block', blockFile];
   if (process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES)) finderArgs.push('--cookies', process.env.YT_COOKIES);
@@ -221,17 +241,19 @@ async function runMemePipeline(opts = {}) {
   logger.success(`Rendered ${res.duration}s, ${res.cuts} cuts in ${Math.round((Date.now() - t0) / 1000)}s`);
 
   const title = `${caption} ${emoji.split(',').join('')}`;
-  const tagsByTheme = { anime: ['anime', 'anime memes', 'anime funny moments'], asian: ['kpop', 'asian memes', 'douyin'], mixed: ['memes', 'funny'] };
+  const tagsByTheme = { anime: ['anime', 'anime memes', 'anime funny moments'], kpop: ['kpop', 'kpop memes', 'kpop funny moments'],
+    japanese: ['japan', 'japanese memes', 'funny japan'], chinese: ['china', 'douyin', 'chinese memes'],
+    funny: ['asian memes', 'funny asian', 'douyin'], cute: ['cute', 'cute asian', 'cute animals'] };
   return {
     success: true,
     videoPath: res.path,
     title,
     description: `${caption} but it's layer by layer ${emoji.split(',')[0]}\n\nwhich layer hit the hardest? 👇\n\n`
-      + (res.channelsUsed.length ? `clips: ${res.channelsUsed.map(c => (c.startsWith('@') ? c : `@${c}`)).join(' ')}\n` : '')
-      + `#acapella #${theme === 'anime' ? 'anime' : 'memes'} #shorts`,
+      + (res.channelsUsed.length ? `clips from: ${res.channelsUsed.map(c => c.trim()).join(', ')}\n` : '')
+      + `#acapella #${{ anime: 'anime', kpop: 'kpop', japanese: 'japan', chinese: 'douyin', cute: 'cute' }[theme] || 'asianmemes'} #shorts`,
     tags: ['acapella', `${song.name} acapella`, song.name, 'memes', 'funny', ...(tagsByTheme[theme] || [])],
     categoryId: '23',
-    playlistTitle: theme === 'anime' ? 'anime acapella' : 'meme acapella',
+    playlistTitle: `${theme} acapella`,
     comment: 'which layer was the best? 😭',
     country: 'Global',
     category: `meme-${theme}`,
