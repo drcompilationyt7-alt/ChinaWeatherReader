@@ -52,10 +52,10 @@ env:
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
-  # narrator: Chatterbox "deep hype" (falls back to Kokoro am_onyx -2 st, then edge-tts)
+  # narrator: Chatterbox, calm and cool (falls back to Kokoro am_onyx, then edge-tts)
   TTS_ENGINE: chatterbox
-  CHATTERBOX_EXAGGERATION: "0.7"
-  CHATTERBOX_CFG: "0.3"
+  CHATTERBOX_EXAGGERATION: "0.3"
+  CHATTERBOX_CFG: "0.6"
   KOKORO_VOICE: am_onyx
   KOKORO_PITCH: "-2"
   KOKORO_DIR: /home/runner/.cache/kokoro

@@ -214,7 +214,8 @@ def chatterbox_lines(lines):
     """
     Most natural narration: Chatterbox (Resemble AI, MIT) on CPU, voiced after
     assets/voice/narrator-ref.wav (a synthetic Kokoro voice, not a real person).
-    CHATTERBOX_EXAGGERATION / CHATTERBOX_CFG tune the delivery ("deep hype" = 0.7 / 0.3).
+    CHATTERBOX_EXAGGERATION / CHATTERBOX_CFG tune the delivery: 0.3 / 0.6 is calm and cool;
+    0.7 / 0.3 ("hype") sounds menacing and garbles short lines.
     """
     global _chatterbox
     import torch
@@ -223,8 +224,8 @@ def chatterbox_lines(lines):
     if _chatterbox is None:
         _chatterbox = ChatterboxTTS.from_pretrained(device='cpu')
     ref = os.environ.get('CHATTERBOX_REF') or VOICE_REF
-    exag = float(os.environ.get('CHATTERBOX_EXAGGERATION', '0.7'))
-    cfg = float(os.environ.get('CHATTERBOX_CFG', '0.3'))
+    exag = float(os.environ.get('CHATTERBOX_EXAGGERATION', '0.3'))
+    cfg = float(os.environ.get('CHATTERBOX_CFG', '0.6'))
     out = []
     for text in lines:
         try:
