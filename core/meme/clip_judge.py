@@ -7,7 +7,8 @@ three frames of every clip with text prompts and scores
   vibe     does the clip match its layer (dance / cool / fight / cute)?
   theme    anime vs real footage, as the short's theme needs
   quality  not blurry, not a black screen, not a text card, not static
-  safety   no revealing or suggestive frames (on top of the NudeNet filter)
+  safety   no revealing or suggestive frames (on top of the NudeNet filter),
+           no blood or gore
 
 Clips that fail are dropped from the manifest (kept in `rejected`); the rest
 are re-ranked inside their vibe. The manifest is rewritten in place.
@@ -46,6 +47,10 @@ UNSAFE = ['a person in a bikini or swimsuit', 'a person in underwear', 'a sexual
           'a person showing a lot of bare skin']
 SAFE = ['a person in normal clothes', 'an ordinary everyday scene', 'a fully clothed anime character',
         'a comedy costume or sparkly stage outfit', 'a singer performing on stage']
+GORE = ['blood splattered everywhere', 'a bloody wound', 'a person covered in blood', 'a dead body',
+        'a stabbing with blood', 'gore and violence']
+CLEAN = ['a clean action scene without blood', 'an ordinary scene', 'a person smiling', 'a dance performance',
+         'an anime fight with energy effects']
 ANIME_THEMES = {'anime'}
 REAL_THEMES = {'kpop', 'chinese', 'japanese', 'funny', 'cute'}
 
@@ -79,7 +84,7 @@ class Judge:
         self.model = AutoModel.from_pretrained(MODEL).eval()
         self.proc = AutoProcessor.from_pretrained(MODEL)
         self.texts = []
-        for group in list(VIBES.values()) + [BAD, GOOD, ANIME, REAL, UNSAFE, SAFE]:
+        for group in list(VIBES.values()) + [BAD, GOOD, ANIME, REAL, UNSAFE, SAFE, GORE, CLEAN]:
             self.texts += group
         with torch.inference_mode():
             t = self.proc(text=self.texts, padding='max_length', return_tensors='pt')
@@ -112,12 +117,15 @@ class Judge:
         quality = self.softmax_groups(sc, {'good': GOOD, 'bad': BAD})['good']
         anime = self.softmax_groups(sc, {'anime': ANIME, 'real': REAL})['anime']
         unsafe = self.softmax_groups(sc, {'unsafe': UNSAFE, 'safe': SAFE})['unsafe']
+        gore = self.softmax_groups(sc, {'gore': GORE, 'clean': CLEAN})['gore']
         want = clip.get('vibe')
         res = {'vibe': {k: round(v, 3) for k, v in vibe.items()}, 'quality': round(quality, 3),
-               'anime': round(anime, 3), 'unsafe': round(unsafe, 3)}
+               'anime': round(anime, 3), 'unsafe': round(unsafe, 3), 'gore': round(gore, 3)}
         reasons = []
         if unsafe > 0.7:
             reasons.append('suggestive')
+        if gore > 0.6:  # clean fights score 0-0.35
+            reasons.append('gore')
         if quality < 0.35:
             reasons.append('low quality / text / static')
         if theme in ANIME_THEMES and anime < 0.4:
@@ -155,7 +163,7 @@ def main():
     rejected = [c for c in clips if not c['judge'].get('ok')]
     # safety rejections never come back; the others can refill the minimum
     if len(kept) < args.min_keep:
-        spare = sorted([c for c in rejected if 'suggestive' not in c['judge'].get('reason', '')],
+        spare = sorted([c for c in rejected if not any(r in c['judge'].get('reason', '') for r in ('suggestive', 'gore'))],
                        key=lambda c: -c['judge'].get('score', 0))
         kept += spare[:args.min_keep - len(kept)]
         rejected = [c for c in rejected if c not in kept]
