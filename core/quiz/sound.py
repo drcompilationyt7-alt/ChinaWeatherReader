@@ -325,10 +325,104 @@ def tts_lines(lines, voices=None, rate='+8%', workdir=None):
     return out
 
 
-def mix(duration, events, voice, music_track=None, music_gain=0.55):
+def _k_weight_gain(n, sr=SR):
+    """|H(f)| of the ITU-R BS.1770 K-weighting (high shelf + high pass) at the rfft bins of an n-sample signal."""
+    f = np.fft.rfftfreq(n, 1 / sr)
+    z = np.exp(-2j * np.pi * f / sr)
+
+    def biquad(b, a):
+        return np.abs((b[0] + b[1] * z + b[2] * z ** 2) / (a[0] + a[1] * z + a[2] * z ** 2))
+    # stage 1: high shelf (+4 dB above ~1.7 kHz)
+    A, w0, q = 10 ** (3.999843853973347 / 40), 2 * np.pi * 1681.974450955533 / sr, 0.7071752369554196
+    al, c = np.sin(w0) / (2 * q), np.cos(w0)
+    shelf = biquad((A * ((A + 1) + (A - 1) * c + 2 * np.sqrt(A) * al), -2 * A * ((A - 1) + (A + 1) * c),
+                    A * ((A + 1) + (A - 1) * c - 2 * np.sqrt(A) * al)),
+                   ((A + 1) - (A - 1) * c + 2 * np.sqrt(A) * al, 2 * ((A - 1) - (A + 1) * c), (A + 1) - (A - 1) * c - 2 * np.sqrt(A) * al))
+    # stage 2: high pass at ~38 Hz
+    w0, q = 2 * np.pi * 38.13547087602444 / sr, 0.5003270373238773
+    al, c = np.sin(w0) / (2 * q), np.cos(w0)
+    hp = biquad(((1 + c) / 2, -(1 + c), (1 + c) / 2), (1 + al, -2 * c, 1 - al))
+    return shelf * hp
+
+
+def lufs(x, sr=SR):
+    """Integrated loudness of a mono signal (BS.1770: K-weighting, 400 ms blocks, -70 LUFS and -10 LU gates)."""
+    x = np.asarray(x, dtype=np.float64)
+    if len(x) < int(0.4 * sr):
+        return -70.0
+    y = np.fft.irfft(np.fft.rfft(x) * _k_weight_gain(len(x), sr), n=len(x))  # zero-phase: loudness only needs power
+    blk, hop = int(0.4 * sr), int(0.1 * sr)
+    c = np.concatenate([[0.0], np.cumsum(y ** 2)])
+    ms = (c[blk::hop][:(len(y) - blk) // hop + 1] - c[:-blk:hop][:(len(y) - blk) // hop + 1]) / blk
+    ld = -0.691 + 10 * np.log10(np.maximum(ms, 1e-12))
+    ms = ms[ld > -70]
+    if not len(ms):
+        return -70.0
+    rel = -0.691 + 10 * np.log10(ms.mean()) - 10
+    ms = ms[-0.691 + 10 * np.log10(ms) > rel]
+    return float(-0.691 + 10 * np.log10(ms.mean()))
+
+
+def _soft_limit(x, peak, knee=0.6):
+    """Leaves everything under knee * peak alone and bends the rest smoothly towards `peak`."""
+    t = peak * knee
+    a = np.abs(x)
+    over = a > t
+    y = x.copy()
+    y[over] = np.sign(x[over]) * (t + (peak - t) * np.tanh((a[over] - t) / (peak - t)))
+    return y
+
+
+def _true_peak_gain(y, ceiling, over=4):
+    """Per-sample gain that keeps the 4x-oversampled (inter-sample) peaks under `ceiling`: bright
+    transients (ticks, hats) overshoot their sample peaks, and AAC adds a little more."""
+    n = len(y)
+    up = np.fft.irfft(np.fft.rfft(y), n=n * over) * over
+    env = np.abs(up).reshape(n, over).max(axis=1)
+    g = np.minimum(1.0, ceiling / np.maximum(env, 1e-9))
+    w = int(0.004 * SR)  # 4 ms: hold the lowest gain around each peak, then smooth the edges
+    pad = np.pad(g, (w, w), mode='edge')
+    held = np.min(np.lib.stride_tricks.sliding_window_view(pad, 2 * w + 1), axis=1)
+    c = np.concatenate([[0.0], np.cumsum(np.pad(held, (w, w), mode='edge'))])
+    return (c[2 * w + 1:] - c[:-(2 * w + 1)]) / (2 * w + 1)
+
+
+def true_peak_db(y, over=4):
+    up = np.fft.irfft(np.fft.rfft(y), n=len(y) * over) * over
+    return 20 * np.log10(np.abs(up).max() or 1e-9)
+
+
+def measure_file(path):
+    """(integrated LUFS, true peak dBTP) of an encoded file, as ffmpeg's EBU R128 meter reports them."""
+    import re
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', path, '-af', 'ebur128=peak=true', '-f', 'null', '-'],
+                       capture_output=True, text=True)
+    s = (r.stderr or '')[(r.stderr or '').rfind('Summary:'):]
+    i, tp = re.search(r'I:\s+(-?[\d.]+) LUFS', s), re.search(r'Peak:\s+(-?[\d.]+) dBFS', s)
+    return (float(i.group(1)) if i else None), (float(tp.group(1)) if tp else None)
+
+
+def master(out, target=-14.0, peak=0.84, tp_ceiling=-3.0):
+    """Loudness to `target` LUFS through a soft limiter, with the true (inter-sample) peak held under
+    `tp_ceiling` dBTP, which leaves room for AAC so the upload stays under -1 dBTP."""
+    ceil = 10 ** (tp_ceiling / 20)
+    g = 10 ** ((target - lufs(out)) / 20)
+    y = out
+    for _ in range(5):
+        y = _soft_limit(out * g, peak)
+        y = y * _true_peak_gain(y, ceil)
+        now = lufs(y)
+        if abs(now - target) < 0.15:
+            break
+        g *= 10 ** ((target - now) / 20)
+    return y
+
+
+def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=None):
     """
     events: [(time_sec, samples, gain)] sound effects
     voice:  [(time_sec, samples)] speech; music ducks under it
+    target_lufs: master to this loudness (EBU R128) instead of the older RMS heuristic
     """
     n = int(SR * duration)
     fx = np.zeros(n)
@@ -361,6 +455,8 @@ def mix(duration, events, voice, music_track=None, music_gain=0.55):
         f = int(SR * 0.6)
         fade[-f:] = np.linspace(1, 0.2, f)
         out += music_gain * m * duck * fade
+    if target_lufs is not None:
+        return master(out, target_lufs)
     # gentle limiter + loudness target (about -14 LUFS for dense speech+music)
     rms = math.sqrt(float(np.mean(out ** 2))) or 1.0
     out *= 0.2 / rms
