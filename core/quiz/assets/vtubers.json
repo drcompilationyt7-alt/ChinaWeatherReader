@@ -1,0 +1,608 @@
+{
+ "source": "Virtual YouTuber Wiki (virtualyoutuber.fandom.com), official portrait art; characters (c) their agencies",
+ "vtubers": [
+  {
+   "name": "Gawr Gura",
+   "agency": "hololive EN",
+   "graduated": true,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/4/4f/Gawr_Gura_Portrait.png/revision/latest?cb=20250925210601",
+   "file": "Gawr Gura Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Gawr_Gura"
+  },
+  {
+   "name": "Mori Calliope",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/39/Mori_Calliope_Portrait.png/revision/latest?cb=20250925202036",
+   "file": "Mori Calliope Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Mori_Calliope"
+  },
+  {
+   "name": "Kizuna AI",
+   "agency": "the first VTuber",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/2/29/Kizuna_Ai_3.0_model.jpg/revision/latest/scale-to-width-down/720?cb=20260706114822",
+   "file": "Kizuna Ai 3.0 model.jpg",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kizuna_Ai"
+  },
+  {
+   "name": "Neuro-sama",
+   "agency": "AI VTuber by Vedal",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/b/bd/NeuroSamaV3.png/revision/latest?cb=20241219232908",
+   "file": "NeuroSamaV3.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Neuro-sama"
+  },
+  {
+   "name": "Usada Pekora",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/95/Usada_Pekora_-_Portrait.png/revision/latest/scale-to-width-down/720?cb=20220729230439",
+   "file": "Usada Pekora - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Usada_Pekora"
+  },
+  {
+   "name": "Shirakami Fubuki",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/4/45/Shirakami_Fubuki_-_Portrait.png/revision/latest?cb=20230627082355",
+   "file": "Shirakami Fubuki - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Shirakami_Fubuki"
+  },
+  {
+   "name": "Hoshimachi Suisei",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/8b/Hoshimachi_Suisei_2019_Portrait.png/revision/latest/scale-to-width-down/720?cb=20191205132210",
+   "file": "Hoshimachi Suisei 2019 Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Hoshimachi_Suisei"
+  },
+  {
+   "name": "Inugami Korone",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/c/c6/Inugami_Korone_Portrait.png/revision/latest?cb=20250930010842",
+   "file": "Inugami Korone Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Inugami_Korone"
+  },
+  {
+   "name": "Takanashi Kiara",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/2/28/Takanashi_Kiara_Portrait.png/revision/latest?cb=20250925202735",
+   "file": "Takanashi Kiara Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Takanashi_Kiara"
+  },
+  {
+   "name": "Ninomae Ina'nis",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/4/46/Ninomae_Ina%27nis_Portrait.png/revision/latest?cb=20250925203523",
+   "file": "Ninomae Ina'nis Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ninomae_Ina%27nis"
+  },
+  {
+   "name": "Watson Amelia",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/97/Watson_Amelia_Portrait.png/revision/latest?cb=20250925204645",
+   "file": "Watson Amelia Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Watson_Amelia"
+  },
+  {
+   "name": "Ironmouse",
+   "agency": "formerly VShojo",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/2/2e/Ironmouse_Portrait_04_2021.png/revision/latest?cb=20210807142833",
+   "file": "Ironmouse Portrait 04 2021.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ironmouse"
+  },
+  {
+   "name": "Sakura Miko",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/7/7f/Sakura_Miko_2020_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210802134259",
+   "file": "Sakura Miko 2020 Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Sakura_Miko"
+  },
+  {
+   "name": "Minato Aqua",
+   "agency": "hololive JP",
+   "graduated": true,
+   "difficulty": 1,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/8b/Minato_Aqua_Portrait.png/revision/latest?cb=20190215180705",
+   "file": "Minato Aqua Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Minato_Aqua"
+  },
+  {
+   "name": "Ouro Kronii",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/b/b2/Ouro_Kronii_Portrait.png/revision/latest?cb=20210817022852",
+   "file": "Ouro Kronii Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ouro_Kronii"
+  },
+  {
+   "name": "Nanashi Mumei",
+   "agency": "hololive EN",
+   "graduated": true,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/86/Nanashi_Mumei_Portrait.png/revision/latest?cb=20210817024548",
+   "file": "Nanashi Mumei Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Nanashi_Mumei"
+  },
+  {
+   "name": "Hakos Baelz",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/a/a3/Hakos_Baelz_Portrait.png/revision/latest?cb=20210817022252",
+   "file": "Hakos Baelz Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Hakos_Baelz"
+  },
+  {
+   "name": "IRyS",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/7/77/IRyS_Portrait.png/revision/latest?cb=20210707011605",
+   "file": "IRyS Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/IRyS"
+  },
+  {
+   "name": "Ceres Fauna",
+   "agency": "hololive EN",
+   "graduated": true,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/7/73/Ceres_Fauna_Portrait.png/revision/latest?cb=20210902015951",
+   "file": "Ceres Fauna Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ceres_Fauna"
+  },
+  {
+   "name": "Koseki Bijou",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/e/ee/Koseki_Bijou_Portrait.png/revision/latest?cb=20230726054859",
+   "file": "Koseki Bijou Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Koseki_Bijou"
+  },
+  {
+   "name": "Nerissa Ravencroft",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/66/Nerissa_Ravencroft_Portrait.png/revision/latest?cb=20230726055055",
+   "file": "Nerissa Ravencroft Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Nerissa_Ravencroft"
+  },
+  {
+   "name": "Nekomata Okayu",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/4/4b/Nekomata_Okayu_Portrait.png/revision/latest?cb=20190405185910",
+   "file": "Nekomata Okayu Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Nekomata_Okayu"
+  },
+  {
+   "name": "Amane Kanata",
+   "agency": "hololive JP",
+   "graduated": true,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/6c/Amane_Kanata_-_Portrait.png/revision/latest?cb=20250410202638",
+   "file": "Amane Kanata - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Amane_Kanata"
+  },
+  {
+   "name": "Oozora Subaru",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/4/49/Oozora_Subaru_Portrait.png/revision/latest?cb=20250907105359",
+   "file": "Oozora Subaru Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Oozora_Subaru"
+  },
+  {
+   "name": "Nakiri Ayame",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/0/09/Nakiri_Ayame_Portrait.png/revision/latest?cb=20250221231720",
+   "file": "Nakiri Ayame Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Nakiri_Ayame"
+  },
+  {
+   "name": "Shishiro Botan",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/d/d9/Shishiro_Botan_Portrait.png/revision/latest?cb=20260103214223",
+   "file": "Shishiro Botan Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Shishiro_Botan"
+  },
+  {
+   "name": "Omaru Polka",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/33/Omaru_Polka_Portrait.png/revision/latest?cb=20260103232033",
+   "file": "Omaru Polka Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Omaru_Polka"
+  },
+  {
+   "name": "Tokino Sora",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/38/Tokino_Sora_2026_Portrait.png/revision/latest/scale-to-width-down/720?cb=20260907164605",
+   "file": "Tokino Sora 2026 Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Tokino_Sora"
+  },
+  {
+   "name": "Ookami Mio",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/1/18/Ookami_Mio_Portrait.png/revision/latest?cb=20250930005406",
+   "file": "Ookami Mio Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ookami_Mio"
+  },
+  {
+   "name": "La+ Darknesss",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/7/7b/La%2B_Darknesss_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211202201644",
+   "file": "La+ Darknesss Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/La%2B_Darknesss"
+  },
+  {
+   "name": "Hakui Koyori",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/c/c2/Hakui_Koyori_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211202201357",
+   "file": "Hakui Koyori Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Hakui_Koyori"
+  },
+  {
+   "name": "Pavolia Reine",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/d/d2/Pavolia_Reine_Portrait.png/revision/latest/scale-to-width-down/720?cb=20201201063050",
+   "file": "Pavolia Reine Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Pavolia_Reine"
+  },
+  {
+   "name": "Kureiji Ollie",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/f/f4/Kureiji_Ollie_Portrait.png/revision/latest/scale-to-width-down/720?cb=20201201052431",
+   "file": "Kureiji Ollie Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kureiji_Ollie"
+  },
+  {
+   "name": "Moona Hoshinova",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/94/Moona_Hoshinova_Portrait.jpg/revision/latest?cb=20200411161426",
+   "file": "Moona Hoshinova Portrait.jpg",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Moona_Hoshinova"
+  },
+  {
+   "name": "Kobo Kanaeru",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/3b/Kobo_Kanaeru_Portrait.png/revision/latest?cb=20220324054528",
+   "file": "Kobo Kanaeru Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kobo_Kanaeru"
+  },
+  {
+   "name": "Tsukino Mito",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/3e/Tsukino_Mito_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210324014712",
+   "file": "Tsukino Mito Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Tsukino_Mito"
+  },
+  {
+   "name": "Kuzuha",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/5/58/Kuzuha_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210325052514",
+   "file": "Kuzuha Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kuzuha"
+  },
+  {
+   "name": "Vox Akuma",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/95/Vox_Akuma_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211220163931",
+   "file": "Vox Akuma Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Vox_Akuma"
+  },
+  {
+   "name": "Pomu Rainpuff",
+   "agency": "NIJISANJI EN",
+   "graduated": true,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/a/a8/Pomu_Rainpuff_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210517092410",
+   "file": "Pomu Rainpuff Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Pomu_Rainpuff"
+  },
+  {
+   "name": "Nyanners",
+   "agency": "formerly VShojo",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/e/ea/Nyatasha_Nyanners_3rd_Model_Portrait.jpg/revision/latest?cb=20250908020423",
+   "file": "Nyatasha Nyanners 3rd Model Portrait.jpg",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Nyatasha_Nyanners"
+  },
+  {
+   "name": "Pipkin Pippa",
+   "agency": "Phase Connect",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/1/1e/Pipkin_Pippa_-_Portrait.png/revision/latest?cb=20210729042840",
+   "file": "Pipkin Pippa - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Pipkin_Pippa"
+  },
+  {
+   "name": "Dokibird",
+   "agency": "independent",
+   "graduated": false,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/91/Dokibird_Third_Model_Portrait.jpg/revision/latest?cb=20240625193650",
+   "file": "Dokibird Third Model Portrait.jpg",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Dokibird"
+  },
+  {
+   "name": "Airani Iofifteen",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/c/cb/Airani_Iofifteen_-_Portrait.png/revision/latest/scale-to-width-down/720?cb=20200427135833",
+   "file": "Airani Iofifteen - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Airani_Iofifteen"
+  },
+  {
+   "name": "Vestia Zeta",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/b/b6/Vestia_Zeta_Portrait.png/revision/latest?cb=20220324053909",
+   "file": "Vestia Zeta Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Vestia_Zeta"
+  },
+  {
+   "name": "Kaela Kovalskia",
+   "agency": "hololive ID",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/61/Kaela_Kovalskia_Portrait.png/revision/latest?cb=20250326164943",
+   "file": "Kaela Kovalskia Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kaela_Kovalskia"
+  },
+  {
+   "name": "Shiori Novella",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/2/26/Shiori_Novella_Portrait.png/revision/latest?cb=20230726054616",
+   "file": "Shiori Novella Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Shiori_Novella"
+  },
+  {
+   "name": "Elizabeth Rose Bloodflame",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/87/Elizabeth_Rose_Bloodflame_Portrait.png/revision/latest?cb=20240619035515",
+   "file": "Elizabeth Rose Bloodflame Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Elizabeth_Rose_Bloodflame"
+  },
+  {
+   "name": "Gigi Murin",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/3c/Gigi_Murin_Portrait.png/revision/latest?cb=20240619041253",
+   "file": "Gigi Murin Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Gigi_Murin"
+  },
+  {
+   "name": "Cecilia Immergreen",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/3c/Cecilia_Immergreen_Portrait.png/revision/latest?cb=20240619034207",
+   "file": "Cecilia Immergreen Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Cecilia_Immergreen"
+  },
+  {
+   "name": "Raora Panthera",
+   "agency": "hololive EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/34/Raora_Panthera_Portrait.png/revision/latest?cb=20240619042904",
+   "file": "Raora Panthera Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Raora_Panthera"
+  },
+  {
+   "name": "Momosuzu Nene",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/93/Momosuzu_Nene_Portrait.png/revision/latest?cb=20200807014856",
+   "file": "Momosuzu Nene Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Momosuzu_Nene"
+  },
+  {
+   "name": "Takane Lui",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/0/04/Takane_Lui_Portrait.png/revision/latest/scale-to-width-down/720?cb=20250614200325",
+   "file": "Takane Lui Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Takane_Lui"
+  },
+  {
+   "name": "Kazama Iroha",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/96/Kazama_Iroha_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211202200910",
+   "file": "Kazama Iroha Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kazama_Iroha"
+  },
+  {
+   "name": "Akai Haato",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/7/77/Akai_Haato_Portrait.png/revision/latest?cb=20260831230151",
+   "file": "Akai Haato Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Akai_Haato"
+  },
+  {
+   "name": "Himemori Luna",
+   "agency": "hololive JP",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/2/22/Himemori_Luna_-_Portrait.png/revision/latest?cb=20250410204015",
+   "file": "Himemori Luna - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Himemori_Luna"
+  },
+  {
+   "name": "Kanade Izuru",
+   "agency": "HOLOSTARS",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/93/Kanade_Izuru_-_Portrait.png/revision/latest/scale-to-width-down/720?cb=20200622090510",
+   "file": "Kanade Izuru - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kanade_Izuru"
+  },
+  {
+   "name": "Kanae",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/95/Kanae_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210325044407",
+   "file": "Kanae Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kanae"
+  },
+  {
+   "name": "Lize Helesta",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/1/13/Lize_Helesta_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210327042159",
+   "file": "Lize Helesta Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Lize_Helesta"
+  },
+  {
+   "name": "Hoshikawa Sara",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/a/af/Hoshikawa_Sara_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210330041146",
+   "file": "Hoshikawa Sara Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Hoshikawa_Sara"
+  },
+  {
+   "name": "Sasaki Saku",
+   "agency": "NIJISANJI",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/84/Sasaki_Saku_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210325045342",
+   "file": "Sasaki Saku Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Sasaki_Saku"
+  },
+  {
+   "name": "Elira Pendora",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/5/5b/Elira_Pendora_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210517092344",
+   "file": "Elira Pendora Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Elira_Pendora"
+  },
+  {
+   "name": "Finana Ryugu",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/6f/Finana_Ryugu_Portrait.png/revision/latest/scale-to-width-down/720?cb=20210517092433",
+   "file": "Finana Ryugu Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Finana_Ryugu"
+  },
+  {
+   "name": "Luca Kaneshiro",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/9/91/Luca_Kaneshiro_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211220163112",
+   "file": "Luca Kaneshiro Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Luca_Kaneshiro"
+  },
+  {
+   "name": "Shu Yamino",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/5/5f/Shu_Yamino_Portrait.png/revision/latest/scale-to-width-down/720?cb=20211220163310",
+   "file": "Shu Yamino Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Shu_Yamino"
+  },
+  {
+   "name": "Ike Eveland",
+   "agency": "NIJISANJI EN",
+   "graduated": true,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/8/87/Ike_Eveland_Portrait.png/revision/latest/scale-to-width-down/720?cb=20230812182331",
+   "file": "Ike Eveland Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Ike_Eveland"
+  },
+  {
+   "name": "Uki Violeta",
+   "agency": "NIJISANJI EN",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/3/35/Uki_Violeta_portrait.png/revision/latest/scale-to-width-down/720?cb=20220228053004",
+   "file": "Uki Violeta portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Uki_Violeta"
+  },
+  {
+   "name": "Kson",
+   "agency": "formerly VShojo",
+   "graduated": false,
+   "difficulty": 3,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/63/Kson_-_Portrait.png/revision/latest?cb=20211017015524",
+   "file": "Kson - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kson"
+  }
+ ]
+}

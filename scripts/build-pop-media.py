@@ -5,11 +5,18 @@ Snapshot of the media the pop quiz formats draw from:
   core/quiz/assets/anime-characters.json  top characters by AniList favourites
   core/quiz/assets/anime-list.json        most popular anime (for the opening quiz)
   core/quiz/assets/kpop-idols.json        idol photos from Wikidata / Wikimedia Commons
+  core/quiz/assets/city-photos.json       city photos from Wikidata / Wikimedia Commons   (--cities)
+  core/quiz/assets/vtubers.json           official VTuber portraits, Virtual YouTuber Wiki (--vtubers)
 
 Images are fetched at render time from the URLs stored here (and cached).
 Commons photos keep their author/licence so the video description can credit them.
+Characters and anime carry `gender` / `age` and an `nsfw` flag (Ecchi genre, or an
+AniList "Sexual Content" tag ranked 50+): flagged ones never appear in the duel,
+voice or scene formats.
 
     python scripts/build-pop-media.py [--skip-idols] [--skip-anime]
+    python scripts/build-pop-media.py --enrich    # add gender / age / nsfw to the existing anime snapshots
+    python scripts/build-pop-media.py --vtubers
 """
 import json
 import os
@@ -28,6 +35,12 @@ NAME_FIX = {
     'Luffy Monkey': 'Monkey D. Luffy', 'Zoro Roronoa': 'Roronoa Zoro', 'Goku Son': 'Son Goku', 'Ryuuk': 'Ryuk',
     'Sanji Vinsmoke': 'Sanji', 'Ace Portgas': 'Portgas D. Ace', 'Law Trafalgar': 'Trafalgar Law', 'Nami': 'Nami',
     'Hisoka Morow': 'Hisoka', 'Shigeo Kageyama': 'Mob', 'Satoru Gojou': 'Satoru Gojo', 'Sukuna Ryoumen': 'Ryomen Sukuna',
+    # after the romanisation fix (keys are what fix_name would otherwise return)
+    'Leloch Lamperoge': 'Lelouch Lamperouge', 'Joutaro Kujo': 'Jotaro Kujo', 'Jousuke Higashikata': 'Josuke Higashikata',
+    'Robin Nico': 'Nico Robin', 'Chopper Tony Tony': 'Tony Tony Chopper', 'Jin-U Seong': 'Sung Jinwoo',
+    'Tooru Honda': 'Tohru Honda', 'Asuka Langley Souryu': 'Asuka Langley Soryu', 'Sakura Mato': 'Sakura Matou',
+    'Rin Toosaka': 'Rin Tohsaka', 'Tooru Oikawa': 'Toru Oikawa', 'Kyo Souma': 'Kyo Sohma', 'Yuki Souma': 'Yuki Sohma',
+    'Hancock Boa': 'Boa Hancock', 'Doflamingo Donquixote': 'Donquixote Doflamingo', 'Hak Son': 'Son Hak',
 }
 
 IDOLS = {
@@ -64,23 +77,85 @@ def http_json(url, data=None, headers=None, tries=4):
 
 
 def fix_name(n):
-    n = NAME_FIX.get(n, n)
+    if n in NAME_FIX:
+        return NAME_FIX[n]
     # AniList romanisation -> the spelling fans use (Tanjirou -> Tanjiro, Shouyou -> Shoyo)
-    return ' '.join(re.sub(r'ou$', 'o', re.sub(r'(?<=[a-z])ou(?=[^aeiou])', 'o', w)).replace('uu', 'u') for w in n.split())
+    out = ' '.join(re.sub(r'ou$', 'o', re.sub(r'(?<=[a-z])ou(?=[^aeiou])', 'o', w)).replace('uu', 'u') for w in n.split())
+    return NAME_FIX.get(out, out)
 
 
 def anilist(query, variables):
     return http_json('https://graphql.anilist.co', {'query': query, 'variables': variables})['data']
 
 
+def is_nsfw(media):
+    """Fan-service or sexual themes: the Ecchi genre, or any AniList "Sexual Content" tag ranked 50+."""
+    if 'Ecchi' in (media.get('genres') or []):
+        return True
+    return any(t.get('category') == 'Sexual Content' and (t.get('rank') or 0) >= 50 for t in media.get('tags') or [])
+
+
+def main_media(c):
+    """The character's most popular anime where they are a MAIN or SUPPORTING character (not a cameo)."""
+    edges = [e for e in (c.get('media') or {}).get('edges') or [] if e.get('node')]
+    for want in (('MAIN', 'SUPPORTING'), ('MAIN', 'SUPPORTING', 'BACKGROUND')):
+        for types in (('ANIME',), ('ANIME', 'MANGA')):
+            for e in edges:
+                if e.get('characterRole') in want and e['node'].get('type') in types:
+                    return e['node']
+    return edges[0]['node'] if edges else {}
+
+
+def enrich_anime():
+    """Add gender / age / nsfw to the existing snapshots without re-ranking them (difficulty stays)."""
+    p = os.path.join(OUT, 'anime-characters.json')
+    data = json.load(open(p, encoding='utf-8'))
+    q = '''query($ids:[Int]){ Page(page:1, perPage:50){ characters(id_in:$ids){ id gender age
+        media(sort: POPULARITY_DESC, perPage: 8){ edges{ characterRole node{ isAdult type title{ english romaji }
+        genres tags{ name rank category } } } } } } }'''
+    got = {}
+    ids = [c['id'] for c in data['characters']]
+    for k in range(0, len(ids), 50):
+        for c in anilist(q, {'ids': ids[k:k + 50]})['Page']['characters']:
+            got[c['id']] = c
+        time.sleep(1.0)
+    for c in data['characters']:
+        g = got.get(c['id'])
+        if g:
+            media = main_media(g)
+            title = media.get('title') and (media['title'].get('english') or media['title'].get('romaji'))
+            if title and title != c['anime']:
+                print(f"  {c['name']}: {c['anime']} -> {title}")
+                c['anime'] = title
+            c.update({'gender': g.get('gender'), 'age': g.get('age'), 'nsfw': is_nsfw(media)})
+    json.dump(data, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f"{len(got)} characters enriched, {sum(bool(c.get('nsfw')) for c in data['characters'])} flagged nsfw")
+
+    p = os.path.join(OUT, 'anime-list.json')
+    data = json.load(open(p, encoding='utf-8'))
+    q = '''query($ids:[Int]){ Page(page:1, perPage:50){ media(id_in:$ids){ id genres tags{ name rank category } } } }'''
+    got = {}
+    ids = [a['id'] for a in data['anime']]
+    for k in range(0, len(ids), 50):
+        for m in anilist(q, {'ids': ids[k:k + 50]})['Page']['media']:
+            got[m['id']] = m
+        time.sleep(1.0)
+    for a in data['anime']:
+        if a['id'] in got:
+            a['nsfw'] = is_nsfw(got[a['id']])
+    json.dump(data, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f"{len(got)} anime enriched, {sum(bool(a.get('nsfw')) for a in data['anime'])} flagged nsfw")
+
+
 def build_anime():
     chars, seen = [], set()
-    q = '''query($p:Int){ Page(page:$p, perPage:50){ characters(sort: FAVOURITES_DESC){ id favourites
+    q = '''query($p:Int){ Page(page:$p, perPage:50){ characters(sort: FAVOURITES_DESC){ id favourites gender age
         name{ full } image{ large }
-        media(sort: POPULARITY_DESC, perPage: 1){ nodes{ isAdult type title{ english romaji } } } } } }'''
+        media(sort: POPULARITY_DESC, perPage: 8){ edges{ characterRole node{ isAdult type title{ english romaji }
+        genres tags{ name rank category } } } } } } }'''
     for page in range(1, 9):
         for c in anilist(q, {'p': page})['Page']['characters']:
-            media = (c['media']['nodes'] or [{}])[0]
+            media = main_media(c)
             if not media or media.get('isAdult') or not c['image'].get('large') or 'default' in c['image']['large']:
                 continue
             name = fix_name(c['name']['full'] or '')
@@ -88,7 +163,8 @@ def build_anime():
                 continue
             seen.add(name.lower())
             title = media['title'].get('english') or media['title'].get('romaji')
-            chars.append({'id': c['id'], 'name': name, 'anime': title, 'image': c['image']['large'], 'favourites': c['favourites']})
+            chars.append({'id': c['id'], 'name': name, 'anime': title, 'image': c['image']['large'], 'favourites': c['favourites'],
+                          'gender': c.get('gender'), 'age': c.get('age'), 'nsfw': is_nsfw(media)})
         time.sleep(1.0)
     for i, c in enumerate(chars):
         c['difficulty'] = 1 if i < 60 else 2 if i < 180 else 3
@@ -98,13 +174,14 @@ def build_anime():
 
     anime = []
     q = '''query($p:Int){ Page(page:$p, perPage:50){ media(type: ANIME, sort: POPULARITY_DESC, isAdult: false){ id popularity
-        title{ english romaji } coverImage{ extraLarge } seasonYear format } } }'''
+        title{ english romaji } coverImage{ extraLarge } seasonYear format genres tags{ name rank category } } } }'''
     for page in range(1, 7):
         for m in anilist(q, {'p': page})['Page']['media']:
             if m.get('format') not in ('TV', 'TV_SHORT', 'ONA'):
                 continue
             anime.append({'id': m['id'], 'title': m['title'].get('english') or m['title']['romaji'], 'romaji': m['title']['romaji'],
-                          'cover': m['coverImage']['extraLarge'], 'year': m.get('seasonYear'), 'popularity': m['popularity']})
+                          'cover': m['coverImage']['extraLarge'], 'year': m.get('seasonYear'), 'popularity': m['popularity'],
+                          'nsfw': is_nsfw(m)})
         time.sleep(1.0)
     for i, a in enumerate(anime):
         a['difficulty'] = 1 if i < 50 else 2 if i < 150 else 3
@@ -142,7 +219,7 @@ def commons_info(filename):
     pages = http_json('https://commons.wikimedia.org/w/api.php?' + urllib.parse.urlencode(params))['query']['pages']
     info = next(iter(pages.values())).get('imageinfo', [{}])[0]
     meta = info.get('extmetadata', {})
-    artist = re.sub('<[^>]+>', '', meta.get('Artist', {}).get('value', '')).strip()
+    artist = re.sub(r'\s+', ' ', re.sub('<[^>]+>', '', meta.get('Artist', {}).get('value', ''))).strip()
     return {'url': info.get('thumburl') or info.get('url'), 'page': info.get('descriptionurl'),
             'license': meta.get('LicenseShortName', {}).get('value', ''), 'author': artist[:80]}
 
@@ -190,6 +267,17 @@ CITY_QIDS = {  # Wikidata items of the cities in pop-bank.json (avoids ambiguous
 }
 
 
+# Commons files that show a city better than its Wikidata image (a landmark instead of a hazy skyline)
+CITY_PHOTO_FILE = {
+    'Lhasa': '布达拉宫.jpg',
+    'Harbin': 'Harbin Ice & Snow Festival 2026 - Saint Sophia Cathedral.jpg',
+    'Jeju': 'Seongsan Ilchulbong from the air.jpg',
+    'Gyeongju': 'Bulguksa temple entrance gate stairs flower bed and blue sky in Gyeongju South Korea.jpg',
+}
+# the photo quiz only: skylines that are hard to tell apart without a landmark
+CITY_PHOTO_DIFFICULTY = {'Incheon': 3, 'Daegu': 3}
+
+
 def build_city_photos():
     bank = json.load(open(os.path.join(OUT, 'pop-bank.json'), encoding='utf-8'))
     out = []
@@ -197,6 +285,13 @@ def build_city_photos():
         qid = CITY_QIDS.get(c['name'])
         if not qid:
             continue
+        c = {**c, 'difficulty': CITY_PHOTO_DIFFICULTY.get(c['name'], c['difficulty'])}
+        if c['name'] in CITY_PHOTO_FILE:
+            info = commons_info(CITY_PHOTO_FILE[c['name']])
+            if info['url']:
+                out.append({**c, 'image': info['url'], 'credit': f"{info['author'] or 'Wikimedia Commons'}, {info['license']}",
+                            'page': info['page'], 'wikidata': qid})
+                continue
         try:
             ent = http_json(f'https://www.wikidata.org/wiki/Special:EntityData/{qid}.json')['entities'][qid]
             label = ent.get('labels', {}).get('en', {}).get('value', '')
@@ -209,7 +304,7 @@ def build_city_photos():
             info = commons_info(p18[0]['mainsnak']['datavalue']['value'])
             if info['url']:
                 out.append({**c, 'image': info['url'], 'credit': f"{info['author'] or 'Wikimedia Commons'}, {info['license']}",
-                            'wikidata': qid})
+                            'page': info['page'], 'wikidata': qid})
             time.sleep(0.3)
         except Exception as e:
             print(f"  {c['name']}: {e}", file=sys.stderr)
@@ -218,9 +313,91 @@ def build_city_photos():
     print(f'{len(out)} city photos')
 
 
+VT_API = 'https://virtualyoutuber.fandom.com/api.php'
+# (wiki page, agency / branch shown on the reveal, difficulty, display name). Only VTubers whose
+# persona and official art are clean (portraits with a revealing neckline are left out); the
+# pick is always the wiki's official portrait art.
+VTUBERS = [
+    ('Gawr Gura', 'hololive EN', 1), ('Mori Calliope', 'hololive EN', 1), ('Kizuna AI', 'the first VTuber', 1, 'Kizuna AI'),
+    ('Neuro-sama', 'AI VTuber by Vedal', 1), ('Usada Pekora', 'hololive JP', 1), ('Shirakami Fubuki', 'hololive JP', 1),
+    ('Hoshimachi Suisei', 'hololive JP', 1), ('Inugami Korone', 'hololive JP', 1), ('Takanashi Kiara', 'hololive EN', 1),
+    ("Ninomae Ina'nis", 'hololive EN', 1), ('Watson Amelia', 'hololive EN', 1), ('Ironmouse', 'formerly VShojo', 1),
+    ('Sakura Miko', 'hololive JP', 1), ('Minato Aqua', 'hololive JP', 1),
+    ('Ouro Kronii', 'hololive EN', 2), ('Nanashi Mumei', 'hololive EN', 2), ('Hakos Baelz', 'hololive EN', 2),
+    ('IRyS', 'hololive EN', 2), ('Ceres Fauna', 'hololive EN', 2), ('Koseki Bijou', 'hololive EN', 2),
+    ('Nerissa Ravencroft', 'hololive EN', 2), ('Nekomata Okayu', 'hololive JP', 2), ('Amane Kanata', 'hololive JP', 2),
+    ('Oozora Subaru', 'hololive JP', 2), ('Nakiri Ayame', 'hololive JP', 2),
+    ('Shishiro Botan', 'hololive JP', 2), ('Omaru Polka', 'hololive JP', 2),
+    ('Tokino Sora', 'hololive JP', 2), ('Ookami Mio', 'hololive JP', 2), ('La+ Darknesss', 'hololive JP', 2),
+    ('Hakui Koyori', 'hololive JP', 2), ('Pavolia Reine', 'hololive ID', 2), ('Kureiji Ollie', 'hololive ID', 2),
+    ('Moona Hoshinova', 'hololive ID', 2), ('Kobo Kanaeru', 'hololive ID', 2), ('Tsukino Mito', 'NIJISANJI', 2),
+    ('Kuzuha', 'NIJISANJI', 2), ('Vox Akuma', 'NIJISANJI EN', 2), ('Pomu Rainpuff', 'NIJISANJI EN', 2),
+    ('Nyanners', 'formerly VShojo', 2, 'Nyanners'), ('Pipkin Pippa', 'Phase Connect', 2), ('Dokibird', 'independent', 2),
+    ('Airani Iofifteen', 'hololive ID', 3), ('Vestia Zeta', 'hololive ID', 3), ('Kaela Kovalskia', 'hololive ID', 3),
+    ('Shiori Novella', 'hololive EN', 3), ('Elizabeth Rose Bloodflame', 'hololive EN', 3), ('Gigi Murin', 'hololive EN', 3),
+    ('Cecilia Immergreen', 'hololive EN', 3), ('Raora Panthera', 'hololive EN', 3), ('Momosuzu Nene', 'hololive JP', 3),
+    ('Takane Lui', 'hololive JP', 3), ('Kazama Iroha', 'hololive JP', 3),
+    ('Akai Haato', 'hololive JP', 3), ('Himemori Luna', 'hololive JP', 3), ('Kanade Izuru', 'HOLOSTARS', 3),
+    ('Kanae', 'NIJISANJI', 3), ('Lize Helesta', 'NIJISANJI', 3), ('Hoshikawa Sara', 'NIJISANJI', 3),
+    ('Sasaki Saku', 'NIJISANJI', 3), ('Elira Pendora', 'NIJISANJI EN', 3), ('Finana Ryugu', 'NIJISANJI EN', 3),
+    ('Luca Kaneshiro', 'NIJISANJI EN', 3), ('Shu Yamino', 'NIJISANJI EN', 3), ('Ike Eveland', 'NIJISANJI EN', 3),
+    ('Uki Violeta', 'NIJISANJI EN', 3), ('Kson', 'formerly VShojo', 3),
+]
+
+
+def vt_query(params):
+    return http_json(VT_API + '?' + urllib.parse.urlencode({**params, 'format': 'json'}))
+
+
+def build_vtubers():
+    """Official portrait of each VTuber from the Virtual YouTuber Wiki (the infobox image, or a '* Portrait' file)."""
+    out = []
+    for k in range(0, len(VTUBERS), 20):
+        chunk = VTUBERS[k:k + 20]
+        d = vt_query({'action': 'query', 'titles': '|'.join(v[0] for v in chunk), 'redirects': 1,
+                      'prop': 'pageimages|images|revisions', 'piprop': 'name', 'imlimit': 500,
+                      'rvprop': 'content', 'rvslots': 'main', 'rvsection': 0})['query']
+        alias = {r['from']: r['to'] for r in d.get('normalized', []) + d.get('redirects', [])}
+        pages = {p.get('title'): p for p in d['pages'].values()}
+        for v in chunk:
+            title = alias.get(alias.get(v[0], v[0]), alias.get(v[0], v[0]))
+            p = pages.get(title)
+            if not p or 'missing' in p:
+                print(f'  missing page: {v[0]}', file=sys.stderr)
+                continue
+            text = (p.get('revisions') or [{}])[0].get('slots', {}).get('main', {}).get('*', '')
+            m = re.search(r'\|\s*image1\s*=[ \t]*([^\n|<]*)', text)
+            infobox = m.group(1).strip() if m and m.group(1).strip() else None
+            portraits = [i['title'][5:] for i in p.get('images', []) if 'portrait' in i['title'].lower() and 'alt' not in i['title'].lower()]
+            pick = infobox if infobox and 'portrait' in infobox.lower() else (portraits[-1] if portraits else infobox or p.get('pageimage'))
+            if not pick:
+                print(f'  no portrait: {v[0]}', file=sys.stderr)
+                continue
+            info = vt_query({'action': 'query', 'titles': 'File:' + pick, 'prop': 'imageinfo', 'iiprop': 'url|size', 'iiurlwidth': 720})['query']
+            ii = (next(iter(info['pages'].values())).get('imageinfo') or [{}])[0]
+            url = ii.get('thumburl') or ii.get('url')
+            if not url:
+                print(f'  no image url: {v[0]} ({pick})', file=sys.stderr)
+                continue
+            r = re.search(r'\|\s*retirement_date\s*=[ \t]*([^\n|]*)', text)
+            retired = bool(r and r.group(1).strip() and 'streaming' not in r.group(1))
+            out.append({'name': v[3] if len(v) > 3 else title, 'agency': v[1], 'graduated': retired, 'difficulty': v[2],
+                        'image': url, 'file': pick, 'page': 'https://virtualyoutuber.fandom.com/wiki/' + urllib.parse.quote(title.replace(' ', '_'))})
+            time.sleep(0.3)
+    json.dump({'source': 'Virtual YouTuber Wiki (virtualyoutuber.fandom.com), official portrait art; characters (c) their agencies',
+               'vtubers': out}, open(os.path.join(OUT, 'vtubers.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f'{len(out)} VTubers with portraits')
+
+
 if __name__ == '__main__':
     if '--cities' in sys.argv:
         build_city_photos()
+        sys.exit(0)
+    if '--enrich' in sys.argv:
+        enrich_anime()
+        sys.exit(0)
+    if '--vtubers' in sys.argv:
+        build_vtubers()
         sys.exit(0)
     if '--skip-anime' not in sys.argv:
         build_anime()
