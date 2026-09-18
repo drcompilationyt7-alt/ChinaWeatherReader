@@ -165,6 +165,13 @@ class PopRenderer(QuizRenderer):
         else:
             self.pal = PALETTE[self.fmt]
         self.accent = self.pal[2]
+        self._order_rounds()
+
+    def _order_rounds(self):
+        """Easy to hard, always: a topic short of hard questions (or a failed opening
+        download replaced by a spare) must not put an EASY label after a MEDIUM one."""
+        if self.fmt != 'wyr':
+            self.plan['rounds'].sort(key=lambda r: int(r.get('difficulty', 2)))
 
     # ── audio lines ──
     def voice_lines(self):
@@ -563,6 +570,7 @@ class PopRenderer(QuizRenderer):
         if len(rounds) < 3:
             raise RuntimeError(f'only {len(rounds)} openings could be fetched')
         self.plan['rounds'] = rounds
+        self._order_rounds()
 
     def make_pop_audio(self, clips, n):
         intro, asks, anss, outro = clips[0], clips[1:1 + n], clips[1 + n:1 + 2 * n], clips[1 + 2 * n]

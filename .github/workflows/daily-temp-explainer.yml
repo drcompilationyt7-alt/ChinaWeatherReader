@@ -14,7 +14,7 @@ on:
         description: 'Override publish time (ISO 8601)'
         required: false
       mode:
-        description: 'pause (default, no upload), quiz (World Quiz shorts) or daily (old clip re-upload pipeline)'
+        description: 'pause (default, no upload), meme (acapella meme shorts), quiz (World Quiz) or daily (old clip re-uploads)'
         required: false
         default: ''
       dry_run:
@@ -48,9 +48,13 @@ env:
   GH_PAT: ${{ secrets.GH_PAT }}
   PRIVATE: "true"
   PUBLISH_HOUR_UTC: "20"
-  # pause = no upload (this channel is moving to the meme format); quiz = World
-  # Quiz shorts (moving to its own channel); daily = the old clip re-upload pipeline
+  # pause = no upload; meme = "<song> acapella" meme shorts (this channel's new
+  # format, switch the default to 'meme' once the samples are approved);
+  # quiz = World Quiz shorts; daily = the old clip re-upload pipeline
   CONTENT_MODE: ${{ github.event.inputs.mode || 'pause' }}
+  WATERMARK: '@mr.worldwidewebster'
+  YT_COOKIES: /tmp/yt_cookies.txt
+  MEME_PYTHON: python3
   # quiz shorts made by this run, scheduled QUIZ_SPACING_HOURS apart from PUBLISH_HOUR_UTC
   QUIZ_COUNT: "1"
   QUIZ_SPACING_HOURS: "4"
@@ -111,11 +115,28 @@ jobs:
           echo "Ollama models ready"
 
       - name: Install Deno (JS runtime for yt-dlp)
-        if: env.CONTENT_MODE == 'daily'
+        if: env.CONTENT_MODE == 'daily' || env.CONTENT_MODE == 'meme'
         run: |
           curl -fsSL https://deno.land/install.sh | sh
           export DENO_INSTALL="$HOME/.deno"
           echo "$DENO_INSTALL/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies (meme)
+        if: env.CONTENT_MODE == 'meme'
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install torch --index-url https://download.pytorch.org/whl/cpu --break-system-packages
+          python3 -m pip install demucs librosa yt-dlp yt-dlp-ejs opencv-python-headless numpy pillow --break-system-packages
+
+      - name: Cache meme models (Demucs, face / nudity filters)
+        if: env.CONTENT_MODE == 'meme'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/clip_finder
+          key: meme-models-v1
 
       - name: Install Python dependencies (quiz)
         if: env.CONTENT_MODE == 'quiz' || env.CONTENT_MODE == 'pause'
@@ -166,7 +187,7 @@ jobs:
         run: |
           python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', device='cpu'); print('MiniLM ready')" || echo "MiniLM unavailable - title ranking falls back to char n-grams"
       - name: Write cookies file
-        if: env.CONTENT_MODE == 'daily'
+        if: env.CONTENT_MODE == 'daily' || env.CONTENT_MODE == 'meme'
         run: |
           if [ -n "$YOUTUBE_COOKIES" ]; then
             printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt
@@ -191,7 +212,9 @@ jobs:
           if [ "${{ github.event.inputs.private }}" = "true" ] || [ "$PRIVATE" = "true" ]; then
             PRIVATE_ARG="--private"
           fi
-          if [ "$CONTENT_MODE" = "quiz" ]; then
+          if [ "$CONTENT_MODE" = "meme" ]; then
+            node core/github-action-runner.js --mode meme --count 1 $PRIVATE_ARG --publish-at "$PUBLISH_AT"
+          elif [ "$CONTENT_MODE" = "quiz" ]; then
             node core/github-action-runner.js --mode quiz --count "$QUIZ_COUNT" $PRIVATE_ARG --publish-at "$PUBLISH_AT"
           else
             node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
@@ -201,8 +224,10 @@ jobs:
         if: env.DRY_RUN == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: quiz-dry-run
-          path: output/quiz/*.mp4
+          name: dry-run-renders
+          path: |
+            output/quiz/*.mp4
+            output/meme/*.mp4
           retention-days: 7
 
       - name: Save memory
@@ -212,7 +237,7 @@ jobs:
           # add only files that exist: one missing path makes `git add` stage nothing
           for f in memory/channel-memory.json memory/type1-channel-memory.json memory/posted-videos.json \
                    memory/performance-stats.json memory/performance-insights.json memory/quiz-history.json \
-                   memory/playlists.json memory/river-views-model.pkl memory/river-seen.json \
+                   memory/playlists.json memory/meme-history.json memory/river-views-model.pkl memory/river-seen.json \
                    memory/dspy-title-program.json memory/dspy-title-status.json config/channel-pool.json config/trend-banks; do
             if [ -e "$f" ]; then git add "$f"; fi
           done
