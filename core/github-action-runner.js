@@ -284,6 +284,13 @@ class DailyRunner {
       if (!result) { errors.push('quiz render failed'); continue; }
 
       const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
+      if (process.env.DRY_RUN === 'true') {
+        // render + metadata only; the workflow keeps output/quiz as a run artifact
+        logger.success(`[dry run] ${result.quiz.format}: "${result.title}" -> ${result.videoPath}`);
+        logger.info(`[dry run] description:\n${result.description}`);
+        uploaded.push({ title: result.title, url: result.videoPath, country: result.country, editType: 'quiz', geminiScore: null });
+        continue;
+      }
       const up = await this._uploadToYouTube({ ...result, publishAt });
       if (!up) { errors.push('upload failed'); continue; }
       try { recordUpload(result, { ...up, publishAt }); } catch (e) { logger.warn(`Quiz history save failed: ${e.message}`); }
@@ -298,9 +305,11 @@ class DailyRunner {
       try { fs.unlinkSync(result.videoPath); } catch {}
     }
 
-    await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
+    if (process.env.DRY_RUN !== 'true') {
+      await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
+    }
     logger.header('SUMMARY');
-    logger.info(`${uploaded.length}/${count} quiz shorts uploaded`);
+    logger.info(`${uploaded.length}/${count} quiz shorts ${process.env.DRY_RUN === 'true' ? 'rendered (dry run, nothing uploaded)' : 'uploaded'}`);
     return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
   }
 

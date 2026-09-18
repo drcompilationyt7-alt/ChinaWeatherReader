@@ -17,6 +17,10 @@ on:
         description: 'quiz (World Quiz shorts) or daily (old clip re-upload pipeline)'
         required: false
         default: ''
+      dry_run:
+        description: 'Quiz mode: render only, attach the mp4s to the run, upload nothing'
+        required: false
+        default: 'false'
 
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -49,6 +53,7 @@ env:
   # quiz shorts made by this run, scheduled QUIZ_SPACING_HOURS apart from PUBLISH_HOUR_UTC
   QUIZ_COUNT: "2"
   QUIZ_SPACING_HOURS: "4"
+  DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
 
 jobs:
   create-shorts:
@@ -189,6 +194,14 @@ jobs:
           else
             node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
           fi
+
+      - name: Keep dry-run renders
+        if: env.DRY_RUN == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-dry-run
+          path: output/quiz/*.mp4
+          retention-days: 7
 
       - name: Save memory
         if: always()
