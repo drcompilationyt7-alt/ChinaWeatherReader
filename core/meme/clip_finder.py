@@ -844,9 +844,12 @@ def nude(img):
     sq = cv2.copyMakeBorder(img, 0, m - img.shape[0], 0, m - img.shape[1], cv2.BORDER_CONSTANT)
     net.setInput(cv2.dnn.blobFromImage(sq, 1 / 255.0, (320, 320), swapRB=True))
     sc = np.squeeze(net.forward()).T[:, 4:].max(0)  # best score per class
-    # tuned to over-reject: a bruised knee still scores ~0.7 "exposed breast"
-    return bool(sc[NUDE_EXPOSED].max() >= 0.45 or sc[NUDE_G_COV] >= 0.45 or sc[NUDE_BUTT_COV] >= 0.6
-                or sc[NUDE_BREAST_COV] >= 0.7 or (sc[NUDE_BREAST_COV] >= 0.45 and sc[NUDE_BELLY] >= 0.45))
+    # tuned to over-reject exposure: a bruised knee still scores ~0.7 "exposed breast".
+    # A covered chest on its own is just a fitted outfit (idol stage dresses scored
+    # >= 0.7 and cost a quarter of K-pop sources); with a bare midriff it is
+    # swimwear-like and still rejected. clip_judge.py re-checks for suggestive frames.
+    return bool(sc[NUDE_EXPOSED].max() >= 0.45 or sc[NUDE_G_COV] >= 0.45 or sc[NUDE_BUTT_COV] >= 0.75
+                or (sc[NUDE_BREAST_COV] >= 0.5 and sc[NUDE_BELLY] >= 0.45))
 
 
 _K3 = np.ones((3, 3), np.uint8)
