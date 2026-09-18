@@ -1,12 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=gqIFkvp6K98",
-      "title": "She was so confused! 😭🤣 #kdrama",
-      "country": "South Korea",
-      "postedAt": "2026-08-18T10:07:42.249Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=20GWQZ7C4h0",
       "title": "Angry with Love💕✨ | CDrama Edit #shorts",
       "country": "China",
@@ -413,6 +407,24 @@
         "spidey-chase"
       ],
       "titleSource": "fallback",
+      "watermark": "default"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=LTZRZ2ue2Ew",
+      "title": "4 Chinese Girls: Pajamas to GLAM! ✨👗",
+      "country": "China",
+      "postedAt": "2026-09-18T06:47:04.983Z",
+      "videoId": "LTZRZ2ue2Ew",
+      "sourceChannel": "Luli_Lush-ENT",
+      "sourceUrl": "https://www.youtube.com/watch?v=-wqCogvlOZY",
+      "sourceTitle": "😌🧣Which transformation #makeup #outfit #douyin #dance #makeuptransition #danceclothes #costume",
+      "summary": "Four Chinese creators perform a popular Douyin transition trend, changing from casual pajamas to glamorous outfits.",
+      "category": "beauty",
+      "eggs": [
+        "spidey-stick",
+        "gwen-peek"
+      ],
+      "titleSource": "dspy",
       "watermark": "default"
     }
   ]
