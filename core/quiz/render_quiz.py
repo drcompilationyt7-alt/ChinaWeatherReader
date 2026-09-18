@@ -325,7 +325,7 @@ class QuizRenderer:
             a = q
             sub = f"NOT {r['decoy'].upper()}!" if r.get('decoy') else (f"CAPITAL: {r['capital'].upper()}" if r.get('capital') else r.get('continent', '').upper())
         elif fmt == 'shape':
-            mask, _ = geo.fit_mask(r['numeric'], 800, 640)
+            mask, _ = geo.fit_mask(r['numeric'], 800, 600)  # tall countries must clear the timer
             q = silhouette(mask, self.accent)
             a = silhouette(mask, self.accent, texture=load_flag(r['iso2']))
             sub = f"POPULATION: {fmt_num(r['population'])}" if r.get('population') else (r.get('continent') or '').upper()
@@ -454,7 +454,7 @@ class QuizRenderer:
 
     def draw_single(self, frame, i, t_local, seg):
         q = seg['reveal'] - seg['start']
-        cy = 900 if self.fmt != 'capital' else 880
+        cy = {'capital': 880, 'shape': 880}.get(self.fmt, 900)
         pop_in = ease_out_back((t_local + self.pop_offset) / 0.32)
         s = 0.86 + 0.14 * pop_in
         if t_local < q:

@@ -219,7 +219,7 @@ jobs:
           if git diff --staged --quiet; then exit 0; fi
           git commit -m "Update $(date +%F)"
           for i in 1 2 3; do
-            git pull --rebase -X theirs origin main && git push && break
+            git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break
             sleep 5
           done
 
