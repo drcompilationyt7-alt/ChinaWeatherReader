@@ -179,7 +179,49 @@ def build_idols():
     print(f'{len(idols)} idols with photos')
 
 
+CITY_QIDS = {  # Wikidata items of the cities in pop-bank.json (avoids ambiguous name searches)
+    'Beijing': 'Q956', 'Shanghai': 'Q8686', 'Hong Kong': 'Q8646', 'Guangzhou': 'Q16572', 'Chengdu': 'Q30002',
+    "Xi'an": 'Q5826', 'Harbin': 'Q42956', 'Lhasa': 'Q5869', 'Urumqi': 'Q93264', 'Chongqing': 'Q11725',
+    'Hangzhou': 'Q4970', 'Kunming': 'Q167219', 'Sanya': 'Q192906', 'Wuhan': 'Q11746', 'Tokyo': 'Q1490',
+    'Osaka': 'Q35765', 'Kyoto': 'Q34600', 'Sapporo': 'Q37951', 'Fukuoka': 'Q26600', 'Hiroshima': 'Q34664',
+    'Nagoya': 'Q11751', 'Sendai': 'Q47262', 'Nagasaki': 'Q38234', 'Seoul': 'Q8684', 'Busan': 'Q16520',
+    'Incheon': 'Q20934', 'Daegu': 'Q20927', 'Gwangju': 'Q41283', 'Jeju': 'Q41520', 'Daejeon': 'Q20921',
+    'Gyeongju': 'Q41327',
+}
+
+
+def build_city_photos():
+    bank = json.load(open(os.path.join(OUT, 'pop-bank.json'), encoding='utf-8'))
+    out = []
+    for c in bank['cities']:
+        qid = CITY_QIDS.get(c['name'])
+        if not qid:
+            continue
+        try:
+            ent = http_json(f'https://www.wikidata.org/wiki/Special:EntityData/{qid}.json')['entities'][qid]
+            label = ent.get('labels', {}).get('en', {}).get('value', '')
+            if label.split(',')[0].lower().replace('-', ' ') not in c['name'].lower().replace("'", '').replace('-', ' ')                     and c['name'].lower().split()[0] not in label.lower():
+                print(f"  {c['name']}: {qid} is '{label}', skipped", file=sys.stderr)
+                continue
+            p18 = ent.get('claims', {}).get('P18')
+            if not p18:
+                continue
+            info = commons_info(p18[0]['mainsnak']['datavalue']['value'])
+            if info['url']:
+                out.append({**c, 'image': info['url'], 'credit': f"{info['author'] or 'Wikimedia Commons'}, {info['license']}",
+                            'wikidata': qid})
+            time.sleep(0.3)
+        except Exception as e:
+            print(f"  {c['name']}: {e}", file=sys.stderr)
+    json.dump({'source': 'Wikidata / Wikimedia Commons (see credit per photo)', 'cities': out},
+              open(os.path.join(OUT, 'city-photos.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f'{len(out)} city photos')
+
+
 if __name__ == '__main__':
+    if '--cities' in sys.argv:
+        build_city_photos()
+        sys.exit(0)
     if '--skip-anime' not in sys.argv:
         build_anime()
     if '--skip-idols' not in sys.argv:

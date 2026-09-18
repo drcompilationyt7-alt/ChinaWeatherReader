@@ -1,0 +1,280 @@
+{
+ "source": "Wikidata / Wikimedia Commons (see credit per photo)",
+ "cities": [
+  {
+   "iso2": "CN",
+   "name": "Beijing",
+   "lat": 39.9,
+   "lon": 116.4,
+   "fact": "Home of the Forbidden City",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29.jpg/960px-Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "N509FZ, CC BY-SA 4.0",
+   "wikidata": "Q956"
+  },
+  {
+   "iso2": "CN",
+   "name": "Shanghai",
+   "lat": 31.2,
+   "lon": 121.5,
+   "fact": "China's biggest city",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Shanghai_montage.png/960px-Shanghai_montage.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "ASDFGHJ, pontmarcheur (compilations, for proper attribution you have to name the, CC BY-SA 3.0",
+   "wikidata": "Q8686"
+  },
+  {
+   "iso2": "CN",
+   "name": "Hong Kong",
+   "lat": 22.3,
+   "lon": 114.2,
+   "fact": "Over 7 million people",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/Hong_Kong_from_Victoria_Peak1.jpg/960px-Hong_Kong_from_Victoria_Peak1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Mustang Joe, CC0",
+   "wikidata": "Q8646"
+  },
+  {
+   "iso2": "CN",
+   "name": "Guangzhou",
+   "lat": 23.1,
+   "lon": 113.3,
+   "fact": "Birthplace of Cantonese dim sum",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/Canton_Tower_20220626_%28cropped%29.jpg/960px-Canton_Tower_20220626_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Tim Wu, CC BY-SA 4.0",
+   "wikidata": "Q16572"
+  },
+  {
+   "iso2": "CN",
+   "name": "Chengdu",
+   "lat": 30.7,
+   "lon": 104.1,
+   "fact": "Famous for giant pandas",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/%E9%9B%AA%E5%B1%B1%E4%B8%8B%E7%9A%84%E6%88%90%E9%83%BD%E5%B8%82%E5%A4%A9%E9%99%85%E7%BA%BF_Chengdu_skyline_with_snow_capped_mountains.jpg/960px-%E9%9B%AA%E5%B1%B1%E4%B8%8B%E7%9A%84%E6%88%90%E9%83%BD%E5%B8%82%E5%A4%A9%E9%99%85%E7%BA%BF_Chengdu_skyline_with_snow_capped_mountains.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "FISU, CC BY 3.0",
+   "wikidata": "Q30002"
+  },
+  {
+   "iso2": "CN",
+   "name": "Xi'an",
+   "lat": 34.3,
+   "lon": 108.9,
+   "fact": "Home of the Terracotta Army",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/%E8%A5%BF%E5%AE%89%E9%92%9F%E6%A5%BC2020_%281%29.jpg/960px-%E8%A5%BF%E5%AE%89%E9%92%9F%E6%A5%BC2020_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "ScareCriterion12, CC BY-SA 4.0",
+   "wikidata": "Q5826"
+  },
+  {
+   "iso2": "CN",
+   "name": "Harbin",
+   "lat": 45.8,
+   "lon": 126.6,
+   "fact": "Hosts a giant ice festival",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/26941-Harbin_%2849027716202%29.jpg/960px-26941-Harbin_%2849027716202%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "xiquinhosilva, CC BY 2.0",
+   "wikidata": "Q42956"
+  },
+  {
+   "iso2": "CN",
+   "name": "Lhasa",
+   "lat": 29.65,
+   "lon": 91.1,
+   "fact": "One of the highest cities on Earth",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Lhasa_from_Potala.JPG/960px-Lhasa_from_Potala.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Wikimedia Commons, CC BY-SA 3.0",
+   "wikidata": "Q5869"
+  },
+  {
+   "iso2": "CN",
+   "name": "Chongqing",
+   "lat": 29.6,
+   "lon": 106.5,
+   "fact": "Built on steep mountain hills",
+   "difficulty": 2,
+   "image": "https://upload.wikimedia.org/wikipedia/commons/5/51/Chongqing_montage_newest_2013.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Jonipoon, CC BY-SA 3.0",
+   "wikidata": "Q11725"
+  },
+  {
+   "iso2": "CN",
+   "name": "Hangzhou",
+   "lat": 30.3,
+   "lon": 120.2,
+   "fact": "Famous for West Lake",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Huanglong_%26_Broken_Bridge_-_Hangzhou_City_%26_West_Lake_near_Broken_Bridge.jpg/960px-Huanglong_%26_Broken_Bridge_-_Hangzhou_City_%26_West_Lake_near_Broken_Bridge.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "User:CatOnMars, CC BY 4.0",
+   "wikidata": "Q4970"
+  },
+  {
+   "iso2": "CN",
+   "name": "Wuhan",
+   "lat": 30.6,
+   "lon": 114.3,
+   "fact": "Sits on the Yangtze River",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/%E6%AD%A6%E6%B1%89%E9%BB%84%E9%B9%A4%E6%A5%BC%E4%BF%AF%E7%9E%B0.jpg/960px-%E6%AD%A6%E6%B1%89%E9%BB%84%E9%B9%A4%E6%A5%BC%E4%BF%AF%E7%9E%B0.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "螺钉, CC BY-SA 4.0",
+   "wikidata": "Q11746"
+  },
+  {
+   "iso2": "JP",
+   "name": "Tokyo",
+   "lat": 35.7,
+   "lon": 139.7,
+   "fact": "Japan's capital and biggest city",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg/960px-Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Morio, CC BY-SA 3.0",
+   "wikidata": "Q1490"
+  },
+  {
+   "iso2": "JP",
+   "name": "Osaka",
+   "lat": 34.7,
+   "lon": 135.5,
+   "fact": "Called 'Japan's kitchen'",
+   "difficulty": 1,
+   "image": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Osaka_montage.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "credit": "Kyoww, CC BY-SA 3.0",
+   "wikidata": "Q35765"
+  },
+  {
+   "iso2": "JP",
+   "name": "Kyoto",
+   "lat": 35.0,
+   "lon": 135.8,
+   "fact": "Japan's capital for 1,000+ years",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Pedestrian_road_with_pavements%2C_paper_umbrellas_and_people_in_yukata%2C_Higashiyama-ku%2C_Kyoto%2C_Japan.jpg/960px-Pedestrian_road_with_pavements%2C_paper_umbrellas_and_people_in_yukata%2C_Higashiyama-ku%2C_Kyoto%2C_Japan.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Basile Morin, CC BY-SA 4.0",
+   "wikidata": "Q34600"
+  },
+  {
+   "iso2": "JP",
+   "name": "Sapporo",
+   "lat": 43.06,
+   "lon": 141.35,
+   "fact": "Famous snow festival",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/%E6%9C%AD%E5%B9%8C%E3%82%BF%E3%83%AF%E3%83%BC%E9%9B%BB%E6%B3%A2%E5%A1%94%E5%B1%95%E6%9C%9B%E5%8F%B0%E3%81%8B%E3%82%89%E6%9C%AD%E5%B9%8C%E9%A7%85%E6%96%B9%E9%9D%A2_-_panoramio.jpg/960px-%E6%9C%AD%E5%B9%8C%E3%82%BF%E3%83%AF%E3%83%BC%E9%9B%BB%E6%B3%A2%E5%A1%94%E5%B1%95%E6%9C%9B%E5%8F%B0%E3%81%8B%E3%82%89%E6%9C%AD%E5%B9%8C%E9%A7%85%E6%96%B9%E9%9D%A2_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Hideki Uchida (セラ), CC BY-SA 3.0",
+   "wikidata": "Q37951"
+  },
+  {
+   "iso2": "JP",
+   "name": "Fukuoka",
+   "lat": 33.6,
+   "lon": 130.4,
+   "fact": "Home of tonkotsu ramen",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/Hakata_Port_from_Fukuoka_Tower.jpg/960px-Hakata_Port_from_Fukuoka_Tower.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "そらみみ, CC BY-SA 4.0",
+   "wikidata": "Q26600"
+  },
+  {
+   "iso2": "JP",
+   "name": "Hiroshima",
+   "lat": 34.4,
+   "lon": 132.45,
+   "fact": "Known for its Peace Memorial",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/Atomic_Bomb_Dome_and_Motoyaso_River%2C_Hiroshima%2C_Northwest_view_20190417_1.jpg/960px-Atomic_Bomb_Dome_and_Motoyaso_River%2C_Hiroshima%2C_Northwest_view_20190417_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "DXR, CC BY-SA 4.0",
+   "wikidata": "Q34664"
+  },
+  {
+   "iso2": "JP",
+   "name": "Nagoya",
+   "lat": 35.2,
+   "lon": 136.9,
+   "fact": "Toyota's home region",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/Japan_Nagoya.png/960px-Japan_Nagoya.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "File:Ferris Wheel - Port of Nagoya.JPG by Gnsin\nFile:Higashiyama botanical garde, CC BY-SA 3.0",
+   "wikidata": "Q11751"
+  },
+  {
+   "iso2": "JP",
+   "name": "Nagasaki",
+   "lat": 32.75,
+   "lon": 129.9,
+   "fact": "Japan's old gateway to Europe",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Nagasaki_City_View_from_Glover_Garden%2C_Nagasaki_2014.jpg/960px-Nagasaki_City_View_from_Glover_Garden%2C_Nagasaki_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Tomio344456, CC BY-SA 4.0",
+   "wikidata": "Q38234"
+  },
+  {
+   "iso2": "KR",
+   "name": "Seoul",
+   "lat": 37.57,
+   "lon": 126.98,
+   "fact": "Half of Koreans live in its metro",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/%EB%8D%95%EC%88%98%EA%B6%81%EC%9D%98_%EA%B0%80%EC%9D%84.jpg/960px-%EB%8D%95%EC%88%98%EA%B6%81%EC%9D%98_%EA%B0%80%EC%9D%84.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "라성민, CC BY-SA 3.0",
+   "wikidata": "Q8684"
+  },
+  {
+   "iso2": "KR",
+   "name": "Busan",
+   "lat": 35.18,
+   "lon": 129.08,
+   "fact": "Korea's biggest port city",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/Korea-Busan-Busan_Tower-01.jpg/960px-Korea-Busan-Busan_Tower-01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "by lwy, CC BY 2.0",
+   "wikidata": "Q16520"
+  },
+  {
+   "iso2": "KR",
+   "name": "Incheon",
+   "lat": 37.46,
+   "lon": 126.7,
+   "fact": "Home of Korea's main airport",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Incheon_Cityscape.jpg/960px-Incheon_Cityscape.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "JNicol, CC BY-SA 3.0",
+   "wikidata": "Q20934"
+  },
+  {
+   "iso2": "KR",
+   "name": "Daegu",
+   "lat": 35.87,
+   "lon": 128.6,
+   "fact": "One of Korea's hottest cities",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Daemyeong-dong%2C_Nam-gu%2C_Daegu.jpg/960px-Daemyeong-dong%2C_Nam-gu%2C_Daegu.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Im Taewon, KOGL Type 1",
+   "wikidata": "Q20927"
+  },
+  {
+   "iso2": "KR",
+   "name": "Gwangju",
+   "lat": 35.16,
+   "lon": 126.85,
+   "fact": "Birthplace of BTS's J-Hope",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4c/%EB%AC%B4%EC%A7%84%EA%B3%A0%EC%84%B1%EC%A7%80%EC%97%90%EC%84%9C_%EB%82%B4%EB%A0%A4%EB%8B%A4%EB%B3%B8_%EA%B4%91%EC%A3%BC%EA%B4%91%EC%97%AD%EC%8B%9C_%EC%8B%9C%EA%B0%80%EC%A7%80.jpg/960px-%EB%AC%B4%EC%A7%84%EA%B3%A0%EC%84%B1%EC%A7%80%EC%97%90%EC%84%9C_%EB%82%B4%EB%A0%A4%EB%8B%A4%EB%B3%B8_%EA%B4%91%EC%A3%BC%EA%B4%91%EC%97%AD%EC%8B%9C_%EC%8B%9C%EA%B0%80%EC%A7%80.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "NZ 토끼들, CC BY-SA 4.0",
+   "wikidata": "Q41283"
+  },
+  {
+   "iso2": "KR",
+   "name": "Daejeon",
+   "lat": 36.35,
+   "lon": 127.38,
+   "fact": "Korea's science city",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/%EB%8C%80%EC%A0%84%EC%8B%9C_%EB%8F%99%EA%B5%AC8%EA%B2%BD_%EC%8B%9D%EC%9E%A5%EC%82%B0.jpg/960px-%EB%8C%80%EC%A0%84%EC%8B%9C_%EB%8F%99%EA%B5%AC8%EA%B2%BD_%EC%8B%9D%EC%9E%A5%EC%82%B0.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "대전광역시 동구, KOGL Type 1",
+   "wikidata": "Q20921"
+  }
+ ]
+}
