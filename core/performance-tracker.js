@@ -34,6 +34,7 @@ const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
 const { Logger } = require('./logger');
+const experiments = require('./experiment-log');
 
 const logger = new Logger('Performance');
 
@@ -163,22 +164,36 @@ async function tryFetchAnalytics(bridge, videoIds) {
     const start = new Date(end.getTime() - 120 * 86400000);
     const fmt = d => d.toISOString().slice(0, 10);
     const out = {};
+    // per-video reports need a sort; engagedViews (what YPP counts for Shorts) may be missing on older API
+    // versions, so the query falls back to the plain metric set once
+    let metrics = 'views,engagedViews,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,shares,subscribersGained';
     for (let i = 0; i < videoIds.length; i += 50) {
       const batch = videoIds.slice(i, i + 50);
-      const r = await ya.reports.query({
+      const query = () => ya.reports.query({
         ids: 'channel==MINE',
         startDate: fmt(start),
         endDate: fmt(end),
-        metrics: 'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,shares,subscribersGained',
+        metrics,
         dimensions: 'video',
         filters: `video==${batch.join(',')}`,
+        sort: '-views',
         maxResults: 50,
       });
+      let r;
+      try {
+        r = await query();
+      } catch (e) {
+        if (!/engagedViews/i.test(e.message || '') || !metrics.includes('engagedViews')) throw e;
+        metrics = metrics.replace('engagedViews,', '');
+        r = await query();
+      }
       const cols = (r.data.columnHeaders || []).map(c => c.name);
       for (const row of r.data.rows || []) {
         const rec = {};
         cols.forEach((c, k) => { rec[c] = row[k]; });
         out[rec.video] = {
+          views: rec.views || 0,
+          engagedViews: rec.engagedViews || null,
           minutesWatched: rec.estimatedMinutesWatched || 0,
           avgViewDurationSec: rec.averageViewDuration || 0,
           avgViewPct: rec.averageViewPercentage || 0,
@@ -353,8 +368,14 @@ async function syncPerformance(bridge) {
   logger.info(`Fetched ${videos.length} uploads for ${channel.title || 'channel'} (${channel.subscribers} subs, ${channel.totalViews.toLocaleString()} views)`);
   const analytics = await tryFetchAnalytics(bridge, videos.map(v => v.videoId));
   if (analytics) for (const v of videos) if (analytics[v.videoId]) v.analytics = analytics[v.videoId];
+  // stat snapshots at fixed ages (48 h, 7 days) for the learners' reward
+  const outcomes = experiments.recordSnapshots(videos);
 
   const { insights, scoredVideos } = computeInsights(videos, channel);
+  const rewards = experiments.computeRewards(scoredVideos, outcomes);
+  for (const v of scoredVideos) {
+    if (rewards[v.videoId]) Object.assign(v, { reward: rewards[v.videoId].r, rewardFinal: rewards[v.videoId].final, v7: rewards[v.videoId].v7 });
+  }
   writeJson(STATS_FILE, { updatedAt: insights.updatedAt, channel, videos: scoredVideos });
   writeJson(INSIGHTS_FILE, insights);
   logger.success(`Insights: ${insights.sampleSize} scored shorts, typical ${insights.typicalScore} views/day${insights.reliable ? '' : ' (not enough data yet — insights not applied)'}`);

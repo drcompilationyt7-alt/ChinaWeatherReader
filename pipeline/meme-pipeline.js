@@ -24,6 +24,7 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const { loadStats } = require('../core/performance-tracker');
+const { decay, appendDecision } = require('../core/experiment-log');
 
 const logger = new Logger('MemeAcapella');
 const ROOT = path.join(__dirname, '..');
@@ -175,9 +176,33 @@ function recordUpload(result, upload) {
     videoId: upload.videoId, url: upload.url, postedAt: new Date().toISOString(), publishAt: upload.publishAt || null,
     song: result.meme.song, theme: result.meme.theme, emoji: result.meme.emoji, title: result.title,
     clipIds: result.meme.clipIds, clipChannels: result.meme.clipChannels, followUpOf: result.meme.followUpOf || undefined,
-    clipSource: result.meme.clipSource || undefined,
+    clipSource: result.meme.clipSource || undefined, settings: result.meme.settings || undefined,
   });
   saveHistory(h);
+  appendDecision({ vid: upload.videoId, ch: 'meme', title: result.title,
+    arm: { song: result.meme.song, source: result.meme.clipSource || null, theme: result.meme.theme, ...(result.meme.settings || {}) },
+    mode: result.meme.followUpOf ? 'followup' : (result.meme.why || 'pick') });
+}
+
+// Production settings tried at random every day (independently), so each upload says a little about
+// each of them; the weekly report compares them (core/reflect/weekly-report.js)
+const SETTINGS = {
+  drop: [10, 14, 18],            // seconds of the original song after the stack
+  edit: [4, 6, 8],               // shots gathered for the drop edit
+  hashtag: [true, false],        // #source in the title
+  hook: ['layers', 'drop', 'question'],
+};
+const HOOKS = {
+  layers: (caption, e, src) => `${caption} but it's layer by layer ${e}${src ? ` (${src} edit at the end)` : ''}`,
+  drop: (caption, e, src) => `wait for the drop ${e} ${caption}${src ? `, then a ${src} edit` : ''}`,
+  question: (caption, e, src) => `which layer hits the hardest? ${e} ${caption}${src ? ` + ${src} edit` : ''}`,
+};
+
+function pickSettings() {
+  const out = {};
+  for (const [k, vals] of Object.entries(SETTINGS)) out[k] = vals[Math.floor(Math.random() * vals.length)];
+  if (process.env.MEME_DROP) out.drop = Number(process.env.MEME_DROP);
+  return out;
 }
 
 function gaussian() {
@@ -189,8 +214,11 @@ function gaussian() {
 
 function scored(stats, history) {
   const byId = new Map(((stats && stats.videos) || []).map(v => [v.videoId, v]));
-  return history.uploads.map(u => ({ ...u, stat: byId.get(u.videoId) }))
+  const out = history.uploads.map(u => ({ ...u, stat: byId.get(u.videoId) }))
     .filter(u => u.stat && typeof u.stat.lscore === 'number' && (u.stat.ageDays || 0) >= 1.5);
+  // learn from the fixed-checkpoint reward once every upload has one; older results count less
+  const useReward = out.length && out.every(u => typeof u.stat.reward === 'number');
+  return out.map(u => ({ ...u, learn: useReward ? u.stat.reward : u.stat.lscore, w: decay(u.stat.ageDays) }));
 }
 
 /** Channels whose clips were in videos YouTube blocked in many countries. */
@@ -239,15 +267,19 @@ function pickSong(stats, history, trends) {
   const recent = new Set(history.uploads.slice(-4).map(u => u.song));
   const bySong = new Map(SONGS.map(x => [x.name, x.source]));
   const recentSources = new Set(history.uploads.slice(-7).map(u => u.clipSource || bySong.get(u.song)).filter(Boolean));
-  const prior = done.length ? done.reduce((a, u) => a + u.stat.lscore, 0) / done.length : 0;
+  const channelPrior = done.length ? done.reduce((a, u) => a + u.learn, 0) / done.length : 0;
+  const wmean = obs => { const n = obs.reduce((a, u) => a + u.w, 0); return n ? obs.reduce((a, u) => a + u.w * u.learn, 0) / n : null; };
   let best = null;
   const seen = new Set();
   for (const s of [...trends, ...SONGS]) {
     if (recent.has(s.name) || seen.has(s.name) || (s.source && recentSources.has(s.source))) continue;
     seen.add(s.name);
-    const mine = done.filter(u => u.song === s.name).map(u => u.stat.lscore);
-    const n = mine.length;
-    const mean = n ? (mine.reduce((a, b) => a + b, 0) + prior) / (n + 1) : prior + (s.trendCount ? 0.4 : 0);
+    // pooled prior: a new song starts from how its anime / group did, else the channel
+    const srcObs = s.source ? done.filter(u => (u.clipSource || bySong.get(u.song)) === s.source) : [];
+    const prior = srcObs.length ? (wmean(srcObs) + channelPrior) / 2 : channelPrior;
+    const mine = done.filter(u => u.song === s.name);
+    const n = mine.reduce((a, u) => a + u.w, 0);
+    const mean = (mine.reduce((a, u) => a + u.w * u.learn, 0) + prior) / (n + 1) + (!mine.length && s.trendCount ? 0.4 : 0);
     const draw = mean + gaussian() * 0.7 / Math.sqrt(n + 1);
     if (!best || draw > best.draw) best = { ...s, draw };
   }
@@ -349,11 +381,13 @@ async function runMemePipeline(opts = {}) {
   const song = forced ? { ...forced, why: 'forced' } : pickSong(stats, history, trends);
   logger.info(`Song: ${song.name} (${song.why})`);
 
+  const settings = pickSettings();
+  logger.info(`Settings: drop ${settings.drop}s, ${settings.edit} edit shots, hashtag ${settings.hashtag ? 'on' : 'off'}, hook ${settings.hook}`);
   const t0 = Date.now();
   const src = await downloadSong(song, work);
   logger.info(`Source audio: ${src.sourceTitle}`);
   const acapArgs = [path.join(ROOT, 'core', 'meme', 'acapella.py'), '--audio', src.audio, '--out-dir', path.join(work, 'acapella'),
-    '--drop', process.env.MEME_DROP || '14'];
+    '--drop', String(settings.drop)];
   if (src.heatmap) acapArgs.push('--heatmap', src.heatmap);
   const acap = await run(python(), acapArgs, 15);
   logger.success(`Acapella: ${acap.bpm} bpm, ${acap.duration}s${acap.drop ? `, original song from ${acap.drop.source_start}s` : ''}`);
@@ -376,7 +410,7 @@ async function runMemePipeline(opts = {}) {
   if (song.source) {
     logger.info(`Clip source: ${song.source} (${song.kind})`);
     const srcArgs = [...baseArgs, '--source', song.source, '--source-kind', song.kind || 'anime',
-      '--aliases', (song.aliases || []).join(','), '--song-name', song.name, '--edit', '6'];
+      '--aliases', (song.aliases || []).join(','), '--song-name', song.name, '--edit', String(settings.edit)];
     if (acap.drop) {
       srcArgs.push('--song-audio', src.audio, '--song-start', String(acap.drop.source_start),
         '--song-len', String(Math.round((acap.drop.source_end - acap.drop.source_start) * 1000) / 1000));
@@ -395,7 +429,8 @@ async function runMemePipeline(opts = {}) {
   }
   // second opinion from a small vision model (SigLIP): vibe, theme, quality, safety
   try {
-    const judged = await run(python(), [path.join(ROOT, 'core', 'meme', 'clip_judge.py'), '--clips', clips.manifest, '--theme', theme], 8);
+    const judged = await run(python(), [path.join(ROOT, 'core', 'meme', 'clip_judge.py'), '--clips', clips.manifest, '--theme', theme,
+      ...(clips.source ? ['--no-vibe'] : [])], 8);
     if (judged.skipped) logger.warn(`Clip judge skipped: ${judged.skipped}`);
     else logger.info(`Clip judge kept ${judged.kept}, dropped ${(judged.rejected || []).length}: ${(judged.rejected || []).map(r => r[1]).join('; ')}`);
   } catch (e) {
@@ -416,7 +451,7 @@ async function runMemePipeline(opts = {}) {
   logger.success(`Rendered ${res.duration}s, ${res.cuts} cuts (${res.editShots || 0} in the drop edit, ${res.editAligned || 0} synced, `
     + `${res.soundEditHits || 0} sound hits) in ${Math.round((Date.now() - t0) / 1000)}s`);
 
-  const tag = clips.source ? song.source.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
+  const tag = clips.source && settings.hashtag ? song.source.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
   const title = `${caption} ${emoji.split(',').join('')}${tag ? ` #${tag}` : ''}`;
   const tagsByTheme = { anime: ['anime', 'anime memes', 'anime funny moments'], kpop: ['kpop', 'kpop memes', 'kpop funny moments'],
     japanese: ['japan', 'japanese memes', 'funny japan'], chinese: ['china', 'douyin', 'chinese memes'],
@@ -425,7 +460,7 @@ async function runMemePipeline(opts = {}) {
     success: true,
     videoPath: res.path,
     title,
-    description: `${caption} but it's layer by layer ${emoji.split(',')[0]}${clips.source ? ` (${song.source} edit at the end)` : ''}`
+    description: HOOKS[settings.hook](caption, emoji.split(',')[0], clips.source ? song.source : null)
       + `\n\nwhich layer hit the hardest? 👇\n\n`
       + (res.channelsUsed.length ? `clips from: ${res.channelsUsed.map(c => c.trim()).join(', ')}\n` : '')
       + `#acapella #${{ anime: 'anime', kpop: 'kpop', japanese: 'japan', chinese: 'douyin', cute: 'cute' }[theme] || 'asianmemes'} #shorts`,
@@ -438,7 +473,7 @@ async function runMemePipeline(opts = {}) {
     category: `meme-${theme}`,
     editType: 'meme',
     meme: { song: song.name, theme, emoji, clipIds: res.clipsUsed, clipChannels: res.channelsUsed, followUpOf: song.followUpOf || null,
-      source: src.source, clipSource: clips.source ? song.source : null },
+      source: src.source, clipSource: clips.source ? song.source : null, settings, why: song.why },
     workDir: work,
   };
 }

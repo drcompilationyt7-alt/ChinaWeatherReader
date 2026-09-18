@@ -923,9 +923,15 @@ def is_blocked(e, block):
     return False
 
 
+# burned-in subtitles / lyrics: the full-screen edit crops them mid-word (text detection misses small subs)
+SUBS_RE = re.compile(r'(sub|subs|subbed|subtitles?|eng ?sub|english sub|lyrics?|romaji|karaoke|cc)|字幕|歌詞|자막|가사', re.I)
+
+
 def prefilter(e, used, block, min_views, max_dur, src=None):
     if e['id'] in used:
         return 'used'
+    if e['vibe'] == 'edit' and SUBS_RE.search(e.get('title') or ''):
+        return 'subtitles'
     if is_blocked(e, block):
         return 'blocked'
     if e['live']:

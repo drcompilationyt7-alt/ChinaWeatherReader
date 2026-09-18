@@ -27,6 +27,7 @@ const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
 const { buildPopPlan, markUsed, key: popKey } = require('./pop-quiz-content');
+const { decay, appendDecision } = require('../core/experiment-log');
 const pop = require('./pop-quiz-meta');
 
 const logger = new Logger('WorldQuiz');
@@ -147,6 +148,9 @@ function recordUpload(result, upload) {
   });
   saveHistory(h);
   if (result.quiz.keys) markUsed(result.quiz.keys);
+  appendDecision({ vid: upload.videoId, ch: 'quiz', title: result.title,
+    arm: { format: result.quiz.format, topic: result.quiz.topic || result.quiz.theme, length: result.quiz.length, title: result.quiz.titleTemplate },
+    mode: result.quiz.followUpOf ? 'followup' : (result.quiz.why || 'pick') });
 }
 
 function recentIso(history, format, days) {
@@ -165,13 +169,24 @@ function recentIso(history, format, days) {
 /** Quiz uploads joined with their latest stats (lscore = log views/day, engagement-weighted). */
 function scoredQuizUploads(stats, history) {
   const byId = new Map(((stats && stats.videos) || []).map(v => [v.videoId, v]));
-  return history.uploads
+  const out = history.uploads
     .map(u => ({ ...u, stat: byId.get(u.videoId) }))
     .filter(u => u.stat && typeof u.stat.lscore === 'number' && (u.stat.ageDays || 0) >= 1.5);
+  // learn from the fixed-checkpoint reward (core/experiment-log.js) once every upload has one;
+  // w: older results count less (10% per week), the channel keeps changing
+  const useReward = out.length && out.every(u => typeof u.stat.reward === 'number');
+  return out.map(u => ({ ...u, learn: useReward ? u.stat.reward : u.stat.lscore, w: decay(u.stat.ageDays) }));
+}
+
+/** Weighted Thompson draw: (sum w*x + prior) / (sum w + 1) plus noise shrinking with the evidence. */
+function weightedDraw(obs, prior, noise) {
+  const n = obs.reduce((a, u) => a + u.w, 0);
+  const mean = (obs.reduce((a, u) => a + u.w * u.x, 0) + prior) / (n + 1);
+  return { n, draw: mean + gaussian() * noise / Math.sqrt(n + 1) };
 }
 
 function percentileRewards(items) {
-  const sorted = [...items].sort((a, b) => a.stat.lscore - b.stat.lscore);
+  const sorted = [...items].sort((a, b) => a.learn - b.learn);
   const rank = new Map(sorted.map((u, i) => [u.videoId, sorted.length > 1 ? i / (sorted.length - 1) : 0.5]));
   return items.map(u => ({ ...u, reward: rank.get(u.videoId) }));
 }
@@ -200,10 +215,8 @@ function pickFormat(stats, history, forced) {
   let best = null;
   const draws = [];
   for (const f of allowed) {
-    const mine = scored.filter(u => u.format === f).map(u => u.reward);
-    const n = mine.length;
-    const draw = (mine.reduce((a, b) => a + b, 0) + 0.5) / (n + 1) + gaussian() * 0.25 / Math.sqrt(n + 1);
-    draws.push(`${f}=${draw.toFixed(2)}(${n})`);
+    const { n, draw } = weightedDraw(scored.filter(u => u.format === f).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
+    draws.push(`${f}=${draw.toFixed(2)}(${n.toFixed(1)})`);
     if (!best || draw > best.draw) best = { f, draw };
   }
   return { format: best.f, why: `thompson ${draws.join(' ')}` };
@@ -219,13 +232,10 @@ const LENGTHS = { quick: 3, standard: null };  // null = the format's default (5
 /** Thompson sampling between the quick (3-round) and standard cut. */
 function pickLength(stats, history) {
   const scored = scoredQuizUploads(stats, history);
-  const prior = scored.length ? scored.reduce((a, u) => a + u.stat.lscore, 0) / scored.length : 0;
+  const prior = scored.length ? scored.reduce((a, u) => a + u.learn, 0) / scored.length : 0;
   let best = null;
   for (const len of Object.keys(LENGTHS)) {
-    const mine = scored.filter(u => (u.length || 'standard') === len).map(u => u.stat.lscore);
-    const n = mine.length;
-    const mean = n ? (mine.reduce((a, b) => a + b, 0) + prior) / (n + 1) : prior;
-    const draw = mean + gaussian() * 0.6 / Math.sqrt(n + 1);
+    const { draw } = weightedDraw(scored.filter(u => (u.length || 'standard') === len).map(u => ({ x: u.learn, w: u.w })), prior, 0.6);
     if (!best || draw > best.draw) best = { len, draw };
   }
   return best.len;
@@ -265,14 +275,11 @@ function pickTitleTemplate(plan, stats, history, llmAvailable) {
   const options = TITLE_TEMPLATES[plan.format].filter(t => (!t.when || t.when(plan)) && !(noHard && /-ramp$/.test(t.id)));
   if (llmAvailable) options.push({ id: `${plan.format}-llm`, llm: true });
   const scored = scoredQuizUploads(stats, history).filter(u => u.format === plan.format);
-  const prior = scored.length ? scored.reduce((a, u) => a + u.stat.lscore, 0) / scored.length : 0;
+  const prior = scored.length ? scored.reduce((a, u) => a + u.learn, 0) / scored.length : 0;
   const recent = history.uploads.filter(u => u.format === plan.format).slice(-2).map(u => u.titleTemplate);
   let best = null;
   for (const t of options) {
-    const mine = scored.filter(u => u.titleTemplate === t.id).map(u => u.stat.lscore);
-    const n = mine.length;
-    const mean = n ? (mine.reduce((a, b) => a + b, 0) + prior) / (n + 1) : prior;
-    let draw = mean + gaussian() * 0.6 / Math.sqrt(n + 1);
+    let { draw } = weightedDraw(scored.filter(u => u.titleTemplate === t.id).map(u => ({ x: u.learn, w: u.w })), prior, 0.6);
     if (recent.includes(t.id)) draw -= 0.35;  // variety between consecutive uploads
     if (!best || draw > best.draw) best = { t, draw };
   }
@@ -497,7 +504,8 @@ async function runWorldQuizPipeline(opts = {}) {
     geminiScore: null,
     sourceChannel: null,
     quiz: {
-      format, theme, seed: plan.seed, titleTemplate, length, followUpOf: hit ? hit.videoId : null,
+      format, theme, seed: plan.seed, titleTemplate, length, followUpOf: hit ? hit.videoId : null, why: String(why || '').slice(0, 80),
+      topic: plan.topic || null,
       iso2s: popKeys || plan.rounds.flatMap(r => (r.left ? [r.left.iso2, r.right.iso2] : [r.iso2])),
       keys: popKeys,
       answers: plan.rounds.map(label),

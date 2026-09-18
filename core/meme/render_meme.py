@@ -99,7 +99,8 @@ class ClipFrames:
         trim = f'crop=iw*{x1 - x0:.4f}:ih*{y1 - y0:.4f}:iw*{x0:.4f}:ih*{y0:.4f},' if (x1 - x0) * (y1 - y0) < 0.97 else ''
         if fill:
             # the edit: fill the screen around where the action is, graded and sharpened like a 4K edit
-            vf = (f'[0:v]{trim}scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,'
+            # drop the bottom band first: burned-in subtitles live there and the crop would cut them mid-word
+            vf = (f'[0:v]{trim}crop=iw:ih*0.86:0:ih*0.02,scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,'
                   f'crop={w}:{h}:max(0\\,min(iw-{w}\\,{cx:.3f}*iw-{w // 2})):(ih-{h})/2,'
                   f'eq=contrast=1.10:saturation=1.30:brightness=0.01,unsharp=5:5:0.8:5:5:0.0,fps={FPS}')
         else:

@@ -76,7 +76,8 @@ def frames(clip, n=3):
 
 
 class Judge:
-    def __init__(self):
+    def __init__(self, check_vibe=True):
+        self.check_vibe = check_vibe
         import torch
         from transformers import AutoModel, AutoProcessor
         torch.set_num_threads(max(1, os.cpu_count() or 1))
@@ -132,7 +133,7 @@ class Judge:
             reasons.append('not anime')
         if theme in REAL_THEMES and anime > 0.85:
             reasons.append('anime in a real-footage theme')
-        if want in vibe and vibe[want] < 0.18 and max(vibe, key=vibe.get) != want:
+        if self.check_vibe and want in vibe and vibe[want] < 0.18 and max(vibe, key=vibe.get) != want:
             reasons.append(f'does not look like {want}')
         res['ok'] = not reasons
         res['reason'] = ', '.join(reasons)
@@ -149,11 +150,12 @@ def main():
     ap.add_argument('--clips', required=True)
     ap.add_argument('--theme', default='mixed')
     ap.add_argument('--min-keep', type=int, default=4, help='never drop below this many clips (best rejected ones come back)')
+    ap.add_argument('--no-vibe', action='store_true', help="source mode: don't reject a clip of the right anime / group for its vibe")
     args = ap.parse_args()
     manifest = json.load(open(args.clips, encoding='utf-8'))
     clips = manifest['clips'] if isinstance(manifest, dict) else manifest
     try:
-        judge = Judge()
+        judge = Judge(check_vibe=not args.no_vibe)
     except Exception as e:
         print(json.dumps({'ok': True, 'skipped': f'model unavailable: {str(e)[:120]}', 'kept': len(clips)}))
         return
