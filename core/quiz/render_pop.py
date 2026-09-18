@@ -69,6 +69,20 @@ INTRO = {'emoji': {'anime': 'Guess the anime from the emojis!', 'kpop song': 'Gu
          'trivia': 'How many can you get right?', 'wyr': None, 'city': 'Guess the city from the map!',
          'character': 'Guess the anime character!', 'idol': 'Guess the K-pop idol!', 'opening': 'Guess the anime from its opening!'}
 
+# Varied, conversational narration: the same fixed line every video is what
+# makes TTS channels feel robotic (and "repetitive" to YouTube's classifiers).
+INTRO_POOL = {
+    'character': ['Guess the anime character!', 'Okay, real otakus only. Who is this?', 'Name the character before it unblurs!',
+                  "Let's see how much anime you've actually watched."],
+    'idol': ['Guess the K-pop idol!', 'Real K-pop fans get these instantly.', 'Name the idol before the photo clears up!'],
+    'opening': ['Guess the anime from its opening!', 'Three seconds of the opening. Name the anime.', 'Headphones on. Which anime is this?'],
+    'emoji': None, 'trivia': ['How many can you get right?', "Let's see if you're a real fan.", 'Five questions. No cheating.'],
+    'city': ['Guess the city from the map!', 'Where is this dot? Name the city.', 'Map nerds, this one is for you.'],
+}
+REVEAL_POOL = ['{a}!', "It's {a}!", 'That was {a}.', '{a}. Did you get it?', 'Easy. {a}!']
+LAST_POOL = ['Last one. This one is evil.', 'Final round. Good luck.', 'Last one, and it gets hard.']
+OUTRO_POOL = ['How many did you get? Comment your score!', 'Be honest. How many did you get?', 'Drop your score in the comments!']
+
 Q_MIN = {'emoji': 4.0, 'trivia': 4.5, 'wyr': 4.2, 'city': 3.0, 'character': 4.0, 'idol': 4.0, 'opening': 4.3}
 R_MIN = {'emoji': 1.9, 'trivia': 1.6, 'wyr': 2.0, 'city': 1.8, 'character': 1.9, 'idol': 1.9, 'opening': 2.1}
 CARD_W, CARD_H = 580, 640
@@ -158,6 +172,8 @@ class PopRenderer(QuizRenderer):
         intro = INTRO[self.fmt]
         if isinstance(intro, dict):
             intro = intro.get(self.topic, 'Guess it from the emojis!')
+        elif INTRO_POOL.get(self.fmt):
+            intro = self.rng.choice(INTRO_POOL[self.fmt])
         ask, ans = [], []
         for r in rounds:
             if self.fmt == 'trivia':
@@ -172,10 +188,11 @@ class PopRenderer(QuizRenderer):
                 ans.append(f"{r['title']}!")
             else:
                 ask.append(None)
-                ans.append(f"{(r.get('answer') or r.get('name')).split(' (')[0]}!")
-        outro = 'Which would you pick? Comment below!' if self.fmt == 'wyr' else 'How many did you get? Comment your score!'
+                name = (r.get('answer') or r.get('name')).split(' (')[0]
+                ans.append(self.rng.choice(REVEAL_POOL).format(a=name))
+        outro = 'Which would you pick? Comment below!' if self.fmt == 'wyr' else self.rng.choice(OUTRO_POOL)
         if self.fmt == 'opening':
-            ans = [f"{r['title']}!" for r in rounds]
+            ans = [self.rng.choice(REVEAL_POOL).format(a=r['title']) for r in rounds]
         return intro, ask, ans, outro
 
     def build_pop_timeline(self, ask_d, ans_d):

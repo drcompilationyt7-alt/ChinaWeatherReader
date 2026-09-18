@@ -401,16 +401,22 @@ class QuizRenderer:
     # ── audio ──
     def voice_lines(self):
         rounds = self.plan['rounds']
-        lines = [INTRO_LINE[self.fmt]]
+        pick = self.rng.choice
+        intros = {'flag': ['Guess the flag in three seconds!', 'Name these flags before the timer runs out.', 'Flag quiz. Easy to impossible. Go!'],
+                  'shape': ['Guess the country by its shape!', 'Can you name the country from its outline?', 'No names, just shapes. Which country?'],
+                  'capital': ['Name the capital city!', 'Capitals. Three seconds each.', 'Most people fail at least one of these capitals.'],
+                  'bigger': ['Which country is actually bigger?', 'The map lies. Which one is bigger?'],
+                  'crowd': ['Which country has more people?', 'More people. Left or right?']}
+        lines = [pick(intros.get(self.fmt) or [INTRO_LINE[self.fmt]])]
         for r in rounds:
             if self.fmt == 'bigger':
                 lines.append(f"{r['answer']}! About {r['ratio']:g} times bigger.")
             elif self.fmt == 'crowd':
                 lines.append(f"{r['answer']}! About {r['ratio']:g} times more people.")
             else:
-                lines.append(f"{r['answer']}!")
-        lines.append('Last one!')
-        lines.append('How many did you get? Comment your score!')
+                lines.append(pick(['{a}!', "It's {a}!", 'That was {a}.', 'Easy. {a}!']).format(a=r['answer']))
+        lines.append(pick(['Last one!', 'Last one. This one is evil.', 'Final round. Good luck.']))
+        lines.append(pick(['How many did you get? Comment your score!', 'Be honest. How many did you get?', 'Drop your score in the comments!']))
         return lines
 
     def make_audio(self, clips):
