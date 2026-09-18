@@ -1,5 +1,7 @@
 /**
- * Question bank for the Asian pop culture formats (emoji, trivia, wyr, city).
+ * Question bank and round picker for the Asian pop culture formats (emoji, trivia, wyr,
+ * city, plus the media formats drawn from snapshots: character, idol, opening, cityphoto,
+ * vtuber, duel, scene, voice).
  *
  * The bank starts from the hand-checked items in core/quiz/assets/pop-bank.json
  * and grows with LLM-written items (Gemini first, OpenRouter as fallback).
@@ -18,12 +20,29 @@ const ROOT = path.join(__dirname, '..');
 const SEED_FILE = path.join(ROOT, 'core', 'quiz', 'assets', 'pop-bank.json');
 const BANK_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'pop-bank.json');
 const REUSE_AFTER_DAYS = 60;
-// snapshots from scripts/build-pop-media.py (AniList, Wikidata/Commons)
+// snapshots from scripts/build-pop-media.py (AniList, Wikidata/Commons, Virtual YouTuber Wiki)
 const MEDIA = {
   character: ['anime-characters.json', 'characters'],
   idol: ['kpop-idols.json', 'idols'],
   opening: ['anime-list.json', 'anime'],
+  cityphoto: ['city-photos.json', 'cities'],
+  vtuber: ['vtubers.json', 'vtubers'],
+  scene: ['anime-list.json', 'anime'],
+  voice: ['anime-characters.json', 'characters'],
+  duel: ['anime-characters.json', 'characters'],
 };
+// clips can fail to download: spare candidates per level (hard shows fail most often: fewer uploads)
+const SPARES = { opening: [1, 1, 1], scene: [3, 3, 2, 3, 1], voice: [3, 2, 3, 1, 2, 1] };
+const RAMPS = { 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] };
+// duel questions (mirrors core/quiz/render_pop.py): neutral ones fit any pair, the rest need both characters 16+
+const DUEL_NEUTRAL = ['Who would you trust to protect you?', 'Who wins in a fight?', "Who's the better teacher?",
+  'Who would you rather go on an adventure with?'];
+const DUEL_ADULT = ['Who would you rather have as your roommate?'];
+const DUEL_SKIP = new Set(['bakemonogatari']);  // fan-service heavy even where AniList does not tag it
+// openings with fan-service shots, although AniList does not flag the show (the scene quiz plays video)
+const SCENE_SKIP = ['Bakemonogatari', 'Kakegurui', "DON'T TOY WITH ME, MISS NAGATORO", 'The Pet Girl of Sakurasou', "Masamune-kun's Revenge",
+  'Fire Force', 'Akame ga Kill!', 'Rascal Does Not Dream of Bunny Girl Senpai', 'Arifureta', 'The Misfit of Demon King Academy',
+  "Miss Kobayashi's Dragon Maid", 'Cyberpunk: Edgerunners', 'The Quintessential Quintuplets', 'Nisekoi', 'Monogatari'];
 
 const TOPICS = {
   emoji: ['anime', 'kpop song'],
@@ -31,9 +50,11 @@ const TOPICS = {
   wyr: ['anime', 'kpop', 'food', 'cities'],
   city: ['CN', 'JP', 'KR'],
   character: ['anime'], idol: ['kpop'], opening: ['anime'],
+  cityphoto: ['asia'], vtuber: ['vtubers'], scene: ['anime'], voice: ['anime'], duel: ['anime'],
 };
 const TOPIC_WEIGHTS = {
   character: { anime: 1 }, idol: { kpop: 1 }, opening: { anime: 1 },
+  cityphoto: { asia: 1 }, vtuber: { vtubers: 1 }, scene: { anime: 1 }, voice: { anime: 1 }, duel: { anime: 1 },
   emoji: { anime: 0.6, 'kpop song': 0.4 },
   trivia: { kpop: 0.3, anime: 0.3, vtubers: 0.15, cdrama: 0.1, cities: 0.15 },
   wyr: { anime: 0.4, kpop: 0.25, food: 0.2, cities: 0.15 },
@@ -53,9 +74,96 @@ function key(fmt, it) {
   if (fmt === 'emoji') return `emoji:${String(it.answer).toLowerCase()}`;
   if (fmt === 'trivia') return `trivia:${String(it.question).toLowerCase()}`;
   if (fmt === 'wyr') return `wyr:${String(it.a).toLowerCase()}|${String(it.b).toLowerCase()}`;
-  if (fmt === 'character' || fmt === 'idol') return `${fmt}:${String(it.name).toLowerCase()}`;
-  if (fmt === 'opening') return `opening:${it.id}`;
+  if (['character', 'idol', 'vtuber', 'voice'].includes(fmt)) return `${fmt}:${String(it.name).toLowerCase()}`;
+  if (fmt === 'opening' || fmt === 'scene') return `${fmt}:${it.id}`;
+  if (fmt === 'duel') return duelKey(it.a, it.b);
+  if (fmt === 'cityphoto') return `cityphoto:${it.iso2}:${String(it.name).toLowerCase()}`;
   return `city:${it.iso2}:${String(it.name).toLowerCase()}`;
+}
+
+const duelKey = (a, b) => `duel:${Math.min(a.id, b.id)}-${Math.max(a.id, b.id)}`;
+
+/** 'Attack on Titan Final Season' -> 'attack on': one entry per series in a quiz (mirrors render_pop.franchise). */
+function franchise(title) {
+  const t = String(title || '').toLowerCase();
+  const head = t.split(/[:\-–]/)[0];
+  return ((head.trim().length >= 4 ? head : t).match(/[a-z0-9]+/g) || []).slice(0, 2).join(' ');
+}
+
+const isSequel = t => /\b(season|part|cour)\s*\d|final season|\b(ii|iii|iv)\b|\d+(st|nd|rd|th) season|\barc\b|√a|:re\b|\bmovie\b|\?$/i
+  .test(String(t || ''));
+
+/** AniList age strings ('17-', '15-16 (series)', '40 Days') -> first number, or null. */
+function ageOf(a) {
+  const s = String(a || '');
+  if (!s || /day|week|month/i.test(s)) return null;
+  const m = s.match(/\d+/);
+  return m ? Number(m[0]) : null;
+}
+
+/** 'noragami' / 'noragami aragoto': one franchise key is the start of the other. */
+function sameSeries(a, b) {
+  const x = franchise(a).split(' '), y = franchise(b).split(' ');
+  const k = Math.min(x.length, y.length);
+  return k > 0 && x.slice(0, k).join(' ') === y.slice(0, k).join(' ');
+}
+
+/** What each media format draws from: nothing flagged nsfw (Ecchi / sexual-content tags), one entry per series for scenes. */
+function mediaPool(fmt, items) {
+  if (fmt === 'scene') {
+    const keep = [];
+    for (const a of [...items].sort((p, q) => (q.popularity || 0) - (p.popularity || 0))) {
+      if (!a.nsfw && !isSequel(a.title) && !SCENE_SKIP.some(s => sameSeries(a.title, s)) && !keep.some(k => sameSeries(a.title, k.title))) keep.push(a);
+    }
+    return keep;
+  }
+  // voice-line videos exist for the well-known characters only
+  if (fmt === 'voice') return items.slice(0, 150).map((c, k) => ({ ...c, difficulty: k < 25 ? 1 : k < 70 ? 2 : 3 })).filter(c => !c.nsfw);
+  return items;
+}
+
+/**
+ * Duel pairs: two popular characters (same series, else same gender among the top 80), a question
+ * each, and the real AniList favourites as the fans' pick. Difficulty = how close the vote is.
+ */
+function duelRounds(chars, n, fresh) {
+  const top = chars.slice(0, 150).filter(c => !c.nsfw && !DUEL_SKIP.has(franchise(c.anime)));
+  const rank = new Map(top.map((c, k) => [c.id, k]));
+  const same = [], cross = [];
+  for (let x = 0; x < top.length; x++) {
+    for (let y = x + 1; y < top.length; y++) {
+      const a = top[x], b = top[y];
+      if (franchise(a.anime) === franchise(b.anime)) same.push([a, b]);
+      else if (rank.get(a.id) < 80 && rank.get(b.id) < 80 && a.gender === b.gender && ['Male', 'Female'].includes(a.gender)) cross.push([a, b]);
+    }
+  }
+  const level = ([a, b]) => {
+    const r = Math.max(a.favourites, b.favourites) / Math.max(1, Math.min(a.favourites, b.favourites));
+    return r >= 1.6 ? 1 : r >= 1.2 ? 2 : 3;
+  };
+  const pickOne = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rounds = [], used = new Set(), asked = new Set(), shows = new Set();
+  for (const d of RAMPS[n] || RAMPS[4]) {
+    let pick = null;
+    for (const pool of (Math.random() < 0.75 ? [same, cross] : [cross, same])) {
+      let cand = pool.filter(p => level(p) === d && !used.has(p[0].id) && !used.has(p[1].id) && fresh(duelKey(p[0], p[1])));
+      const varied = cand.filter(p => !shows.has(franchise(p[0].anime)) && !shows.has(franchise(p[1].anime)));  // vary the shows
+      if (varied.length) cand = varied;
+      if (cand.length) { pick = pickOne(cand); shows.add(franchise(pick[0].anime)); shows.add(franchise(pick[1].anime)); break; }
+    }
+    if (!pick) continue;
+    const [a, b] = Math.random() < 0.5 ? pick : [pick[1], pick[0]];
+    used.add(a.id); used.add(b.id);
+    const grown = [a, b].every(c => (ageOf(c.age) ?? 0) >= 16);
+    const qs = [...DUEL_NEUTRAL, ...(grown ? DUEL_ADULT : [])].filter(q => !asked.has(q));
+    const special = !grown ? null : a.gender === 'Female' && b.gender === 'Female' ? 'Best girl?' : a.gender === 'Male' && b.gender === 'Male' ? 'Best boy?' : null;
+    const question = special && !asked.has(special) && Math.random() < 0.5 ? special : pickOne(qs.length ? qs : DUEL_NEUTRAL);
+    asked.add(question);
+    const keep = c => ({ id: c.id, name: c.name, anime: c.anime, image: c.image, favourites: c.favourites });
+    const winner = a.favourites >= b.favourites ? 'a' : 'b';
+    rounds.push({ a: keep(a), b: keep(b), question, difficulty: d, winner, answer: (winner === 'a' ? a : b).name });
+  }
+  return rounds;
 }
 
 function loadBank() {
@@ -75,7 +183,7 @@ function loadBank() {
   for (const [fmt, [file, field]] of Object.entries(MEDIA)) {
     try {
       const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'core', 'quiz', 'assets', file), 'utf8'))[field] || [];
-      bank[fmt] = data.map(x => ({ ...x, topic: TOPICS[fmt][0] }));
+      bank[fmt] = mediaPool(fmt, data).map(x => ({ ...x, topic: TOPICS[fmt][0] }));
     } catch { bank[fmt] = []; }
   }
   bank.generated = (mem.items) || { emoji: [], trivia: [], wyr: [] };
@@ -207,7 +315,12 @@ async function generate(bank, fmt, topic, n = 12) {
 async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
   const bank = loadBank();
   topic = topic || pickWeighted(TOPIC_WEIGHTS[fmt]);
-  const n = rounds || (fmt === 'wyr' ? 4 : 5);
+  const n = rounds || (fmt === 'wyr' || fmt === 'duel' ? 4 : 5);
+  if (fmt === 'duel') {
+    let picked = duelRounds(bank.duel, n, k => !bank.used[k] || (Date.now() - new Date(bank.used[k]).getTime()) > REUSE_AFTER_DAYS * 86400000);
+    if (picked.length < Math.min(3, n)) picked = duelRounds(bank.duel, n, () => true);  // every pair used lately: allow repeats
+    return { plan: { format: 'duel', topic: 'anime', rounds: picked }, keys: picked.map(r => key('duel', r)) };
+  }
   const fresh = () => bank[fmt].filter(i => i.topic === topic && isFresh(bank, fmt, i));
   if (!['city', ...Object.keys(MEDIA)].includes(fmt) && fresh().length < n + 4) {
     try { await generate(bank, fmt, topic); } catch (e) { logger.warn(`Generation failed: ${(e.message || '').slice(0, 100)}`); }
@@ -218,25 +331,28 @@ async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
       .sort((a, b) => String(bank.used[key(fmt, a)] || '').localeCompare(String(bank.used[key(fmt, b)] || '')));
   }
   const chosen = [];
-  // openings can fail to download: plan spare candidates, the renderer keeps the first n that work
-  const target = fmt === 'opening' ? n + 3 : n;
+  // clips can fail to download: plan spare candidates, the renderer keeps n of them (a spare replaces a
+  // failed round of the same difficulty, so the easy-to-hard ramp holds)
+  const spareLevels = SPARES[fmt] || [];
   if (fmt === 'wyr') {
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     chosen.push(...shuffled.slice(0, n));
   } else {
-    const ramp = [...({ 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] }[n] || [1, 1, 2, 2, 3]), ...Array(target - n).fill(1)];
+    const ramp = [...(RAMPS[n] || RAMPS[5]), ...spareLevels];
     for (const d of ramp) {
-      const c = pool.filter(i => !chosen.includes(i) && (i.difficulty || 2) === d);
-      const any = pool.filter(i => !chosen.includes(i));
+      // scene: never two seasons of one show in a quiz
+      const any = pool.filter(i => !chosen.includes(i) && (fmt !== 'scene' || !chosen.some(c => sameSeries(i.title, c.title))));
+      const c = any.filter(i => (i.difficulty || 2) === d);
       const src = c.length ? c : any;
       if (!src.length) break;
       chosen.push(src[Math.floor(Math.random() * src.length)]);
     }
   }
+  const byName = ['city', 'character', 'idol', 'cityphoto', 'vtuber', 'voice'];
   const plan = {
-    format: fmt, topic, want: fmt === 'opening' ? n : undefined,
-    rounds: chosen.map(i => (fmt === 'city' || fmt === 'character' || fmt === 'idol' ? { ...i, answer: i.name }
-      : fmt === 'opening' ? { ...i, answer: i.title } : fmt === 'trivia' ? { ...i, answerText: i.options[i.answer] } : i)),
+    format: fmt, topic, want: spareLevels.length ? n : undefined,
+    rounds: chosen.map(i => (byName.includes(fmt) ? { ...i, answer: i.name }
+      : fmt === 'opening' || fmt === 'scene' ? { ...i, answer: i.title } : fmt === 'trivia' ? { ...i, answerText: i.options[i.answer] } : i)),
   };
   return { plan, keys: chosen.map(i => key(fmt, i)) };
 }
@@ -250,4 +366,4 @@ function markUsed(keys) {
   saveBank(bank);
 }
 
-module.exports = { buildPopPlan, markUsed, loadBank, TOPICS, generate, key };
+module.exports = { buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };

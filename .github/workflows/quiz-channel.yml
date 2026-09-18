@@ -16,7 +16,7 @@ on:
         required: false
         default: ''
       format:
-        description: 'Force a format (optional: character, idol, opening, emoji, trivia, wyr, city, flag, shape)'
+        description: 'Force a format (optional: character, idol, opening, scene, duel, cityphoto, vtuber, emoji, trivia, wyr, city, flag, shape)'
         required: false
         default: ''
       dry_run:
@@ -48,8 +48,10 @@ env:
   YT_COOKIES: /tmp/yt_cookies.txt
   QUIZ_MEDIA_CACHE: /home/runner/.cache/quiz-media
   MEMORY_DIR: memory/quiz-channel
-  # Asian pop culture formats + Asia editions of the geography quizzes
-  QUIZ_FORMATS: character,idol,opening,emoji,trivia,wyr,city,flag,shape
+  # Asian pop culture formats + Asia editions of the geography quizzes. `voice` (guess the character
+  # by voice) is left out on purpose: its YouTube clips can't be checked for the right speaker;
+  # add it to this list to try it (a forced format must be in the list too).
+  QUIZ_FORMATS: character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
