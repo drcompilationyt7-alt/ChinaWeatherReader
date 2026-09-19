@@ -1,6 +1,12 @@
 name: Daily Shorts Creation (Gemini-First)
 
 on:
+  # Zero Yen Otaku: one meme short a day, published at 12:00 UTC. The render starts ~9 h early
+  # (GitHub can start scheduled runs late); 07:47 and the external 06:22 trigger are backups that
+  # do nothing once today's short is up.
+  schedule:
+    - cron: '47 2 * * *'
+    - cron: '47 7 * * *'
   workflow_dispatch:
     inputs:
       country:
@@ -14,7 +20,7 @@ on:
         description: 'Override publish time (ISO 8601)'
         required: false
       mode:
-        description: 'pause (default, no upload), meme (acapella meme shorts), quiz (World Quiz) or daily (old clip re-uploads)'
+        description: 'meme (default: acapella meme shorts), pause (no upload), quiz (World Quiz) or daily (old clip re-uploads)'
         required: false
         default: ''
       dry_run:
@@ -51,7 +57,7 @@ env:
   # pause = no upload; meme = "<song> acapella" meme shorts (this channel's new
   # format, switch the default to 'meme' once the samples are approved);
   # quiz = World Quiz shorts; daily = the old clip re-upload pipeline
-  CONTENT_MODE: ${{ github.event.inputs.mode || 'pause' }}
+  CONTENT_MODE: ${{ github.event.inputs.mode || 'meme' }}
   WATERMARK: '@zeroyenotaku'
   YT_COOKIES: /tmp/yt_cookies.txt
   MEME_PYTHON: python3
@@ -71,6 +77,14 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT || github.token }}
           fetch-depth: 0
+
+      - name: One short a day
+        if: env.CONTENT_MODE == 'meme' && github.event.inputs.dry_run != 'true'
+        run: |
+          if node -e "const h=require('./memory/meme-history.json'); const d=new Date().toISOString().slice(0,10); process.exit((h.uploads||[]).some(u=>String(u.postedAt||'').startsWith(d))?0:1)" 2>/dev/null; then
+            echo "Today's meme short is already uploaded; nothing to do."
+            echo "CONTENT_MODE=pause" >> $GITHUB_ENV
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
