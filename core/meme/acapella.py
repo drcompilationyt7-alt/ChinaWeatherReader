@@ -6,12 +6,18 @@ Acapella engine for the "<song> acapella" meme shorts.
         [--length 20] [--drop 14] [--heatmap heatmap.json] [--threads N] [--debug]
 
 Picks a ~20 s hook (--start, else the yt-dlp "most replayed" heatmap, else the
-loudest vocal stretch), snaps it to a downbeat, pulls the real lead vocal out
-with Demucs (htdemucs, CPU, that window only) and stacks our own mouth-made
-layers on it, one more per section:
+loudest vocal stretch), snaps it to a downbeat and splits that window into the
+song's real stems with Demucs (htdemucs_6s, CPU: vocals, drums, bass, guitar,
+piano, other). The stems that actually play in the window are stacked one per
+section, all from the same recording, so the build-up ends as the real song:
 
-    vocal  ->  + hummed "doom" bass  ->  + beatbox  ->  + ooh/aah harmony
-           ->  (--drop) the original song, on from where the stack stopped
+    vocals  ->  + drums  ->  + bass  ->  + piano / guitar / the rest
+            ->  (--drop) the original song, on from where the stack stopped
+
+A section only exists for a stem that is there (no bass, no "+ BASS"); more
+than four stems merge into the last layer. Songs with fewer than two usable
+stems fall back to --stems synth: the real vocal plus our own synthesised
+hummed bass, beatbox and ooh/aah harmony.
 
 Bass, beatbox and harmony are synthesised here (glottal-pulse harmonics shaped
 by vowel formants, filtered noise bursts for the mouth drums); nothing is
@@ -763,12 +769,15 @@ def arrange(beats, n_bars, sizes, chords, bpm, centre, n_out, seed=0):
 
 # ---------------------------------------------------------------- separation
 
+STEM_MODEL = os.environ.get('STEM_MODEL', 'htdemucs_6s')
+
+
 def separate(seg, threads):
     import torch
     from demucs.apply import apply_model
     from demucs.pretrained import get_model
     torch.set_num_threads(threads)
-    model = get_model('htdemucs')
+    model = get_model(STEM_MODEL)
     wav = torch.from_numpy(seg.astype(np.float32))
     ref = wav.mean(0)
     mu, sd = ref.mean(), ref.std() + 1e-8
@@ -787,7 +796,7 @@ def _quiet_point(env, et, a, b):
     return float(et[sel][np.argmin(env[sel])])
 
 
-def add_drop(x, acap, we, off, per, want, dur):
+def add_drop(x, acap, we, off, per, want, dur, ring=0.25):
     """
     The original song picks up where the stack stops: from the window's last
     downbeat for about `want` seconds of whole bars, a touch louder than the
@@ -822,7 +831,7 @@ def add_drop(x, acap, we, off, per, want, dur):
     y = np.zeros((2, d0 + n))
     a = acap[:, :min(acap.shape[1], y.shape[1])]
     ta = np.arange(a.shape[1]) / SR
-    y[:, :a.shape[1]] += a * np.clip(1 - (ta - (ds - off)) / 0.25, 0, 1)
+    y[:, :a.shape[1]] += a * np.clip(1 - (ta - (ds - off)) / ring, 0, 1)
     y[:, d0:] += seg
     ceil = 10 ** (-1.5 / 20)
     y = limit(y, ceil)
@@ -857,7 +866,27 @@ def add_drop(x, acap, we, off, per, want, dur):
     return y, info
 
 
-def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, debug=False, drop=0.0):
+LAYER_ORDER = ['vocals', 'drums', 'bass']   # then the other stems, loudest first
+
+
+def plan_layers(segs, window):
+    """
+    Which real stems make the build-up and in what order: [(layer name, [stems])].
+    A stem counts when it is audible in the window next to the whole mix; vocals, drums and
+    bass come first, the rest by loudness; beyond four layers the quietest merge into the last,
+    which is named after its loudest part.
+    """
+    lv = {k: lufs(v[:, :window]) for k, v in segs.items()}
+    full = lufs(sum(segs.values())[:, :window])
+    active = [k for k in segs if lv[k] > max(-42.0, full - 20.0)]
+    order = [k for k in LAYER_ORDER if k in active] + sorted([k for k in active if k not in LAYER_ORDER], key=lambda k: -lv[k])
+    if len(order) <= 4:
+        return [(k, [k]) for k in order], lv
+    head, rest = order[:3], order[3:]
+    return [(k, [k]) for k in head] + [(max(rest, key=lambda k: lv[k]), rest)], lv
+
+
+def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, debug=False, drop=0.0, mode='real'):
     import librosa
     t_start = time.time()
     threads = threads or os.cpu_count() or 2
@@ -884,7 +913,10 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     # separate only the window plus room to snap to a downbeat, slide onto the singing and ring out
     rs = max(0.0, s0 - L / 4 - 3 * per0 - 1.0)
     re_ = min(dur, s0 + L + L / 3 + 8 * per0 + 1.5)
-    stems = separate(x[:, int(rs * SR):int(re_ * SR)], threads)
+    stems_all = separate(x[:, int(rs * SR):int(re_ * SR)], threads)
+    # the analysis (grid, downbeats, chords) wants the classic 4: fold guitar / piano into "other"
+    stems = {k: stems_all[k] for k in ('vocals', 'drums', 'bass') if k in stems_all}
+    stems['other'] = sum(v for k, v in stems_all.items() if k not in ('vocals', 'drums', 'bass'))
     log(f'[acapella] demucs done on {re_ - rs:.1f}s [{time.time() - t_start:.1f}s]')
 
     sel = bt[(bt >= rs) & (bt <= re_)]
@@ -941,48 +973,91 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     cb = grid[k0:k0 + n_bars * 4 + 5]
     chords = chords_per_beat(stems, voc, rs, cb, np.arange(len(cb) - 1))
     lead = lead_pitch(voc[:, int((ws - rs) * SR):int((we - rs) * SR)])
-    centre = float(np.clip(lead - 3, 57, 69))
-    layers, ev = arrange(beats_out, n_bars, sizes, chords, bpm, centre, n_out,
-                         seed=int(ws * 1000) % 100000)
-
-    # vocal as separated (low rumble filtered), faded at the cut points
     i0 = int(round((off - rs) * SR))
-    vocal = np.zeros((2, n_out))
-    seg = voc[:, i0:i0 + n_out]
-    vocal[:, :seg.shape[1]] = seg
-    vocal = _filt(vocal, lo=70)
     t = np.arange(n_out) / SR
-    ve = v_end - off
-    fade = np.clip(t / 0.012, 0, 1) * np.clip((ve + 0.06 - t) / 0.08, 0, 1)
-    vocal *= fade
+    window = int((we - off) * SR)
 
-    # levels relative to the vocal (loudness of each layer where it plays)
-    lv = lufs(vocal)
-    sec_t = [float(beats_out[b * 4]) if b * 4 < len(beats_out) else we - off
-             for b in np.concatenate([[0], np.cumsum(sizes)])]
-    sec_t[0] = 0.0
-    st = {'vocal': vocal}
-    for i, (name, rel) in enumerate((('bass', -6.0), ('beatbox', -5.0), ('harmony', -10.5))):
-        s = layers[name]
-        cur = lufs(np.atleast_2d(s)[:, int(sec_t[i + 1] * SR):])
-        g = 10 ** ((lv + rel - cur) / 20) if cur > -70 else 1.0
-        st[name] = s * g if s.ndim == 2 else _pan(s * g, 0.08 if name == 'beatbox' else 0.0)
+    def seg_of(v):
+        arr = np.zeros((2, n_out))
+        piece = v[:, i0:i0 + n_out]
+        arr[:, :piece.shape[1]] = piece
+        return arr
 
-    dry = sum(st.values())
-    sends = {'vocal': 0.10, 'bass': 0.05, 'beatbox': 0.10, 'harmony': 0.35}
-    bus = sum(sends[k] * st[k].mean(axis=0) for k in st)
-    ir = _room_ir()
-    wet = np.stack([signal.fftconvolve(bus, ir[c])[:n_out] for c in range(2)])
-    wet = _filt(wet, lo=180)
-    mix = dry + wet
-    endfade = np.clip((n_out / SR - t) / 0.25, 0, 1)
-    mix *= endfade
-    out, g = master(mix)
-    for k in st:
-        st[k] = st[k] * g * endfade
+    layer_plan, stem_lv = ([], {})
+    if mode == 'real':
+        segs = {k: seg_of(v) for k, v in stems_all.items()}
+        layer_plan, stem_lv = plan_layers(segs, window)
+        if len(layer_plan) < 2:
+            log(f'[acapella] only {len(layer_plan)} usable stem(s) here: synthesised layers instead')
+            mode = 'synth'
+    if mode == 'real':
+        names = [name for name, _ in layer_plan]
+        n = len(names)
+        sizes = [n_bars // n + (1 if i >= n - n_bars % n else 0) for i in range(n)]
+        sec_t = [float(beats_out[b * 4]) if b * 4 < len(beats_out) else we - off
+                 for b in np.concatenate([[0], np.cumsum(sizes)])]
+        sec_t[0] = 0.0
+        st = {}
+        for j, (name, parts) in enumerate(layer_plan):
+            a_ = sum(segs[p] for p in parts)
+            if j == 0:
+                env = np.clip(t / 0.012, 0, 1)
+            else:  # in from its downbeat (a hair early, so the first attack is whole)
+                env = np.clip((t - (sec_t[j] - 0.03)) / 0.02, 0, 1)
+            st[name] = a_ * env
+        mix = sum(st.values())
+        # level the stack so the full build matches the song it turns into (no jump at the drop)
+        full = mix[:, int(sec_t[-1] * SR):window]
+        g = 10 ** ((-13.0 - lufs(full)) / 20) if full.shape[1] > SR // 2 else 1.0
+        ceil = 10 ** (-1.5 / 20)
+        endfade = np.clip((n_out / SR - t) / 0.25, 0, 1) if drop <= 0 else np.ones(n_out)
+        out = limit(mix * g * endfade, ceil)
+        tp = true_peak(out)
+        if tp > ceil:
+            out *= ceil / tp
+        for k in st:
+            st[k] = st[k] * g * endfade
+        log(f'[acapella] real stems: {" -> ".join(names)} '
+            f'({", ".join(f"{k} {v:.0f} LUFS" for k, v in sorted(stem_lv.items(), key=lambda kv: -kv[1]))})')
+        ev = None
+    else:
+        names = ['vocal', 'bass', 'beatbox', 'harmony']
+        sizes = [n_bars // 4 + (1 if i >= 4 - n_bars % 4 else 0) for i in range(4)]
+        centre = float(np.clip(lead - 3, 57, 69))
+        layers, ev = arrange(beats_out, n_bars, sizes, chords, bpm, centre, n_out,
+                             seed=int(ws * 1000) % 100000)
+        # vocal as separated (low rumble filtered), faded at the cut points
+        vocal = seg_of(voc)
+        vocal = _filt(vocal, lo=70)
+        ve = v_end - off
+        fade = np.clip(t / 0.012, 0, 1) * np.clip((ve + 0.06 - t) / 0.08, 0, 1)
+        vocal *= fade
+        # levels relative to the vocal (loudness of each layer where it plays)
+        lv = lufs(vocal)
+        sec_t = [float(beats_out[b * 4]) if b * 4 < len(beats_out) else we - off
+                 for b in np.concatenate([[0], np.cumsum(sizes)])]
+        sec_t[0] = 0.0
+        st = {'vocal': vocal}
+        for i, (name, rel) in enumerate((('bass', -6.0), ('beatbox', -5.0), ('harmony', -10.5))):
+            s_ = layers[name]
+            cur = lufs(np.atleast_2d(s_)[:, int(sec_t[i + 1] * SR):])
+            g = 10 ** ((lv + rel - cur) / 20) if cur > -70 else 1.0
+            st[name] = s_ * g if s_.ndim == 2 else _pan(s_ * g, 0.08 if name == 'beatbox' else 0.0)
+        dry = sum(st.values())
+        sends = {'vocal': 0.10, 'bass': 0.05, 'beatbox': 0.10, 'harmony': 0.35}
+        bus = sum(sends[k] * st[k].mean(axis=0) for k in st)
+        ir = _room_ir()
+        wet = np.stack([signal.fftconvolve(bus, ir[c])[:n_out] for c in range(2)])
+        wet = _filt(wet, lo=180)
+        mix = dry + wet
+        endfade = np.clip((n_out / SR - t) / 0.25, 0, 1)
+        mix *= endfade
+        out, g = master(mix)
+        for k in st:
+            st[k] = st[k] * g * endfade
     drop_info = None
     if drop > 0:
-        out, drop_info = add_drop(x, out, we, off, per, drop, dur)
+        out, drop_info = add_drop(x, out, we, off, per, drop, dur, ring=0.012 if mode == 'real' else 0.25)
         if drop_info:
             log(f'[acapella] drop: original song {drop_info["source_start"]:.1f}-{drop_info["source_end"]:.1f}s '
                 f'({drop_info["bars"]} bars) [{time.time() - t_start:.1f}s]')
@@ -990,33 +1065,36 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     paths = {'mix': os.path.join(out_dir, 'acapella.wav')}
     write_wav(paths['mix'], out)
     stems_out = {}
-    for k in ('vocal', 'bass', 'beatbox', 'harmony'):
+    for k in names:
         stems_out[k] = os.path.join(out_dir, f'{k}.wav')
         write_wav(stems_out[k], st[k])
     if debug:
-        acc = sum(stems[k] for k in ('drums', 'bass', 'other'))[:, i0:i0 + n_out]
+        acc = sum(stems[k] for k in ('drums', 'bass', 'other') if k in stems)[:, i0:i0 + n_out]
         write_wav(os.path.join(out_dir, 'accomp.wav'), acc)
         write_wav(os.path.join(out_dir, 'drums.wav'), stems['drums'][:, i0:i0 + n_out])
         write_wav(os.path.join(out_dir, 'source.wav'), x[:, int(off * SR):int(off * SR) + n_out])
 
     # timeline for the video editor (all times in output seconds)
-    vy = _to_asr(vocal)
-    von = librosa.onset.onset_detect(y=vy, sr=ASR, hop_length=128, units='time', backtrack=False)
-    ve_env = librosa.feature.rms(y=vy, frame_length=1024, hop_length=128)[0]
-    von = [round(float(o), 4) for o in von
-           if ve_env[min(len(ve_env) - 1, int(o * ASR / 128))] > 0.1 * np.percentile(ve_env, 95)]
+    def onsets_of(sig):
+        y = _to_asr(sig)
+        on = librosa.onset.onset_detect(y=y, sr=ASR, hop_length=128, units='time', backtrack=False)
+        env = librosa.feature.rms(y=y, frame_length=1024, hop_length=128)[0]
+        top = np.percentile(env, 95) if len(env) else 0
+        return [round(float(o), 4) for o in on if env[min(len(env) - 1, int(o * ASR / 128))] > 0.1 * top]
+
+    layer_onsets = {k: onsets_of(st[k]) for k in names} if mode == 'real' else None
+    von = layer_onsets[names[0]] if mode == 'real' else onsets_of(st['vocal'])
     bars = []
     for b in range(n_bars):
         bc = chords[b * 4:b * 4 + 4]
         name = max(set(bc), key=lambda c: (bc.count(c), -bc.index(c)))
         bars.append({'index': b, 'start': round(float(beats_out[b * 4]), 4),
                      'end': round(float(beats_out[b * 4 + 4]), 4), 'chord': chord_name(name)})
-    layer_order = ['vocal', 'bass', 'beatbox', 'harmony']
     sections, b0 = [], 0
     for i, sz in enumerate(sizes):
         sections.append({'index': i + 1, 'start': round(0.0 if i == 0 else float(beats_out[b0 * 4]), 4),
                          'end': round(float(beats_out[(b0 + sz) * 4]), 4), 'bars': [b0, b0 + sz],
-                         'layers': layer_order[:i + 1]})
+                         'layers': names[:i + 1]})
         b0 += sz
     end_hit = round(float(beats_out[n_bars * 4]), 4)
     nb_all = n_bars * 4 + 1
@@ -1034,14 +1112,16 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         'sections': sections,
         'end_hit': end_hit,
         'drop': drop_info,
-        'layers': {
-            'vocal': {'file': 'vocal.wav', 'onsets': von},
-            'bass': {'file': 'bass.wav', 'notes': ev['bass']},
-            'beatbox': {'file': 'beatbox.wav', 'hits': ev['beatbox']},
-            'harmony': {'file': 'harmony.wav', 'notes': ev['harmony']},
-        },
-        'onsets': {'vocal': von, 'bass': [e['t'] for e in ev['bass']],
-                   'beatbox': [e['t'] for e in ev['beatbox']], 'harmony': [e['t'] for e in ev['harmony']]},
+        'stems_mode': mode,
+        'layers': ({k: {'file': f'{k}.wav', 'onsets': layer_onsets[k], 'stems': dict(layer_plan)[k]} for k in names}
+                   if mode == 'real' else {
+                       'vocal': {'file': 'vocal.wav', 'onsets': von},
+                       'bass': {'file': 'bass.wav', 'notes': ev['bass']},
+                       'beatbox': {'file': 'beatbox.wav', 'hits': ev['beatbox']},
+                       'harmony': {'file': 'harmony.wav', 'notes': ev['harmony']}}),
+        'onsets': (dict(layer_onsets) if mode == 'real' else
+                   {'vocal': von, 'bass': [e['t'] for e in ev['bass']],
+                    'beatbox': [e['t'] for e in ev['beatbox']], 'harmony': [e['t'] for e in ev['harmony']]}),
         'analysis': {'grid_to_attacks_median_ms': round(resid * 1000, 1), 'lead_median_midi': round(lead, 1),
                      'loudness_lufs': round(lufs(out), 2), 'true_peak_dbtp': round(20 * math.log10(true_peak(out)), 2),
                      'seconds': round(time.time() - t_start, 1)},
@@ -1053,7 +1133,7 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         f'[{time.time() - t_start:.1f}s]')
     return {'ok': True, 'mix': os.path.abspath(paths['mix']), 'stems': {k: os.path.abspath(v) for k, v in stems_out.items()},
             'timeline': os.path.abspath(paths['timeline']), 'bpm': round(bpm, 2), 'duration': round(out.shape[1] / SR, 3),
-            'window_start': round(ws, 3), 'window_end': round(we, 3), 'picked_by': how,
+            'window_start': round(ws, 3), 'window_end': round(we, 3), 'picked_by': how, 'layers': names, 'stems_mode': mode,
             'drop': {k: drop_info[k] for k in ('start', 'end', 'source_start', 'source_end')} if drop_info else None}
 
 
@@ -1066,12 +1146,14 @@ def main():
     ap.add_argument('--heatmap', help='yt-dlp heatmap JSON (list of {start_time, end_time, value}) or -J dump')
     ap.add_argument('--drop', type=float, default=0.0,
                     help='then play the original song on from where the stack ends, about this many seconds (whole bars)')
+    ap.add_argument('--stems', choices=['real', 'synth'], default=os.environ.get('MEME_STEMS', 'real'),
+                    help="real: the song's own stems build up; synth: real vocal + our synthesised layers")
     ap.add_argument('--threads', type=int, help='torch threads (default: all cores)')
     ap.add_argument('--debug', action='store_true', help='also write accomp/drums/source windows')
     args = ap.parse_args()
     os.environ.setdefault('HF_HUB_DISABLE_SYMLINKS_WARNING', '1')
     try:
-        res = run(args.audio, args.out_dir, args.start, args.length, args.heatmap, args.threads, args.debug, args.drop)
+        res = run(args.audio, args.out_dir, args.start, args.length, args.heatmap, args.threads, args.debug, args.drop, args.stems)
     except Exception as e:
         import traceback
         traceback.print_exc()

@@ -532,7 +532,14 @@ class DailyRunner {
   async run() {
     await this.initialize();
     const args = process.argv.slice(2);
-    const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'daily';
+    const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'none';
+    // Zero Yen Otaku (meme edits) and Asian Pop Quiz (quiz) are the only live pipelines. The old
+    // Mr. WorldWideWebster re-upload / explainer / nightly / weekly modes are retired for good:
+    // they re-posted other creators' clips.
+    if (!['meme', 'quiz'].includes(mode)) {
+      logger.warn(`Mode "${mode}" is retired (old re-upload pipelines). Nothing to do.`);
+      return 0;
+    }
     const countryArg = args.includes('--country') ? args[args.indexOf('--country') + 1] : null;
     const publishAt = args.includes('--publish-at') ? args[args.indexOf('--publish-at') + 1] : null;
     const isPrivate = args.includes('--private');

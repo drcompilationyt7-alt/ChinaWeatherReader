@@ -20,7 +20,7 @@ on:
         description: 'Override publish time (ISO 8601)'
         required: false
       mode:
-        description: 'meme (default: acapella meme shorts), pause (no upload), quiz (World Quiz) or daily (old clip re-uploads)'
+        description: 'meme (default: acapella meme shorts) or pause (no upload)'
         required: false
         default: ''
       dry_run:
@@ -228,10 +228,8 @@ jobs:
           fi
           if [ "$CONTENT_MODE" = "meme" ]; then
             node core/github-action-runner.js --mode meme --count 1 $PRIVATE_ARG --publish-at "$PUBLISH_AT"
-          elif [ "$CONTENT_MODE" = "quiz" ]; then
-            node core/github-action-runner.js --mode quiz --count "$QUIZ_COUNT" $PRIVATE_ARG --publish-at "$PUBLISH_AT"
           else
-            node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
+            echo "Mode $CONTENT_MODE is retired on this channel (the old re-upload pipelines); nothing to do."
           fi
 
       - name: Keep renders (every short, uploaded or not, for review)

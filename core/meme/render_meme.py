@@ -68,9 +68,14 @@ import edit_fx as fx  # noqa: E402
 
 W, H, FPS = 1080, 1920, 60
 AFPS = 30  # motion analysis rate
-LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']
-VIBE = {'vocal': 'dance', 'bass': 'cool', 'beatbox': 'fight', 'harmony': 'cute'}
-LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'bass': ('+ BASS', '🗣️'), 'beatbox': ('+ BEATBOX', '🥁'), 'harmony': ('+ HARMONY', '🎶')}
+LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']   # the older synthesised build-up (timelines without layer names)
+# clip vibe per stem: the singer dances, drums hit, bass struts, the melody is the cute one
+VIBE_OF = {'vocal': 'dance', 'vocals': 'dance', 'drums': 'fight', 'beatbox': 'fight', 'bass': 'cool', 'guitar': 'cool',
+           'harmony': 'cute', 'piano': 'cute', 'other': 'cute'}
+VIBE = VIBE_OF
+LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'vocals': ('VOCALS', '🎤'), 'drums': ('DRUMS', '🥁'), 'beatbox': ('BEATBOX', '🥁'),
+               'bass': ('BASS', '🔊'), 'guitar': ('GUITAR', '🎸'), 'piano': ('PIANO', '🎹'), 'harmony': ('HARMONY', '🎶'),
+               'other': ('MELODY', '🎶')}
 LAYOUT = {
     1: [(0, 0, W, H)],
     2: [(0, 0, W, H // 2), (0, H // 2, W, H // 2)],
@@ -527,11 +532,18 @@ class Edit:
                 'transitions': [s['fx'] for s in self.shots]}
 
 
-def choose_clips(clips, n):
+def section_layers(timeline):
+    """The layer each section brings in: the song's real stems (acapella.py --stems real), else the old four."""
+    secs = timeline['sections'][:4]
+    names = [sec['layers'][-1] if sec.get('layers') else None for sec in secs]
+    return [nm or LAYERS[i % 4] for i, nm in enumerate(names)]
+
+
+def choose_clips(clips, names):
     """One clip per layer, matching the layer's vibe (manifest order = hook rank); different source videos."""
     chosen, used_src = [], set()
-    for i in range(n):
-        want = VIBE[LAYERS[i]]
+    for i, name in enumerate(names):
+        want = VIBE_OF.get(name, 'cute')
         pool = [c for c in clips if c.get('vibe') == want] + [c for c in clips if c.get('vibe') != want]
         pick = next((c for c in pool if (c.get('source_id') or c['path']) not in used_src and c not in chosen), None)
         if pick is None:
@@ -546,29 +558,103 @@ def plan(timeline, clips):
     beats = np.array(timeline['beats'])
     onsets = timeline.get('onsets') or {}
     sections = timeline['sections'][:4]
-    chosen = choose_clips(clips, len(sections))
+    names = section_layers(timeline)
+    chosen = choose_clips(clips, names)
     tiles = []
     for i, (sec, clip) in enumerate(zip(sections, chosen)):
+        name = names[i]
         s0, s1 = float(sec['start']), float(sec['end'])
         period = s1 - s0
         dur = float(clip.get('duration') or probe_duration(clip['path']))
         peak = float(clip.get('peak') if clip.get('peak') is not None else dur / 2)
         # the hit we aim at: a drum hit for fight clips, otherwise a beat, ~1 s into the section
-        grid = sorted(onsets.get('beatbox') or []) if VIBE[LAYERS[i]] == 'fight' and i >= 2 else list(beats)
+        grid = sorted(onsets.get(name) or []) if VIBE_OF.get(name) == 'fight' and onsets.get(name) else list(beats)
         targets = [b - s0 for b in grid if s0 + 0.6 <= b < s1 - 0.3] or [min(1.0, period / 2)]
         target = next((tg for tg in targets if peak - tg >= 0), targets[0])
         offset = max(0.0, peak - target)
-        stem = [o - s0 for o in sorted(onsets.get(LAYERS[i]) or []) if s0 <= o < s1]
+        stem = [o - s0 for o in sorted(onsets.get(name) or []) if s0 <= o < s1]
         hits = [h for h in motion_hits(clip) if h > offset]
         anchors = time_map(period, offset, hits, stem)
-        tiles.append({'clip': clip, 'start': s0, 'period': period, 'offset': offset, 'layer': LAYERS[i],
+        tiles.append({'clip': clip, 'start': s0, 'period': period, 'offset': offset, 'layer': name,
                       'anchors': anchors, 'synced': len(anchors) - 2})
     return tiles
 
 
-def label_image(layer, override=None):
-    """Big layer label ("VOCALS", "+ BASS", ...) that pops up on top."""
-    text, emo = override or LAYER_LABEL.get(layer, (layer.upper(), '🎵'))
+class BuildUp:
+    """
+    The tile section grows with the music: while the vocal is alone the picture is nearly colourless,
+    dark and still; every stem that comes in pushes saturation, contrast and glow up (eased in over a
+    moment), hits with an exposure flash, a zoom punch and a shake that grow with it, and the beat
+    bounce and drifting sparks build until the full song drops.
+    """
+
+    def __init__(self, starts, beats, downbeats, colors=None):
+        self.starts, self.beats, self.downbeats = starts, beats, downbeats
+        self.n_layers = max(1, len(starts))
+        self.particles = fx.Particles(colors or [(120, 200, 255), (255, 140, 220)], n=55, seed=5)
+        yy, xx = np.mgrid[0:H // 4, 0:W // 4].astype(np.float32)
+        r = np.sqrt(((xx - W / 8) / (W / 8)) ** 2 + ((yy - H / 8) / (H / 8)) ** 2) / math.sqrt(2)
+        self.vig = cv2.resize(np.clip((r - 0.35) / 0.65, 0, 1) ** 1.6, (W, H))[..., None]
+
+    def level(self, t):
+        """0 (vocal alone) .. 1 (everything in), eased over 0.35 s after each entry."""
+        n = max(1, sum(1 for s in self.starts if s <= t))
+        if self.n_layers == 1:
+            return 1.0, n
+        age = t - self.starts[n - 1]
+        prev = (n - 2) / (self.n_layers - 1) if n > 1 else 0.0
+        cur = (n - 1) / (self.n_layers - 1)
+        return prev + (cur - prev) * fx.ease_io(min(1.0, age / 0.35)) if n > 1 else 0.0, n
+
+    def apply(self, frame, t):
+        x, n = self.level(t)
+        img = np.asarray(frame.convert('RGB')).astype(np.float32)
+        # colour: grey and dark -> saturated, contrasty, glowing
+        lum = img @ np.array([0.299, 0.587, 0.114], np.float32)
+        sat = 0.22 + 1.25 * x
+        img = lum[..., None] + (img - lum[..., None]) * sat
+        img = (img - 128) * (0.92 + 0.28 * x) + 128
+        img *= 0.8 + 0.2 * x
+        img[..., 2] += (1 - x) * 10          # a cool, quiet start (RGB: blue channel)
+        img[..., 0] += x * 8                 # warming as it fills
+        if x > 0.45:
+            small = cv2.resize(np.clip(img, 0, 255), (W // 4, H // 4), interpolation=cv2.INTER_AREA)
+            hi = cv2.GaussianBlur(np.clip(small - 170, 0, None) * 2.2, (0, 0), 7)
+            img += cv2.resize(hi, (W, H)) * (x - 0.45) * 1.3
+        img *= 1 - self.vig * (0.55 - 0.3 * x)
+        # motion: entry punch + shake, beat bounce growing with the layers
+        age = t - self.starts[n - 1]
+        z, dx, dy, rot = 1.0, 0.0, 0.0, 0.0
+        if n > 1 and age < 0.5:
+            z *= 1 + fx.punch(age, 0.05 + 0.07 * x, tau=0.16)
+            a = (1 - age / 0.5) ** 2
+            dx += a * (6 + 18 * x) * fx.smooth_noise(t, n * 13.1, 9)
+            dy += a * (4 + 14 * x) * fx.smooth_noise(t, n * 7.7 + 3, 8)
+            rot += a * (0.3 + 0.9 * x) * fx.smooth_noise(t, n * 3.3 + 1, 6)
+        if n >= 2:
+            sdb = min([t - b for b in self.downbeats if b <= t] or [9.0])
+            sb = min([t - b for b in self.beats if b <= t] or [9.0])
+            z *= 1 + fx.punch(sdb, 0.02 + 0.05 * x, tau=0.12) + fx.punch(sb, 0.008 + 0.022 * x, tau=0.1)
+        arr = np.clip(img, 0, 255).astype(np.uint8)
+        if z > 1.0005 or abs(dx) + abs(dy) > 0.3:
+            arr = fx.warp(arr, z, rot, dx, dy, (W, H))
+        # sparks once the beat is in; an exposure flash on every entry, bigger as it builds
+        if x > 0.3:
+            arr = fx.screen(arr, self.particles.layer(t, 0.0)[..., ::-1], (x - 0.3) * 0.8)
+        if n > 1 and age < 0.14:
+            f = 0.3 + 0.45 * x
+            k = f * (1 - age / 0.14)
+            arr = np.clip(arr.astype(np.float32) * (1 + 1.3 * k) + 40 * k, 0, 255).astype(np.uint8)
+        return Image.fromarray(arr).convert('RGBA'), n
+
+
+def label_image(layer, override=None, first=False):
+    """Big layer label ("VOCALS", "+ DRUMS", ...) that pops up on top: the stem that just came in."""
+    if override:
+        text, emo = override
+    else:
+        text, emo = LAYER_LABEL.get(layer, (str(layer).upper(), '🎵'))
+        text = text if first else '+ ' + text
     p = pill(text, 58, (255, 214, 0), max_w=700)
     e = quiz_emoji.image(emo, 72)
     if e is not None:
@@ -632,7 +718,7 @@ def render(args):
     title = title_image(args.title, args.emoji) if args.title else None
     subtitle = text_layer(args.subtitle.lower(), 44, fill=(255, 214, 0), stroke=6, stroke_fill=(0, 0, 0), max_w=900,
                           min_size=26) if args.subtitle else None
-    labels = [label_image(tl['layer']) for tl in tiles]
+    labels = [label_image(tl['layer'], first=(i == 0)) for i, tl in enumerate(tiles)]
     captions = {}
     wm = text_layer(args.watermark, 38, fill=(255, 255, 255, 170), stroke=3, stroke_fill=(0, 0, 0, 120)) if args.watermark else None
 
@@ -642,6 +728,7 @@ def render(args):
     enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     frames = {}  # (tile, size) -> ClipFrames
     beats = timeline['beats']
+    build = BuildUp(starts, beats, downbeats, colors=[c[::-1] for c in edit.colors] if edit is not None else None)
     for f in range(int(dur * FPS)):
         t = f / FPS
         if edit is not None and t >= drop['start'] - 0.5 / FPS:
@@ -688,18 +775,8 @@ def render(args):
             for k in range(3):
                 d.rectangle([x + k * 5, y + k * 5, x + w - 1 - k * 5, y + h - 1 - k * 5],
                             outline=GLOW + (int(255 * a * (1 - k * 0.3)),), width=6)
-        # all tiles bounce together with the beat once the drums are in (harder on downbeats)
-        if n >= 3:
-            since_db = min([t - b for b in downbeats if b <= t] or [9])
-            since_b = min([t - b for b in beats if b <= t] or [9])
-            z = 1.0
-            if since_db < 0.18:
-                z = 1 + 0.07 * (1 - since_db / 0.18)
-            elif since_b < 0.14:
-                z = 1 + 0.035 * (1 - since_b / 0.14)
-            if z > 1.001:  # sub-pixel scale about the centre (integer crops judder at 60 fps)
-                arr = fx.warp(np.asarray(frame.convert('RGB')), z, 0.0, 0.0, 0.0, (W, H))
-                frame = Image.fromarray(arr).convert('RGBA')
+        # the build-up escalates with the music: colour, glow, punches, bounce and sparks grow per layer
+        frame, _ = build.apply(frame, t)
         if age < 1.8:
             put(frame, labels[n - 1], W / 2, 400, s=max(0.01, ease_out_back(age / 0.25)), a=clamp((1.8 - age) / 0.3))
         # the last half beat before the drop fades to black: the drop hits out of the dark
@@ -723,7 +800,8 @@ def render(args):
     everything = used + ([sh['clip'] for sh in edit.shots] if edit else [])
     info = {'duration': round(dur, 2), 'cuts': len(used) + (len(edit.shots) if edit else 0),
             'clipsUsed': list(dict.fromkeys(c.get('source_id') for c in everything if c.get('source_id'))),
-            'vibes': [c.get('vibe') for c in used], 'stemSyncedHits': [tl['synced'] for tl in tiles],
+            'vibes': [c.get('vibe') for c in used], 'layers': [tl['layer'] for tl in tiles],
+            'stemSyncedHits': [tl['synced'] for tl in tiles],
             'channelsUsed': sorted({c.get('source_channel') for c in everything if c.get('source_channel')})}
     if edit:
         info.update(edit.stats(), soundEditHits=getattr(edit, 'n_sfx', 0))
