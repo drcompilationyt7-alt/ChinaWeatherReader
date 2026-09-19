@@ -419,6 +419,18 @@ class Edit:
         size = (src.shape[1], src.shape[0])
         img = fx.motion_blurred(src, lambda tt: self.cam.params(tt, shot), t, dt, size)
         since = t - shot['t0']
+        if shot['fx'] == 'whip' and since < fx.WHIP_T:
+            j = self.shots.index(shot)
+            prev = self.shots[j - 1] if j else None
+            out = None
+            if prev is not None:
+                pf = self.frames[prev['clip']['path']]
+                psrc = pf.frame(shot_time(prev, t, self.P))
+                if psrc.shape[:2] == src.shape[:2]:
+                    out = fx.warp(psrc, *self.cam.params(t, prev), size)
+            w_img = fx.whip(img, out, since, shot.get('whip_in', 1))
+            if w_img is not None:
+                img = w_img
         if shot['fx'] == 'zoomblur' and since < 0.3:
             img = fx.zoom_blur(img, 0.3 * (1 - since / 0.3) ** 1.5)
         img = self._overlays(size).apply(img, t)
@@ -432,7 +444,10 @@ class Edit:
             k = since if shot['fx'] == 'flash' else sd
             img = fx.screen(img, fx.light_leak(size, t, hash(shot['clip']['path']) % 97 / 97.0), 0.55 * (1 - k / 0.6))
         if flash > 0:
-            img = cv2.addWeighted(img, 1 - flash, np.full_like(img, 255), flash, 0)
+            f = img.astype(np.float32) * (1 + 1.6 * flash)
+            glow = cv2.GaussianBlur(cv2.resize(img, (size[0] // 4, size[1] // 4)), (0, 0), 6)
+            f += cv2.resize(glow, size).astype(np.float32) * 0.9 * flash
+            img = np.clip(f + 60 * flash, 0, 255).astype(np.uint8)
         # a short dip to black right before each new phrase
         nxt = min([p - t for p in self.phrases if p > t + 1e-6] or [9.0])
         if nxt < 0.05 and sd > 0.5:
@@ -581,7 +596,7 @@ def render(args):
     wm = text_layer(args.watermark, 38, fill=(255, 255, 255, 170), stroke=3, stroke_fill=(0, 0, 0, 120)) if args.watermark else None
 
     cmd = ['ffmpeg', '-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
-           '-i', audio, '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
+           '-i', audio, '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p',
            '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', args.out]
     enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     frames = {}  # (tile, size) -> ClipFrames

@@ -112,34 +112,92 @@ def prepare_shot(clip, workdir, layout='letterbox', look='cinematic', cx=0.5):
 
 
 class ShotFrames:
-    """Frames of a prepared shot; frame(t) blends the two nearest source frames (smooth slow motion)."""
+    """
+    Frames of a prepared shot at any time t. Anime holds each drawing for 2-3
+    frames, so repeats are dropped first (keeping their real times); in-between
+    moments are synthesised with DIS optical flow (both directions, half
+    resolution), which is smooth slow motion without the ghosting of a plain
+    cross-fade. Across a scene cut inside the clip there is no flow: the nearer
+    frame is shown.
+    """
 
     def __init__(self, paths, fps, size, text_band=0.0):
-        self.paths, self.fps, self.size, self.text_band = paths, fps, size, text_band
-        self._cache = {}
+        self.fps, self.size, self.text_band = fps, size, text_band
+        self.all_paths = paths
+        self._cache, self._flows = {}, {}
+        self._dis = None
+        # unique drawings: drop frames (almost) identical to the previous kept one
+        self.paths, self.times, self.cut_after = [], [], set()
+        prev = None
+        for k, p in enumerate(paths):
+            g = cv2.imread(p, cv2.IMREAD_REDUCED_GRAYSCALE_4)
+            if g is None:
+                continue
+            if prev is not None:
+                d = float(np.abs(g.astype(np.int16) - prev.astype(np.int16)).mean())
+                if d < 1.2:
+                    continue
+                if d > 38:  # a cut inside the clip: never morph across it
+                    self.cut_after.add(len(self.paths) - 1)
+            self.paths.append(p)
+            self.times.append(k / fps)
+            prev = g
+        self.times = np.array(self.times) if self.times else np.zeros(1)
 
     @property
     def duration(self):
-        return len(self.paths) / self.fps if self.paths else 0.0
+        return len(self.all_paths) / self.fps if self.all_paths else 0.0
 
     def _load(self, k):
         k = max(0, min(len(self.paths) - 1, k))
         if k not in self._cache:
-            if len(self._cache) > 12:
+            if len(self._cache) > 10:
                 self._cache.pop(next(iter(self._cache)))
             self._cache[k] = cv2.imread(self.paths[k], cv2.IMREAD_COLOR)
         return self._cache[k]
 
+    def _flow(self, k):
+        """Flows k->k+1 and k+1->k at full size (computed at half resolution, cached)."""
+        if k not in self._flows:
+            if self._dis is None:
+                self._dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
+            a, b = self._load(k), self._load(k + 1)
+            h, w = a.shape[:2]
+            ga = cv2.cvtColor(cv2.resize(a, (w // 2, h // 2), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
+            gb = cv2.cvtColor(cv2.resize(b, (w // 2, h // 2), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2GRAY)
+            fab = cv2.resize(self._dis.calc(ga, gb, None), (w, h)) * 2
+            fba = cv2.resize(self._dis.calc(gb, ga, None), (w, h)) * 2
+            if len(self._flows) > 6:
+                self._flows.pop(next(iter(self._flows)))
+            self._flows[k] = (fab, fba)
+        return self._flows[k]
+
     def frame(self, t):
         if not self.paths:
             return np.zeros((self.size[1], self.size[0], 3), np.uint8)
-        x = max(0.0, t) * self.fps
-        k = int(x)
-        a = x - k
-        f0 = self._load(k)
-        if a < 0.08 or k + 1 >= len(self.paths):
-            return f0
-        return cv2.addWeighted(f0, 1 - a, self._load(k + 1), a, 0)
+        t = max(0.0, t)
+        k = int(np.searchsorted(self.times, t, side='right')) - 1
+        k = max(0, min(len(self.paths) - 1, k))
+        if k + 1 >= len(self.paths):
+            return self._load(k)
+        t0, t1 = self.times[k], self.times[k + 1]
+        a = float((t - t0) / max(1e-6, t1 - t0))
+        if a < 0.04:
+            return self._load(k)
+        if a > 0.96:
+            return self._load(k + 1)
+        if k in self.cut_after:
+            return self._load(k if a < 0.5 else k + 1)
+        A, B = self._load(k), self._load(k + 1)
+        fab, fba = self._flow(k)
+        h, w = A.shape[:2]
+        gx, gy = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+        f32 = np.float32
+        wa = cv2.remap(A, (gx - f32(a) * fab[..., 0]).astype(f32), (gy - f32(a) * fab[..., 1]).astype(f32),
+                       cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        wb = cv2.remap(B, (gx - f32(1 - a) * fba[..., 0]).astype(f32), (gy - f32(1 - a) * fba[..., 1]).astype(f32),
+                       cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        return cv2.addWeighted(wa, 1 - a, wb, a, 0)
 
 
 # ---------------------------------------------------------------- camera
@@ -195,11 +253,6 @@ class Camera:
                 dx += a * 22 * smooth_noise(t, p * 13.1, 9)
                 dy += a * 16 * smooth_noise(t, p * 7.7 + 3, 8)
                 rot += a * 0.9 * smooth_noise(t, p * 3.3 + 1, 6)
-        # whip-in: the new shot slides in from the side
-        wi = shot.get('whip_in')
-        if wi and t - shot['t0'] < 0.18:
-            k = 1 - ease_io((t - shot['t0']) / 0.18)
-            dx += wi * k * W * 0.9
         return s, rot, dx, dy
 
 
@@ -219,7 +272,7 @@ def motion_blurred(img, cam_fn, t, dt, out_size, samples=5, threshold=6.0):
     move = abs(p1[2] - p0[2]) + abs(p1[3] - p0[3]) + abs(p1[0] - p0[0]) * W * 0.5 + abs(p1[1] - p0[1]) * 12
     if move < threshold:
         return warp(img, *cam_fn(t), out_size)
-    n = int(min(9, max(3, samples * move / 30)))
+    n = int(min(16, max(3, move / 4)))
     acc = np.zeros((out_size[1], out_size[0], 3), np.float32)
     for i in range(n):
         acc += warp(img, *cam_fn(t - dt / 2 + dt * i / (n - 1)), out_size)
@@ -251,6 +304,32 @@ def zoom_blur(img, strength, steps=6):
         m = cv2.getRotationMatrix2D((w / 2, h / 2), 0, s)
         acc += cv2.warpAffine(img, m, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT101)
     return (acc / steps).astype(np.uint8)
+
+
+WHIP_T = 0.16
+
+
+def whip(incoming, outgoing, since, direction):
+    """
+    Whip pan between two shots: the outgoing one slides out as the incoming one
+    slides in right behind it (edge to edge), smeared along the move in
+    proportion to its speed. None once the whip is over.
+    """
+    if since >= WHIP_T or outgoing is None:
+        return None
+    h, w = incoming.shape[:2]
+    k = ease_io(since / WHIP_T)
+    k_next = ease_io(min(1.0, (since + 1 / 60) / WHIP_T))
+    off = int(round(direction * w * (1 - k)))          # incoming shot's left edge
+    speed = abs(k_next - k) * w                          # px per frame
+    canvas = np.zeros_like(incoming)
+    if off >= 0:
+        canvas[:, off:] = incoming[:, :w - off]
+        canvas[:, :off] = outgoing[:, w - off:] if off else canvas[:, :0]
+    else:
+        canvas[:, :w + off] = incoming[:, -off:]
+        canvas[:, w + off:] = outgoing[:, :-off]
+    return directional_blur(canvas, min(140, speed * 1.2))
 
 
 # ---------------------------------------------------------------- overlays
