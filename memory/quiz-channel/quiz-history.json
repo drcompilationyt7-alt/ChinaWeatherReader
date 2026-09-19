@@ -1,0 +1,21 @@
+{
+ "uploads": [
+  {
+   "videoId": "IE80eNcEv04",
+   "url": "https://www.youtube.com/watch?v=IE80eNcEv04",
+   "postedAt": "2026-09-19T02:48:36.428Z",
+   "publishAt": "2026-09-19T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "anime",
+   "seed": 630221516,
+   "length": "quick",
+   "titleTemplate": "emoji-anime-ramp",
+   "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+   "answers": [
+    "emoji:attack on titan",
+    "emoji:jujutsu kaisen",
+    "emoji:haikyu!!"
+   ]
+  }
+ ]
+}
