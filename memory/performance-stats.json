@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-19T02:35:15.761Z",
+  "updatedAt": "2026-09-19T02:56:28.116Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
@@ -22,11 +22,11 @@
       "category": null,
       "eggs": null,
       "ageDays": 6.3,
-      "velocity": 135.8,
+      "velocity": 135.5,
       "engagement": 0.016,
-      "score": 138,
-      "lscore": 4.935,
-      "reward": 7.601,
+      "score": 137.7,
+      "lscore": 4.932,
+      "reward": 7.605,
       "rewardFinal": false,
       "v7": null
     },
@@ -49,7 +49,7 @@
       "engagement": 0.014,
       "score": 40.9,
       "lscore": 3.736,
-      "reward": 5.59,
+      "reward": 5.596,
       "rewardFinal": false,
       "v7": null
     },
@@ -72,7 +72,7 @@
       "engagement": 0.028,
       "score": 10.4,
       "lscore": 2.43,
-      "reward": 3.399,
+      "reward": 3.403,
       "rewardFinal": false,
       "v7": null
     },
@@ -93,10 +93,10 @@
         "gwen-stick"
       ],
       "ageDays": 2.6,
-      "velocity": 7.7,
+      "velocity": 7.6,
       "engagement": 0,
-      "score": 7.7,
-      "lscore": 2.16,
+      "score": 7.6,
+      "lscore": 2.155,
       "reward": 2.338,
       "rewardFinal": false,
       "v7": 40
@@ -120,7 +120,7 @@
       "engagement": 0.074,
       "score": 4.1,
       "lscore": 1.638,
-      "reward": 2.071,
+      "reward": 2.074,
       "rewardFinal": false,
       "v7": null
     },
@@ -143,9 +143,9 @@
       "ageDays": 1.6,
       "velocity": 3.7,
       "engagement": 0.04,
-      "score": 3.9,
-      "lscore": 1.586,
-      "reward": 1.984,
+      "score": 3.8,
+      "lscore": 1.578,
+      "reward": 1.973,
       "rewardFinal": false,
       "v7": null
     },
@@ -168,7 +168,7 @@
       "engagement": 0.08,
       "score": 3.3,
       "lscore": 1.463,
-      "reward": 1.777,
+      "reward": 1.78,
       "rewardFinal": false,
       "v7": null
     },
@@ -191,7 +191,7 @@
       "engagement": 0.28,
       "score": 3.3,
       "lscore": 1.459,
-      "reward": 1.771,
+      "reward": 1.773,
       "rewardFinal": false,
       "v7": null
     },
@@ -215,8 +215,8 @@
       "velocity": 2.2,
       "engagement": 0.08,
       "score": 2.4,
-      "lscore": 1.222,
-      "reward": 1.373,
+      "lscore": 1.219,
+      "reward": 1.37,
       "rewardFinal": false,
       "v7": null
     },
@@ -240,7 +240,7 @@
       "velocity": 2.2,
       "engagement": 0.04,
       "score": 2.3,
-      "lscore": 1.19,
+      "lscore": 1.185,
       "reward": 0.691,
       "rewardFinal": false,
       "v7": 10
@@ -259,12 +259,12 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 115.3,
+      "ageDays": 115.4,
       "velocity": 2.3,
       "engagement": 0,
       "score": 2.3,
       "lscore": 1.19,
-      "reward": 1.319,
+      "reward": 1.321,
       "rewardFinal": false,
       "v7": null
     },
@@ -287,7 +287,7 @@
       "engagement": 0,
       "score": 2.1,
       "lscore": 1.145,
-      "reward": 1.244,
+      "reward": 1.246,
       "rewardFinal": false,
       "v7": null
     },
@@ -310,7 +310,7 @@
       "engagement": 0.04,
       "score": 1.9,
       "lscore": 1.05,
-      "reward": 1.085,
+      "reward": 1.086,
       "rewardFinal": false,
       "v7": null
     },
@@ -333,7 +333,7 @@
       "engagement": 0.04,
       "score": 1.9,
       "lscore": 1.05,
-      "reward": 1.085,
+      "reward": 1.086,
       "rewardFinal": false,
       "v7": null
     },
@@ -356,7 +356,7 @@
       "engagement": 0.04,
       "score": 1.8,
       "lscore": 1.023,
-      "reward": 1.039,
+      "reward": 1.041,
       "rewardFinal": false,
       "v7": null
     },
@@ -379,7 +379,7 @@
       "engagement": 0.18,
       "score": 1.8,
       "lscore": 1.019,
-      "reward": 1.033,
+      "reward": 1.034,
       "rewardFinal": false,
       "v7": null
     },
@@ -402,7 +402,7 @@
       "engagement": 0.22,
       "score": 1.8,
       "lscore": 1.04,
-      "reward": 1.068,
+      "reward": 1.069,
       "rewardFinal": false,
       "v7": null
     },
@@ -425,7 +425,7 @@
       "engagement": 0.08,
       "score": 1.7,
       "lscore": 0.992,
-      "reward": 0.987,
+      "reward": 0.989,
       "rewardFinal": false,
       "v7": null
     },
@@ -443,12 +443,12 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 106.3,
+      "ageDays": 106.4,
       "velocity": 1.5,
       "engagement": 0.08,
       "score": 1.6,
       "lscore": 0.963,
-      "reward": 0.939,
+      "reward": 0.94,
       "rewardFinal": false,
       "v7": null
     },
@@ -471,7 +471,7 @@
       "engagement": 0.24,
       "score": 1.6,
       "lscore": 0.953,
-      "reward": 0.922,
+      "reward": 0.923,
       "rewardFinal": false,
       "v7": null
     },
@@ -494,7 +494,7 @@
       "engagement": 0.04,
       "score": 1.6,
       "lscore": 0.969,
-      "reward": 0.949,
+      "reward": 0.95,
       "rewardFinal": false,
       "v7": null
     },
@@ -512,12 +512,12 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 113.3,
+      "ageDays": 113.4,
       "velocity": 1.4,
       "engagement": 0.04,
       "score": 1.5,
       "lscore": 0.911,
-      "reward": 0.851,
+      "reward": 0.853,
       "rewardFinal": false,
       "v7": null
     },
@@ -540,7 +540,7 @@
       "engagement": 0.04,
       "score": 1.5,
       "lscore": 0.911,
-      "reward": 0.851,
+      "reward": 0.853,
       "rewardFinal": false,
       "v7": null
     },
@@ -563,7 +563,7 @@
       "engagement": 0.08,
       "score": 1.4,
       "lscore": 0.871,
-      "reward": 0.784,
+      "reward": 0.786,
       "rewardFinal": false,
       "v7": null
     },
@@ -588,8 +588,8 @@
       "velocity": 1.2,
       "engagement": 0.08,
       "score": 1.3,
-      "lscore": 0.841,
-      "reward": 0.734,
+      "lscore": 0.839,
+      "reward": 0.732,
       "rewardFinal": false,
       "v7": null
     },
@@ -612,7 +612,7 @@
       "engagement": 0,
       "score": 1.2,
       "lscore": 0.795,
-      "reward": 0.657,
+      "reward": 0.658,
       "rewardFinal": false,
       "v7": null
     },
@@ -635,7 +635,7 @@
       "engagement": 0.04,
       "score": 1.2,
       "lscore": 0.783,
-      "reward": 0.637,
+      "reward": 0.638,
       "rewardFinal": false,
       "v7": null
     },
@@ -658,7 +658,7 @@
       "engagement": 0.04,
       "score": 1.2,
       "lscore": 0.783,
-      "reward": 0.637,
+      "reward": 0.638,
       "rewardFinal": false,
       "v7": null
     },
@@ -681,7 +681,7 @@
       "engagement": 0.08,
       "score": 1.2,
       "lscore": 0.769,
-      "reward": 0.613,
+      "reward": 0.614,
       "rewardFinal": false,
       "v7": null
     },
@@ -704,7 +704,7 @@
       "engagement": 0.08,
       "score": 1.2,
       "lscore": 0.804,
-      "reward": 0.672,
+      "reward": 0.673,
       "rewardFinal": false,
       "v7": null
     },
@@ -727,7 +727,7 @@
       "engagement": 0,
       "score": 1.1,
       "lscore": 0.762,
-      "reward": 0.601,
+      "reward": 0.603,
       "rewardFinal": false,
       "v7": null
     },
@@ -750,7 +750,7 @@
       "engagement": 0,
       "score": 1.1,
       "lscore": 0.762,
-      "reward": 0.601,
+      "reward": 0.603,
       "rewardFinal": false,
       "v7": null
     },
@@ -773,7 +773,7 @@
       "engagement": 0,
       "score": 1.1,
       "lscore": 0.762,
-      "reward": 0.601,
+      "reward": 0.603,
       "rewardFinal": false,
       "v7": null
     },
@@ -796,7 +796,7 @@
       "engagement": 0,
       "score": 1.1,
       "lscore": 0.762,
-      "reward": 0.601,
+      "reward": 0.603,
       "rewardFinal": false,
       "v7": null
     },
@@ -819,7 +819,7 @@
       "engagement": 0.04,
       "score": 1.1,
       "lscore": 0.749,
-      "reward": 0.58,
+      "reward": 0.581,
       "rewardFinal": false,
       "v7": null
     },
@@ -842,7 +842,7 @@
       "engagement": 0.04,
       "score": 1.1,
       "lscore": 0.749,
-      "reward": 0.58,
+      "reward": 0.581,
       "rewardFinal": false,
       "v7": null
     },
@@ -865,7 +865,7 @@
       "engagement": 0.04,
       "score": 1.1,
       "lscore": 0.749,
-      "reward": 0.58,
+      "reward": 0.581,
       "rewardFinal": false,
       "v7": null
     },
@@ -887,7 +887,7 @@
       "velocity": 1,
       "engagement": 0,
       "score": 1,
-      "lscore": 0.674,
+      "lscore": 0.673,
       "reward": 0.293,
       "rewardFinal": true,
       "v7": 7
@@ -911,7 +911,7 @@
       "engagement": 0.04,
       "score": 1,
       "lscore": 0.676,
-      "reward": 0.457,
+      "reward": 0.458,
       "rewardFinal": false,
       "v7": null
     },
@@ -934,7 +934,7 @@
       "engagement": 0.04,
       "score": 1,
       "lscore": 0.676,
-      "reward": 0.457,
+      "reward": 0.458,
       "rewardFinal": false,
       "v7": null
     },
@@ -956,8 +956,8 @@
       "velocity": 0.9,
       "engagement": 0.04,
       "score": 0.9,
-      "lscore": 0.643,
-      "reward": 0.402,
+      "lscore": 0.642,
+      "reward": 0.401,
       "rewardFinal": false,
       "v7": null
     },
@@ -980,7 +980,7 @@
       "engagement": 0.04,
       "score": 0.9,
       "lscore": 0.637,
-      "reward": 0.392,
+      "reward": 0.393,
       "rewardFinal": false,
       "v7": null
     },
@@ -1003,7 +1003,7 @@
       "engagement": 0,
       "score": 0.9,
       "lscore": 0.657,
-      "reward": 0.425,
+      "reward": 0.426,
       "rewardFinal": false,
       "v7": null
     },
@@ -1026,7 +1026,7 @@
       "engagement": 0.08,
       "score": 0.9,
       "lscore": 0.655,
-      "reward": 0.422,
+      "reward": 0.423,
       "rewardFinal": false,
       "v7": null
     },
@@ -1117,8 +1117,8 @@
       "velocity": 0.7,
       "engagement": 0.08,
       "score": 0.8,
-      "lscore": 0.572,
-      "reward": 0.283,
+      "lscore": 0.571,
+      "reward": 0.282,
       "rewardFinal": false,
       "v7": null
     },
@@ -1141,7 +1141,7 @@
       "engagement": 0,
       "score": 0.8,
       "lscore": 0.58,
-      "reward": 0.296,
+      "reward": 0.297,
       "rewardFinal": false,
       "v7": null
     },
@@ -1164,7 +1164,7 @@
       "engagement": 0,
       "score": 0.8,
       "lscore": 0.58,
-      "reward": 0.296,
+      "reward": 0.297,
       "rewardFinal": false,
       "v7": null
     },
@@ -1187,7 +1187,7 @@
       "engagement": 0,
       "score": 0.8,
       "lscore": 0.58,
-      "reward": 0.296,
+      "reward": 0.297,
       "rewardFinal": false,
       "v7": null
     },
@@ -1210,7 +1210,7 @@
       "engagement": 0,
       "score": 0.8,
       "lscore": 0.58,
-      "reward": 0.296,
+      "reward": 0.297,
       "rewardFinal": false,
       "v7": null
     },
@@ -1233,7 +1233,7 @@
       "engagement": 0.08,
       "score": 0.8,
       "lscore": 0.572,
-      "reward": 0.283,
+      "reward": 0.284,
       "rewardFinal": false,
       "v7": null
     },
@@ -1256,7 +1256,7 @@
       "engagement": 0.08,
       "score": 0.8,
       "lscore": 0.572,
-      "reward": 0.283,
+      "reward": 0.284,
       "rewardFinal": false,
       "v7": null
     },
@@ -1279,7 +1279,7 @@
       "engagement": 0.08,
       "score": 0.8,
       "lscore": 0.572,
-      "reward": 0.283,
+      "reward": 0.284,
       "rewardFinal": false,
       "v7": null
     },
@@ -1302,7 +1302,7 @@
       "engagement": 0.04,
       "score": 0.8,
       "lscore": 0.597,
-      "reward": 0.325,
+      "reward": 0.326,
       "rewardFinal": false,
       "v7": null
     },
@@ -1324,8 +1324,8 @@
       "velocity": 0.7,
       "engagement": 0,
       "score": 0.7,
-      "lscore": 0.502,
-      "reward": 0.165,
+      "lscore": 0.501,
+      "reward": 0.164,
       "rewardFinal": false,
       "v7": null
     },
@@ -1348,7 +1348,7 @@
       "engagement": 0.04,
       "score": 0.7,
       "lscore": 0.556,
-      "reward": 0.256,
+      "reward": 0.257,
       "rewardFinal": false,
       "v7": null
     },
@@ -1371,7 +1371,7 @@
       "engagement": 0.04,
       "score": 0.7,
       "lscore": 0.556,
-      "reward": 0.256,
+      "reward": 0.257,
       "rewardFinal": false,
       "v7": null
     },
@@ -1394,7 +1394,7 @@
       "engagement": 0.08,
       "score": 0.7,
       "lscore": 0.527,
-      "reward": 0.207,
+      "reward": 0.208,
       "rewardFinal": false,
       "v7": null
     },
@@ -1417,7 +1417,7 @@
       "engagement": 0.04,
       "score": 0.7,
       "lscore": 0.512,
-      "reward": 0.182,
+      "reward": 0.183,
       "rewardFinal": false,
       "v7": null
     },
@@ -1440,7 +1440,7 @@
       "engagement": 0.04,
       "score": 0.7,
       "lscore": 0.512,
-      "reward": 0.182,
+      "reward": 0.183,
       "rewardFinal": false,
       "v7": null
     },
@@ -1463,7 +1463,7 @@
       "engagement": 0.04,
       "score": 0.7,
       "lscore": 0.556,
-      "reward": 0.256,
+      "reward": 0.257,
       "rewardFinal": false,
       "v7": null
     },
@@ -1486,7 +1486,7 @@
       "engagement": 0,
       "score": 0.7,
       "lscore": 0.539,
-      "reward": 0.227,
+      "reward": 0.228,
       "rewardFinal": false,
       "v7": null
     },
@@ -1509,7 +1509,7 @@
       "engagement": 0,
       "score": 0.7,
       "lscore": 0.539,
-      "reward": 0.227,
+      "reward": 0.228,
       "rewardFinal": false,
       "v7": null
     },
@@ -1531,7 +1531,7 @@
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.473,
+      "lscore": 0.472,
       "reward": -0.067,
       "rewardFinal": true,
       "v7": 5
@@ -1555,7 +1555,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.452,
-      "reward": 0.081,
+      "reward": 0.082,
       "rewardFinal": false,
       "v7": null
     },
@@ -1578,7 +1578,7 @@
       "engagement": 0.04,
       "score": 0.6,
       "lscore": 0.466,
-      "reward": 0.105,
+      "reward": 0.106,
       "rewardFinal": false,
       "v7": null
     },
@@ -1601,7 +1601,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.496,
-      "reward": 0.155,
+      "reward": 0.156,
       "rewardFinal": false,
       "v7": null
     },
@@ -1624,7 +1624,7 @@
       "engagement": 0.04,
       "score": 0.6,
       "lscore": 0.466,
-      "reward": 0.105,
+      "reward": 0.106,
       "rewardFinal": false,
       "v7": null
     },
@@ -1647,7 +1647,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.496,
-      "reward": 0.155,
+      "reward": 0.156,
       "rewardFinal": false,
       "v7": null
     },
@@ -1670,7 +1670,7 @@
       "engagement": 0.04,
       "score": 0.6,
       "lscore": 0.466,
-      "reward": 0.105,
+      "reward": 0.106,
       "rewardFinal": false,
       "v7": null
     },
@@ -1693,7 +1693,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.496,
-      "reward": 0.155,
+      "reward": 0.156,
       "rewardFinal": false,
       "v7": null
     },
@@ -1716,7 +1716,7 @@
       "engagement": 0.04,
       "score": 0.6,
       "lscore": 0.466,
-      "reward": 0.105,
+      "reward": 0.106,
       "rewardFinal": false,
       "v7": null
     },
@@ -1739,7 +1739,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.452,
-      "reward": 0.081,
+      "reward": 0.082,
       "rewardFinal": false,
       "v7": null
     },
@@ -1762,7 +1762,7 @@
       "engagement": 0.04,
       "score": 0.6,
       "lscore": 0.466,
-      "reward": 0.105,
+      "reward": 0.106,
       "rewardFinal": false,
       "v7": null
     },
@@ -1808,7 +1808,7 @@
       "engagement": 0,
       "score": 0.6,
       "lscore": 0.496,
-      "reward": 0.155,
+      "reward": 0.156,
       "rewardFinal": false,
       "v7": null
     },
@@ -1830,8 +1830,8 @@
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.397,
-      "reward": -0.011,
+      "lscore": 0.395,
+      "reward": -0.014,
       "rewardFinal": false,
       "v7": null
     },
@@ -1853,8 +1853,8 @@
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.387,
-      "reward": -0.028,
+      "lscore": 0.386,
+      "reward": -0.029,
       "rewardFinal": false,
       "v7": null
     },
@@ -1946,7 +1946,7 @@
       "engagement": 0.04,
       "score": 0.5,
       "lscore": 0.419,
-      "reward": 0.026,
+      "reward": 0.027,
       "rewardFinal": false,
       "v7": null
     },
@@ -1969,7 +1969,7 @@
       "engagement": 0.04,
       "score": 0.5,
       "lscore": 0.419,
-      "reward": 0.026,
+      "reward": 0.027,
       "rewardFinal": false,
       "v7": null
     },
@@ -1992,7 +1992,7 @@
       "engagement": 0.04,
       "score": 0.5,
       "lscore": 0.419,
-      "reward": 0.026,
+      "reward": 0.027,
       "rewardFinal": false,
       "v7": null
     },
@@ -2015,7 +2015,7 @@
       "engagement": 0.04,
       "score": 0.5,
       "lscore": 0.419,
-      "reward": 0.026,
+      "reward": 0.027,
       "rewardFinal": false,
       "v7": null
     },
@@ -2060,8 +2060,8 @@
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305,
-      "reward": -0.165,
+      "lscore": 0.304,
+      "reward": -0.166,
       "rewardFinal": false,
       "v7": null
     },
@@ -2084,7 +2084,7 @@
       "engagement": 0,
       "score": 0.4,
       "lscore": 0.313,
-      "reward": -0.152,
+      "reward": -0.151,
       "rewardFinal": false,
       "v7": null
     },
@@ -2199,7 +2199,7 @@
       "engagement": 0,
       "score": 0.4,
       "lscore": 0.357,
-      "reward": -0.078,
+      "reward": -0.077,
       "rewardFinal": false,
       "v7": null
     },
@@ -2268,7 +2268,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.369,
-      "reward": -0.058,
+      "reward": -0.057,
       "rewardFinal": false,
       "v7": null
     },
@@ -2314,7 +2314,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.369,
-      "reward": -0.058,
+      "reward": -0.057,
       "rewardFinal": false,
       "v7": null
     },
@@ -2337,7 +2337,7 @@
       "engagement": 0,
       "score": 0.4,
       "lscore": 0.357,
-      "reward": -0.078,
+      "reward": -0.077,
       "rewardFinal": false,
       "v7": null
     },
@@ -2360,7 +2360,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.369,
-      "reward": -0.058,
+      "reward": -0.057,
       "rewardFinal": false,
       "v7": null
     },
@@ -2383,7 +2383,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.316,
-      "reward": -0.147,
+      "reward": -0.146,
       "rewardFinal": false,
       "v7": null
     },
@@ -2406,7 +2406,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.369,
-      "reward": -0.058,
+      "reward": -0.057,
       "rewardFinal": false,
       "v7": null
     },
@@ -2452,7 +2452,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.316,
-      "reward": -0.147,
+      "reward": -0.146,
       "rewardFinal": false,
       "v7": null
     },
@@ -2475,7 +2475,7 @@
       "engagement": 0.04,
       "score": 0.4,
       "lscore": 0.369,
-      "reward": -0.058,
+      "reward": -0.057,
       "rewardFinal": false,
       "v7": null
     },
@@ -2498,7 +2498,7 @@
       "engagement": 0,
       "score": 0.4,
       "lscore": 0.357,
-      "reward": -0.078,
+      "reward": -0.077,
       "rewardFinal": false,
       "v7": null
     },
@@ -2521,7 +2521,7 @@
       "engagement": 0,
       "score": 0.4,
       "lscore": 0.357,
-      "reward": -0.078,
+      "reward": -0.077,
       "rewardFinal": false,
       "v7": null
     },
@@ -2544,7 +2544,7 @@
       "engagement": 0.24,
       "score": 0.4,
       "lscore": 0.303,
-      "reward": -0.169,
+      "reward": -0.168,
       "rewardFinal": false,
       "v7": null
     },
@@ -2613,7 +2613,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.263,
-      "reward": -0.236,
+      "reward": -0.235,
       "rewardFinal": false,
       "v7": null
     },
@@ -2636,7 +2636,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.251,
-      "reward": -0.256,
+      "reward": -0.255,
       "rewardFinal": false,
       "v7": null
     },
@@ -2659,7 +2659,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.251,
-      "reward": -0.256,
+      "reward": -0.255,
       "rewardFinal": false,
       "v7": null
     },
@@ -2682,7 +2682,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.251,
-      "reward": -0.256,
+      "reward": -0.255,
       "rewardFinal": false,
       "v7": null
     },
@@ -2705,7 +2705,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2728,7 +2728,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.251,
-      "reward": -0.256,
+      "reward": -0.255,
       "rewardFinal": false,
       "v7": null
     },
@@ -2751,7 +2751,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2774,7 +2774,7 @@
       "engagement": 0,
       "score": 0.3,
       "lscore": 0.251,
-      "reward": -0.256,
+      "reward": -0.255,
       "rewardFinal": false,
       "v7": null
     },
@@ -2797,7 +2797,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2820,7 +2820,7 @@
       "engagement": 0.08,
       "score": 0.3,
       "lscore": 0.269,
-      "reward": -0.226,
+      "reward": -0.225,
       "rewardFinal": false,
       "v7": null
     },
@@ -2843,7 +2843,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2866,7 +2866,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2889,7 +2889,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -2912,7 +2912,7 @@
       "engagement": 0.04,
       "score": 0.3,
       "lscore": 0.26,
-      "reward": -0.241,
+      "reward": -0.24,
       "rewardFinal": false,
       "v7": null
     },
@@ -3073,7 +3073,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3119,7 +3119,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3165,7 +3165,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3188,7 +3188,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3211,7 +3211,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3280,7 +3280,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3303,7 +3303,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3326,7 +3326,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3349,7 +3349,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3372,7 +3372,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },
@@ -3441,7 +3441,7 @@
       "engagement": 0.04,
       "score": 0.2,
       "lscore": 0.201,
-      "reward": -0.34,
+      "reward": -0.339,
       "rewardFinal": false,
       "v7": null
     },

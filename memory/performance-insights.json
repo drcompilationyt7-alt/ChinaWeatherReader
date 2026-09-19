@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-19T02:35:15.761Z",
+  "updatedAt": "2026-09-19T02:56:28.116Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
@@ -15,7 +15,7 @@
       "videoId": "h0Ealj2sA2g",
       "title": "Trending Korean Girl Dance! 🔥💃",
       "views": 852,
-      "score": 138,
+      "score": 137.7,
       "country": "China",
       "ageDays": 6.3
     },
@@ -39,7 +39,7 @@
       "videoId": "hzmtUuvSoMc",
       "title": "#trending #dance",
       "views": 20,
-      "score": 7.7,
+      "score": 7.6,
       "country": "China",
       "ageDays": 2.6
     },
@@ -55,7 +55,7 @@
       "videoId": "fikwfU11qgU",
       "title": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap",
       "views": 6,
-      "score": 3.9,
+      "score": 3.8,
       "country": "Japan",
       "ageDays": 1.6
     },
@@ -251,12 +251,12 @@
   "channels": {
     "Dance-p2d": {
       "n": 1,
-      "meanScore": 7.7,
+      "meanScore": 7.6,
       "weight": 1
     },
     "tokyotrending": {
       "n": 1,
-      "meanScore": 3.9,
+      "meanScore": 3.8,
       "weight": 1
     },
     "BB_BrainBoost": {
@@ -278,7 +278,7 @@
   "categories": {
     "dance": {
       "n": 1,
-      "meanScore": 7.7,
+      "meanScore": 7.6,
       "weight": 1
     },
     "other": {
@@ -307,7 +307,7 @@
   "history": [
     {
       "title": "Trending Korean Girl Dance! 🔥💃",
-      "score": 4.935
+      "score": 4.932
     },
     {
       "title": "Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral",
@@ -319,7 +319,7 @@
     },
     {
       "title": "#trending #dance",
-      "score": 2.16
+      "score": 2.155
     },
     {
       "title": "Real Madrid vs Barcelona was INSANE! 😱🔥",
@@ -327,7 +327,7 @@
     },
     {
       "title": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap",
-      "score": 1.586
+      "score": 1.578
     },
     {
       "title": "Eris vs Nina: EPIC Fight! 👊🔥 #MushokuTensei",
@@ -339,11 +339,11 @@
     },
     {
       "title": "Bought a Mountain of Glue When Bored! 😱🖌️",
-      "score": 1.222
+      "score": 1.219
     },
     {
       "title": "Insane Sketch Transformation! 🎨✨",
-      "score": 1.19
+      "score": 1.185
     },
     {
       "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
@@ -403,7 +403,7 @@
     },
     {
       "title": "Top 5 Chibi Naruto Funniest Moments",
-      "score": 0.841
+      "score": 0.839
     },
     {
       "title": "Fighting in front of my parents, then kissing righ",
@@ -455,7 +455,7 @@
     },
     {
       "title": "kpop comebacks after member departure✨ #kpop#kpopd",
-      "score": 0.674
+      "score": 0.673
     },
     {
       "title": "TOP 5 Guy Sensei Moments! 🔥🇯🇵",
@@ -467,7 +467,7 @@
     },
     {
       "title": "Jisoo's reaction 🤣 You ok? #jisoo #blackpink #rea",
-      "score": 0.643
+      "score": 0.642
     },
     {
       "title": "Qatar is actually unreal 🤯",
@@ -495,7 +495,7 @@
     },
     {
       "title": "Most Viewed 5th gen mvs✨ #kpop##kpopshorts#kpopdan",
-      "score": 0.572
+      "score": 0.571
     },
     {
       "title": "Cha Eunwoo in glasses || My All",
@@ -531,7 +531,7 @@
     },
     {
       "title": "As soon as it’s time to take a picture, forget eve",
-      "score": 0.502
+      "score": 0.501
     },
     {
       "title": "Why K-pop Idols DON'T use headsets! 🎤🚫",
@@ -567,7 +567,7 @@
     },
     {
       "title": "3 Reasons Why Renting in Japan Is Basically a Scam",
-      "score": 0.473
+      "score": 0.472
     },
     {
       "title": "One Piece MOST VIRAL Instagram Edits 🏴‍☠️🔥 | Top",
@@ -619,11 +619,11 @@
     },
     {
       "title": "Bubble Tea Shop Dance Vibes! 🧋✨",
-      "score": 0.397
+      "score": 0.395
     },
     {
       "title": "Jennie was doing so dangerous stunt 😱😭 #jennie #",
-      "score": 0.387
+      "score": 0.386
     },
     {
       "title": "This CDrama hit different... 🥹❤️‍🩹",
@@ -659,7 +659,7 @@
     },
     {
       "title": "What if her Dad wants her back after seeing THIS ?",
-      "score": 0.305
+      "score": 0.304
     },
     {
       "title": "World Street Moment",
@@ -1131,5 +1131,5 @@
     }
   ],
   "promptSummary": "Based on 206 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 0.6/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Trending Korean Girl Dance! 🔥💃\" (852 views, China)\n  - \"Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral\" (565 views, unknown)\n  - \"Jude Bellingham || Bye (Altare Remix) edit\" (141 views, unknown)\n  - \"#trending #dance\" (20 views, China)\n  - \"Real Madrid vs Barcelona was INSANE! 😱🔥\" (54 views, unknown)\n  - \"Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap\" (6 views, Japan)\nTitles that performed WORST for us:\n  - \"Korea Dance Hits Different\" (0 views)\n  - \"LIV & KIKI SUI: Real Life Twins? 👯‍♀️✨\" (0 views)\n  - \"That was too close! 😱😂 #funny\" (0 views)\nPatterns that WORK for this channel: mentions place (x1.31), has number (x1.16)\nBest performing countries: China (x1.6, 12 shorts), Japan (x1.02, 13 shorts), South Korea (x0.99, 9 shorts); weakest: United States (x0.85), Vietnam (x0.83)",
-  "summaryLine": "Best recent: \"Trending Korean Girl Dance! 🔥💃\" (852 views, 138/day) — typical short 0.6/day over 206 shorts"
+  "summaryLine": "Best recent: \"Trending Korean Girl Dance! 🔥💃\" (852 views, 137.7/day) — typical short 0.6/day over 206 shorts"
 }
