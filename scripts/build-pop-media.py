@@ -17,6 +17,7 @@ voice or scene formats.
     python scripts/build-pop-media.py [--skip-idols] [--skip-anime]
     python scripts/build-pop-media.py --enrich    # add gender / age / nsfw to the existing anime snapshots
     python scripts/build-pop-media.py --vtubers
+    python scripts/build-pop-media.py --voices    # verified voice-line clips for the voice quiz (yt-dlp + faster-whisper)
 """
 import json
 import os
@@ -389,7 +390,49 @@ def build_vtubers():
     print(f'{len(out)} VTubers with portraits')
 
 
+def build_voices(limit=220):
+    """
+    core/quiz/assets/voice-lines.json: for each of the most popular characters (no nsfw flag, no
+    fan-service show), a YouTube voice-line upload that names the character and the show, and the
+    start of ~3 s in it that faster-whisper confirmed as Japanese speech with a few words. The voice
+    quiz draws only from these (and re-checks the clip at render time). Needs yt-dlp + faster-whisper.
+    """
+    sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+    import media
+    from render_pop import SCENE_SKIP, same_series
+    from concurrent.futures import ThreadPoolExecutor
+    chars = json.load(open(os.path.join(OUT, 'anime-characters.json'), encoding='utf-8'))['characters'][:limit]
+    pool = [{**c, 'difficulty': 1 if k < 25 else 2 if k < 70 else 3} for k, c in enumerate(chars)
+            if not c.get('nsfw') and not any(same_series(c['anime'], s) for s in SCENE_SKIP)]
+
+    def one(c):
+        try:
+            seg, info = media.fetch_voice(c['name'], c['anime'])
+        except Exception as e:
+            seg, info = None, str(e)
+        return c, seg, info
+
+    out = []
+    with ThreadPoolExecutor(3) as ex:
+        for c, seg, info in ex.map(one, pool):
+            if seg is None:
+                print(f"  - {c['name']} ({c['anime']}): {str(info)[:90]}", file=sys.stderr)
+                continue
+            asr = info.get('asr') or {}
+            out.append({'id': c['id'], 'name': c['name'], 'anime': c['anime'], 'image': c['image'], 'favourites': c['favourites'],
+                        'difficulty': c['difficulty'], 'video': info['video'], 'videoTitle': info.get('videoTitle'),
+                        'start': round(info['pin'], 3), 'check':{k: asr.get(k) for k in ('lang', 'langProb', 'noSpeech', 'logprob')}})
+            print(f"  + {c['name']}: {info.get('videoTitle')}", file=sys.stderr)
+    json.dump({'source': 'YouTube voice-line uploads that name the character and the show; clips checked by faster-whisper '
+                         '(Japanese speech, a few words). Character art: AniList.', 'voices': out},
+              open(os.path.join(OUT, 'voice-lines.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print(f'{len(out)}/{len(pool)} characters with a verified voice clip')
+
+
 if __name__ == '__main__':
+    if '--voices' in sys.argv:
+        build_voices()
+        sys.exit(0)
     if '--cities' in sys.argv:
         build_city_photos()
         sys.exit(0)

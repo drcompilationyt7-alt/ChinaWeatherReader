@@ -37,16 +37,18 @@ const RENDERER = path.join(ROOT, 'core', 'quiz', 'render_quiz.py');
 const HISTORY_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'quiz-history.json');
 
 const GEO_FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
-const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice'];
+const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song'];
 // QUIZ_FORMATS picks the channel's formats (the quiz channel runs the pop set + Asia geography)
 const FORMATS = (process.env.QUIZ_FORMATS || GEO_FORMATS.join(','))
   .split(',').map(f => f.trim()).filter(f => GEO_FORMATS.includes(f) || POP_FORMATS.includes(f));
 const isPop = f => POP_FORMATS.includes(f);
-// exploration weights; on the pop channel the geography formats are only a side dish
+// exploration weights; on the pop channel the geography formats are only a side dish. The new formats
+// (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
-  ? { emoji: 0.25, trivia: 0.2, wyr: 0.2, city: 0.1, character: 0.3, idol: 0.2, opening: 0.3, flag: 0.06, shape: 0.05,
-    cityphoto: 0.15, vtuber: 0.2, duel: 0.25, scene: 0.3, voice: 0.15 }
+  ? { emoji: 0.3, trivia: 0.15, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.2, opening: 0.3, flag: 0.05, shape: 0.04,
+    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4 }
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
+const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];
 const THEMED_FORMATS = new Set(['flag', 'shape', 'capital']);
 
@@ -200,22 +202,25 @@ function pickWeighted(pairs) {
 
 /**
  * Gaussian Thompson sampling over formats on percentile rewards (how each quiz
- * ranked among our quizzes). 15% of picks explore; a format may repeat, but
- * never three times in a row.
+ * ranked among our quizzes). 15% of picks explore. Consecutive days rotate: the
+ * last upload's format is never picked again right away, and the formats of the
+ * last ROTATE_RECENT uploads are drawn less (exploration weight x0.3, Thompson -0.15).
  */
 function pickFormat(stats, history, forced) {
   if (forced && FORMATS.includes(forced)) return { format: forced, why: 'forced' };
-  const lastTwo = history.uploads.slice(-2).map(u => u.format);
-  const allowed = FORMATS.filter(f => !(lastTwo.length === 2 && lastTwo[0] === f && lastTwo[1] === f));
+  const recent = history.uploads.slice(-ROTATE_RECENT).map(u => u.format);
+  const last = recent[recent.length - 1];
+  const allowed = FORMATS.length > 1 ? FORMATS.filter(f => f !== last) : FORMATS;
   const scored = percentileRewards(scoredQuizUploads(stats, history));
   if (Math.random() < 0.15 || scored.length < 6) {
-    const f = pickWeighted(allowed.map(f => [f, FALLBACK_WEIGHTS[f]]));
+    const f = pickWeighted(allowed.map(f => [f, (FALLBACK_WEIGHTS[f] || 0.1) * (recent.includes(f) ? 0.3 : 1)]));
     return { format: f, why: scored.length < 6 ? `exploring (${scored.length} scored quizzes so far)` : 'exploration draw' };
   }
   let best = null;
   const draws = [];
   for (const f of allowed) {
-    const { n, draw } = weightedDraw(scored.filter(u => u.format === f).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
+    const { n, draw: d } = weightedDraw(scored.filter(u => u.format === f).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
+    const draw = d - (recent.includes(f) ? 0.15 : 0);
     draws.push(`${f}=${draw.toFixed(2)}(${n.toFixed(1)})`);
     if (!best || draw > best.draw) best = { f, draw };
   }
@@ -396,7 +401,8 @@ function renderQuiz({ format, theme, seed, avoid, outPath, rounds, planFile }) {
       try { res = line ? JSON.parse(line) : null; } catch {}
       if (err || !res || !res.ok) return reject(new Error((res && res.reason) || (stderr || err?.message || 'render failed').toString().slice(-300)));
       // rounds whose clip or photo could not be fetched (a spare took their place)
-      for (const l of String(stderr || '').split(/\r?\n/).filter(x => /skipped:/.test(x)).slice(0, 8)) logger.warn(l.slice(0, 200));
+      for (const l of String(stderr || '').split(/?
+/).filter(x => /skipped:|audio check:/.test(x)).slice(0, 12)) logger.warn(l.slice(0, 200));
       resolve(res);
     });
   });
@@ -413,7 +419,9 @@ async function runWorldQuizPipeline(opts = {}) {
   const history = loadHistory();
 
   const forcedFormat = opts.format || process.env.QUIZ_FORMAT;
-  const hit = !forcedFormat && Math.random() < 0.5 ? findHit(stats, history) : null;
+  const lastFormat = (history.uploads[history.uploads.length - 1] || {}).format;
+  let hit = !forcedFormat && Math.random() < 0.5 ? findHit(stats, history) : null;
+  if (hit && hit.format === lastFormat && FORMATS.length > 1) hit = null;  // a follow-up waits a day: consecutive days rotate
   let format, why, theme, length;
   if (hit && FORMATS.includes(hit.format)) {
     ({ format, theme } = hit);
@@ -467,11 +475,15 @@ async function runWorldQuizPipeline(opts = {}) {
   } else {
     title = tpl.text(plan);
   }
-  title = title.substring(0, 100);
+  title = pop.clean(title).substring(0, 100);  // YouTube rejects < and > in titles and descriptions
   logger.info(`Title [${titleTemplate}]: ${title}`);
 
   const hook = isPop(format) ? pop.popHook(plan) : hookLine(plan);
-  const description = isPop(format) ? pop.popDescription(plan) : buildDescription(plan, hook);
+  const description = pop.clean(isPop(format) ? pop.popDescription(plan) : buildDescription(plan, hook));
+  if (res.audioCheck) {
+    logger.info(`Audio: narrator over clip ${res.audioCheck.overlapSec}s, all at ${res.audioCheck.clipGainUnderVoiceDb ?? '-'} dB; `
+      + `unducked overlap ${res.audioCheck.overlapUnduckedSec}s; fetch ${JSON.stringify(res.fetch || {})}`);
+  }
   const answersText = isPop(format) ? pop.popAnswers(plan) : answersBlock(plan);
   const hashtags = isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format];
   let localizations = null;
@@ -499,6 +511,9 @@ async function runWorldQuizPipeline(opts = {}) {
       ? 'Which one surprised you the most? 🤯 Tell me your score 👇'
       : `What did you score out of ${plan.rounds.length}? 🏆 Which one got you? 👇`,
     country: 'Global',
+    // what the renderer measured: loudness, fetch results, and every narrator / clip placement with the overlap check
+    renderInfo: { duration: res.duration, renderSec: res.renderSec, totalSec: Math.round((Date.now() - t0) / 1000), lufs: res.lufs,
+      truePeak: res.truePeak, fetch: res.fetch, audioCheck: res.audioCheck, placements: res.placements },
     category: `quiz-${format}`,
     editType: 'quiz',
     geminiScore: null,

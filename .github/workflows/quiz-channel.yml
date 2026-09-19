@@ -15,7 +15,7 @@ on:
         required: false
         default: ''
       format:
-        description: 'Force a format (optional: character, idol, opening, scene, duel, cityphoto, vtuber, emoji, trivia, wyr, city, flag, shape)'
+        description: 'Force a format (optional: song, voice, character, idol, opening, scene, duel, cityphoto, vtuber, emoji, trivia, wyr, city, flag, shape)'
         required: false
         default: ''
       dry_run:
@@ -47,10 +47,10 @@ env:
   YT_COOKIES: /tmp/yt_cookies.txt
   QUIZ_MEDIA_CACHE: /home/runner/.cache/quiz-media
   MEMORY_DIR: memory/quiz-channel
-  # Asian pop culture formats + Asia editions of the geography quizzes. `voice` (guess the character
-  # by voice) is left out on purpose: its YouTube clips can't be checked for the right speaker;
-  # add it to this list to try it (a forced format must be in the list too).
-  QUIZ_FORMATS: character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape
+  # Asian pop culture formats + Asia editions of the geography quizzes (a forced format must be in the
+  # list too). `voice` draws only from voice-lines.json: uploads that name the character (and the show),
+  # each clip confirmed as Japanese speech by faster-whisper, re-checked at render time.
+  QUIZ_FORMATS: song,voice,character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
@@ -101,20 +101,23 @@ jobs:
           python3 -m pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu --break-system-packages
           python3 -m pip install chatterbox-tts --break-system-packages
           python3 -m pip install pillow edge-tts yt-dlp yt-dlp-ejs kokoro-onnx soundfile --break-system-packages
+          # speech check for the voice quiz (Whisper tiny on CPU; the model is cached with the voice models)
+          python3 -m pip install faster-whisper --break-system-packages
           curl -fsSL https://deno.land/install.sh | sh
           echo "$HOME/.deno/bin" >> $GITHUB_PATH
           npm ci || npm install
           mkdir -p output/quiz "$MEMORY_DIR" "$QUIZ_MEDIA_CACHE"
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > "$YT_COOKIES"; fi
 
-      - name: Cache voice models (Chatterbox, Kokoro)
+      - name: Cache voice models (Chatterbox, Kokoro, faster-whisper tiny)
         if: steps.gate.outputs.ready == 'true'
         uses: actions/cache@v4
         with:
           path: |
             /home/runner/.cache/huggingface
             /home/runner/.cache/kokoro
-          key: voice-models-chatterbox-v1
+          key: voice-models-chatterbox-whisper-v2
+          restore-keys: voice-models-chatterbox-
 
       - name: Cache quiz media (images, opening clips)
         if: steps.gate.outputs.ready == 'true'

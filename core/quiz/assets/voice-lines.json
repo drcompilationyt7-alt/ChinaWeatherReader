@@ -1,0 +1,1280 @@
+{
+ "source": "YouTube voice-line uploads that name the character and the show; clips checked by faster-whisper (Japanese speech, a few words). Character art: AniList.",
+ "voices": [
+  {
+   "id": 127691,
+   "name": "Satoru Gojo",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
+   "favourites": 39390,
+   "difficulty": 1,
+   "video": "UOSm6T-fVOk",
+   "videoTitle": "Gojo satoru☄️🥶| Voice pack for edits😬 | Free to use🤧🥴",
+   "start": 42.502,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.93,
+    "noSpeech": 0.03,
+    "logprob": -0.54
+   }
+  },
+  {
+   "id": 40,
+   "name": "Monkey D. Luffy",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+   "favourites": 36000,
+   "difficulty": 1,
+   "video": "DuHHaa-20V4",
+   "videoTitle": "Monkey D luffy - One piece || Voice Pack || Free to use 🗣️",
+   "start": 39.577,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.02,
+    "logprob": -1.06
+   }
+  },
+  {
+   "id": 27,
+   "name": "Killua Zoldyck",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b27-Z5O02kQUydpT.jpg",
+   "favourites": 34795,
+   "difficulty": 1,
+   "video": "pIRgrVcbpUA",
+   "videoTitle": "Hunter x Hunter - Killua Zoldyck Voice Lines (Japanese)",
+   "start": 229.26,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.02,
+    "logprob": -0.16
+   }
+  },
+  {
+   "id": 40882,
+   "name": "Eren Yeager",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40882-dsj7IP943WFF.jpg",
+   "favourites": 31845,
+   "difficulty": 1,
+   "video": "ndPaqqLSJCQ",
+   "videoTitle": "Eren Yeager - Attack on Titan 🌋🌋 || Free to use || Voice pack🗣️",
+   "start": 20.559,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.01,
+    "logprob": -0.62
+   }
+  },
+  {
+   "id": 62,
+   "name": "Roronoa Zoro",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b62-S7oAeA9WInjV.png",
+   "favourites": 28862,
+   "difficulty": 1,
+   "video": "bEiiFBzHjds",
+   "videoTitle": "Jump Force - Roronoa Zoro Voice (Japanese)",
+   "start": 101.26,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.85,
+    "noSpeech": 0.03,
+    "logprob": -0.94
+   }
+  },
+  {
+   "id": 417,
+   "name": "Lelouch Lamperouge",
+   "anime": "Code Geass: Lelouch of the Rebellion",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b417-gVLmIJu9phcK.png",
+   "favourites": 28236,
+   "difficulty": 1,
+   "video": "IPgcy-nsPk8",
+   "videoTitle": "Code Geass: Lelouch of the Rebellion (DS Game) - Lelouch vi Britannia/Lelouch Lamperouge Voice Clips",
+   "start": 121.497,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.02,
+    "logprob": -0.27
+   }
+  },
+  {
+   "id": 40881,
+   "name": "Mikasa Ackerman",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40881-F3gr1PkreDvj.png",
+   "favourites": 25572,
+   "difficulty": 1,
+   "video": "ws4KyK9KKD4",
+   "videoTitle": "Mikasa - AOT || FREE TO USE || VOICE PACK 🗣️",
+   "start": 3.493,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.13,
+    "logprob": -0.55
+   }
+  },
+  {
+   "id": 137080,
+   "name": "Makima",
+   "anime": "Chainsaw Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137080-UHcynYNjb5ZU.png",
+   "favourites": 22256,
+   "difficulty": 1,
+   "video": "mPtSobMx8JA",
+   "videoTitle": "Chainsaw Man - Makima Voice Lines YOU Haven’t Heard Yet.",
+   "start": 46.159,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.13,
+    "logprob": -0.7
+   }
+  },
+  {
+   "id": 14,
+   "name": "Itachi Uchiha",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b14-9Kb1E5oel1ke.png",
+   "favourites": 21439,
+   "difficulty": 1,
+   "video": "0cdlvZaiLac",
+   "videoTitle": "Naruto x Boruto Ultimate Ninja Storm Connections - Itachi Uchiha Voice (Japanese)",
+   "start": 155.874,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.02,
+    "logprob": -0.64
+   }
+  },
+  {
+   "id": 127212,
+   "name": "Yuji Itadori",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127212-FVm2tD0erQ5B.png",
+   "favourites": 21286,
+   "difficulty": 1,
+   "video": "aCsqwhSWtuQ",
+   "videoTitle": "Itadori Yuuji Japanese Voicelines - Jujutsu Kaisen Phantom Parade",
+   "start": 105.649,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.1,
+    "logprob": -0.64
+   }
+  },
+  {
+   "id": 28,
+   "name": "Kurapika",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b28-ivA7UGnfE40a.png",
+   "favourites": 20683,
+   "difficulty": 1,
+   "video": "lptDgpPGbhI",
+   "videoTitle": "Hunter X Hunter :Kurapika Japanese voice",
+   "start": 48.598,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.76,
+    "noSpeech": 0.07,
+    "logprob": -0.96
+   }
+  },
+  {
+   "id": 85,
+   "name": "Kakashi Hatake",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b85-mkVBh2yjxjmx.png",
+   "favourites": 20524,
+   "difficulty": 2,
+   "video": "WyMfrIi1c4I",
+   "videoTitle": "Hatake Kakashi - Naruto 🥷🥷 || Free to use || Voice pack",
+   "start": 13.489,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.83,
+    "noSpeech": 0.01,
+    "logprob": -1.02
+   }
+  },
+  {
+   "id": 11,
+   "name": "Edward Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11-TA5Nuk7EDUZG.jpg",
+   "favourites": 19225,
+   "difficulty": 2,
+   "video": "Dah1Q_BQN24",
+   "videoTitle": "Fullmetal Alchemist Brotherhood - Edward Elric Voice Lines (Japanese)",
+   "start": 72.735,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.77,
+    "noSpeech": 0.05,
+    "logprob": -1.07
+   }
+  },
+  {
+   "id": 17,
+   "name": "Naruto Uzumaki",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b17-phjcWCkRuIhu.png",
+   "favourites": 18183,
+   "difficulty": 2,
+   "video": "R_7jfMPX1HU",
+   "videoTitle": "Naruto uzumaki 🦊 | Voice pack for edit🤧 | Free to use 🥴",
+   "start": 8.613,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.03,
+    "logprob": -0.45
+   }
+  },
+  {
+   "id": 126071,
+   "name": "Tanjiro Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126071-BTNEc1nRIv68.png",
+   "favourites": 18037,
+   "difficulty": 2,
+   "video": "GvQi-EyW0MQ",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles - Tanjiro Kamado Voice (Japanese)",
+   "start": 3.737,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.58,
+    "noSpeech": 0.06,
+    "logprob": -0.93
+   }
+  },
+  {
+   "id": 500,
+   "name": "Sakura Matou",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b500-NQrLbnBr1sDv.png",
+   "favourites": 17770,
+   "difficulty": 2,
+   "video": "dMziWEyo6MY",
+   "videoTitle": "Fate/Tiger Colosseum Upper Matou Sakura Voice Lines",
+   "start": 68.59,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.9,
+    "noSpeech": 0.34,
+    "logprob": -0.14
+   }
+  },
+  {
+   "id": 126635,
+   "name": "Megumi Fushiguro",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126635-L0y3I92JSUkN.png",
+   "favourites": 17410,
+   "difficulty": 2,
+   "video": "jECF_bKVdrU",
+   "videoTitle": "ANIME VOICES ~ MEGUMI FUSHIGURO (No Background Music)",
+   "start": 43.721,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.02,
+    "logprob": -0.37
+   }
+  },
+  {
+   "id": 6356,
+   "name": "Joseph Joestar",
+   "anime": "JoJo's Bizarre Adventure (TV)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6356-RImEfUfHpC58.png",
+   "favourites": 17015,
+   "difficulty": 2,
+   "video": "MPH1z6bdxNQ",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Joseph Joestar Voice (Japanese)",
+   "start": 137.344,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.88,
+    "noSpeech": 0.08,
+    "logprob": -0.93
+   }
+  },
+  {
+   "id": 89220,
+   "name": "Shoto Todoroki",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89220-KNBwaVFAR8FD.png",
+   "favourites": 16810,
+   "difficulty": 2,
+   "video": "NKIRRC90mIM",
+   "videoTitle": "My Hero Academia : All's Justice - Shoto Todoroki Voice (Japanese)",
+   "start": 129.055,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.01,
+    "logprob": -0.85
+   }
+  },
+  {
+   "id": 88892,
+   "name": "Katsuki Bakugo",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88892-bdOha3lNcaN6.png",
+   "favourites": 16220,
+   "difficulty": 2,
+   "video": "mI8s73_hRR8",
+   "videoTitle": "Jump Force - Katsuki Bakugo Voice (Japanese)",
+   "start": 146.365,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.82,
+    "noSpeech": 0.19,
+    "logprob": -0.98
+   }
+  },
+  {
+   "id": 123212,
+   "name": "Kiyotaka Ayanokoji",
+   "anime": "Classroom of the Elite",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123212-ewZgUQr9vvEM.png",
+   "favourites": 15826,
+   "difficulty": 2,
+   "video": "fhYVr_VRHe8",
+   "videoTitle": "Kiyotaka Ayanokōji Quotes with Anime Voice | Classroom Of The Elite Quotes",
+   "start": 51.036,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.18,
+    "logprob": -0.34
+   }
+  },
+  {
+   "id": 88573,
+   "name": "Subaru Natsuki",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88573-F8yMTK9GhnTA.png",
+   "favourites": 15414,
+   "difficulty": 2,
+   "video": "qq1HJtW3_Zs",
+   "videoTitle": "Voice Pack \"Natsuki Subaru\" ",
+   "start": 24.217,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.54,
+    "noSpeech": 0.15,
+    "logprob": -0.84
+   }
+  },
+  {
+   "id": 30,
+   "name": "Gon Freecss",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b30-lyFExKyDhefc.jpg",
+   "favourites": 15388,
+   "difficulty": 2,
+   "video": "AOKtCliZnzs",
+   "videoTitle": "HUNTERxHUNTER NENxIMPACT - Gon Freecss Voice (Japanese)",
+   "start": 2.03,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.68,
+    "noSpeech": 0.09,
+    "logprob": -0.77
+   }
+  },
+  {
+   "id": 305,
+   "name": "Sanji",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b305-6lisPmHtCnLT.png",
+   "favourites": 15220,
+   "difficulty": 2,
+   "video": "27OxH2cqFXo",
+   "videoTitle": "One Piece Bounty Rush - Raid on Onigashima Sanji Voice (Japanese)",
+   "start": 3.249,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.91,
+    "noSpeech": 0.17,
+    "logprob": -0.8
+   }
+  },
+  {
+   "id": 73935,
+   "name": "Saitama",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b73935-ON5d0mAcrItd.jpg",
+   "favourites": 15105,
+   "difficulty": 2,
+   "video": "beQeTZXfyXY",
+   "videoTitle": "All Saitama Japanese Voice Clips • One Punch Man: A Hero Nobody Knows • Lines (Makoto Furukawa)",
+   "start": 11.295,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.01,
+    "logprob": -0.32
+   }
+  },
+  {
+   "id": 61,
+   "name": "Nico Robin",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+   "favourites": 14814,
+   "difficulty": 2,
+   "video": "_nnjb0-Kn2w",
+   "videoTitle": "One Piece Bounty Rush - Egghead Nico Robin Voice (Japanese)",
+   "start": 4.224,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.01,
+    "logprob": -0.58
+   }
+  },
+  {
+   "id": 90107,
+   "name": "Kusuo Saiki",
+   "anime": "The Disastrous Life of Saiki K.",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b90107-ZULW5HlPX1uU.png",
+   "favourites": 14714,
+   "difficulty": 2,
+   "video": "aiRJyI-wlv0",
+   "videoTitle": "J-Stars Victory Vs+ - Kusuo Saiki Voice (Japanese)",
+   "start": 5.199,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.04,
+    "logprob": -0.63
+   }
+  },
+  {
+   "id": 129130,
+   "name": "Inosuke Hashibira",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/n129130-SJC0Kn1DU39E.jpg",
+   "favourites": 14659,
+   "difficulty": 2,
+   "video": "g65Bg_hQVc4",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles - Inosuke Hashibira Voice (Japanese)",
+   "start": 13.489,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.02,
+    "logprob": -1.09
+   }
+  },
+  {
+   "id": 64769,
+   "name": "Shoyo Hinata",
+   "anime": "HAIKYU!!",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b64769-WoWlCMLLgJ14.png",
+   "favourites": 14651,
+   "difficulty": 2,
+   "video": "O7wIZ2boHq0",
+   "videoTitle": "J-Stars Victory Vs+ - Shoyo Hinata Voice (Japanese)",
+   "start": 36.407,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.84,
+    "noSpeech": 0.11,
+    "logprob": -0.84
+   }
+  },
+  {
+   "id": 127518,
+   "name": "Nezuko Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127518-NRlq1CQ1v1ro.png",
+   "favourites": 14632,
+   "difficulty": 2,
+   "video": "RbFOO0dsj0Q",
+   "videoTitle": "Nezuko Voice Pack 🎀🔥 | Free to Use | Demon Slayer",
+   "start": 11.295,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.06,
+    "logprob": -0.81
+   }
+  },
+  {
+   "id": 5,
+   "name": "Ichigo Kurosaki",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5-a7bkJgjhhigE.png",
+   "favourites": 14544,
+   "difficulty": 2,
+   "video": "7PmfBW1wMY8",
+   "videoTitle": "Bleach Rebirth of Souls - Ichigo Kurosaki Voice (Japanese)",
+   "start": 117.108,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.77,
+    "noSpeech": 0.06,
+    "logprob": -0.85
+   }
+  },
+  {
+   "id": 68,
+   "name": "Roy Mustang",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
+   "favourites": 14463,
+   "difficulty": 2,
+   "video": "3zapetKzF5Y",
+   "videoTitle": "Fullmetal Alchemist mobile Roy Mustang SSR Voices (CV: Shinichiro Miki)",
+   "start": 32.506,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.05,
+    "logprob": -0.92
+   }
+  },
+  {
+   "id": 4003,
+   "name": "Jotaro Kujo",
+   "anime": "JoJo's Bizarre Adventure: Stardust Crusaders",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4003-gWDSEGbeOAll.png",
+   "favourites": 14224,
+   "difficulty": 3,
+   "video": "cm_cZ2XpiqI",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Jotaro Kujo Voice (Japanese)",
+   "start": 9.344,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.79,
+    "noSpeech": 0.07,
+    "logprob": -0.97
+   }
+  },
+  {
+   "id": 89028,
+   "name": "Izuku Midoriya",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89028-8w1I9o1ISHMg.png",
+   "favourites": 14054,
+   "difficulty": 3,
+   "video": "GNbQffRLgkI",
+   "videoTitle": "Jump Force - Izuku Midoriya Voice (Japanese)",
+   "start": 183.18,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.02,
+    "logprob": -0.72
+   }
+  },
+  {
+   "id": 71121,
+   "name": "Hange Zoe",
+   "anime": "Attack on Titan",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71121-7R7CnQd3lHgt.png",
+   "favourites": 13864,
+   "difficulty": 3,
+   "video": "bEeCqtGmPs8",
+   "videoTitle": "Hange Zoe voice lines~ | aot",
+   "start": 4.468,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.01,
+    "logprob": -0.87
+   }
+  },
+  {
+   "id": 129131,
+   "name": "Zenitsu Agatsuma",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129131-FZrQ7lSlxmEr.png",
+   "favourites": 13783,
+   "difficulty": 3,
+   "video": "QU8I0V-8DCk",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles - Zenitsu Agatsuma Voice (Japanese)",
+   "start": 6.418,
+   "check": {
+    "lang": "ja",
+    "langProb": 1.0,
+    "noSpeech": 0.0,
+    "logprob": -1.07
+   }
+  },
+  {
+   "id": 134167,
+   "name": "Maki Zenin",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b134167-5TCytk45YByD.png",
+   "favourites": 13067,
+   "difficulty": 3,
+   "video": "hJpXebEhF9Y",
+   "videoTitle": "Maki Zenin Japanese Voicelines - Jujutsu Kaisen Phantom Parade",
+   "start": 190.495,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.13,
+    "logprob": -0.59
+   }
+  },
+  {
+   "id": 13,
+   "name": "Sasuke Uchiha",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13-SISLEw1oAD7a.png",
+   "favourites": 13043,
+   "difficulty": 3,
+   "video": "dZ4rMpw5fAg",
+   "videoTitle": "Sasuke Voice pack🗡️🗿 | Free to use | Naruto",
+   "start": 28.118,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.06,
+    "logprob": -0.57
+   }
+  },
+  {
+   "id": 498,
+   "name": "Rin Tohsaka",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b498-lwawtSpLyATL.png",
+   "favourites": 12844,
+   "difficulty": 3,
+   "video": "vfk0YG97t9Y",
+   "videoTitle": "RIN TOHSAKA ALL VOICE LINES (JAPANESE)",
+   "start": 51.279,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.9,
+    "noSpeech": 0.08,
+    "logprob": -0.65
+   }
+  },
+  {
+   "id": 130050,
+   "name": "Giyu Tomioka",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b130050-qsLThJs5VIbz.png",
+   "favourites": 12479,
+   "difficulty": 3,
+   "video": "t-2dmyQ4WeA",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles 2 - Giyu Tomioka (Infinity Castle) Voice (Japanese)",
+   "start": 46.403,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.01,
+    "logprob": -0.66
+   }
+  },
+  {
+   "id": 497,
+   "name": "Artoria Pendragon",
+   "anime": "Fate/Zero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b497-Yg5pNmC8kxzs.png",
+   "favourites": 12131,
+   "difficulty": 3,
+   "video": "Pas4rAtvAAY",
+   "videoTitle": "Fate/Grand Order - Altria/Artoria Pendragon (Lily) Summon Voice line",
+   "start": 3.005,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.04,
+    "logprob": -0.57
+   }
+  },
+  {
+   "id": 129571,
+   "name": "Yuta Okkotsu",
+   "anime": "JUJUTSU KAISEN Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129571-GHJk7gviHOOw.jpg",
+   "favourites": 11666,
+   "difficulty": 3,
+   "video": "t41mFNZCMFo",
+   "videoTitle": "Yuta okkotsu voice pack for edit ",
+   "start": 7.638,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.68,
+    "noSpeech": 0.24,
+    "logprob": -1.01
+   }
+  },
+  {
+   "id": 129133,
+   "name": "Kyojuro Rengoku",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129133-VlTPowwt68rJ.png",
+   "favourites": 11524,
+   "difficulty": 3,
+   "video": "cHNMDRxO2cE",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles - Kyojuro Rengoku Voice (Japanese)",
+   "start": 180.255,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.79,
+    "noSpeech": 0.08,
+    "logprob": -0.58
+   }
+  },
+  {
+   "id": 13767,
+   "name": "Trafalgar Law",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13767-U604OJN9dxCn.jpg",
+   "favourites": 10334,
+   "difficulty": 3,
+   "video": "qhg_VLGCp1o",
+   "videoTitle": "Jump Force - Trafalgar Law Voice (Japanese)",
+   "start": 93.702,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.02,
+    "logprob": -0.6
+   }
+  },
+  {
+   "id": 723,
+   "name": "Nami",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b723-vp5hPptgnNEC.png",
+   "favourites": 10204,
+   "difficulty": 3,
+   "video": "_cidDKPumrs",
+   "videoTitle": "One Piece Bounty Rush - Whole Cake Island Nami Voice (Japanese)",
+   "start": 1.298,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.06,
+    "logprob": -0.87
+   }
+  },
+  {
+   "id": 141061,
+   "name": "Vladilena Milizé",
+   "anime": "86 EIGHTY-SIX",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141061-jqIhB9jmClQ3.png",
+   "favourites": 10182,
+   "difficulty": 3,
+   "video": "TsZ5Pqtee5g",
+   "videoTitle": "86- Eighty Six Vladilena Milizé(Lena) Radio Voice Pack Preview",
+   "start": 26.655,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.94,
+    "noSpeech": 0.19,
+    "logprob": -0.49
+   }
+  },
+  {
+   "id": 11772,
+   "name": "Gyro Zeppeli",
+   "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 1st STAGE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11772-p7MO37Mk0f5g.png",
+   "favourites": 10037,
+   "difficulty": 3,
+   "video": "USUSzHZM4TE",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Gyro Zeppeli Voice (Japanese)",
+   "start": 14.464,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.94,
+    "noSpeech": 0.01,
+    "logprob": -0.81
+   }
+  },
+  {
+   "id": 58,
+   "name": "Chrollo Lucilfer",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b58-USOmsz3nursi.jpg",
+   "favourites": 9556,
+   "difficulty": 3,
+   "video": "BcihMXsEpto",
+   "videoTitle": "HUNTERxHUNTER NENxIMPACT - Chrollo Lucilfer Voice (Japanese)",
+   "start": 8.857,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.91,
+    "noSpeech": 0.07,
+    "logprob": -0.94
+   }
+  },
+  {
+   "id": 4004,
+   "name": "Dio Brando",
+   "anime": "JoJo's Bizarre Adventure (TV)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4004-w0OtWuvjhftG.png",
+   "favourites": 9548,
+   "difficulty": 3,
+   "video": "zHNgdg4vMQs",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - DIO Voice (Japanese)",
+   "start": 102.236,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.0,
+    "logprob": -0.98
+   }
+  },
+  {
+   "id": 136070,
+   "name": "Shinobu Kocho",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136070-MC9LLxJsHyHE.png",
+   "favourites": 9400,
+   "difficulty": 3,
+   "video": "6P82UqdpTQc",
+   "videoTitle": "Demon Slayer : The Hinokami Chronicles - Shinobu Kocho Voice (Japanese)",
+   "start": 79.074,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.02,
+    "logprob": -0.93
+   }
+  },
+  {
+   "id": 23277,
+   "name": "Meruem",
+   "anime": "Hunter x Hunter (2011)",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+   "favourites": 9368,
+   "difficulty": 3,
+   "video": "y6JYvVgeuCI",
+   "videoTitle": "Various Hunter x Hunter Arena Battle Voice Lines [Meruem]",
+   "start": 96.14,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.01,
+    "logprob": -0.82
+   }
+  },
+  {
+   "id": 2072,
+   "name": "Portgas D. Ace",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2072-Lc6jEdsueJUK.jpg",
+   "favourites": 9049,
+   "difficulty": 3,
+   "video": "hsiZt1gnNsU",
+   "videoTitle": "One Piece Bounty Rush - Fire Fist Portgas D. Ace Voice (Japanese)",
+   "start": 3.005,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.03,
+    "logprob": -0.57
+   }
+  },
+  {
+   "id": 81929,
+   "name": "Tatsumaki",
+   "anime": "One-Punch Man",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+   "favourites": 8783,
+   "difficulty": 3,
+   "video": "jzZ5OB6FI_Q",
+   "videoTitle": "One Punch Man A Hero Nobody Knows Voice Lines - Tatsumaki (Japanese)",
+   "start": 20.316,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.08,
+    "logprob": -0.6
+   }
+  },
+  {
+   "id": 89225,
+   "name": "Shota Aizawa",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89225-XBgvUhI9naVI.png",
+   "favourites": 8772,
+   "difficulty": 3,
+   "video": "WES7gPhXFzs",
+   "videoTitle": "MY HERO ULTRA RUMBLE: Shota Aizawa Voice Collection (JPN)",
+   "start": 52.011,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.96,
+    "noSpeech": 0.01,
+    "logprob": -0.81
+   }
+  },
+  {
+   "id": 309,
+   "name": "Tony Tony Chopper",
+   "anime": "ONE PIECE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b309-H64NhbJ2ywIQ.jpg",
+   "favourites": 8735,
+   "difficulty": 3,
+   "video": "LCbklFSheuY",
+   "videoTitle": "One Piece Bounty Rush - Egghead Tony Tony Chopper Voice (Japanese)",
+   "start": 27.386,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.84,
+    "noSpeech": 0.03,
+    "logprob": -0.64
+   }
+  },
+  {
+   "id": 13085,
+   "name": "Josuke Higashikata",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b13085-CkmgXL7SSLxL.jpg",
+   "favourites": 8705,
+   "difficulty": 3,
+   "video": "1xTihmu9cQg",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Josuke Higashikata (JoJoLion) Voice (Japanese)",
+   "start": 12.026,
+   "check": {
+    "lang": "ja",
+    "langProb": 1.0,
+    "noSpeech": 0.01,
+    "logprob": -0.69
+   }
+  },
+  {
+   "id": 12055,
+   "name": "Yoshikage Kira",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12055-eCEkIVV4qoCu.png",
+   "favourites": 8518,
+   "difficulty": 3,
+   "video": "vw-sjeBaZ9c",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Yoshikage KIra Voice (Japanese)",
+   "start": 5.443,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.97,
+    "noSpeech": 0.06,
+    "logprob": -0.99
+   }
+  },
+  {
+   "id": 2007,
+   "name": "Shikamaru Nara",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2007-QaesJlIZDifj.jpg",
+   "favourites": 8435,
+   "difficulty": 3,
+   "video": "yUOfPKmnyFY",
+   "videoTitle": "Naruto x Boruto Ultimate Ninja Storm Connections - Shikamaru Nara Voice (Japanese)",
+   "start": 11.295,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.94,
+    "noSpeech": 0.01,
+    "logprob": -1.05
+   }
+  },
+  {
+   "id": 210,
+   "name": "Kisuke Urahara",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b210-mw01NrQfRjzT.png",
+   "favourites": 8390,
+   "difficulty": 3,
+   "video": "ZwzqevEgHeA",
+   "videoTitle": "Bleach Rebirth of Souls - Kisuke Urahara Voice (Japanese)",
+   "start": 119.546,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.05,
+    "logprob": -0.96
+   }
+  },
+  {
+   "id": 133699,
+   "name": "Suguru Geto",
+   "anime": "JUJUTSU KAISEN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133699-FCnXaISgazAi.png",
+   "favourites": 8232,
+   "difficulty": 3,
+   "video": "M5yxALPV21U",
+   "videoTitle": "Geto voice pack | Free to use | Jujutsu Kaisen",
+   "start": 5.931,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.82,
+    "noSpeech": 0.05,
+    "logprob": -0.3
+   }
+  },
+  {
+   "id": 11222,
+   "name": "Jolyne Kujo",
+   "anime": "JoJo's Bizarre Adventure: STONE OCEAN",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b11222-Se9QoJHDSeYY.png",
+   "favourites": 7939,
+   "difficulty": 3,
+   "video": "speESjDibE4",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Jolyne Cujoh Voice (Japanese)",
+   "start": 121.497,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.05,
+    "logprob": -0.8
+   }
+  },
+  {
+   "id": 162722,
+   "name": "Touji Fushiguro",
+   "anime": "JUJUTSU KAISEN Season 2",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162722-btzdghBizxKS.jpg",
+   "favourites": 7717,
+   "difficulty": 3,
+   "video": "iltzWQ_8V5U",
+   "videoTitle": "Toji Fushiguro voicelines",
+   "start": 28.118,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.25,
+    "logprob": -0.86
+   }
+  },
+  {
+   "id": 6,
+   "name": "Rukia Kuchiki",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+   "favourites": 7389,
+   "difficulty": 3,
+   "video": "M-0LjweoX_c",
+   "videoTitle": "Kuchiki Rukia TYBW voice lines",
+   "start": 6.175,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.02,
+    "logprob": -0.25
+   }
+  },
+  {
+   "id": 19492,
+   "name": "Johnny Joestar",
+   "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 1st STAGE",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b19492-gvMnKxhUhT9V.jpg",
+   "favourites": 7355,
+   "difficulty": 3,
+   "video": "1VauD3BvkU4",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Johnny Joestar Voice (Japanese)",
+   "start": 153.923,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.94,
+    "noSpeech": 0.23,
+    "logprob": -0.82
+   }
+  },
+  {
+   "id": 12,
+   "name": "Alphonse Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12-tCKu8yK5kFL5.jpg",
+   "favourites": 7330,
+   "difficulty": 3,
+   "video": "roLc_czVsMA",
+   "videoTitle": "The Alchemist Code - Alphonse Voice Lines || Fullmetal Alchemist Collab",
+   "start": 97.116,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.01,
+    "logprob": -0.74
+   }
+  },
+  {
+   "id": 913,
+   "name": "Vegeta",
+   "anime": "Dragon Ball Z",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b913-NIFkKazWM8VO.png",
+   "favourites": 7323,
+   "difficulty": 3,
+   "video": "FisJzt7gqDY",
+   "videoTitle": "Dragon Ball Legends - Super Vegeta (DBL68-01S) Voice (Japanese)",
+   "start": 69.321,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.0,
+    "logprob": -0.36
+   }
+  },
+  {
+   "id": 1662,
+   "name": "Gaara",
+   "anime": "Naruto",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1662-4E5J0LX9jZKZ.png",
+   "favourites": 7296,
+   "difficulty": 3,
+   "video": "rZDwJvn1fGk",
+   "videoTitle": "Naruto x Boruto Ultimate Ninja Storm Connections - Gaara Voice (Japanese)",
+   "start": 18.121,
+   "check": {
+    "lang": "ja",
+    "langProb": 1.0,
+    "noSpeech": 0.01,
+    "logprob": -0.9
+   }
+  },
+  {
+   "id": 260329,
+   "name": "Chisato Nishikigi",
+   "anime": "Lycoris Recoil",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b260329-1Z5n1QgViEBI.png",
+   "favourites": 7153,
+   "difficulty": 3,
+   "video": "dtq9xf5F-yg",
+   "videoTitle": "Chisato Best Voicelines - Lycoris Recoil",
+   "start": 115.401,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.03,
+    "logprob": -0.48
+   }
+  },
+  {
+   "id": 908,
+   "name": "Yoruichi Shihouin",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b908-JSYUkJLCw1f0.png",
+   "favourites": 7060,
+   "difficulty": 3,
+   "video": "BzGlKoHaiV0",
+   "videoTitle": "Bleach Brave Souls: Yoruichi Shihōin Cacao Society - Voice Lines",
+   "start": 5.199,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.75,
+    "noSpeech": 0.14,
+    "logprob": -0.95
+   }
+  },
+  {
+   "id": 1086,
+   "name": "Sousuke Aizen",
+   "anime": "Bleach",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+   "favourites": 7030,
+   "difficulty": 3,
+   "video": "WN7La_h3a9M",
+   "videoTitle": "Sosuke Aizen voicelines",
+   "start": 103.698,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.98,
+    "noSpeech": 0.03,
+    "logprob": -0.77
+   }
+  },
+  {
+   "id": 65645,
+   "name": "Nagisa Shiota",
+   "anime": "Assassination Classroom",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65645-nWH4mBMW5lYw.png",
+   "favourites": 6886,
+   "difficulty": 3,
+   "video": "V_LjOVR9Oy0",
+   "videoTitle": "Jump Force - Nagisa Shiota Voice (Japanese)",
+   "start": 38.845,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.93,
+    "noSpeech": 0.41,
+    "logprob": -0.39
+   }
+  },
+  {
+   "id": 89224,
+   "name": "Toshinori Yagi",
+   "anime": "My Hero Academia",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89224-K6KEuQAuYKzq.jpg",
+   "favourites": 6852,
+   "difficulty": 3,
+   "video": "vhMYGrowhRQ",
+   "videoTitle": "My Hero Academia Battle for All Toshinori Yagi (All-Might) Voice Clips",
+   "start": 183.18,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.95,
+    "noSpeech": 0.16,
+    "logprob": -0.6
+   }
+  },
+  {
+   "id": 88889,
+   "name": "Raphtalia",
+   "anime": "The Rising of the Shield Hero",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88889-CWYytVbCOPsV.png",
+   "favourites": 6848,
+   "difficulty": 3,
+   "video": "f3mQIlO7CF4",
+   "videoTitle": "The Alchemist Code - Raphtalia Voice Lines || Shield Hero Collab",
+   "start": 55.668,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.99,
+    "noSpeech": 0.01,
+    "logprob": -0.36
+   }
+  },
+  {
+   "id": 12659,
+   "name": "Rohan Kishibe",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12659-hgT3g7q7oHnU.png",
+   "favourites": 6840,
+   "difficulty": 3,
+   "video": "sDWtul0a_-k",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Rohan Kishibe Voice (Japanese)",
+   "start": 5.199,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.83,
+    "noSpeech": 0.09,
+    "logprob": -0.94
+   }
+  },
+  {
+   "id": 10529,
+   "name": "Giorno Giovanna",
+   "anime": "JoJo's Bizarre Adventure: Golden Wind",
+   "image": "https://s4.anilist.co/file/anilistcdn/character/large/b10529-AloL8jjZwjsg.png",
+   "favourites": 6811,
+   "difficulty": 3,
+   "video": "c_ey8K5eft0",
+   "videoTitle": "JoJo's Bizarre Adventure : All-Star Battle R - Giorno Giovanna Voice (Japanese)",
+   "start": 64.201,
+   "check": {
+    "lang": "ja",
+    "langProb": 0.93,
+    "noSpeech": 0.08,
+    "logprob": -0.34
+   }
+  }
+ ]
+}
