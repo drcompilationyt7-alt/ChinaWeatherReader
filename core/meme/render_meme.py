@@ -70,10 +70,10 @@ W, H, FPS = 1080, 1920, 60
 AFPS = 30  # motion analysis rate
 LAYERS = ['vocal', 'bass', 'beatbox', 'harmony']   # the older synthesised build-up (timelines without layer names)
 # clip vibe per stem: the singer dances, drums hit, bass struts, the melody is the cute one
-VIBE_OF = {'vocal': 'dance', 'vocals': 'dance', 'drums': 'fight', 'beatbox': 'fight', 'bass': 'cool', 'guitar': 'cool',
+VIBE_OF = {'vocal': 'dance', 'vocals': 'dance', 'drums': 'fight', 'kick': 'fight', 'beatbox': 'fight', 'bass': 'cool', 'guitar': 'cool',
            'harmony': 'cute', 'piano': 'cute', 'other': 'cute'}
 VIBE = VIBE_OF
-LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'vocals': ('VOCALS', '🎤'), 'drums': ('DRUMS', '🥁'), 'beatbox': ('BEATBOX', '🥁'),
+LAYER_LABEL = {'vocal': ('VOCALS', '🎤'), 'vocals': ('VOCALS', '🎤'), 'drums': ('DRUMS', '🥁'), 'kick': ('KICK', '🥁'), 'beatbox': ('BEATBOX', '🥁'),
                'bass': ('BASS', '🔊'), 'guitar': ('GUITAR', '🎸'), 'piano': ('PIANO', '🎹'), 'harmony': ('HARMONY', '🎶'),
                'other': ('MELODY', '🎶')}
 LAYOUT = {
@@ -546,9 +546,12 @@ def section_layers(timeline):
 
 def choose_clips(clips, names):
     """One clip per layer, matching the layer's vibe (manifest order = hook rank); different source videos."""
-    chosen, used_src = [], set()
+    chosen, used_src, used_vibes = [], set(), set()
     for i, name in enumerate(names):
         want = VIBE_OF.get(name, 'cute')
+        if want in used_vibes:
+            want = next((v for v in ('dance', 'fight', 'cool', 'cute') if v not in used_vibes), want)
+        used_vibes.add(want)
         pool = [c for c in clips if c.get('vibe') == want] + [c for c in clips if c.get('vibe') != want]
         pick = next((c for c in pool if (c.get('source_id') or c['path']) not in used_src and c not in chosen), None)
         if pick is None:
@@ -613,20 +616,9 @@ class BuildUp:
 
     def apply(self, frame, t):
         x, n = self.level(t)
+        # the tiles keep their own colour (owner: no saturation ramp); the build-up is in the motion,
+        # the flashes and the sparks, and the drop's graded edit is the colour step up
         img = np.asarray(frame.convert('RGB')).astype(np.float32)
-        # colour: grey and dark -> saturated, contrasty, glowing
-        lum = img @ np.array([0.299, 0.587, 0.114], np.float32)
-        sat = 0.22 + 1.25 * x
-        img = lum[..., None] + (img - lum[..., None]) * sat
-        img = (img - 128) * (0.92 + 0.28 * x) + 128
-        img *= 0.8 + 0.2 * x
-        img[..., 2] += (1 - x) * 10          # a cool, quiet start (RGB: blue channel)
-        img[..., 0] += x * 8                 # warming as it fills
-        if x > 0.45:
-            small = cv2.resize(np.clip(img, 0, 255), (W // 4, H // 4), interpolation=cv2.INTER_AREA)
-            hi = cv2.GaussianBlur(np.clip(small - 170, 0, None) * 2.2, (0, 0), 7)
-            img += cv2.resize(hi, (W, H)) * (x - 0.45) * 1.3
-        img *= 1 - self.vig * (0.55 - 0.3 * x)
         # motion: entry punch + shake, beat bounce growing with the layers
         age = t - self.starts[n - 1]
         z, dx, dy, rot = 1.0, 0.0, 0.0, 0.0

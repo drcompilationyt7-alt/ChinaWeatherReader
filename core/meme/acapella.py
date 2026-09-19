@@ -869,21 +869,50 @@ def add_drop(x, acap, we, off, per, want, dur, ring=0.25):
 LAYER_ORDER = ['vocals', 'drums', 'bass']   # then the other stems, loudest first
 
 
+HOLD_BACK = ('other',)   # the song's instrument bed (synths, strings, pads): only the drop brings it in
+
+
+def split_drums(drums, cut=160.0):
+    """The kick (lows) and the rest of the kit (snare, hats, toms) from the drum stem, as a pair that sums back."""
+    kick = _filt(drums, hi=cut, order=4)
+    return kick, drums - kick
+
+
 def plan_layers(segs, window):
     """
-    Which real stems make the build-up and in what order: [(layer name, [stems])].
-    A stem counts when it is audible in the window next to the whole mix; vocals, drums and
-    bass come first, the rest by loudness; beyond four layers the quietest merge into the last,
-    which is named after its loudest part.
+    Which real stems make the build-up and in what order: [(layer name, [stems])], plus the held-back
+    stems. The build-up must NOT complete the song: the instrument bed ("other", and any melodic stem
+    not stacked) stays out until the drop, which brings the full record in at once. Order: vocals,
+    drums (or the kick first and the rest of the kit later), bass, then at most one melodic stem
+    (piano / guitar) if something substantial is still held back. Up to four layers.
     """
     lv = {k: lufs(v[:, :window]) for k, v in segs.items()}
     full = lufs(sum(segs.values())[:, :window])
     active = [k for k in segs if lv[k] > max(-42.0, full - 20.0)]
-    order = [k for k in LAYER_ORDER if k in active] + sorted([k for k in active if k not in LAYER_ORDER], key=lambda k: -lv[k])
-    if len(order) <= 4:
-        return [(k, [k]) for k in order], lv
-    head, rest = order[:3], order[3:]
-    return [(k, [k]) for k in head] + [(max(rest, key=lambda k: lv[k]), rest)], lv
+    melodic = sorted([k for k in active if k not in ('vocals', 'drums', 'bass') and k not in HOLD_BACK], key=lambda k: -lv[k])
+    held = [k for k in segs if k in HOLD_BACK or k not in active]
+
+    def held_level(extra=()):
+        parts = [segs[k] for k in list(held) + list(extra)]
+        return lufs(sum(parts)[:, :window]) if parts else -70.0
+
+    layers = [k for k in ('vocals', 'drums', 'bass') if k in active]
+    # one melodic stem may join, as long as what stays held back is still a real step up at the drop
+    if melodic and held_level() > full - 12.0:
+        layers.append(melodic[0])
+        held += melodic[1:]
+    else:
+        held += melodic
+    # too few layers for the 1 -> 4 tiles: the kick comes in first, the rest of the kit later
+    if len(layers) < 4 and 'drums' in layers:
+        segs['kick'], segs['kit'] = split_drums(segs['drums'])
+        i = layers.index('drums')
+        layers[i:i + 1] = ['kick']
+        layers.insert(min(len(layers), i + 2), 'kit')   # after the bass: vocals, kick, bass, drums
+        lv['kick'], lv['kit'] = lufs(segs['kick'][:, :window]), lufs(segs['kit'][:, :window])
+    plan = [('drums' if k == 'kit' else k, [k]) for k in layers[:4]]
+    held += [k for k in layers[4:]]
+    return plan, lv, held
 
 
 def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, debug=False, drop=0.0, mode='real'):
@@ -983,10 +1012,10 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         arr[:, :piece.shape[1]] = piece
         return arr
 
-    layer_plan, stem_lv = ([], {})
+    layer_plan, stem_lv, held = ([], {}, [])
     if mode == 'real':
         segs = {k: seg_of(v) for k, v in stems_all.items()}
-        layer_plan, stem_lv = plan_layers(segs, window)
+        layer_plan, stem_lv, held = plan_layers(segs, window)
         if len(layer_plan) < 2:
             log(f'[acapella] only {len(layer_plan)} usable stem(s) here: synthesised layers instead')
             mode = 'synth'
@@ -1007,8 +1036,12 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
             st[name] = a_ * env
         mix = sum(st.values())
         # level the stack so the full build matches the song it turns into (no jump at the drop)
-        full = mix[:, int(sec_t[-1] * SR):window]
-        g = 10 ** ((-13.0 - lufs(full)) / 20) if full.shape[1] > SR // 2 else 1.0
+        # level as the whole record would be (held-back stems included): the stack stays thinner and a
+        # little quieter, and the drop brings the full song in at its real level
+        # sec_t[-1] is the END of the stack: measure over the last section (all stacked layers playing)
+        last0 = int(sec_t[len(names) - 1] * SR)
+        song = (mix + sum((segs[k] for k in held if k in segs), np.zeros_like(mix)))[:, last0:window]
+        g = 10 ** ((-13.0 - lufs(song)) / 20) if song.shape[1] > SR // 2 else 1.0
         ceil = 10 ** (-1.5 / 20)
         endfade = np.clip((n_out / SR - t) / 0.25, 0, 1) if drop <= 0 else np.ones(n_out)
         out = limit(mix * g * endfade, ceil)
@@ -1017,7 +1050,7 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
             out *= ceil / tp
         for k in st:
             st[k] = st[k] * g * endfade
-        log(f'[acapella] real stems: {" -> ".join(names)} '
+        log(f'[acapella] real stems: {" -> ".join(names)}, held back for the drop: {", ".join(held) or "none"} '
             f'({", ".join(f"{k} {v:.0f} LUFS" for k, v in sorted(stem_lv.items(), key=lambda kv: -kv[1]))})')
         ev = None
     else:
