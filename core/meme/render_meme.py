@@ -107,10 +107,15 @@ class ClipFrames:
     def __init__(self, clip, w, h, workdir, fill=False, cx=0.5):
         x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
         # burned-in subtitles / credits: cut the text band off the bottom (owner: no subtitles, ever)
-        if 'text_band' not in clip:
-            clip['text_band'] = fx.text_band(clip['path'])
-        if clip['text_band']:
-            y1 = min(y1, 1 - clip['text_band'])
+        if 'text_bands' not in clip:
+            clip['text_bands'] = list(fx.text_bands(clip['path']))
+        top, bottom = clip['text_bands']
+        # subtitle / logo bands are small; a huge "band" is a false alarm (hair, window frames): never
+        # crop half the picture for it (such clips are sent to the back of the queue instead)
+        if 0 < bottom <= 0.3:
+            y1 = min(y1, 1 - bottom)
+        if 0 < top <= 0.3:
+            y0 = max(y0, top)
         trim = f'crop=iw*{x1 - x0:.4f}:ih*{y1 - y0:.4f}:iw*{x0:.4f}:ih*{y0:.4f},' if (x1 - x0) * (y1 - y0) < 0.97 else ''
         if fill:
             # the edit: fill the screen around where the action is, graded and sharpened like a 4K edit
@@ -552,7 +557,11 @@ def choose_clips(clips, names):
         if want in used_vibes:
             want = next((v for v in ('dance', 'fight', 'cool', 'cute') if v not in used_vibes), want)
         used_vibes.add(want)
-        pool = [c for c in clips if c.get('vibe') == want] + [c for c in clips if c.get('vibe') != want]
+        for c in clips:
+            if 'text_bands' not in c:
+                c['text_bands'] = list(fx.text_bands(c['path']))
+        clean = [c for c in clips if max(c['text_bands']) <= 0.3 and sum(c['text_bands']) < 0.35] or clips
+        pool = [c for c in clean if c.get('vibe') == want] + [c for c in clean if c.get('vibe') != want]
         pick = next((c for c in pool if (c.get('source_id') or c['path']) not in used_src and c not in chosen), None)
         if pick is None:
             pick = next((c for c in clips if c not in chosen), clips[i % len(clips)])
@@ -786,9 +795,10 @@ def render(args):
         # the last half beat before the drop fades to black: the drop hits out of the dark
         if edit is not None:
             to_drop = drop['start'] - t
-            half = 30.0 / drop['bpm']
-            if 0 < to_drop < half:
-                frame.alpha_composite(Image.new('RGBA', (W, H), (0, 0, 0, int(230 * (1 - to_drop / half)))))
+            half = drop.get('gap') or 30.0 / drop['bpm']
+            if 0 < to_drop < half:  # the silent half beat before the drop: black
+                a_ = 255 if to_drop < half - 0.04 else int(255 * (half - to_drop) / 0.04)
+                frame.alpha_composite(Image.new('RGBA', (W, H), (0, 0, 0, a_)))
         if title is not None:
             put(frame, title, W / 2, 250)
         if subtitle is not None:

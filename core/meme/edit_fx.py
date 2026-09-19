@@ -55,11 +55,12 @@ def probe(path):
         return 1280, 720, 30.0
 
 
-def text_band(path, samples=8):
+def text_bands(path, samples=8):
     """
-    Fraction of the frame height, from the bottom, covered by burned-in text
-    (subtitles, credits): rows where sharp, bright, outlined strokes sit still
-    while the picture moves. 0 if none.
+    Burned-in text at the top and the bottom of the frame (subtitles, credits, Shorts captions like
+    "POV: ..."): (top, bottom) fractions of the height to cut away, 0 where there is none. Text is
+    found as sharp, bright, outlined strokes that hold still between neighbouring samples while the
+    picture moves (lyric lines change every few seconds).
     """
     r = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-an', '-vf', f'fps=4,scale=320:-2,format=gray', '-frames:v', str(samples * 2),
                         '-f', 'rawvideo', '-'], capture_output=True)
@@ -67,19 +68,32 @@ def text_band(path, samples=8):
     hh = int(round(320 * h / w / 2) * 2)
     a = np.frombuffer(r.stdout, np.uint8)
     if a.size < 320 * hh * 3:
-        return 0.0
+        return 0.0, 0.0
     f = a[:a.size // (320 * hh) * 320 * hh].reshape(-1, hh, 320).astype(np.float32)
     edges = np.abs(np.diff(f, axis=2))[:, :-1, :] + np.abs(np.diff(f, axis=1))[:, :, :-1]
-    strong = (edges > 60) & (f[:, :-1, :-1] > 170)          # bright glyph strokes
-    # text holds still between neighbouring samples (lyric lines change every few seconds)
+    strong = (edges > 60) & (f[:, :-1, :-1] > 180)          # bright glyph strokes (subtitles, logos)
     still = strong[1:] & strong[:-1] & (np.abs(f[1:, :-1, :-1] - f[:-1, :-1, :-1]) < 12)
     persist = still.mean(axis=0)
-    rows = (persist > 0.3).mean(axis=1)                     # share of the row that is still text
-    txt = np.where(rows > 0.02)[0]
-    txt = txt[txt > hh * 0.55]                              # subtitles / credits live in the lower part
-    if not len(txt):
-        return 0.0
-    return float(min(0.4, (hh - txt.min()) / hh + 0.02))
+    on = persist > 0.3
+    # letters: a row of text is many short bright strokes; window frames, lamps and sun rays are a few
+    # long edges. Count stroke segments and their mean length per row.
+    rise = np.diff(on.astype(np.int8), axis=1) > 0
+    segs = rise.sum(axis=1)
+    cover = on.sum(axis=1)
+    letters = (segs >= 6) & (cover / np.maximum(segs, 1) < 7) & (cover > 0.02 * on.shape[1])
+    # and a line of text is several consecutive such rows
+    dense = np.convolve(letters.astype(float), np.ones(3), mode='same') >= 2
+    txt = np.where(dense)[0]
+    bottom = txt[txt > hh * 0.55]
+    top = txt[txt < hh * 0.40]
+    b = float(min(0.45, (hh - bottom.min()) / hh + 0.02)) if len(bottom) else 0.0
+    t = float(min(0.45, top.max() / hh + 0.03)) if len(top) else 0.0
+    return t, b
+
+
+def text_band(path, samples=8):
+    """Bottom burned-in text band only (kept for callers that trim the bottom)."""
+    return text_bands(path, samples)[1]
 
 
 def exposure(path, target=0.42):
@@ -107,8 +121,9 @@ def prepare_shot(clip, workdir, layout='letterbox', look='cinematic', cx=0.5):
     lk = LOOKS.get(look, LOOKS['cinematic'])
     ex_gamma, bloom_k = exposure(clip['path'])
     x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
-    band = text_band(clip['path'])
-    y1 = min(y1, 1 - band) if band else y1
+    top, band = text_bands(clip['path'])
+    y1 = min(y1, 1 - band) if 0 < band <= 0.3 else y1   # bigger "bands" are false alarms: never crop half
+    y0 = max(y0, top) if 0 < top <= 0.3 else y0
     crop = f'crop=iw*{x1 - x0:.4f}:ih*{y1 - y0:.4f}:iw*{x0:.4f}:ih*{y0:.4f},' if (x1 - x0) * (y1 - y0) < 0.995 else ''
     aspect = (w * (x1 - x0)) / max(1, h * (y1 - y0))
     if layout == 'fill' or aspect < 1.0:  # vertical sources always fill
@@ -279,7 +294,7 @@ class Camera:
         # the drop
         sd = t - self.drop_start
         if 0 <= sd < 0.9:
-            s *= 1 + punch(sd, 0.22, tau=0.28)
+            s *= 1 + punch(sd, 0.32, tau=0.3)   # the drop: the biggest hit of the short
         # shake on phrase starts and the drop (decaying, ~9 Hz, with a little roll)
         for p in self.phrases + [self.drop_start]:
             dt = t - p

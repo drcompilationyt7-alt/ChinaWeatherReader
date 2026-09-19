@@ -869,6 +869,48 @@ def add_drop(x, acap, we, off, per, want, dur, ring=0.25):
 LAYER_ORDER = ['vocals', 'drums', 'bass']   # then the other stems, loudest first
 
 
+def lowpass_sweep(x, f0, f1, chunk=2048):
+    """A closing low-pass (f0 -> f1 Hz, exponential) over x, done in overlapping chunks."""
+    n = x.shape[1]
+    out = np.zeros_like(x)
+    win = np.hanning(chunk * 2)
+    hop = chunk
+    k = 0
+    for i in range(0, n, hop):
+        a, b = max(0, i - chunk // 2), min(n, i + chunk * 2 - chunk // 2)
+        u = min(1.0, i / max(1, n - 1))
+        fc = f0 * (f1 / f0) ** u
+        seg = signal.sosfiltfilt(signal.butter(2, min(fc, SR / 2 - 100), 'low', fs=SR, output='sos'), x[:, a:b], axis=1)
+        w = np.hanning(b - a) if b - a > 4 else np.ones(b - a)
+        out[:, a:b] += seg * w
+        k += 1
+    norm = np.zeros(n)
+    for i in range(0, n, hop):
+        a, b = max(0, i - chunk // 2), min(n, i + chunk * 2 - chunk // 2)
+        norm[a:b] += np.hanning(b - a) if b - a > 4 else 1
+    return out / np.maximum(norm, 1e-3)
+
+
+def riser(n, rng):
+    """Filtered noise that rises in pitch and level over n samples (the build before a drop)."""
+    noise = rng.standard_normal((2, n))
+    t = np.linspace(0, 1, n)
+    out = lowpass_sweep(noise, 400.0, 9000.0) if n > 4096 else noise * 0.1
+    out = _filt(out, lo=250)
+    return out * (t ** 2.2)[None] * 0.22
+
+
+def impact(n_sec=0.9):
+    """The hit under the first beat of the drop: a falling sub sine plus a short noisy crack."""
+    n = int(n_sec * SR)
+    t = np.arange(n) / SR
+    f = 42 + 50 * np.exp(-t / 0.08)
+    sub = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 0.32)
+    crack = np.random.default_rng(3).standard_normal(n) * np.exp(-t / 0.018) * 0.35
+    y = sub * 0.9 + _filt(crack[None], lo=900)[0]
+    return np.stack([y, y])
+
+
 HOLD_BACK = ('other',)   # the song's instrument bed (synths, strings, pads): only the drop brings it in
 
 
@@ -1040,16 +1082,34 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
         # little quieter, and the drop brings the full song in at its real level
         # sec_t[-1] is the END of the stack: measure over the last section (all stacked layers playing)
         last0 = int(sec_t[len(names) - 1] * SR)
-        song = (mix + sum((segs[k] for k in held if k in segs), np.zeros_like(mix)))[:, last0:window]
-        g = 10 ** ((-13.0 - lufs(song)) / 20) if song.shape[1] > SR // 2 else 1.0
+        # the full stack plays ~4 LU under the drop, so the drop is a real jump in size and level
+        stack_last = mix[:, last0:window]
+        g = 10 ** ((-17.0 - lufs(stack_last)) / 20) if stack_last.shape[1] > SR // 2 else 1.0
         ceil = 10 ** (-1.5 / 20)
         endfade = np.clip((n_out / SR - t) / 0.25, 0, 1) if drop <= 0 else np.ones(n_out)
-        out = limit(mix * g * endfade, ceil)
+        mix = mix * g
+        if drop > 0:
+            # the build into the drop: over the last bar the stack closes into a low-pass while a
+            # noise riser climbs; the last half beat is silent, then the full song slams in
+            bar0 = max(last0, int((we - off - 4 * per) * SR))
+            gap0 = int((we - off - 0.5 * per) * SR)
+            if gap0 - bar0 > SR // 4:
+                mix[:, bar0:gap0] = lowpass_sweep(mix[:, bar0:gap0], 16000.0, 900.0)
+                mix[:, bar0:gap0] += riser(gap0 - bar0, np.random.default_rng(7)) * 10 ** ((-17.0 + 14.0) / 20)
+            fade = np.ones(n_out)
+            f0 = max(0, gap0 - int(0.02 * SR))
+            fade[f0:gap0] = np.linspace(1, 0, gap0 - f0)
+            fade[gap0:] = 0.0
+            mix *= fade
+            for k in st:
+                st[k] = st[k] * fade
+        out = limit(mix * endfade, ceil)
         tp = true_peak(out)
         if tp > ceil:
             out *= ceil / tp
         for k in st:
             st[k] = st[k] * g * endfade
+        drop_gap = 0.5 * per if drop > 0 else 0.0
         log(f'[acapella] real stems: {" -> ".join(names)}, held back for the drop: {", ".join(held) or "none"} '
             f'({", ".join(f"{k} {v:.0f} LUFS" for k, v in sorted(stem_lv.items(), key=lambda kv: -kv[1]))})')
         ev = None
@@ -1091,6 +1151,23 @@ def run(audio, out_dir, start=None, length=20.0, heatmap=None, threads=None, deb
     drop_info = None
     if drop > 0:
         out, drop_info = add_drop(x, out, we, off, per, drop, dur, ring=0.012 if mode == 'real' else 0.25)
+        if drop_info and mode == 'real':
+            d0 = int(drop_info['start'] * SR)
+            # the silent half beat, measured back from where the drop really lands (its own beat grid)
+            gap = int(0.5 * per * SR)
+            g0, g1 = max(0, d0 - gap), max(0, d0 - int(0.008 * SR))
+            f0 = max(0, g0 - int(0.02 * SR))
+            out[:, f0:g0] *= np.linspace(1, 0, g0 - f0)[None]
+            out[:, g0:g1] = 0.0
+            hit = impact()
+            m = min(hit.shape[1], out.shape[1] - d0)
+            out[:, d0:d0 + m] += hit[:, :m] * 0.45
+            ceil = 10 ** (-1.5 / 20)
+            out = limit(out, ceil)
+            tp = true_peak(out)
+            if tp > ceil:
+                out *= ceil / tp
+            drop_info['gap'] = round(0.5 * per, 4)
         if drop_info:
             log(f'[acapella] drop: original song {drop_info["source_start"]:.1f}-{drop_info["source_end"]:.1f}s '
                 f'({drop_info["bars"]} bars) [{time.time() - t_start:.1f}s]')
