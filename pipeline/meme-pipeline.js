@@ -166,7 +166,7 @@ const SONGS = [
 const CLIP_THEMES = {
   anime: ['anime'], jpop: ['anime', 'japanese'], kpop: ['kpop'], chinese: ['chinese'], asian: ['funny', 'cute'],
 };
-const EMOJI_PAIRS = ['😭,✌️', '🥹,🥹', '😭,😭', '✌️,😭', '😳,😳', '🥲,🥲', '🗣️,🗣️', '😭,🥀'];
+const EMOJI_PAIRS = ['🔥,🎧', '⚡,🔥', '🎧,✨', '🔥,🔥', '✨,⚡', '🎶,🔥', '💿,✨'];  // energetic only: no sad / crying faces (owner)
 
 function loadHistory() {
   try { return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch { return { uploads: [] }; }
