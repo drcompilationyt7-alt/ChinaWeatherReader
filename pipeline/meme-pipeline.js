@@ -339,7 +339,7 @@ async function captionClips(manifestPath, theme) {
     const g = getGeminiService();
     if (g && g.getStats().keysLoaded > 0) {
       const sys = 'You write tiny meme captions for clips in a YouTube Shorts meme compilation (theme: ' + theme + '). '
-        + 'Lowercase, 2-7 words, Gen-Z meme voice, max one emoji, describe the funny/cute moment so a viewer instantly gets it. '
+        + 'Lowercase, 2-7 words, Gen-Z meme voice, NO emoji (the video font cannot draw them), describe the moment so a viewer instantly gets it. '
         + 'Never sexual, never mocking accents, looks or ethnicity. If the title is unclear, write a neutral reaction caption.';
       const msg = need.map(x => `${x.i}. "${x.title}" (channel: ${x.ch})`).join('\n') + '\nReturn JSON: {"captions": {"<index>": "caption"}}';
       out = await Promise.race([g.chatJSON(sys, msg), new Promise(r => setTimeout(() => r(null), 60000))]);

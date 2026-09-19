@@ -678,10 +678,17 @@ def title_image(title, emoji):
     return row
 
 
+def latin_only(text):
+    """Drop what the Latin caption font can't draw (emoji, symbols, CJK): they would render as squares."""
+    import unicodedata
+    keep = [ch for ch in str(text) if ord(ch) < 0x2000 and unicodedata.category(ch)[0] in 'LNPZ']
+    return ' '.join(''.join(keep).split())
+
+
 def caption_image(text, tile_w):
     """Meme caption for one clip (lowercase, white with a black outline)."""
     size = 52 if tile_w >= W else 40
-    return text_layer(text.lower(), size, stroke=6, stroke_fill=(0, 0, 0), max_w=tile_w - 60, min_size=26)
+    return text_layer(latin_only(text).lower(), size, stroke=6, stroke_fill=(0, 0, 0), max_w=tile_w - 60, min_size=26)
 
 
 def render(args):
