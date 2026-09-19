@@ -33,7 +33,8 @@ const HISTORY_FILE = path.join(MEM, 'meme-history.json');
 
 // name shown in the title -> YouTube search for the original song. Asia only:
 // anime / J-pop, K-pop and Asian viral songs (the channel's niche). Every
-// song has a source, and every clip in its short comes from that source:
+// song has a source, and every clip in its short comes from that source (Japanese anime songs,
+// J-pop and K-pop only):
 // the anime whose opening it is, or the group / artist who sings it
 // (kind "group": real footage). aliases: character / member names and
 // native-script titles, which clip titles must mention.
@@ -123,6 +124,10 @@ const SONGS = [
     aliases: ['imase', 'night dancer'] },
   { name: 'shinunoga e-wa', query: 'Fujii Kaze Shinunoga E-Wa official audio', theme: 'jpop', source: 'Fujii Kaze', kind: 'group',
     aliases: ['fujii kaze', '藤井風', 'shinunoga e-wa'] },
+  { name: 'yoru ni kakeru', query: 'YOASOBI Yoru ni Kakeru Racing into the Night official audio', theme: 'jpop', source: 'YOASOBI', kind: 'group',
+    aliases: ['yoasobi', 'ヨアソビ', 'ikura', 'lilas', 'ayase', 'yoru ni kakeru'] },
+  { name: 'odoriko', query: 'Vaundy Odoriko official audio', theme: 'jpop', source: 'Vaundy', kind: 'group',
+    aliases: ['vaundy', 'バウンディ', 'odoriko'] },
   // K-pop: the group
   { name: 'apt', query: 'ROSE Bruno Mars APT official audio', theme: 'kpop', source: 'ROSÉ', kind: 'group',
     aliases: ['rosé', 'rose', '로제', 'blackpink rose', 'apt'] },
@@ -144,16 +149,18 @@ const SONGS = [
     aliases: ['blackpink', '블랙핑크', 'jennie', 'lisa', 'jisoo', 'rosé'] },
   { name: 'dynamite', query: 'BTS Dynamite official audio', theme: 'kpop', source: 'BTS', kind: 'group',
     aliases: ['bts', '방탄소년단', 'jungkook', 'jimin', 'suga', 'j-hope', 'jin', 'taehyung'] },
-  // Chinese
-  { name: 'yi jian mei', query: 'Fei Yu-ching Yi Jian Mei 一剪梅 费玉清', theme: 'chinese', source: 'Fei Yu-ching', kind: 'group',
-    aliases: ['fei yu-ching', 'fei yu ching', '费玉清', '費玉清', 'yi jian mei', '一剪梅', 'xue hua piao piao'] },
-  { name: 'wu ji', query: 'The Untamed OST Wu Ji 无羁 Xiao Zhan Wang Yibo', theme: 'chinese', source: 'The Untamed', kind: 'group',
-    aliases: ['the untamed', '陈情令', '陳情令', 'wei wuxian', 'lan wangji', 'xiao zhan', 'wang yibo', '无羁'] },
-  { name: 'mojito', query: 'Jay Chou Mojito official audio 周杰倫', theme: 'chinese', source: 'Jay Chou', kind: 'group',
-    aliases: ['jay chou', '周杰伦', '周杰倫', 'mojito'] },
-  // Asian viral: the trend itself
-  { name: 'linggang guli guli', query: 'linggang guli guli guli wacha song', theme: 'asian', source: 'Linggang Guli Guli', kind: 'group',
-    aliases: ['linggang guli', 'guli guli', 'wacha'] },
+  { name: 'pink venom', query: 'BLACKPINK Pink Venom official audio', theme: 'kpop', source: 'BLACKPINK', kind: 'group',
+    aliases: ['blackpink', '블랙핑크', 'jennie', 'lisa', 'jisoo', 'rosé'] },
+  { name: 'love dive', query: 'IVE LOVE DIVE official audio', theme: 'kpop', source: 'IVE', kind: 'group',
+    aliases: ['ive', '아이브', 'wonyoung', 'yujin', 'gaeul', 'rei', 'liz', 'leeseo'] },
+  { name: 'antifragile', query: 'LE SSERAFIM ANTIFRAGILE official audio', theme: 'kpop', source: 'LE SSERAFIM', kind: 'group',
+    aliases: ['le sserafim', 'lesserafim', '르세라핌', 'chaewon', 'sakura', 'yunjin', 'kazuha', 'eunchae'] },
+  { name: 'cupid', query: 'FIFTY FIFTY Cupid official audio', theme: 'kpop', source: 'FIFTY FIFTY', kind: 'group',
+    aliases: ['fifty fifty', '피프티피프티', 'cupid'] },
+  { name: "god's menu", query: "Stray Kids God's Menu official audio", theme: 'kpop', source: 'Stray Kids', kind: 'group',
+    aliases: ['stray kids', 'straykids', '스트레이 키즈', 'felix', 'hyunjin', 'bang chan', 'han'] },
+  { name: 'eta', query: 'NewJeans ETA official audio', theme: 'kpop', source: 'NewJeans', kind: 'group',
+    aliases: ['newjeans', 'new jeans', '뉴진스', 'minji', 'hanni', 'danielle', 'haerin', 'hyein'] },
 ];
 // one theme per short, chosen from the song: every clip in it follows that theme
 const CLIP_THEMES = {
