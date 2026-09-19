@@ -273,7 +273,8 @@ def edit_shots(drop, pool):
                               'stutter': stutter, 'pair': 1})
                 prev = clip
                 continue
-        cands = [c for c in others if c is not prev] or others
+        recent_clips = [sh['clip'] for sh in shots[-3:]]
+        cands = [c for c in others if c not in recent_clips] or [c for c in others if c is not prev] or others
         clip = cands[oi % len(cands)]
         oi += 1
         dur = float(clip.get('duration') or probe_duration(clip['path']))
@@ -382,27 +383,40 @@ class Edit:
             if key not in self.frames:
                 cx = focus_x(s['clip']) if layout == 'fill' else 0.5
                 self.frames[key] = fx.prepare_shot(s['clip'], workdir, layout=layout, look=look, cx=cx)
-        # transitions: phrase starts zoom-blur in, other downbeats alternate whip / flash, the rest hard cuts
-        whip = 1
+        # a transition on every cut (bigger ones on phrase starts), never the same one twice running;
+        # stutter punch-ins stay hard cuts
+        small = ['flashzoom', 'blur', 'glitch', 'flashzoom', 'whip', 'blur']
+        big = ['zoomthrough', 'spin', 'zoomblur', 'whip']
+        last, whip_dir = None, 1
         for j, s in enumerate(self.shots):
-            s['fx'] = 'cut'
-            s['push'] = 0.05 + 0.03 * (j % 3 == 0)
-            s['drift'] = 0.02 * (1 if j % 2 else -1)
-            if j == 0 or s.get('pair') == 2:
+            s['push'] = 0.08 + 0.05 * (j % 3 == 0)
+            s['push_in'] = j % 2 == 0
+            s['drift'] = 0.025 * (1 if j % 2 else -1)
+            s['drift_y'] = 0.02 * (1 if j % 3 else -1)
+            s['tilt'] = 2.2 * (1 if (j // 2) % 2 else -1)
+            s['spin_dir'] = 1 if j % 2 else -1
+            if j == 0:
+                s['fx'] = 'drop'
                 continue
-            if any(abs(s['t0'] - p) < 0.03 for p in self.phrases):
-                s['fx'] = 'zoomblur'
-            elif any(abs(s['t0'] - d) < 0.03 for d in self.downbeats):
-                s['fx'] = 'whip' if j % 2 else 'flash'
-                if s['fx'] == 'whip':
-                    s['whip_in'] = whip
-                    whip = -whip
+            if s.get('pair') == 2:
+                s['fx'] = 'cut'
+                continue
+            phrase = any(abs(s['t0'] - p) < 0.03 for p in self.phrases)
+            pool = [x for x in (big if phrase else small) if x != last] or (big if phrase else small)
+            s['fx'] = pool[j % len(pool)]
+            if s['fx'] == 'whip':
+                s['whip_in'] = whip_dir
+                whip_dir = -whip_dir
+            last = s['fx']
+        for j in range(len(self.shots) - 1):
+            self.shots[j]['next_fx'] = self.shots[j + 1]['fx']
         mids = []
         for sf in self.frames.values():
             if sf.paths:
                 mids.append(cv2.imread(sf.paths[len(sf.paths) // 2]))
         self.colors = fx.palette(mids)
         self.over = {}
+        self.particles = {}
         self.title = fx.title_card(title or 'FULL SONG') if title is not None else None
 
     def _overlays(self, size):
@@ -419,7 +433,9 @@ class Edit:
         size = (src.shape[1], src.shape[0])
         img = fx.motion_blurred(src, lambda tt: self.cam.params(tt, shot), t, dt, size)
         since = t - shot['t0']
-        if shot['fx'] == 'whip' and since < fx.WHIP_T:
+        to_cut = shot['t1'] - t
+        tr = shot['fx']
+        if tr == 'whip' and since < fx.WHIP_T:
             j = self.shots.index(shot)
             prev = self.shots[j - 1] if j else None
             out = None
@@ -431,19 +447,43 @@ class Edit:
             w_img = fx.whip(img, out, since, shot.get('whip_in', 1))
             if w_img is not None:
                 img = w_img
-        if shot['fx'] == 'zoomblur' and since < 0.3:
-            img = fx.zoom_blur(img, 0.3 * (1 - since / 0.3) ** 1.5)
+        # zoom blur rides the zoom-through / spin / zoom-blur transitions, in and out
+        zb = 0.0
+        if tr in ('zoomthrough', 'zoomblur', 'spin') and since < 0.22:
+            zb = 0.32 * (1 - since / 0.22) ** 1.5
+        if shot.get('next_fx') in ('zoomthrough', 'spin') and to_cut < 0.1:
+            zb = max(zb, 0.32 * (1 - to_cut / 0.1))
+        if zb:
+            img = fx.zoom_blur(img, zb)
+        if tr == 'blur' and since < 0.2:
+            img = fx.defocus(img, 1 - since / 0.2)
+        if shot.get('next_fx') == 'blur' and to_cut < 0.08:
+            img = fx.defocus(img, 1 - to_cut / 0.08)
+        if tr == 'glitch' and since < 0.1:
+            img = fx.glitch(img, t, 1 - since / 0.1)
         img = self._overlays(size).apply(img, t)
+        # particles all through the drop, bursting on phrase starts; a shockwave ring on the drop and phrases
+        if size not in self.particles:
+            self.particles[size] = fx.Particles(self.colors, size=size)
+        sph = min([t - p for p in self.phrases + [self.drop['start']] if p <= t + 1e-6] or [9.0])
+        burst = max(0.0, 1 - sph / 0.5)
+        img = fx.screen(img, self.particles[size].layer(t, burst), 0.55)
+        if sph < 0.4:
+            img = fx.screen(img, fx.ring(size, sph / 0.4, self.colors[0][::-1] if self.colors else (255, 255, 255)), 0.9)
         sd = t - self.drop['start']
         flash = 0.0
         if 0 <= sd < 0.25:
             flash = 1 - sd / 0.25
-        elif shot['fx'] == 'flash' and since < 0.14:
-            flash = 0.7 * (1 - since / 0.14)
-        if (shot['fx'] == 'flash' and since < 0.45) or 0 <= sd < 0.6:
-            k = since if shot['fx'] == 'flash' else sd
+        elif tr in ('flashzoom', 'zoomthrough') and since < 0.12:
+            flash = 0.75 * (1 - since / 0.12)
+        elif tr in ('spin', 'blur', 'glitch', 'whip') and since < 0.08:
+            flash = 0.35 * (1 - since / 0.08)
+        if tr == 'flashzoom' and since < 0.45 or 0 <= sd < 0.6:
+            k = since if tr == 'flashzoom' else sd
             img = fx.screen(img, fx.light_leak(size, t, hash(shot['clip']['path']) % 97 / 97.0), 0.55 * (1 - k / 0.6))
         if flash > 0:
+            # bright shots get a gentler flash (they blow out to white otherwise)
+            flash *= min(1.0, max(0.3, 1.25 - float(img[::16, ::16].mean()) / 255 * 1.2))
             f = img.astype(np.float32) * (1 + 1.6 * flash)
             glow = cv2.GaussianBlur(cv2.resize(img, (size[0] // 4, size[1] // 4)), (0, 0), 6)
             f += cv2.resize(glow, size).astype(np.float32) * 0.9 * flash
@@ -462,7 +502,7 @@ class Edit:
             cover = cv2.resize(small, (int(sw * k) + 2, H // 10), interpolation=cv2.INTER_LINEAR)
             x0 = (cover.shape[1] - sw) // 2
             cover = cv2.GaussianBlur(cover[:, x0:x0 + sw], (0, 0), 2.5)
-            bg = (cv2.resize(cover, (W, H), interpolation=cv2.INTER_LINEAR).astype(np.float32) * 0.38)
+            bg = (cv2.resize(cover, (W, H), interpolation=cv2.INTER_LINEAR).astype(np.float32) * 0.26)
             y = int((H - size[1]) * 0.48)
             # soft shadow above and below the shot
             ramp = np.linspace(1.0, 0.55, 40, dtype=np.float32)[:, None, None]
@@ -472,11 +512,12 @@ class Edit:
             bg[y:y + size[1]] = rgb
             frame = Image.fromarray(bg).convert('RGBA')
         # the anime's name hits with the drop, pulses on the beats, then fades
-        if self.title is not None and 0 <= sd < 1.8:
+        title_end = min(1.8, self.shots[0]['t1'] - self.drop['start']) if self.shots else 1.8
+        if self.title is not None and 0 <= sd < title_end:
             since_b = min([t - b for b in self.beats if b <= t + 1e-6] or [9.0])
             pulse = 1 + 0.06 * math.exp(-since_b / 0.12)
             put(frame, self.title, W / 2, H * 0.5, s=max(0.01, ease_out_back(min(1.0, sd / 0.3)) * pulse),
-                a=clamp((1.8 - sd) / 0.4))
+                a=clamp((title_end - sd) / 0.25))
         return frame
 
     def stats(self):

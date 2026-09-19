@@ -188,7 +188,7 @@ function recordUpload(result, upload) {
 // each of them; the weekly report compares them (core/reflect/weekly-report.js)
 const SETTINGS = {
   drop: [10, 14, 18],            // seconds of the original song after the stack
-  edit: [4, 6, 8],               // shots gathered for the drop edit
+  edit: [6, 8, 10],              // shots gathered for the drop edit (more = fewer repeats)
   hashtag: [true, false],        // #source in the title
   hook: ['layers', 'drop', 'question'],
   look: ['cinematic', 'dreamy', 'hype'],  // the drop edit's colour grade (core/meme/edit_fx.py LOOKS)

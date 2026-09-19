@@ -32,11 +32,11 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 W, H = 1080, 1920
 LOOKS = {
     # S-curve + split toning (cool shadows, warm highlights) + vibrance; bloom opacity; sharpening
-    'cinematic': dict(curve="0/0 0.10/0.04 0.35/0.28 0.7/0.72 0.92/0.96 1/1", sat=1.22, gamma=0.95,
-                      balance='rs=-0.03:gs=-0.01:bs=0.07:rh=0.05:gh=0.01:bh=-0.05', bloom=0.35, bloom_at=0.78, cas=0.6),
-    'dreamy': dict(curve="0/0.03 0.25/0.22 0.6/0.64 0.9/0.95 1/1", sat=1.15, gamma=1.0,
-                   balance='rs=0.03:bs=0.05:rm=0.03:bm=-0.02:rh=0.06:bh=-0.03', bloom=0.5, bloom_at=0.7, cas=0.45),
-    'hype': dict(curve="0/0 0.15/0.05 0.5/0.5 0.85/0.93 1/1", sat=1.38, gamma=0.9,
+    'cinematic': dict(curve="0/0 0.10/0.03 0.35/0.26 0.7/0.74 0.92/0.97 1/1", sat=1.42, gamma=0.93,
+                      balance='rs=-0.04:gs=-0.01:bs=0.09:rh=0.07:gh=0.02:bh=-0.06', bloom=0.45, bloom_at=0.74, cas=0.6),
+    'dreamy': dict(curve="0/0.03 0.25/0.22 0.6/0.66 0.9/0.96 1/1", sat=1.32, gamma=0.98,
+                   balance='rs=0.04:bs=0.06:rm=0.04:bm=-0.02:rh=0.07:bh=-0.03', bloom=0.6, bloom_at=0.66, cas=0.45),
+    'hype': dict(curve="0/0 0.15/0.04 0.5/0.5 0.85/0.95 1/1", sat=1.6, gamma=0.88,
                  balance='rs=-0.05:bs=0.09:rh=0.07:bh=-0.07', bloom=0.3, bloom_at=0.82, cas=0.75),
 }
 FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'quiz', 'assets', 'fonts')
@@ -82,10 +82,30 @@ def text_band(path, samples=8):
     return float(min(0.4, (hh - txt.min()) / hh + 0.02))
 
 
+def exposure(path, target=0.42):
+    """
+    Per-shot exposure: (gamma for ffmpeg eq, bloom scale). Bright shots (a pink stage, a white
+    sky) come down toward the target mean so the grade and bloom don't turn them milky;
+    dark ones are lifted a little. Returns (1.0, 1.0) if the shot can't be read.
+    """
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-an', '-vf', 'fps=2,scale=160:-2,format=gray',
+                        '-f', 'rawvideo', '-'], capture_output=True)
+    a = np.frombuffer(r.stdout, np.uint8)
+    if a.size < 1000:
+        return 1.0, 1.0
+    m = float(a.mean()) / 255
+    m = min(0.95, max(0.05, m))
+    g = math.log(target) / math.log(m)           # out = in ** g maps the mean onto the target
+    g = min(1.45, max(0.8, g))
+    bloom = min(1.0, max(0.35, (0.62 - m) / 0.22))  # less glow on already-bright shots
+    return 1.0 / g, bloom                          # eq's gamma brightens above 1
+
+
 def prepare_shot(clip, workdir, layout='letterbox', look='cinematic', cx=0.5):
     """Grade, sharpen and lay out one shot; returns ShotFrames."""
     w, h, fps = probe(clip['path'])
     lk = LOOKS.get(look, LOOKS['cinematic'])
+    ex_gamma, bloom_k = exposure(clip['path'])
     x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
     band = text_band(clip['path'])
     y1 = min(y1, 1 - band) if band else y1
@@ -101,10 +121,10 @@ def prepare_shot(clip, workdir, layout='letterbox', look='cinematic', cx=0.5):
         sw = int(round(W * 1.22 / 2) * 2)
         geo = f'scale={sw}:{sh}:flags=lanczos,crop={W}:{sh}'
         size = (W, sh)
-    vf = (f'[0:v]{crop}{geo},cas={lk["cas"]},curves=all=\'{lk["curve"]}\',eq=saturation={lk["sat"]}:gamma={lk["gamma"]},'
-          f'colorbalance={lk["balance"]},split[a][b];'
+    vf = (f'[0:v]{crop}{geo},eq=gamma={ex_gamma:.3f},cas={lk["cas"]},curves=all=\'{lk["curve"]}\','
+          f'eq=saturation={lk["sat"]}:gamma={lk["gamma"]},colorbalance={lk["balance"]},split[a][b];'
           f'[b]curves=all=\'0/0 {lk["bloom_at"]}/0 1/1\',gblur=sigma=24[g];'
-          f'[a][g]blend=all_mode=screen:all_opacity={lk["bloom"]}')
+          f'[a][g]blend=all_mode=screen:all_opacity={lk["bloom"] * bloom_k:.3f}')
     d = tempfile.mkdtemp(prefix='shot-', dir=workdir)
     subprocess.run(['ffmpeg', '-v', 'error', '-i', clip['path'], '-an', '-filter_complex', vf, '-q:v', '2',
                     os.path.join(d, '%05d.jpg')], check=False)
@@ -197,7 +217,14 @@ class ShotFrames:
                        cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         wb = cv2.remap(B, (gx - f32(1 - a) * fba[..., 0]).astype(f32), (gy - f32(1 - a) * fba[..., 1]).astype(f32),
                        cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
-        return cv2.addWeighted(wa, 1 - a, wb, a, 0)
+        blend = cv2.addWeighted(wa, 1 - a, wb, a, 0)
+        # where the warps disagree (fast limbs, occlusions) the flow failed: take the nearer warp outright
+        diff = cv2.absdiff(wa, wb).max(axis=2)
+        mask = cv2.GaussianBlur((diff > 38).astype(np.float32), (0, 0), 3)[..., None]
+        if float(mask.mean()) < 0.002:
+            return blend
+        near = wa if a < 0.5 else wb
+        return (blend * (1 - mask) + near * mask).astype(np.uint8)
 
 
 # ---------------------------------------------------------------- camera
@@ -231,28 +258,53 @@ class Camera:
         self.shots = []
 
     def params(self, t, shot):
+        """
+        Every shot keeps moving: a push-in or pull-out (alternating), a slow tilt and pan drift,
+        a small bounce on every beat and a big one on the strong beats; shakes on phrase starts.
+        """
         span = max(0.3, shot['t1'] - shot['t0'])
         u = ease_io((t - shot['t0']) / span)
-        s = shot.get('zoom', 1.0) * (1.0 + shot.get('push', 0.06) * u)
+        push = shot.get('push', 0.1)
+        s = shot.get('zoom', 1.0) * ((1.0 + push * u) if shot.get('push_in', True) else (1.0 + push * (1 - u)))
         dx = shot.get('drift', 0.0) * (u - 0.5) * W
-        dy = 0.0
-        rot = 0.0
-        # beat punches: strong beats harder, downbeats hardest
+        dy = shot.get('drift_y', 0.0) * (u - 0.5) * H * 0.3
+        rot = shot.get('tilt', 0.0) * (u - 0.5)
+        # every beat: a small bounce; strong beats (hits, downbeats) a big one
+        for b in self.beats:
+            if 0 <= t - b < 0.4:
+                s *= 1 + punch(t - b, 0.018, tau=0.12)
         for b, g in self.strong:
             if 0 <= t - b < 0.6:
-                s *= 1 + punch(t - b, 0.03 + 0.05 * g)
+                s *= 1 + punch(t - b, 0.035 + 0.06 * g)
         # the drop
         sd = t - self.drop_start
         if 0 <= sd < 0.9:
-            s *= 1 + punch(sd, 0.2, tau=0.28)
+            s *= 1 + punch(sd, 0.22, tau=0.28)
         # shake on phrase starts and the drop (decaying, ~9 Hz, with a little roll)
         for p in self.phrases + [self.drop_start]:
             dt = t - p
             if 0 <= dt < 0.45:
                 a = (1 - dt / 0.45) ** 2
-                dx += a * 22 * smooth_noise(t, p * 13.1, 9)
-                dy += a * 16 * smooth_noise(t, p * 7.7 + 3, 8)
-                rot += a * 0.9 * smooth_noise(t, p * 3.3 + 1, 6)
+                dx += a * 24 * smooth_noise(t, p * 13.1, 9)
+                dy += a * 18 * smooth_noise(t, p * 7.7 + 3, 8)
+                rot += a * 1.1 * smooth_noise(t, p * 3.3 + 1, 6)
+        # transitions that move the camera: spin-in, zoom-through (in), flash-zoom (in)
+        since = t - shot['t0']
+        tr = shot.get('fx')
+        if tr == 'spin' and since < 0.22:
+            k = 1 - ease_io(since / 0.22)
+            rot += shot.get('spin_dir', 1) * 28 * k
+            s *= 1 + 0.35 * k
+        elif tr in ('zoomthrough', 'flashzoom') and since < 0.18:
+            k = 1 - ease_io(since / 0.18)
+            s *= 1 + (0.6 if tr == 'zoomthrough' else 0.22) * k
+        # zoom-through (out): the outgoing shot rushes forward into the cut
+        nxt = shot.get('next_fx')
+        to_cut = shot['t1'] - t
+        if nxt == 'zoomthrough' and to_cut < 0.1:
+            s *= 1 + 0.6 * ease_io(1 - to_cut / 0.1)
+        elif nxt == 'spin' and to_cut < 0.08:
+            rot -= shot.get('spin_dir', 1) * 14 * ease_io(1 - to_cut / 0.08)
         return s, rot, dx, dy
 
 
@@ -364,9 +416,11 @@ class Overlays:
             u = np.clip(u, 0, 1)[..., None]
             self.grads.append((c0 * (1 - u) + c1 * u).astype(np.float32))
 
-    def apply(self, img, t, strength=0.22):
+    def apply(self, img, t, strength=0.34):
         f = img.astype(np.float32) / 255.0
-        g = self.grads[int(t * 0.8) % len(self.grads)] / 255.0
+        x = t * 0.8
+        i, fr = int(x) % len(self.grads), x - int(x)
+        g = (self.grads[i] * (1 - fr) + self.grads[(i + 1) % len(self.grads)] * fr) / 255.0
         # soft light
         soft = np.where(g < 0.5, 2 * f * g + f * f * (1 - 2 * g), 2 * f * (1 - g) + np.sqrt(np.clip(f, 0, 1)) * (2 * g - 1))
         f = f * (1 - strength) + soft * strength
@@ -385,6 +439,68 @@ def light_leak(size, t, seed, color=(80, 170, 255)):
     cv2.circle(small, (int(cx), int(cy)), int(small.shape[1] * 0.45), [c / 255 for c in color], -1)
     small = cv2.GaussianBlur(small, (0, 0), small.shape[1] * 0.18)
     return cv2.resize(small, (w, h))
+
+
+class Particles:
+    """Drifting glowing embers / sparkles in the palette colours (quarter resolution, screen-blended)."""
+
+    def __init__(self, colors, n=70, seed=11, size=(W, H)):
+        rng = np.random.default_rng(seed)
+        self.size = size
+        self.pos = rng.uniform(0, 1, (n, 2)).astype(np.float32)
+        self.vel = np.stack([rng.uniform(-0.02, 0.02, n), rng.uniform(-0.09, -0.03, n)], 1).astype(np.float32)
+        self.rad = rng.uniform(0.8, 2.6, n).astype(np.float32)
+        self.phase = rng.uniform(0, 6.28, n).astype(np.float32)
+        self.col = [colors[i % len(colors)] for i in range(n)]
+
+    def layer(self, t, burst=0.0):
+        w, h = self.size[0] // 4, self.size[1] // 4
+        out = np.zeros((h, w, 3), np.float32)
+        p = (self.pos + self.vel * t) % 1.0
+        tw = 0.55 + 0.45 * np.sin(t * 5.0 + self.phase)
+        for i in range(len(p)):
+            c = [float(min(255, v * 0.6 + 110) / 255 * tw[i] * (1 + burst)) for v in self.col[i]]
+            cv2.circle(out, (int(p[i, 0] * w), int(p[i, 1] * h)), int(self.rad[i] * (1 + burst)), c, -1, cv2.LINE_AA)
+        glow = cv2.GaussianBlur(out, (0, 0), 2.2)
+        return cv2.resize(out + glow * 1.5, self.size)
+
+
+def ring(size, progress, color=(255, 255, 255)):
+    """An expanding shockwave ring (float BGR 0..1 layer)."""
+    w, h = size[0] // 4, size[1] // 4
+    out = np.zeros((h, w, 3), np.float32)
+    r = int((0.05 + 0.9 * ease_io(progress)) * max(w, h) * 0.7)
+    th = max(1, int(6 * (1 - progress)))
+    cv2.circle(out, (w // 2, h // 2), r, [float(c) / 255 * (1 - progress) for c in color], th, cv2.LINE_AA)
+    out = out + cv2.GaussianBlur(out, (0, 0), 4) * 2
+    return cv2.resize(out, size)
+
+
+def glitch(img, t, amount):
+    """RGB split plus a few horizontal slices shoved sideways."""
+    h, w = img.shape[:2]
+    out = img.copy()
+    px = int(14 * amount)
+    if px:
+        out[:, px:, 2] = img[:, :-px, 2]
+        out[:, :-px, 0] = img[:, px:, 0]
+    rng = np.random.default_rng(int(t * 60))
+    for _ in range(int(6 * amount)):
+        y0 = int(rng.uniform(0, h - 20))
+        hh = int(rng.uniform(8, h * 0.08))
+        sh = int(rng.uniform(-60, 60) * amount)
+        out[y0:y0 + hh] = np.roll(out[y0:y0 + hh], sh, axis=1)
+    return out
+
+
+def defocus(img, amount):
+    """Lens-style blur for blur transitions (fast: blur a small copy)."""
+    if amount < 0.02:
+        return img
+    h, w = img.shape[:2]
+    small = cv2.resize(img, (w // 4, h // 4), interpolation=cv2.INTER_AREA)
+    small = cv2.GaussianBlur(small, (0, 0), 1 + 7 * amount)
+    return cv2.addWeighted(img, 1 - min(1.0, amount * 1.3), cv2.resize(small, (w, h)), min(1.0, amount * 1.3), 0)
 
 
 def screen(img, layer, amount):
