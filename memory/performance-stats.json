@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-19T02:56:28.116Z",
+  "updatedAt": "2026-09-19T03:01:39.955Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
@@ -22,11 +22,11 @@
       "category": null,
       "eggs": null,
       "ageDays": 6.3,
-      "velocity": 135.5,
+      "velocity": 135.4,
       "engagement": 0.016,
-      "score": 137.7,
+      "score": 137.6,
       "lscore": 4.932,
-      "reward": 7.605,
+      "reward": 7.606,
       "rewardFinal": false,
       "v7": null
     },
@@ -49,7 +49,7 @@
       "engagement": 0.014,
       "score": 40.9,
       "lscore": 3.736,
-      "reward": 5.596,
+      "reward": 5.597,
       "rewardFinal": false,
       "v7": null
     },
@@ -72,7 +72,7 @@
       "engagement": 0.028,
       "score": 10.4,
       "lscore": 2.43,
-      "reward": 3.403,
+      "reward": 3.404,
       "rewardFinal": false,
       "v7": null
     },
@@ -96,7 +96,7 @@
       "velocity": 7.6,
       "engagement": 0,
       "score": 7.6,
-      "lscore": 2.155,
+      "lscore": 2.154,
       "reward": 2.338,
       "rewardFinal": false,
       "v7": 40
@@ -144,8 +144,8 @@
       "velocity": 3.7,
       "engagement": 0.04,
       "score": 3.8,
-      "lscore": 1.578,
-      "reward": 1.973,
+      "lscore": 1.577,
+      "reward": 1.971,
       "rewardFinal": false,
       "v7": null
     },
@@ -240,7 +240,7 @@
       "velocity": 2.2,
       "engagement": 0.04,
       "score": 2.3,
-      "lscore": 1.185,
+      "lscore": 1.184,
       "reward": 0.691,
       "rewardFinal": false,
       "v7": 10
@@ -402,7 +402,7 @@
       "engagement": 0.22,
       "score": 1.8,
       "lscore": 1.04,
-      "reward": 1.069,
+      "reward": 1.07,
       "rewardFinal": false,
       "v7": null
     },
@@ -588,8 +588,8 @@
       "velocity": 1.2,
       "engagement": 0.08,
       "score": 1.3,
-      "lscore": 0.839,
-      "reward": 0.732,
+      "lscore": 0.838,
+      "reward": 0.73,
       "rewardFinal": false,
       "v7": null
     },
@@ -837,7 +837,7 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 104.1,
+      "ageDays": 104.2,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.1,
@@ -956,8 +956,8 @@
       "velocity": 0.9,
       "engagement": 0.04,
       "score": 0.9,
-      "lscore": 0.642,
-      "reward": 0.401,
+      "lscore": 0.641,
+      "reward": 0.4,
       "rewardFinal": false,
       "v7": null
     },
@@ -1049,7 +1049,7 @@
       "engagement": 0,
       "score": 0.9,
       "lscore": 0.619,
-      "reward": 0.362,
+      "reward": 0.363,
       "rewardFinal": false,
       "v7": null
     },
@@ -1072,7 +1072,7 @@
       "engagement": 0,
       "score": 0.9,
       "lscore": 0.619,
-      "reward": 0.362,
+      "reward": 0.363,
       "rewardFinal": false,
       "v7": null
     },
@@ -1094,7 +1094,7 @@
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.581,
+      "lscore": 0.58,
       "reward": 0.125,
       "rewardFinal": true,
       "v7": 6
@@ -3671,7 +3671,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -3763,7 +3763,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -3786,7 +3786,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -3809,7 +3809,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -4016,7 +4016,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -4062,7 +4062,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -4131,7 +4131,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -4246,7 +4246,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },
@@ -4384,7 +4384,7 @@
       "engagement": 0.04,
       "score": 0.1,
       "lscore": 0.139,
-      "reward": -0.444,
+      "reward": -0.443,
       "rewardFinal": false,
       "v7": null
     },

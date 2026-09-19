@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-19T02:56:28.116Z",
+  "updatedAt": "2026-09-19T03:01:39.955Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
@@ -15,7 +15,7 @@
       "videoId": "h0Ealj2sA2g",
       "title": "Trending Korean Girl Dance! 🔥💃",
       "views": 852,
-      "score": 137.7,
+      "score": 137.6,
       "country": "China",
       "ageDays": 6.3
     },
@@ -319,7 +319,7 @@
     },
     {
       "title": "#trending #dance",
-      "score": 2.155
+      "score": 2.154
     },
     {
       "title": "Real Madrid vs Barcelona was INSANE! 😱🔥",
@@ -327,7 +327,7 @@
     },
     {
       "title": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap",
-      "score": 1.578
+      "score": 1.577
     },
     {
       "title": "Eris vs Nina: EPIC Fight! 👊🔥 #MushokuTensei",
@@ -343,7 +343,7 @@
     },
     {
       "title": "Insane Sketch Transformation! 🎨✨",
-      "score": 1.185
+      "score": 1.184
     },
     {
       "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
@@ -403,7 +403,7 @@
     },
     {
       "title": "Top 5 Chibi Naruto Funniest Moments",
-      "score": 0.839
+      "score": 0.838
     },
     {
       "title": "Fighting in front of my parents, then kissing righ",
@@ -467,7 +467,7 @@
     },
     {
       "title": "Jisoo's reaction 🤣 You ok? #jisoo #blackpink #rea",
-      "score": 0.642
+      "score": 0.641
     },
     {
       "title": "Qatar is actually unreal 🤯",
@@ -491,7 +491,7 @@
     },
     {
       "title": "Asia's Hardest Revenge Songs Reveal Shocking Truths 🌎😱",
-      "score": 0.581
+      "score": 0.58
     },
     {
       "title": "Most Viewed 5th gen mvs✨ #kpop##kpopshorts#kpopdan",
@@ -1131,5 +1131,5 @@
     }
   ],
   "promptSummary": "Based on 206 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 0.6/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Trending Korean Girl Dance! 🔥💃\" (852 views, China)\n  - \"Ghana Witch Black Magic Against Colombia 💀☠️ #fifaworldcup2026  #viral\" (565 views, unknown)\n  - \"Jude Bellingham || Bye (Altare Remix) edit\" (141 views, unknown)\n  - \"#trending #dance\" (20 views, China)\n  - \"Real Madrid vs Barcelona was INSANE! 😱🔥\" (54 views, unknown)\n  - \"Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap\" (6 views, Japan)\nTitles that performed WORST for us:\n  - \"Korea Dance Hits Different\" (0 views)\n  - \"LIV & KIKI SUI: Real Life Twins? 👯‍♀️✨\" (0 views)\n  - \"That was too close! 😱😂 #funny\" (0 views)\nPatterns that WORK for this channel: mentions place (x1.31), has number (x1.16)\nBest performing countries: China (x1.6, 12 shorts), Japan (x1.02, 13 shorts), South Korea (x0.99, 9 shorts); weakest: United States (x0.85), Vietnam (x0.83)",
-  "summaryLine": "Best recent: \"Trending Korean Girl Dance! 🔥💃\" (852 views, 137.7/day) — typical short 0.6/day over 206 shorts"
+  "summaryLine": "Best recent: \"Trending Korean Girl Dance! 🔥💃\" (852 views, 137.6/day) — typical short 0.6/day over 206 shorts"
 }
