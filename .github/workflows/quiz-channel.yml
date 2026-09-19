@@ -151,11 +151,12 @@ jobs:
           export PUBLISH_AT=$(date -u -d "today 12:00:00" +%Y-%m-%dT%H:%M:%SZ)
           node core/github-action-runner.js --mode quiz --count "$COUNT" --private --publish-at "$PUBLISH_AT"
 
-      - name: Keep dry-run renders
-        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true' && env.DRY_RUN == 'true'
+      - name: Keep renders (every short, uploaded or not, for review)
+        if: always() && steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: quiz-channel-dry-run
+          name: quiz-renders
+          if-no-files-found: ignore
           path: output/quiz/*.mp4
           retention-days: 7
 

@@ -234,11 +234,12 @@ jobs:
             node core/github-action-runner.js --mode daily $COUNTRY_ARG $PRIVATE_ARG --publish-at "$PUBLISH_AT"
           fi
 
-      - name: Keep dry-run renders
-        if: env.DRY_RUN == 'true'
+      - name: Keep renders (every short, uploaded or not, for review)
+        if: always() && env.CONTENT_MODE != 'pause'
         uses: actions/upload-artifact@v4
         with:
-          name: dry-run-renders
+          name: renders
+          if-no-files-found: ignore
           path: |
             output/quiz/*.mp4
             output/meme/*.mp4
