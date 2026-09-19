@@ -7,7 +7,11 @@ name: Quiz Channel (Asian pop culture quizzes)
 
 on:
   schedule:
-    - cron: '17 5 * * *'    # 05:17 UTC -> one short, published at 12:00 UTC (8 PM in China/SEA, 8 AM US East)
+    # one short a day, published at 12:00 UTC (8 PM in China/SEA, 8 AM US East). The render starts
+    # ~10 h early (GitHub can start scheduled runs late); the 07:17 run is a backup that only
+    # works if the 02:17 one didn't upload today's short.
+    - cron: '17 2 * * *'
+    - cron: '17 7 * * *'
   workflow_dispatch:
     inputs:
       count:
@@ -87,14 +91,25 @@ jobs:
           token: ${{ secrets.GH_PAT || github.token }}
           fetch-depth: 0
 
+      - name: One short a day
+        id: today
+        if: steps.gate.outputs.ready == 'true' && github.event_name == 'schedule'
+        run: |
+          if node -e "const h=require('./memory/quiz-channel/quiz-history.json'); const d=new Date().toISOString().slice(0,10); process.exit((h.uploads||[]).some(u=>String(u.postedAt||'').startsWith(d))?0:1)" 2>/dev/null; then
+            echo "Today's short is already uploaded; this backup run has nothing to do."
+            echo "done=true" >> $GITHUB_OUTPUT
+          else
+            echo "done=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install dependencies
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
@@ -110,7 +125,7 @@ jobs:
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > "$YT_COOKIES"; fi
 
       - name: Cache voice models (Chatterbox, Kokoro, faster-whisper tiny)
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -120,7 +135,7 @@ jobs:
           restore-keys: voice-models-chatterbox-
 
       - name: Cache quiz media (images, opening clips)
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/quiz-media
@@ -128,7 +143,7 @@ jobs:
           restore-keys: quiz-media-
 
       - name: Make and upload quiz shorts
-        if: steps.gate.outputs.ready == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         run: |
           # one short a day, published at 12:00 UTC (after 12:00 it goes out right away)
           COUNT=1
@@ -137,7 +152,7 @@ jobs:
           node core/github-action-runner.js --mode quiz --count "$COUNT" --private --publish-at "$PUBLISH_AT"
 
       - name: Keep dry-run renders
-        if: steps.gate.outputs.ready == 'true' && env.DRY_RUN == 'true'
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true' && env.DRY_RUN == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: quiz-channel-dry-run
@@ -149,7 +164,7 @@ jobs:
         run: rm -f /tmp/yt_cookies.txt
 
       - name: Save memory
-        if: always() && steps.gate.outputs.ready == 'true'
+        if: always() && steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
           if [ -d "$MEMORY_DIR" ]; then git add "$MEMORY_DIR"; fi
