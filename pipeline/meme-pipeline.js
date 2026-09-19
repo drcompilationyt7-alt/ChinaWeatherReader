@@ -198,7 +198,9 @@ const SETTINGS = {
   edit: [6, 8, 10],              // shots gathered for the drop edit (more = fewer repeats)
   hashtag: [true, false],        // #source in the title
   hook: ['layers', 'drop', 'question'],
-  look: ['cinematic', 'dreamy', 'hype'],  // the drop edit's colour grade (core/meme/edit_fx.py LOOKS)
+  // the drop edit's colour grade (core/meme/edit_fx.py LOOKS): only the grade tuned against the
+  // owner's reference edits; add 'dreamy' / 'hype' back once they have been reviewed the same way
+  look: ['cinematic'],
 };
 const HOOKS = {
   layers: (caption, e, src) => `${caption} but it's layer by layer ${e}${src ? ` (${src} edit at the end)` : ''}`,
