@@ -401,8 +401,7 @@ function renderQuiz({ format, theme, seed, avoid, outPath, rounds, planFile }) {
       try { res = line ? JSON.parse(line) : null; } catch {}
       if (err || !res || !res.ok) return reject(new Error((res && res.reason) || (stderr || err?.message || 'render failed').toString().slice(-300)));
       // rounds whose clip or photo could not be fetched (a spare took their place)
-      for (const l of String(stderr || '').split(/?
-/).filter(x => /skipped:|audio check:/.test(x)).slice(0, 12)) logger.warn(l.slice(0, 200));
+      for (const l of String(stderr || '').split(/\r?\n/).filter(x => /skipped:|audio check:/.test(x)).slice(0, 12)) logger.warn(l.slice(0, 200));
       resolve(res);
     });
   });
