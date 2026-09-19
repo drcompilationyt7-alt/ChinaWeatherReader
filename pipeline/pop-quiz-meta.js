@@ -1,14 +1,17 @@
 /**
  * Titles, hashtags, tags, playlists, credits and description text for the Asian pop
  * culture formats (emoji, trivia, wyr, city, character, idol, opening, cityphoto, vtuber,
- * duel, scene, voice). The world-quiz pipeline picks a
+ * duel, scene, voice, song). The world-quiz pipeline picks a
  * title template with the same Thompson sampling it uses for the geography
  * formats; `when` limits a template to the plan's topic.
+ * Nothing here may contain < or > (YouTube rejects them): clean() strips them.
  */
 const TOPIC_LABEL = {
   anime: 'Anime', 'kpop song': 'K-Pop Song', kpop: 'K-Pop', vtubers: 'VTuber', cdrama: 'C-Drama & Movie',
-  cities: 'Asia City', food: 'Asian Food', CN: 'China', JP: 'Japan', KR: 'Korea',
+  cities: 'Asia City', food: 'Asian Food', CN: 'China', JP: 'Japan', KR: 'Korea', mixed: 'Asian Pop',
 };
+const clean = s => String(s == null ? '' : s).replace(/[<>]/g, '');
+const shortShow = t => String(t || '').split(/:| -/)[0].replace(/\s*\((tv|\d{4})\)$/i, '').trim();
 const CITY_ADJ = { CN: 'Chinese', JP: 'Japanese', KR: 'Korean' };
 const CITY_FLAG = { CN: '🇨🇳', JP: '🇯🇵', KR: '🇰🇷' };
 const n = p => p.rounds.length;
@@ -92,6 +95,16 @@ const POP_TITLE_TEMPLATES = {
     { id: 'voice-casual', text: () => 'guess the anime character by voice 😭✌️' },
     { id: 'voice-ramp', text: () => 'Anime Voice Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
+  song: [
+    { id: 'song-3sec', text: () => 'Guess the Song in 3 Seconds 🎶' },
+    { id: 'song-casual', text: () => 'guess the song in 3 seconds 😭✌️' },
+    { id: 'song-ramp', text: p => `${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : 'Asian Pop'} Song Quiz: Easy to IMPOSSIBLE 🔥` },
+    { id: 'song-kpop', text: () => 'Guess the K-Pop Song in 3 Seconds 🎧', when: is('kpop') },
+    { id: 'song-kpop-fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜`, when: is('kpop') },
+    { id: 'song-anime', text: () => 'Guess the Anime Song in 3 Seconds 🎧', when: is('anime') },
+    { id: 'song-anime-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎶`, when: is('anime') },
+    { id: 'song-mixed', text: () => 'K-Pop, Anime or J-Pop? Name the Song 🎶', when: is('mixed') },
+  ],
   city: [
     { id: 'city-guess', text: p => `Guess the ${CITY_ADJ[p.topic]} City From the Map ${CITY_FLAG[p.topic]}` },
     { id: 'city-find', text: p => `Can You Find These ${CITY_ADJ[p.topic]} Cities? 🗺️` },
@@ -104,6 +117,12 @@ const FORMAT_HASHTAG = {
   character: '#anime #animequiz #quiz', idol: '#kpop #kpopquiz #quiz', opening: '#anime #animeopening #quiz',
   cityphoto: '#asia #travel #quiz', vtuber: '#vtuber #hololive #quiz', duel: '#anime #wouldyourather #quiz',
   scene: '#anime #animequiz #quiz', voice: '#anime #animequiz #quiz',
+};
+const SONG_HASHTAG = { kpop: '#kpop #guessthesong #quiz', anime: '#anime #animesongs #quiz', mixed: '#kpop #jpop #guessthesong' };
+const SONG_TAGS = {
+  kpop: ['guess the kpop song', 'kpop quiz', 'kpop songs', 'guess the song', 'kpop'],
+  anime: ['guess the anime song', 'anime opening quiz', 'anime songs', 'guess the song', 'anime'],
+  mixed: ['guess the song', 'kpop songs', 'anime songs', 'jpop', 'cpop', 'music quiz'],
 };
 const COUNTRY = { CN: 'China', JP: 'Japan', KR: 'South Korea' };
 const HASHTAG = {
@@ -127,6 +146,7 @@ const TOPIC_TAGS = {
 const BASE_TAGS = ['asian pop quiz', 'quiz', 'trivia', 'shorts quiz', 'asian pop culture'];
 
 function popPlaylist(p) {
+  if (p.format === 'song') return p.topic === 'kpop' ? 'Guess the K-Pop Song' : p.topic === 'anime' ? 'Guess the Anime Song' : 'Guess the Song: K-Pop, Anime & J-Pop';
   if (p.format === 'cityphoto') return 'Guess the Asian City From a Photo';
   if (p.format === 'vtuber') return 'Guess the VTuber';
   if (p.format === 'duel') return 'Anime Duels: Who Would You Pick?';
@@ -142,6 +162,7 @@ function popPlaylist(p) {
 }
 
 function popHook(p) {
+  if (p.format === 'song') return `Can you name all ${n(p)} songs from 3 seconds of each?`;
   if (p.format === 'cityphoto') return `Can you name all ${n(p)} Asian cities from a single photo?`;
   if (p.format === 'vtuber') return `Can you name all ${n(p)} VTubers before the picture gets sharp?`;
   if (p.format === 'duel') return 'Pick one each round, then see who anime fans actually picked on AniList.';
@@ -156,9 +177,15 @@ function popHook(p) {
   return `How many of these ${n(p)} can you get right?`;
 }
 
+const wyrLabel = (r, side) => r[side === 'a' ? 'labelA' : 'labelB'] || r[side];
+
 function popAnswers(p) {
   return p.rounds.map((r, i) => {
-    if (p.format === 'wyr') return `${i + 1}. ${r.a} OR ${r.b}`;
+    if (p.format === 'wyr') {
+      const side = ['a', 'b'].includes(r.pick) ? r.pick : null;
+      return `${i + 1}. ${r.a} OR ${r.b}${side ? ` (my pick: ${wyrLabel(r, side)})` : ''}`;
+    }
+    if (p.format === 'song') return `${i + 1}. ${r.title} by ${r.artist}${r.anime || r.anime_film ? ` (${shortShow(r.anime || r.anime_film)})` : ''}`;
     if (p.format === 'trivia') return `${i + 1}. ${r.question} → ${r.options[r.answer]}`;
     if (p.format === 'character') return `${i + 1}. ${r.name} (${r.anime})`;
     if (p.format === 'idol') return `${i + 1}. ${r.name}${r.group ? ` (${r.group})` : ''}`;
@@ -178,7 +205,18 @@ function popAnswers(p) {
 const yt = id => `https://youtu.be/${id}`;
 
 function popCredits(p) {
+  const clips = p.rounds.filter(r => r.source && r.source.video);
   switch (p.format) {
+    case 'song': return `Song clips from: ${clips.map(r => `${r.title} ${yt(r.source.video)}`).join('; ')}. All songs belong to their artists and labels.\n`;
+    case 'emoji': return (clips.length ? `Songs on the reveals: ${clips.map(r => `${r.song || (p.topic === 'anime' ? `${r.answer} opening`
+      : String(r.answer).split(' (')[0])} ${yt(r.source.video)}`).join('; ')}. `
+      + 'Covers via AniList. ' : '') + 'Emoji art: Noto Emoji (Apache-2.0).\n';
+    case 'wyr': {
+      const ph = p.rounds.filter(r => r.photoCredit && r.photoCredit.credit);
+      return 'The picks are my own opinion, not a poll. '
+        + (ph.length ? `Photos: ${ph.map(r => `${r.photoCredit.option}: ${r.photoCredit.credit}${r.photoCredit.page ? ` ${r.photoCredit.page}` : ''}`).join('; ')}. ` : '')
+        + 'Emoji art: Noto Emoji (Apache-2.0).\n';
+    }
     case 'idol': return `Photos (Wikimedia Commons): ${p.rounds.map(r => `${r.name}: ${r.credit}`).join('; ')}\n`;
     case 'cityphoto': return `Photos (Wikimedia Commons, licences as listed): ${p.rounds.map(r => `${r.name}: ${r.credit}${r.page ? ` ${r.page}` : ''}`).join('; ')}\n`;
     case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
@@ -196,19 +234,22 @@ function popDescription(p) {
   const head = p.format === 'wyr' ? `${popHook(p)} Comment A or B for each 👇`
     : p.format === 'duel' ? `${popHook(p)} Comment your picks 👇` : `${popHook(p)} Comment your score 👇`;
   const label = p.format === 'wyr' ? 'The choices' : p.format === 'duel' ? 'The fans picked' : 'Answers (no peeking!)';
-  return `${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
+  return clean(`${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
     + `${label}:\n${popAnswers(p)}\n\n${popCredits(p)}`
-    + (FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz');
+    + popHashtags(p));
 }
 
 function popTags(p) {
   const names = p.format === 'duel' ? p.rounds.flatMap(r => [r.a.name, r.b.name])
-    : ['emoji', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'scene', 'voice'].includes(p.format)
-      ? p.rounds.map(r => String(r.answer || r.name || r.title).split(' (')[0]) : [];
+    : p.format === 'song' ? p.rounds.flatMap(r => [r.title, r.artist])
+      : ['emoji', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'scene', 'voice'].includes(p.format)
+        ? p.rounds.map(r => String(r.answer || r.name || r.title).split(' (')[0]) : [];
   const out = [];
   let len = 0;
-  for (const t of [...(TOPIC_TAGS[p.topic] || []), ...BASE_TAGS, ...names]) {
-    if (out.includes(t) || len + t.length + 3 > 480) continue;
+  const topicTags = p.format === 'song' ? SONG_TAGS[p.topic] || SONG_TAGS.mixed : TOPIC_TAGS[p.topic] || [];
+  for (const t0 of [...topicTags, ...BASE_TAGS, ...names]) {
+    const t = clean(t0).replace(/,/g, '').trim();
+    if (!t || out.includes(t) || len + t.length + 3 > 480) continue;
     out.push(t);
     len += t.length + 3;
   }
@@ -218,10 +259,10 @@ function popTags(p) {
 function popComment(p) {
   if (p.format === 'duel') return 'Did the fans get it right? Who would you have picked? 👇';
   return p.format === 'wyr'
-    ? 'Which would you pick? Drop your A/B answers 👇'
+    ? 'Did you agree with my picks? Drop your A/B answers 👇'
     : `What did you score out of ${n(p)}? 🏆 Which one got you? 👇`;
 }
 
-const popHashtags = p => FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz';
+const popHashtags = p => (p.format === 'song' ? SONG_HASHTAG[p.topic] || SONG_HASHTAG.mixed : FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz');
 
-module.exports = { POP_TITLE_TEMPLATES, popPlaylist, popHook, popAnswers, popDescription, popTags, popComment, popHashtags, HASHTAG };
+module.exports = { POP_TITLE_TEMPLATES, popPlaylist, popHook, popAnswers, popDescription, popTags, popComment, popHashtags, HASHTAG, clean };

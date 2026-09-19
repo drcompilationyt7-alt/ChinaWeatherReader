@@ -419,10 +419,26 @@ def master(out, target=-14.0, peak=0.84, tp_ceiling=-3.0):
     return y
 
 
-def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=None):
+def span_gain(n, spans, attack=0.08, release=0.3):
+    """Gain curve over n samples: 1 outside the spans, `g` inside each (start_sec, end_sec, g), reached
+    `attack` seconds before the start and released over `release` seconds after the end."""
+    env = np.ones(n)
+    for s, e, g in spans:
+        i0, i1 = max(0, int((s - attack) * SR)), min(n, int((e + release) * SR))
+        if i1 <= i0:
+            continue
+        x = np.arange(i0, i1) / SR
+        env[i0:i1] = np.minimum(env[i0:i1], np.interp(x, [s - attack, s, e, e + release], [1.0, g, g, 1.0]))
+    return env
+
+
+def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=None, clip_track=None, clip_env=None, music_env=None):
     """
     events: [(time_sec, samples, gain)] sound effects
     voice:  [(time_sec, samples)] speech; music ducks under it
+    clip_track: full-length array of media audio (songs, openings, character voices), on the same
+                scale as the raw voice lines; clip_env / music_env: gain curves (span_gain) for it and
+                for the music, e.g. the clip pulled down hard while the narrator talks over a reveal
     target_lufs: master to this loudness (EBU R128) instead of the older RMS heuristic
     """
     n = int(SR * duration)
@@ -440,10 +456,14 @@ def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=
             continue
         j = min(n, i + len(sig))
         vo[i:j] += sig[:j - i]
-    # voice level: peak-normalise speech to a consistent loudness
-    if np.abs(vo).max() > 0:
-        vo *= 0.9 / np.abs(vo).max()
+    # voice level: peak-normalise speech to a consistent loudness (the clips keep their level relative to it)
+    g_v = 0.9 / np.abs(vo).max() if np.abs(vo).max() > 0 else 1.0
+    vo *= g_v
     out = fx + vo
+    if clip_track is not None:
+        c = np.zeros(n)
+        c[:min(n, len(clip_track))] = clip_track[:n]
+        out += g_v * c * (clip_env[:n] if clip_env is not None else 1.0)
     if music_track is not None:
         m = np.zeros(n)
         m[:min(n, len(music_track))] = music_track[:n]
@@ -455,7 +475,7 @@ def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=
         fade = np.ones(n)
         f = int(SR * 0.6)
         fade[-f:] = np.linspace(1, 0.2, f)
-        out += music_gain * m * duck * fade
+        out += music_gain * m * duck * fade * (music_env[:n] if music_env is not None else 1.0)
     if target_lufs is not None:
         return master(out, target_lufs)
     # gentle limiter + loudness target (about -14 LUFS for dense speech+music)

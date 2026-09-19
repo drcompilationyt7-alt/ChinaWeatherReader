@@ -597,7 +597,7 @@ class QuizRenderer:
 
 
 # the Asian pop culture formats (render_pop.py); kept here so the CLI does not import it for geography runs
-POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice')
+POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song')
 
 
 def main():
@@ -635,10 +635,14 @@ def main():
         from render_pop import PopRenderer, gradient_bg
         r = PopRenderer(pop_plan, voice=not args.no_voice, music=not args.no_music, voice_name=args.voice)
         if args.frame is not None:
-            if r.fmt in ('opening', 'scene', 'voice'):
+            if r.fmt in ('opening', 'scene', 'voice', 'song'):
                 r._load_clips()
+            elif r.fmt == 'emoji':
+                r._load_emoji_media()
+            elif r.fmt == 'wyr':
+                r._load_wyr_photos()
             n = len(r.plan['rounds'])
-            r.build_pop_timeline([2.0] * n, [1.0] * n)
+            r.build_pop_timeline([0.0] * n, [1.0] * n, intro_d=1.5 if r.fmt in ('opening', 'scene', 'voice', 'song') else 0.0)
             r.prepare_pop()
             r.bg = gradient_bg(*r.pal, split=r.fmt == 'wyr')
             r.frame_at(args.frame).convert('RGB').save(args.out)
@@ -646,6 +650,8 @@ def main():
             return
         info = r.render(args.out)
         clean = {**r.plan, 'rounds': [{k: v for k, v in x.items() if not k.startswith('_')} for x in r.plan['rounds']]}
+        for x in clean['rounds']:
+            x.pop('match', None)  # search rules: not needed downstream
         print(json.dumps({'ok': True, 'path': os.path.abspath(args.out), **info, 'plan': clean}, ensure_ascii=False))
         return
     if pop_plan is not None:
