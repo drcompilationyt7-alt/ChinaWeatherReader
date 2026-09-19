@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-09-18T20:29:26.769Z",
+  "updatedAt": "2026-09-19T02:35:15.761Z",
   "channel": {
-    "title": "Mr. WorldWideWebster",
+    "title": "Zero Yen Otaku",
     "subscribers": 6,
     "totalViews": 2975,
-    "totalVideos": 209
+    "totalVideos": 205
   },
   "videos": [
     {
       "videoId": "h0Ealj2sA2g",
       "title": "Trending Korean Girl Dance! 🔥💃",
       "publishedAt": "2026-09-12T20:00:12Z",
-      "views": 848,
+      "views": 852,
       "likes": 7,
       "comments": 0,
       "durationSec": 15,
@@ -21,11 +21,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 6,
-      "velocity": 140.9,
-      "engagement": 0.017,
-      "score": 143.2,
-      "lscore": 4.971
+      "ageDays": 6.3,
+      "velocity": 135.8,
+      "engagement": 0.016,
+      "score": 138,
+      "lscore": 4.935,
+      "reward": 7.601,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "rdPocqkmG9Q",
@@ -41,11 +44,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 77.2,
+      "ageDays": 77.5,
       "velocity": 40.4,
       "engagement": 0.014,
       "score": 40.9,
-      "lscore": 3.736
+      "lscore": 3.736,
+      "reward": 5.59,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "BKBnS1ZOquo",
@@ -61,11 +67,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 33,
+      "ageDays": 33.3,
       "velocity": 10.1,
       "engagement": 0.028,
       "score": 10.4,
-      "lscore": 2.43
+      "lscore": 2.43,
+      "reward": 3.399,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "hzmtUuvSoMc",
@@ -83,11 +92,14 @@
       "eggs": [
         "gwen-stick"
       ],
-      "ageDays": 2.4,
-      "velocity": 8.5,
+      "ageDays": 2.6,
+      "velocity": 7.7,
       "engagement": 0,
-      "score": 8.5,
-      "lscore": 2.251
+      "score": 7.7,
+      "lscore": 2.16,
+      "reward": 2.338,
+      "rewardFinal": false,
+      "v7": 40
     },
     {
       "videoId": "23hBmU5jB2g",
@@ -103,11 +115,39 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 70,
+      "ageDays": 70.3,
       "velocity": 3.9,
       "engagement": 0.074,
       "score": 4.1,
-      "lscore": 1.638
+      "lscore": 1.638,
+      "reward": 2.071,
+      "rewardFinal": false,
+      "v7": null
+    },
+    {
+      "videoId": "fikwfU11qgU",
+      "title": "Why Japan MIGHT CUT WELFARE for FOREIGNERS?📉 #jap",
+      "publishedAt": "2026-09-17T12:00:39Z",
+      "views": 6,
+      "likes": 1,
+      "comments": 0,
+      "durationSec": 30,
+      "regionBlocked": 0,
+      "analytics": null,
+      "country": "Japan",
+      "sourceChannel": "tokyotrending",
+      "category": "other",
+      "eggs": [
+        "gwen-popout"
+      ],
+      "ageDays": 1.6,
+      "velocity": 3.7,
+      "engagement": 0.04,
+      "score": 3.9,
+      "lscore": 1.586,
+      "reward": 1.984,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "uCv5JdrtzgU",
@@ -123,11 +163,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 50.4,
+      "ageDays": 50.6,
       "velocity": 3.1,
       "engagement": 0.08,
       "score": 3.3,
-      "lscore": 1.463
+      "lscore": 1.463,
+      "reward": 1.777,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "nlEd25NLm9A",
@@ -143,33 +186,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 106.8,
+      "ageDays": 107.1,
       "velocity": 2.6,
       "engagement": 0.28,
       "score": 3.3,
-      "lscore": 1.459
-    },
-    {
-      "videoId": "7YLLlQ6sWy0",
-      "title": "Insane Sketch Transformation! 🎨✨",
-      "publishedAt": "2026-09-16T20:00:30Z",
-      "views": 5,
-      "likes": 1,
-      "comments": 0,
-      "durationSec": 20,
-      "regionBlocked": 0,
-      "analytics": null,
-      "country": "China",
-      "sourceChannel": "艺术绘画l",
-      "category": "other",
-      "eggs": [
-        "gwen-stick"
-      ],
-      "ageDays": 2,
-      "velocity": 2.5,
-      "engagement": 0.04,
-      "score": 2.6,
-      "lscore": 1.274
+      "lscore": 1.459,
+      "reward": 1.771,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "4PHljPZE59U",
@@ -187,11 +211,39 @@
       "eggs": [
         "spidey-popcorn"
       ],
-      "ageDays": 3.4,
-      "velocity": 2.4,
+      "ageDays": 3.6,
+      "velocity": 2.2,
       "engagement": 0.08,
-      "score": 2.6,
-      "lscore": 1.274
+      "score": 2.4,
+      "lscore": 1.222,
+      "reward": 1.373,
+      "rewardFinal": false,
+      "v7": null
+    },
+    {
+      "videoId": "7YLLlQ6sWy0",
+      "title": "Insane Sketch Transformation! 🎨✨",
+      "publishedAt": "2026-09-16T20:00:30Z",
+      "views": 5,
+      "likes": 1,
+      "comments": 0,
+      "durationSec": 20,
+      "regionBlocked": 0,
+      "analytics": null,
+      "country": "China",
+      "sourceChannel": "艺术绘画l",
+      "category": "other",
+      "eggs": [
+        "gwen-stick"
+      ],
+      "ageDays": 2.3,
+      "velocity": 2.2,
+      "engagement": 0.04,
+      "score": 2.3,
+      "lscore": 1.19,
+      "reward": 0.691,
+      "rewardFinal": false,
+      "v7": 10
     },
     {
       "videoId": "JkS6OVIv230",
@@ -207,11 +259,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 115.1,
+      "ageDays": 115.3,
       "velocity": 2.3,
       "engagement": 0,
       "score": 2.3,
-      "lscore": 1.19
+      "lscore": 1.19,
+      "reward": 1.319,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "0PpaB_KfC7E",
@@ -227,11 +282,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 73.4,
+      "ageDays": 73.6,
       "velocity": 2.1,
       "engagement": 0,
       "score": 2.1,
-      "lscore": 1.145
+      "lscore": 1.145,
+      "reward": 1.244,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "b2bAAA68ftc",
@@ -247,11 +305,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 77,
+      "ageDays": 77.3,
       "velocity": 1.8,
       "engagement": 0.04,
       "score": 1.9,
-      "lscore": 1.05
+      "lscore": 1.05,
+      "reward": 1.085,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Y3zlsn4nxvo",
@@ -267,11 +328,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 91.4,
+      "ageDays": 91.6,
       "velocity": 1.8,
       "engagement": 0.04,
       "score": 1.9,
-      "lscore": 1.05
+      "lscore": 1.05,
+      "reward": 1.085,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "zE_qZ_aJ9jc",
@@ -287,11 +351,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 14.4,
+      "ageDays": 14.6,
       "velocity": 1.7,
       "engagement": 0.04,
       "score": 1.8,
-      "lscore": 1.023
+      "lscore": 1.023,
+      "reward": 1.039,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "na66xshMnXA",
@@ -307,11 +374,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 105.3,
+      "ageDays": 105.6,
       "velocity": 1.5,
       "engagement": 0.18,
       "score": 1.8,
-      "lscore": 1.019
+      "lscore": 1.019,
+      "reward": 1.033,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "h_4UJZY3oIs",
@@ -327,11 +397,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 111,
+      "ageDays": 111.3,
       "velocity": 1.5,
       "engagement": 0.22,
       "score": 1.8,
-      "lscore": 1.04
+      "lscore": 1.04,
+      "reward": 1.068,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "bz8-7fB1pCU",
@@ -347,11 +420,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 84,
+      "ageDays": 84.3,
       "velocity": 1.6,
       "engagement": 0.08,
       "score": 1.7,
-      "lscore": 0.992
+      "lscore": 0.992,
+      "reward": 0.987,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "cADxqEGP2XQ",
@@ -367,11 +443,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 106.1,
+      "ageDays": 106.3,
       "velocity": 1.5,
       "engagement": 0.08,
       "score": 1.6,
-      "lscore": 0.963
+      "lscore": 0.963,
+      "reward": 0.939,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "31jQj2vUqAA",
@@ -387,11 +466,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 110,
+      "ageDays": 110.3,
       "velocity": 1.3,
       "engagement": 0.24,
       "score": 1.6,
-      "lscore": 0.953
+      "lscore": 0.953,
+      "reward": 0.922,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "8iv14JJisCc",
@@ -407,11 +489,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 116.1,
+      "ageDays": 116.4,
       "velocity": 1.6,
       "engagement": 0.04,
       "score": 1.6,
-      "lscore": 0.969
+      "lscore": 0.969,
+      "reward": 0.949,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "hjDYdyOIVRc",
@@ -427,11 +512,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 113.1,
+      "ageDays": 113.3,
       "velocity": 1.4,
       "engagement": 0.04,
       "score": 1.5,
-      "lscore": 0.911
+      "lscore": 0.911,
+      "reward": 0.851,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Hy18DvbOYus",
@@ -447,11 +535,37 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 116.1,
+      "ageDays": 116.4,
       "velocity": 1.4,
       "engagement": 0.04,
       "score": 1.5,
-      "lscore": 0.911
+      "lscore": 0.911,
+      "reward": 0.851,
+      "rewardFinal": false,
+      "v7": null
+    },
+    {
+      "videoId": "8mt01QVo8yI",
+      "title": "Why Japanese People Hide Their Anime Love 🤫🇯🇵",
+      "publishedAt": "2026-08-17T20:00:06Z",
+      "views": 18,
+      "likes": 2,
+      "comments": 0,
+      "durationSec": 38,
+      "regionBlocked": 0,
+      "analytics": null,
+      "country": null,
+      "sourceChannel": null,
+      "category": null,
+      "eggs": null,
+      "ageDays": 32.3,
+      "velocity": 1.3,
+      "engagement": 0.08,
+      "score": 1.4,
+      "lscore": 0.871,
+      "reward": 0.784,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "fe0RiOcwuE0",
@@ -470,31 +584,14 @@
         "spidey-chase",
         "gwen-tap"
       ],
-      "ageDays": 3,
-      "velocity": 1.3,
+      "ageDays": 3.3,
+      "velocity": 1.2,
       "engagement": 0.08,
-      "score": 1.4,
-      "lscore": 0.888
-    },
-    {
-      "videoId": "8mt01QVo8yI",
-      "title": "Why Japanese People Hide Their Anime Love 🤫🇯🇵",
-      "publishedAt": "2026-08-17T20:00:06Z",
-      "views": 18,
-      "likes": 2,
-      "comments": 0,
-      "durationSec": 38,
-      "regionBlocked": 0,
-      "analytics": null,
-      "country": null,
-      "sourceChannel": null,
-      "category": null,
-      "eggs": null,
-      "ageDays": 32,
-      "velocity": 1.3,
-      "engagement": 0.08,
-      "score": 1.4,
-      "lscore": 0.871
+      "score": 1.3,
+      "lscore": 0.841,
+      "reward": 0.734,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "QkNJ86-nniI",
@@ -510,11 +607,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 17.4,
+      "ageDays": 17.6,
       "velocity": 1.2,
       "engagement": 0,
       "score": 1.2,
-      "lscore": 0.795
+      "lscore": 0.795,
+      "reward": 0.657,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "fQrLk8y8Us0",
@@ -530,11 +630,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 34,
+      "ageDays": 34.3,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.2,
-      "lscore": 0.783
+      "lscore": 0.783,
+      "reward": 0.637,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "VKhWQ3Yug6k",
@@ -550,11 +653,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 74,
+      "ageDays": 74.3,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.2,
-      "lscore": 0.783
+      "lscore": 0.783,
+      "reward": 0.637,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "GAjp1tjdinA",
@@ -570,11 +676,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 104.3,
+      "ageDays": 104.6,
       "velocity": 1.1,
       "engagement": 0.08,
       "score": 1.2,
-      "lscore": 0.769
+      "lscore": 0.769,
+      "reward": 0.613,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "O88vdNEdRR8",
@@ -590,11 +699,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 109.9,
+      "ageDays": 110.2,
       "velocity": 1.1,
       "engagement": 0.08,
       "score": 1.2,
-      "lscore": 0.804
+      "lscore": 0.804,
+      "reward": 0.672,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "-rGFbFwjoJE",
@@ -610,11 +722,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 19.4,
+      "ageDays": 19.6,
       "velocity": 1.1,
       "engagement": 0,
       "score": 1.1,
-      "lscore": 0.762
+      "lscore": 0.762,
+      "reward": 0.601,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "QtWO6wQ67EI",
@@ -630,11 +745,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 25,
+      "ageDays": 25.3,
       "velocity": 1.1,
       "engagement": 0,
       "score": 1.1,
-      "lscore": 0.762
+      "lscore": 0.762,
+      "reward": 0.601,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "2IVsp8kgsZ8",
@@ -650,11 +768,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 27,
+      "ageDays": 27.3,
       "velocity": 1.1,
       "engagement": 0,
       "score": 1.1,
-      "lscore": 0.762
+      "lscore": 0.762,
+      "reward": 0.601,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "grddelwt82o",
@@ -670,11 +791,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 29,
+      "ageDays": 29.3,
       "velocity": 1.1,
       "engagement": 0,
       "score": 1.1,
-      "lscore": 0.762
+      "lscore": 0.762,
+      "reward": 0.601,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "X7hL49jIdec",
@@ -690,11 +814,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 37.4,
+      "ageDays": 37.6,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.1,
-      "lscore": 0.749
+      "lscore": 0.749,
+      "reward": 0.58,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "APnste6PB54",
@@ -710,11 +837,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 103.9,
+      "ageDays": 104.1,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.1,
-      "lscore": 0.749
+      "lscore": 0.749,
+      "reward": 0.58,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "1Ao8tItzPY4",
@@ -730,31 +860,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 116.1,
+      "ageDays": 116.4,
       "velocity": 1.1,
       "engagement": 0.04,
       "score": 1.1,
-      "lscore": 0.749
-    },
-    {
-      "videoId": "dNSTLeDljmY",
-      "title": "Jisoo's reaction 🤣 You ok? #jisoo #blackpink #rea",
-      "publishedAt": "2026-09-14T12:00:28Z",
-      "views": 4,
-      "likes": 1,
-      "comments": 0,
-      "durationSec": 14,
-      "regionBlocked": 0,
-      "analytics": null,
-      "country": "Spain",
-      "sourceChannel": null,
-      "category": null,
-      "eggs": null,
-      "ageDays": 4.4,
-      "velocity": 0.9,
-      "engagement": 0.04,
-      "score": 1,
-      "lscore": 0.671
+      "lscore": 0.749,
+      "reward": 0.58,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "sRqRfrfQVaM",
@@ -770,11 +883,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 7,
+      "ageDays": 7.3,
       "velocity": 1,
       "engagement": 0,
       "score": 1,
-      "lscore": 0.692
+      "lscore": 0.674,
+      "reward": 0.293,
+      "rewardFinal": true,
+      "v7": 7
     },
     {
       "videoId": "kauPP2rgNoA",
@@ -790,11 +906,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 36.4,
+      "ageDays": 36.6,
       "velocity": 0.9,
       "engagement": 0.04,
       "score": 1,
-      "lscore": 0.676
+      "lscore": 0.676,
+      "reward": 0.457,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "01_tm9X0K0o",
@@ -810,11 +929,37 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 101,
+      "ageDays": 101.3,
       "velocity": 0.9,
       "engagement": 0.04,
       "score": 1,
-      "lscore": 0.676
+      "lscore": 0.676,
+      "reward": 0.457,
+      "rewardFinal": false,
+      "v7": null
+    },
+    {
+      "videoId": "dNSTLeDljmY",
+      "title": "Jisoo's reaction 🤣 You ok? #jisoo #blackpink #rea",
+      "publishedAt": "2026-09-14T12:00:28Z",
+      "views": 4,
+      "likes": 1,
+      "comments": 0,
+      "durationSec": 14,
+      "regionBlocked": 0,
+      "analytics": null,
+      "country": "Spain",
+      "sourceChannel": null,
+      "category": null,
+      "eggs": null,
+      "ageDays": 4.6,
+      "velocity": 0.9,
+      "engagement": 0.04,
+      "score": 0.9,
+      "lscore": 0.643,
+      "reward": 0.402,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "E_omf7pEMd4",
@@ -830,11 +975,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 69,
+      "ageDays": 69.3,
       "velocity": 0.9,
       "engagement": 0.04,
       "score": 0.9,
-      "lscore": 0.637
+      "lscore": 0.637,
+      "reward": 0.392,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "MeJQRyZgCdU",
@@ -850,11 +998,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 83.4,
+      "ageDays": 83.6,
       "velocity": 0.9,
       "engagement": 0,
       "score": 0.9,
-      "lscore": 0.657
+      "lscore": 0.657,
+      "reward": 0.425,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "M6HBR9DvxBk",
@@ -870,11 +1021,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 87.4,
+      "ageDays": 87.6,
       "velocity": 0.9,
       "engagement": 0.08,
       "score": 0.9,
-      "lscore": 0.655
+      "lscore": 0.655,
+      "reward": 0.422,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "4tTYb7z6Ezs",
@@ -890,11 +1044,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 92.4,
+      "ageDays": 92.6,
       "velocity": 0.9,
       "engagement": 0,
       "score": 0.9,
-      "lscore": 0.619
+      "lscore": 0.619,
+      "reward": 0.362,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "tbRjAARd848",
@@ -910,11 +1067,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 98.4,
+      "ageDays": 98.6,
       "velocity": 0.9,
       "engagement": 0,
       "score": 0.9,
-      "lscore": 0.619
+      "lscore": 0.619,
+      "reward": 0.362,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "mMBJ-iFPdeo",
@@ -930,11 +1090,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 7.4,
+      "ageDays": 7.6,
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.597
+      "lscore": 0.581,
+      "reward": 0.125,
+      "rewardFinal": true,
+      "v7": 6
     },
     {
       "videoId": "4cnEsr_A0nI",
@@ -950,11 +1113,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 12.4,
+      "ageDays": 12.6,
       "velocity": 0.7,
       "engagement": 0.08,
       "score": 0.8,
-      "lscore": 0.58
+      "lscore": 0.572,
+      "reward": 0.283,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "RDjUBTanNsI",
@@ -970,11 +1136,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 17,
+      "ageDays": 17.3,
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.58
+      "lscore": 0.58,
+      "reward": 0.296,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "oHVjQ4xITfI",
@@ -990,11 +1159,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 19,
+      "ageDays": 19.3,
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.58
+      "lscore": 0.58,
+      "reward": 0.296,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "j_QeKd6Z3mo",
@@ -1010,11 +1182,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 24,
+      "ageDays": 24.3,
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.58
+      "lscore": 0.58,
+      "reward": 0.296,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "IkHxUGZNkRc",
@@ -1030,11 +1205,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 49,
+      "ageDays": 49.3,
       "velocity": 0.8,
       "engagement": 0,
       "score": 0.8,
-      "lscore": 0.58
+      "lscore": 0.58,
+      "reward": 0.296,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "GIGx5XruBK0",
@@ -1050,11 +1228,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 76.4,
+      "ageDays": 76.6,
       "velocity": 0.7,
       "engagement": 0.08,
       "score": 0.8,
-      "lscore": 0.572
+      "lscore": 0.572,
+      "reward": 0.283,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Pva7emfBGFY",
@@ -1070,11 +1251,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 100,
+      "ageDays": 100.3,
       "velocity": 0.7,
       "engagement": 0.08,
       "score": 0.8,
-      "lscore": 0.572
+      "lscore": 0.572,
+      "reward": 0.283,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "mskBAUMfOZk",
@@ -1090,11 +1274,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 102,
+      "ageDays": 102.3,
       "velocity": 0.7,
       "engagement": 0.08,
       "score": 0.8,
-      "lscore": 0.572
+      "lscore": 0.572,
+      "reward": 0.283,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "3uUhuaZR68k",
@@ -1110,11 +1297,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 103.5,
+      "ageDays": 103.7,
       "velocity": 0.8,
       "engagement": 0.04,
       "score": 0.8,
-      "lscore": 0.597
+      "lscore": 0.597,
+      "reward": 0.325,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "RRkyckiNMi4",
@@ -1130,11 +1320,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 12,
+      "ageDays": 12.3,
       "velocity": 0.7,
       "engagement": 0,
       "score": 0.7,
-      "lscore": 0.51
+      "lscore": 0.502,
+      "reward": 0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "urTvf5omj20",
@@ -1150,11 +1343,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 34.4,
+      "ageDays": 34.6,
       "velocity": 0.7,
       "engagement": 0.04,
       "score": 0.7,
-      "lscore": 0.556
+      "lscore": 0.556,
+      "reward": 0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "SUj2Eywxxwc",
@@ -1170,11 +1366,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 71,
+      "ageDays": 71.3,
       "velocity": 0.7,
       "engagement": 0.04,
       "score": 0.7,
-      "lscore": 0.556
+      "lscore": 0.556,
+      "reward": 0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Z007q7ddJDg",
@@ -1190,11 +1389,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 76,
+      "ageDays": 76.3,
       "velocity": 0.6,
       "engagement": 0.08,
       "score": 0.7,
-      "lscore": 0.527
+      "lscore": 0.527,
+      "reward": 0.207,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "vcUybz-rQT4",
@@ -1210,11 +1412,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 79,
+      "ageDays": 79.3,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.7,
-      "lscore": 0.512
+      "lscore": 0.512,
+      "reward": 0.182,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "WIhjN1Xgojo",
@@ -1230,11 +1435,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 88.4,
+      "ageDays": 88.6,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.7,
-      "lscore": 0.512
+      "lscore": 0.512,
+      "reward": 0.182,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "FwJaUdw_JuQ",
@@ -1250,11 +1458,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 97.4,
+      "ageDays": 97.6,
       "velocity": 0.7,
       "engagement": 0.04,
       "score": 0.7,
-      "lscore": 0.556
+      "lscore": 0.556,
+      "reward": 0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "MNnEmKAKHLk",
@@ -1270,11 +1481,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 100.4,
+      "ageDays": 100.6,
       "velocity": 0.7,
       "engagement": 0,
       "score": 0.7,
-      "lscore": 0.539
+      "lscore": 0.539,
+      "reward": 0.227,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "eT-MHfxQn7M",
@@ -1290,11 +1504,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 113.9,
+      "ageDays": 114.1,
       "velocity": 0.7,
       "engagement": 0,
       "score": 0.7,
-      "lscore": 0.539
+      "lscore": 0.539,
+      "reward": 0.227,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "MTmMUs8JdXY",
@@ -1310,11 +1527,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 8.4,
+      "ageDays": 8.6,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.484
+      "lscore": 0.473,
+      "reward": -0.067,
+      "rewardFinal": true,
+      "v7": 5
     },
     {
       "videoId": "rUAtQ0KGgL8",
@@ -1330,11 +1550,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 23.4,
+      "ageDays": 23.6,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.452
+      "lscore": 0.452,
+      "reward": 0.081,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "HC8GlnxUdXk",
@@ -1350,11 +1573,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 36,
+      "ageDays": 36.3,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.466
+      "lscore": 0.466,
+      "reward": 0.105,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "tNoUEyA7Qmo",
@@ -1370,11 +1596,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 38,
+      "ageDays": 38.3,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.496
+      "lscore": 0.496,
+      "reward": 0.155,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "CJeMd9wLDtg",
@@ -1390,11 +1619,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 40.4,
+      "ageDays": 40.6,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.466
+      "lscore": 0.466,
+      "reward": 0.105,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "OvngZGyq6Ik",
@@ -1410,11 +1642,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 50,
+      "ageDays": 50.3,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.496
+      "lscore": 0.496,
+      "reward": 0.155,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "oylUCcWjc6k",
@@ -1430,11 +1665,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 51.4,
+      "ageDays": 51.6,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.466
+      "lscore": 0.466,
+      "reward": 0.105,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "SZHhOXgF4VY",
@@ -1450,11 +1688,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 54,
+      "ageDays": 54.3,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.496
+      "lscore": 0.496,
+      "reward": 0.155,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Be6yF3ySiOM",
@@ -1470,11 +1711,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 74.4,
+      "ageDays": 74.6,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.466
+      "lscore": 0.466,
+      "reward": 0.105,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "giGLZEyHy_Y",
@@ -1490,11 +1734,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 80.4,
+      "ageDays": 80.6,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.452
+      "lscore": 0.452,
+      "reward": 0.081,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "egi8bDgD9UE",
@@ -1510,11 +1757,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 82,
+      "ageDays": 82.3,
       "velocity": 0.6,
       "engagement": 0.04,
       "score": 0.6,
-      "lscore": 0.466
+      "lscore": 0.466,
+      "reward": 0.105,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "sqoLNFrVecA",
@@ -1530,11 +1780,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 103.3,
+      "ageDays": 103.6,
       "velocity": 0.5,
       "engagement": 0.18,
       "score": 0.6,
-      "lscore": 0.464
+      "lscore": 0.464,
+      "reward": 0.102,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "KNxkjkBzrDA",
@@ -1550,11 +1803,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 113.9,
+      "ageDays": 114.1,
       "velocity": 0.6,
       "engagement": 0,
       "score": 0.6,
-      "lscore": 0.496
+      "lscore": 0.496,
+      "reward": 0.155,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "svODUI3Z_t8",
@@ -1570,11 +1826,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 4,
+      "ageDays": 4.3,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.417
+      "lscore": 0.397,
+      "reward": -0.011,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Sz0_HNx3_EE",
@@ -1590,11 +1849,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 6.4,
+      "ageDays": 6.6,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.399
+      "lscore": 0.387,
+      "reward": -0.028,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ooGvqpqYV0U",
@@ -1610,11 +1872,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 22,
+      "ageDays": 22.3,
       "velocity": 0.5,
       "engagement": 0,
       "score": 0.5,
-      "lscore": 0.405
+      "lscore": 0.405,
+      "reward": 0.003,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "z5R47FAC9Xc",
@@ -1630,11 +1895,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 58,
+      "ageDays": 58.3,
       "velocity": 0.5,
       "engagement": 0,
       "score": 0.5,
-      "lscore": 0.405
+      "lscore": 0.405,
+      "reward": 0.003,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "dYX1ctfA-mc",
@@ -1650,11 +1918,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 70.4,
+      "ageDays": 70.6,
       "velocity": 0.5,
       "engagement": 0,
       "score": 0.5,
-      "lscore": 0.405
+      "lscore": 0.405,
+      "reward": 0.003,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "JkuQTKzAqb4",
@@ -1670,11 +1941,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 80,
+      "ageDays": 80.3,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.419
+      "lscore": 0.419,
+      "reward": 0.026,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "GvEwjplsVKs",
@@ -1690,11 +1964,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 83,
+      "ageDays": 83.3,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.419
+      "lscore": 0.419,
+      "reward": 0.026,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Q0f46YpRdxA",
@@ -1710,11 +1987,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 86,
+      "ageDays": 86.3,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.419
+      "lscore": 0.419,
+      "reward": 0.026,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "BQ7XhhrB6kw",
@@ -1730,11 +2010,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 99,
+      "ageDays": 99.3,
       "velocity": 0.5,
       "engagement": 0.04,
       "score": 0.5,
-      "lscore": 0.419
+      "lscore": 0.419,
+      "reward": 0.026,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "zynSytiJ-CU",
@@ -1750,11 +2033,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 101.4,
+      "ageDays": 101.6,
       "velocity": 0.5,
       "engagement": 0,
       "score": 0.5,
-      "lscore": 0.405
+      "lscore": 0.405,
+      "reward": 0.003,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "bKa-IOG0f-4",
@@ -1770,11 +2056,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 5.4,
+      "ageDays": 5.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.317
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Ybk_hjPJiY4",
@@ -1790,11 +2079,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 13.4,
+      "ageDays": 13.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.318
+      "lscore": 0.313,
+      "reward": -0.152,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "eR848qV4Z1A",
@@ -1810,11 +2102,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 23,
+      "ageDays": 23.3,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "kBwG24H7DI0",
@@ -1830,11 +2125,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 26,
+      "ageDays": 26.3,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "AvHMiuSVCwM",
@@ -1850,11 +2148,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 26.4,
+      "ageDays": 26.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "gvcXyR80Ofg",
@@ -1870,11 +2171,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 33.4,
+      "ageDays": 33.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "x3ojVmDM2bk",
@@ -1890,11 +2194,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 38.4,
+      "ageDays": 38.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.357
+      "lscore": 0.357,
+      "reward": -0.078,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Q5OR9-Sy9PA",
@@ -1910,11 +2217,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 58.4,
+      "ageDays": 58.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "16I1tf0zfDA",
@@ -1930,11 +2240,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 59,
+      "ageDays": 59.3,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "wAl0CkZD6g4",
@@ -1950,11 +2263,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 60.4,
+      "ageDays": 60.6,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.369
+      "lscore": 0.369,
+      "reward": -0.058,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "625Lp5V_uqE",
@@ -1970,11 +2286,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 64.4,
+      "ageDays": 64.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "6bkN3GpSNm0",
@@ -1990,11 +2309,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 69.4,
+      "ageDays": 69.6,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.369
+      "lscore": 0.369,
+      "reward": -0.058,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ZWYYrcG-gH4",
@@ -2010,11 +2332,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 77.4,
+      "ageDays": 77.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.357
+      "lscore": 0.357,
+      "reward": -0.078,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "2QYkB5qk5Hs",
@@ -2030,11 +2355,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 79.4,
+      "ageDays": 79.6,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.369
+      "lscore": 0.369,
+      "reward": -0.058,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "98QnFTBs7cA",
@@ -2050,11 +2378,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 81,
+      "ageDays": 81.3,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.316
+      "lscore": 0.316,
+      "reward": -0.147,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "fcFbTguC1uM",
@@ -2070,11 +2401,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 81.4,
+      "ageDays": 81.6,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.369
+      "lscore": 0.369,
+      "reward": -0.058,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "2V2lAXJmB9A",
@@ -2090,11 +2424,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 82.4,
+      "ageDays": 82.6,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.305
+      "lscore": 0.305,
+      "reward": -0.165,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "59I1r61jMoI",
@@ -2110,11 +2447,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 85,
+      "ageDays": 85.3,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.316
+      "lscore": 0.316,
+      "reward": -0.147,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Pm3k_nPETI0",
@@ -2130,11 +2470,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 89,
+      "ageDays": 89.3,
       "velocity": 0.4,
       "engagement": 0.04,
       "score": 0.4,
-      "lscore": 0.369
+      "lscore": 0.369,
+      "reward": -0.058,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "oRKP-vcdaGY",
@@ -2150,11 +2493,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 91.8,
+      "ageDays": 92.1,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.357
+      "lscore": 0.357,
+      "reward": -0.078,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "lKiNs55f6I8",
@@ -2170,11 +2516,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 93,
+      "ageDays": 93.3,
       "velocity": 0.4,
       "engagement": 0,
       "score": 0.4,
-      "lscore": 0.357
+      "lscore": 0.357,
+      "reward": -0.078,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "vcSup8pp5ro",
@@ -2190,11 +2539,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 98,
+      "ageDays": 98.3,
       "velocity": 0.3,
       "engagement": 0.24,
       "score": 0.4,
-      "lscore": 0.303
+      "lscore": 0.303,
+      "reward": -0.169,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "n8McpgYsmZI",
@@ -2210,11 +2562,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 9.4,
+      "ageDays": 9.6,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.288
+      "lscore": 0.281,
+      "reward": -0.575,
+      "rewardFinal": true,
+      "v7": 3
     },
     {
       "videoId": "NJtNQPdqXtA",
@@ -2230,11 +2585,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 11.4,
+      "ageDays": 11.6,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.234
+      "lscore": 0.23,
+      "reward": -0.291,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "XYOAtEebO1w",
@@ -2250,11 +2608,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 13,
+      "ageDays": 13.3,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.268
+      "lscore": 0.263,
+      "reward": -0.236,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "XHtMYr-V2to",
@@ -2270,11 +2631,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 14,
+      "ageDays": 14.3,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.251
+      "lscore": 0.251,
+      "reward": -0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ROeySGZrxgM",
@@ -2290,11 +2654,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 18.4,
+      "ageDays": 18.6,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.251
+      "lscore": 0.251,
+      "reward": -0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "0KU1MpmV31M",
@@ -2310,11 +2677,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 61,
+      "ageDays": 61.3,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.251
+      "lscore": 0.251,
+      "reward": -0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "yA_XWVwWynY",
@@ -2330,11 +2700,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 68.4,
+      "ageDays": 68.6,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "N18CpkwqA5s",
@@ -2350,11 +2723,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 75,
+      "ageDays": 75.3,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.251
+      "lscore": 0.251,
+      "reward": -0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "taPyX_oXIbw",
@@ -2370,11 +2746,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 75.4,
+      "ageDays": 75.6,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "yQW5r9tfXRY",
@@ -2390,11 +2769,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 84.4,
+      "ageDays": 84.6,
       "velocity": 0.3,
       "engagement": 0,
       "score": 0.3,
-      "lscore": 0.251
+      "lscore": 0.251,
+      "reward": -0.256,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "GN560_B_ar4",
@@ -2410,11 +2792,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 88,
+      "ageDays": 88.3,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "eOYel5wq76Y",
@@ -2430,11 +2815,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 90,
+      "ageDays": 90.3,
       "velocity": 0.3,
       "engagement": 0.08,
       "score": 0.3,
-      "lscore": 0.269
+      "lscore": 0.269,
+      "reward": -0.226,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "PFBJfCIJc-Q",
@@ -2450,11 +2838,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 91,
+      "ageDays": 91.3,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "wF3g51bviHI",
@@ -2470,11 +2861,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 94.4,
+      "ageDays": 94.6,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "WQGSeTnWB3M",
@@ -2490,11 +2884,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 96,
+      "ageDays": 96.3,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "q0H5qsrV3d4",
@@ -2510,11 +2907,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 97,
+      "ageDays": 97.3,
       "velocity": 0.3,
       "engagement": 0.04,
       "score": 0.3,
-      "lscore": 0.26
+      "lscore": 0.26,
+      "reward": -0.241,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "zV_u_sNLzUc",
@@ -2530,11 +2930,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 8,
+      "ageDays": 8.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.223
+      "lscore": 0.216,
+      "reward": -0.935,
+      "rewardFinal": true,
+      "v7": 2
     },
     {
       "videoId": "U7rHGEDHvsA",
@@ -2550,11 +2953,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 9,
+      "ageDays": 9.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.2
+      "lscore": 0.195,
+      "reward": -0.935,
+      "rewardFinal": true,
+      "v7": 2
     },
     {
       "videoId": "sLNkBaLmLzk",
@@ -2570,11 +2976,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 10,
+      "ageDays": 10.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.182
+      "lscore": 0.178,
+      "reward": -0.935,
+      "rewardFinal": true,
+      "v7": 2
     },
     {
       "videoId": "KyBP5DYk3N4",
@@ -2590,11 +2999,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 11,
+      "ageDays": 11.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.167
+      "lscore": 0.163,
+      "reward": -0.403,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ePOnRl6P2Bs",
@@ -2610,11 +3022,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 15,
+      "ageDays": 15.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "7kJSqomWWDw",
@@ -2630,11 +3045,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 16,
+      "ageDays": 16.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Mjp1fOJsdIU",
@@ -2650,11 +3068,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 16.4,
+      "ageDays": 16.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "k9bvdfnVkN0",
@@ -2670,11 +3091,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 21.4,
+      "ageDays": 21.6,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "gqIFkvp6K98",
@@ -2690,11 +3114,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 31,
+      "ageDays": 31.3,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Fh0jLO4MT6E",
@@ -2710,11 +3137,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 39,
+      "ageDays": 39.3,
       "velocity": 0.2,
       "engagement": 0.08,
       "score": 0.2,
-      "lscore": 0.208
+      "lscore": 0.208,
+      "reward": -0.328,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "dmDbi9620Ec",
@@ -2730,11 +3160,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 39.4,
+      "ageDays": 39.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "_YBFjztx_xU",
@@ -2750,11 +3183,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 43,
+      "ageDays": 43.3,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ho_rqUWRKO4",
@@ -2770,11 +3206,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 59.4,
+      "ageDays": 59.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "pz7-NTNa9Ms",
@@ -2790,11 +3229,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 64,
+      "ageDays": 64.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Y7rm6kj2mNU",
@@ -2810,11 +3252,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 65.4,
+      "ageDays": 65.6,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "XrmxO4vj07s",
@@ -2830,11 +3275,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 66,
+      "ageDays": 66.3,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "0B_fqsNEIEc",
@@ -2850,11 +3298,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 67.4,
+      "ageDays": 67.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "qYgskmeqh94",
@@ -2870,11 +3321,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 68,
+      "ageDays": 68.3,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "wbj2GNZkd2s",
@@ -2890,11 +3344,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 72.4,
+      "ageDays": 72.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "UpYz3GkezDM",
@@ -2910,11 +3367,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 85.4,
+      "ageDays": 85.6,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "i931yqhuzkY",
@@ -2930,11 +3390,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 87,
+      "ageDays": 87.3,
       "velocity": 0.1,
       "engagement": 0.08,
       "score": 0.2,
-      "lscore": 0.143
+      "lscore": 0.143,
+      "reward": -0.437,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "EC8Xct2aZg4",
@@ -2950,11 +3413,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 90.4,
+      "ageDays": 90.6,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "S-aIgRKR_fk",
@@ -2970,11 +3436,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 92,
+      "ageDays": 92.3,
       "velocity": 0.2,
       "engagement": 0.04,
       "score": 0.2,
-      "lscore": 0.201
+      "lscore": 0.201,
+      "reward": -0.34,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "xtn-gsB0abc",
@@ -2990,11 +3459,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 94,
+      "ageDays": 94.3,
       "velocity": 0.2,
       "engagement": 0,
       "score": 0.2,
-      "lscore": 0.194
+      "lscore": 0.194,
+      "reward": -0.351,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "NN0JZAcLbv4",
@@ -3010,11 +3482,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 10.4,
+      "ageDays": 10.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.092
+      "lscore": 0.09,
+      "reward": -0.526,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "A2B2cddLXPA",
@@ -3030,11 +3505,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 15.4,
+      "ageDays": 15.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "XEFTDYdVOk8",
@@ -3050,11 +3528,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 18,
+      "ageDays": 18.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "b3zZ9CwbhwE",
@@ -3070,11 +3551,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 20,
+      "ageDays": 20.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "426oFF-6yRE",
@@ -3090,11 +3574,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 21,
+      "ageDays": 21.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "-cYCyOQ7hok",
@@ -3110,11 +3597,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 22.4,
+      "ageDays": 22.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "m-yey8izNJs",
@@ -3130,11 +3620,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 24.4,
+      "ageDays": 24.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "B6loNeAP-9E",
@@ -3150,11 +3643,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 27.4,
+      "ageDays": 27.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "m3UewG_i5gs",
@@ -3170,11 +3666,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 28,
+      "ageDays": 28.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "ZWi6DXMs4-c",
@@ -3190,11 +3689,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 28.4,
+      "ageDays": 28.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "LAeKM4zWj_0",
@@ -3210,11 +3712,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 29.4,
+      "ageDays": 29.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "20GWQZ7C4h0",
@@ -3230,11 +3735,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 30.4,
+      "ageDays": 30.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "6gPAuTr8Tis",
@@ -3250,11 +3758,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 31.4,
+      "ageDays": 31.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "1Chu7RLab1o",
@@ -3270,11 +3781,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 32.4,
+      "ageDays": 32.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "hO7oYYn3rQ0",
@@ -3290,11 +3804,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 35,
+      "ageDays": 35.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "a9punhI-1BY",
@@ -3310,11 +3827,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 35.4,
+      "ageDays": 35.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Rwz1VNPc5ek",
@@ -3330,11 +3850,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 37,
+      "ageDays": 37.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "mbhYSYn9eVs",
@@ -3350,11 +3873,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 40,
+      "ageDays": 40.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "dUm-8RXM1To",
@@ -3370,11 +3896,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 42.4,
+      "ageDays": 42.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "p4D9mt_Idu0",
@@ -3390,11 +3919,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 45.4,
+      "ageDays": 45.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "OFZ3r4Ar5EU",
@@ -3410,11 +3942,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 46,
+      "ageDays": 46.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "aXgQd9Uz62k",
@@ -3430,11 +3965,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 46.4,
+      "ageDays": 46.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "WGOf-sPSjrc",
@@ -3450,11 +3988,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 47,
+      "ageDays": 47.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "o2-NDtRapb8",
@@ -3470,11 +4011,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 47.4,
+      "ageDays": 47.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "IbSbiltw2DA",
@@ -3490,11 +4034,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 48,
+      "ageDays": 48.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "sIJpsNHxwik",
@@ -3510,11 +4057,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 48.4,
+      "ageDays": 48.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "R9vZmlFsWHg",
@@ -3530,11 +4080,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 49.4,
+      "ageDays": 49.6,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "gzhlJm3G-rY",
@@ -3550,11 +4103,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 51,
+      "ageDays": 51.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "A4ESumS8uzw",
@@ -3570,11 +4126,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 52,
+      "ageDays": 52.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "JZ-T9mf5__Y",
@@ -3590,11 +4149,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 54.4,
+      "ageDays": 54.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "C3jGPkjwLQ4",
@@ -3610,11 +4172,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 56.4,
+      "ageDays": 56.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "p_2wCtfeNJc",
@@ -3630,11 +4195,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 57,
+      "ageDays": 57.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.072
+      "lscore": 0.072,
+      "reward": -0.556,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "iST5gtR8fSg",
@@ -3650,11 +4218,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 57.4,
+      "ageDays": 57.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "7Yi0hk0Wl5Y",
@@ -3670,11 +4241,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 60,
+      "ageDays": 60.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "TEvK8ahv7Go",
@@ -3690,11 +4264,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 61.4,
+      "ageDays": 61.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "GnR7DdeWzh0",
@@ -3710,11 +4287,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 62,
+      "ageDays": 62.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "74bK2mdos4o",
@@ -3730,11 +4310,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 63,
+      "ageDays": 63.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.069
+      "lscore": 0.069,
+      "reward": -0.561,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "mOrKBmsY4HM",
@@ -3750,11 +4333,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 65,
+      "ageDays": 65.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "u-pLEmb1YZg",
@@ -3770,11 +4356,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 66.4,
+      "ageDays": 66.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "R8FOvNPC7rU",
@@ -3790,11 +4379,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 67,
+      "ageDays": 67.3,
       "velocity": 0.1,
       "engagement": 0.04,
       "score": 0.1,
-      "lscore": 0.139
+      "lscore": 0.139,
+      "reward": -0.444,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "J4RaTV4Xiv0",
@@ -3810,11 +4402,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 86.4,
+      "ageDays": 86.6,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "EWl_1Qm_euQ",
@@ -3830,11 +4425,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 95,
+      "ageDays": 95.3,
       "velocity": 0.1,
       "engagement": 0,
       "score": 0.1,
-      "lscore": 0.134
+      "lscore": 0.134,
+      "reward": -0.452,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "VqjJuMBaReY",
@@ -3850,11 +4448,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 25.4,
+      "ageDays": 25.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "28IryqHSNMo",
@@ -3870,11 +4471,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 41.4,
+      "ageDays": 41.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "nJrWQmCNE50",
@@ -3890,11 +4494,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 42,
+      "ageDays": 42.3,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "NiaoLNdS-bY",
@@ -3910,11 +4517,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 43.4,
+      "ageDays": 43.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "YBpoTwLcg2k",
@@ -3930,11 +4540,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 44,
+      "ageDays": 44.3,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "1KszRKD5EtQ",
@@ -3950,11 +4563,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 44.4,
+      "ageDays": 44.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "zaFB1rrzGDo",
@@ -3970,11 +4586,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 45,
+      "ageDays": 45.3,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "fwFse5r9pQg",
@@ -3990,11 +4609,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 53,
+      "ageDays": 53.3,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "5eRWmzNzWBc",
@@ -4010,11 +4632,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 53.4,
+      "ageDays": 53.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "rgawt3tqrng",
@@ -4030,11 +4655,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 55,
+      "ageDays": 55.3,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "Dmo28CyiD5c",
@@ -4050,11 +4678,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 55.4,
+      "ageDays": 55.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "vUfp6G5kzDM",
@@ -4070,11 +4701,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 62.4,
+      "ageDays": 62.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "4g_yvf-_t30",
@@ -4090,11 +4724,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 63.4,
+      "ageDays": 63.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     },
     {
       "videoId": "QefbAWW-WD4",
@@ -4110,11 +4747,14 @@
       "sourceChannel": null,
       "category": null,
       "eggs": null,
-      "ageDays": 99.4,
+      "ageDays": 99.6,
       "velocity": 0,
       "engagement": 0,
       "score": 0,
-      "lscore": 0
+      "lscore": 0,
+      "reward": -0.677,
+      "rewardFinal": false,
+      "v7": null
     }
   ]
 }
