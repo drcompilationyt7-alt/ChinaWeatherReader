@@ -10,6 +10,10 @@
  * Reads <MEMORY_DIR>/{meme-history|quiz-history}.json and performance-stats.json
  * (rewards from core/experiment-log.js). Writes reports/weekly/<channel>/<YYYY-Www>.md
  * and <MEMORY_DIR>/lessons.json (the latest effects, for people and future tools).
+ *
+ * Metadata section: core/metadata/evolve.js scores every metadata arm (title style, on-video
+ * text, hashtag set, emoji set, description hook), retires clear losers and adds up to 3 new
+ * LLM-proposed arms (validated, bounded prior) to <MEMORY_DIR>/metadata-arms.json, once a week.
  */
 const fs = require('fs');
 const path = require('path');
@@ -117,6 +121,16 @@ async function main() {
     lines.push(...t);
     tables += t.join('\n') + '\n';
   }
+  // metadata: what each title style / on-video text / hashtag set / emoji set / description hook earned,
+  // then the weekly self-improvement step (retire clear losers, add up to 3 validated new arms)
+  try {
+    const { weeklyMetadataStep } = require('../metadata/evolve');
+    const md = await weeklyMetadataStep({ channel, week });
+    lines.push(...md.lines);
+    tables += md.tablesText;
+  } catch (e) {
+    lines.push(`_Metadata step failed: ${String((e && e.message) || e).slice(0, 200)}_`, '');
+  }
   const read = rows.length >= 3 ? await llmRead(channel, tables) : null;
   if (read) lines.push('## Read (LLM, from the tables above only)', '', read, '');
   else if (rows.length < 3) lines.push('_Not enough scored uploads yet for a read._', '');
@@ -129,5 +143,6 @@ async function main() {
   console.log(`Weekly report: ${path.relative(ROOT, file)} (${rows.length} scored uploads)`);
 }
 
-if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
+// exit when done: a timed-out LLM call can leave retry timers running (all files are written synchronously)
+if (require.main === module) main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
 module.exports = { effects, isoWeek };

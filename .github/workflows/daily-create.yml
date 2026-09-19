@@ -251,7 +251,9 @@ jobs:
           for f in memory/channel-memory.json memory/type1-channel-memory.json memory/posted-videos.json \
                    memory/performance-stats.json memory/performance-insights.json memory/quiz-history.json \
                    memory/playlists.json memory/meme-history.json memory/river-views-model.pkl memory/river-seen.json \
-                   memory/dspy-title-program.json memory/dspy-title-status.json config/channel-pool.json config/trend-banks; do
+                   memory/dspy-title-program.json memory/dspy-title-status.json config/channel-pool.json config/trend-banks \
+                   memory/experiments.jsonl memory/outcomes.json memory/metadata-choices.jsonl memory/metadata-arms.json \
+                   memory/yt-suggest-cache.json; do
             if [ -e "$f" ]; then git add "$f"; fi
           done
           if git diff --staged --quiet; then exit 0; fi

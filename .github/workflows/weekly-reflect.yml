@@ -3,6 +3,8 @@ name: Weekly reflection
 # Sunday: a report per channel of what each choice (anime / group, song, settings,
 # quiz format, length, title style) has earned so far, from the rewards the daily
 # syncs record. Reads memory only (no YouTube calls); Gemini adds a short read.
+# The metadata step (core/metadata/evolve.js) also retires losing title / hashtag /
+# emoji / description arms and adds up to 3 LLM-proposed ones: metadata-arms.json.
 on:
   schedule:
     - cron: '0 2 * * 0'
@@ -23,6 +25,10 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
       GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      # fallback for the metadata proposals when Gemini is rate-limited (free models)
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+      OPENROUTER_API_KEY_3: ${{ secrets.OPENROUTER_API_KEY_3 }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,6 +44,11 @@ jobs:
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
           git add reports/weekly memory/lessons.json memory/quiz-channel/lessons.json 2>/dev/null || true
+          # one missing path makes `git add` stage nothing: add these one by one
+          for f in memory/metadata-arms.json memory/quiz-channel/metadata-arms.json memory/yt-suggest-cache.json \
+                   memory/quiz-channel/yt-suggest-cache.json; do
+            if [ -e "$f" ]; then git add "$f"; fi
+          done
           if git diff --staged --quiet; then exit 0; fi
           git commit -m "Weekly reflection $(date +%G-W%V)"
           for i in 1 2 3; do

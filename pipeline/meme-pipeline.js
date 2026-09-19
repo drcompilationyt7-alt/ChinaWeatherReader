@@ -25,6 +25,7 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const { loadStats } = require('../core/performance-tracker');
 const { decay, appendDecision } = require('../core/experiment-log');
+const { optimizeMetadata, recordMetadataChoice, buildDescription } = require('../core/metadata');
 
 const logger = new Logger('MemeAcapella');
 const ROOT = path.join(__dirname, '..');
@@ -166,7 +167,7 @@ const SONGS = [
 const CLIP_THEMES = {
   anime: ['anime'], jpop: ['anime', 'japanese'], kpop: ['kpop'], chinese: ['chinese'], asian: ['funny', 'cute'],
 };
-const EMOJI_PAIRS = ['🔥,🎧', '⚡,🔥', '🎧,✨', '🔥,🔥', '✨,⚡', '🎶,🔥', '💿,✨'];  // energetic only: no sad / crying faces (owner)
+// title, on-video title, emoji (energetic only), hashtags, description hook and comment: core/metadata (learned arms)
 
 function loadHistory() {
   try { return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch { return { uploads: [] }; }
@@ -184,28 +185,27 @@ function recordUpload(result, upload) {
     song: result.meme.song, theme: result.meme.theme, emoji: result.meme.emoji, title: result.title,
     clipIds: result.meme.clipIds, clipChannels: result.meme.clipChannels, followUpOf: result.meme.followUpOf || undefined,
     clipSource: result.meme.clipSource || undefined, settings: result.meme.settings || undefined,
+    onVideoTitle: result.meme.onVideoTitle || undefined, meta: result.meme.meta || undefined,
   });
   saveHistory(h);
+  // the metadata arms (titleStyle, hashtagSet, emojiSet, descHook, ovStyle) go in the decision log for the learner
   appendDecision({ vid: upload.videoId, ch: 'meme', title: result.title,
-    arm: { song: result.meme.song, source: result.meme.clipSource || null, theme: result.meme.theme, ...(result.meme.settings || {}) },
+    arm: { song: result.meme.song, source: result.meme.clipSource || null, theme: result.meme.theme, ...(result.meme.settings || {}),
+      ...(result.meme.meta || {}) },
     mode: result.meme.followUpOf ? 'followup' : (result.meme.why || 'pick') });
+  if (result.meme.metaChoice) recordMetadataChoice(result.meme.metaChoice, { videoId: upload.videoId });
 }
 
 // Production settings tried at random every day (independently), so each upload says a little about
 // each of them; the weekly report compares them (core/reflect/weekly-report.js)
+// (the title hashtag and the description hook are metadata arms now: core/metadata learns them;
+// settings.hashtag / settings.hook are still filled in from its choice for the weekly report)
 const SETTINGS = {
   drop: [10, 14, 18],            // seconds of the original song after the stack
   edit: [6, 8, 10],              // shots gathered for the drop edit (more = fewer repeats)
-  hashtag: [true, false],        // #source in the title
-  hook: ['layers', 'drop', 'question'],
   // the drop edit's colour grade (core/meme/edit_fx.py LOOKS): only the grade tuned against the
   // owner's reference edits; add 'dreamy' / 'hype' back once they have been reviewed the same way
   look: ['cinematic'],
-};
-const HOOKS = {
-  layers: (caption, e, src) => `${caption} but it's layer by layer ${e}${src ? ` (${src} edit at the end)` : ''}`,
-  drop: (caption, e, src) => `wait for the drop ${e} ${caption}${src ? `, then a ${src} edit` : ''}`,
-  question: (caption, e, src) => `which layer hits the hardest? ${e} ${caption}${src ? ` + ${src} edit` : ''}`,
 };
 
 function pickSettings() {
@@ -392,7 +392,7 @@ async function runMemePipeline(opts = {}) {
   logger.info(`Song: ${song.name} (${song.why})`);
 
   const settings = pickSettings();
-  logger.info(`Settings: drop ${settings.drop}s, ${settings.edit} edit shots, hashtag ${settings.hashtag ? 'on' : 'off'}, hook ${settings.hook}, look ${settings.look}`);
+  logger.info(`Settings: drop ${settings.drop}s, ${settings.edit} edit shots, look ${settings.look}`);
   const t0 = Date.now();
   const src = await downloadSong(song, work);
   logger.info(`Source audio: ${src.sourceTitle}`);
@@ -449,8 +449,22 @@ async function runMemePipeline(opts = {}) {
   const captioned = await captionClips(clips.manifest, theme);
   if (captioned) logger.info(`Captioned ${captioned} clips`);
 
-  const emoji = EMOJI_PAIRS[Math.floor(Math.random() * EMOJI_PAIRS.length)];
-  const caption = `${song.name} acapella`;
+  // metadata (core/metadata): title, on-video title, emoji, hashtags, description and comment from the
+  // learned arms (Thompson sampling on our own uploads' rewards); a remake of a hit reuses the hit's arms
+  const tagsByTheme = { anime: ['anime', 'anime memes', 'anime funny moments'], kpop: ['kpop', 'kpop memes', 'kpop funny moments'],
+    japanese: ['japan', 'japanese memes', 'funny japan'], chinese: ['china', 'douyin', 'chinese memes'],
+    funny: ['asian memes', 'funny asian', 'douyin'], cute: ['cute', 'cute asian', 'cute animals'] };
+  const hitUpload = song.followUpOf ? history.uploads.find(u => u.videoId === song.followUpOf) : null;
+  const meta = await optimizeMetadata({
+    channel: 'meme', contentType: 'stem-edit',
+    facts: { song: song.name, source: clips.source ? song.source : null, kind: song.kind, theme: song.theme, query: song.query,
+      aliases: song.aliases, extraTags: tagsByTheme[theme] || [], recentTitles: history.uploads.slice(-30).map(u => u.title) },
+    style: (hitUpload && hitUpload.meta) || {},
+  });
+  logger.info(`Metadata (${Object.entries(meta.arms).filter(([k]) => k !== 'contentType').map(([k, v]) => `${k} ${v}${meta.modes[k] ? `/${meta.modes[k]}` : ''}`).join(', ')}; `
+    + `llm ${meta.llm}): "${meta.title}", on video "${meta.onVideoTitle}"`);
+  const emoji = meta.emoji;  // drawn as images next to the on-video title (the font cannot draw emoji)
+  const caption = meta.onVideoTitle || song.name;
   const outPath = path.join(outputDir, `meme-${Date.now()}.mp4`);
   const timeline = acap.timeline || path.join(work, 'acapella', 'timeline.json');
   const audio = acap.acapella || acap.mix || path.join(work, 'acapella', 'acapella.wav');
@@ -462,29 +476,25 @@ async function runMemePipeline(opts = {}) {
   logger.success(`Rendered ${res.duration}s, ${res.cuts} cuts (${res.editShots || 0} in the drop edit, ${res.editAligned || 0} synced, `
     + `${res.soundEditHits || 0} sound hits) in ${Math.round((Date.now() - t0) / 1000)}s`);
 
-  const tag = clips.source && settings.hashtag ? song.source.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
-  const title = `${caption} ${emoji.split(',').join('')}${tag ? ` #${tag}` : ''}`;
-  const tagsByTheme = { anime: ['anime', 'anime memes', 'anime funny moments'], kpop: ['kpop', 'kpop memes', 'kpop funny moments'],
-    japanese: ['japan', 'japanese memes', 'funny japan'], chinese: ['china', 'douyin', 'chinese memes'],
-    funny: ['asian memes', 'funny asian', 'douyin'], cute: ['cute', 'cute asian', 'cute animals'] };
+  // the old settings keys, filled from the learned arms so the weekly report's tables keep counting
+  settings.hashtag = meta.titleHashtags.length > 0;
+  settings.hook = meta.arms.descHook;
+  const credits = res.channelsUsed.length ? `clips from: ${res.channelsUsed.map(c => c.trim()).join(', ')}` : '';
   return {
     success: true,
     videoPath: res.path,
-    title,
-    description: HOOKS[settings.hook](caption, emoji.split(',')[0], clips.source ? song.source : null)
-      + `\n\nwhich layer hit the hardest? 👇\n\n`
-      + (res.channelsUsed.length ? `clips from: ${res.channelsUsed.map(c => c.trim()).join(', ')}\n` : '')
-      + `#acapella #${{ anime: 'anime', kpop: 'kpop', japanese: 'japan', chinese: 'douyin', cute: 'cute' }[theme] || 'asianmemes'} #shorts`,
-    tags: ['acapella', `${song.name} acapella`, song.name, ...(clips.source ? [song.source, `${song.source} edit`] : []), 'memes',
-      ...(tagsByTheme[theme] || [])],
+    title: meta.title,
+    description: buildDescription(meta, credits),  // hook (keyword first) + question, credits, 1-3 hashtags
+    tags: meta.tags,
     categoryId: '23',
     playlistTitle: `${theme} acapella`,
-    comment: 'which layer was the best? 😭',
+    comment: meta.comment,
     country: 'Global',
     category: `meme-${theme}`,
     editType: 'meme',
     meme: { song: song.name, theme, emoji, clipIds: res.clipsUsed, clipChannels: res.channelsUsed, followUpOf: song.followUpOf || null,
-      source: src.source, clipSource: clips.source ? song.source : null, settings, why: song.why },
+      source: src.source, clipSource: clips.source ? song.source : null, settings, why: song.why,
+      onVideoTitle: caption, meta: meta.arms, metaChoice: meta.choice },
     workDir: work,
   };
 }

@@ -1,9 +1,11 @@
 /**
  * Titles, hashtags, tags, playlists, credits and description text for the Asian pop
  * culture formats (emoji, trivia, wyr, city, character, idol, opening, cityphoto, vtuber,
- * duel, scene, voice, song). The world-quiz pipeline picks a
- * title template with the same Thompson sampling it uses for the geography
- * formats; `when` limits a template to the plan's topic.
+ * duel, scene, voice, song). `when` limits a template to the plan's topic; `style` is the
+ * template's title style (keyword / speed / challenge / fans / casual / ramp): core/metadata
+ * learns which style works across all formats and the template rotates inside it.
+ * No sad / crying emoji (the owner does not want them). popKeyword() is what people search for
+ * each format (the title keyword the metadata optimizer checks).
  * Nothing here may contain < or > (YouTube rejects them): clean() strips them.
  */
 const TOPIC_LABEL = {
@@ -19,97 +21,97 @@ const is = (...topics) => p => topics.includes(p.topic);
 
 const POP_TITLE_TEMPLATES = {
   emoji: [
-    { id: 'emoji-anime-guess', text: () => 'Guess the Anime From Emojis 🍜🦊', when: is('anime') },
-    { id: 'emoji-anime-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 😭`, when: is('anime') },
-    { id: 'emoji-anime-casual', text: () => 'guess the anime from emojis 😭✌️', when: is('anime') },
-    { id: 'emoji-anime-ramp', text: () => 'Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥', when: is('anime') },
-    { id: 'emoji-kpop-guess', text: () => 'Guess the K-Pop Song From Emojis 🎶', when: is('kpop song') },
-    { id: 'emoji-kpop-fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜`, when: is('kpop song') },
-    { id: 'emoji-kpop-casual', text: () => 'guess the kpop song from emojis 😭✌️', when: is('kpop song') },
+    { id: 'emoji-anime-guess', style: 'keyword', text: () => 'Guess the Anime From Emojis 🍜🦊', when: is('anime') },
+    { id: 'emoji-anime-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🔥`, when: is('anime') },
+    { id: 'emoji-anime-casual', style: 'casual', text: () => 'guess the anime from emojis 👀✌️', when: is('anime') },
+    { id: 'emoji-anime-ramp', style: 'ramp', text: () => 'Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥', when: is('anime') },
+    { id: 'emoji-kpop-guess', style: 'keyword', text: () => 'Guess the K-Pop Song From Emojis 🎶', when: is('kpop song') },
+    { id: 'emoji-kpop-fans', style: 'fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜`, when: is('kpop song') },
+    { id: 'emoji-kpop-casual', style: 'casual', text: () => 'guess the kpop song from emojis 🎶✌️', when: is('kpop song') },
   ],
   trivia: [
-    { id: 'trivia-fans', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Only Real Fans Get ${n(p)}/${n(p)} 🔥`, when: is('kpop', 'anime', 'vtubers') },
-    { id: 'trivia-howwell', text: p => `How Well Do You Know ${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : p.topic === 'vtubers' ? 'VTubers' : p.topic === 'cdrama' ? 'Chinese Movies' : 'Asia'}? 🤔` },
-    { id: 'trivia-ramp', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Easy to IMPOSSIBLE 🔥` },
-    { id: 'trivia-casual', text: p => `${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic === 'vtubers' ? 'vtuber' : 'asia'} quiz but it gets hard fast 😭` },
-    { id: 'trivia-holo', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.topic === 'vtubers' && p.rounds.some(r => /hololive|gura|pekora|marine/i.test(JSON.stringify(r))) },
+    { id: 'trivia-fans', style: 'fans', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Only Real Fans Get ${n(p)}/${n(p)} 🔥`, when: is('kpop', 'anime', 'vtubers') },
+    { id: 'trivia-howwell', style: 'challenge', text: p => `How Well Do You Know ${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : p.topic === 'vtubers' ? 'VTubers' : p.topic === 'cdrama' ? 'Chinese Movies' : 'Asia'}? 🤔` },
+    { id: 'trivia-ramp', style: 'ramp', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Easy to IMPOSSIBLE 🔥` },
+    { id: 'trivia-casual', style: 'casual', text: p => `${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic === 'vtubers' ? 'vtuber' : 'asia'} quiz but it gets hard fast 🔥` },
+    { id: 'trivia-holo', style: 'fans', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.topic === 'vtubers' && p.rounds.some(r => /hololive|gura|pekora|marine/i.test(JSON.stringify(r))) },
   ],
   wyr: [
-    { id: 'wyr-edition', text: p => `Would You Rather: ${TOPIC_LABEL[p.topic]} Edition 😳` },
-    { id: 'wyr-casual', text: p => `would you rather (${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic} edition) 😭✌️` },
-    { id: 'wyr-hard', text: () => 'The Hardest Would You Rather 😭' },
-    { id: 'wyr-anime-powers', text: () => 'Would You Rather: Anime Powers ⚡', when: is('anime') },
-    { id: 'wyr-idol', text: () => 'Would You Rather: K-Pop Idol Life 💜', when: is('kpop') },
-    { id: 'wyr-food', text: () => 'Would You Rather: Asian Food Edition 🍜', when: is('food') },
+    { id: 'wyr-edition', style: 'keyword', text: p => `Would You Rather: ${TOPIC_LABEL[p.topic]} Edition 😳` },
+    { id: 'wyr-casual', style: 'casual', text: p => `would you rather (${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic} edition) 🔥✌️` },
+    { id: 'wyr-hard', style: 'challenge', text: () => 'The Hardest Would You Rather 🤯' },
+    { id: 'wyr-anime-powers', style: 'keyword', text: () => 'Would You Rather: Anime Powers ⚡', when: is('anime') },
+    { id: 'wyr-idol', style: 'keyword', text: () => 'Would You Rather: K-Pop Idol Life 💜', when: is('kpop') },
+    { id: 'wyr-food', style: 'keyword', text: () => 'Would You Rather: Asian Food Edition 🍜', when: is('food') },
   ],
   character: [
-    { id: 'char-guess', text: () => 'Guess the Anime Character 🤔' },
-    { id: 'char-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 😭` },
-    { id: 'char-casual', text: () => 'guess the anime character 😭✌️' },
-    { id: 'char-blur', text: () => 'Guess the Anime Character Before It Unblurs 👀' },
-    { id: 'char-ramp', text: () => 'Anime Character Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'char-guess', style: 'keyword', text: () => 'Guess the Anime Character 🤔' },
+    { id: 'char-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🔥` },
+    { id: 'char-casual', style: 'casual', text: () => 'guess the anime character 🔥✌️' },
+    { id: 'char-blur', style: 'speed', text: () => 'Guess the Anime Character Before It Unblurs 👀' },
+    { id: 'char-ramp', style: 'ramp', text: () => 'Anime Character Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
   idol: [
-    { id: 'idol-guess', text: () => 'Guess the K-Pop Idol 💜' },
-    { id: 'idol-fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 😭` },
-    { id: 'idol-casual', text: () => 'guess the kpop idol 😭✌️' },
-    { id: 'idol-blur', text: () => 'Name the K-Pop Idol Before It Unblurs 👀' },
+    { id: 'idol-guess', style: 'keyword', text: () => 'Guess the K-Pop Idol 💜' },
+    { id: 'idol-fans', style: 'fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜` },
+    { id: 'idol-casual', style: 'casual', text: () => 'guess the kpop idol 🔥✌️' },
+    { id: 'idol-blur', style: 'speed', text: () => 'Name the K-Pop Idol Before It Unblurs 👀' },
   ],
   opening: [
-    { id: 'op-3sec', text: () => 'Guess the Anime Opening in 3 Seconds 🎶' },
-    { id: 'op-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎧` },
-    { id: 'op-casual', text: () => 'guess the anime opening 😭✌️' },
-    { id: 'op-ramp', text: () => 'Anime Opening Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'op-3sec', style: 'speed', text: () => 'Guess the Anime Opening in 3 Seconds 🎶' },
+    { id: 'op-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎧` },
+    { id: 'op-casual', style: 'casual', text: () => 'guess the anime opening 🔥✌️' },
+    { id: 'op-ramp', style: 'ramp', text: () => 'Anime Opening Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
   cityphoto: [
-    { id: 'cphoto-guess', text: () => 'Guess the Asian City From One Photo 📸' },
-    { id: 'cphoto-name', text: p => `Can You Name These ${n(p)} Asian Cities? 🏙️` },
-    { id: 'cphoto-casual', text: () => 'guess the city from the photo 😭✌️' },
-    { id: 'cphoto-ramp', text: () => 'Asia City Quiz: Easy to IMPOSSIBLE 🔥' },
-    { id: 'cphoto-travel', text: p => `Only Travel Nerds Get ${n(p)}/${n(p)} ✈️` },
+    { id: 'cphoto-guess', style: 'keyword', text: () => 'Guess the Asian City From One Photo 📸' },
+    { id: 'cphoto-name', style: 'challenge', text: p => `Can You Name These ${n(p)} Asian Cities? 🏙️` },
+    { id: 'cphoto-casual', style: 'casual', text: () => 'guess the city from the photo 🔥✌️' },
+    { id: 'cphoto-ramp', style: 'ramp', text: () => 'Asia City Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'cphoto-travel', style: 'fans', text: p => `Only Travel Nerds Get ${n(p)}/${n(p)} ✈️` },
   ],
   vtuber: [
-    { id: 'vt-guess', text: () => 'Guess the VTuber 🤔' },
-    { id: 'vt-fans', text: p => `Only Real VTuber Fans Get ${n(p)}/${n(p)} 😭` },
-    { id: 'vt-casual', text: () => 'guess the vtuber 😭✌️' },
-    { id: 'vt-blur', text: () => 'Name the VTuber Before It Unblurs 👀' },
-    { id: 'vt-ramp', text: () => 'VTuber Quiz: Easy to IMPOSSIBLE 🔥' },
-    { id: 'vt-holo', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.rounds.filter(r => /hololive/i.test(r.agency || '')).length >= 3 },
+    { id: 'vt-guess', style: 'keyword', text: () => 'Guess the VTuber 🤔' },
+    { id: 'vt-fans', style: 'fans', text: p => `Only Real VTuber Fans Get ${n(p)}/${n(p)} 🔥` },
+    { id: 'vt-casual', style: 'casual', text: () => 'guess the vtuber 🔥✌️' },
+    { id: 'vt-blur', style: 'speed', text: () => 'Name the VTuber Before It Unblurs 👀' },
+    { id: 'vt-ramp', style: 'ramp', text: () => 'VTuber Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'vt-holo', style: 'fans', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.rounds.filter(r => /hololive/i.test(r.agency || '')).length >= 3 },
   ],
   duel: [
-    { id: 'duel-pick', text: () => 'Who Would You Pick? Anime Edition ⚔️' },
-    { id: 'duel-vs', text: p => `${p.rounds[0].a.name} or ${p.rounds[0].b.name}? Fans Voted 🤔`, when: p => (p.rounds[0].a.name + p.rounds[0].b.name).length <= 30 },
-    { id: 'duel-casual', text: () => 'who would you pick? (anime edition) 😭✌️' },
-    { id: 'duel-agree', text: () => 'Do You Agree With Anime Fans? 🔥' },
-    { id: 'duel-fans', text: () => 'Anime Fans Picked... Do You Agree? 😳' },
+    { id: 'duel-pick', style: 'keyword', text: () => 'Who Would You Pick? Anime Edition ⚔️' },
+    { id: 'duel-vs', style: 'keyword', text: p => `${p.rounds[0].a.name} or ${p.rounds[0].b.name}? Fans Voted 🤔`, when: p => (p.rounds[0].a.name + p.rounds[0].b.name).length <= 30 },
+    { id: 'duel-casual', style: 'casual', text: () => 'who would you pick? (anime edition) 🔥✌️' },
+    { id: 'duel-agree', style: 'challenge', text: () => 'Do You Agree With Anime Fans? 🔥' },
+    { id: 'duel-fans', style: 'challenge', text: () => 'Anime Fans Picked... Do You Agree? 😳' },
   ],
   scene: [
-    { id: 'scene-4sec', text: () => 'Guess the Anime From One Scene 🎬' },
-    { id: 'scene-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎬` },
-    { id: 'scene-casual', text: () => 'guess the anime from 4 seconds 😭✌️' },
-    { id: 'scene-ramp', text: () => 'Anime Scene Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'scene-4sec', style: 'keyword', text: () => 'Guess the Anime From One Scene 🎬' },
+    { id: 'scene-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎬` },
+    { id: 'scene-casual', style: 'casual', text: () => 'guess the anime from 4 seconds 🔥✌️' },
+    { id: 'scene-ramp', style: 'ramp', text: () => 'Anime Scene Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
   voice: [
-    { id: 'voice-guess', text: () => 'Guess the Anime Character by Their Voice 🎧' },
-    { id: 'voice-fans', text: p => `Only Real Fans Know All ${n(p)} Voices 😭` },
-    { id: 'voice-casual', text: () => 'guess the anime character by voice 😭✌️' },
-    { id: 'voice-ramp', text: () => 'Anime Voice Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'voice-guess', style: 'keyword', text: () => 'Guess the Anime Character by Their Voice 🎧' },
+    { id: 'voice-fans', style: 'fans', text: p => `Only Real Fans Know All ${n(p)} Voices 🎧` },
+    { id: 'voice-casual', style: 'casual', text: () => 'guess the anime character by voice 🔥✌️' },
+    { id: 'voice-ramp', style: 'ramp', text: () => 'Anime Voice Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
   song: [
-    { id: 'song-3sec', text: () => 'Guess the Song in 3 Seconds 🎶' },
-    { id: 'song-casual', text: () => 'guess the song in 3 seconds 😭✌️' },
-    { id: 'song-ramp', text: p => `${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : 'Asian Pop'} Song Quiz: Easy to IMPOSSIBLE 🔥` },
-    { id: 'song-kpop', text: () => 'Guess the K-Pop Song in 3 Seconds 🎧', when: is('kpop') },
-    { id: 'song-kpop-fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜`, when: is('kpop') },
-    { id: 'song-anime', text: () => 'Guess the Anime Song in 3 Seconds 🎧', when: is('anime') },
-    { id: 'song-anime-otaku', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎶`, when: is('anime') },
-    { id: 'song-mixed', text: () => 'K-Pop, Anime or J-Pop? Name the Song 🎶', when: is('mixed') },
+    { id: 'song-3sec', style: 'speed', text: () => 'Guess the Song in 3 Seconds 🎶' },
+    { id: 'song-casual', style: 'casual', text: () => 'guess the song in 3 seconds 🔥✌️' },
+    { id: 'song-ramp', style: 'ramp', text: p => `${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : 'Asian Pop'} Song Quiz: Easy to IMPOSSIBLE 🔥` },
+    { id: 'song-kpop', style: 'speed', text: () => 'Guess the K-Pop Song in 3 Seconds 🎧', when: is('kpop') },
+    { id: 'song-kpop-fans', style: 'fans', text: p => `Only Real K-Pop Fans Get ${n(p)}/${n(p)} 💜`, when: is('kpop') },
+    { id: 'song-anime', style: 'speed', text: () => 'Guess the Anime Song in 3 Seconds 🎧', when: is('anime') },
+    { id: 'song-anime-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} 🎶`, when: is('anime') },
+    { id: 'song-mixed', style: 'keyword', text: () => 'K-Pop, Anime or J-Pop? Name the Song 🎶', when: is('mixed') },
   ],
   city: [
-    { id: 'city-guess', text: p => `Guess the ${CITY_ADJ[p.topic]} City From the Map ${CITY_FLAG[p.topic]}` },
-    { id: 'city-find', text: p => `Can You Find These ${CITY_ADJ[p.topic]} Cities? 🗺️` },
-    { id: 'city-casual', text: p => `most people fail this ${TOPIC_LABEL[p.topic].toLowerCase()} map quiz 😭` },
-    { id: 'city-ramp', text: p => `${TOPIC_LABEL[p.topic]} Map Quiz: Easy to IMPOSSIBLE 🔥` },
+    { id: 'city-guess', style: 'keyword', text: p => `Guess the ${CITY_ADJ[p.topic]} City From the Map ${CITY_FLAG[p.topic]}` },
+    { id: 'city-find', style: 'challenge', text: p => `Can You Find These ${CITY_ADJ[p.topic]} Cities? 🗺️` },
+    { id: 'city-casual', style: 'casual', text: p => `most people fail this ${TOPIC_LABEL[p.topic].toLowerCase()} map quiz 🔥` },
+    { id: 'city-ramp', style: 'ramp', text: p => `${TOPIC_LABEL[p.topic]} Map Quiz: Easy to IMPOSSIBLE 🔥` },
   ],
 };
 
@@ -230,13 +232,44 @@ function popCredits(p) {
   }
 }
 
-function popDescription(p) {
-  const head = p.format === 'wyr' ? `${popHook(p)} Comment A or B for each 👇`
-    : p.format === 'duel' ? `${popHook(p)} Comment your picks 👇` : `${popHook(p)} Comment your score 👇`;
+/** The comment prompt after the description's hook line. */
+const popCta = p => (p.format === 'wyr' ? 'Comment A or B for each 👇' : p.format === 'duel' ? 'Comment your picks 👇' : 'Comment your score 👇');
+
+/** opts.head / opts.hashtags: the metadata optimizer's first line and hashtag set (else the defaults). */
+function popDescription(p, opts = {}) {
+  const head = opts.head || `${popHook(p)} ${popCta(p)}`;
   const label = p.format === 'wyr' ? 'The choices' : p.format === 'duel' ? 'The fans picked' : 'Answers (no peeking!)';
   return clean(`${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
     + `${label}:\n${popAnswers(p)}\n\n${popCredits(p)}`
-    + popHashtags(p));
+    + (opts.hashtags || popHashtags(p)));
+}
+
+/**
+ * What people type to find this quiz: {keyword, Keyword (title case), any (a title must contain one), emoji}.
+ * LLM-written titles must contain one of `any`.
+ */
+function popKeyword(p) {
+  const k = (keyword, Keyword, any, emoji) => ({ keyword, Keyword, any, emoji });
+  const label = TOPIC_LABEL[p.topic] || 'Asian Pop';
+  switch (p.format) {
+    case 'emoji': return p.topic === 'anime' ? k('guess the anime from emojis', 'Guess the Anime From Emojis', ['anime', 'otaku'], '🎬')
+      : k('guess the kpop song from emojis', 'Guess the K-Pop Song From Emojis', ['kpop', 'k-pop'], '🎶');
+    case 'trivia': return k(`${label.toLowerCase()} quiz`, `${label} Quiz`, ['quiz', label.toLowerCase()], '🧠');
+    case 'wyr': return k('would you rather', 'Would You Rather', ['would you rather'], '🤔');
+    case 'character': return k('guess the anime character', 'Guess the Anime Character', ['anime', 'otaku'], '🎬');
+    case 'idol': return k('guess the kpop idol', 'Guess the K-Pop Idol', ['kpop', 'k-pop', 'idol'], '💜');
+    case 'opening': return k('guess the anime opening', 'Guess the Anime Opening', ['opening', 'anime', 'otaku'], '🎶');
+    case 'cityphoto': return k('guess the city', 'Guess the Asian City', ['city', 'cities'], '📸');
+    case 'vtuber': return k('guess the vtuber', 'Guess the VTuber', ['vtuber', 'hololive'], '🦊');
+    case 'duel': return k('who would you pick anime', 'Who Would You Pick', ['anime', 'pick'], '⚔️');
+    case 'scene': return k('guess the anime', 'Guess the Anime From One Scene', ['anime', 'otaku'], '🎬');
+    case 'voice': return k('guess the anime character by voice', 'Guess the Anime Character by Voice', ['voice', 'voices'], '🎧');
+    case 'song': return p.topic === 'kpop' ? k('guess the kpop song', 'Guess the K-Pop Song', ['song'], '🎶')
+      : p.topic === 'anime' ? k('guess the anime song', 'Guess the Anime Song', ['song', 'otaku'], '🎶') : k('guess the song', 'Guess the Song', ['song'], '🎶');
+    case 'city': return k(`${(CITY_ADJ[p.topic] || 'asian').toLowerCase()} map quiz`, `${CITY_ADJ[p.topic] || 'Asian'} Map Quiz`,
+      ['city', 'cities', 'map'], CITY_FLAG[p.topic] || '🗺️');
+    default: return k(`${label.toLowerCase()} quiz`, `${label} Quiz`, ['quiz'], '🔥');
+  }
 }
 
 function popTags(p) {
@@ -265,4 +298,5 @@ function popComment(p) {
 
 const popHashtags = p => (p.format === 'song' ? SONG_HASHTAG[p.topic] || SONG_HASHTAG.mixed : FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz');
 
-module.exports = { POP_TITLE_TEMPLATES, popPlaylist, popHook, popAnswers, popDescription, popTags, popComment, popHashtags, HASHTAG, clean };
+module.exports = { POP_TITLE_TEMPLATES, popPlaylist, popHook, popAnswers, popDescription, popTags, popComment, popHashtags, popKeyword,
+  popCta, HASHTAG, TOPIC_LABEL, clean };

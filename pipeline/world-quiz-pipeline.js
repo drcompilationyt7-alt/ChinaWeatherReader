@@ -9,7 +9,9 @@
  *      sampling, trained only on how our own quiz uploads performed
  *   2. pick a theme (world, or an Asia / Europe / Africa / Americas edition)
  *   3. render, avoiding answers used in recent quizzes
- *   4. title: Thompson sampling over title templates (+ an LLM-written arm)
+ *   4. metadata (core/metadata): the title style (keyword / speed / challenge / fans / casual /
+ *      ramp / LLM-written, + styles the weekly step adds), hashtag set, emoji set and description
+ *      hook are bandit arms learned across all formats; the template rotates inside the style
  *   5. description with the answers, hashtags, tags, translated titles
  *
  * Like the fastest-growing meme channels (one narrow format, repeated), a quiz
@@ -29,6 +31,7 @@ const { loadStats } = require('../core/performance-tracker');
 const { buildPopPlan, markUsed, key: popKey } = require('./pop-quiz-content');
 const { decay, appendDecision } = require('../core/experiment-log');
 const pop = require('./pop-quiz-meta');
+const metadata = require('../core/metadata');
 
 const logger = new Logger('WorldQuiz');
 
@@ -68,6 +71,15 @@ const HASHTAGS = {
   crowd: '#population #geography #quiz',
 };
 
+// what people search for each geography format (the metadata optimizer's title keyword)
+const GEO_KEYWORD = {
+  flag: { keyword: 'flag quiz', Keyword: 'Flag Quiz', any: ['flag'], emoji: '🚩' },
+  shape: { keyword: 'guess the country', Keyword: 'Guess the Country', any: ['country', 'countries', 'shape'], emoji: '🗺️' },
+  capital: { keyword: 'capital quiz', Keyword: 'Capital Cities Quiz', any: ['capital'], emoji: '🏛️' },
+  bigger: { keyword: 'which country is bigger', Keyword: 'Which Country Is Bigger', any: ['bigger', 'size'], emoji: '🌍' },
+  crowd: { keyword: 'population quiz', Keyword: 'Population Quiz', any: ['people', 'population'], emoji: '👥' },
+};
+
 const TAGS = {
   base: ['geography quiz', 'world quiz', 'geography', 'quiz', 'trivia', 'country quiz', 'general knowledge', 'guess the country'],
   flag: ['flag quiz', 'guess the flag', 'flags of the world', 'world flags', 'vexillology'],
@@ -82,46 +94,46 @@ const THEME_WORD = { asia: 'Asian', europe: 'European', africa: 'African', ameri
 // Title templates. `when` limits a template to plans it makes sense for.
 const TITLE_TEMPLATES = {
   flag: [
-    { id: 'flag-3sec', text: () => 'Guess the Flag in 3 Seconds 🌍', when: p => p.theme === 'world' },
-    { id: 'flag-all5', text: p => `Can You Name All ${p.rounds.length} Flags? 🚩` },
-    { id: 'flag-ramp', text: () => 'Flag Quiz: Easy to IMPOSSIBLE 🔥', when: p => p.theme === 'world' },
-    { id: 'flag-expert', text: p => `Only Flag Experts Get ${p.rounds.length}/${p.rounds.length} 🌍` },
-    { id: 'flag-casual', text: () => 'this flag quiz gets hard fast 😭✌️' },
-    { id: 'flag-casual-last', text: () => 'nobody gets the last flag 😭😭', when: p => p.rounds.some(r => r.decoy) },
-    { id: 'flag-timer', text: () => 'Name These Flags Before Time Runs Out ⏱️' },
-    { id: 'flag-theme', text: p => `${THEME_WORD[p.theme]} Flag Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🌏`, when: p => p.theme in THEME_WORD },
-    { id: 'flag-theme-3sec', text: p => p.theme === 'americas' ? 'Flags of the Americas in 3 Seconds 🌎' : `Guess the ${THEME_WORD[p.theme]} Flag in 3 Seconds 🌏`, when: p => p.theme in THEME_WORD },
-    { id: 'flag-lookalike', text: () => 'Most People Get the Last Flag Wrong 😅', when: p => p.rounds.some(r => r.decoy) },
+    { id: 'flag-3sec', style: 'speed', text: () => 'Guess the Flag in 3 Seconds 🌍', when: p => p.theme === 'world' },
+    { id: 'flag-all5', style: 'challenge', text: p => `Can You Name All ${p.rounds.length} Flags? 🚩` },
+    { id: 'flag-ramp', style: 'ramp', text: () => 'Flag Quiz: Easy to IMPOSSIBLE 🔥', when: p => p.theme === 'world' },
+    { id: 'flag-expert', style: 'fans', text: p => `Only Flag Experts Get ${p.rounds.length}/${p.rounds.length} 🌍` },
+    { id: 'flag-casual', style: 'casual', text: () => 'this flag quiz gets hard fast 🔥✌️' },
+    { id: 'flag-casual-last', style: 'casual', text: () => 'nobody gets the last flag 👀🔥', when: p => p.rounds.some(r => r.decoy) },
+    { id: 'flag-timer', style: 'speed', text: () => 'Name These Flags Before Time Runs Out ⏱️' },
+    { id: 'flag-theme', style: 'challenge', text: p => `${THEME_WORD[p.theme]} Flag Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🌏`, when: p => p.theme in THEME_WORD },
+    { id: 'flag-theme-3sec', style: 'speed', text: p => p.theme === 'americas' ? 'Flags of the Americas in 3 Seconds 🌎' : `Guess the ${THEME_WORD[p.theme]} Flag in 3 Seconds 🌏`, when: p => p.theme in THEME_WORD },
+    { id: 'flag-lookalike', style: 'fans', text: () => 'Most People Get the Last Flag Wrong 😅', when: p => p.rounds.some(r => r.decoy) },
   ],
   shape: [
-    { id: 'shape-guess', text: () => 'Guess the Country by Its Shape 🗺️' },
-    { id: 'shape-all5', text: p => `Can You Recognize These ${p.rounds.length} Countries? 🗺️` },
-    { id: 'shape-casual', text: () => 'guess the country by its shape 😭🗺️' },
-    { id: 'shape-ramp', text: () => 'Country Shape Quiz: Easy to IMPOSSIBLE 🔥' },
-    { id: 'shape-outline', text: () => 'Name the Country From Its Outline 🌍' },
-    { id: 'shape-theme', text: p => `${THEME_WORD[p.theme]} Countries by Shape: How Many Do You Know? 🌏`, when: p => p.theme in THEME_WORD && p.theme !== 'americas' },
+    { id: 'shape-guess', style: 'keyword', text: () => 'Guess the Country by Its Shape 🗺️' },
+    { id: 'shape-all5', style: 'challenge', text: p => `Can You Recognize These ${p.rounds.length} Countries? 🗺️` },
+    { id: 'shape-casual', style: 'casual', text: () => 'guess the country by its shape 👀🗺️' },
+    { id: 'shape-ramp', style: 'ramp', text: () => 'Country Shape Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'shape-outline', style: 'keyword', text: () => 'Name the Country From Its Outline 🌍' },
+    { id: 'shape-theme', style: 'challenge', text: p => `${THEME_WORD[p.theme]} Countries by Shape: How Many Do You Know? 🌏`, when: p => p.theme in THEME_WORD && p.theme !== 'americas' },
   ],
   capital: [
-    { id: 'cap-3sec', text: () => 'Name the Capital in 3 Seconds 🏛️' },
-    { id: 'cap-trap', text: p => `Most People Get #${p.rounds.findIndex(r => r.decoy) + 1} Wrong 😅 Capital Quiz`, when: p => p.rounds.some(r => r.decoy) },
-    { id: 'cap-ramp', text: () => 'Capital City Quiz: Easy to IMPOSSIBLE 🔥' },
-    { id: 'cap-know', text: () => 'Do You Know These Capitals? 🌍' },
-    { id: 'cap-casual', text: () => 'most people fail this capital quiz 😭✌️' },
-    { id: 'cap-theme', text: p => p.theme === 'americas' ? 'Capitals of the Americas Quiz 🌎' : `${THEME_WORD[p.theme]} Capitals Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🏛️`, when: p => p.theme in THEME_WORD },
+    { id: 'cap-3sec', style: 'speed', text: () => 'Name the Capital in 3 Seconds 🏛️' },
+    { id: 'cap-trap', style: 'fans', text: p => `Most People Get #${p.rounds.findIndex(r => r.decoy) + 1} Wrong 😅 Capital Quiz`, when: p => p.rounds.some(r => r.decoy) },
+    { id: 'cap-ramp', style: 'ramp', text: () => 'Capital City Quiz: Easy to IMPOSSIBLE 🔥' },
+    { id: 'cap-know', style: 'challenge', text: () => 'Do You Know These Capitals? 🌍' },
+    { id: 'cap-casual', style: 'casual', text: () => 'most people fail this capital quiz 🔥✌️' },
+    { id: 'cap-theme', style: 'challenge', text: p => p.theme === 'americas' ? 'Capitals of the Americas Quiz 🌎' : `${THEME_WORD[p.theme]} Capitals Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🏛️`, when: p => p.theme in THEME_WORD },
   ],
   bigger: [
-    { id: 'big-actually', text: () => 'Which Country Is Actually Bigger? 🤯' },
-    { id: 'big-vs', text: p => `${p.rounds[0].left.name} vs ${p.rounds[0].right.name}: Which Is Bigger? 🌍`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 34 },
-    { id: 'big-maplies', text: () => 'The Map Lies! Which Country Is Bigger? 🗺️' },
-    { id: 'big-realsize', text: () => 'Real Size Quiz: Which Country Is Bigger? 📏' },
-    { id: 'big-casual', text: () => 'the map has been lying to you 😭🗺️' },
+    { id: 'big-actually', style: 'keyword', text: () => 'Which Country Is Actually Bigger? 🤯' },
+    { id: 'big-vs', style: 'keyword', text: p => `${p.rounds[0].left.name} vs ${p.rounds[0].right.name}: Which Is Bigger? 🌍`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 34 },
+    { id: 'big-maplies', style: 'challenge', text: () => 'The Map Lies! Which Country Is Bigger? 🗺️' },
+    { id: 'big-realsize', style: 'keyword', text: () => 'Real Size Quiz: Which Country Is Bigger? 📏' },
+    { id: 'big-casual', style: 'casual', text: () => 'the map has been lying to you 🤯🗺️' },
   ],
   crowd: [
-    { id: 'crowd-more', text: () => 'Which Country Has More People? 👥' },
-    { id: 'crowd-vs', text: p => `${p.rounds[0].left.name} or ${p.rounds[0].right.name}: Who Has More People? 🤔`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 30 },
-    { id: 'crowd-harder', text: () => 'Population Quiz: Harder Than It Looks 🤯' },
-    { id: 'crowd-guess', text: () => 'Guess Which Country Has More People 🌍' },
-    { id: 'crowd-casual', text: () => 'i did not expect #1 😭👥' },
+    { id: 'crowd-more', style: 'keyword', text: () => 'Which Country Has More People? 👥' },
+    { id: 'crowd-vs', style: 'keyword', text: p => `${p.rounds[0].left.name} or ${p.rounds[0].right.name}: Who Has More People? 🤔`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 30 },
+    { id: 'crowd-harder', style: 'challenge', text: () => 'Population Quiz: Harder Than It Looks 🤯' },
+    { id: 'crowd-guess', style: 'keyword', text: () => 'Guess Which Country Has More People 🌍' },
+    { id: 'crowd-casual', style: 'casual', text: () => 'i did not expect #1 🤯👥' },
   ],
   ...pop.POP_TITLE_TEMPLATES,
 };
@@ -147,12 +159,16 @@ function recordUpload(result, upload) {
     format: result.quiz.format, theme: result.quiz.theme, seed: result.quiz.seed, length: result.quiz.length,
     followUpOf: result.quiz.followUpOf || undefined,
     titleTemplate: result.quiz.titleTemplate, title: result.title, answers: result.quiz.iso2s,
+    meta: result.quiz.meta || undefined,
   });
   saveHistory(h);
   if (result.quiz.keys) markUsed(result.quiz.keys);
+  // the metadata arms (titleStyle, hashtagSet, emojiSet, descHook) go in the decision log for the learner
   appendDecision({ vid: upload.videoId, ch: 'quiz', title: result.title,
-    arm: { format: result.quiz.format, topic: result.quiz.topic || result.quiz.theme, length: result.quiz.length, title: result.quiz.titleTemplate },
+    arm: { format: result.quiz.format, topic: result.quiz.topic || result.quiz.theme, length: result.quiz.length, title: result.quiz.titleTemplate,
+      ...(result.quiz.meta || {}) },
     mode: result.quiz.followUpOf ? 'followup' : (result.quiz.why || 'pick') });
+  if (result.quiz.metaChoice) metadata.recordMetadataChoice(result.quiz.metaChoice, { videoId: upload.videoId });
 }
 
 function recentIso(history, format, days) {
@@ -273,22 +289,75 @@ function gaussian() {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 }
 
-function pickTitleTemplate(plan, stats, history, llmAvailable) {
-  // "Easy to IMPOSSIBLE" only when an impossible round made it into the video (hard clips fail to download most)
+/** Does the video have a hard round? (no difficulty data: the geography formats, assume yes) */
+function hasHardRound(plan) {
   const levels = (plan.rounds || []).map(r => Number(r.difficulty)).filter(Number.isFinite);
-  const noHard = levels.length && Math.max(...levels) < 3;
-  const options = TITLE_TEMPLATES[plan.format].filter(t => (!t.when || t.when(plan)) && !(noHard && /-ramp$/.test(t.id)));
-  if (llmAvailable) options.push({ id: `${plan.format}-llm`, llm: true });
-  const scored = scoredQuizUploads(stats, history).filter(u => u.format === plan.format);
-  const prior = scored.length ? scored.reduce((a, u) => a + u.learn, 0) / scored.length : 0;
-  const recent = history.uploads.filter(u => u.format === plan.format).slice(-2).map(u => u.titleTemplate);
-  let best = null;
-  for (const t of options) {
-    let { draw } = weightedDraw(scored.filter(u => u.titleTemplate === t.id).map(u => ({ x: u.learn, w: u.w })), prior, 0.6);
-    if (recent.includes(t.id)) draw -= 0.35;  // variety between consecutive uploads
-    if (!best || draw > best.draw) best = { t, draw };
+  return !(levels.length && Math.max(...levels) < 3);
+}
+
+/** The title templates that fit this plan: "Easy to IMPOSSIBLE" only when a hard round made it into the video. */
+function titleOptions(plan) {
+  const noHard = !hasHardRound(plan);
+  return TITLE_TEMPLATES[plan.format].filter(t => (!t.when || t.when(plan)) && !(noHard && /-ramp$/.test(t.id)));
+}
+
+/** What the metadata optimizer needs to know about a quiz (no answers in the title, keyword, hook, ...). */
+function quizFacts(plan) {
+  const format = plan.format;
+  const k = isPop(format) ? pop.popKeyword(plan) : GEO_KEYWORD[format];
+  const answers = plan.rounds.map(r => (typeof r.answer === 'string' ? r.answer.split(' (')[0] : '')).filter(a => a.length > 3);
+  const topicLabel = isPop(format) ? (pop.TOPIC_LABEL[plan.topic] || 'Asian Pop') : (THEME_WORD[plan.theme] || 'World');
+  return {
+    format, topic: plan.topic || plan.theme, topicLabel, keyword: k.keyword, Keyword: k.Keyword, any: k.any, topicEmoji: k.emoji,
+    n: plan.rounds.length, hard: hasHardRound(plan),
+    forbidden: plan.rounds[0] && plan.rounds[0].left ? [] : answers,  // "X vs Y" titles may name both sides
+    hook: isPop(format) ? pop.popHook(plan) : hookLine(plan),
+    cta: isPop(format) ? pop.popCta(plan) : 'Comment your score 👇',
+    formatTags: isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format],
+    roundsText: plan.rounds.map(r => (r.left ? `${r.left.name} vs ${r.right.name}` : r.question || (r.a ? `${r.a.name || r.a} or ${r.b.name || r.b}` : 'hidden answer')))
+      .join('; ').slice(0, 400),
+  };
+}
+
+/**
+ * The title template. The style (keyword / speed / challenge / fans / casual / ramp / llm, + styles
+ * the weekly step adds) is a bandit arm learned across ALL formats by core/metadata (one upload a day
+ * is too little to learn per format and template); inside the style the template rotates, never one
+ * of the format's last two. Falls back to a random fresh template.
+ */
+function pickTitleTemplate(plan, stats, history, llmAvailable) {
+  const options = titleOptions(plan);
+  const recentIds = history.uploads.filter(u => u.format === plan.format).slice(-2).map(u => u.titleTemplate);
+  try {
+    const t = metadata.pickQuizTitle({ plan, options, llmAvailable, recentIds, facts: quizFacts(plan) });
+    if (t) return t;
+  } catch (e) {
+    logger.warn(`Title style pick failed (${(e.message || '').slice(0, 80)}), using a random template`);
   }
-  return best.t;
+  const fresh = options.filter(t => !recentIds.includes(t.id));
+  const list = fresh.length ? fresh : options;
+  const t = list[Math.floor(Math.random() * list.length)];
+  return { ...t, style: t.style || metadata.quizStyleOf(t.id) };
+}
+
+/**
+ * Title, hashtags, description head, tags and comment from core/metadata. tpl: the template
+ * pickTitleTemplate chose (or a hit's); hitMeta: the hit's arms for a follow-up.
+ */
+async function quizMetadata(plan, tpl, { hitMeta = null, baseTags = [], comment = null } = {}) {
+  const facts = quizFacts(plan);
+  const options = titleOptions(plan);
+  const templates = options.map(t => ({ id: t.id, style: t.style || metadata.quizStyleOf(t.id), text: t.text(plan) }));
+  if (!tpl.llm && !templates.some(t => t.id === tpl.id) && typeof tpl.text === 'function') templates.push({ id: tpl.id, style: tpl.style, text: tpl.text(plan) });
+  const meta = await metadata.optimizeMetadata({
+    channel: 'quiz', contentType: plan.format,
+    facts: { ...facts, templates, templateId: tpl.llm ? null : tpl.id, baseTags, comment,
+      recentTemplateIds: loadHistory().uploads.filter(u => u.format === plan.format).slice(-2).map(u => u.titleTemplate) },
+    style: { ...(hitMeta || {}), titleStyle: tpl.style || metadata.quizStyleOf(tpl.id) },
+    llm: process.env.QUIZ_LLM !== 'off',
+  });
+  if (tpl.mode && meta.modes) meta.modes.titleStyle = tpl.mode;  // how pickTitleTemplate chose the style (thompson / explore)
+  return meta;
 }
 
 // Once a Gemini call fails or times out (quota, outage), skip it for the rest
@@ -312,20 +381,8 @@ function getGemini() {
   } catch { return null; }
 }
 
-async function llmTitle(gemini, plan, stats, history) {
-  const top = scoredQuizUploads(stats, history).sort((a, b) => b.stat.lscore - a.stat.lscore).slice(0, 5).map(u => `"${u.title}" (${u.stat.views} views)`);
-  const sys = 'You write titles for a geography quiz YouTube Shorts channel. Titles are short (max 60 characters), '
-    + 'a question or a challenge, honest (no false claims, no invented statistics), never reveal answers, and use at most one emoji.';
-  const rounds = plan.rounds.map((r, i) => `${i + 1}. ${r.left ? `${r.left.name} vs ${r.right.name}` : r.question || (r.a ? `${r.a} OR ${r.b}` : r.levelLabel || 'hidden answer')}`).join('\n');
-  const msg = `Quiz format: ${plan.format} (${plan.topic ? `topic: ${plan.topic}` : `theme: ${plan.theme}`})\nRounds:\n${rounds}\n`
-    + (top.length ? `Our best performing quiz titles so far:\n${top.join('\n')}\n` : '')
-    + 'Return JSON: {"title": "..."}';
-  const r = await withTimeout(gemini.chatJSON(sys, msg), 60000);
-  const t = r && typeof r.title === 'string' ? r.title.trim().replace(/^["']|["']$/g, '') : '';
-  const answers = plan.rounds.map(r => (typeof r.answer === 'string' ? r.answer.split(' (')[0] : '').toLowerCase()).filter(Boolean);
-  if (!t || t.length > 80 || answers.some(a => a.length > 3 && t.toLowerCase().includes(a) && !plan.rounds[0].left)) return null;
-  return t;
-}
+// (LLM-written titles: core/metadata writes them with its Shorts-packaging brief, validated: no answers,
+// the format's keyword, no invented statistics)
 
 async function translateMeta(gemini, title, hook) {
   const sys = 'Translate YouTube Shorts metadata naturally for native speakers. Keep emojis, keep it short and punchy.';
@@ -364,12 +421,13 @@ function answersBlock(plan) {
   }).join('\n');
 }
 
-function buildDescription(plan, hook) {
-  return `${hook} Comment your score 👇\n\n`
+/** opts.head / opts.hashtags: the metadata optimizer's first line and hashtag set (else the defaults). */
+function buildDescription(plan, hook, opts = {}) {
+  return `${opts.head || `${hook} Comment your score 👇`}\n\n`
     + '🌍 A new world quiz every day: flags, country shapes, capitals and the real size of countries.\n\n'
     + `Answers (no peeking!):\n${answersBlock(plan)}\n\n`
     + 'Data: Wikidata (CC0), Natural Earth, flagcdn.com\n'
-    + `${HASHTAGS[plan.format]}`;
+    + `${opts.hashtags || HASHTAGS[plan.format]}`;
 }
 
 function buildTags(plan) {
@@ -459,32 +517,44 @@ async function runWorldQuizPipeline(opts = {}) {
   if (res.voice === 0) logger.warn('No voice lines were generated (edge-tts unreachable) — the short uses music and SFX only');
 
   const gemini = getGemini();
-  const hitTpl = hit && TITLE_TEMPLATES[format].find(t => t.id === hit.titleTemplate && (!t.when || t.when(plan)));
-  const tpl = hitTpl || pickTitleTemplate(plan, stats, history, !!gemini);
-  let title = null;
-  let titleTemplate = tpl.id;
-  if (tpl.llm) {
-    title = await llmTitle(gemini, plan, stats, history).catch(() => null);
-    if (!title) {
-      const fallback = TITLE_TEMPLATES[format].filter(t => !t.when || t.when(plan));
-      const f = fallback[Math.floor(Math.random() * fallback.length)];
-      title = f.text(plan);
-      titleTemplate = f.id;
-    }
+  // a follow-up to a hit keeps the hit's title template (or its LLM-written style) and its other metadata arms
+  const hitTpl = hit && (TITLE_TEMPLATES[format].find(t => t.id === hit.titleTemplate && (!t.when || t.when(plan)))
+    || (hit.meta && hit.meta.titleStyle === 'llm' && process.env.QUIZ_LLM !== 'off' ? { id: `${format}-llm`, llm: true, style: 'llm' } : null));
+  const tpl = hitTpl || pickTitleTemplate(plan, stats, history, process.env.QUIZ_LLM !== 'off');
+  const comment = isPop(format) ? pop.popComment(plan) : format === 'bigger' || format === 'crowd'
+    ? 'Which one surprised you the most? 🤯 Tell me your score 👇'
+    : `What did you score out of ${plan.rounds.length}? 🏆 Which one got you? 👇`;
+  const baseTags = isPop(format) ? pop.popTags(plan) : buildTags(plan);
+  // title style, hashtag set, emoji set and description hook: core/metadata (learned across formats)
+  let meta = null;
+  try {
+    meta = await quizMetadata(plan, tpl, { hitMeta: hit && hit.meta, baseTags, comment });
+  } catch (e) {
+    logger.warn(`Metadata optimizer failed (${(e.message || '').slice(0, 100)}), using the template as is`);
+  }
+  let title;
+  let titleTemplate;
+  if (meta) {
+    title = meta.title;
+    titleTemplate = meta.titleSource === 'llm' ? `${format}-llm` : (meta.templateId || tpl.id);
   } else {
-    title = tpl.text(plan);
+    const t = tpl.llm || typeof tpl.text !== 'function' ? titleOptions(plan)[0] : tpl;
+    title = t.text(plan);
+    titleTemplate = t.id;
   }
   title = pop.clean(title).substring(0, 100);  // YouTube rejects < and > in titles and descriptions
-  logger.info(`Title [${titleTemplate}]: ${title}`);
+  logger.info(`Title [${titleTemplate}${meta ? `; ${Object.entries(meta.arms).filter(([k]) => k !== 'contentType')
+    .map(([k, v]) => `${k} ${v}${meta.modes[k] ? `/${meta.modes[k]}` : ''}`).join(', ')}; llm ${meta.llm}` : ''}]: ${title}`);
 
   const hook = isPop(format) ? pop.popHook(plan) : hookLine(plan);
-  const description = pop.clean(isPop(format) ? pop.popDescription(plan) : buildDescription(plan, hook));
+  const hashtags = (meta && meta.hashtagLine) || (isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format]);
+  const head = meta ? meta.descriptionHead : null;
+  const description = pop.clean(isPop(format) ? pop.popDescription(plan, { head, hashtags }) : buildDescription(plan, hook, { head, hashtags }));
   if (res.audioCheck) {
     logger.info(`Audio: narrator over clip ${res.audioCheck.overlapSec}s, all at ${res.audioCheck.clipGainUnderVoiceDb ?? '-'} dB; `
       + `unducked overlap ${res.audioCheck.overlapUnduckedSec}s; fetch ${JSON.stringify(res.fetch || {})}`);
   }
   const answersText = isPop(format) ? pop.popAnswers(plan) : answersBlock(plan);
-  const hashtags = isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format];
   let localizations = null;
   if (gemini && !geminiDown && process.env.QUIZ_TRANSLATE !== 'off') {
     const tr = await translateMeta(gemini, title, hook).catch(() => null);
@@ -502,13 +572,11 @@ async function runWorldQuizPipeline(opts = {}) {
     videoPath: res.path,
     title,
     description,
-    tags: isPop(format) ? pop.popTags(plan) : buildTags(plan),
+    tags: (meta && meta.tags) || baseTags,
     categoryId: isPop(format) ? '24' : '27',
     localizations,
     playlistTitle: isPop(format) ? pop.popPlaylist(plan) : PLAYLISTS[format],
-    comment: isPop(format) ? pop.popComment(plan) : format === 'bigger' || format === 'crowd'
-      ? 'Which one surprised you the most? 🤯 Tell me your score 👇'
-      : `What did you score out of ${plan.rounds.length}? 🏆 Which one got you? 👇`,
+    comment: (meta && meta.comment) || comment,
     country: 'Global',
     // what the renderer measured: loudness, fetch results, and every narrator / clip placement with the overlap check
     renderInfo: { duration: res.duration, renderSec: res.renderSec, totalSec: Math.round((Date.now() - t0) / 1000), lufs: res.lufs,
@@ -524,8 +592,10 @@ async function runWorldQuizPipeline(opts = {}) {
       keys: popKeys,
       answers: plan.rounds.map(label),
       duration: res.duration,
+      meta: meta ? meta.arms : undefined, metaChoice: meta ? meta.choice : undefined,
     },
   };
 }
 
-module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickLength, findHit, pickTitleTemplate, buildDescription, buildTags, TITLE_TEMPLATES, PLAYLISTS };
+module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickLength, findHit, pickTitleTemplate, titleOptions, quizFacts,
+  quizMetadata, buildDescription, buildTags, TITLE_TEMPLATES, PLAYLISTS };
