@@ -930,7 +930,7 @@ SUBS_RE = re.compile(r'(sub|subs|subbed|subtitles?|eng ?sub|english sub|lyrics?
 def prefilter(e, used, block, min_views, max_dur, src=None):
     if e['id'] in used:
         return 'used'
-    if e['vibe'] == 'edit' and SUBS_RE.search(e.get('title') or ''):
+    if SUBS_RE.search(e.get('title') or ''):  # every clip (tiles too): the owner wants no subtitles, ever
         return 'subtitles'
     if is_blocked(e, block):
         return 'blocked'

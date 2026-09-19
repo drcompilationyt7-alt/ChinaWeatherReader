@@ -106,6 +106,11 @@ class ClipFrames:
 
     def __init__(self, clip, w, h, workdir, fill=False, cx=0.5):
         x0, y0, x1, y1 = clip.get('content_box') or [0, 0, 1, 1]
+        # burned-in subtitles / credits: cut the text band off the bottom (owner: no subtitles, ever)
+        if 'text_band' not in clip:
+            clip['text_band'] = fx.text_band(clip['path'])
+        if clip['text_band']:
+            y1 = min(y1, 1 - clip['text_band'])
         trim = f'crop=iw*{x1 - x0:.4f}:ih*{y1 - y0:.4f}:iw*{x0:.4f}:ih*{y0:.4f},' if (x1 - x0) * (y1 - y0) < 0.97 else ''
         if fill:
             # the edit: fill the screen around where the action is, graded and sharpened like a 4K edit
