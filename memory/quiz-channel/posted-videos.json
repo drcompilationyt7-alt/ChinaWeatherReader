@@ -10,6 +10,17 @@
       "titleSource": "emoji-anime-ramp",
       "quizFormat": "emoji",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "country": "Global",
+      "postedAt": "2026-09-20T12:33:56.841Z",
+      "videoId": "S1mLvoUzF0s",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-llm",
+      "quizFormat": "trivia",
+      "quizTheme": "cities"
     }
   ]
 }

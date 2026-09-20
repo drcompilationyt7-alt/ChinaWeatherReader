@@ -16,6 +16,30 @@
     "emoji:jujutsu kaisen",
     "emoji:haikyu!!"
    ]
+  },
+  {
+   "videoId": "S1mLvoUzF0s",
+   "url": "https://www.youtube.com/watch?v=S1mLvoUzF0s",
+   "postedAt": "2026-09-20T12:33:56.755Z",
+   "publishAt": null,
+   "format": "trivia",
+   "theme": "cities",
+   "seed": 67488139,
+   "length": "quick",
+   "titleTemplate": "trivia-llm",
+   "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+   "answers": [
+    "trivia:which chinese city is famous for giant pandas?",
+    "trivia:the terracotta army is in which city?",
+    "trivia:west lake is in which city?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "llm",
+    "descHook": "keyword"
+   }
   }
  ]
 }
