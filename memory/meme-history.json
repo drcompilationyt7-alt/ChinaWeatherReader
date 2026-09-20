@@ -32,6 +32,50 @@
     "hook": "drop",
     "look": "cinematic"
    }
+  },
+  {
+   "videoId": "ULfXOR-LeQc",
+   "url": "https://www.youtube.com/watch?v=ULfXOR-LeQc",
+   "postedAt": "2026-09-20T08:14:05.229Z",
+   "publishAt": "2026-09-20T12:00:00.000Z",
+   "song": "love dive",
+   "theme": "kpop",
+   "emoji": "🗿,🔥",
+   "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+   "clipIds": [
+    "S37Um-3BgSw",
+    "SZc_JAPevIQ",
+    "F0B7HDiY-10",
+    "p5alBs-xsmg",
+    "Y8JFxS1HlDo",
+    "lvNOcspBdPU",
+    "FMvHOPcVXa0"
+   ],
+   "clipChannels": [
+    "1theK Originals - 원더케이 오리지널",
+    "MBCkpop",
+    "STARSHIP",
+    "idol studio",
+    "김교차",
+    "프리티타"
+   ],
+   "clipSource": "IVE",
+   "settings": {
+    "drop": 18,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "llm-line"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "llm-line"
+   }
   }
  ]
 }
