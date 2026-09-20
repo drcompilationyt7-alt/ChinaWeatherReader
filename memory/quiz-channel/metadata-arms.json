@@ -1,0 +1,120 @@
+{
+ "version": 1,
+ "pools": {
+  "quiz/quiz": {
+   "arms": {},
+   "posterior": {
+    "week": "2026-W38",
+    "n": 0,
+    "dims": {
+     "titleStyle": {
+      "keyword": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "speed": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "challenge": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "fans": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "casual": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ramp": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "hashtagSet": {
+      "format3": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "two": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "title-tag": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "emojiSet": {
+      "template": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "fire": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "topic": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "none": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "descHook": {
+      "challenge": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "keyword": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "no-peek": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     }
+    }
+   }
+  }
+ },
+ "log": [
+  {
+   "week": "2026-W38",
+   "pool": "quiz/quiz",
+   "at": "2026-09-20T07:15:50.668Z",
+   "n": 0,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "0 scored uploads: proposals start at 5"
+  }
+ ],
+ "updatedAt": "2026-09-20T07:15:50.668Z"
+}

@@ -1,0 +1,152 @@
+{
+ "version": 1,
+ "pools": {
+  "meme/stem-edit": {
+   "arms": {},
+   "posterior": {
+    "week": "2026-W38",
+    "n": 0,
+    "dims": {
+     "titleStyle": {
+      "kw-emoji": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-source": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-suggest": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-hook": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-free": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "ovStyle": {
+      "ov-kw": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-layers": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-drop": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-question": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-llm": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "hashtagSet": {
+      "niche3": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "title-source": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "edit-community": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "minimal": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "emojiSet": {
+      "fire": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "music": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "spark": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "moai": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "descHook": {
+      "layers": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "drop": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "question": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "stems": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-line": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     }
+    }
+   }
+  }
+ },
+ "log": [
+  {
+   "week": "2026-W38",
+   "pool": "meme/stem-edit",
+   "at": "2026-09-20T07:15:50.563Z",
+   "n": 0,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "0 scored uploads: proposals start at 5"
+  }
+ ],
+ "updatedAt": "2026-09-20T07:15:50.563Z"
+}
