@@ -1,10 +1,42 @@
 {
-  "updatedAt": "2026-09-20T12:29:11.648Z",
+  "updatedAt": "2026-09-21T08:03:27.702Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
     "totalViews": 0,
-    "totalVideos": 1
+    "totalVideos": 2
   },
-  "videos": []
+  "videos": [
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "publishedAt": "2026-09-19T12:00:03Z",
+      "views": 699,
+      "likes": 9,
+      "comments": 0,
+      "durationSec": 26,
+      "regionBlocked": 0,
+      "analytics": {
+        "views": 1,
+        "engagedViews": 1,
+        "minutesWatched": 0,
+        "avgViewDurationSec": 25,
+        "avgViewPct": 98.85,
+        "shares": 0,
+        "subscribersGained": 0
+      },
+      "country": "Global",
+      "sourceChannel": null,
+      "category": "quiz-emoji",
+      "eggs": null,
+      "ageDays": 1.8,
+      "velocity": 380.8,
+      "engagement": 0.026,
+      "score": 482.6,
+      "lscore": 6.181,
+      "reward": 0,
+      "rewardFinal": false,
+      "v7": null
+    }
+  ]
 }

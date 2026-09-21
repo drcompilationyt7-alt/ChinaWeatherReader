@@ -40,6 +40,31 @@
     "titleStyle": "llm",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "6UEpONYClmg",
+   "url": "https://www.youtube.com/watch?v=6UEpONYClmg",
+   "postedAt": "2026-09-21T08:09:59.500Z",
+   "publishAt": "2026-09-21T12:00:00.000Z",
+   "format": "duel",
+   "theme": "anime",
+   "seed": 293430107,
+   "length": "standard",
+   "titleTemplate": "duel-pick",
+   "title": "Who Would You Pick? Anime Edition ⚔️",
+   "answers": [
+    "duel:13-14",
+    "duel:46496-125659",
+    "duel:35252-89028",
+    "duel:89334-89616"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "template",
+    "hashtagSet": "two",
+    "titleStyle": "keyword",
+    "descHook": "challenge"
+   }
   }
  ]
 }

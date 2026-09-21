@@ -21,6 +21,17 @@
       "titleSource": "trivia-llm",
       "quizFormat": "trivia",
       "quizTheme": "cities"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=6UEpONYClmg",
+      "title": "Who Would You Pick? Anime Edition ⚔️",
+      "country": "Global",
+      "postedAt": "2026-09-21T08:09:59.583Z",
+      "videoId": "6UEpONYClmg",
+      "category": "quiz-duel",
+      "titleSource": "duel-pick",
+      "quizFormat": "duel",
+      "quizTheme": "anime"
     }
   ]
 }

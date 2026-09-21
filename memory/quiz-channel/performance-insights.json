@@ -1,23 +1,58 @@
 {
-  "updatedAt": "2026-09-20T12:29:11.648Z",
+  "updatedAt": "2026-09-21T08:03:27.702Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
     "totalViews": 0,
-    "totalVideos": 1
+    "totalVideos": 2
   },
-  "sampleSize": 0,
+  "sampleSize": 1,
   "reliable": false,
-  "globalMeanScore": 0,
-  "typicalScore": 0,
-  "topTitles": [],
-  "bottomTitles": [],
+  "globalMeanScore": 482.6,
+  "typicalScore": 482.5,
+  "topTitles": [
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 699,
+      "score": 482.6,
+      "country": "Global",
+      "ageDays": 1.8
+    }
+  ],
+  "bottomTitles": [
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 699,
+      "score": 482.6,
+      "country": "Global",
+      "ageDays": 1.8
+    }
+  ],
   "titlePatterns": [],
-  "countries": {},
+  "countries": {
+    "Global": {
+      "n": 1,
+      "meanScore": 482.6,
+      "weight": 1
+    }
+  },
   "channels": {},
-  "categories": {},
+  "categories": {
+    "quiz-emoji": {
+      "n": 1,
+      "meanScore": 482.6,
+      "weight": 1
+    }
+  },
   "eggs": {},
-  "history": [],
+  "history": [
+    {
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "score": 6.181
+    }
+  ],
   "promptSummary": "",
-  "summaryLine": "No public shorts with stats yet"
+  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (699 views, 482.6/day) — typical short 482.5/day over 1 shorts"
 }
