@@ -76,6 +76,49 @@
     "ovStyle": "ov-drop",
     "descHook": "llm-line"
    }
+  },
+  {
+   "videoId": "-3pKrM_MiHE",
+   "url": "https://www.youtube.com/watch?v=-3pKrM_MiHE",
+   "postedAt": "2026-09-21T08:25:16.586Z",
+   "publishAt": "2026-09-21T12:00:00.000Z",
+   "song": "clattanoia",
+   "theme": "anime",
+   "emoji": "🔥,🔥",
+   "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+   "clipIds": [
+    "_MKFTVPOl6Y",
+    "V3aAsRPFUTs",
+    "1OfI8YYHls4",
+    "jdeuRYMgo1o",
+    "gme1ffqskew",
+    "t-txKm7Qa2A"
+   ],
+   "clipChannels": [
+    "BrainWasheD",
+    "Crunchyroll",
+    "KADOKAWAanime",
+    "Neobrane",
+    "NonEssential Nonsense",
+    "SenorKimchi"
+   ],
+   "clipSource": "Overlord",
+   "settings": {
+    "drop": 10,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "stems"
+   },
+   "onVideoTitle": "clattanoia acapella",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "niche3",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-kw",
+    "descHook": "stems"
+   }
   }
  ]
 }

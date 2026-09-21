@@ -1,197 +1,58 @@
 {
-  "updatedAt": "2026-09-20T07:58:10.495Z",
+  "updatedAt": "2026-09-21T08:14:39.433Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 3046,
-    "totalVideos": 12
+    "totalViews": 3034,
+    "totalVideos": 2
   },
-  "sampleSize": 10,
-  "reliable": true,
-  "globalMeanScore": 1.2,
-  "typicalScore": 1.1,
+  "sampleSize": 1,
+  "reliable": false,
+  "globalMeanScore": 13.7,
+  "typicalScore": 13.7,
   "topTitles": [
     {
-      "videoId": "JkS6OVIv230",
-      "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
-      "views": 32,
-      "score": 3.4,
-      "country": null,
-      "ageDays": 116.6
-    },
-    {
-      "videoId": "h_4UJZY3oIs",
-      "title": "United States Travel Short 🔥",
-      "views": 21,
-      "score": 2.4,
-      "country": null,
-      "ageDays": 112.5
-    },
-    {
-      "videoId": "Hy18DvbOYus",
-      "title": "Me Too, Thank You for Watching",
-      "views": 20,
-      "score": 1.2,
-      "country": null,
-      "ageDays": 117.6
-    },
-    {
-      "videoId": "hjDYdyOIVRc",
-      "title": "Amazing Moments from Nigeria You Need to See",
-      "views": 20,
-      "score": 1.1,
-      "country": null,
-      "ageDays": 114.6
-    },
-    {
-      "videoId": "eT-MHfxQn7M",
-      "title": "Explore Chinas Moments: Check Out This Clip!",
-      "views": 10,
-      "score": 1,
-      "country": null,
-      "ageDays": 115.3
-    },
-    {
-      "videoId": "8iv14JJisCc",
-      "title": "Korean Vibes: Life Turns & Jala Beats 🔥",
-      "views": 22,
-      "score": 0.9,
-      "country": null,
-      "ageDays": 117.6
-    },
-    {
-      "videoId": "O88vdNEdRR8",
-      "title": "Japan is living in 3024 🇯🇵🤯",
-      "views": 17,
-      "score": 0.7,
-      "country": null,
-      "ageDays": 111.4
-    },
-    {
-      "videoId": "31jQj2vUqAA",
-      "title": "Three Things Anime Made Famous in Japan 🔥",
-      "views": 18,
-      "score": 0.7,
-      "country": null,
-      "ageDays": 111.5
-    },
-    {
-      "videoId": "KNxkjkBzrDA",
-      "title": "Explore Life in India 🇮🇳 [Clip]",
-      "views": 9,
-      "score": 0.5,
-      "country": null,
-      "ageDays": 115.3
-    },
-    {
-      "videoId": "1Ao8tItzPY4",
-      "title": "$55,000,000 Mega Yacht In Thailand #shorts",
+      "videoId": "V3R9YEsOkxo",
+      "title": "rise acapella 🥲🥲",
       "views": 15,
-      "score": 0.5,
-      "country": null,
-      "ageDays": 117.6
+      "score": 13.7,
+      "country": "Global",
+      "ageDays": 1.8
     }
   ],
   "bottomTitles": [
     {
-      "videoId": "1Ao8tItzPY4",
-      "title": "$55,000,000 Mega Yacht In Thailand #shorts",
+      "videoId": "V3R9YEsOkxo",
+      "title": "rise acapella 🥲🥲",
       "views": 15,
-      "score": 0.5,
-      "country": null,
-      "ageDays": 117.6
-    },
-    {
-      "videoId": "KNxkjkBzrDA",
-      "title": "Explore Life in India 🇮🇳 [Clip]",
-      "views": 9,
-      "score": 0.5,
-      "country": null,
-      "ageDays": 115.3
-    },
-    {
-      "videoId": "31jQj2vUqAA",
-      "title": "Three Things Anime Made Famous in Japan 🔥",
-      "views": 18,
-      "score": 0.7,
-      "country": null,
-      "ageDays": 111.5
-    },
-    {
-      "videoId": "O88vdNEdRR8",
-      "title": "Japan is living in 3024 🇯🇵🤯",
-      "views": 17,
-      "score": 0.7,
-      "country": null,
-      "ageDays": 111.4
-    },
-    {
-      "videoId": "8iv14JJisCc",
-      "title": "Korean Vibes: Life Turns & Jala Beats 🔥",
-      "views": 22,
-      "score": 0.9,
-      "country": null,
-      "ageDays": 117.6
+      "score": 13.7,
+      "country": "Global",
+      "ageDays": 1.8
     }
   ],
-  "titlePatterns": [
-    {
-      "name": "short (<= 40 chars)",
-      "n": 5,
-      "lift": 0.94
-    },
-    {
-      "name": "has emoji",
-      "n": 5,
-      "lift": 0.85
+  "titlePatterns": [],
+  "countries": {
+    "Global": {
+      "n": 1,
+      "meanScore": 13.7,
+      "weight": 1
     }
-  ],
-  "countries": {},
+  },
   "channels": {},
-  "categories": {},
+  "categories": {
+    "meme-anime": {
+      "n": 1,
+      "meanScore": 13.7,
+      "weight": 1
+    }
+  },
   "eggs": {},
   "history": [
     {
-      "title": "Chinese Calligraphy Beauty: Captivating Stroke by Stroke",
-      "score": 1.488
-    },
-    {
-      "title": "United States Travel Short 🔥",
-      "score": 1.228
-    },
-    {
-      "title": "Me Too, Thank You for Watching",
-      "score": 0.767
-    },
-    {
-      "title": "Amazing Moments from Nigeria You Need to See",
-      "score": 0.744
-    },
-    {
-      "title": "Explore Chinas Moments: Check Out This Clip!",
-      "score": 0.699
-    },
-    {
-      "title": "Korean Vibes: Life Turns & Jala Beats 🔥",
-      "score": 0.624
-    },
-    {
-      "title": "Japan is living in 3024 🇯🇵🤯",
-      "score": 0.521
-    },
-    {
-      "title": "Three Things Anime Made Famous in Japan 🔥",
-      "score": 0.507
-    },
-    {
-      "title": "Explore Life in India 🇮🇳 [Clip]",
-      "score": 0.378
-    },
-    {
-      "title": "$55,000,000 Mega Yacht In Thailand #shorts",
-      "score": 0.401
+      "title": "rise acapella 🥲🥲",
+      "score": 2.686
     }
   ],
-  "promptSummary": "Based on 10 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 1.1/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Chinese Calligraphy Beauty: Captivating Stroke by Stroke\" (32 views, unknown)\n  - \"United States Travel Short 🔥\" (21 views, unknown)\n  - \"Me Too, Thank You for Watching\" (20 views, unknown)\n  - \"Amazing Moments from Nigeria You Need to See\" (20 views, unknown)\n  - \"Explore Chinas Moments: Check Out This Clip!\" (10 views, unknown)\n  - \"Korean Vibes: Life Turns & Jala Beats 🔥\" (22 views, unknown)\nTitles that performed WORST for us:\n  - \"$55,000,000 Mega Yacht In Thailand #shorts\" (15 views)\n  - \"Explore Life in India 🇮🇳 [Clip]\" (9 views)\n  - \"Three Things Anime Made Famous in Japan 🔥\" (18 views)\nPatterns that UNDER-perform: has emoji (x0.85)",
-  "summaryLine": "Best recent: \"Chinese Calligraphy Beauty: Captivating Stroke by Stroke\" (32 views, 3.4/day) — typical short 1.1/day over 10 shorts"
+  "promptSummary": "",
+  "summaryLine": "Best recent: \"rise acapella 🥲🥲\" (15 views, 13.7/day) — typical short 13.7/day over 1 shorts"
 }
