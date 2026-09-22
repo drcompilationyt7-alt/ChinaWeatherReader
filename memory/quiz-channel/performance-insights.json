@@ -1,40 +1,56 @@
 {
-  "updatedAt": "2026-09-21T08:03:27.702Z",
+  "updatedAt": "2026-09-22T07:48:59.882Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 0,
+    "totalViews": 961,
     "totalVideos": 2
   },
-  "sampleSize": 1,
+  "sampleSize": 2,
   "reliable": false,
-  "globalMeanScore": 482.6,
-  "typicalScore": 482.5,
+  "globalMeanScore": 167.5,
+  "typicalScore": 158.5,
   "topTitles": [
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 699,
-      "score": 482.6,
+      "views": 734,
+      "score": 221.8,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "views": 202,
+      "score": 113.2,
       "country": "Global",
       "ageDays": 1.8
     }
   ],
   "bottomTitles": [
     {
-      "videoId": "IE80eNcEv04",
-      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 699,
-      "score": 482.6,
+      "videoId": "S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "views": 202,
+      "score": 113.2,
       "country": "Global",
       "ageDays": 1.8
+    },
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 734,
+      "score": 221.8,
+      "country": "Global",
+      "ageDays": 2.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 1,
-      "meanScore": 482.6,
+      "n": 2,
+      "meanScore": 167.5,
       "weight": 1
     }
   },
@@ -42,7 +58,12 @@
   "categories": {
     "quiz-emoji": {
       "n": 1,
-      "meanScore": 482.6,
+      "meanScore": 221.8,
+      "weight": 1
+    },
+    "quiz-trivia": {
+      "n": 1,
+      "meanScore": 113.2,
       "weight": 1
     }
   },
@@ -50,9 +71,13 @@
   "history": [
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 6.181
+      "score": 5.406
+    },
+    {
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "score": 4.738
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (699 views, 482.6/day) — typical short 482.5/day over 1 shorts"
+  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (734 views, 221.8/day) — typical short 158.5/day over 2 shorts"
 }

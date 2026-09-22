@@ -65,6 +65,31 @@
     "titleStyle": "keyword",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "X0RTX6oQ1IE",
+   "url": "https://www.youtube.com/watch?v=X0RTX6oQ1IE",
+   "postedAt": "2026-09-22T07:56:34.589Z",
+   "publishAt": "2026-09-22T12:00:00.000Z",
+   "format": "wyr",
+   "theme": "cities",
+   "seed": 742850720,
+   "length": "standard",
+   "titleTemplate": "wyr-casual",
+   "title": "would you rather (cities edition) 🔥✌️",
+   "answers": [
+    "wyr:live in shanghai|live in hong kong",
+    "wyr:live in korea|live in china",
+    "wyr:street food in bangkok|night market in osaka",
+    "wyr:live in china|live in japan"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "template",
+    "hashtagSet": "two",
+    "titleStyle": "casual",
+    "descHook": "keyword"
+   }
   }
  ]
 }
