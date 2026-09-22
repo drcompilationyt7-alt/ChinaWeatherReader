@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=2IVsp8kgsZ8",
-      "title": "Celebrities STUNNED by Adele! 😱🎤",
-      "country": "United Kingdom",
-      "postedAt": "2026-08-22T09:59:32.227Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=AvHMiuSVCwM",
-      "title": "He said NO chance... but 💕🇯🇵",
-      "country": "Japan",
-      "postedAt": "2026-08-23T06:45:51.166Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=kBwG24H7DI0",
       "title": "Where is Miguel #anime #shorts #jjk",
       "country": "Kenya",
@@ -435,6 +423,15 @@
       "videoId": "-3pKrM_MiHE",
       "category": "meme-anime",
       "titleSource": "clattanoia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=i6wFQ4hxE48",
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "country": "Global",
+      "postedAt": "2026-09-22T08:12:16.144Z",
+      "videoId": "i6wFQ4hxE48",
+      "category": "meme-anime",
+      "titleSource": "redo"
     }
   ]
 }

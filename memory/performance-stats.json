@@ -1,27 +1,50 @@
 {
-  "updatedAt": "2026-09-21T08:14:39.433Z",
+  "updatedAt": "2026-09-22T07:59:47.389Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 3034,
-    "totalVideos": 2
+    "totalViews": 31,
+    "totalVideos": 3
   },
   "videos": [
+    {
+      "videoId": "ULfXOR-LeQc",
+      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+      "publishedAt": "2026-09-20T12:00:38Z",
+      "views": 13,
+      "likes": 3,
+      "comments": 0,
+      "durationSec": 40,
+      "regionBlocked": 0,
+      "analytics": null,
+      "country": "Global",
+      "sourceChannel": null,
+      "category": "meme-kpop",
+      "eggs": null,
+      "ageDays": 1.8,
+      "velocity": 7.1,
+      "engagement": 0.12,
+      "score": 7.9,
+      "lscore": 2.191,
+      "reward": 0,
+      "rewardFinal": false,
+      "v7": null
+    },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "publishedAt": "2026-09-19T12:00:07Z",
-      "views": 15,
+      "views": 18,
       "likes": 3,
       "comments": 0,
       "durationSec": 36,
       "regionBlocked": 0,
       "analytics": {
-        "views": 1,
-        "engagedViews": 1,
-        "minutesWatched": 1,
-        "avgViewDurationSec": 116,
-        "avgViewPct": 322.27,
+        "views": 12,
+        "engagedViews": 8,
+        "minutesWatched": 4,
+        "avgViewDurationSec": 30,
+        "avgViewPct": 85.18,
         "shares": 0,
         "subscribersGained": 0
       },
@@ -29,14 +52,14 @@
       "sourceChannel": null,
       "category": "meme-anime",
       "eggs": null,
-      "ageDays": 1.8,
-      "velocity": 8.1,
+      "ageDays": 2.8,
+      "velocity": 6.4,
       "engagement": 0.12,
-      "score": 13.7,
-      "lscore": 2.686,
+      "score": 7.6,
+      "lscore": 2.149,
       "reward": 0,
       "rewardFinal": false,
-      "v7": null
+      "v7": 21
     }
   ]
 }

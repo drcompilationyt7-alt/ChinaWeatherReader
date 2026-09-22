@@ -119,6 +119,50 @@
     "ovStyle": "ov-kw",
     "descHook": "stems"
    }
+  },
+  {
+   "videoId": "i6wFQ4hxE48",
+   "url": "https://www.youtube.com/watch?v=i6wFQ4hxE48",
+   "postedAt": "2026-09-22T08:12:16.141Z",
+   "publishAt": "2026-09-22T12:00:00.000Z",
+   "song": "redo",
+   "theme": "anime",
+   "emoji": "🎶,🎧",
+   "title": "redo acapella but the drums kick in 🎶🎧",
+   "clipIds": [
+    "4YE1FSC5KH0",
+    "oYW-iYeDvSA",
+    "OH420Emc6qM",
+    "od-e1Z3sPCE",
+    "wKvBpv2idRc",
+    "Jo5HjzgoiZA",
+    "QPsY1VHgyIM"
+   ],
+   "clipChannels": [
+    "Bruh Clan ++",
+    "Chairman",
+    "KADOKAWAanime",
+    "Kirito's Clip Vault",
+    "eren yeager",
+    "「Re:ゼロから始める異世界生活」チャンネル【公式】"
+   ],
+   "clipSource": "Re:Zero",
+   "settings": {
+    "drop": 18,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "layers"
+   },
+   "onVideoTitle": "layers hit hard",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-llm",
+    "descHook": "layers"
+   }
   }
  ]
 }

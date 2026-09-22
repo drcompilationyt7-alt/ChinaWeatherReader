@@ -1,31 +1,47 @@
 {
-  "updatedAt": "2026-09-21T08:14:39.433Z",
+  "updatedAt": "2026-09-22T07:59:47.389Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 3034,
-    "totalVideos": 2
+    "totalViews": 31,
+    "totalVideos": 3
   },
-  "sampleSize": 1,
+  "sampleSize": 2,
   "reliable": false,
-  "globalMeanScore": 13.7,
-  "typicalScore": 13.7,
+  "globalMeanScore": 7.8,
+  "typicalScore": 7.8,
   "topTitles": [
+    {
+      "videoId": "ULfXOR-LeQc",
+      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+      "views": 13,
+      "score": 7.9,
+      "country": "Global",
+      "ageDays": 1.8
+    },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
-      "views": 15,
-      "score": 13.7,
+      "views": 18,
+      "score": 7.6,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.8
     }
   ],
   "bottomTitles": [
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
-      "views": 15,
-      "score": 13.7,
+      "views": 18,
+      "score": 7.6,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "ULfXOR-LeQc",
+      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+      "views": 13,
+      "score": 7.9,
       "country": "Global",
       "ageDays": 1.8
     }
@@ -33,26 +49,35 @@
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 1,
-      "meanScore": 13.7,
+      "n": 2,
+      "meanScore": 7.8,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
+    "meme-kpop": {
+      "n": 1,
+      "meanScore": 7.9,
+      "weight": 1
+    },
     "meme-anime": {
       "n": 1,
-      "meanScore": 13.7,
+      "meanScore": 7.6,
       "weight": 1
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+      "score": 2.191
+    },
+    {
       "title": "rise acapella 🥲🥲",
-      "score": 2.686
+      "score": 2.149
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"rise acapella 🥲🥲\" (15 views, 13.7/day) — typical short 13.7/day over 1 shorts"
+  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (13 views, 7.9/day) — typical short 7.8/day over 2 shorts"
 }
