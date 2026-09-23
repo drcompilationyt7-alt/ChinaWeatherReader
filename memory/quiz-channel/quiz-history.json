@@ -90,6 +90,30 @@
     "titleStyle": "casual",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "T1hGqwqU0rU",
+   "url": "https://www.youtube.com/watch?v=T1hGqwqU0rU",
+   "postedAt": "2026-09-23T07:55:10.555Z",
+   "publishAt": "2026-09-23T12:00:00.000Z",
+   "format": "cityphoto",
+   "theme": "asia",
+   "seed": 250326856,
+   "length": "quick",
+   "titleTemplate": "cphoto-travel",
+   "title": "Only Travel Nerds Get 3/3 ✈️",
+   "answers": [
+    "cityphoto:CN:beijing",
+    "cityphoto:JP:hiroshima",
+    "cityphoto:KR:gyeongju"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "template",
+    "hashtagSet": "two",
+    "titleStyle": "fans",
+    "descHook": "keyword"
+   }
   }
  ]
 }

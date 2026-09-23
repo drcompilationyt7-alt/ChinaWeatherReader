@@ -1,56 +1,72 @@
 {
-  "updatedAt": "2026-09-22T07:48:59.882Z",
+  "updatedAt": "2026-09-23T07:51:27.382Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 961,
-    "totalVideos": 2
+    "totalViews": 1015,
+    "totalVideos": 3
   },
-  "sampleSize": 2,
+  "sampleSize": 3,
   "reliable": false,
-  "globalMeanScore": 167.5,
-  "typicalScore": 158.5,
+  "globalMeanScore": 86,
+  "typicalScore": 66.3,
   "topTitles": [
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 734,
-      "score": 221.8,
+      "views": 736,
+      "score": 176.6,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 202,
-      "score": 113.2,
+      "views": 212,
+      "score": 45.3,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "6UEpONYClmg",
+      "title": "Who Would You Pick? Anime Edition ⚔️",
+      "views": 59,
+      "score": 36.1,
       "country": "Global",
       "ageDays": 1.8
     }
   ],
   "bottomTitles": [
     {
-      "videoId": "S1mLvoUzF0s",
-      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 202,
-      "score": 113.2,
+      "videoId": "6UEpONYClmg",
+      "title": "Who Would You Pick? Anime Edition ⚔️",
+      "views": 59,
+      "score": 36.1,
       "country": "Global",
       "ageDays": 1.8
     },
     {
-      "videoId": "IE80eNcEv04",
-      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 734,
-      "score": 221.8,
+      "videoId": "S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "views": 212,
+      "score": 45.3,
       "country": "Global",
       "ageDays": 2.8
+    },
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 736,
+      "score": 176.6,
+      "country": "Global",
+      "ageDays": 3.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 2,
-      "meanScore": 167.5,
+      "n": 3,
+      "meanScore": 86,
       "weight": 1
     }
   },
@@ -58,12 +74,17 @@
   "categories": {
     "quiz-emoji": {
       "n": 1,
-      "meanScore": 221.8,
+      "meanScore": 176.6,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 113.2,
+      "meanScore": 45.3,
+      "weight": 1
+    },
+    "quiz-duel": {
+      "n": 1,
+      "meanScore": 36.1,
       "weight": 1
     }
   },
@@ -71,13 +92,17 @@
   "history": [
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 5.406
+      "score": 5.179
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 4.738
+      "score": 3.835
+    },
+    {
+      "title": "Who Would You Pick? Anime Edition ⚔️",
+      "score": 3.614
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (734 views, 221.8/day) — typical short 158.5/day over 2 shorts"
+  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (736 views, 176.6/day) — typical short 66.3/day over 3 shorts"
 }

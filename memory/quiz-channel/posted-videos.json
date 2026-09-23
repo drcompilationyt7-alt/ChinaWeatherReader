@@ -43,6 +43,17 @@
       "titleSource": "wyr-casual",
       "quizFormat": "wyr",
       "quizTheme": "cities"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=T1hGqwqU0rU",
+      "title": "Only Travel Nerds Get 3/3 ✈️",
+      "country": "Global",
+      "postedAt": "2026-09-23T07:55:10.638Z",
+      "videoId": "T1hGqwqU0rU",
+      "category": "quiz-cityphoto",
+      "titleSource": "cphoto-travel",
+      "quizFormat": "cityphoto",
+      "quizTheme": "asia"
     }
   ]
 }
