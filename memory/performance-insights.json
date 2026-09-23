@@ -1,21 +1,29 @@
 {
-  "updatedAt": "2026-09-22T07:59:47.389Z",
+  "updatedAt": "2026-09-23T08:00:31.529Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 31,
-    "totalVideos": 3
+    "totalViews": 41,
+    "totalVideos": 4
   },
-  "sampleSize": 2,
+  "sampleSize": 3,
   "reliable": false,
-  "globalMeanScore": 7.8,
-  "typicalScore": 7.8,
+  "globalMeanScore": 4.6,
+  "typicalScore": 4.5,
   "topTitles": [
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "views": 13,
-      "score": 7.9,
+      "views": 16,
+      "score": 5.9,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "-3pKrM_MiHE",
+      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+      "views": 8,
+      "score": 4.5,
       "country": "Global",
       "ageDays": 1.8
     },
@@ -23,9 +31,9 @@
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 18,
-      "score": 7.6,
+      "score": 3.3,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     }
   ],
   "bottomTitles": [
@@ -33,24 +41,32 @@
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 18,
-      "score": 7.6,
+      "score": 3.3,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
+    },
+    {
+      "videoId": "-3pKrM_MiHE",
+      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+      "views": 8,
+      "score": 4.5,
+      "country": "Global",
+      "ageDays": 1.8
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "views": 13,
-      "score": 7.9,
+      "views": 16,
+      "score": 5.9,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 2,
-      "meanScore": 7.8,
+      "n": 3,
+      "meanScore": 4.6,
       "weight": 1
     }
   },
@@ -58,12 +74,12 @@
   "categories": {
     "meme-kpop": {
       "n": 1,
-      "meanScore": 7.9,
+      "meanScore": 5.9,
       "weight": 1
     },
     "meme-anime": {
-      "n": 1,
-      "meanScore": 7.6,
+      "n": 2,
+      "meanScore": 3.9,
       "weight": 1
     }
   },
@@ -71,13 +87,17 @@
   "history": [
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "score": 2.191
+      "score": 1.936
+    },
+    {
+      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+      "score": 1.712
     },
     {
       "title": "rise acapella 🥲🥲",
-      "score": 2.149
+      "score": 1.459
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (13 views, 7.9/day) — typical short 7.8/day over 2 shorts"
+  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (16 views, 5.9/day) — typical short 4.5/day over 3 shorts"
 }
