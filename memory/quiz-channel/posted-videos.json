@@ -54,6 +54,17 @@
       "titleSource": "cphoto-travel",
       "quizFormat": "cityphoto",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=_NXBxpZnYS8",
+      "title": "who would you pick anime: teacher roommate fight ⚔️",
+      "country": "Global",
+      "postedAt": "2026-09-24T07:48:11.603Z",
+      "videoId": "_NXBxpZnYS8",
+      "category": "quiz-duel",
+      "titleSource": "duel-llm",
+      "quizFormat": "duel",
+      "quizTheme": "anime"
     }
   ]
 }

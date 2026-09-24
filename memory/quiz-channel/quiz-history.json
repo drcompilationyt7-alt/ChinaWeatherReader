@@ -114,6 +114,30 @@
     "titleStyle": "fans",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "_NXBxpZnYS8",
+   "url": "https://www.youtube.com/watch?v=_NXBxpZnYS8",
+   "postedAt": "2026-09-24T07:48:11.517Z",
+   "publishAt": "2026-09-24T12:00:00.000Z",
+   "format": "duel",
+   "theme": "anime",
+   "seed": 5522761,
+   "length": "quick",
+   "titleTemplate": "duel-llm",
+   "title": "who would you pick anime: teacher roommate fight ⚔️",
+   "answers": [
+    "duel:46496-127212",
+    "duel:61-13767",
+    "duel:34470-35252"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "two",
+    "titleStyle": "llm",
+    "descHook": "challenge"
+   }
   }
  ]
 }

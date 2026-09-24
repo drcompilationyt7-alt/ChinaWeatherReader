@@ -1,72 +1,88 @@
 {
-  "updatedAt": "2026-09-23T07:51:27.382Z",
+  "updatedAt": "2026-09-24T07:41:48.894Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 1015,
-    "totalVideos": 3
+    "totalViews": 1154,
+    "totalVideos": 5
   },
-  "sampleSize": 3,
+  "sampleSize": 4,
   "reliable": false,
-  "globalMeanScore": 86,
-  "typicalScore": 66.3,
+  "globalMeanScore": 71.7,
+  "typicalScore": 55.3,
   "topTitles": [
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 736,
-      "score": 176.6,
+      "views": 737,
+      "score": 139.9,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.8
+    },
+    {
+      "videoId": "X0RTX6oQ1IE",
+      "title": "would you rather (cities edition) 🔥✌️",
+      "views": 159,
+      "score": 92.3,
+      "country": "Global",
+      "ageDays": 1.8
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 212,
-      "score": 45.3,
+      "views": 211,
+      "score": 33.3,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "views": 59,
-      "score": 36.1,
+      "views": 61,
+      "score": 21.3,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.8
     }
   ],
   "bottomTitles": [
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "views": 59,
-      "score": 36.1,
-      "country": "Global",
-      "ageDays": 1.8
-    },
-    {
-      "videoId": "S1mLvoUzF0s",
-      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 212,
-      "score": 45.3,
+      "views": 61,
+      "score": 21.3,
       "country": "Global",
       "ageDays": 2.8
     },
     {
-      "videoId": "IE80eNcEv04",
-      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 736,
-      "score": 176.6,
+      "videoId": "S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "views": 211,
+      "score": 33.3,
       "country": "Global",
       "ageDays": 3.8
+    },
+    {
+      "videoId": "X0RTX6oQ1IE",
+      "title": "would you rather (cities edition) 🔥✌️",
+      "views": 159,
+      "score": 92.3,
+      "country": "Global",
+      "ageDays": 1.8
+    },
+    {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 737,
+      "score": 139.9,
+      "country": "Global",
+      "ageDays": 4.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 3,
-      "meanScore": 86,
+      "n": 4,
+      "meanScore": 71.7,
       "weight": 1
     }
   },
@@ -74,17 +90,22 @@
   "categories": {
     "quiz-emoji": {
       "n": 1,
-      "meanScore": 176.6,
+      "meanScore": 139.9,
+      "weight": 1
+    },
+    "quiz-wyr": {
+      "n": 1,
+      "meanScore": 92.3,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 45.3,
+      "meanScore": 33.3,
       "weight": 1
     },
     "quiz-duel": {
       "n": 1,
-      "meanScore": 36.1,
+      "meanScore": 21.3,
       "weight": 1
     }
   },
@@ -92,17 +113,21 @@
   "history": [
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 5.179
+      "score": 4.948
+    },
+    {
+      "title": "would you rather (cities edition) 🔥✌️",
+      "score": 4.536
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 3.835
+      "score": 3.535
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "score": 3.614
+      "score": 3.103
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (736 views, 176.6/day) — typical short 66.3/day over 3 shorts"
+  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (737 views, 139.9/day) — typical short 55.3/day over 4 shorts"
 }
