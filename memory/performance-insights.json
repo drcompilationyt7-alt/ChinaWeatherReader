@@ -1,72 +1,88 @@
 {
-  "updatedAt": "2026-09-23T08:00:31.529Z",
+  "updatedAt": "2026-09-24T07:51:38.529Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 41,
-    "totalVideos": 4
+    "totalViews": 45,
+    "totalVideos": 5
   },
-  "sampleSize": 3,
+  "sampleSize": 4,
   "reliable": false,
-  "globalMeanScore": 4.6,
-  "typicalScore": 4.5,
+  "globalMeanScore": 3,
+  "typicalScore": 2.8,
   "topTitles": [
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "views": 16,
-      "score": 5.9,
+      "score": 4.8,
       "country": "Global",
-      "ageDays": 2.8
-    },
-    {
-      "videoId": "-3pKrM_MiHE",
-      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "views": 8,
-      "score": 4.5,
-      "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 3.8
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 18,
-      "score": 3.3,
+      "score": 3.7,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.8
+    },
+    {
+      "videoId": "i6wFQ4hxE48",
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "views": 3,
+      "score": 1.7,
+      "country": "Global",
+      "ageDays": 1.8
+    },
+    {
+      "videoId": "-3pKrM_MiHE",
+      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+      "views": 8,
+      "score": 1.7,
+      "country": "Global",
+      "ageDays": 2.8
     }
   ],
   "bottomTitles": [
     {
-      "videoId": "V3R9YEsOkxo",
-      "title": "rise acapella 🥲🥲",
-      "views": 18,
-      "score": 3.3,
-      "country": "Global",
-      "ageDays": 3.8
-    },
-    {
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 8,
-      "score": 4.5,
+      "score": 1.7,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "i6wFQ4hxE48",
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "views": 3,
+      "score": 1.7,
       "country": "Global",
       "ageDays": 1.8
+    },
+    {
+      "videoId": "V3R9YEsOkxo",
+      "title": "rise acapella 🥲🥲",
+      "views": 18,
+      "score": 3.7,
+      "country": "Global",
+      "ageDays": 4.8
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "views": 16,
-      "score": 5.9,
+      "score": 4.8,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 3,
-      "meanScore": 4.6,
+      "n": 4,
+      "meanScore": 3,
       "weight": 1
     }
   },
@@ -74,30 +90,34 @@
   "categories": {
     "meme-kpop": {
       "n": 1,
-      "meanScore": 5.9,
+      "meanScore": 4.8,
       "weight": 1
     },
     "meme-anime": {
-      "n": 2,
-      "meanScore": 3.9,
-      "weight": 1
+      "n": 3,
+      "meanScore": 2.4,
+      "weight": 0.93
     }
   },
   "eggs": {},
   "history": [
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "score": 1.936
-    },
-    {
-      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "score": 1.712
+      "score": 1.757
     },
     {
       "title": "rise acapella 🥲🥲",
-      "score": 1.459
+      "score": 1.553
+    },
+    {
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "score": 0.996
+    },
+    {
+      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
+      "score": 0.99
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (16 views, 5.9/day) — typical short 4.5/day over 3 shorts"
+  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (16 views, 4.8/day) — typical short 2.8/day over 4 shorts"
 }

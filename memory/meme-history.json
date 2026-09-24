@@ -208,6 +208,51 @@
     "ovStyle": "ov-llm",
     "descHook": "stems"
    }
+  },
+  {
+   "videoId": "wFuMHySFyWw",
+   "url": "https://www.youtube.com/watch?v=wFuMHySFyWw",
+   "postedAt": "2026-09-24T08:01:22.388Z",
+   "publishAt": "2026-09-24T12:00:00.000Z",
+   "song": "unravel",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "unravel acapella 🗿",
+   "clipIds": [
+    "JNEsM3cQbng",
+    "Z6-dA9x4nDc",
+    "ol-Q9--Y7Yw",
+    "v9pMaJJzNcU",
+    "-spnJgXoqUU",
+    "RrfyrqvQ_Wk",
+    "Epr-4IpcHCY"
+   ],
+   "clipChannels": [
+    "All the Anime",
+    "Amazon Prime Video France",
+    "AnimeZ Axz",
+    "Bruh Clan ++",
+    "Laps #Shorts",
+    "Nornp Lilith",
+    "ha!See?"
+   ],
+   "clipSource": "Tokyo Ghoul",
+   "settings": {
+    "drop": 18,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-drop",
+    "descHook": "drop"
+   }
   }
  ]
 }
