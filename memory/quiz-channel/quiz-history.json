@@ -138,6 +138,30 @@
     "titleStyle": "llm",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "8dJefQwj140",
+   "url": "https://www.youtube.com/watch?v=8dJefQwj140",
+   "postedAt": "2026-09-25T08:02:51.069Z",
+   "publishAt": "2026-09-25T12:00:00.000Z",
+   "format": "vtuber",
+   "theme": "vtubers",
+   "seed": 892450498,
+   "length": "quick",
+   "titleTemplate": "vt-ramp",
+   "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
+   "answers": [
+    "vtuber:minato aqua",
+    "vtuber:moona hoshinova",
+    "vtuber:shiori novella"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "keyword"
+   }
   }
  ]
 }

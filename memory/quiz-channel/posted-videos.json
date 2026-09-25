@@ -65,6 +65,17 @@
       "titleSource": "duel-llm",
       "quizFormat": "duel",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=8dJefQwj140",
+      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
+      "country": "Global",
+      "postedAt": "2026-09-25T08:02:51.156Z",
+      "videoId": "8dJefQwj140",
+      "category": "quiz-vtuber",
+      "titleSource": "vt-ramp",
+      "quizFormat": "vtuber",
+      "quizTheme": "vtubers"
     }
   ]
 }

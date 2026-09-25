@@ -1,47 +1,55 @@
 {
-  "updatedAt": "2026-09-24T07:41:48.894Z",
+  "updatedAt": "2026-09-25T07:58:37.247Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 1154,
-    "totalVideos": 5
+    "totalViews": 1298,
+    "totalVideos": 6
   },
-  "sampleSize": 4,
+  "sampleSize": 5,
   "reliable": false,
-  "globalMeanScore": 71.7,
-  "typicalScore": 55.3,
+  "globalMeanScore": 72.3,
+  "typicalScore": 48.6,
   "topTitles": [
     {
-      "videoId": "IE80eNcEv04",
-      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 737,
-      "score": 139.9,
-      "country": "Global",
-      "ageDays": 4.8
-    },
-    {
-      "videoId": "X0RTX6oQ1IE",
-      "title": "would you rather (cities edition) 🔥✌️",
-      "views": 159,
-      "score": 92.3,
+      "videoId": "T1hGqwqU0rU",
+      "title": "Only Travel Nerds Get 3/3 ✈️",
+      "views": 286,
+      "score": 162.1,
       "country": "Global",
       "ageDays": 1.8
     },
     {
+      "videoId": "IE80eNcEv04",
+      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
+      "views": 737,
+      "score": 115.1,
+      "country": "Global",
+      "ageDays": 5.8
+    },
+    {
+      "videoId": "X0RTX6oQ1IE",
+      "title": "would you rather (cities edition) 🔥✌️",
+      "views": 160,
+      "score": 46.6,
+      "country": "Global",
+      "ageDays": 2.8
+    },
+    {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 211,
-      "score": 33.3,
+      "views": 212,
+      "score": 26.4,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.8
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 61,
-      "score": 21.3,
+      "score": 11.2,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     }
   ],
   "bottomTitles": [
@@ -49,85 +57,102 @@
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 61,
-      "score": 21.3,
-      "country": "Global",
-      "ageDays": 2.8
-    },
-    {
-      "videoId": "S1mLvoUzF0s",
-      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 211,
-      "score": 33.3,
+      "score": 11.2,
       "country": "Global",
       "ageDays": 3.8
     },
     {
+      "videoId": "S1mLvoUzF0s",
+      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
+      "views": 212,
+      "score": 26.4,
+      "country": "Global",
+      "ageDays": 4.8
+    },
+    {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
-      "views": 159,
-      "score": 92.3,
+      "views": 160,
+      "score": 46.6,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.8
     },
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
       "views": 737,
-      "score": 139.9,
+      "score": 115.1,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.8
+    },
+    {
+      "videoId": "T1hGqwqU0rU",
+      "title": "Only Travel Nerds Get 3/3 ✈️",
+      "views": 286,
+      "score": 162.1,
+      "country": "Global",
+      "ageDays": 1.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 4,
-      "meanScore": 71.7,
+      "n": 5,
+      "meanScore": 72.3,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
+    "quiz-cityphoto": {
+      "n": 1,
+      "meanScore": 162.1,
+      "weight": 1
+    },
     "quiz-emoji": {
       "n": 1,
-      "meanScore": 139.9,
+      "meanScore": 115.1,
       "weight": 1
     },
     "quiz-wyr": {
       "n": 1,
-      "meanScore": 92.3,
+      "meanScore": 46.6,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 33.3,
+      "meanScore": 26.4,
       "weight": 1
     },
     "quiz-duel": {
       "n": 1,
-      "meanScore": 21.3,
+      "meanScore": 11.2,
       "weight": 1
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "Only Travel Nerds Get 3/3 ✈️",
+      "score": 5.094
+    },
+    {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 4.948
+      "score": 4.755
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
-      "score": 4.536
+      "score": 3.862
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 3.535
+      "score": 3.312
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "score": 3.103
+      "score": 2.498
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (737 views, 139.9/day) — typical short 55.3/day over 4 shorts"
+  "summaryLine": "Best recent: \"Only Travel Nerds Get 3/3 ✈️\" (286 views, 162.1/day) — typical short 48.6/day over 5 shorts"
 }
