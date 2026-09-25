@@ -253,6 +253,55 @@
     "ovStyle": "ov-drop",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "RaxOD5kvDwk",
+   "url": "https://www.youtube.com/watch?v=RaxOD5kvDwk",
+   "postedAt": "2026-09-25T08:25:21.643Z",
+   "publishAt": "2026-09-25T12:00:00.000Z",
+   "song": "supernova",
+   "theme": "kpop",
+   "emoji": "🗿,🔥",
+   "title": "supernova acapella stem build up aespa edit 🗿🔥",
+   "clipIds": [
+    "NU611fxGyPU",
+    "-KMZJor-FzY",
+    "0lXwMdnpoFQ",
+    "wKbHnbOpq-I",
+    "Q-1MPME8NAQ",
+    "0otVCR2XBgY",
+    "RZqUGKR__VE",
+    "zIlCcVyl4Cw",
+    "phuiiNCxRMg"
+   ],
+   "clipChannels": [
+    "KBS Kpop",
+    "M2",
+    "SBSKPOP X INKIGAYO",
+    "SMP FLOOR",
+    "SMTOWN",
+    "aespa",
+    "강민혁 X 차누",
+    "겨울이",
+    "김교차"
+   ],
+   "clipSource": "aespa",
+   "settings": {
+    "drop": 18,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "stems"
+   },
+   "onVideoTitle": "supernova layer by layer",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-layers",
+    "descHook": "stems"
+   }
   }
  ]
 }

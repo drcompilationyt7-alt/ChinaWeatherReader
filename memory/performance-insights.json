@@ -1,47 +1,55 @@
 {
-  "updatedAt": "2026-09-24T07:51:38.529Z",
+  "updatedAt": "2026-09-25T08:13:22.544Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 45,
-    "totalVideos": 5
+    "totalViews": 72,
+    "totalVideos": 6
   },
-  "sampleSize": 4,
+  "sampleSize": 5,
   "reliable": false,
-  "globalMeanScore": 3,
-  "typicalScore": 2.8,
+  "globalMeanScore": 7.5,
+  "typicalScore": 4.1,
   "topTitles": [
+    {
+      "videoId": "kY-fbtjVQ7c",
+      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
+      "views": 49,
+      "score": 27.7,
+      "country": "Global",
+      "ageDays": 1.8
+    },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "views": 16,
-      "score": 4.8,
-      "country": "Global",
-      "ageDays": 3.8
-    },
-    {
-      "videoId": "V3R9YEsOkxo",
-      "title": "rise acapella 🥲🥲",
-      "views": 18,
-      "score": 3.7,
+      "score": 3.6,
       "country": "Global",
       "ageDays": 4.8
     },
     {
       "videoId": "i6wFQ4hxE48",
       "title": "redo acapella but the drums kick in 🎶🎧",
-      "views": 3,
-      "score": 1.7,
+      "views": 5,
+      "score": 2.7,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.8
+    },
+    {
+      "videoId": "V3R9YEsOkxo",
+      "title": "rise acapella 🥲🥲",
+      "views": 18,
+      "score": 2,
+      "country": "Global",
+      "ageDays": 5.8
     },
     {
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 8,
-      "score": 1.7,
+      "score": 1.4,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.8
     }
   ],
   "bottomTitles": [
@@ -49,75 +57,92 @@
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 8,
-      "score": 1.7,
+      "score": 1.4,
       "country": "Global",
-      "ageDays": 2.8
-    },
-    {
-      "videoId": "i6wFQ4hxE48",
-      "title": "redo acapella but the drums kick in 🎶🎧",
-      "views": 3,
-      "score": 1.7,
-      "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 3.8
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 18,
-      "score": 3.7,
+      "score": 2,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.8
+    },
+    {
+      "videoId": "i6wFQ4hxE48",
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "views": 5,
+      "score": 2.7,
+      "country": "Global",
+      "ageDays": 2.8
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "views": 16,
-      "score": 4.8,
+      "score": 3.6,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.8
+    },
+    {
+      "videoId": "kY-fbtjVQ7c",
+      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
+      "views": 49,
+      "score": 27.7,
+      "country": "Global",
+      "ageDays": 1.8
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 4,
-      "meanScore": 3,
+      "n": 5,
+      "meanScore": 7.5,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
+    "meme-japanese": {
+      "n": 1,
+      "meanScore": 27.7,
+      "weight": 1
+    },
     "meme-kpop": {
       "n": 1,
-      "meanScore": 4.8,
+      "meanScore": 3.6,
       "weight": 1
     },
     "meme-anime": {
       "n": 3,
-      "meanScore": 2.4,
-      "weight": 0.93
+      "meanScore": 2,
+      "weight": 0.76
     }
   },
   "eggs": {},
   "history": [
     {
-      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "score": 1.757
+      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
+      "score": 3.356
     },
     {
-      "title": "rise acapella 🥲🥲",
-      "score": 1.553
+      "title": "love dive acapella stem build up (ive edit) 🗿🔥",
+      "score": 1.52
     },
     {
       "title": "redo acapella but the drums kick in 🎶🎧",
-      "score": 0.996
+      "score": 1.317
+    },
+    {
+      "title": "rise acapella 🥲🥲",
+      "score": 1.098
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "score": 0.99
+      "score": 0.879
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"love dive acapella stem build up (ive edit) 🗿🔥\" (16 views, 4.8/day) — typical short 2.8/day over 4 shorts"
+  "summaryLine": "Best recent: \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (49 views, 27.7/day) — typical short 4.1/day over 5 shorts"
 }
