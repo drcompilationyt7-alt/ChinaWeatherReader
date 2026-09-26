@@ -76,6 +76,17 @@
       "titleSource": "vt-ramp",
       "quizFormat": "vtuber",
       "quizTheme": "vtubers"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=pCSycG4OlKs",
+      "title": "guess the kpop song from emojis 🎶",
+      "country": "Global",
+      "postedAt": "2026-09-26T07:55:53.021Z",
+      "videoId": "pCSycG4OlKs",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-kpop-casual",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
     }
   ]
 }

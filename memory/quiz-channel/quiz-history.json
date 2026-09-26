@@ -162,6 +162,30 @@
     "titleStyle": "ramp",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "pCSycG4OlKs",
+   "url": "https://www.youtube.com/watch?v=pCSycG4OlKs",
+   "postedAt": "2026-09-26T07:55:52.957Z",
+   "publishAt": "2026-09-26T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 968007888,
+   "length": "quick",
+   "titleTemplate": "emoji-kpop-casual",
+   "title": "guess the kpop song from emojis 🎶",
+   "answers": [
+    "emoji:dynamite (bts)",
+    "emoji:money (lisa)",
+    "emoji:god's menu (stray kids)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "two",
+    "titleStyle": "casual",
+    "descHook": "keyword"
+   }
   }
  ]
 }
