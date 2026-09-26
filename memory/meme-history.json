@@ -302,6 +302,53 @@
     "ovStyle": "ov-layers",
     "descHook": "stems"
    }
+  },
+  {
+   "videoId": "c6l6daliqog",
+   "url": "https://www.youtube.com/watch?v=c6l6daliqog",
+   "postedAt": "2026-09-26T08:12:35.038Z",
+   "publishAt": "2026-09-26T12:00:00.000Z",
+   "song": "otonoke",
+   "theme": "anime",
+   "emoji": "🎧,🎶",
+   "title": "otonoke acapella 🎧🎶 #dandadan",
+   "clipIds": [
+    "lQFly6Vid24",
+    "LRSfmE7yaAA",
+    "eUXclct2yqg",
+    "wL3u1A_hnFQ",
+    "a4na2opArGY",
+    "nYLFPDVVL1s",
+    "iRkNJo2u7dw",
+    "lTx1VlXBBwY"
+   ],
+   "clipChannels": [
+    "AniBuzz",
+    "Crunchyroll",
+    "MBS animation 公式チャンネル",
+    "Neobrane",
+    "Social Emblem Gta",
+    "kwerple",
+    "river",
+    "なんかやる"
+   ],
+   "clipSource": "Dandadan",
+   "settings": {
+    "drop": 14,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "question"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-drop",
+    "descHook": "question"
+   }
   }
  ]
 }
