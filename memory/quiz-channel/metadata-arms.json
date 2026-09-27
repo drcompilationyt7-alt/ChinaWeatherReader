@@ -1,17 +1,49 @@
 {
  "version": 1,
+ "log": [
+  {
+   "week": "2026-W38",
+   "pool": "quiz/quiz",
+   "at": "2026-09-20T07:15:50.668Z",
+   "n": 0,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "0 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W39",
+   "pool": "quiz/quiz",
+   "at": "2026-09-27T07:21:01.300Z",
+   "n": 4,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "4 scored uploads: proposals start at 5"
+  }
+ ],
  "pools": {
   "quiz/quiz": {
    "arms": {},
    "posterior": {
-    "week": "2026-W38",
-    "n": 0,
+    "week": "2026-W39",
+    "n": 4,
     "dims": {
      "titleStyle": {
-      "keyword": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "fans": {
+       "uses": 1,
+       "mean": 0.52,
+       "sd": 0.76
+      },
+      "casual": {
+       "uses": 1,
+       "mean": 0.07,
+       "sd": 0.77
+      },
+      "llm": {
+       "uses": 1,
+       "mean": 0.06,
+       "sd": 0.77
       },
       "speed": {
        "uses": 0,
@@ -23,54 +55,39 @@
        "mean": 0,
        "sd": 1
       },
-      "fans": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "casual": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "ramp": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
-      "llm": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "keyword": {
+       "uses": 1,
+       "mean": -0.64,
+       "sd": 0.77
       }
      },
      "hashtagSet": {
+      "title-tag": {
+       "uses": 1,
+       "mean": 0.06,
+       "sd": 0.77
+      },
       "format3": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
       "two": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "title-tag": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 3,
+       "mean": -0.03,
+       "sd": 0.57
       }
      },
      "emojiSet": {
-      "template": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "fire": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.06,
+       "sd": 0.77
       },
       "topic": {
        "uses": 0,
@@ -81,40 +98,33 @@
        "uses": 0,
        "mean": 0,
        "sd": 1
+      },
+      "template": {
+       "uses": 3,
+       "mean": -0.03,
+       "sd": 0.57
       }
      },
      "descHook": {
-      "challenge": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "keyword": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 3,
+       "mean": 0.36,
+       "sd": 0.57
       },
       "no-peek": {
        "uses": 0,
        "mean": 0,
        "sd": 1
+      },
+      "challenge": {
+       "uses": 1,
+       "mean": -0.64,
+       "sd": 0.77
       }
      }
     }
    }
   }
  },
- "log": [
-  {
-   "week": "2026-W38",
-   "pool": "quiz/quiz",
-   "at": "2026-09-20T07:15:50.668Z",
-   "n": 0,
-   "retired": [],
-   "added": [],
-   "rejected": [],
-   "note": "0 scored uploads: proposals start at 5"
-  }
- ],
- "updatedAt": "2026-09-20T07:15:50.668Z"
+ "updatedAt": "2026-09-27T07:21:01.301Z"
 }

@@ -1,13 +1,40 @@
 {
  "version": 1,
+ "log": [
+  {
+   "week": "2026-W38",
+   "pool": "meme/stem-edit",
+   "at": "2026-09-20T07:15:50.563Z",
+   "n": 0,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "0 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W39",
+   "pool": "meme/stem-edit",
+   "at": "2026-09-27T07:20:22.472Z",
+   "n": 4,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "4 scored uploads: proposals start at 5"
+  }
+ ],
  "pools": {
   "meme/stem-edit": {
    "arms": {},
    "posterior": {
-    "week": "2026-W38",
-    "n": 0,
+    "week": "2026-W39",
+    "n": 4,
     "dims": {
      "titleStyle": {
+      "llm-free": {
+       "uses": 1,
+       "mean": 0.1,
+       "sd": 0.77
+      },
       "kw-emoji": {
        "uses": 0,
        "mean": 0,
@@ -24,28 +51,23 @@
        "sd": 1
       },
       "llm-hook": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "llm-free": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 3,
+       "mean": -0.05,
+       "sd": 0.57
       }
      },
      "ovStyle": {
-      "ov-kw": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "ov-layers": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "ov-llm": {
+       "uses": 2,
+       "mean": 0.12,
+       "sd": 0.64
       },
       "ov-drop": {
+       "uses": 1,
+       "mean": 0.1,
+       "sd": 0.77
+      },
+      "ov-layers": {
        "uses": 0,
        "mean": 0,
        "sd": 1
@@ -55,61 +77,66 @@
        "mean": 0,
        "sd": 1
       },
-      "ov-llm": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "ov-kw": {
+       "uses": 1,
+       "mean": -0.26,
+       "sd": 0.77
       }
      },
      "hashtagSet": {
-      "niche3": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "title-source": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.63,
+       "sd": 0.76
       },
       "edit-community": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
+      "niche3": {
+       "uses": 2,
+       "mean": -0.11,
+       "sd": 0.65
+      },
       "minimal": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 1,
+       "mean": -0.46,
+       "sd": 0.77
       }
      },
      "emojiSet": {
-      "fire": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "music": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "moai": {
+       "uses": 2,
+       "mean": 0.52,
+       "sd": 0.64
       },
       "spark": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
-      "moai": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "fire": {
+       "uses": 1,
+       "mean": -0.26,
+       "sd": 0.77
+      },
+      "music": {
+       "uses": 1,
+       "mean": -0.46,
+       "sd": 0.77
       }
      },
      "descHook": {
-      "layers": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "stems": {
+       "uses": 2,
+       "mean": 0.26,
+       "sd": 0.64
+      },
+      "llm-line": {
+       "uses": 1,
+       "mean": 0.1,
+       "sd": 0.77
       },
       "drop": {
        "uses": 0,
@@ -121,32 +148,15 @@
        "mean": 0,
        "sd": 1
       },
-      "stems": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "llm-line": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "layers": {
+       "uses": 1,
+       "mean": -0.46,
+       "sd": 0.77
       }
      }
     }
    }
   }
  },
- "log": [
-  {
-   "week": "2026-W38",
-   "pool": "meme/stem-edit",
-   "at": "2026-09-20T07:15:50.563Z",
-   "n": 0,
-   "retired": [],
-   "added": [],
-   "rejected": [],
-   "note": "0 scored uploads: proposals start at 5"
-  }
- ],
- "updatedAt": "2026-09-20T07:15:50.563Z"
+ "updatedAt": "2026-09-27T07:20:22.472Z"
 }
