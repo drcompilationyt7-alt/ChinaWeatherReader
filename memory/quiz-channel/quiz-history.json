@@ -186,6 +186,30 @@
     "titleStyle": "casual",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "aqIJfCd0aIk",
+   "url": "https://www.youtube.com/watch?v=aqIJfCd0aIk",
+   "postedAt": "2026-09-27T08:24:46.548Z",
+   "publishAt": "2026-09-27T12:00:00.000Z",
+   "format": "song",
+   "theme": "anime",
+   "seed": 449994332,
+   "length": "quick",
+   "titleTemplate": "song-anime-otaku",
+   "title": "Only Real Otakus Get 3/3 🎶",
+   "answers": [
+    "song:kaikai kitan|eve",
+    "song:pokémon theme|jason paige",
+    "song:the hero!!|jam project"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "template",
+    "hashtagSet": "format3",
+    "titleStyle": "fans",
+    "descHook": "keyword"
+   }
   }
  ]
 }

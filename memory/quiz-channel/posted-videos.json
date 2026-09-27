@@ -87,6 +87,17 @@
       "titleSource": "emoji-kpop-casual",
       "quizFormat": "emoji",
       "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aqIJfCd0aIk",
+      "title": "Only Real Otakus Get 3/3 🎶",
+      "country": "Global",
+      "postedAt": "2026-09-27T08:24:46.635Z",
+      "videoId": "aqIJfCd0aIk",
+      "category": "quiz-song",
+      "titleSource": "song-anime-otaku",
+      "quizFormat": "song",
+      "quizTheme": "anime"
     }
   ]
 }
