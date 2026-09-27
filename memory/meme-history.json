@@ -349,6 +349,49 @@
     "ovStyle": "ov-drop",
     "descHook": "question"
    }
+  },
+  {
+   "videoId": "TU8oZz2apfk",
+   "url": "https://www.youtube.com/watch?v=TU8oZz2apfk",
+   "postedAt": "2026-09-27T08:47:02.309Z",
+   "publishAt": "2026-09-27T12:00:00.000Z",
+   "song": "crossing field",
+   "theme": "anime",
+   "emoji": "🗿,🔥",
+   "title": "crossing field acapella 🗿🔥",
+   "clipIds": [
+    "BPf6LfSmXxA",
+    "N1BZIRIgiss",
+    "a2Z4T1_KEMU",
+    "jcy0XomhAZM",
+    "6Y1swEeFwYo",
+    "Y4kfe8R1Iqs"
+   ],
+   "clipChannels": [
+    "Anni Mei",
+    "Ezieck Clarent",
+    "GAccel Kun",
+    "Legit Anime",
+    "Shishu",
+    "アニプレックス チャンネル"
+   ],
+   "clipSource": "Sword Art Online",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "which layer hits hardest?",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-question",
+    "descHook": "drop"
+   }
   }
  ]
 }

@@ -1,63 +1,71 @@
 {
-  "updatedAt": "2026-09-26T08:02:21.289Z",
+  "updatedAt": "2026-09-27T08:36:43.860Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 131,
-    "totalVideos": 7
+    "totalViews": 170,
+    "totalVideos": 8
   },
-  "sampleSize": 6,
+  "sampleSize": 7,
   "reliable": false,
-  "globalMeanScore": 6.1,
-  "typicalScore": 4.3,
+  "globalMeanScore": 4.2,
+  "typicalScore": 3.5,
   "topTitles": [
-    {
-      "videoId": "wFuMHySFyWw",
-      "title": "unravel acapella 🗿",
-      "views": 29,
-      "score": 17.7,
-      "country": "Global",
-      "ageDays": 1.8
-    },
     {
       "videoId": "kY-fbtjVQ7c",
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "views": 59,
-      "score": 9.3,
+      "views": 64,
+      "score": 7.3,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.9
+    },
+    {
+      "videoId": "RaxOD5kvDwk",
+      "title": "supernova acapella stem build up aespa edit 🗿🔥",
+      "views": 12,
+      "score": 6.7,
+      "country": "Global",
+      "ageDays": 1.9
+    },
+    {
+      "videoId": "wFuMHySFyWw",
+      "title": "unravel acapella 🗿",
+      "views": 34,
+      "score": 6.5,
+      "country": "Global",
+      "ageDays": 2.9
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "views": 19,
-      "score": 3.5,
+      "views": 21,
+      "score": 3.4,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     },
     {
       "videoId": "i6wFQ4hxE48",
       "title": "redo acapella but the drums kick in 🎶🎧",
       "views": 8,
-      "score": 3.2,
+      "score": 2.6,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.9
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 21,
-      "score": 2,
+      "score": 1.7,
       "country": "Global",
-      "ageDays": 6.8
+      "ageDays": 7.9
     },
     {
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 8,
-      "score": 1.1,
+      "score": 0.9,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     }
   ],
   "bottomTitles": [
@@ -65,96 +73,100 @@
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 8,
-      "score": 1.1,
+      "score": 0.9,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 21,
-      "score": 2,
+      "score": 1.7,
       "country": "Global",
-      "ageDays": 6.8
+      "ageDays": 7.9
     },
     {
       "videoId": "i6wFQ4hxE48",
       "title": "redo acapella but the drums kick in 🎶🎧",
       "views": 8,
-      "score": 3.2,
+      "score": 2.6,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.9
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "views": 19,
-      "score": 3.5,
+      "views": 21,
+      "score": 3.4,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     },
     {
-      "videoId": "kY-fbtjVQ7c",
-      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "views": 59,
-      "score": 9.3,
+      "videoId": "wFuMHySFyWw",
+      "title": "unravel acapella 🗿",
+      "views": 34,
+      "score": 6.5,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 2.9
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 6,
-      "meanScore": 6.1,
+      "n": 7,
+      "meanScore": 4.2,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
-    "meme-anime": {
-      "n": 4,
-      "meanScore": 6,
-      "weight": 0.93
-    },
     "meme-japanese": {
       "n": 1,
-      "meanScore": 9.3,
+      "meanScore": 7.3,
       "weight": 1
     },
     "meme-kpop": {
-      "n": 1,
-      "meanScore": 3.5,
+      "n": 2,
+      "meanScore": 5.1,
       "weight": 1
+    },
+    "meme-anime": {
+      "n": 4,
+      "meanScore": 2.9,
+      "weight": 0.85
     }
   },
   "eggs": {},
   "history": [
     {
-      "title": "unravel acapella 🗿",
-      "score": 2.929
+      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
+      "score": 2.115
     },
     {
-      "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "score": 2.33
+      "title": "supernova acapella stem build up aespa edit 🗿🔥",
+      "score": 2.043
+    },
+    {
+      "title": "unravel acapella 🗿",
+      "score": 2.021
     },
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "score": 1.508
+      "score": 1.488
     },
     {
       "title": "redo acapella but the drums kick in 🎶🎧",
-      "score": 1.445
+      "score": 1.269
     },
     {
       "title": "rise acapella 🥲🥲",
-      "score": 1.096
+      "score": 1.005
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "score": 0.751
+      "score": 0.654
     }
   ],
   "promptSummary": "",
-  "summaryLine": "Best recent: \"unravel acapella 🗿\" (29 views, 17.7/day) — typical short 4.3/day over 6 shorts"
+  "summaryLine": "Best recent: \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (64 views, 7.3/day) — typical short 3.5/day over 7 shorts"
 }
