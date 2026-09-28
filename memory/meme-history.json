@@ -392,6 +392,53 @@
     "ovStyle": "ov-question",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "0EL5CX1KLHc",
+   "url": "https://www.youtube.com/watch?v=0EL5CX1KLHc",
+   "postedAt": "2026-09-28T09:13:40.445Z",
+   "publishAt": "2026-09-28T12:00:00.000Z",
+   "song": "shinunoga e-wa",
+   "theme": "japanese",
+   "emoji": "✨,🔥",
+   "title": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥",
+   "clipIds": [
+    "sfFG0g83MRQ",
+    "1dN-z63WEvw",
+    "3TmpQriR25A",
+    "-VveCS6zBPc",
+    "XyOvhQX8ceQ",
+    "w2j8U5MU_vw",
+    "GcQTFooaOE0",
+    "4qSl76V_Q_E"
+   ],
+   "clipChannels": [
+    "Biey Kayrin",
+    "CYE7  CLOSER",
+    "JpopInYourArea",
+    "Ronaldoo 【 Fujii Kaze Impersonator】",
+    "aloy",
+    "みどりジャージのひと",
+    "マイナビニュース【エンタメ・ホビー】",
+    "京都新聞"
+   ],
+   "clipSource": "Fujii Kaze",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "llm-line"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "edit-community",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "llm-line"
+   }
   }
  ]
 }
