@@ -210,6 +210,31 @@
     "titleStyle": "fans",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "mHpF6_z6UoA",
+   "url": "https://www.youtube.com/watch?v=mHpF6_z6UoA",
+   "postedAt": "2026-09-28T08:52:52.915Z",
+   "publishAt": "2026-09-28T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 476818894,
+   "length": "quick",
+   "followUpOf": "pCSycG4OlKs",
+   "titleTemplate": "emoji-kpop-casual",
+   "title": "guess the kpop song from emojis 🎶",
+   "answers": [
+    "emoji:apt. (rosé & bruno mars)",
+    "emoji:cupid (fifty fifty)",
+    "emoji:magnetic (illit)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "two",
+    "titleStyle": "casual",
+    "descHook": "keyword"
+   }
   }
  ]
 }

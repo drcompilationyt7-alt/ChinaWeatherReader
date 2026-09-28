@@ -1,71 +1,79 @@
 {
-  "updatedAt": "2026-09-27T08:20:33.325Z",
+  "updatedAt": "2026-09-28T08:47:48.053Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 1798,
-    "totalVideos": 8
+    "totalViews": 2522,
+    "totalVideos": 9
   },
-  "sampleSize": 7,
-  "reliable": false,
-  "globalMeanScore": 76.9,
-  "typicalScore": 39.4,
+  "sampleSize": 8,
+  "reliable": true,
+  "globalMeanScore": 77.3,
+  "typicalScore": 41.3,
   "topTitles": [
+    {
+      "videoId": "pCSycG4OlKs",
+      "title": "guess the kpop song from emojis 🎶",
+      "views": 459,
+      "score": 252.9,
+      "country": "Global",
+      "ageDays": 1.9
+    },
     {
       "videoId": "8dJefQwj140",
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "views": 564,
-      "score": 321,
+      "views": 631,
+      "score": 179.6,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.9
     },
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
       "views": 738,
-      "score": 85.7,
+      "score": 75.9,
       "country": "Global",
-      "ageDays": 7.8
+      "ageDays": 8.9
     },
     {
       "videoId": "T1hGqwqU0rU",
       "title": "Only Travel Nerds Get 3/3 ✈️",
       "views": 327,
-      "score": 56.2,
+      "score": 46.3,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.9
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 160,
-      "score": 26.9,
+      "score": 22.7,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     },
     {
       "videoId": "_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "views": 84,
-      "score": 22,
+      "score": 17.6,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.9
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 213,
-      "score": 19.2,
+      "views": 214,
+      "score": 16.8,
       "country": "Global",
-      "ageDays": 6.8
+      "ageDays": 7.8
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 62,
-      "score": 7.4,
+      "score": 6.9,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     }
   ],
   "bottomTitles": [
@@ -73,115 +81,119 @@
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 62,
-      "score": 7.4,
+      "score": 6.9,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 213,
-      "score": 19.2,
+      "views": 214,
+      "score": 16.8,
       "country": "Global",
-      "ageDays": 6.8
+      "ageDays": 7.8
     },
     {
       "videoId": "_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "views": 84,
-      "score": 22,
+      "score": 17.6,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.9
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 160,
-      "score": 26.9,
+      "score": 22.7,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     },
     {
       "videoId": "T1hGqwqU0rU",
       "title": "Only Travel Nerds Get 3/3 ✈️",
       "views": 327,
-      "score": 56.2,
+      "score": 46.3,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.9
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 7,
-      "meanScore": 76.9,
+      "n": 8,
+      "meanScore": 77.3,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
-    "quiz-vtuber": {
-      "n": 1,
-      "meanScore": 321,
+    "quiz-emoji": {
+      "n": 2,
+      "meanScore": 164.4,
       "weight": 1
     },
-    "quiz-emoji": {
+    "quiz-vtuber": {
       "n": 1,
-      "meanScore": 85.7,
+      "meanScore": 179.6,
       "weight": 1
     },
     "quiz-cityphoto": {
       "n": 1,
-      "meanScore": 56.2,
+      "meanScore": 46.3,
       "weight": 1
     },
     "quiz-wyr": {
       "n": 1,
-      "meanScore": 26.9,
+      "meanScore": 22.7,
       "weight": 1
     },
     "quiz-duel": {
       "n": 2,
-      "meanScore": 14.7,
+      "meanScore": 12.3,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 19.2,
+      "meanScore": 16.8,
       "weight": 1
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "guess the kpop song from emojis 🎶",
+      "score": 5.537
+    },
+    {
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "score": 5.774
+      "score": 5.196
     },
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 4.462
+      "score": 4.342
     },
     {
       "title": "Only Travel Nerds Get 3/3 ✈️",
-      "score": 4.047
+      "score": 3.856
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
-      "score": 3.327
+      "score": 3.164
     },
     {
       "title": "who would you pick anime: teacher roommate fight ⚔️",
-      "score": 3.137
+      "score": 2.921
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 3.007
+      "score": 2.879
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "score": 2.131
+      "score": 2.07
     }
   ],
-  "promptSummary": "",
-  "summaryLine": "Best recent: \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (564 views, 321/day) — typical short 39.4/day over 7 shorts"
+  "promptSummary": "Based on 8 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 41.3/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"guess the kpop song from emojis 🎶\" (459 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (631 views, Global)\n  - \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (738 views, Global)\n  - \"Only Travel Nerds Get 3/3 ✈️\" (327 views, Global)\n  - \"would you rather (cities edition) 🔥✌️\" (160 views, Global)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (84 views, Global)\nTitles that performed WORST for us:\n  - \"Who Would You Pick? Anime Edition ⚔️\" (62 views)\n  - \"Asia City Quiz: Can You Get 3/3? 🔥 #asia\" (214 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (84 views)",
+  "summaryLine": "Best recent: \"guess the kpop song from emojis 🎶\" (459 views, 252.9/day) — typical short 41.3/day over 8 shorts"
 }

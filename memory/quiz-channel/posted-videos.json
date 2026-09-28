@@ -98,6 +98,17 @@
       "titleSource": "song-anime-otaku",
       "quizFormat": "song",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=mHpF6_z6UoA",
+      "title": "guess the kpop song from emojis 🎶",
+      "country": "Global",
+      "postedAt": "2026-09-28T08:52:53.001Z",
+      "videoId": "mHpF6_z6UoA",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-kpop-casual",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
     }
   ]
 }
