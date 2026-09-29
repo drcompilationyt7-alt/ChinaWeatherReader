@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=b3zZ9CwbhwE",
-      "title": "The teacher every student deserves #anime #shorts",
-      "country": "Japan",
-      "postedAt": "2026-08-29T10:04:32.829Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=-rGFbFwjoJE",
-      "title": "Celebrities React To Dido’s Live Performance!",
-      "country": "United Kingdom",
-      "postedAt": "2026-08-30T07:14:07.552Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=oHVjQ4xITfI",
       "title": "Jisoo and Kai met in real life 😱🤯 #jisoo #kai #f",
       "country": "South Korea",
@@ -420,6 +408,15 @@
       "videoId": "0EL5CX1KLHc",
       "category": "meme-japanese",
       "titleSource": "shinunoga e-wa"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=AQ7-2LyD16w",
+      "title": "dynamite acapella bts ✨🔥",
+      "country": "Global",
+      "postedAt": "2026-09-29T09:19:46.280Z",
+      "videoId": "AQ7-2LyD16w",
+      "category": "meme-kpop",
+      "titleSource": "dynamite"
     }
   ]
 }

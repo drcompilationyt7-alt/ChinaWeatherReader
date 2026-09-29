@@ -439,6 +439,56 @@
     "ovStyle": "ov-drop",
     "descHook": "llm-line"
    }
+  },
+  {
+   "videoId": "AQ7-2LyD16w",
+   "url": "https://www.youtube.com/watch?v=AQ7-2LyD16w",
+   "postedAt": "2026-09-29T09:19:46.277Z",
+   "publishAt": "2026-09-29T12:00:00.000Z",
+   "song": "dynamite",
+   "theme": "kpop",
+   "emoji": "✨,🔥",
+   "title": "dynamite acapella bts ✨🔥",
+   "clipIds": [
+    "5-knBga_Rxo",
+    "gA7Qy10dFlA",
+    "AX0CIHA2f1M",
+    "HvNUmaBXzYI",
+    "DnL2cNRDqP4",
+    "Y7YmJcfG5fQ",
+    "CN4fffh7gmk",
+    "hwaZxtzx_n4",
+    "WP6ueEmye_Q",
+    "QvL2LNwWIYw"
+   ],
+   "clipChannels": [
+    "BANGTANTV",
+    "Brilliant",
+    "K-Pop Dance Mirror",
+    "KONG",
+    "M2",
+    "Vampimelu",
+    "YOURE BTS",
+    "셤깐",
+    "하맹이"
+   ],
+   "clipSource": "BTS",
+   "settings": {
+    "drop": 14,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "which layer hits hardest?",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "minimal",
+    "titleStyle": "kw-suggest",
+    "ovStyle": "ov-question",
+    "descHook": "drop"
+   }
   }
  ]
 }
