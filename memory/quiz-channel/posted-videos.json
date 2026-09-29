@@ -109,6 +109,17 @@
       "titleSource": "emoji-kpop-casual",
       "quizFormat": "emoji",
       "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Sw0Nb60i-1Y",
+      "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
+      "country": "Global",
+      "postedAt": "2026-09-29T08:44:00.304Z",
+      "videoId": "Sw0Nb60i-1Y",
+      "category": "quiz-voice",
+      "titleSource": "voice-llm",
+      "quizFormat": "voice",
+      "quizTheme": "anime"
     }
   ]
 }

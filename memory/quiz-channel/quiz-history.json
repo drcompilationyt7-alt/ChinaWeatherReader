@@ -235,6 +235,30 @@
     "titleStyle": "casual",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "Sw0Nb60i-1Y",
+   "url": "https://www.youtube.com/watch?v=Sw0Nb60i-1Y",
+   "postedAt": "2026-09-29T08:44:00.236Z",
+   "publishAt": "2026-09-29T12:00:00.000Z",
+   "format": "voice",
+   "theme": "anime",
+   "seed": 921890951,
+   "length": "quick",
+   "titleTemplate": "voice-llm",
+   "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
+   "answers": [
+    "voice:roronoa zoro",
+    "voice:makima",
+    "voice:killua zoldyck"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "llm",
+    "descHook": "challenge"
+   }
   }
  ]
 }
