@@ -489,6 +489,50 @@
     "ovStyle": "ov-question",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "h469omNRzVE",
+   "url": "https://www.youtube.com/watch?v=h469omNRzVE",
+   "postedAt": "2026-09-30T09:13:20.805Z",
+   "publishAt": "2026-09-30T12:00:00.000Z",
+   "song": "kiss of death",
+   "theme": "anime",
+   "emoji": "⚡,⚡",
+   "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
+   "clipIds": [
+    "QaS2JHyklBc",
+    "EOAzv1yt3_U",
+    "JblSrOlYbpM",
+    "-uI3YaKAYs8",
+    "h1m8_iZtkXI",
+    "hCzkkHwR2gg",
+    "O_DS2SmwjTI"
+   ],
+   "clipChannels": [
+    "Crunchyroll",
+    "Crunchyroll FR",
+    "Doraemon Wii Game",
+    "Kazu Nowa",
+    "MeeAM",
+    "愛Tuliuz II"
+   ],
+   "clipSource": "Darling in the FranXX",
+   "settings": {
+    "drop": 10,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "title-source",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "drop"
+   }
   }
  ]
 }
