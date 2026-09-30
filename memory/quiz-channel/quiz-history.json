@@ -259,6 +259,30 @@
     "titleStyle": "llm",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "Tyg2ooEtzho",
+   "url": "https://www.youtube.com/watch?v=Tyg2ooEtzho",
+   "postedAt": "2026-09-30T08:44:30.379Z",
+   "publishAt": "2026-09-30T12:00:00.000Z",
+   "format": "character",
+   "theme": "anime",
+   "seed": 488558263,
+   "length": "quick",
+   "titleTemplate": "char-ramp",
+   "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
+   "answers": [
+    "character:miko iino",
+    "character:shikamaru nara",
+    "character:hina chono"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

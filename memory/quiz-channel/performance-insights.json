@@ -1,87 +1,95 @@
 {
-  "updatedAt": "2026-09-29T08:41:19.160Z",
+  "updatedAt": "2026-09-30T08:41:45.655Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 2,
-    "totalViews": 2694,
-    "totalVideos": 10
+    "totalViews": 3336,
+    "totalVideos": 11
   },
-  "sampleSize": 9,
+  "sampleSize": 10,
   "reliable": true,
-  "globalMeanScore": 51.9,
-  "typicalScore": 24.2,
+  "globalMeanScore": 44.4,
+  "typicalScore": 22.9,
   "topTitles": [
     {
       "videoId": "pCSycG4OlKs",
       "title": "guess the kpop song from emojis 🎶",
-      "views": 484,
-      "score": 150.5,
+      "views": 565,
+      "score": 129.3,
       "country": "Global",
-      "ageDays": 2.9
+      "ageDays": 3.9
     },
     {
       "videoId": "8dJefQwj140",
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
       "views": 630,
-      "score": 150.1,
+      "score": 119.4,
       "country": "Global",
-      "ageDays": 3.9
+      "ageDays": 4.9
     },
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
       "views": 738,
-      "score": 68.2,
+      "score": 61.9,
       "country": "Global",
-      "ageDays": 9.9
+      "ageDays": 10.9
+    },
+    {
+      "videoId": "mHpF6_z6UoA",
+      "title": "guess the kpop song from emojis 🎶",
+      "views": 83,
+      "score": 48.9,
+      "country": "Global",
+      "ageDays": 1.9
     },
     {
       "videoId": "T1hGqwqU0rU",
       "title": "Only Travel Nerds Get 3/3 ✈️",
       "views": 329,
-      "score": 39.9,
+      "score": 34,
       "country": "Global",
-      "ageDays": 5.9
+      "ageDays": 6.9
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 160,
-      "score": 19.9,
+      "score": 17.4,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 7.9
     },
     {
       "videoId": "_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "views": 88,
-      "score": 16.5,
+      "score": 13.6,
       "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 5.9
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
       "views": 214,
-      "score": 14.9,
+      "score": 13.4,
       "country": "Global",
-      "ageDays": 8.8
+      "ageDays": 9.8
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 62,
-      "score": 6.1,
+      "score": 5.4,
       "country": "Global",
-      "ageDays": 7.9
+      "ageDays": 8.9
     },
     {
       "videoId": "aqIJfCd0aIk",
       "title": "Only Real Otakus Get 3/3 🎶",
       "views": 1,
-      "score": 0.6,
+      "score": 0.4,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 2.9
     }
   ],
   "bottomTitles": [
@@ -89,86 +97,86 @@
       "videoId": "aqIJfCd0aIk",
       "title": "Only Real Otakus Get 3/3 🎶",
       "views": 1,
-      "score": 0.6,
+      "score": 0.4,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 2.9
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 62,
-      "score": 6.1,
+      "score": 5.4,
       "country": "Global",
-      "ageDays": 7.9
+      "ageDays": 8.9
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
       "views": 214,
-      "score": 14.9,
+      "score": 13.4,
       "country": "Global",
-      "ageDays": 8.8
+      "ageDays": 9.8
     },
     {
       "videoId": "_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "views": 88,
-      "score": 16.5,
+      "score": 13.6,
       "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 5.9
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 160,
-      "score": 19.9,
+      "score": 17.4,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 7.9
     }
   ],
   "titlePatterns": [],
   "countries": {
     "Global": {
-      "n": 9,
-      "meanScore": 51.9,
+      "n": 10,
+      "meanScore": 44.4,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
     "quiz-emoji": {
-      "n": 2,
-      "meanScore": 109.4,
-      "weight": 1
+      "n": 3,
+      "meanScore": 80,
+      "weight": 1.6
     },
     "quiz-vtuber": {
       "n": 1,
-      "meanScore": 150.1,
+      "meanScore": 119.4,
       "weight": 1
     },
     "quiz-cityphoto": {
       "n": 1,
-      "meanScore": 39.9,
+      "meanScore": 34,
       "weight": 1
     },
     "quiz-wyr": {
       "n": 1,
-      "meanScore": 19.9,
+      "meanScore": 17.4,
       "weight": 1
     },
     "quiz-duel": {
       "n": 2,
-      "meanScore": 11.3,
+      "meanScore": 9.5,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 14.9,
+      "meanScore": 13.4,
       "weight": 1
     },
     "quiz-song": {
       "n": 1,
-      "meanScore": 0.6,
+      "meanScore": 0.4,
       "weight": 1
     }
   },
@@ -176,41 +184,45 @@
   "history": [
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 5.021
+      "score": 4.87
     },
     {
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "score": 5.018
+      "score": 4.791
     },
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 4.237
+      "score": 4.142
+    },
+    {
+      "title": "guess the kpop song from emojis 🎶",
+      "score": 3.909
     },
     {
       "title": "Only Travel Nerds Get 3/3 ✈️",
-      "score": 3.71
+      "score": 3.557
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
-      "score": 3.04
+      "score": 2.911
     },
     {
       "title": "who would you pick anime: teacher roommate fight ⚔️",
-      "score": 2.86
+      "score": 2.684
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 2.767
+      "score": 2.667
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "score": 1.953
+      "score": 1.851
     },
     {
       "title": "Only Real Otakus Get 3/3 🎶",
-      "score": 0.444
+      "score": 0.361
     }
   ],
-  "promptSummary": "Based on 9 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 24.2/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"guess the kpop song from emojis 🎶\" (484 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (630 views, Global)\n  - \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (738 views, Global)\n  - \"Only Travel Nerds Get 3/3 ✈️\" (329 views, Global)\n  - \"would you rather (cities edition) 🔥✌️\" (160 views, Global)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (88 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (1 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (62 views)\n  - \"Asia City Quiz: Can You Get 3/3? 🔥 #asia\" (214 views)",
-  "summaryLine": "Best recent: \"guess the kpop song from emojis 🎶\" (484 views, 150.5/day) — typical short 24.2/day over 9 shorts"
+  "promptSummary": "Based on 10 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 22.9/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"guess the kpop song from emojis 🎶\" (565 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (630 views, Global)\n  - \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (738 views, Global)\n  - \"guess the kpop song from emojis 🎶\" (83 views, Global)\n  - \"Only Travel Nerds Get 3/3 ✈️\" (329 views, Global)\n  - \"would you rather (cities edition) 🔥✌️\" (160 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (1 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (62 views)\n  - \"Asia City Quiz: Can You Get 3/3? 🔥 #asia\" (214 views)",
+  "summaryLine": "Best recent: \"guess the kpop song from emojis 🎶\" (565 views, 129.3/day) — typical short 22.9/day over 10 shorts"
 }

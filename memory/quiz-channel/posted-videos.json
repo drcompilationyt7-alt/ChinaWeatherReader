@@ -120,6 +120,17 @@
       "titleSource": "voice-llm",
       "quizFormat": "voice",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Tyg2ooEtzho",
+      "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-09-30T08:44:30.428Z",
+      "videoId": "Tyg2ooEtzho",
+      "category": "quiz-character",
+      "titleSource": "char-ramp",
+      "quizFormat": "character",
+      "quizTheme": "anime"
     }
   ]
 }
