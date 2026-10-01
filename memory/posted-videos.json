@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=XEFTDYdVOk8",
-      "title": "Legendary Bands We'll Never See Again! 🎸😭",
-      "country": "United States",
-      "postedAt": "2026-08-31T10:01:41.355Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=QkNJ86-nniI",
-      "title": "Fighting in front of my parents, then kissing righ",
-      "country": "China",
-      "postedAt": "2026-09-01T06:49:03.457Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=RDjUBTanNsI",
       "title": "Cha Eunwoo in glasses || My All",
       "country": "South Korea",
@@ -414,6 +402,15 @@
       "videoId": "h469omNRzVE",
       "category": "meme-anime",
       "titleSource": "kiss of death"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=g3-PyhfIecA",
+      "title": "kick back acapella ⚡🔥",
+      "country": "Global",
+      "postedAt": "2026-10-01T09:40:34.164Z",
+      "videoId": "g3-PyhfIecA",
+      "category": "meme-anime",
+      "titleSource": "kick back"
     }
   ]
 }

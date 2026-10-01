@@ -533,6 +533,49 @@
     "ovStyle": "ov-drop",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "g3-PyhfIecA",
+   "url": "https://www.youtube.com/watch?v=g3-PyhfIecA",
+   "postedAt": "2026-10-01T09:40:34.161Z",
+   "publishAt": "2026-10-01T12:00:00.000Z",
+   "song": "kick back",
+   "theme": "anime",
+   "emoji": "⚡,🔥",
+   "title": "kick back acapella ⚡🔥",
+   "clipIds": [
+    "OJNWD1v2uMw",
+    "zm-G5MqBAns",
+    "zRq8ZlMFVzQ",
+    "sNv05qZGH5U",
+    "Hw1fy7VF_w8",
+    "cDdLlFN3V_M"
+   ],
+   "clipChannels": [
+    "AMV Exploits",
+    "Crunchyroll",
+    "Just Anime Things",
+    "MAPPA CHANNEL",
+    "Seb FinalTake - Sebastián",
+    "Sr Randoom"
+   ],
+   "clipSource": "Chainsaw Man",
+   "settings": {
+    "drop": 18,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "question"
+   },
+   "onVideoTitle": "kick back layer by layer",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-layers",
+    "descHook": "question"
+   }
   }
  ]
 }
