@@ -283,6 +283,30 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "RCsOZI0JRLI",
+   "url": "https://www.youtube.com/watch?v=RCsOZI0JRLI",
+   "postedAt": "2026-10-01T09:08:29.451Z",
+   "publishAt": "2026-10-01T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "anime",
+   "seed": 225639555,
+   "length": "quick",
+   "titleTemplate": "emoji-anime-casual",
+   "title": "guess the anime from emojis 🔥 #anime",
+   "answers": [
+    "emoji:death note",
+    "emoji:sailor moon",
+    "emoji:blue lock"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "challenge"
+   }
   }
  ]
 }
