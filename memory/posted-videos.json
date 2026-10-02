@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=RDjUBTanNsI",
-      "title": "Cha Eunwoo in glasses || My All",
-      "country": "South Korea",
-      "postedAt": "2026-09-01T10:12:26.748Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=Mjp1fOJsdIU",
-      "title": "Don't Do This in China! 🚫🇨🇳",
-      "country": "China",
-      "postedAt": "2026-09-02T06:46:27.595Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=7kJSqomWWDw",
       "title": "Blackpink always treats their staff well!!😍❤️ #bl",
       "country": "Hong Kong",
@@ -411,6 +399,15 @@
       "videoId": "g3-PyhfIecA",
       "category": "meme-anime",
       "titleSource": "kick back"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=dXj0c9t-rqY",
+      "title": "super shy acapella 🗿 #newjeans",
+      "country": "Global",
+      "postedAt": "2026-10-02T09:19:35.652Z",
+      "videoId": "dXj0c9t-rqY",
+      "category": "meme-kpop",
+      "titleSource": "super shy"
     }
   ]
 }

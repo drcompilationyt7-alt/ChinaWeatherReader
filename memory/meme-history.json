@@ -576,6 +576,57 @@
     "ovStyle": "ov-layers",
     "descHook": "question"
    }
+  },
+  {
+   "videoId": "dXj0c9t-rqY",
+   "url": "https://www.youtube.com/watch?v=dXj0c9t-rqY",
+   "postedAt": "2026-10-02T09:19:35.649Z",
+   "publishAt": "2026-10-02T12:00:00.000Z",
+   "song": "super shy",
+   "theme": "kpop",
+   "emoji": "🗿",
+   "title": "super shy acapella 🗿 #newjeans",
+   "clipIds": [
+    "NcJo-T5Wo3U",
+    "NDfh8m20dy4",
+    "5sp_qdC3_dg",
+    "JEnNWN2EkjU",
+    "pG0F2jyyyWc",
+    "NHjI-IIVfXE",
+    "qsHvdRA0a6o",
+    "l5DdBk-rbsQ",
+    "yIBQpq5CHMA",
+    "PSqw8Ys7Nio"
+   ],
+   "clipChannels": [
+    "KBS Entertain",
+    "KBS Kpop",
+    "Kpop_kimz",
+    "M2",
+    "NewJeans",
+    "SBSKPOP X INKIGAYO",
+    "idol studio",
+    "김성민",
+    "김진추",
+    "한국 맥도날드"
+   ],
+   "clipSource": "NewJeans",
+   "settings": {
+    "drop": 18,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "stems"
+   },
+   "onVideoTitle": "super shy layer by layer",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-layers",
+    "descHook": "stems"
+   }
   }
  ]
 }
