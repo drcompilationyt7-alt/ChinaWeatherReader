@@ -307,6 +307,31 @@
     "titleStyle": "casual",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "e14ZT-QLggw",
+   "url": "https://www.youtube.com/watch?v=e14ZT-QLggw",
+   "postedAt": "2026-10-02T08:43:56.067Z",
+   "publishAt": "2026-10-02T12:00:00.000Z",
+   "format": "character",
+   "theme": "anime",
+   "seed": 565973538,
+   "length": "quick",
+   "followUpOf": "Tyg2ooEtzho",
+   "titleTemplate": "char-ramp",
+   "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
+   "answers": [
+    "character:izumi miyamura",
+    "character:artoria pendragon",
+    "character:ken ryuguji"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
