@@ -332,6 +332,30 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "Fbg3jG9oNts",
+   "url": "https://www.youtube.com/watch?v=Fbg3jG9oNts",
+   "postedAt": "2026-10-03T08:19:17.337Z",
+   "publishAt": "2026-10-03T12:00:00.000Z",
+   "format": "trivia",
+   "theme": "cdrama",
+   "seed": 217283474,
+   "length": "quick",
+   "titleTemplate": "trivia-howwell",
+   "title": "How Well Do You Know Chinese Movies?",
+   "answers": [
+    "trivia:bruce lee's most famous film is 'enter the...'",
+    "trivia:xiao zhan and wang yibo starred in...",
+    "trivia:who played ip man in the 2008 movie?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "two",
+    "titleStyle": "challenge",
+    "descHook": "challenge"
+   }
   }
  ]
 }

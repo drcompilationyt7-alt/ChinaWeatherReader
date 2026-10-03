@@ -153,6 +153,17 @@
       "titleSource": "char-ramp",
       "quizFormat": "character",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Fbg3jG9oNts",
+      "title": "How Well Do You Know Chinese Movies?",
+      "country": "Global",
+      "postedAt": "2026-10-03T08:19:17.391Z",
+      "videoId": "Fbg3jG9oNts",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-howwell",
+      "quizFormat": "trivia",
+      "quizTheme": "cdrama"
     }
   ]
 }
