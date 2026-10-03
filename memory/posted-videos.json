@@ -1,24 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=7kJSqomWWDw",
-      "title": "Blackpink always treats their staff well!!😍❤️ #bl",
-      "country": "Hong Kong",
-      "postedAt": "2026-09-02T09:56:47.763Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=A2B2cddLXPA",
-      "title": "This Scene 🔥🥵 || CDrama ~ Speed and Love #edit #",
-      "country": "Thailand",
-      "postedAt": "2026-09-03T06:50:24.575Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=ePOnRl6P2Bs",
-      "title": "Girls spot a hottie! 😍👀",
-      "country": "Vietnam",
-      "postedAt": "2026-09-03T10:06:49.383Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=zE_qZ_aJ9jc",
       "title": "Anime characters who rarely smile/never smile 🕊❤‍",
       "country": "Japan",
@@ -408,6 +390,15 @@
       "videoId": "dXj0c9t-rqY",
       "category": "meme-kpop",
       "titleSource": "super shy"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=sCoxfXm2XPA",
+      "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
+      "country": "Global",
+      "postedAt": "2026-10-03T12:54:28.168Z",
+      "videoId": "sCoxfXm2XPA",
+      "category": "meme-anime",
+      "titleSource": "idol"
     }
   ]
 }

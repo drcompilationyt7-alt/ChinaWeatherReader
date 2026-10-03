@@ -1,95 +1,95 @@
 {
-  "updatedAt": "2026-10-02T09:03:59.203Z",
+  "updatedAt": "2026-10-03T12:45:28.442Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 236,
-    "totalVideos": 13
+    "totalViews": 263,
+    "totalVideos": 14
   },
-  "sampleSize": 12,
+  "sampleSize": 13,
   "reliable": true,
-  "globalMeanScore": 1.8,
-  "typicalScore": 1.6,
+  "globalMeanScore": 2.4,
+  "typicalScore": 1.7,
   "topTitles": [
+    {
+      "videoId": "g3-PyhfIecA",
+      "title": "kick back acapella ⚡🔥",
+      "views": 24,
+      "score": 11.8,
+      "country": "Global",
+      "ageDays": 2
+    },
     {
       "videoId": "kY-fbtjVQ7c",
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "views": 73,
-      "score": 4.1,
+      "views": 74,
+      "score": 3.8,
       "country": "Global",
-      "ageDays": 8.9
+      "ageDays": 10
     },
     {
       "videoId": "AQ7-2LyD16w",
       "title": "dynamite acapella bts ✨🔥",
-      "views": 25,
-      "score": 3.6,
+      "views": 30,
+      "score": 2.8,
       "country": "Global",
-      "ageDays": 2.9
+      "ageDays": 4
     },
     {
       "videoId": "wFuMHySFyWw",
       "title": "unravel acapella 🗿",
       "views": 36,
-      "score": 2.6,
+      "score": 2.3,
       "country": "Global",
-      "ageDays": 7.9
+      "ageDays": 9
     },
     {
       "videoId": "c6l6daliqog",
       "title": "otonoke acapella 🎧🎶 #dandadan",
       "views": 18,
-      "score": 2.2,
+      "score": 1.7,
       "country": "Global",
-      "ageDays": 5.9
+      "ageDays": 7
     },
     {
       "videoId": "ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "views": 21,
-      "score": 1.8,
+      "score": 1.7,
       "country": "Global",
-      "ageDays": 11.9
+      "ageDays": 13
     },
     {
       "videoId": "h469omNRzVE",
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
       "views": 3,
-      "score": 1.7,
+      "score": 1.5,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 3
+    },
+    {
+      "videoId": "TU8oZz2apfk",
+      "title": "crossing field acapella 🗿🔥",
+      "views": 6,
+      "score": 1.3,
+      "country": "Global",
+      "ageDays": 6
     },
     {
       "videoId": "i6wFQ4hxE48",
       "title": "redo acapella but the drums kick in 🎶🎧",
       "views": 8,
-      "score": 1.3,
+      "score": 1.2,
       "country": "Global",
-      "ageDays": 9.9
-    },
-    {
-      "videoId": "TU8oZz2apfk",
-      "title": "crossing field acapella 🗿🔥",
-      "views": 4,
-      "score": 1.1,
-      "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 11
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 21,
-      "score": 1,
-      "country": "Global",
-      "ageDays": 12.9
-    },
-    {
-      "videoId": "RaxOD5kvDwk",
-      "title": "supernova acapella stem build up aespa edit 🗿🔥",
-      "views": 18,
       "score": 0.9,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 14
     }
   ],
   "bottomTitles": [
@@ -97,126 +97,130 @@
       "videoId": "0EL5CX1KLHc",
       "title": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥",
       "views": 1,
-      "score": 0.3,
+      "score": 0.2,
       "country": "Global",
-      "ageDays": 3.9
+      "ageDays": 5
     },
     {
       "videoId": "-3pKrM_MiHE",
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
       "views": 11,
-      "score": 0.8,
+      "score": 0.7,
       "country": "Global",
-      "ageDays": 10.9
+      "ageDays": 12
     },
     {
       "videoId": "RaxOD5kvDwk",
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
-      "views": 18,
-      "score": 0.9,
+      "views": 20,
+      "score": 0.8,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 8
     },
     {
       "videoId": "V3R9YEsOkxo",
       "title": "rise acapella 🥲🥲",
       "views": 21,
-      "score": 1,
+      "score": 0.9,
       "country": "Global",
-      "ageDays": 12.9
+      "ageDays": 14
     },
     {
-      "videoId": "TU8oZz2apfk",
-      "title": "crossing field acapella 🗿🔥",
-      "views": 4,
-      "score": 1.1,
+      "videoId": "i6wFQ4hxE48",
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "views": 8,
+      "score": 1.2,
       "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 11
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
-      "n": 6,
-      "lift": 1.21
+      "n": 7,
+      "lift": 1.47
     }
   ],
   "countries": {
     "Global": {
-      "n": 12,
-      "meanScore": 1.8,
+      "n": 13,
+      "meanScore": 2.4,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
+    "meme-anime": {
+      "n": 8,
+      "meanScore": 2.7,
+      "weight": 1.04
+    },
     "meme-japanese": {
       "n": 2,
-      "meanScore": 2.2,
+      "meanScore": 2,
       "weight": 1
     },
     "meme-kpop": {
       "n": 3,
-      "meanScore": 2.1,
-      "weight": 1.06
-    },
-    "meme-anime": {
-      "n": 7,
-      "meanScore": 1.5,
-      "weight": 0.97
+      "meanScore": 1.8,
+      "weight": 0.98
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "kick back acapella ⚡🔥",
+      "score": 2.551
+    },
+    {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "score": 1.631
+      "score": 1.563
     },
     {
       "title": "dynamite acapella bts ✨🔥",
-      "score": 1.518
+      "score": 1.324
     },
     {
       "title": "unravel acapella 🗿",
-      "score": 1.281
+      "score": 1.184
     },
     {
       "title": "otonoke acapella 🎧🎶 #dandadan",
-      "score": 1.166
+      "score": 0.977
     },
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
-      "score": 1.045
+      "score": 0.986
     },
     {
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
-      "score": 0.979
-    },
-    {
-      "title": "redo acapella but the drums kick in 🎶🎧",
-      "score": 0.838
+      "score": 0.934
     },
     {
       "title": "crossing field acapella 🗿🔥",
-      "score": 0.727
+      "score": 0.832
+    },
+    {
+      "title": "redo acapella but the drums kick in 🎶🎧",
+      "score": 0.777
     },
     {
       "title": "rise acapella 🥲🥲",
-      "score": 0.697
+      "score": 0.656
     },
     {
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
-      "score": 0.641
+      "score": 0.595
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "score": 0.574
+      "score": 0.531
     },
     {
       "title": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥",
-      "score": 0.229
+      "score": 0.181
     }
   ],
-  "promptSummary": "Based on 12 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 1.6/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (73 views, Global)\n  - \"dynamite acapella bts ✨🔥\" (25 views, Global)\n  - \"unravel acapella 🗿\" (36 views, Global)\n  - \"otonoke acapella 🎧🎶 #dandadan\" (18 views, Global)\n  - \"love dive acapella stem build up (ive edit) 🗿🔥\" (21 views, Global)\n  - \"kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx\" (3 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"clattanoia acapella but each stem makes the edit harder 🔥\" (11 views)\n  - \"supernova acapella stem build up aespa edit 🗿🔥\" (18 views)\nPatterns that WORK for this channel: short (<= 40 chars) (x1.21)",
-  "summaryLine": "Best recent: \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (73 views, 4.1/day) — typical short 1.6/day over 12 shorts"
+  "promptSummary": "Based on 13 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 1.7/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"kick back acapella ⚡🔥\" (24 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (74 views, Global)\n  - \"dynamite acapella bts ✨🔥\" (30 views, Global)\n  - \"unravel acapella 🗿\" (36 views, Global)\n  - \"otonoke acapella 🎧🎶 #dandadan\" (18 views, Global)\n  - \"love dive acapella stem build up (ive edit) 🗿🔥\" (21 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"clattanoia acapella but each stem makes the edit harder 🔥\" (11 views)\n  - \"supernova acapella stem build up aespa edit 🗿🔥\" (20 views)\nPatterns that WORK for this channel: short (<= 40 chars) (x1.47)",
+  "summaryLine": "Best recent: \"kick back acapella ⚡🔥\" (24 views, 11.8/day) — typical short 1.7/day over 13 shorts"
 }

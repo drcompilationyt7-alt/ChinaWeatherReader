@@ -627,6 +627,53 @@
     "ovStyle": "ov-layers",
     "descHook": "stems"
    }
+  },
+  {
+   "videoId": "sCoxfXm2XPA",
+   "url": "https://www.youtube.com/watch?v=sCoxfXm2XPA",
+   "postedAt": "2026-10-03T12:54:28.166Z",
+   "publishAt": null,
+   "song": "idol",
+   "theme": "anime",
+   "emoji": "🔥,🔥",
+   "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
+   "clipIds": [
+    "X7RotIysnpo",
+    "C1_QeLs_vX8",
+    "G91pfbeJdFc",
+    "iN0-dRNsmRM",
+    "y11qgJVKK0A",
+    "Dnf7GC52LG8",
+    "PAcf55v6zqQ",
+    "T26xIPzfHYQ"
+   ],
+   "clipChannels": [
+    "Akiko Animes",
+    "Anime　【OSHI NO KO】　Official Channel",
+    "LeeandLie (AmaLee)",
+    "Lindea",
+    "NurarihyonMaou",
+    "Rykko",
+    "Snack Time Anime",
+    "ほいてちゃんねる"
+   ],
+   "clipSource": "Oshi no Ko",
+   "settings": {
+    "drop": 18,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "title-source",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "drop"
+   }
   }
  ]
 }
