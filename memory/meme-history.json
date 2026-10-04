@@ -674,6 +674,51 @@
     "ovStyle": "ov-drop",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "V4jth3Elrmk",
+   "url": "https://www.youtube.com/watch?v=V4jth3Elrmk",
+   "postedAt": "2026-10-04T09:03:44.057Z",
+   "publishAt": "2026-10-04T12:00:00.000Z",
+   "song": "god's menu",
+   "theme": "kpop",
+   "emoji": "🎶,🎧",
+   "title": "god's menu acapella but the stems stack up 🎶🎧",
+   "clipIds": [
+    "UZMAIH7AdeQ",
+    "k8Y6ZTjmCXs",
+    "8mw156uzCI4",
+    "Q7IFjVUUb_E",
+    "LhwQ5_NO2v0",
+    "dx9gQRCT_kM",
+    "nkeh7Bx3GzY",
+    "TQTlCHxyuu8"
+   ],
+   "clipChannels": [
+    "JYP Entertainment",
+    "K-dance mirrored",
+    "M2",
+    "STUDIO CHOOM [스튜디오 춤]",
+    "Stray Kids",
+    "soobinloml"
+   ],
+   "clipSource": "Stray Kids",
+   "settings": {
+    "drop": 10,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "question"
+   },
+   "onVideoTitle": "which layer hits hardest?",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-question",
+    "descHook": "question"
+   }
   }
  ]
 }
