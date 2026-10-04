@@ -20,143 +20,153 @@
    "added": [],
    "rejected": [],
    "note": "4 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W40",
+   "pool": "meme/stem-edit",
+   "at": "2026-10-04T07:35:58.362Z",
+   "n": 12,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "LLM call failed: no proposals this week"
   }
  ],
  "pools": {
   "meme/stem-edit": {
    "arms": {},
    "posterior": {
-    "week": "2026-W39",
-    "n": 4,
+    "week": "2026-W40",
+    "n": 12,
     "dims": {
      "titleStyle": {
-      "llm-free": {
+      "kw-suggest": {
        "uses": 1,
-       "mean": 0.1,
+       "mean": 0.32,
        "sd": 0.77
       },
       "kw-emoji": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 4,
+       "mean": 0.24,
+       "sd": 0.49
+      },
+      "llm-hook": {
+       "uses": 3,
+       "mean": 0.07,
+       "sd": 0.53
       },
       "kw-source": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
-      "kw-suggest": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "llm-hook": {
-       "uses": 3,
-       "mean": -0.05,
-       "sd": 0.57
+      "llm-free": {
+       "uses": 4,
+       "mean": -0.36,
+       "sd": 0.49
       }
      },
      "ovStyle": {
+      "ov-layers": {
+       "uses": 2,
+       "mean": 0.52,
+       "sd": 0.62
+      },
       "ov-llm": {
        "uses": 2,
-       "mean": 0.12,
-       "sd": 0.64
+       "mean": 0.3,
+       "sd": 0.61
       },
       "ov-drop": {
-       "uses": 1,
-       "mean": 0.1,
-       "sd": 0.77
-      },
-      "ov-layers": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 5,
+       "mean": -0.16,
+       "sd": 0.45
       },
       "ov-question": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 2,
+       "mean": -0.21,
+       "sd": 0.65
       },
       "ov-kw": {
        "uses": 1,
-       "mean": -0.26,
-       "sd": 0.77
+       "mean": -0.3,
+       "sd": 0.74
       }
      },
      "hashtagSet": {
-      "title-source": {
-       "uses": 1,
-       "mean": 0.63,
-       "sd": 0.76
-      },
-      "edit-community": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "niche3": {
-       "uses": 2,
-       "mean": -0.11,
-       "sd": 0.65
+       "uses": 6,
+       "mean": 0.12,
+       "sd": 0.41
       },
       "minimal": {
+       "uses": 2,
+       "mean": 0.1,
+       "sd": 0.63
+      },
+      "title-source": {
+       "uses": 3,
+       "mean": 0.07,
+       "sd": 0.54
+      },
+      "edit-community": {
        "uses": 1,
-       "mean": -0.46,
+       "mean": -0.5,
        "sd": 0.77
       }
      },
      "emojiSet": {
-      "moai": {
-       "uses": 2,
-       "mean": 0.52,
-       "sd": 0.64
-      },
-      "spark": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
       "fire": {
-       "uses": 1,
-       "mean": -0.26,
-       "sd": 0.77
+       "uses": 2,
+       "mean": 0.29,
+       "sd": 0.62
+      },
+      "moai": {
+       "uses": 5,
+       "mean": 0.2,
+       "sd": 0.44
       },
       "music": {
-       "uses": 1,
-       "mean": -0.46,
-       "sd": 0.77
+       "uses": 2,
+       "mean": -0.12,
+       "sd": 0.6
+      },
+      "spark": {
+       "uses": 3,
+       "mean": -0.37,
+       "sd": 0.57
       }
      },
      "descHook": {
-      "stems": {
+      "question": {
        "uses": 2,
-       "mean": 0.26,
-       "sd": 0.64
+       "mean": 0.48,
+       "sd": 0.62
       },
-      "llm-line": {
-       "uses": 1,
-       "mean": 0.1,
-       "sd": 0.77
+      "stems": {
+       "uses": 3,
+       "mean": 0.17,
+       "sd": 0.53
       },
       "drop": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
-      },
-      "question": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 4,
+       "mean": -0.14,
+       "sd": 0.5
       },
       "layers": {
        "uses": 1,
-       "mean": -0.46,
-       "sd": 0.77
+       "mean": -0.16,
+       "sd": 0.74
+      },
+      "llm-line": {
+       "uses": 2,
+       "mean": -0.29,
+       "sd": 0.63
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-09-27T07:20:22.472Z"
+ "updatedAt": "2026-10-04T07:35:58.363Z"
 }
