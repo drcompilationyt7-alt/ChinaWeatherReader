@@ -164,6 +164,17 @@
       "titleSource": "trivia-howwell",
       "quizFormat": "trivia",
       "quizTheme": "cdrama"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=QaF4Ova1vq4",
+      "title": "Guess the Country by Its Shape 🗺️ #geography",
+      "country": "Global",
+      "postedAt": "2026-10-04T08:37:03.313Z",
+      "videoId": "QaF4Ova1vq4",
+      "category": "quiz-shape",
+      "titleSource": "shape-guess",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }

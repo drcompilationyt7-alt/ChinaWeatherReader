@@ -1,95 +1,95 @@
 {
-  "updatedAt": "2026-10-03T08:16:14.922Z",
+  "updatedAt": "2026-10-04T08:33:22.185Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 4,
-    "totalViews": 5030,
-    "totalVideos": 14
+    "totalViews": 5284,
+    "totalVideos": 15
   },
-  "sampleSize": 13,
+  "sampleSize": 14,
   "reliable": true,
-  "globalMeanScore": 67.7,
-  "typicalScore": 28.8,
+  "globalMeanScore": 57.2,
+  "typicalScore": 27.3,
   "topTitles": [
     {
       "videoId": "Tyg2ooEtzho",
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "views": 1235,
-      "score": 330.5,
+      "views": 1244,
+      "score": 245.1,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.9
+    },
+    {
+      "videoId": "e14ZT-QLggw",
+      "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
+      "views": 198,
+      "score": 116.4,
+      "country": "Global",
+      "ageDays": 1.9
     },
     {
       "videoId": "RCsOZI0JRLI",
       "title": "guess the anime from emojis 🔥 #anime",
       "views": 313,
-      "score": 177.8,
+      "score": 113.4,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 2.9
     },
     {
       "videoId": "Sw0Nb60i-1Y",
       "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
-      "views": 587,
-      "score": 90.9,
+      "views": 586,
+      "score": 71.7,
       "country": "Global",
-      "ageDays": 3.8
+      "ageDays": 4.9
     },
     {
       "videoId": "pCSycG4OlKs",
       "title": "guess the kpop song from emojis 🎶",
-      "views": 581,
-      "score": 76.8,
+      "views": 582,
+      "score": 66.8,
       "country": "Global",
-      "ageDays": 6.8
+      "ageDays": 7.9
     },
     {
       "videoId": "8dJefQwj140",
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
       "views": 643,
-      "score": 74.7,
+      "score": 66,
       "country": "Global",
-      "ageDays": 7.8
+      "ageDays": 8.9
     },
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
       "views": 741,
-      "score": 48.8,
+      "score": 48.2,
       "country": "Global",
-      "ageDays": 13.8
+      "ageDays": 14.9
     },
     {
       "videoId": "T1hGqwqU0rU",
       "title": "Only Travel Nerds Get 3/3 ✈️",
       "views": 331,
-      "score": 24,
+      "score": 21.8,
       "country": "Global",
-      "ageDays": 9.8
+      "ageDays": 10.9
     },
     {
       "videoId": "mHpF6_z6UoA",
       "title": "guess the kpop song from emojis 🎶",
-      "views": 109,
-      "score": 19,
+      "views": 110,
+      "score": 16,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 161,
-      "score": 12.7,
+      "score": 11.8,
       "country": "Global",
-      "ageDays": 10.8
-    },
-    {
-      "videoId": "S1mLvoUzF0s",
-      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "views": 217,
-      "score": 10.4,
-      "country": "Global",
-      "ageDays": 12.8
+      "ageDays": 11.9
     }
   ],
   "bottomTitles": [
@@ -97,102 +97,102 @@
       "videoId": "aqIJfCd0aIk",
       "title": "Only Real Otakus Get 3/3 🎶",
       "views": 5,
-      "score": 1.1,
+      "score": 0.5,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     },
     {
       "videoId": "6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "views": 66,
-      "score": 4.2,
+      "score": 4.1,
       "country": "Global",
-      "ageDays": 11.8
+      "ageDays": 12.9
     },
     {
       "videoId": "_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "views": 93,
-      "score": 9.8,
+      "score": 8.7,
       "country": "Global",
-      "ageDays": 8.8
+      "ageDays": 9.9
     },
     {
       "videoId": "S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
       "views": 217,
-      "score": 10.4,
+      "score": 9.7,
       "country": "Global",
-      "ageDays": 12.8
+      "ageDays": 13.8
     },
     {
       "videoId": "X0RTX6oQ1IE",
       "title": "would you rather (cities edition) 🔥✌️",
       "views": 161,
-      "score": 12.7,
+      "score": 11.8,
       "country": "Global",
-      "ageDays": 10.8
+      "ageDays": 11.9
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
       "n": 8,
-      "lift": 0.44
+      "lift": 0.38
     }
   ],
   "countries": {
     "Global": {
-      "n": 13,
-      "meanScore": 67.7,
+      "n": 14,
+      "meanScore": 57.2,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
     "quiz-character": {
-      "n": 1,
-      "meanScore": 330.5,
+      "n": 2,
+      "meanScore": 180.8,
       "weight": 1
     },
     "quiz-emoji": {
       "n": 4,
-      "meanScore": 80.6,
-      "weight": 1.51
+      "meanScore": 61.1,
+      "weight": 1.39
     },
     "quiz-voice": {
       "n": 1,
-      "meanScore": 90.9,
+      "meanScore": 71.7,
       "weight": 1
     },
     "quiz-vtuber": {
       "n": 1,
-      "meanScore": 74.7,
+      "meanScore": 66,
       "weight": 1
     },
     "quiz-cityphoto": {
       "n": 1,
-      "meanScore": 24,
+      "meanScore": 21.8,
       "weight": 1
     },
     "quiz-wyr": {
       "n": 1,
-      "meanScore": 12.7,
+      "meanScore": 11.8,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 1,
-      "meanScore": 10.4,
+      "meanScore": 9.7,
       "weight": 1
     },
     "quiz-duel": {
       "n": 2,
-      "meanScore": 7,
+      "meanScore": 6.4,
       "weight": 1
     },
     "quiz-song": {
       "n": 1,
-      "meanScore": 1.1,
+      "meanScore": 0.5,
       "weight": 1
     }
   },
@@ -200,57 +200,61 @@
   "history": [
     {
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "score": 5.804
+      "score": 5.506
+    },
+    {
+      "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
+      "score": 4.765
     },
     {
       "title": "guess the anime from emojis 🔥 #anime",
-      "score": 5.186
+      "score": 4.74
     },
     {
       "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
-      "score": 4.521
+      "score": 4.286
     },
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 4.354
+      "score": 4.217
     },
     {
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "score": 4.327
+      "score": 4.205
     },
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 3.908
+      "score": 3.896
     },
     {
       "title": "Only Travel Nerds Get 3/3 ✈️",
-      "score": 3.219
+      "score": 3.129
     },
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 2.995
+      "score": 2.835
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
-      "score": 2.615
+      "score": 2.548
     },
     {
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "score": 2.436
+      "score": 2.371
     },
     {
       "title": "who would you pick anime: teacher roommate fight ⚔️",
-      "score": 2.378
+      "score": 2.273
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
-      "score": 1.658
+      "score": 1.627
     },
     {
       "title": "Only Real Otakus Get 3/3 🎶",
-      "score": 0.725
+      "score": 0.423
     }
   ],
-  "promptSummary": "Based on 13 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 28.8/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime\" (1,235 views, Global)\n  - \"guess the anime from emojis 🔥 #anime\" (313 views, Global)\n  - \"Guess the Anime Character by Voice: Can You Get 3/3 #anime\" (587 views, Global)\n  - \"guess the kpop song from emojis 🎶\" (581 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (643 views, Global)\n  - \"Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥\" (741 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (5 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (66 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (93 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.44)",
-  "summaryLine": "Best recent: \"Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime\" (1,235 views, 330.5/day) — typical short 28.8/day over 13 shorts"
+  "promptSummary": "Based on 14 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 27.3/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime\" (1,244 views, Global)\n  - \"Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime\" (198 views, Global)\n  - \"guess the anime from emojis 🔥 #anime\" (313 views, Global)\n  - \"Guess the Anime Character by Voice: Can You Get 3/3 #anime\" (586 views, Global)\n  - \"guess the kpop song from emojis 🎶\" (582 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber\" (643 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (5 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (66 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (93 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.38)",
+  "summaryLine": "Best recent: \"Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime\" (1,244 views, 245.1/day) — typical short 27.3/day over 14 shorts"
 }
