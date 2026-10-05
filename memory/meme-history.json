@@ -719,6 +719,55 @@
     "ovStyle": "ov-question",
     "descHook": "question"
    }
+  },
+  {
+   "videoId": "zoIsrTuwqzw",
+   "url": "https://www.youtube.com/watch?v=zoIsrTuwqzw",
+   "postedAt": "2026-10-05T09:53:28.476Z",
+   "publishAt": "2026-10-05T12:00:00.000Z",
+   "song": "pokemon theme",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "pokemon theme acapella 🗿",
+   "clipIds": [
+    "Asz32GbogAA",
+    "H9a4UU44r7c",
+    "ccgCQotQFM4",
+    "lNStZSVdFDI",
+    "YIa8UOg-mtI",
+    "6xKWiCMKKJg",
+    "h_okQYik1xg",
+    "63962x_Bd5A",
+    "XbAJwdgpbQw"
+   ],
+   "clipChannels": [
+    "Com.Figurado",
+    "Julien Lippert",
+    "Marcus Mapua",
+    "Pikachu cutest moments",
+    "PokeBondX_7",
+    "PokemonAll",
+    "The Official Pokémon YouTube channel",
+    "ThePokemonNetwork",
+    "imangos"
+   ],
+   "clipSource": "Pokemon",
+   "settings": {
+    "drop": 18,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "pokemon theme acapella",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-kw",
+    "descHook": "drop"
+   }
   }
  ]
 }
