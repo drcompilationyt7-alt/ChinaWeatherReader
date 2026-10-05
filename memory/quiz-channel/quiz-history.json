@@ -380,6 +380,30 @@
     "titleStyle": "keyword",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "vaJCe01FdYs",
+   "url": "https://www.youtube.com/watch?v=vaJCe01FdYs",
+   "postedAt": "2026-10-05T09:18:00.257Z",
+   "publishAt": "2026-10-05T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "anime",
+   "seed": 449692225,
+   "length": "quick",
+   "titleTemplate": "emoji-anime-casual",
+   "title": "guess the anime from emojis 🎬 #anime",
+   "answers": [
+    "emoji:one piece",
+    "emoji:spirited away",
+    "emoji:frieren"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

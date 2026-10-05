@@ -175,6 +175,17 @@
       "titleSource": "shape-guess",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=vaJCe01FdYs",
+      "title": "guess the anime from emojis 🎬 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-05T09:18:00.348Z",
+      "videoId": "vaJCe01FdYs",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-anime-casual",
+      "quizFormat": "emoji",
+      "quizTheme": "anime"
     }
   ]
 }
