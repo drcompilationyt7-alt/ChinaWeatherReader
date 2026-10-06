@@ -768,6 +768,49 @@
     "ovStyle": "ov-kw",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "aJ9WPdgjEoU",
+   "url": "https://www.youtube.com/watch?v=aJ9WPdgjEoU",
+   "postedAt": "2026-10-06T09:36:59.435Z",
+   "publishAt": "2026-10-06T12:00:00.000Z",
+   "song": "iro kousui",
+   "theme": "anime",
+   "emoji": "🔥,🔥",
+   "title": "iro kousui acapella (horimiya edit) 🔥 #horimiya",
+   "clipIds": [
+    "Z0IhiA-NtuE",
+    "BsVBssO-yb8",
+    "u7dJXQMiPjc",
+    "pk5uFG8QclE",
+    "-yox3tK8w2U",
+    "md_jaWVuaCM"
+   ],
+   "clipChannels": [
+    "Animerd123",
+    "Animistic 2",
+    "Oiru",
+    "anime love",
+    "アニプレックス チャンネル",
+    "天草式"
+   ],
+   "clipSource": "Horimiya",
+   "settings": {
+    "drop": 14,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "drop"
+   },
+   "onVideoTitle": "iro kousui stems",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-source",
+    "ovStyle": "ov-llm",
+    "descHook": "drop"
+   }
   }
  ]
 }
