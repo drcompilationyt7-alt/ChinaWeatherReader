@@ -811,6 +811,51 @@
     "ovStyle": "ov-llm",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "450-mzMj98U",
+   "url": "https://www.youtube.com/watch?v=450-mzMj98U",
+   "postedAt": "2026-10-07T09:30:38.259Z",
+   "publishAt": "2026-10-07T12:00:00.000Z",
+   "song": "chaos ga kiwamaru",
+   "theme": "anime",
+   "emoji": "🔥,🔥",
+   "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
+   "clipIds": [
+    "L1nxJY-N7U4",
+    "GeF-QhIh_Xs",
+    "GXp_z_l-ay0",
+    "UcGvFwkM11Y",
+    "hbZr47jwL_4",
+    "e9jh494EMj4",
+    "MaIfp6WRYhY",
+    "soCQVOsPghc"
+   ],
+   "clipChannels": [
+    "Anicrad",
+    "Bandai Namco Filmworks Channel",
+    "D3emure",
+    "Superetie 4K",
+    "YapMaster 68",
+    "mystxc"
+   ],
+   "clipSource": "Blue Lock",
+   "settings": {
+    "drop": 10,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "question"
+   },
+   "onVideoTitle": "which layer hits hardest?",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-source",
+    "ovStyle": "ov-question",
+    "descHook": "question"
+   }
   }
  ]
 }

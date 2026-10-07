@@ -1,63 +1,71 @@
 {
-  "updatedAt": "2026-10-06T09:28:29.916Z",
+  "updatedAt": "2026-10-07T09:21:24.028Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 6,
-    "totalViews": 330,
-    "totalVideos": 17
+    "totalViews": 347,
+    "totalVideos": 18
   },
-  "sampleSize": 16,
+  "sampleSize": 17,
   "reliable": true,
-  "globalMeanScore": 2.3,
-  "typicalScore": 1.6,
+  "globalMeanScore": 1.9,
+  "typicalScore": 1.5,
   "topTitles": [
     {
       "videoId": "sCoxfXm2XPA",
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
-      "views": 32,
-      "score": 10.9,
+      "views": 34,
+      "score": 7,
       "country": "Global",
-      "ageDays": 2.9
+      "ageDays": 3.9
+    },
+    {
+      "videoId": "zoIsrTuwqzw",
+      "title": "pokemon theme acapella 🗿",
+      "views": 11,
+      "score": 5.8,
+      "country": "Global",
+      "ageDays": 1.9
     },
     {
       "videoId": "V4jth3Elrmk",
       "title": "god's menu acapella but the stems stack up 🎶🎧",
       "views": 14,
-      "score": 7.7,
+      "score": 3.2,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 2.9
     },
     {
       "videoId": "g3-PyhfIecA",
       "title": "kick back acapella ⚡🔥",
       "views": 35,
-      "score": 3.7,
+      "score": 3.1,
       "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 5.9
     },
     {
       "videoId": "kY-fbtjVQ7c",
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
       "views": 74,
-      "score": 2.9,
+      "score": 2.7,
       "country": "Global",
-      "ageDays": 12.9
+      "ageDays": 13.9
     },
     {
       "videoId": "AQ7-2LyD16w",
       "title": "dynamite acapella bts ✨🔥",
       "views": 31,
-      "score": 1.9,
+      "score": 1.7,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 7.9
     },
     {
       "videoId": "wFuMHySFyWw",
       "title": "unravel acapella 🗿",
       "views": 36,
-      "score": 1.7,
+      "score": 1.6,
       "country": "Global",
-      "ageDays": 11.9
+      "ageDays": 12.9
     },
     {
       "videoId": "ULfXOR-LeQc",
@@ -65,15 +73,15 @@
       "views": 21,
       "score": 1.6,
       "country": "Global",
-      "ageDays": 15.9
+      "ageDays": 16.9
     },
     {
       "videoId": "c6l6daliqog",
       "title": "otonoke acapella 🎧🎶 #dandadan",
-      "views": 20,
-      "score": 1.2,
+      "views": 21,
+      "score": 1.1,
       "country": "Global",
-      "ageDays": 9.9
+      "ageDays": 10.9
     },
     {
       "videoId": "i6wFQ4hxE48",
@@ -81,15 +89,7 @@
       "views": 8,
       "score": 0.9,
       "country": "Global",
-      "ageDays": 13.9
-    },
-    {
-      "videoId": "V3R9YEsOkxo",
-      "title": "rise acapella 🥲🥲",
-      "views": 21,
-      "score": 0.9,
-      "country": "Global",
-      "ageDays": 16.9
+      "ageDays": 14.9
     }
   ],
   "bottomTitles": [
@@ -99,15 +99,15 @@
       "views": 1,
       "score": 0.1,
       "country": "Global",
-      "ageDays": 7.9
+      "ageDays": 8.9
     },
     {
       "videoId": "dXj0c9t-rqY",
       "title": "super shy acapella 🗿 #newjeans",
-      "views": 2,
+      "views": 3,
       "score": 0.4,
       "country": "Global",
-      "ageDays": 3.9
+      "ageDays": 4.9
     },
     {
       "videoId": "TU8oZz2apfk",
@@ -115,7 +115,7 @@
       "views": 6,
       "score": 0.5,
       "country": "Global",
-      "ageDays": 8.9
+      "ageDays": 9.9
     },
     {
       "videoId": "-3pKrM_MiHE",
@@ -123,46 +123,46 @@
       "views": 12,
       "score": 0.7,
       "country": "Global",
-      "ageDays": 14.9
+      "ageDays": 15.9
     },
     {
       "videoId": "RaxOD5kvDwk",
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
       "views": 20,
-      "score": 0.8,
+      "score": 0.7,
       "country": "Global",
-      "ageDays": 10.9
+      "ageDays": 11.9
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
-      "n": 8,
-      "lift": 0.75
+      "n": 9,
+      "lift": 0.97
     }
   ],
   "countries": {
     "Global": {
-      "n": 16,
-      "meanScore": 2.3,
+      "n": 17,
+      "meanScore": 1.9,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
     "meme-anime": {
-      "n": 9,
-      "meanScore": 2.4,
-      "weight": 1.01
+      "n": 10,
+      "meanScore": 2.2,
+      "weight": 1.06
     },
     "meme-kpop": {
       "n": 5,
-      "meanScore": 2.5,
-      "weight": 1.04
+      "meanScore": 1.5,
+      "weight": 0.96
     },
     "meme-japanese": {
       "n": 2,
-      "meanScore": 1.5,
+      "meanScore": 1.4,
       "weight": 1
     }
   },
@@ -170,27 +170,31 @@
   "history": [
     {
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
-      "score": 2.478
+      "score": 2.077
+    },
+    {
+      "title": "pokemon theme acapella 🗿",
+      "score": 1.92
     },
     {
       "title": "god's menu acapella but the stems stack up 🎶🎧",
-      "score": 2.162
+      "score": 1.442
     },
     {
       "title": "kick back acapella ⚡🔥",
-      "score": 1.558
+      "score": 1.415
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
-      "score": 1.372
+      "score": 1.317
     },
     {
       "title": "dynamite acapella bts ✨🔥",
-      "score": 1.065
+      "score": 0.979
     },
     {
       "title": "unravel acapella 🗿",
-      "score": 1.002
+      "score": 0.951
     },
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
@@ -198,11 +202,11 @@
     },
     {
       "title": "otonoke acapella 🎧🎶 #dandadan",
-      "score": 0.785
+      "score": 0.739
     },
     {
       "title": "redo acapella but the drums kick in 🎶🎧",
-      "score": 0.659
+      "score": 0.655
     },
     {
       "title": "rise acapella 🥲🥲",
@@ -210,11 +214,11 @@
     },
     {
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
-      "score": 0.584
+      "score": 0.518
     },
     {
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
-      "score": 0.56
+      "score": 0.523
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
@@ -222,17 +226,17 @@
     },
     {
       "title": "crossing field acapella 🗿🔥",
-      "score": 0.415
+      "score": 0.38
     },
     {
       "title": "super shy acapella 🗿 #newjeans",
-      "score": 0.308
+      "score": 0.358
     },
     {
       "title": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥",
-      "score": 0.119
+      "score": 0.107
     }
   ],
-  "promptSummary": "Based on 16 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 1.6/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (32 views, Global)\n  - \"god's menu acapella but the stems stack up 🎶🎧\" (14 views, Global)\n  - \"kick back acapella ⚡🔥\" (35 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (74 views, Global)\n  - \"dynamite acapella bts ✨🔥\" (31 views, Global)\n  - \"unravel acapella 🗿\" (36 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (2 views)\n  - \"crossing field acapella 🗿🔥\" (6 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.75)",
-  "summaryLine": "Best recent: \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (32 views, 10.9/day) — typical short 1.6/day over 16 shorts"
+  "promptSummary": "Based on 17 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 1.5/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (34 views, Global)\n  - \"pokemon theme acapella 🗿\" (11 views, Global)\n  - \"god's menu acapella but the stems stack up 🎶🎧\" (14 views, Global)\n  - \"kick back acapella ⚡🔥\" (35 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (74 views, Global)\n  - \"dynamite acapella bts ✨🔥\" (31 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (3 views)\n  - \"crossing field acapella 🗿🔥\" (6 views)",
+  "summaryLine": "Best recent: \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (34 views, 7/day) — typical short 1.5/day over 17 shorts"
 }
