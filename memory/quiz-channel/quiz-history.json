@@ -428,6 +428,30 @@
     "titleStyle": "speed",
     "descHook": "keyword"
    }
+  },
+  {
+   "videoId": "1ppVYRgxwNA",
+   "url": "https://www.youtube.com/watch?v=1ppVYRgxwNA",
+   "postedAt": "2026-10-07T08:53:03.426Z",
+   "publishAt": "2026-10-07T12:00:00.000Z",
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 233124670,
+   "length": "quick",
+   "titleTemplate": "idol-casual",
+   "title": "guess the kpop idol 🔥 #kpop",
+   "answers": [
+    "idol:rm",
+    "idol:bang chan",
+    "idol:yeji"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

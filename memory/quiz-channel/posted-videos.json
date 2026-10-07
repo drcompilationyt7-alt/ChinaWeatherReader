@@ -197,6 +197,17 @@
       "titleSource": "op-3sec",
       "quizFormat": "opening",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1ppVYRgxwNA",
+      "title": "guess the kpop idol 🔥 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-07T08:53:03.493Z",
+      "videoId": "1ppVYRgxwNA",
+      "category": "quiz-idol",
+      "titleSource": "idol-casual",
+      "quizFormat": "idol",
+      "quizTheme": "kpop"
     }
   ]
 }
