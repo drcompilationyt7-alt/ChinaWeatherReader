@@ -856,6 +856,50 @@
     "ovStyle": "ov-question",
     "descHook": "question"
    }
+  },
+  {
+   "videoId": "I3Sn-81uwrE",
+   "url": "https://www.youtube.com/watch?v=I3Sn-81uwrE",
+   "postedAt": "2026-10-08T09:40:20.207Z",
+   "publishAt": "2026-10-08T12:00:00.000Z",
+   "song": "hana ni natte",
+   "theme": "anime",
+   "emoji": "✨,🔥",
+   "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
+   "clipIds": [
+    "4Spirny-NYI",
+    "4UcPtsV7Auc",
+    "BWzPgAHZRrE",
+    "M3TuMMxAk48",
+    "wOleNo7T6_4",
+    "z9JZB08qy44",
+    "E3QN_uoHysA"
+   ],
+   "clipChannels": [
+    "Adelaide142",
+    "Anime at Home",
+    "MelodyHype",
+    "TOHO animation",
+    "TriaxFx",
+    "アニソンピクチャー"
+   ],
+   "clipSource": "The Apothecary Diaries",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "question"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "niche3",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-llm",
+    "descHook": "question"
+   }
   }
  ]
 }
