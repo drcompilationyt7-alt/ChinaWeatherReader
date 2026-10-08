@@ -208,6 +208,17 @@
       "titleSource": "idol-casual",
       "quizFormat": "idol",
       "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=WjE7g5LMDnQ",
+      "title": "Only Real Otakus Get 3/3 🎶 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-08T09:11:36.304Z",
+      "videoId": "WjE7g5LMDnQ",
+      "category": "quiz-opening",
+      "titleSource": "op-otaku",
+      "quizFormat": "opening",
+      "quizTheme": "anime"
     }
   ]
 }
