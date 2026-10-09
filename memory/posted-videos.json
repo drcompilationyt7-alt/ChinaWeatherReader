@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=sLNkBaLmLzk",
-      "title": "If you say she’s brainless, she’ll find a way to p",
-      "country": "China",
-      "postedAt": "2026-09-08T10:01:40.701Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=n8McpgYsmZI",
-      "title": "Ranking Top 10 Disney Channel Songs!",
-      "country": "United States",
-      "postedAt": "2026-09-09T07:17:43.805Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=U7rHGEDHvsA",
       "title": "Unexpected Give and Take! 😂💩",
       "country": "Vietnam",
@@ -390,6 +378,15 @@
       "videoId": "I3Sn-81uwrE",
       "category": "meme-anime",
       "titleSource": "hana ni natte"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=20gtifoxMCw",
+      "title": "magnetic acapella ✨⚡",
+      "country": "Global",
+      "postedAt": "2026-10-09T09:57:04.996Z",
+      "videoId": "20gtifoxMCw",
+      "category": "meme-kpop",
+      "titleSource": "magnetic"
     }
   ]
 }

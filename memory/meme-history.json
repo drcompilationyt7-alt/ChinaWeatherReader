@@ -900,6 +900,52 @@
     "ovStyle": "ov-llm",
     "descHook": "question"
    }
+  },
+  {
+   "videoId": "20gtifoxMCw",
+   "url": "https://www.youtube.com/watch?v=20gtifoxMCw",
+   "postedAt": "2026-10-09T09:57:04.994Z",
+   "publishAt": "2026-10-09T12:00:00.000Z",
+   "song": "magnetic",
+   "theme": "kpop",
+   "emoji": "✨,⚡",
+   "title": "magnetic acapella ✨⚡",
+   "clipIds": [
+    "yDwniXXHg24",
+    "dcWjn0awVhc",
+    "YjJnqX8Xe28",
+    "mLQBjeERh9E",
+    "b5ZnrM4gQCU",
+    "TEKyEQL-S8o",
+    "r8zfTiED3uE",
+    "6KIuzXYR16Y",
+    "gCdNHUYP1iE"
+   ],
+   "clipChannels": [
+    "ILLIT",
+    "KBS Kpop",
+    "KBS WORLD TV",
+    "M2",
+    "SBSKPOP X INKIGAYO",
+    "STUDIO CHOOM [스튜디오 춤]"
+   ],
+   "clipSource": "ILLIT",
+   "settings": {
+    "drop": 18,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "stems"
+   },
+   "onVideoTitle": "magnetic acapella",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "niche3",
+    "titleStyle": "kw-emoji",
+    "ovStyle": "ov-kw",
+    "descHook": "stems"
+   }
   }
  ]
 }
