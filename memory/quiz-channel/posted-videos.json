@@ -219,6 +219,17 @@
       "titleSource": "op-otaku",
       "quizFormat": "opening",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aGsvXn7x8AM",
+      "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
+      "country": "Global",
+      "postedAt": "2026-10-09T09:17:55.591Z",
+      "videoId": "aGsvXn7x8AM",
+      "category": "quiz-shape",
+      "titleSource": "shape-ramp",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }
