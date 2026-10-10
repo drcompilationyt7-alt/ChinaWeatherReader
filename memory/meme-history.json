@@ -946,6 +946,55 @@
     "ovStyle": "ov-kw",
     "descHook": "stems"
    }
+  },
+  {
+   "videoId": "vRoEzBcd3rc",
+   "url": "https://www.youtube.com/watch?v=vRoEzBcd3rc",
+   "postedAt": "2026-10-10T09:17:02.648Z",
+   "publishAt": "2026-10-10T12:00:00.000Z",
+   "song": "yoru ni kakeru",
+   "theme": "japanese",
+   "emoji": "🔥,🔥",
+   "title": "yoru ni kakeru acapella yoasobi edit 🔥",
+   "clipIds": [
+    "5QnTQq_u040",
+    "MWtVpwKeFRg",
+    "REfW9POtXzw",
+    "9RGCf7J6gPs",
+    "T7b4hz3bAMY",
+    "i4CM8U6ywY8",
+    "i6EETGckaUo",
+    "zXpu9M3snpM",
+    "aEiVvyojCQY"
+   ],
+   "clipChannels": [
+    "Ananta Hutagalung",
+    "Saki",
+    "Simon Lee",
+    "TATATAN",
+    "YOASOBI",
+    "hiro's",
+    "pratama putra",
+    "yoasobi fanclub YOA'S",
+    "びりんだ"
+   ],
+   "clipSource": "YOASOBI",
+   "settings": {
+    "drop": 10,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "drop"
+   }
   }
  ]
 }
