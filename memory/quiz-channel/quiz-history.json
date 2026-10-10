@@ -500,6 +500,31 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "pcC2sSKxuYQ",
+   "url": "https://www.youtube.com/watch?v=pcC2sSKxuYQ",
+   "postedAt": "2026-10-10T08:40:14.414Z",
+   "publishAt": "2026-10-10T12:00:00.000Z",
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 804535173,
+   "length": "quick",
+   "followUpOf": "1ppVYRgxwNA",
+   "titleTemplate": "idol-casual",
+   "title": "guess the kpop idol 🔥 #kpop",
+   "answers": [
+    "idol:j-hope",
+    "idol:sehun",
+    "idol:an yu-jin"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
