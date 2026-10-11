@@ -113,11 +113,31 @@ PROGRESSIONS = [
 ]
 
 
-def music(duration, seed=0, bpm=112):
-    """Light upbeat loop: kick, hats, bass, plucked chords."""
+MOODS = {   # themed editions (themes.json "music"): progression, tempo, extra layer
+    'summer': {'prog': [(0, (0, 4, 7)), (7, (0, 4, 7)), (9, (0, 3, 7)), (5, (0, 4, 7))], 'bpm': 122, 'arp': (0, 4, 7, 12, 7, 4, 7, 12)},
+    'festival': {'prog': [(0, (0, 4, 7)), (5, (0, 4, 7)), (9, (0, 3, 7)), (7, (0, 4, 7))], 'bpm': 112, 'arp': (0, 2, 4, 7, 9, 7, 4, 2)},
+    'spooky': {'prog': [(0, (0, 3, 7)), (8, (0, 4, 7)), (3, (0, 4, 7)), (10, (0, 4, 7))], 'bpm': 96, 'arp': (0, 3, 7, 3, 0, 3, 6, 3)},
+    'winter': {'prog': [(0, (0, 4, 7)), (9, (0, 3, 7)), (5, (0, 4, 7)), (7, (0, 4, 7))], 'bpm': 108, 'arp': (12, 7, 4, 7, 12, 16, 12, 7)},
+    'sports': {'prog': [(0, (0, 4, 7)), (10, (0, 4, 7)), (5, (0, 4, 7)), (7, (0, 4, 7))], 'bpm': 128, 'arp': None},
+}
+
+
+def music(duration, seed=0, bpm=112, mood=None):
+    """Light upbeat loop: kick, hats, bass, plucked chords (+ a mood's progression, tempo and bright arpeggio)."""
+    if mood:   # themed editions have their own procedural bed (music_beds.py); the regular bed below is unchanged
+        try:
+            import music_beds
+            b = music_beds.bed(mood, duration, seed)
+            if b is not None:
+                return b
+        except Exception as e:  # noqa: BLE001  (missing scipy etc.: fall back to the regular bed, never fail the render)
+            print(f'theme bed unavailable ({str(e)[:60]}), using the regular bed', file=sys.stderr)
     rng = np.random.default_rng(seed)
     key = int(rng.integers(0, 7))
     prog = PROGRESSIONS[int(rng.integers(0, len(PROGRESSIONS)))]
+    md = MOODS.get(mood) if mood else None
+    if md:
+        prog, bpm = md['prog'], md['bpm']
     beat = 60.0 / bpm
     bar = beat * 4
     n = int(SR * (duration + 1))
@@ -147,6 +167,9 @@ def music(duration, seed=0, bpm=112):
             # plucked chord on the off-beat
             for k, iv in enumerate(chord):
                 put(_note(_midi(base + 12 + iv), beat * 0.8), bt + beat / 2 + 0.008 * k, 0.07)
+            if md and md.get('arp'):   # mood layer: a bright eighth-note arpeggio, an octave up
+                for h in range(2):
+                    put(_note(_midi(base + 24 + md['arp'][(q * 2 + h) % 8]), beat * 0.45), bt + h * beat / 2, 0.045)
         put(_note(_midi(base + 12), bar, 'pad'), t, 0.05)
         t += bar
         b += 1
@@ -258,17 +281,26 @@ def _stretch(a, rate):
     return out / np.maximum(norm, 1e-3)
 
 
+LAST_ENGINE = None  # which engine voiced the last tts_lines() call (logged by the renderers)
+
+
 def tts_lines(lines, voices=None, rate='+8%', workdir=None):
     """Synthesise each line: TTS_ENGINE=chatterbox | kokoro | edge (default), falling back in that order."""
+    global LAST_ENGINE
+    if os.environ.get('POP_PRONOUNCE') == '1':   # phonetic respelling of names for the narrator only (pronounce.py); screen text is untouched
+        import pronounce
+        lines = [pronounce.respell(l) if isinstance(l, str) else l for l in lines]
     engine = os.environ.get('TTS_ENGINE', 'edge').lower()
     if engine == 'chatterbox':
         try:
             got = chatterbox_lines(lines)
+            LAST_ENGINE = 'chatterbox'
             if all(g is not None for g in got):
                 return got
             # patch the lines Chatterbox missed with Kokoro so the voice stays close
             try:
                 fill = kokoro_lines([l for l, g in zip(lines, got) if g is None])
+                LAST_ENGINE = 'chatterbox+kokoro'
                 it = iter(fill)
                 return [g if g is not None else next(it) for g in got]
             except Exception:
@@ -280,11 +312,13 @@ def tts_lines(lines, voices=None, rate='+8%', workdir=None):
     if engine == 'kokoro':
         try:
             got = kokoro_lines(lines)
+            LAST_ENGINE = 'kokoro'
             if any(g is not None for g in got):
                 return got
         except Exception as e:
             print(f'kokoro unavailable ({str(e)[:80]}), using edge-tts', file=sys.stderr)
     voices = [v for v in (voices or []) if v] + DEFAULT_VOICES
+    LAST_ENGINE = 'edge'
     try:
         import edge_tts
     except Exception:
@@ -432,7 +466,10 @@ def span_gain(n, spans, attack=0.08, release=0.3):
     return env
 
 
-def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=None, clip_track=None, clip_env=None, music_env=None):
+MUSIC_TRIM_DB = float(os.environ.get('POP_MUSIC_TRIM_DB', '-3'))   # owner 2026-10-11: music 3 dB lower, the voice level unchanged
+
+
+def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=None, clip_track=None, clip_env=None, music_env=None, music_trim_db=MUSIC_TRIM_DB):
     """
     events: [(time_sec, samples, gain)] sound effects
     voice:  [(time_sec, samples)] speech; music ducks under it
@@ -475,8 +512,20 @@ def mix(duration, events, voice, music_track=None, music_gain=0.55, target_lufs=
         fade = np.ones(n)
         f = int(SR * 0.6)
         fade[-f:] = np.linspace(1, 0.2, f)
-        out += music_gain * m * duck * fade * (music_env[:n] if music_env is not None else 1.0)
+        mus = music_gain * m * duck * fade * (music_env[:n] if music_env is not None else 1.0)
+        out_full = out + mus
+        out = out + mus * 10 ** (music_trim_db / 20.0)
+    else:
+        out_full = None
     if target_lufs is not None:
+        if out_full is not None and music_trim_db:
+            # master the mix as before (same gain for the voice), then apply that gain to the quieter-music mix:
+            # the voice stays exactly where it was, only the music drops
+            y = master(out_full, target_lufs)
+            g = float(np.dot(y, out_full) / max(1e-12, np.dot(out_full, out_full)))
+            res = g * out
+            pk = float(np.abs(res).max())
+            return res * (0.89 / pk) if pk > 0.89 else res
         return master(out, target_lufs)
     # gentle limiter + loudness target (about -14 LUFS for dense speech+music)
     rms = math.sqrt(float(np.mean(out ** 2))) or 1.0

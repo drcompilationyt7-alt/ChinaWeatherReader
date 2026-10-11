@@ -1,0 +1,53 @@
+{
+ "about": "Per-character appearance rules (owner 2026-10-10). A confirmed adult (age_class adult) gets the full adult rules. The ONLY exception is this explicit hand-made list: characters canonically drawn with a CHILD'S body (child proportions / loli design) whatever their stated age = strict (still in silhouette / eyes / character, no outfit, no swimwear / bare skin / suggestive), (approved by the owner 2026-10-10), plus owner notes (Frieren adult-modest: swimwear + bare legs / feet, no suggestive poses; Kobeni, Shinobu adult). Nobody is added automatically; no body heuristics. Per-picture and per-post age rejects (WD14 loli / shota / child / aged_down; Danbooru loli, shota, child, aged_down, younger) stay for everyone. age_class itself is never changed.",
+ "characters": {
+  "144594": {
+   "name": "Kobeni Higashiyama",
+   "rule": "adult",
+   "reason": "drawn as a young adult (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "136070": {
+   "name": "Shinobu Kocho",
+   "rule": "adult",
+   "reason": "drawn as a young adult (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "176754": {
+   "name": "Frieren",
+   "rule": "adult-modest",
+   "reason": "swimwear and bare legs / feet allowed, no suggestive poses (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "130429": {
+   "name": "Senko",
+   "rule": "strict",
+   "reason": "drawn with a child's body whatever the stated age (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "89029": {
+   "name": "Rory Mercury",
+   "rule": "strict",
+   "reason": "drawn with a child's body whatever the stated age (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "124447": {
+   "name": "Charmy Pappitson",
+   "rule": "strict",
+   "reason": "drawn with a child's body whatever the stated age (owner)",
+   "by": "owner 2026-10-09"
+  },
+  "128036": {
+   "name": "Milim Nava",
+   "rule": "strict",
+   "reason": "canonically drawn with a child's body (loli design), stated age adult",
+   "by": "owner approved 2026-10-10 (hand list)"
+  },
+  "910": {
+   "name": "Yachiru Kusajishi",
+   "rule": "strict",
+   "reason": "canonically drawn with a child's body (child proportions)",
+   "by": "owner approved 2026-10-10 (hand list)"
+  }
+ }
+}

@@ -16,6 +16,9 @@ voice or scene formats.
 
     python scripts/build-pop-media.py [--skip-idols] [--skip-anime]
     python scripts/build-pop-media.py --enrich    # add gender / age / nsfw to the existing anime snapshots
+    python scripts/build-pop-media.py --characters   # widen the character snapshot (favourites pages + top characters per popular show)
+    python scripts/build-pop-media.py --newformats [--limit 450] [--scan 900]   # silhouette / eyes / outfit extras + age classes
+    python scripts/build-pop-media.py --newformats2 --phase light|prefetch|eyes|models|theme|finish|regate|compact [--theme beach] [--minutes 40]   # all characters, more wiki art; waits while edit renders run
     python scripts/build-pop-media.py --vtubers
     python scripts/build-pop-media.py --voices    # verified voice-line clips for the voice quiz (yt-dlp + faster-whisper)
 """
@@ -189,6 +192,99 @@ def build_anime():
     json.dump({'source': 'AniList (anilist.co)', 'anime': anime},
               open(os.path.join(OUT, 'anime-list.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(f'{len(anime)} anime')
+
+
+EXPLICIT_TAGS = {'Rape': 40, 'Ahegao': 20, 'Prostitution': 50, 'Sex Work': 50, 'Incest': 50, 'Paraphilia': 50, 'Nudity': 75}
+EXPLICIT_TITLE = re.compile(r'hentai|\bporn|uncensored|\br-?18\b|(?<![0-9])18 ?\+|\bxxx\b', re.I)
+
+
+def is_explicit(media):
+    """Hentai / explicit: adult flag, the Hentai genre, explicit tags ranked high, or an explicit title."""
+    if media.get('isAdult') or 'Hentai' in (media.get('genres') or []):
+        return True
+    t = media.get('title') or {}
+    if EXPLICIT_TITLE.search(f"{t.get('english') or ''} {t.get('romaji') or ''}"):
+        return True
+    return any(x.get('name') in EXPLICIT_TAGS and (x.get('rank') or 0) >= EXPLICIT_TAGS[x['name']] for x in media.get('tags') or [])
+
+
+def roster_rejects():
+    """Names flagged nsfw in the edit pipeline's roster (core/edit/refs/edit-roster.json)."""
+    try:
+        d = json.load(open(os.path.join(ROOT, 'core', 'edit', 'refs', 'edit-roster.json'), encoding='utf-8'))
+    except (OSError, ValueError):
+        return set()
+    return {e['name'].lower() for k in ('beauty', 'aura') for e in d.get(k, []) if e.get('nsfw_flag')}
+
+
+def build_characters_wide(fav_pages=40, shows=600, per_show=6, min_fav=150):
+    """
+    Widen anime-characters.json: more AniList favourites pages, plus the top characters of each of the
+    `shows` most popular anime (recent and classic, every genre). Same filters as before (no isAdult media,
+    is_nsfw kept as a flag, fan-service shows in SCENE_SKIP and hentai / explicit media dropped, roster
+    nsfw rejects dropped). The existing 400 keep their data; difficulty stays by favourites rank.
+    """
+    sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+    from render_pop import SCENE_SKIP, same_series
+    p = os.path.join(OUT, 'anime-characters.json')
+    old = json.load(open(p, encoding='utf-8'))['characters']
+    rejects = roster_rejects()
+    chars = {c['id']: c for c in old}
+    seen = {c['name'].lower() for c in old}
+    stats = {'explicit': 0, 'skip_show': 0, 'roster': 0, 'noimg': 0, 'low_fav': 0}
+
+    def add(c, media):
+        if c['id'] in chars:
+            return
+        if not media or is_explicit(media):
+            stats['explicit'] += 1
+            return
+        title = media['title'].get('english') or media['title'].get('romaji')
+        if any(same_series(title, s) for s in SCENE_SKIP):
+            stats['skip_show'] += 1
+            return
+        img = (c.get('image') or {}).get('large')
+        if not img or 'default' in img:
+            stats['noimg'] += 1
+            return
+        name = fix_name(c['name']['full'] or '')
+        if not name or name.lower() in seen:
+            return
+        if name.lower() in rejects:
+            stats['roster'] += 1
+            return
+        if (c.get('favourites') or 0) < min_fav:
+            stats['low_fav'] += 1
+            return
+        seen.add(name.lower())
+        chars[c['id']] = {'id': c['id'], 'name': name, 'anime': title, 'image': img, 'favourites': c['favourites'],
+                          'gender': c.get('gender'), 'age': c.get('age'), 'nsfw': is_nsfw(media)}
+
+    q = '''query($p:Int){ Page(page:$p, perPage:50){ characters(sort: FAVOURITES_DESC){ id favourites gender age
+        name{ full } image{ large }
+        media(sort: POPULARITY_DESC, perPage: 8){ edges{ characterRole node{ isAdult type title{ english romaji }
+        genres tags{ name rank category } } } } } } }'''
+    for page in range(1, fav_pages + 1):
+        for c in anilist(q, {'p': page})['Page']['characters']:
+            add(c, main_media(c))
+        time.sleep(0.8)
+    print(f'favourites pages: {len(chars)} characters', file=sys.stderr)
+
+    q = '''query($p:Int){ Page(page:$p, perPage:25){ media(type: ANIME, sort: POPULARITY_DESC, isAdult: false){ id isAdult
+        title{ english romaji } genres tags{ name rank category }
+        characters(sort: FAVOURITES_DESC, perPage: %d){ edges{ role node{ id favourites gender age name{ full } image{ large } } } } } } }''' % per_show
+    for page in range(1, shows // 25 + 1):
+        for m in anilist(q, {'p': page})['Page']['media']:
+            for e in m['characters']['edges']:
+                if e['role'] in ('MAIN', 'SUPPORTING'):
+                    add(e['node'], m)
+        time.sleep(0.8)
+    out = sorted(chars.values(), key=lambda c: -c['favourites'])
+    for i, c in enumerate(out):
+        c['difficulty'] = 1 if i < 60 else 2 if i < 180 else 3
+    json.dump({'source': 'AniList (anilist.co)', 'characters': out}, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    n_shows = len({c['anime'] for c in out})
+    print(f'{len(old)} -> {len(out)} anime characters from {n_shows} shows; dropped {stats}')
 
 
 def wd_search(name, group):
@@ -435,6 +531,53 @@ if __name__ == '__main__':
         sys.exit(0)
     if '--cities' in sys.argv:
         build_city_photos()
+        sys.exit(0)
+    if '--age-research' in sys.argv:  # unknown ages: cited wiki statements -> assets/age-proposals.json (proposals only)
+        sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+        import pop_age_research
+        pop_age_research.run(minutes=float(sys.argv[sys.argv.index('--minutes') + 1]) if '--minutes' in sys.argv else 40)
+        sys.exit(0)
+    if '--newformats2' in sys.argv:  # all usable characters, several wiki images each; --phase light|models|finish, --minutes N
+        sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+        import pop_extras
+        arg = lambda k, d: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
+        if '--shard' in sys.argv:   # CI: this job's slice of the characters (--shard i/N: id % N == i)
+            os.environ['POP_SHARD'] = arg('--shard', '')
+        if arg('--phase', 'light') not in ('light', 'prefetch', 'compact'):
+            # eyes / models / finish need the vision stack (cv2, onnxruntime, torch): run them with the acapvenv interpreter.
+            # Without this check a bare Python caches "No module named cv2" as a drop for every character.
+            try:
+                import cv2, onnxruntime, torch  # noqa: F401,E401
+            except ImportError as e:
+                print(f'--newformats2 --phase {arg("--phase", "")}: {e}; run it with %TEMP%/acapvenv/Scripts/python.exe', file=sys.stderr)
+                sys.exit(2)
+        if arg('--phase', 'light') == 'prefetch':   # network half for an offline GPU session (needs POP_IMG_CACHE)
+            pop_extras.prefetch(minutes=float(arg('--minutes', 60)), limit=int(arg('--limit', 0)) or None)
+        elif arg('--phase', 'light') == 'regate':
+            pop_extras.regate_all()
+        elif arg('--phase', 'light') == 'compact':
+            pop_extras.compact()
+        elif arg('--phase', 'light') == 'theme':   # themed edition pool: --theme beach (core/quiz/themes.json)
+            pop_extras.build_theme(arg('--theme', 'beach'), minutes=float(arg('--minutes', 40)))
+        elif arg('--phase', 'light') == 'topup':   # official promo / game art second pass for dropped silhouette / outfit / themed art
+            pop_extras.build_topup(minutes=float(arg('--minutes', 40)), scopes=tuple(arg('--scopes', 'base,beach,halloween').split(',')))
+            pop_extras.finish_v2()
+            for t in arg('--scopes', 'base,beach,halloween').split(','):
+                if t != 'base':
+                    pop_extras.finish_theme(t)
+        elif arg('--phase', 'light') == 'finish':
+            pop_extras.finish_v2()
+        else:
+            pop_extras.build_v2(phase=arg('--phase', 'light'), minutes=float(arg('--minutes', 40)))
+        sys.exit(0)
+    if '--newformats' in sys.argv:  # silhouette / eyes / outfit extras (models cached in ~/.cache/pop_quiz_models)
+        sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+        import pop_extras
+        lim = int(sys.argv[sys.argv.index('--limit') + 1]) if '--limit' in sys.argv else 450
+        pop_extras.build(limit=lim, adult_scan=max(lim, int(sys.argv[sys.argv.index('--scan') + 1]) if '--scan' in sys.argv else lim))
+        sys.exit(0)
+    if '--characters' in sys.argv:
+        build_characters_wide()
         sys.exit(0)
     if '--enrich' in sys.argv:
         enrich_anime()

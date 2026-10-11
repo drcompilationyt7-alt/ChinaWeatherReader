@@ -28,7 +28,8 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
-const { buildPopPlan, markUsed, key: popKey } = require('./pop-quiz-content');
+const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, llmJSON } = require('./pop-quiz-content');
+const { aiNarratorLines, recordAiLines } = require('./pop-narrator-ai');
 const { decay, appendDecision } = require('../core/experiment-log');
 const pop = require('./pop-quiz-meta');
 const metadata = require('../core/metadata');
@@ -40,7 +41,9 @@ const RENDERER = path.join(ROOT, 'core', 'quiz', 'render_quiz.py');
 const HISTORY_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'quiz-history.json');
 
 const GEO_FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
-const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song'];
+const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song',
+  // silhouette / eyes / outfit stay out of the rotation until the owner has reviewed the samples: POP_NEW_FORMATS=1 turns them on
+  ...(process.env.POP_NEW_FORMATS === '1' ? ['silhouette', 'eyes', 'outfit'] : [])];
 // QUIZ_FORMATS picks the channel's formats (the quiz channel runs the pop set + Asia geography)
 const FORMATS = (process.env.QUIZ_FORMATS || GEO_FORMATS.join(','))
   .split(',').map(f => f.trim()).filter(f => GEO_FORMATS.includes(f) || POP_FORMATS.includes(f));
@@ -49,7 +52,7 @@ const isPop = f => POP_FORMATS.includes(f);
 // (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
   ? { emoji: 0.3, trivia: 0.15, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.2, opening: 0.3, flag: 0.05, shape: 0.04,
-    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4 }
+    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.12, eyes: 0.12, outfit: 0.08 }   // new formats: a modest share while they are new
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];
@@ -157,15 +160,19 @@ function recordUpload(result, upload) {
   h.uploads.push({
     videoId: upload.videoId, url: upload.url, postedAt: new Date().toISOString(), publishAt: upload.publishAt || null,
     format: result.quiz.format, theme: result.quiz.theme, seed: result.quiz.seed, length: result.quiz.length,
+    edition: result.quiz.edition || undefined,
+    aiLines: result.quiz.aiLines || undefined,
     followUpOf: result.quiz.followUpOf || undefined,
     titleTemplate: result.quiz.titleTemplate, title: result.title, answers: result.quiz.iso2s,
     meta: result.quiz.meta || undefined,
   });
   saveHistory(h);
   if (result.quiz.keys) markUsed(result.quiz.keys);
+  if (result.quiz.aiLines) recordAiLines(result.quiz.aiLines.filter(l => l.used !== 'pool').map(l => l.template || l.line));
   // the metadata arms (titleStyle, hashtagSet, emojiSet, descHook) go in the decision log for the learner
   appendDecision({ vid: upload.videoId, ch: 'quiz', title: result.title,
     arm: { format: result.quiz.format, topic: result.quiz.topic || result.quiz.theme, length: result.quiz.length, title: result.quiz.titleTemplate,
+      ...(result.quiz.edition ? { edition: result.quiz.edition } : {}),
       ...(result.quiz.meta || {}) },
     mode: result.quiz.followUpOf ? 'followup' : (result.quiz.why || 'pick') });
   if (result.quiz.metaChoice) metadata.recordMetadataChoice(result.quiz.metaChoice, { videoId: upload.videoId });
@@ -306,7 +313,7 @@ function quizFacts(plan) {
   const format = plan.format;
   const k = isPop(format) ? pop.popKeyword(plan) : GEO_KEYWORD[format];
   const answers = plan.rounds.map(r => (typeof r.answer === 'string' ? r.answer.split(' (')[0] : '')).filter(a => a.length > 3);
-  const topicLabel = isPop(format) ? (pop.TOPIC_LABEL[plan.topic] || 'Asian Pop') : (THEME_WORD[plan.theme] || 'World');
+  const topicLabel = plan.edition ? `${plan.edition.name} edition` : isPop(format) ? (pop.TOPIC_LABEL[plan.topic] || 'Asian Pop') : (THEME_WORD[plan.theme] || 'World');
   return {
     format, topic: plan.topic || plan.theme, topicLabel, keyword: k.keyword, Keyword: k.Keyword, any: k.any, topicEmoji: k.emoji,
     n: plan.rounds.length, hard: hasHardRound(plan),
@@ -499,9 +506,35 @@ async function runWorldQuizPipeline(opts = {}) {
   let planFile = null;
   let popKeys = null;
   if (isPop(format)) {
-    const built = await buildPopPlan(format, { topic: hit ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null });
+    // themed edition (POP_NEW_FORMATS=1 + POP_THEMES): seasonal first, else ~1 in 4, never the same theme twice in a row
+    const lastEdition = (history.uploads[history.uploads.length - 1] || {}).edition || null;
+    let edition = hit ? null : (opts.edition || process.env.POP_EDITION || pickEdition(format, lastEdition));
+    // a pool that ran out of fresh items: switch theme / format first, reuse (LRU) only when nothing else has fresh items
+    const need = LENGTHS[length] || 5;
+    if (edition && freshCount(format, edition) < need) {
+      logger.warn(`Edition ${edition} has < ${need} fresh ${format} items: plain edition instead`);
+      edition = null;
+    }
+    if (!edition && !forcedFormat && !hit && freshCount(format) < need) {
+      const alt = FORMATS.filter(f => isPop(f) && f !== format && freshCount(f) >= need);
+      if (alt.length) {
+        logger.warn(`${format} has < ${need} fresh items: switching to ${alt[0]}`);
+        format = alt[Math.floor(Math.random() * alt.length)];
+      }
+    }
+    if (edition) logger.info(`Edition: ${edition}`);
+    const built = await buildPopPlan(format, { topic: hit ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null, edition });
     theme = built.plan.topic;
     popKeys = built.keys;
+    // AI-written narrator lines (POP_AI_LINES=1): validated here, timed after the TTS in the renderer, fixed pools as fallback
+    try {
+      const ai = await aiNarratorLines(built.plan, built.plan.edition || null, llmJSON);
+      if (ai) {
+        built.plan.ai_lines = ai;
+        logger.info(`AI narrator lines: intro ${ai.intro ? 'ok' : 'pool'}, outro ${ai.outro ? 'ok' : 'pool'}, reveals ${ai.reveal.filter(Boolean).length}/${ai.reveal.length}`
+          + (ai.rejected.length ? `; rejected: ${ai.rejected.slice(0, 4).join('; ')}` : ''));
+      }
+    } catch (e) { logger.warn(`AI narrator lines failed (${(e.message || '').slice(0, 80)}): fixed pools`); }
     planFile = path.join(outputDir, `plan-${Date.now()}.json`);
     fs.writeFileSync(planFile, JSON.stringify({ ...built.plan, seed }, null, 1));
     logger.info(`Topic: ${theme}, ${built.plan.rounds.length} rounds`);
@@ -541,6 +574,9 @@ async function runWorldQuizPipeline(opts = {}) {
     const t = tpl.llm || typeof tpl.text !== 'function' ? titleOptions(plan)[0] : tpl;
     title = t.text(plan);
     titleTemplate = t.id;
+  }
+  if (plan.edition && !String(title).toUpperCase().includes(plan.edition.label)) {   // themed: the edition always leads the title
+    title = `${plan.edition.label} ${plan.edition.emoji || ''} ${title}`.replace(/\s+/g, ' ');
   }
   title = pop.clean(title).substring(0, 100);  // YouTube rejects < and > in titles and descriptions
   logger.info(`Title [${titleTemplate}${meta ? `; ${Object.entries(meta.arms).filter(([k]) => k !== 'contentType')
@@ -587,6 +623,8 @@ async function runWorldQuizPipeline(opts = {}) {
     sourceChannel: null,
     quiz: {
       format, theme, seed: plan.seed, titleTemplate, length, followUpOf: hit ? hit.videoId : null, why: String(why || '').slice(0, 80),
+      edition: plan.edition ? plan.edition.id : null,
+      aiLines: res.aiLines || undefined,   // which slots used AI / short / pool lines, with the text and its length
       topic: plan.topic || null,
       iso2s: popKeys || plan.rounds.flatMap(r => (r.left ? [r.left.iso2, r.right.iso2] : [r.iso2])),
       keys: popKeys,

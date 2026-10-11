@@ -1,0 +1,672 @@
+{
+ "about": "Themed editions (owner 2026-10-09). One place per theme: title card, palette, decoration, narrator lines, music mood, art query, age rule, formats, optional date window (MM-DD, inclusive), duel questions, LLM topic. Art formats (character / silhouette / eyes / outfit) use the theme pool built by `python scripts/build-pop-media.py --newformats2 --phase theme --theme <id>` (character-extras.json -> themes.<id>); duel uses the pool's characters + the theme's questions; wyr / trivia / emoji use `topic` in the generator prompt (fact-check kept). Content rules are the same as everywhere: age_rule 'adults' = age_class adult and NO appearance override; 'any' = every age, minors / unknown / strict overrides through the strict gate. Live only with POP_NEW_FORMATS=1 and the theme in POP_THEMES (comma list or 'all'); POP_THEME_RATE (default 0.25) = share of videos that are themed outside a seasonal window.",
+ "rate": 0.25,
+ "seasonal_rate": 0.5,
+ "themes": {
+  "beach": {
+   "name": "Beach Day",
+   "label": "BEACH DAY EDITION",
+   "emoji": "🏖️",
+   "hashtags": [
+    "#beachday",
+    "#summer"
+   ],
+   "palette": [
+    [
+     0,
+     120,
+     190
+    ],
+    [
+     255,
+     186,
+     92
+    ],
+    [
+     255,
+     236,
+     120
+    ]
+   ],
+   "deco": "sun_waves",
+   "music": "tropical",
+   "intro": [
+    "Beach day edition! Guess who's hitting the beach!",
+    "Beach day! Who's this soaking up the sun?",
+    "Surf's up! Guess who's at the beach!"
+   ],
+   "outro": [
+    "How many beach-goers did you get? Comment your score!",
+    "That's a wrap on beach day! Drop your score below!"
+   ],
+   "age_rule": "adults",
+   "art": {
+    "query_tags": 10,
+    "fan_limit_adult": 16,
+    "framing_query": true,
+    "danbooru": [
+     "swimsuit",
+     "beach",
+     "bikini",
+     "one-piece_swimsuit",
+     "sarong",
+     "innertube",
+     "beach_umbrella",
+     "summer",
+     "swim_trunks",
+     "pool",
+     "hawaiian_shirt",
+     "surfboard"
+    ],
+    "wiki": "swim|bikini|beach|summer|resort|pool|sea",
+    "confirm": [
+     "swimsuit",
+     "bikini",
+     "one-piece_swimsuit",
+     "beach",
+     "sarong",
+     "innertube",
+     "swim_trunks",
+     "swim_briefs",
+     "hawaiian_shirt",
+     "surfboard",
+     "swim_ring"
+    ],
+    "min_score": 10,
+    "costume_tags": true,
+    "loose_framing": true
+   },
+   "formats": [
+    "outfit",
+    "silhouette",
+    "character",
+    "duel",
+    "wyr",
+    "trivia"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who wins the beach volleyball match?"
+    },
+    {
+     "q": "Who builds the better sandcastle?"
+    },
+    {
+     "q": "Who would you rather spend a beach day with?",
+     "adult": true
+    },
+    {
+     "q": "Who's the better surfer?"
+    }
+   ],
+   "topic": "beach episodes, summer vacations and seaside settings in popular anime (no fan service)"
+  },
+  "festival": {
+   "name": "Summer Festival",
+   "label": "SUMMER FESTIVAL EDITION",
+   "emoji": "🎆",
+   "hashtags": [
+    "#summerfestival",
+    "#yukata"
+   ],
+   "palette": [
+    [
+     20,
+     16,
+     60
+    ],
+    [
+     120,
+     40,
+     110
+    ],
+    [
+     255,
+     170,
+     60
+    ]
+   ],
+   "deco": "fireworks",
+   "music": "matsuri",
+   "intro": [
+    "Summer festival edition! Guess who's in a yukata!",
+    "Fireworks night! Who's at the festival?"
+   ],
+   "outro": [
+    "How many festival-goers did you get? Comment your score!"
+   ],
+   "age_rule": "any",
+   "art": {
+    "danbooru": [
+     "yukata",
+     "summer_festival",
+     "fireworks",
+     "kimono"
+    ],
+    "wiki": "yukata|festival|matsuri|firework",
+    "confirm": [
+     "yukata",
+     "kimono",
+     "fireworks",
+     "festival",
+     "summer_festival",
+     "paper_lantern"
+    ]
+   },
+   "formats": [
+    "outfit",
+    "silhouette",
+    "character",
+    "duel",
+    "wyr",
+    "trivia",
+    "emoji"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who wins the goldfish scooping game?"
+    },
+    {
+     "q": "Who would you rather watch the fireworks with?",
+     "adult": true
+    },
+    {
+     "q": "Who eats the most festival food?"
+    }
+   ],
+   "topic": "summer festivals, yukata, fireworks and matsuri scenes in popular anime"
+  },
+  "halloween": {
+   "name": "Halloween",
+   "label": "HALLOWEEN EDITION",
+   "emoji": "🎃",
+   "hashtags": [
+    "#halloween",
+    "#spooky"
+   ],
+   "palette": [
+    [
+     18,
+     8,
+     30
+    ],
+    [
+     90,
+     30,
+     10
+    ],
+    [
+     255,
+     140,
+     30
+    ]
+   ],
+   "duel_base_art": true,
+   "deco": "moon_bats",
+   "music": "halloween",
+   "intro": [
+    "Halloween edition! Guess who's in costume!",
+    "Trick or treat! Who's hiding behind the costume?"
+   ],
+   "outro": [
+    "How many did you get? Spooky score in the comments!",
+    "Happy Halloween! Drop your score below!"
+   ],
+   "age_rule": "any",
+   "window": [
+    "10-15",
+    "10-31"
+   ],
+   "art": {
+    "query_tags": 3,
+    "framing_query": true,
+    "danbooru": [
+     "halloween",
+     "halloween_costume",
+     "witch_hat",
+     "jack-o'-lantern",
+     "vampire",
+     "witch"
+    ],
+    "wiki": "halloween|witch|vampire|pumpkin",
+    "confirm": [
+     "halloween",
+     "halloween_costume",
+     "witch_hat",
+     "witch",
+     "jack-o'-lantern",
+     "pumpkin",
+     "vampire",
+     "bat_(animal)",
+     "ghost"
+    ]
+   },
+   "formats": [
+    "character",
+    "silhouette",
+    "outfit",
+    "duel",
+    "wyr",
+    "trivia",
+    "emoji"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who has the scarier costume?"
+    },
+    {
+     "q": "Who collects the most candy?"
+    },
+    {
+     "q": "Who survives the haunted house?"
+    }
+   ],
+   "topic": "Halloween episodes, ghosts, witches, vampires and spooky moments in popular anime"
+  },
+  "winter": {
+   "name": "Christmas / Winter",
+   "label": "WINTER EDITION",
+   "emoji": "🎄",
+   "hashtags": [
+    "#christmas",
+    "#winter"
+   ],
+   "palette": [
+    [
+     10,
+     40,
+     90
+    ],
+    [
+     150,
+     20,
+     40
+    ],
+    [
+     255,
+     255,
+     255
+    ]
+   ],
+   "deco": "snow",
+   "music": "sleigh",
+   "intro": [
+    "Winter edition! Guess who's bundled up for the holidays!",
+    "Christmas edition! Who's this in winter clothes?"
+   ],
+   "outro": [
+    "How many did you get? Happy holidays, comment your score!"
+   ],
+   "age_rule": "any",
+   "window": [
+    "12-01",
+    "12-31"
+   ],
+   "art": {
+    "danbooru": [
+     "christmas",
+     "winter_clothes",
+     "santa_costume",
+     "scarf",
+     "snow",
+     "santa_hat"
+    ],
+    "wiki": "christmas|winter|snow|santa",
+    "confirm": [
+     "santa_costume",
+     "santa_hat",
+     "christmas",
+     "winter_clothes",
+     "scarf",
+     "snow",
+     "coat",
+     "mittens"
+    ]
+   },
+   "formats": [
+    "character",
+    "silhouette",
+    "outfit",
+    "duel",
+    "wyr",
+    "trivia",
+    "emoji"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who wins the snowball fight?"
+    },
+    {
+     "q": "Who gives the best Christmas present?"
+    }
+   ],
+   "topic": "Christmas, New Year and winter episodes in popular anime"
+  },
+  "maid": {
+   "name": "Maid Cafe",
+   "label": "MAID CAFE EDITION",
+   "emoji": "☕",
+   "hashtags": [
+    "#maidcafe"
+   ],
+   "palette": [
+    [
+     60,
+     20,
+     50
+    ],
+    [
+     230,
+     120,
+     170
+    ],
+    [
+     255,
+     255,
+     255
+    ]
+   ],
+   "deco": "hearts",
+   "music": "kawaii",
+   "intro": [
+    "Maid cafe edition! Welcome home! Guess who's serving today!"
+   ],
+   "outro": [
+    "How many did you get? Comment your score, master!"
+   ],
+   "age_rule": "any",
+   "art": {
+    "danbooru": [
+     "maid",
+     "enmaided",
+     "maid_headdress"
+    ],
+    "wiki": "maid",
+    "confirm": [
+     "maid",
+     "maid_headdress",
+     "maid_apron",
+     "enmaided"
+    ]
+   },
+   "formats": [
+    "character",
+    "outfit",
+    "silhouette",
+    "duel"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who runs the better maid cafe?"
+    },
+    {
+     "q": "Who makes the best latte art?"
+    }
+   ],
+   "topic": "maid cafes and maid characters in popular anime"
+  },
+  "gym": {
+   "name": "Gym / Sports",
+   "label": "SPORTS DAY EDITION",
+   "emoji": "🏋️",
+   "hashtags": [
+    "#sportsday",
+    "#gym"
+   ],
+   "palette": [
+    [
+     10,
+     30,
+     40
+    ],
+    [
+     20,
+     140,
+     90
+    ],
+    [
+     200,
+     255,
+     80
+    ]
+   ],
+   "deco": "stripes",
+   "music": "edm",
+   "intro": [
+    "Sports day edition! Guess who's hitting the gym!",
+    "Game day! Who's this athlete?"
+   ],
+   "outro": [
+    "How many athletes did you get? Comment your score!"
+   ],
+   "age_rule": "any",
+   "art": {
+    "danbooru": [
+     "sportswear",
+     "gym_uniform",
+     "track_suit",
+     "track_jacket",
+     "volleyball_uniform",
+     "basketball_uniform",
+     "sports_bra"
+    ],
+    "wiki": "sport|gym|uniform|volleyball|basketball|soccer|track",
+    "confirm": [
+     "sportswear",
+     "gym_uniform",
+     "track_suit",
+     "track_jacket",
+     "volleyball_uniform",
+     "basketball_uniform",
+     "sports_bra",
+     "gym"
+    ]
+   },
+   "formats": [
+    "character",
+    "outfit",
+    "silhouette",
+    "duel",
+    "trivia"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who wins the 100m sprint?"
+    },
+    {
+     "q": "Who lifts more?"
+    },
+    {
+     "q": "Who's the team captain?"
+    }
+   ],
+   "topic": "sports anime and sports festival episodes"
+  },
+  "valentine": {
+   "name": "Valentine's",
+   "label": "VALENTINE'S EDITION",
+   "emoji": "💝",
+   "hashtags": [
+    "#valentines"
+   ],
+   "palette": [
+    [
+     70,
+     10,
+     40
+    ],
+    [
+     220,
+     50,
+     100
+    ],
+    [
+     255,
+     220,
+     230
+    ]
+   ],
+   "deco": "hearts",
+   "music": "romantic",
+   "intro": [
+    "Valentine's edition! Guess who's got chocolate for you!"
+   ],
+   "outro": [
+    "How many did you get? Comment your score, and happy Valentine's!"
+   ],
+   "age_rule": "any",
+   "window": [
+    "02-01",
+    "02-14"
+   ],
+   "art": {
+    "danbooru": [
+     "valentine",
+     "chocolate",
+     "heart-shaped_box",
+     "holding_chocolate"
+    ],
+    "wiki": "valentine|chocolate",
+    "confirm": [
+     "valentine",
+     "heart-shaped_box",
+     "chocolate",
+     "heart",
+     "gift"
+    ]
+   },
+   "formats": [
+    "character",
+    "silhouette",
+    "duel",
+    "wyr",
+    "trivia",
+    "emoji"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who makes the better Valentine's chocolate?"
+    },
+    {
+     "q": "Who would you rather get chocolate from?",
+     "adult": true
+    }
+   ],
+   "topic": "Valentine's Day episodes and romance anime"
+  },
+  "glasses": {
+   "name": "Glasses",
+   "label": "GLASSES EDITION",
+   "emoji": "👓",
+   "hashtags": [
+    "#glasses"
+   ],
+   "palette": [
+    [
+     16,
+     24,
+     48
+    ],
+    [
+     60,
+     70,
+     120
+    ],
+    [
+     140,
+     220,
+     255
+    ]
+   ],
+   "deco": "glints",
+   "music": "lofi",
+   "intro": [
+    "Glasses edition! Every character today wears glasses. Who is it?"
+   ],
+   "outro": [
+    "How many did you get? Comment your score!"
+   ],
+   "age_rule": "any",
+   "select": {
+    "wd14": [
+     "glasses",
+     "semi-rimless_eyewear",
+     "rimless_eyewear",
+     "round_eyewear"
+    ]
+   },
+   "formats": [
+    "character",
+    "eyes",
+    "silhouette",
+    "duel",
+    "trivia"
+   ],
+   "duel_questions": [
+    {
+     "q": "Who's the smartest?"
+    },
+    {
+     "q": "Who would win a chess match?"
+    }
+   ],
+   "topic": "anime characters who wear glasses"
+  },
+  "villains": {
+   "name": "Villains",
+   "label": "VILLAINS EDITION",
+   "emoji": "😈",
+   "hashtags": [
+    "#animevillains"
+   ],
+   "palette": [
+    [
+     20,
+     0,
+     10
+    ],
+    [
+     80,
+     0,
+     30
+    ],
+    [
+     255,
+     50,
+     60
+    ]
+   ],
+   "deco": "smoke",
+   "music": "dark",
+   "intro": [
+    "Villains edition! Only the bad guys today. Who is it?"
+   ],
+   "outro": [
+    "How many villains did you get? Comment your score!"
+   ],
+   "age_rule": "any",
+   "select": {
+    "desc": "\\b(villain|antagonist|main antagonist|arch-?enemy|nemesis|demon lord|demon king|serial killer|mastermind|leader of the (akatsuki|phantom troupe|espada|upper moons))\\b"
+   },
+   "formats": [
+    "character",
+    "silhouette",
+    "eyes",
+    "duel",
+    "trivia"
+   ],
+   "duel_questions": [
+    {
+     "q": "Which villain is scarier?"
+    },
+    {
+     "q": "Who's the better villain?"
+    },
+    {
+     "q": "Who wins in a fight?"
+    }
+   ],
+   "topic": "famous anime villains and antagonists"
+  }
+ }
+}

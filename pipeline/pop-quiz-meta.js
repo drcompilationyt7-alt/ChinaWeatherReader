@@ -1,7 +1,7 @@
 /**
  * Titles, hashtags, tags, playlists, credits and description text for the Asian pop
  * culture formats (emoji, trivia, wyr, city, character, idol, opening, cityphoto, vtuber,
- * duel, scene, voice, song). `when` limits a template to the plan's topic; `style` is the
+ * duel, scene, voice, song, plus silhouette / eyes / outfit: new, behind POP_NEW_FORMATS=1 in the pipeline). `when` limits a template to the plan's topic; `style` is the
  * template's title style (keyword / speed / challenge / fans / casual / ramp): core/metadata
  * learns which style works across all formats and the template rotates inside it.
  * No sad / crying emoji (the owner does not want them). popKeyword() is what people search for
@@ -50,6 +50,27 @@ const POP_TITLE_TEMPLATES = {
     { id: 'char-casual', style: 'casual', text: () => 'guess the anime character 🔥✌️' },
     { id: 'char-blur', style: 'speed', text: () => 'Guess the Anime Character Before It Unblurs 👀' },
     { id: 'char-ramp', style: 'ramp', text: () => 'Anime Character Quiz: Easy to IMPOSSIBLE 🔥' },
+  ],
+  silhouette: [
+    { id: 'sil-guess', style: 'keyword', text: () => 'Guess the Anime Character by Their Silhouette 👤' },
+    { id: 'sil-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} Silhouettes 🔥` },
+    { id: 'sil-casual', style: 'casual', text: () => 'guess the anime character from the shadow 👀✌️' },
+    { id: 'sil-shadow', style: 'speed', text: () => 'Name the Anime Character From Their Shadow 🕵️' },
+    { id: 'sil-ramp', style: 'ramp', text: () => 'Anime Silhouette Quiz: Easy to IMPOSSIBLE 🔥' },
+  ],
+  eyes: [
+    { id: 'eyes-guess', style: 'keyword', text: () => 'Guess the Anime Character by Their Eyes 👁️' },
+    { id: 'eyes-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} From the Eyes 🔥` },
+    { id: 'eyes-casual', style: 'casual', text: () => 'guess the anime character by their eyes 👀✌️' },
+    { id: 'eyes-look', style: 'speed', text: () => 'One Look at the Eyes: Name the Anime Character 👁️' },
+    { id: 'eyes-ramp', style: 'ramp', text: () => 'Anime Eyes Quiz: Easy to IMPOSSIBLE 🔥' },
+  ],
+  outfit: [
+    { id: 'outfit-guess', style: 'keyword', text: () => 'Guess the Anime Character by Their Outfit 👗' },
+    { id: 'outfit-otaku', style: 'fans', text: p => `Only Real Otakus Get ${n(p)}/${n(p)} Outfits 🔥` },
+    { id: 'outfit-casual', style: 'casual', text: () => 'guess the anime character by the outfit 👀✌️' },
+    { id: 'outfit-design', style: 'challenge', text: () => 'Can You Name These Anime Characters From Their Costume? 🤔' },
+    { id: 'outfit-ramp', style: 'ramp', text: () => 'Anime Outfit Quiz: Easy to IMPOSSIBLE 🔥' },
   ],
   idol: [
     { id: 'idol-guess', style: 'keyword', text: () => 'Guess the K-Pop Idol 💜' },
@@ -119,6 +140,7 @@ const FORMAT_HASHTAG = {
   character: '#anime #animequiz #quiz', idol: '#kpop #kpopquiz #quiz', opening: '#anime #animeopening #quiz',
   cityphoto: '#asia #travel #quiz', vtuber: '#vtuber #hololive #quiz', duel: '#anime #wouldyourather #quiz',
   scene: '#anime #animequiz #quiz', voice: '#anime #animequiz #quiz',
+  silhouette: '#anime #animequiz #quiz', eyes: '#anime #animequiz #quiz', outfit: '#anime #animequiz #quiz',
 };
 const SONG_HASHTAG = { kpop: '#kpop #guessthesong #quiz', anime: '#anime #animesongs #quiz', mixed: '#kpop #jpop #guessthesong' };
 const SONG_TAGS = {
@@ -155,6 +177,9 @@ function popPlaylist(p) {
   if (p.format === 'scene') return 'Guess the Anime From a Scene';
   if (p.format === 'voice') return 'Guess the Anime Character by Voice';
   if (p.format === 'character') return 'Guess the Anime Character';
+  if (p.format === 'silhouette') return 'Guess the Anime Character by Silhouette';
+  if (p.format === 'eyes') return 'Guess the Anime Character by Their Eyes';
+  if (p.format === 'outfit') return 'Guess the Anime Character by Outfit';
   if (p.format === 'idol') return 'Guess the K-Pop Idol';
   if (p.format === 'opening') return 'Guess the Anime Opening';
   if (p.format === 'wyr') return 'Would You Rather: Asia Edition';
@@ -174,6 +199,9 @@ function popHook(p) {
   if (p.format === 'city') return `Can you place all ${n(p)} ${CITY_ADJ[p.topic]} cities on the map?`;
   if (p.format === 'emoji') return `Can you guess all ${n(p)} from just 4 emojis?`;
   if (p.format === 'character') return `Can you name all ${n(p)} anime characters before the picture gets sharp?`;
+  if (p.format === 'silhouette') return `Can you name all ${n(p)} anime characters from nothing but their shadow?`;
+  if (p.format === 'eyes') return `Can you name all ${n(p)} anime characters from just their eyes?`;
+  if (p.format === 'outfit') return `Can you name all ${n(p)} anime characters from just their outfit?`;
   if (p.format === 'idol') return `Can you name all ${n(p)} K-pop idols before the photo gets sharp?`;
   if (p.format === 'opening') return `Can you name the anime from 3 seconds of its opening?`;
   return `How many of these ${n(p)} can you get right?`;
@@ -189,7 +217,7 @@ function popAnswers(p) {
     }
     if (p.format === 'song') return `${i + 1}. ${r.title} by ${r.artist}${r.anime || r.anime_film ? ` (${shortShow(r.anime || r.anime_film)})` : ''}`;
     if (p.format === 'trivia') return `${i + 1}. ${r.question} → ${r.options[r.answer]}`;
-    if (p.format === 'character') return `${i + 1}. ${r.name} (${r.anime})`;
+    if (['character', 'silhouette', 'eyes', 'outfit'].includes(p.format)) return `${i + 1}. ${r.name} (${r.anime})`;
     if (p.format === 'idol') return `${i + 1}. ${r.name}${r.group ? ` (${r.group})` : ''}`;
     if (p.format === 'opening' || p.format === 'scene') return `${i + 1}. ${r.title}`;
     if (p.format === 'cityphoto') return `${i + 1}. ${r.name}, ${COUNTRY[r.iso2] || r.iso2}${r.fact ? ` (${r.fact})` : ''}`;
@@ -223,10 +251,28 @@ function popCredits(p) {
     case 'cityphoto': return `Photos (Wikimedia Commons, licences as listed): ${p.rounds.map(r => `${r.name}: ${r.credit}${r.page ? ` ${r.page}` : ''}`).join('; ')}\n`;
     case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
       + 'All characters belong to their agencies and creators.\n';
-    case 'duel': return 'Character art and favorite counts via AniList (anilist.co).\n';
+    case 'duel': {
+      const fan = p.rounds.flatMap((r, i) => [r.a, r.b].filter(c => c && c.source && c.source.kind === 'danbooru' && c.source.artist)
+        .map(c => `${i + 1}. ${c.name}: Art: ${String(c.source.artist).split(' ').join(', ')}${c.source.post ? ` ${c.source.post}` : ''}`));
+      return 'Character art and favorite counts via AniList (anilist.co)' + (fan.length ? ', fan art credited below' : '') + '.\n'
+        + (fan.length ? `${fan.join('\n')}\n` : '');
+    }
     case 'scene': return `Clips from the creditless openings: ${p.rounds.map(r => (r.source && r.source.video ? `${r.title} ${yt(r.source.video)}` : r.title)).join('; ')}. Covers via AniList.\n`;
     case 'voice': return `Voice clips from: ${p.rounds.map(r => (r.source && r.source.video ? `${r.name} ${yt(r.source.video)}` : r.name)).join('; ')}. Character art via AniList.\n`;
-    case 'character': case 'opening': return 'Character art and covers via AniList.\n';
+    case 'silhouette': case 'eyes': case 'outfit': {
+      // fan art (Danbooru): one "Art: <artist>" credit line per round that uses it, with the post link
+      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && r.source.kind === 'danbooru' && r.source.artist);
+      const fanLines = fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}`);
+      return 'Character art via AniList and the characters Fandom wikis (text CC-BY-SA)'
+        + (fan.length ? ', and fan art credited below' : '') + '. '
+        + 'All characters and artwork belong to their creators and studios and are shown only to identify them.\n'
+        + (fanLines.length ? `${fanLines.join('\n')}\n` : '');
+    }
+    case 'character': case 'opening': {
+      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && r.source.kind === 'danbooru' && r.source.artist);
+      return 'Character art and covers via AniList' + (fan.length ? ' and the fan art credited below' : '') + '.\n'
+        + fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}\n`).join('');
+    }
     case 'city': return 'Map data: Natural Earth. Emoji art: Noto Emoji (Apache-2.0).\n';
     default: return 'Emoji art: Noto Emoji (Apache-2.0).\n';
   }
@@ -237,11 +283,11 @@ const popCta = p => (p.format === 'wyr' ? 'Comment A or B for each 👇' : p.for
 
 /** opts.head / opts.hashtags: the metadata optimizer's first line and hashtag set (else the defaults). */
 function popDescription(p, opts = {}) {
-  const head = opts.head || `${popHook(p)} ${popCta(p)}`;
+  const head = (p.edition ? `${p.edition.emoji || ''} ${p.edition.label}\n` : '') + (opts.head || `${popHook(p)} ${popCta(p)}`);
   const label = p.format === 'wyr' ? 'The choices' : p.format === 'duel' ? 'The fans picked' : 'Answers (no peeking!)';
   return clean(`${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
     + `${label}:\n${popAnswers(p)}\n\n${popCredits(p)}`
-    + (opts.hashtags || popHashtags(p)));
+    + (opts.hashtags || popHashtags(p)) + (p.edition && p.edition.hashtags ? ` ${p.edition.hashtags.join(' ')}` : ''));
 }
 
 /**
@@ -256,6 +302,9 @@ function popKeyword(p) {
       : k('guess the kpop song from emojis', 'Guess the K-Pop Song From Emojis', ['kpop', 'k-pop'], '🎶');
     case 'trivia': return k(`${label.toLowerCase()} quiz`, `${label} Quiz`, ['quiz', label.toLowerCase()], '🧠');
     case 'wyr': return k('would you rather', 'Would You Rather', ['would you rather'], '🤔');
+    case 'silhouette': return k('guess the anime character silhouette', 'Guess the Anime Character by Silhouette', ['silhouette', 'shadow', 'anime'], '👤');
+    case 'eyes': return k('guess the anime character by eyes', 'Guess the Anime Character by Their Eyes', ['eyes', 'anime'], '👁️');
+    case 'outfit': return k('guess the anime character by outfit', 'Guess the Anime Character by Outfit', ['outfit', 'costume', 'anime'], '👗');
     case 'character': return k('guess the anime character', 'Guess the Anime Character', ['anime', 'otaku'], '🎬');
     case 'idol': return k('guess the kpop idol', 'Guess the K-Pop Idol', ['kpop', 'k-pop', 'idol'], '💜');
     case 'opening': return k('guess the anime opening', 'Guess the Anime Opening', ['opening', 'anime', 'otaku'], '🎶');
@@ -275,7 +324,7 @@ function popKeyword(p) {
 function popTags(p) {
   const names = p.format === 'duel' ? p.rounds.flatMap(r => [r.a.name, r.b.name])
     : p.format === 'song' ? p.rounds.flatMap(r => [r.title, r.artist])
-      : ['emoji', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'scene', 'voice'].includes(p.format)
+      : ['emoji', 'city', 'character', 'silhouette', 'eyes', 'outfit', 'idol', 'opening', 'cityphoto', 'vtuber', 'scene', 'voice'].includes(p.format)
         ? p.rounds.map(r => String(r.answer || r.name || r.title).split(' (')[0]) : [];
   const out = [];
   let len = 0;

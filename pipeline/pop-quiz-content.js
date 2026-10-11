@@ -24,6 +24,7 @@ const ROOT = path.join(__dirname, '..');
 const SEED_FILE = path.join(ROOT, 'core', 'quiz', 'assets', 'pop-bank.json');
 const BANK_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'pop-bank.json');
 const REUSE_AFTER_DAYS = 60;
+const MIN_REUSE_DAYS = 14;   // worst case (a pool ran out): reuse the least recently used, never one shown in the last 14 days
 // snapshots from scripts/build-pop-media.py (AniList, Wikidata/Commons, Virtual YouTuber Wiki)
 const MEDIA = {
   character: ['anime-characters.json', 'characters'],
@@ -35,9 +36,23 @@ const MEDIA = {
   voice: ['voice-lines.json', 'voices'],  // characters with a Whisper-checked voice-line clip (build-pop-media.py --voices)
   duel: ['anime-characters.json', 'characters'],
   song: ['songs.json', 'songs'],
+  // new formats (precomputed masks / crops / gate results from scripts/build-pop-media.py --newformats); live only with POP_NEW_FORMATS=1
+  silhouette: ['character-extras.json', 'silhouette'],
+  eyes: ['character-extras.json', 'eyes'],
+  outfit: ['character-extras.json', 'outfit'],
 };
+const NEW_FORMATS = ['silhouette', 'eyes', 'outfit'];
+const NEW_FORMATS_ON = process.env.POP_NEW_FORMATS === '1';
+
+// themed editions (core/quiz/themes.json): behind POP_NEW_FORMATS=1 + POP_THEMES (comma list of theme ids, or 'all')
+const THEMES_FILE = path.join(ROOT, 'core', 'quiz', 'themes.json');
+const EXTRAS_FILE = process.env.POP_EXTRAS_FILE || path.join(ROOT, 'core', 'quiz', 'assets', 'character-extras.json');
+const POP2 = path.join(ROOT, 'core', 'quiz', 'assets', 'pop2');
+const ART_FORMATS = ['character', 'silhouette', 'eyes', 'outfit'];
+const LLM_FORMATS = ['wyr', 'trivia', 'emoji'];
 // clips can fail to download: spare candidates per level (hard shows fail most often: fewer uploads)
-const SPARES = { opening: [2, 3, 2, 3, 1], scene: [3, 3, 2, 3, 1], voice: [3, 2, 3, 1, 2, 1], song: [2, 3, 1, 2, 3] };
+const SPARES = { opening: [2, 3, 2, 3, 1], scene: [3, 3, 2, 3, 1], voice: [3, 2, 3, 1, 2, 1], song: [2, 3, 1, 2, 3],
+  silhouette: [2, 3, 1, 3, 2], eyes: [2, 3, 1, 3, 2], outfit: [2, 3, 1, 3, 2] };
 const SONG_TOPICS = { kpop: ['kpop'], anime: ['anime'], mixed: ['kpop', 'anime', 'jpop', 'cpop'] };
 const RAMPS = { 3: [1, 2, 3], 4: [1, 2, 2, 3], 5: [1, 1, 2, 2, 3] };
 // duel questions (mirrors core/quiz/render_pop.py): neutral ones fit any pair, the rest need both characters 16+
@@ -55,12 +70,12 @@ const TOPICS = {
   trivia: ['kpop', 'anime', 'vtubers', 'cdrama', 'cities'],
   wyr: ['anime', 'kpop', 'food', 'cities'],
   city: ['CN', 'JP', 'KR'],
-  character: ['anime'], idol: ['kpop'], opening: ['anime'],
+  character: ['anime'], silhouette: ['anime'], eyes: ['anime'], outfit: ['anime'], idol: ['kpop'], opening: ['anime'],
   cityphoto: ['asia'], vtuber: ['vtubers'], scene: ['anime'], voice: ['anime'], duel: ['anime'],
   song: ['kpop', 'anime', 'mixed'],
 };
 const TOPIC_WEIGHTS = {
-  character: { anime: 1 }, idol: { kpop: 1 }, opening: { anime: 1 },
+  character: { anime: 1 }, silhouette: { anime: 1 }, eyes: { anime: 1 }, outfit: { anime: 1 }, idol: { kpop: 1 }, opening: { anime: 1 },
   cityphoto: { asia: 1 }, vtuber: { vtubers: 1 }, scene: { anime: 1 }, voice: { anime: 1 }, duel: { anime: 1 },
   song: { kpop: 0.4, anime: 0.35, mixed: 0.25 },
   emoji: { anime: 0.6, 'kpop song': 0.4 },
@@ -68,7 +83,7 @@ const TOPIC_WEIGHTS = {
   wyr: { anime: 0.4, kpop: 0.25, food: 0.2, cities: 0.15 },
   city: { CN: 0.45, JP: 0.35, KR: 0.2 },
 };
-const TOPIC_DESC = {
+const TOPIC_DESC_BASE = {
   anime: 'anime (hugely popular series from the last 30 years)',
   'kpop song': 'K-pop songs (answer as "Title (Artist)")',
   kpop: 'K-pop groups, idols, fandom names and hit songs',
@@ -82,7 +97,7 @@ function key(fmt, it) {
   if (fmt === 'emoji') return `emoji:${String(it.answer).toLowerCase()}`;
   if (fmt === 'trivia') return `trivia:${String(it.question).toLowerCase()}`;
   if (fmt === 'wyr') return `wyr:${String(it.a).toLowerCase()}|${String(it.b).toLowerCase()}`;
-  if (['character', 'idol', 'vtuber', 'voice'].includes(fmt)) return `${fmt}:${String(it.name).toLowerCase()}`;
+  if (['character', 'idol', 'vtuber', 'voice', 'silhouette', 'eyes', 'outfit'].includes(fmt)) return `${fmt}:${String(it.name).toLowerCase()}`;
   if (fmt === 'opening' || fmt === 'scene') return `${fmt}:${it.id}`;
   if (fmt === 'duel') return duelKey(it.a, it.b);
   if (fmt === 'song') return `song:${String(it.title).toLowerCase()}|${String(it.artist).toLowerCase()}`;
@@ -128,6 +143,11 @@ function mediaPool(fmt, items) {
     }
     return keep;
   }
+  // characters: nothing flagged nsfw, no fan-service shows (same SCENE_SKIP / DUEL_SKIP as the other formats)
+  if (fmt === 'character' || NEW_FORMATS.includes(fmt)) {
+    return items.filter(c => !c.nsfw && !SCENE_SKIP.some(s => sameSeries(c.anime, s)) && !DUEL_SKIP.has(franchise(c.anime))
+      && (fmt !== 'outfit' || (c.age_class === 'adult' && c.gender === 'Female')));
+  }
   // voice-lines.json: only characters with a verified clip (difficulty by popularity rank); no fan-service shows
   if (fmt === 'voice') return items.filter(c => !c.nsfw && !SCENE_SKIP.some(s => sameSeries(c.anime, s)));
   // anime songs from nsfw-flagged or fan-service shows stay out
@@ -160,7 +180,7 @@ const animeSafe = title => {
  * Duel pairs: two popular characters (same series, else same gender among the top 80), a question
  * each, and the real AniList favourites as the fans' pick. Difficulty = how close the vote is.
  */
-function duelRounds(chars, n, fresh) {
+function duelRounds(chars, n, fresh, questions = null) {
   const top = chars.slice(0, 150).filter(c => !c.nsfw && !DUEL_SKIP.has(franchise(c.anime)));
   const rank = new Map(top.map((c, k) => [c.id, k]));
   const same = [], cross = [];
@@ -189,15 +209,61 @@ function duelRounds(chars, n, fresh) {
     const [a, b] = Math.random() < 0.5 ? pick : [pick[1], pick[0]];
     used.add(a.id); used.add(b.id);
     const grown = [a, b].every(c => (ageOf(c.age) ?? 0) >= 16);
-    const qs = [...DUEL_NEUTRAL, ...(grown ? DUEL_ADULT : [])].filter(q => !asked.has(q));
-    const special = !grown ? null : a.gender === 'Female' && b.gender === 'Female' ? 'Best girl?' : a.gender === 'Male' && b.gender === 'Male' ? 'Best boy?' : null;
-    const question = special && !asked.has(special) && Math.random() < 0.5 ? special : pickOne(qs.length ? qs : DUEL_NEUTRAL);
+    // a themed edition asks its own questions; the adult-only ones still need both characters 16+
+    const neutral = questions ? questions.filter(x => !x.adult).map(x => x.q) : DUEL_NEUTRAL;
+    const qs = questions ? questions.filter(x => !asked.has(x.q) && (grown || !x.adult)).map(x => x.q)
+      : [...DUEL_NEUTRAL, ...(grown ? DUEL_ADULT : [])].filter(q => !asked.has(q));
+    const special = questions || !grown ? null : a.gender === 'Female' && b.gender === 'Female' ? 'Best girl?' : a.gender === 'Male' && b.gender === 'Male' ? 'Best boy?' : null;
+    const question = special && !asked.has(special) && Math.random() < 0.5 ? special : pickOne(qs.length ? qs : neutral);
     asked.add(question);
-    const keep = c => ({ id: c.id, name: c.name, anime: c.anime, image: c.image, favourites: c.favourites });
+    const keep = c => ({ id: c.id, name: c.name, anime: c.anime, image: c.image, favourites: c.favourites,
+      ...(c.image_file ? { image_file: c.image_file, source: c.source } : {}) });
     const winner = a.favourites >= b.favourites ? 'a' : 'b';
     rounds.push({ a: keep(a), b: keep(b), question, difficulty: d, winner, answer: (winner === 'a' ? a : b).name });
   }
   return rounds;
+}
+
+function loadThemes() {
+  try { return JSON.parse(fs.readFileSync(THEMES_FILE, 'utf8')); } catch { return { themes: {} }; }
+}
+
+/** A theme's pool for an art format (built by build-pop-media.py --phase theme); character items get their themed art file. */
+function themePool(tid, fmt) {
+  let ex = {};
+  try { ex = JSON.parse(fs.readFileSync(EXTRAS_FILE, 'utf8')); } catch {}
+  const items = (((ex.themes || {})[tid] || {})[fmt]) || [];
+  const withFile = items.map(it => (fmt === 'character' && it.dir ? { ...it, image_file: path.join(POP2, it.dir, `${it.id}.jpg`) } : it));
+  return mediaPool(fmt, withFile);
+}
+
+const mmdd = d => `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const inWindow = (th, now) => !!th.window && th.window[0] <= mmdd(now) && mmdd(now) <= th.window[1];
+
+/** Does the theme have enough material for this format right now? */
+function themeFits(tid, th, fmt) {
+  if (!(th.formats || []).includes(fmt)) return false;
+  if (ART_FORMATS.includes(fmt)) return themePool(tid, fmt).length >= 6;
+  if (fmt === 'duel') return th.duel_base_art || themePool(tid, 'character').length >= 10;   // duel_base_art: normal character art + the theme's deco / questions
+  return LLM_FORMATS.includes(fmt);
+}
+
+/**
+ * The themed edition for this video, or null. Seasonal themes inside their date window first (seasonal_rate, default 1 in 2),
+ * otherwise a non-seasonal theme at `rate` (default 1 in 4; POP_THEME_RATE overrides); never the previous video's theme.
+ */
+function pickEdition(fmt, lastEdition, now = new Date()) {
+  if (!NEW_FORMATS_ON) return null;
+  const list = String(process.env.POP_THEMES || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (!list.length) return null;
+  const spec = loadThemes();
+  const fits = Object.keys(spec.themes).filter(t => (list.includes('all') || list.includes(t)) && t !== lastEdition && themeFits(t, spec.themes[t], fmt));
+  const seasonal = fits.filter(t => inWindow(spec.themes[t], now));
+  const regular = fits.filter(t => !spec.themes[t].window);
+  const one = arr => arr[Math.floor(Math.random() * arr.length)];
+  if (seasonal.length && Math.random() < Number(process.env.POP_SEASONAL_RATE || spec.seasonal_rate || 0.5)) return one(seasonal);
+  if (regular.length && Math.random() < Number(process.env.POP_THEME_RATE || spec.rate || 0.25)) return one(regular);
+  return null;
 }
 
 function loadBank() {
@@ -217,8 +283,10 @@ function loadBank() {
   }
   bank.city = (seed.cities || []).map(c => ({ ...c, topic: c.iso2 }));
   for (const [fmt, [file, field]] of Object.entries(MEDIA)) {
+    if (NEW_FORMATS.includes(fmt) && !NEW_FORMATS_ON) { bank[fmt] = []; continue; }  // behind POP_NEW_FORMATS=1
     try {
-      const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'core', 'quiz', 'assets', file), 'utf8'))[field] || [];
+      const fpath = file === 'character-extras.json' ? EXTRAS_FILE : path.join(ROOT, 'core', 'quiz', 'assets', file);
+      const data = JSON.parse(fs.readFileSync(fpath, 'utf8'))[field] || [];
       bank[fmt] = mediaPool(fmt, data).map(x => ({ ...x, topic: fmt === 'song' ? x.type : TOPICS[fmt][0] }));
     } catch { bank[fmt] = []; }
   }
@@ -229,6 +297,26 @@ function loadBank() {
 function saveBank(bank) {
   fs.mkdirSync(path.dirname(BANK_FILE), { recursive: true });
   fs.writeFileSync(BANK_FILE, JSON.stringify({ used: bank.used, items: bank.generated }, null, 1));
+}
+
+/** Exhausted pool: least recently used first (never-used first), nothing shown in the last MIN_REUSE_DAYS. Logs a warning. */
+function lruReuse(bank, fmt, items, what) {
+  const age = it => { const u = bank.used[key(fmt, it)]; return u ? (Date.now() - new Date(u).getTime()) / 86400000 : Infinity; };
+  const ok = items.filter(it => age(it) >= MIN_REUSE_DAYS).sort((a, b) => age(b) - age(a));
+  logger.warn(`${what}: fresh items ran out (all used within ${REUSE_AFTER_DAYS} days); reusing the least recently used (${ok.length} not shown in ${MIN_REUSE_DAYS} days)`);
+  return ok;
+}
+
+/** How many items of a format (or a theme's format) are fresh (not used within REUSE_AFTER_DAYS). */
+function freshCount(fmt, edition = null) {
+  const bank = loadBank();
+  if (edition) {
+    if (fmt === 'duel') return Math.max(themePool(edition, 'character').length, loadThemes().themes[edition].duel_base_art ? 99 : 0);   // pairs: plenty of combinations
+    if (!ART_FORMATS.includes(fmt)) return Infinity;                      // generated on demand
+    return themePool(edition, fmt).filter(i => isFresh(bank, fmt, i)).length;
+  }
+  if (!bank[fmt] || ['emoji', 'trivia', 'wyr', 'duel'].includes(fmt)) return Infinity;   // generated on demand / pairs
+  return bank[fmt].filter(i => isFresh(bank, fmt, i)).length;
 }
 
 function isFresh(bank, fmt, it) {
@@ -275,8 +363,10 @@ async function llmJSON(system, user) {
 const SAFETY = 'Only use well-documented, neutral facts. Never mention scandals, dating rumours, politics, '
   + 'religion, ages or private details of real people. English only.';
 
-function genPrompt(fmt, topic, n, avoid) {
+function genPrompt(fmt, topic, n, avoid, edition = null) {
   const avoidLine = avoid.length ? `Do NOT reuse any of these: ${avoid.slice(0, 60).join('; ')}.` : '';
+  // themed edition: the same prompt about the theme's topic (e.g. beach episodes of popular anime); facts are still checked
+  const TOPIC_DESC = edition ? { ...TOPIC_DESC_BASE, [topic]: `${edition.topic}; this is a "${edition.name}" themed edition, every item fits that theme` } : TOPIC_DESC_BASE;
   if (fmt === 'emoji') {
     // the reveal plays the real song: K-pop answers name it; anime series play their first opening,
     // anime films need their theme song named
@@ -348,11 +438,11 @@ async function verify(fmt, items) {
   return items.filter((_, i) => ok.has(i));
 }
 
-async function generate(bank, fmt, topic, n = 12) {
+async function generate(bank, fmt, topic, n = 12, edition = null) {
   const existing = bank[fmt].filter(i => i.topic === topic).map(i => (fmt === 'emoji' ? i.answer : fmt === 'trivia' ? i.question : `${i.a} / ${i.b}`));
-  const [sys, msg] = genPrompt(fmt, topic, n, existing);
+  const [sys, msg] = genPrompt(fmt, topic, n, existing, edition);
   const r = await llmJSON(sys, msg);
-  const raw = (r && Array.isArray(r.items) ? r.items : []).map(it => ({ ...it, topic }));
+  const raw = (r && Array.isArray(r.items) ? r.items : []).map(it => ({ ...it, topic, ...(edition ? { edition: edition.id } : {}) }));
   const seen = new Set(bank[fmt].map(i => key(fmt, i)));
   const candidates = raw.filter(it => validItem(fmt, it) && !seen.has(key(fmt, it)));
   const kept = candidates.length ? await verify(fmt, candidates) : [];
@@ -370,27 +460,53 @@ async function generate(bank, fmt, topic, n = 12) {
  * pool for the topic is running low.
  * @returns {Promise<{format, topic, rounds, keys}>}
  */
-async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
+async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null } = {}) {
   const bank = loadBank();
   topic = topic || pickWeighted(TOPIC_WEIGHTS[fmt]);
   const n = rounds || (fmt === 'wyr' || fmt === 'duel' ? 4 : 5);
+  const th = edition ? { ...loadThemes().themes[edition], id: edition } : null;
+  const freshKey = k => !bank.used[k] || (Date.now() - new Date(bank.used[k]).getTime()) > REUSE_AFTER_DAYS * 86400000;
+  if (th && fmt === 'duel') {
+    let chars = themePool(edition, 'character').sort((a, b) => b.favourites - a.favourites);
+    if (chars.length < 10 && th.duel_base_art) chars = bank.duel;   // thin themed art pool: normal cards, themed deco + questions
+    let picked = duelRounds(chars, n, freshKey, th.duel_questions || null);
+    if (picked.length < Math.min(3, n)) picked = duelRounds(chars, n, () => true, th.duel_questions || null);
+    return { plan: { format: 'duel', topic: 'anime', rounds: picked, edition: th }, keys: picked.map(r => key('duel', r)) };
+  }
+  if (th && ART_FORMATS.includes(fmt)) {
+    const all = themePool(edition, fmt);
+    let pool = all.filter(i => freshKey(key(fmt, i)));
+    if (pool.length < n) pool = lruReuse(bank, fmt, all, `${th.name} ${fmt}`);
+    const chosen = [];
+    for (const d of [...(RAMPS[n] || RAMPS[5]), ...(SPARES[fmt] || [])]) {
+      const any = pool.filter(i => !chosen.includes(i) && !chosen.some(c => sameSeries(i.anime, c.anime)));
+      const c = any.filter(i => (i.difficulty || 2) === d);
+      const src = c.length ? c : any;
+      if (!src.length) break;
+      chosen.push(src[Math.floor(Math.random() * src.length)]);
+    }
+    const spare = (SPARES[fmt] || []).length;
+    return { plan: { format: fmt, topic: 'anime', want: spare ? n : undefined, rounds: chosen.map(i => ({ ...i, answer: i.name })), edition: th },
+      keys: chosen.map(i => key(fmt, i)) };
+  }
+  if (th && LLM_FORMATS.includes(fmt)) topic = 'anime';   // themed questions are about anime; items carry the edition
   if (fmt === 'duel') {
     let picked = duelRounds(bank.duel, n, k => !bank.used[k] || (Date.now() - new Date(bank.used[k]).getTime()) > REUSE_AFTER_DAYS * 86400000);
     if (picked.length < Math.min(3, n)) picked = duelRounds(bank.duel, n, () => true);  // every pair used lately: allow repeats
     return { plan: { format: 'duel', topic: 'anime', rounds: picked }, keys: picked.map(r => key('duel', r)) };
   }
   // songs: a K-pop or anime quiz draws from its type, the mixed one from all (K-pop, anime, J-pop, C-pop)
-  const inTopic = i => (fmt === 'song' ? (SONG_TOPICS[topic] || SONG_TOPICS.mixed).includes(i.type) : i.topic === topic);
+  const inTopic = i => (fmt === 'song' ? (SONG_TOPICS[topic] || SONG_TOPICS.mixed).includes(i.type)
+    : i.topic === topic && (!th || i.edition === th.id));
   const fresh = () => bank[fmt].filter(i => inTopic(i) && isFresh(bank, fmt, i));
   // would you rather: the generator keeps up with picks + photos; older items without a pick don't count
   const usable = fmt === 'wyr' ? () => fresh().filter(i => i.pick) : fresh;
   if (!['city', ...Object.keys(MEDIA)].includes(fmt) && usable().length < n + 4) {
-    try { await generate(bank, fmt, topic); } catch (e) { logger.warn(`Generation failed: ${(e.message || '').slice(0, 100)}`); }
+    try { await generate(bank, fmt, topic, 12, th); } catch (e) { logger.warn(`Generation failed: ${(e.message || '').slice(0, 100)}`); }
   }
   let pool = fresh();
-  if (pool.length < n) {  // bank exhausted: reuse the least recently used items
-    pool = bank[fmt].filter(inTopic)
-      .sort((a, b) => String(bank.used[key(fmt, a)] || '').localeCompare(String(bank.used[key(fmt, b)] || '')));
+  if (pool.length < n) {  // bank exhausted: reuse the least recently used items (never within MIN_REUSE_DAYS)
+    pool = lruReuse(bank, fmt, bank[fmt].filter(inTopic), `${fmt}/${topic}`);
   }
   const chosen = [];
   // clips can fail to download: plan spare candidates, the renderer keeps n of them (a spare replaces a
@@ -404,16 +520,17 @@ async function buildPopPlan(fmt, { topic = null, rounds = null } = {}) {
     const ramp = [...(RAMPS[n] || RAMPS[5]), ...spareLevels];
     for (const d of ramp) {
       // scene: never two seasons of one show in a quiz
-      const any = pool.filter(i => !chosen.includes(i) && (fmt !== 'scene' || !chosen.some(c => sameSeries(i.title, c.title))));
+      const any = pool.filter(i => !chosen.includes(i) && (fmt !== 'scene' || !chosen.some(c => sameSeries(i.title, c.title)))
+        && (!NEW_FORMATS.includes(fmt) || !chosen.some(c => sameSeries(i.anime, c.anime))));
       const c = any.filter(i => (i.difficulty || 2) === d);
       const src = c.length ? c : any;
       if (!src.length) break;
       chosen.push(src[Math.floor(Math.random() * src.length)]);
     }
   }
-  const byName = ['city', 'character', 'idol', 'cityphoto', 'vtuber', 'voice'];
+  const byName = ['city', 'character', 'idol', 'cityphoto', 'vtuber', 'voice', ...NEW_FORMATS];
   const plan = {
-    format: fmt, topic, want: spareLevels.length ? n : undefined,
+    format: fmt, topic, want: spareLevels.length ? n : undefined, ...(th ? { edition: th } : {}),
     rounds: chosen.map(i => (byName.includes(fmt) ? { ...i, answer: i.name }
       : fmt === 'song' ? { ...i, answer: `${i.title} (${i.artist})` }
         : fmt === 'opening' || fmt === 'scene' ? { ...i, answer: i.title } : fmt === 'trivia' ? { ...i, answerText: i.options[i.answer] } : i)),
@@ -430,4 +547,4 @@ function markUsed(keys) {
   saveBank(bank);
 }
 
-module.exports = { buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
+module.exports = { llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };

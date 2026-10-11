@@ -226,15 +226,39 @@ def _put_clipped(frame, im, cx, cy):
 _wm = {}
 
 
-def draw_watermark(frame):
-    """Channel handle (env WATERMARK, e.g. @asianpopquiz), small and translucent at the top."""
-    text = os.environ.get('WATERMARK', '').strip()
+WM_SPOTS = [(540, 150), (330, 1600), (540, 1560)]   # safe spots: top band under the Shorts bar, bottom band left of the like column / above the caption
+WM_HOLD, WM_FADE = 9.0, 0.9                           # seconds on one spot, soft fade between spots
+WM_ALPHA = 0.40
+
+
+def draw_watermark(frame, t=0.0):
+    """Channel handle (env WATERMARK, e.g. @asianpopquiz), small and translucent.  POP_WATERMARK=1 (owner request, pending approval):
+    always on (default text @asianpopquiz), 40 % opacity, moves between 3 safe spots every ~9 s with a soft fade, plus a very faint
+    second mark (logo dot + handle initial) that sits elsewhere so cropping one corner never removes both.  Without the flag: the
+    old static mark at the top (only when WATERMARK is set)."""
+    on = os.environ.get('POP_WATERMARK') == '1'
+    text = os.environ.get('WATERMARK', '').strip() or ('@asianpopquiz' if on else '')
     if not text:
         return
-    if text not in _wm:
-        t = text_layer(text, 40, fill=(255, 255, 255, 150), stroke=3, stroke_fill=(0, 0, 0, 90))
-        _wm[text] = t
-    put(frame, _wm[text], W / 2, 150)
+    if not on:
+        if text not in _wm:
+            _wm[text] = text_layer(text, 40, fill=(255, 255, 255, 150), stroke=3, stroke_fill=(0, 0, 0, 90))
+        put(frame, _wm[text], W / 2, 150)
+        return
+    if ('on', text) not in _wm:
+        _wm[('on', text)] = text_layer(text, 38, fill=(255, 255, 255, 255), stroke=3, stroke_fill=(0, 0, 0, 120))
+        dot = Image.new('RGBA', (30, 30), (0, 0, 0, 0))
+        d = ImageDraw.Draw(dot)
+        d.ellipse([2, 2, 27, 27], outline=(255, 255, 255, 255), width=3)
+        d.ellipse([10, 10, 19, 19], fill=(255, 255, 255, 255))
+        _wm['dot'] = dot
+    k = int(t // WM_HOLD)
+    ph = t - k * WM_HOLD
+    a = min(1.0, ph / WM_FADE, (WM_HOLD - ph) / WM_FADE)   # fade in at the start of a hold, out at its end
+    x, y = WM_SPOTS[k % len(WM_SPOTS)]
+    put(frame, _wm[('on', text)], x, y, a=WM_ALPHA * max(0.0, a))
+    top = y < 800   # faint second mark on the other band, away from the main one
+    put(frame, _wm['dot'], 880 if not top else 780, 150 if not top else 1600, a=0.16)
 
 
 def check_mark(size, color):
@@ -551,7 +575,7 @@ class QuizRenderer:
     def frame_at(self, t):
         off = int(t * 14) % self.map_w
         frame = self.bg.crop((off, 0, off + W, H))
-        draw_watermark(frame)
+        draw_watermark(frame, t)
         if t >= self.outro_start:
             put(frame, self.title, W / 2, 262, a=1 - clamp((t - self.outro_start) / 0.25))
             self.draw_outro(frame, t - self.outro_start)
@@ -596,8 +620,24 @@ class QuizRenderer:
                 'voice': sum(c is not None for c in clips), 'voiceLines': len(clips)}
 
 
+# narrator settings of the quiz channel's CI run (.github/workflows/quiz-channel.yml env); --ci-voice applies them locally
+CI_VOICE_ENV = {'TTS_ENGINE': 'chatterbox', 'CHATTERBOX_EXAGGERATION': '0.3', 'CHATTERBOX_CFG': '0.6',
+                'KOKORO_VOICE': 'am_onyx', 'KOKORO_PITCH': '-2'}
+
+
+def _check_voice(args, info):
+    """--ci-voice: every narrator line must be voiced, by the channel's engine."""
+    info['ttsEngine'] = sound.LAST_ENGINE
+    if args.ci_voice and not args.no_voice:
+        if info.get('voice', 0) < info.get('voiceLines', 0) or not str(sound.LAST_ENGINE or '').startswith('chatterbox'):
+            print(json.dumps({'ok': False, 'reason': f"narrator incomplete: {info.get('voice')}/{info.get('voiceLines')} lines, "
+                                                     f"engine {sound.LAST_ENGINE}"}), flush=True)
+            sys.exit(2)
+
+
 # the Asian pop culture formats (render_pop.py); kept here so the CLI does not import it for geography runs
-POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song')
+POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song',
+       'silhouette', 'eyes', 'outfit')
 
 
 def main():
@@ -619,8 +659,23 @@ def main():
     ap.add_argument('--no-voice', action='store_true')
     ap.add_argument('--no-music', action='store_true')
     ap.add_argument('--voice', default=None)
+    ap.add_argument('--ci-voice', action='store_true',
+                    help='local review renders: the channel narrator exactly as in .github/workflows/quiz-channel.yml '
+                         '(Chatterbox + narrator-ref.wav, Kokoro am_onyx fallback); fails when a line is left unvoiced. '
+                         'Run it with a Python that has chatterbox-tts + kokoro-onnx (e.g. %%TEMP%%/ttsvenv)')
     ap.add_argument('--frame', type=float, default=None, help='only save a PNG of this timestamp')
+    ap.add_argument('--anim-bg', action='store_true', help='pop quiz: animated looping background (spinning LED globe + theme motion; cached)')
+    ap.add_argument('--edition', default=None, help='themed edition from core/quiz/themes.json (beach, halloween, ...)')
     args = ap.parse_args()
+    if args.anim_bg:
+        os.environ['POP_ANIM_BG'] = '1'
+    if args.ci_voice:
+        for k, v in CI_VOICE_ENV.items():
+            os.environ.setdefault(k, v)
+        if not os.environ.get('KOKORO_DIR'):
+            tmp_k = os.path.join(os.environ.get('TEMP', ''), 'kokoro')
+            if os.path.exists(os.path.join(tmp_k, 'kokoro-v1.0.onnx')):
+                os.environ['KOKORO_DIR'] = tmp_k
     seed = args.seed if args.seed is not None else random.randint(1, 10 ** 9)
     avoid = [x.strip().upper() for x in args.avoid.split(',') if x.strip()]
     pop_plan = None
@@ -630,7 +685,7 @@ def main():
         pop_plan.setdefault('seed', seed)
     elif args.format in POP:
         from render_pop import plan_from_bank
-        pop_plan = plan_from_bank(args.format, topic=args.topic, seed=seed, n=args.rounds, country=args.country)
+        pop_plan = plan_from_bank(args.format, topic=args.topic, seed=seed, n=args.rounds, country=args.country, edition=args.edition)
     if pop_plan is not None and pop_plan['format'] in POP:
         from render_pop import PopRenderer, gradient_bg
         r = PopRenderer(pop_plan, voice=not args.no_voice, music=not args.no_music, voice_name=args.voice)
@@ -649,6 +704,7 @@ def main():
             print(json.dumps({'ok': True, 'path': args.out}, ensure_ascii=False))
             return
         info = r.render(args.out)
+        _check_voice(args, info)
         clean = {**r.plan, 'rounds': [{k: v for k, v in x.items() if not k.startswith('_')} for x in r.plan['rounds']]}
         for x in clean['rounds']:
             x.pop('match', None)  # search rules: not needed downstream
@@ -669,6 +725,7 @@ def main():
         print(json.dumps({'ok': True, 'path': args.out, 'plan': p}))
         return
     info = r.render(args.out)
+    _check_voice(args, info)
     print(json.dumps({'ok': True, 'path': os.path.abspath(args.out), **info, 'plan': p}, ensure_ascii=False))
 
 

@@ -19,7 +19,7 @@ on:
         required: false
         default: ''
       format:
-        description: 'Force a format (optional: song, voice, character, idol, opening, scene, duel, cityphoto, vtuber, emoji, trivia, wyr, city, flag, shape)'
+        description: 'Force a format (optional: song, voice, character, idol, opening, scene, duel, cityphoto, vtuber, emoji, trivia, wyr, city, flag, shape, silhouette, eyes, outfit)'
         required: false
         default: ''
       dry_run:
@@ -54,10 +54,20 @@ env:
   # Asian pop culture formats + Asia editions of the geography quizzes (a forced format must be in the
   # list too). `voice` draws only from voice-lines.json: uploads that name the character (and the show),
   # each clip confirmed as Japanese speech by faster-whisper, re-checked at render time.
-  QUIZ_FORMATS: song,voice,character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape
+  QUIZ_FORMATS: song,voice,character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape,silhouette,eyes,outfit
   QUIZ_THEME: asia
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
   QUIZ_SPACING_HOURS: "4"
+  # 2026-10-11 (owner approved): new formats (silhouette / eyes / outfit), themed editions (Halloween in its window 10-15..10-31 first,
+  # beach / festival ~1 in 4, winter and valentine in their windows), animated looping backgrounds, AI narrator lines (fixed pools as
+  # fallback), moving watermark. Off until verified: POP_PRONOUNCE (phonetic respelling).
+  POP_NEW_FORMATS: "1"
+  POP_THEMES: "halloween,beach,festival,winter,valentine"
+  POP_ANIM_BG: "1"
+  POP_AI_LINES: "1"
+  POP_BG_CACHE: /home/runner/.cache/pop_quiz_bg
+  # watermark: moving 40 % handle on 3 safe spots + a faint second mark (sample frames checked 2026-10-11)
+  POP_WATERMARK: "1"
   # narrator: Chatterbox, calm and cool (falls back to Kokoro am_onyx, then edge-tts)
   TTS_ENGINE: chatterbox
   CHATTERBOX_EXAGGERATION: "0.3"
@@ -115,7 +125,7 @@ jobs:
           sudo apt-get install -y ffmpeg
           python3 -m pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu --break-system-packages
           python3 -m pip install chatterbox-tts --break-system-packages
-          python3 -m pip install pillow edge-tts yt-dlp yt-dlp-ejs kokoro-onnx soundfile --break-system-packages
+          python3 -m pip install pillow edge-tts yt-dlp yt-dlp-ejs kokoro-onnx soundfile scipy --break-system-packages
           # speech check for the voice quiz (Whisper tiny on CPU; the model is cached with the voice models)
           python3 -m pip install faster-whisper --break-system-packages
           curl -fsSL https://deno.land/install.sh | sh
@@ -133,6 +143,13 @@ jobs:
             /home/runner/.cache/kokoro
           key: voice-models-chatterbox-whisper-v2
           restore-keys: voice-models-chatterbox-
+
+      - name: Cache animated background loops (rendered once, ~1-2 min each on CPU)
+        if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/pop_quiz_bg
+          key: pop-bg-loops-v4-${{ hashFiles('core/quiz/bg_anim.py') }}
 
       - name: Cache quiz media (images, opening clips)
         if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
