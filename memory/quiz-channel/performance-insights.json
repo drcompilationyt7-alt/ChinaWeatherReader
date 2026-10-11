@@ -1,95 +1,95 @@
 {
-  "updatedAt": "2026-10-11T09:02:41.898Z",
+  "updatedAt": "2026-10-11T21:03:37.088Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 9,
-    "totalViews": 10052,
-    "totalVideos": 22
+    "totalViews": 11273,
+    "totalVideos": 23
   },
   "sampleSize": 21,
   "reliable": true,
-  "globalMeanScore": 82.8,
-  "typicalScore": 34.3,
+  "globalMeanScore": 73.3,
+  "typicalScore": 32.6,
   "topTitles": [
     {
       "videoId": "aGsvXn7x8AM",
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "views": 934,
-      "score": 517.4,
+      "views": 987,
+      "score": 401.8,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 2.4
     },
     {
       "videoId": "1ppVYRgxwNA",
       "title": "guess the kpop idol 🔥 #kpop",
-      "views": 1281,
-      "score": 344.3,
+      "views": 1307,
+      "score": 313.7,
       "country": "Global",
-      "ageDays": 3.9
+      "ageDays": 4.4
     },
     {
       "videoId": "QaF4Ova1vq4",
       "title": "Guess the Country by Its Shape 🗺️ #geography",
-      "views": 958,
-      "score": 143.3,
+      "views": 959,
+      "score": 133.7,
       "country": "Global",
-      "ageDays": 6.9
-    },
-    {
-      "videoId": "WjE7g5LMDnQ",
-      "title": "Only Real Otakus Get 3/3 🎶 #anime",
-      "views": 341,
-      "score": 101.9,
-      "country": "Global",
-      "ageDays": 2.9
+      "ageDays": 7.4
     },
     {
       "videoId": "vaJCe01FdYs",
       "title": "guess the anime from emojis 🎬 #anime",
-      "views": 642,
-      "score": 97.1,
+      "views": 643,
+      "score": 89.6,
       "country": "Global",
-      "ageDays": 5.9
+      "ageDays": 6.4
     },
     {
-      "videoId": "tUG5iOh0w6Y",
-      "title": "Guess the Anime Opening in 3 Seconds 🎶",
-      "views": 516,
-      "score": 91.4,
+      "videoId": "WjE7g5LMDnQ",
+      "title": "Only Real Otakus Get 3/3 🎶 #anime",
+      "views": 342,
+      "score": 87.5,
       "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 3.4
     },
     {
       "videoId": "Fbg3jG9oNts",
       "title": "How Well Do You Know Chinese Movies?",
-      "views": 1055,
-      "score": 89.1,
+      "views": 1057,
+      "score": 84,
       "country": "Global",
-      "ageDays": 7.9
+      "ageDays": 8.4
     },
     {
       "videoId": "Tyg2ooEtzho",
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
       "views": 1255,
-      "score": 87,
+      "score": 83.2,
       "country": "Global",
-      "ageDays": 10.9
+      "ageDays": 11.4
+    },
+    {
+      "videoId": "tUG5iOh0w6Y",
+      "title": "Guess the Anime Opening in 3 Seconds 🎶",
+      "views": 516,
+      "score": 82.2,
+      "country": "Global",
+      "ageDays": 5.4
     },
     {
       "videoId": "IE80eNcEv04",
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "views": 742,
+      "views": 743,
       "score": 48.3,
       "country": "Global",
-      "ageDays": 21.9
+      "ageDays": 22.4
     },
     {
       "videoId": "8dJefQwj140",
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "views": 645,
-      "score": 41.8,
+      "views": 646,
+      "score": 41.9,
       "country": "Global",
-      "ageDays": 15.9
+      "ageDays": 16.4
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 6,
       "score": 0.4,
       "country": "Global",
-      "ageDays": 13.9
+      "ageDays": 14.4
     },
     {
       "videoId": "6UEpONYClmg",
@@ -107,7 +107,7 @@
       "views": 66,
       "score": 3.8,
       "country": "Global",
-      "ageDays": 19.9
+      "ageDays": 20.4
     },
     {
       "videoId": "_NXBxpZnYS8",
@@ -115,15 +115,15 @@
       "views": 93,
       "score": 6.1,
       "country": "Global",
-      "ageDays": 16.9
+      "ageDays": 17.4
     },
     {
       "videoId": "mHpF6_z6UoA",
       "title": "guess the kpop song from emojis 🎶",
       "views": 114,
-      "score": 7.5,
+      "score": 7.2,
       "country": "Global",
-      "ageDays": 12.9
+      "ageDays": 13.4
     },
     {
       "videoId": "S1mLvoUzF0s",
@@ -131,19 +131,19 @@
       "views": 217,
       "score": 9.6,
       "country": "Global",
-      "ageDays": 20.9
+      "ageDays": 21.4
     }
   ],
   "titlePatterns": [
     {
       "name": "ALL CAPS word",
       "n": 5,
-      "lift": 2.64
+      "lift": 2.57
     },
     {
       "name": "short (<= 40 chars)",
       "n": 13,
-      "lift": 0.69
+      "lift": 0.7
     },
     {
       "name": "has number",
@@ -154,7 +154,7 @@
   "countries": {
     "Global": {
       "n": 21,
-      "meanScore": 82.8,
+      "meanScore": 73.3,
       "weight": 1
     }
   },
@@ -162,42 +162,42 @@
   "categories": {
     "quiz-shape": {
       "n": 2,
-      "meanScore": 330.4,
+      "meanScore": 267.8,
       "weight": 1
     },
     "quiz-idol": {
       "n": 1,
-      "meanScore": 344.3,
-      "weight": 1
-    },
-    "quiz-opening": {
-      "n": 2,
-      "meanScore": 96.7,
+      "meanScore": 313.7,
       "weight": 1
     },
     "quiz-emoji": {
       "n": 5,
-      "meanScore": 44.8,
+      "meanScore": 43,
+      "weight": 1.01
+    },
+    "quiz-opening": {
+      "n": 2,
+      "meanScore": 84.9,
       "weight": 1
     },
     "quiz-trivia": {
       "n": 2,
-      "meanScore": 49.3,
+      "meanScore": 46.8,
       "weight": 1
     },
     "quiz-character": {
       "n": 2,
-      "meanScore": 54.5,
+      "meanScore": 52,
       "weight": 1
     },
     "quiz-vtuber": {
       "n": 1,
-      "meanScore": 41.8,
+      "meanScore": 41.9,
       "weight": 1
     },
     "quiz-voice": {
       "n": 1,
-      "meanScore": 29.1,
+      "meanScore": 27.9,
       "weight": 1
     },
     "quiz-cityphoto": {
@@ -225,43 +225,43 @@
   "history": [
     {
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "score": 6.251
+      "score": 5.998
     },
     {
       "title": "guess the kpop idol 🔥 #kpop",
-      "score": 5.845
+      "score": 5.752
     },
     {
       "title": "Guess the Country by Its Shape 🗺️ #geography",
-      "score": 4.972
-    },
-    {
-      "title": "Only Real Otakus Get 3/3 🎶 #anime",
-      "score": 4.634
+      "score": 4.903
     },
     {
       "title": "guess the anime from emojis 🎬 #anime",
-      "score": 4.586
+      "score": 4.507
     },
     {
-      "title": "Guess the Anime Opening in 3 Seconds 🎶",
-      "score": 4.526
+      "title": "Only Real Otakus Get 3/3 🎶 #anime",
+      "score": 4.482
     },
     {
       "title": "How Well Do You Know Chinese Movies?",
-      "score": 4.501
+      "score": 4.442
     },
     {
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "score": 4.477
+      "score": 4.433
+    },
+    {
+      "title": "Guess the Anime Opening in 3 Seconds 🎶",
+      "score": 4.421
     },
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 3.897
+      "score": 3.898
     },
     {
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
-      "score": 3.757
+      "score": 3.758
     },
     {
       "title": "guess the kpop song from emojis 🎶",
@@ -269,19 +269,19 @@
     },
     {
       "title": "guess the anime from emojis 🔥 #anime",
-      "score": 3.546
+      "score": 3.501
     },
     {
       "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
-      "score": 3.404
+      "score": 3.364
     },
     {
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "score": 3.135
+      "score": 3.083
     },
     {
       "title": "Only Travel Nerds Get 3/3 ✈️",
-      "score": 2.89
+      "score": 2.892
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
@@ -293,7 +293,7 @@
     },
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 2.137
+      "score": 2.103
     },
     {
       "title": "who would you pick anime: teacher roommate fight ⚔️",
@@ -305,9 +305,9 @@
     },
     {
       "title": "Only Real Otakus Get 3/3 🎶",
-      "score": 0.342
+      "score": 0.339
     }
   ],
-  "promptSummary": "Based on 21 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 34.3/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (934 views, Global)\n  - \"guess the kpop idol 🔥 #kpop\" (1,281 views, Global)\n  - \"Guess the Country by Its Shape 🗺️ #geography\" (958 views, Global)\n  - \"Only Real Otakus Get 3/3 🎶 #anime\" (341 views, Global)\n  - \"guess the anime from emojis 🎬 #anime\" (642 views, Global)\n  - \"Guess the Anime Opening in 3 Seconds 🎶\" (516 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (6 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (66 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (93 views)\nPatterns that WORK for this channel: ALL CAPS word (x2.64)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.69), has number (x0.47)",
-  "summaryLine": "Best recent: \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (934 views, 517.4/day) — typical short 34.3/day over 21 shorts"
+  "promptSummary": "Based on 21 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 32.6/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (987 views, Global)\n  - \"guess the kpop idol 🔥 #kpop\" (1,307 views, Global)\n  - \"Guess the Country by Its Shape 🗺️ #geography\" (959 views, Global)\n  - \"guess the anime from emojis 🎬 #anime\" (643 views, Global)\n  - \"Only Real Otakus Get 3/3 🎶 #anime\" (342 views, Global)\n  - \"How Well Do You Know Chinese Movies?\" (1,057 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (6 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (66 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (93 views)\nPatterns that WORK for this channel: ALL CAPS word (x2.57)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.7), has number (x0.47)",
+  "summaryLine": "Best recent: \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (987 views, 401.8/day) — typical short 32.6/day over 21 shorts"
 }
