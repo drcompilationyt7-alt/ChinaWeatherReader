@@ -45,111 +45,216 @@
      "why": "1-3 hashtags, at most 1 in the title"
     }
    ]
+  },
+  {
+   "week": "2026-W41",
+   "pool": "quiz/quiz",
+   "at": "2026-10-11T08:01:51.865Z",
+   "n": 18,
+   "retired": [
+    {
+     "dim": "emojiSet",
+     "id": "template",
+     "uses": 4,
+     "mean": -0.92,
+     "best": "fire",
+     "z": 2.03
+    }
+   ],
+   "added": [
+    {
+     "dim": "titleStyle",
+     "id": "op-exact-search",
+     "mu0": 0.47
+    },
+    {
+     "dim": "descHook",
+     "id": "op-comment-score",
+     "mu0": 0.43
+    },
+    {
+     "dim": "emojiSet",
+     "id": "op-quiz-pop",
+     "mu0": 0.4
+    }
+   ],
+   "rejected": []
   }
  ],
  "pools": {
   "quiz/quiz": {
-   "arms": {},
+   "arms": {
+    "emojiSet": {
+     "template": {
+      "status": "retired",
+      "retiredAt": "2026-W41",
+      "why": "mean -0.92 after 4 uses vs fire (z 2.03)"
+     },
+     "op-quiz-pop": {
+      "status": "active",
+      "source": "opro-2026-W41",
+      "added": "2026-W41",
+      "mu0": 0.4,
+      "n0": 1,
+      "def": {
+       "pool": [
+        "🧠",
+        "🎧",
+        "⚡",
+        "👀"
+       ]
+      },
+      "why": "Specific energetic topic emojis (+0.38 fire, +0.33 topic) significantly outperform no emoji (-0.17). A targeted set focused on visual pop and sound/mind quiz themes (brain, headphones, flash, eyes) pr"
+     }
+    },
+    "titleStyle": {
+     "op-exact-search": {
+      "status": "active",
+      "source": "opro-2026-W41",
+      "added": "2026-W41",
+      "mu0": 0.47,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "Matches real YouTube search queries strictly in natural lowercase with format context and title tag",
+       "example": "{keyword} by voice {e} #{fmt1}",
+       "fallback": "keyword"
+      },
+      "why": "Casual lowercase search titles are the top performer (+0.43), whereas LLM-styled titles underperformed (-0.63). Aligning strictly with actual YouTube autocomplete phrases boosts both initial feed seed"
+     }
+    },
+    "descHook": {
+     "op-comment-score": {
+      "status": "active",
+      "source": "opro-2026-W41",
+      "added": "2026-W41",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "Directly prompts comment engagement right after the quiz hook",
+       "example": "{hook} Drop your score in the comments! 📝 {cta}",
+       "fallback": "challenge"
+      },
+      "why": "The top description hook 'no-peek' (+0.68) succeeded by setting explicit rules for playing the quiz video. Directing viewers to leave their score drives comment velocity, which is a key secondary sign"
+     }
+    }
+   },
    "posterior": {
-    "week": "2026-W40",
-    "n": 11,
+    "week": "2026-W41",
+    "n": 18,
     "dims": {
      "titleStyle": {
-      "ramp": {
-       "uses": 2,
-       "mean": 0.79,
-       "sd": 0.62
+      "op-exact-search": {
+       "uses": 0,
+       "mean": 0.47,
+       "sd": 1
       },
       "casual": {
+       "uses": 6,
+       "mean": 0.43,
+       "sd": 0.42
+      },
+      "ramp": {
        "uses": 3,
-       "mean": 0.25,
-       "sd": 0.56
+       "mean": 0.32,
+       "sd": 0.53
       },
       "speed": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.12,
+       "sd": 0.77
       },
       "challenge": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.11,
+       "sd": 0.77
+      },
+      "keyword": {
+       "uses": 2,
+       "mean": -0.14,
+       "sd": 0.64
       },
       "llm": {
        "uses": 3,
-       "mean": -0.28,
+       "mean": -0.63,
        "sd": 0.54
       },
       "fans": {
        "uses": 2,
-       "mean": -0.34,
-       "sd": 0.63
-      },
-      "keyword": {
-       "uses": 1,
-       "mean": -0.64,
-       "sd": 0.74
+       "mean": -0.66,
+       "sd": 0.62
       }
      },
      "hashtagSet": {
       "title-tag": {
-       "uses": 4,
-       "mean": 0.36,
-       "sd": 0.49
+       "uses": 9,
+       "mean": 0.38,
+       "sd": 0.35
       },
       "two": {
-       "uses": 6,
-       "mean": -0.08,
-       "sd": 0.42
+       "uses": 7,
+       "mean": -0.29,
+       "sd": 0.4
       },
       "format3": {
-       "uses": 1,
-       "mean": -0.7,
-       "sd": 0.77
+       "uses": 2,
+       "mean": -0.55,
+       "sd": 0.63
       }
      },
      "emojiSet": {
+      "op-quiz-pop": {
+       "uses": 0,
+       "mean": 0.4,
+       "sd": 1
+      },
       "fire": {
-       "uses": 3,
-       "mean": 0.46,
-       "sd": 0.54
+       "uses": 6,
+       "mean": 0.38,
+       "sd": 0.41
       },
       "topic": {
-       "uses": 3,
-       "mean": 0.27,
-       "sd": 0.55
+       "uses": 6,
+       "mean": 0.33,
+       "sd": 0.43
       },
       "none": {
-       "uses": 1,
-       "mean": -0.06,
-       "sd": 0.77
+       "uses": 2,
+       "mean": -0.17,
+       "sd": 0.63
       },
       "template": {
        "uses": 4,
-       "mean": -0.59,
+       "mean": -0.92,
        "sd": 0.49
       }
      },
      "descHook": {
       "no-peek": {
-       "uses": 1,
-       "mean": 0.6,
-       "sd": 0.76
+       "uses": 5,
+       "mean": 0.68,
+       "sd": 0.45
+      },
+      "op-comment-score": {
+       "uses": 0,
+       "mean": 0.43,
+       "sd": 1
       },
       "keyword": {
-       "uses": 7,
-       "mean": 0.08,
-       "sd": 0.39
+       "uses": 8,
+       "mean": -0.24,
+       "sd": 0.37
       },
       "challenge": {
-       "uses": 3,
-       "mean": -0.49,
-       "sd": 0.54
+       "uses": 5,
+       "mean": -0.36,
+       "sd": 0.45
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-04T07:38:14.230Z"
+ "updatedAt": "2026-10-11T08:01:51.865Z"
 }
