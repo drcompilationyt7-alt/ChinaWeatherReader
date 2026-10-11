@@ -995,6 +995,52 @@
     "ovStyle": "ov-drop",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "2ETGsUNONIc",
+   "url": "https://www.youtube.com/watch?v=2ETGsUNONIc",
+   "postedAt": "2026-10-11T09:33:05.168Z",
+   "publishAt": "2026-10-11T12:00:00.000Z",
+   "song": "odoriko",
+   "theme": "japanese",
+   "emoji": "🗿,🔥",
+   "title": "odoriko acapella but the drums kick in 🗿🔥",
+   "clipIds": [
+    "ZJzGa7wrcBo",
+    "N6zlmRqsAZk",
+    "81yR76QH4zI",
+    "njwdCXJW7Q4",
+    "RhN3PZCgjiY",
+    "4W6-FlB-Xro",
+    "zkOYWw0u8as",
+    "E1fSjs1bA04"
+   ],
+   "clipChannels": [
+    "TMSアニメ公式チャンネル",
+    "TOHO animation",
+    "Vaundy",
+    "ezra",
+    "jABBKLAB",
+    "studiodecg888",
+    "アニプレックス チャンネル"
+   ],
+   "clipSource": "Vaundy",
+   "settings": {
+    "drop": 18,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "layers hit different",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "op-stem-action",
+    "ovStyle": "ov-llm",
+    "descHook": "drop"
+   }
   }
  ]
 }

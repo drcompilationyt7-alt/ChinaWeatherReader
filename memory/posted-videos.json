@@ -1,18 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=zV_u_sNLzUc",
-      "title": "A Spicy Way to Check Temperature! 🌡️🔥",
-      "country": "Japan",
-      "postedAt": "2026-09-10T09:54:09.478Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=mMBJ-iFPdeo",
-      "title": "Asia's Hardest Revenge Songs Reveal Shocking Truths 🌎😱",
-      "country": "World",
-      "postedAt": "2026-09-11T07:13:37.604Z"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=sRqRfrfQVaM",
       "title": "kpop comebacks after member departure✨ #kpop#kpopd",
       "country": "South Korea",
@@ -384,6 +372,15 @@
       "videoId": "vRoEzBcd3rc",
       "category": "meme-japanese",
       "titleSource": "yoru ni kakeru"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=2ETGsUNONIc",
+      "title": "odoriko acapella but the drums kick in 🗿🔥",
+      "country": "Global",
+      "postedAt": "2026-10-11T09:33:05.170Z",
+      "videoId": "2ETGsUNONIc",
+      "category": "meme-japanese",
+      "titleSource": "odoriko"
     }
   ]
 }
