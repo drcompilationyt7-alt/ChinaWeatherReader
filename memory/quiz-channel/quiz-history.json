@@ -525,6 +525,31 @@
     "titleStyle": "casual",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "RDyjt6LO7es",
+   "url": "https://www.youtube.com/watch?v=RDyjt6LO7es",
+   "postedAt": "2026-10-11T09:05:43.539Z",
+   "publishAt": "2026-10-11T12:00:00.000Z",
+   "format": "shape",
+   "theme": "asia",
+   "seed": 970910078,
+   "length": "quick",
+   "followUpOf": "aGsvXn7x8AM",
+   "titleTemplate": "shape-ramp",
+   "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
+   "answers": [
+    "VN",
+    "NP",
+    "CN"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
