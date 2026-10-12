@@ -52,7 +52,7 @@ const isPop = f => POP_FORMATS.includes(f);
 // (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
   ? { emoji: 0.3, trivia: 0.15, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.2, opening: 0.3, flag: 0.05, shape: 0.04,
-    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.12, eyes: 0.12, outfit: 0.08 }   // new formats: a modest share while they are new
+    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.25, eyes: 0.25, outfit: 0.2 }   // new formats: owner 2026-10-12 asked for higher odds
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];

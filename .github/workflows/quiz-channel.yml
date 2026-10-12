@@ -63,6 +63,7 @@ env:
   # fallback), moving watermark. Off until verified: POP_PRONOUNCE (phonetic respelling).
   POP_NEW_FORMATS: "1"
   POP_THEMES: "halloween,beach,festival,winter,valentine"
+  POP_SEASONAL_RATE: "0.34"    # Halloween (Oct 15-31) on about 1 in 3 videos (owner 2026-10-12)
   POP_ANIM_BG: "1"
   POP_AI_LINES: "1"
   POP_BG_CACHE: /home/runner/.cache/pop_quiz_bg
