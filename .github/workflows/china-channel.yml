@@ -1,0 +1,89 @@
+name: China Channel (Mainland Unpacked uploads)
+
+# Third channel. This workflow only UPLOADS; nothing is rendered here.
+# - The week (7 Shorts + 1 long-form) is rendered locally and reviewed by the owner.
+# - scripts/china/push-week.js then pushes it as a DRAFT release "china-week-<date>" with a manifest.
+#   Drafts aren't public, so nothing leaks from this public repo before it airs.
+# - Each day this posts what is due: that day's Short, plus the long-form on its day. Both are
+#   scheduled with publishAt. A finished week's release is deleted.
+# Quota: the same Google project as the other two channels (10,000 units/day; an upload costs about 1,600),
+# so this never uploads more than CHINA_MAX_PER_RUN videos in one run.
+# It has its own OAuth secrets (CHINA_YOUTUBE_*); until they exist, every run exits early.
+
+on:
+  schedule:
+    # 03:37 UTC, well before the 14:00 UTC publish time; the 09:37 run is a backup that only
+    # does something if the first run didn't happen or failed.
+    - cron: '37 3 * * *'
+    - cron: '37 9 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only show what would be uploaded'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: china-channel
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # read draft releases, delete finished ones, commit the upload history
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      YOUTUBE_CLIENT_ID: ${{ secrets.CHINA_YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.CHINA_YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.CHINA_YOUTUBE_REFRESH_TOKEN }}
+      CHINA_CHANNEL_ID: ${{ vars.CHINA_CHANNEL_ID }}
+      CHINA_MAX_PER_RUN: "2"
+      MEMORY_DIR: memory/china-channel
+      GH_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+
+    steps:
+      - name: Check channel secrets
+        id: gate
+        run: |
+          if [ -z "$YOUTUBE_REFRESH_TOKEN" ]; then
+            echo "CHINA_YOUTUBE_REFRESH_TOKEN is not set yet - see branding/china-channel/README.md. Nothing to do."
+            echo "ready=false" >> $GITHUB_OUTPUT
+          else
+            echo "ready=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+
+      - name: Setup Node
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install googleapis
+        if: steps.gate.outputs.ready == 'true'
+        # only the API client, not the whole repo's dependencies (puppeteer etc.)
+        run: npm install --prefix "$RUNNER_TEMP/yt" --no-audit --no-fund googleapis@128
+
+      - name: Upload what is due
+        if: steps.gate.outputs.ready == 'true'
+        run: NODE_PATH="$RUNNER_TEMP/yt/node_modules" node scripts/china/daily-upload.js
+
+      - name: Save upload history
+        if: always() && steps.gate.outputs.ready == 'true' && env.DRY_RUN != 'true'
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          if [ -d "$MEMORY_DIR" ]; then git add "$MEMORY_DIR"; fi
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "China channel uploads $(date +%F)"
+          for i in 1 2 3; do
+            git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break
+            sleep 5
+          done

@@ -1,0 +1,101 @@
+{
+ "title": "China Just Opened the World's Highest Bridge #shorts",
+ "description": "The Huajiang Grand Canyon Bridge in Guizhou opened on 28 Sept 2025: its deck sits 625 m above the river, the highest of any bridge on Earth.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Smithsonian Magazine; The Structural Engineer. Footage: China News Service (CC BY).",
+ "tags": [
+  "china",
+  "bridge",
+  "huajiang grand canyon bridge",
+  "guizhou",
+  "megaproject",
+  "engineering",
+  "shorts"
+ ],
+ "music": "epic",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "China just opened the highest bridge on Earth.",
+   "headline": [
+    "WORLD'S",
+    "HIGHEST BRIDGE"
+   ],
+   "image": "File:Huajiang Canyon Bridge3.JPG",
+   "fit": "cover",
+   "focus": [
+    0.5,
+    0.35
+   ],
+   "video": "yt:i5LPV1IxAIc",
+   "videoStart": 240
+  },
+  {
+   "type": "counter",
+   "text": "The Huajiang Grand Canyon Bridge in Guizhou sits 625 meters above the river below.",
+   "to": 625,
+   "unit": "METERS",
+   "label": "from the deck down to the river",
+   "kicker": "OPENED SEPT 2025",
+   "image": "File:Huajiang Canyon Bridge2.JPG",
+   "cue": "625",
+   "cueEnd": "meters",
+   "video": "yt:QjMYlhtzqMw",
+   "videoStart": 1
+  },
+  {
+   "type": "bars",
+   "text": "That's almost twice the height of the Eiffel Tower, and 60 meters above the old record holder, also in Guizhou.",
+   "kicker": "HEIGHT (METERS)",
+   "items": [
+    {
+     "label": "Huajiang Grand Canyon Bridge",
+     "value": 625,
+     "highlight": true
+    },
+    {
+     "label": "Eiffel Tower",
+     "value": 330,
+     "cue": "Eiffel"
+    },
+    {
+     "label": "Beipanjiang Bridge (old record)",
+     "value": 565,
+     "cue": "old record"
+    }
+   ]
+  },
+  {
+   "type": "vs",
+   "text": "Crossing this canyon used to take up to two hours on winding mountain roads. Now it takes about two minutes.",
+   "before": {
+    "label": "BEFORE",
+    "value": "2 HOURS",
+    "cue": "two hours"
+   },
+   "after": {
+    "label": "NOW",
+    "value": "2 MIN",
+    "cue": "two minutes"
+   },
+   "image": "File:Huajiang Canyon Bridge1.JPG",
+   "video": "yt:VgjG2Nqn7Do",
+   "videoStart": 24
+  },
+  {
+   "type": "photo",
+   "text": "Guizhou is so mountainous, it has nearly half of the world's hundred highest bridges.",
+   "kicker": "GUIZHOU, CHINA",
+   "label": "Beipanjiang Bridge, 565 m",
+   "image": "File:BeipanjiangDugeByHighestBridges.jpg",
+   "cue": "hundred"
+  },
+  {
+   "type": "outro",
+   "text": "Would you drive across it? Tell me in the comments.",
+   "question": "WOULD YOU DRIVE ACROSS?",
+   "image": "File:Huajiang Canyon Bridge2.JPG",
+   "video": "yt:i5LPV1IxAIc",
+   "videoStart": 0
+  }
+ ],
+ "slug": "2-huajiang-bridge"
+}

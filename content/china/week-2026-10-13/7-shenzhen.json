@@ -1,0 +1,113 @@
+{
+ "title": "From Border Town to 18 Million People #shorts",
+ "description": "In 1979 Shenzhen had about 300,000 people. Then it became China's first Special Economic Zone.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Investment Monitor; The Plan; Shenzhen Statistics Bureau. Footage: Phuketian Mobi (CC BY).",
+ "tags": [
+  "china",
+  "shenzhen",
+  "city",
+  "urban growth",
+  "huawei",
+  "tencent",
+  "byd",
+  "dji",
+  "shorts"
+ ],
+ "music": "epic",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "In 1979, this city had about 300,000 people.",
+   "headline": [
+    "BORDER TOWN",
+    "TO MEGACITY"
+   ],
+   "image": "File:Pingan International Finance Center2020.jpg",
+   "fit": "cover",
+   "video": "yt:qT_IvWKFTRU",
+   "videoStart": 40
+  },
+  {
+   "type": "timeline",
+   "text": "In 1980, Shenzhen became China's first Special Economic Zone, a test lab for markets and foreign money.",
+   "kicker": "SHENZHEN",
+   "events": [
+    {
+     "year": "1979",
+     "text": "Small town on the Hong Kong border"
+    },
+    {
+     "year": "1980",
+     "text": "China's first Special Economic Zone",
+     "cue": "1980"
+    },
+    {
+     "year": "TODAY",
+     "text": "A global tech capital",
+     "cue": "markets"
+    }
+   ]
+  },
+  {
+   "type": "counter",
+   "text": "Today, almost 18 million people live here.",
+   "from": 0.3,
+   "to": 17.8,
+   "decimals": 1,
+   "unit": "MILLION PEOPLE",
+   "label": "up from about 0.3 million in 1979",
+   "image": "File:Shenzhen Skyline At Night (214551663).jpeg",
+   "cue": "18",
+   "cueEnd": "million",
+   "video": "yt:qT_IvWKFTRU",
+   "videoStart": 152
+  },
+  {
+   "type": "counter",
+   "text": "Its economy grew more than 20% a year on average, for four decades.",
+   "to": 21.6,
+   "decimals": 1,
+   "unit": "% A YEAR",
+   "label": "average growth, 1979 to 2019",
+   "kicker": "GDP GROWTH",
+   "image": "File:Shenzhen Skyline Fuhua Road Ping An International Finance Center.jpg",
+   "cue": "20%",
+   "cueEnd": "decades",
+   "video": "yt:qT_IvWKFTRU",
+   "videoStart": 86
+  },
+  {
+   "type": "list",
+   "text": "Huawei, Tencent, BYD and DJI are all headquartered here.",
+   "kicker": "HOME OF",
+   "items": [
+    {
+     "text": "Huawei",
+     "cue": "Huawei"
+    },
+    {
+     "text": "Tencent",
+     "cue": "Tencent"
+    },
+    {
+     "text": "BYD",
+     "cue": "BYD"
+    },
+    {
+     "text": "DJI",
+     "cue": "DJI"
+    }
+   ],
+   "image": "File:Ping An IFC from above.jpg",
+   "video": "yt:qT_IvWKFTRU",
+   "videoStart": 8
+  },
+  {
+   "type": "outro",
+   "text": "Should other countries copy the Shenzhen playbook?",
+   "question": "SHOULD OTHERS COPY IT?",
+   "video": "yt:qT_IvWKFTRU",
+   "videoStart": 116
+  }
+ ],
+ "slug": "7-shenzhen"
+}

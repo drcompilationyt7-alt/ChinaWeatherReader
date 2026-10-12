@@ -1,0 +1,85 @@
+{
+ "title": "The Exam That Stops All of China #shorts",
+ "description": "The gaokao, China's college entrance exam: 13.4 million students in 2025, police-guarded papers, quiet streets, and AI chatbots that switch off.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Bloomberg, Fortune (June 2025). Footage: China News Service (CC BY).",
+ "tags": [
+  "china",
+  "gaokao",
+  "exam",
+  "student life",
+  "education",
+  "school pressure",
+  "shorts"
+ ],
+ "music": "calm",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "Once a year, all of China slows down for one exam.",
+   "headline": [
+    "ONE EXAM.",
+    "ONE SHOT."
+   ],
+   "image": "File:Gate of Beijing 101 Middle School during NCEE2026 (20260607172055).jpg",
+   "fit": "cover",
+   "video": "yt:XUNJqg9fPfQ",
+   "videoStart": 2
+  },
+  {
+   "type": "counter",
+   "text": "It's called the gaokao. In 2025, about 13.4 million students took it.",
+   "say": "It's called the gow-kow. In 2025, about thirteen point four million students took it.",
+   "to": 13.4,
+   "decimals": 1,
+   "unit": "MILLION",
+   "label": "students sat the 2025 gaokao",
+   "image": "File:Examinees leaving 101 Middle School after first exam (20210607114526).jpg",
+   "cue": "13.4",
+   "cueEnd": "million",
+   "video": "yt:XUNJqg9fPfQ",
+   "videoStart": 6
+  },
+  {
+   "type": "photo",
+   "text": "For most of them, this one score decides which university they can get into.",
+   "kicker": "ONE SCORE",
+   "image": "File:Gaokao Huizhou 9 Middle School.JPG"
+  },
+  {
+   "type": "list",
+   "text": "Police guard the exam papers, traffic gets rerouted, and construction near test sites stops.",
+   "kicker": "EXAM DAYS",
+   "items": [
+    {
+     "text": "Police guard the papers",
+     "cue": "Police"
+    },
+    {
+     "text": "Traffic rerouted",
+     "cue": "traffic"
+    },
+    {
+     "text": "Construction noise banned",
+     "cue": "construction"
+    }
+   ],
+   "image": "File:Gate of Beijing Bayi School during NCEE2025 (20250607154558).jpg",
+   "video": "yt:XUNJqg9fPfQ",
+   "videoStart": 16
+  },
+  {
+   "type": "photo",
+   "text": "In 2025, several Chinese AI chatbots even switched off photo recognition during exam hours.",
+   "kicker": "AI: PAUSED",
+   "label": "No photo answers during the exam",
+   "source": "Reported for Tencent Yuanbao, Moonshot Kimi & others",
+   "image": "File:Liangxiang High School Affiliated to BNU during NCEE2026 (20260607132401).jpg",
+   "cue": "switched"
+  },
+  {
+   "type": "outro",
+   "text": "Could you handle your whole future riding on one exam?",
+   "question": "COULD YOU HANDLE IT?"
+  }
+ ],
+ "slug": "6-gaokao"
+}

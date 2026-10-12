@@ -1,0 +1,116 @@
+{
+ "title": "996: China's Brutal 72-Hour Work Week #shorts",
+ "description": "9 a.m. to 9 p.m., six days a week. How 996 became normal in Chinese tech, the 996.ICU protest, and the 2021 ruling that called it illegal.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Supreme People's Court & Ministry of Human Resources typical cases (Aug 2021); PRC Labor Law Art. 41. Footage: China News Service; Videos library (CC BY).",
+ "tags": [
+  "china",
+  "996",
+  "work culture",
+  "overtime",
+  "chinese tech",
+  "jack ma",
+  "shorts"
+ ],
+ "music": "serious",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "Nine a.m. to nine p.m., six days a week. In China, it has a name.",
+   "headline": [
+    "996"
+   ],
+   "size": 420,
+   "y": 640,
+   "sub": "9 AM  •  9 PM  •  6 DAYS",
+   "highlight": 0,
+   "image": "File:Beijing CBD 2015 September (night).jpg",
+   "fit": "cover",
+   "video": "yt:xotLdiQ2Kh8",
+   "videoStart": 0
+  },
+  {
+   "type": "counter",
+   "text": "That's seventy-two hours a week.",
+   "to": 72,
+   "unit": "HOURS A WEEK",
+   "label": "on a 996 schedule",
+   "image": "File:Beijing skyline (cropped).jpg",
+   "hold": 0.4,
+   "cue": "seventy-two",
+   "cueEnd": "week",
+   "video": "yt:VUmMypCo4gk",
+   "videoStart": 16
+  },
+  {
+   "type": "bars",
+   "text": "China's own labor law caps it at about forty-eight: forty regular hours, plus up to thirty-six hours of overtime a month.",
+   "kicker": "HOURS PER WEEK",
+   "unit": "h",
+   "items": [
+    {
+     "label": "996 schedule",
+     "value": 72,
+     "highlight": true
+    },
+    {
+     "label": "Legal maximum (with overtime)",
+     "value": 48,
+     "cue": "forty-eight"
+    },
+    {
+     "label": "Standard week",
+     "value": 40,
+     "cue": "forty regular"
+    }
+   ],
+   "source": "PRC Labor Law, Art. 41"
+  },
+  {
+   "type": "photo",
+   "text": "In 2019, tech workers fought back online with a GitHub project called 996.ICU: work 996, end up in the ICU.",
+   "say": "In 2019, tech workers fought back online with a GitHub project called nine nine six dot I C U. Work nine nine six, end up in the I C U.",
+   "kicker": "2019",
+   "label": "Zhongguancun, Beijing's tech hub",
+   "image": "File:Zhongguancun from Huangzhuang North Footbridge (20201214122926).jpg"
+  },
+  {
+   "type": "quote",
+   "text": "The same year, Alibaba founder Jack Ma called working 996 a huge blessing.",
+   "say": "The same year, Alibaba founder Jack Ma called working nine nine six a huge blessing.",
+   "quote": "A huge blessing.",
+   "who": "Jack Ma on 996, 2019",
+   "cue": "huge"
+  },
+  {
+   "type": "list",
+   "text": "In 2021, China's top court and labor ministry declared it illegal, after a courier firm fired a worker for refusing 996.",
+   "say": "In 2021, China's top court and labor ministry declared it illegal, after a courier firm fired a worker for refusing nine nine six.",
+   "kicker": "2021 RULING",
+   "items": [
+    {
+     "text": "Ruling: 996 is illegal",
+     "icon": "check",
+     "cue": "declared"
+    },
+    {
+     "text": "Courier firm fires a worker",
+     "icon": "cross",
+     "cue": "courier"
+    },
+    {
+     "text": "...for refusing 996",
+     "icon": "cross",
+     "cue": "refusing"
+    }
+   ]
+  },
+  {
+   "type": "outro",
+   "text": "But many workers say the long hours never went away. Would you work 996 for double pay?",
+   "say": "But many workers say the long hours never went away. Would you work nine nine six for double pay?",
+   "question": "WOULD YOU DO 996 FOR DOUBLE PAY?",
+   "video": "yt:VUmMypCo4gk",
+   "videoStart": 19
+  }
+ ],
+ "slug": "3-996-work-culture"
+}

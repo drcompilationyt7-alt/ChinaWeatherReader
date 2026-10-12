@@ -1,0 +1,97 @@
+{
+ "title": "China's 5-Minute EV Charge Is Real (Almost) #shorts",
+ "description": "BYD's Super e-Platform (March 2025) claims 1,000 kW charging: about 400 km of range in 5 minutes. Here's how it compares, and the catch.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: BYD press release (17 Mar 2025); Inside China Auto. Charging figures are BYD's own claims. Footage: Vincent Everts (CC BY).",
+ "tags": [
+  "china",
+  "byd",
+  "ev",
+  "electric car",
+  "fast charging",
+  "china tech",
+  "shorts"
+ ],
+ "music": "tech",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "China just made charging an EV almost as fast as filling up with gas.",
+   "headline": [
+    "5-MINUTE",
+    "EV CHARGE"
+   ],
+   "image": "File:BYD Han L EV 001.jpg",
+   "fit": "cover"
+  },
+  {
+   "type": "counter",
+   "text": "In March 2025, BYD unveiled chargers that push one thousand kilowatts. That's a full megawatt.",
+   "to": 1000,
+   "unit": "kW",
+   "label": "peak charging power",
+   "kicker": "BYD SUPER e-PLATFORM",
+   "image": "File:BYD Han L EV 007.jpg",
+   "source": "Source: BYD, March 2025",
+   "cue": "one thousand",
+   "cueEnd": "kilowatts",
+   "video": "yt:r6Vp0IrkU54",
+   "videoStart": 92
+  },
+  {
+   "type": "vs",
+   "text": "BYD says five minutes on the plug adds about four hundred kilometers of range.",
+   "before": {
+    "label": "PLUGGED IN",
+    "value": "5 MIN",
+    "cue": "five minutes"
+   },
+   "after": {
+    "label": "RANGE ADDED",
+    "value": "400 KM",
+    "cue": "four hundred"
+   },
+   "kicker": "BYD'S CLAIM",
+   "source": "Company figures, not independently tested",
+   "image": "File:BYD Han L EV 004.jpg",
+   "video": "yt:r6Vp0IrkU54",
+   "videoStart": 4
+  },
+  {
+   "type": "bars",
+   "text": "The previous record was about 520 kilowatts. A standard Tesla Supercharger peaks at 250.",
+   "kicker": "PEAK CHARGING POWER (kW)",
+   "items": [
+    {
+     "label": "BYD megawatt charger",
+     "value": 1000,
+     "highlight": true
+    },
+    {
+     "label": "Li Auto MEGA (old record)",
+     "value": 520,
+     "cue": "520"
+    },
+    {
+     "label": "Tesla V3 Supercharger",
+     "value": 250,
+     "cue": "Tesla"
+    }
+   ]
+  },
+  {
+   "type": "photo",
+   "text": "The catch: you need BYD's own megawatt chargers, and it plans to build more than four thousand across China.",
+   "kicker": "THE CATCH",
+   "label": "4,000+ stations planned",
+   "image": "File:BYD Han L EV 008.jpg",
+   "cue": "four thousand",
+   "video": "yt:r6Vp0IrkU54",
+   "videoStart": 52
+  },
+  {
+   "type": "outro",
+   "text": "Would you switch to an EV if charging took five minutes? Tell me in the comments.",
+   "question": "WOULD YOU SWITCH?"
+  }
+ ],
+ "slug": "1-byd-flash-charge"
+}

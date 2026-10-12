@@ -1,0 +1,100 @@
+{
+ "title": "A 57-Floor Skyscraper Built in 19 Days #shorts",
+ "description": "In 2015, Broad Group assembled Mini Sky City in Changsha from 2,736 factory-made modules, about three floors a day.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Mingtiandi; Fox News; Construction Digital (2015). Build-speed figures are the company's. Construction footage is illustrative (Pixabay), not Mini Sky City itself.",
+ "tags": [
+  "china",
+  "skyscraper",
+  "construction",
+  "modular",
+  "changsha",
+  "broad group",
+  "engineering",
+  "shorts"
+ ],
+ "music": "tech",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "This 57-story skyscraper went up in 19 days.",
+   "say": "This fifty-seven story skyscraper went up in nineteen days.",
+   "headline": [
+    "57 FLOORS",
+    "19 DAYS"
+   ],
+   "video": "pixabay:206315",
+   "source": "Illustrative footage, not Mini Sky City"
+  },
+  {
+   "type": "stack",
+   "text": "In 2015, Broad Group assembled Mini Sky City in Changsha, about three floors a day.",
+   "kicker": "CHANGSHA, 2015",
+   "floors": 57,
+   "days": 19,
+   "hold": 0.6
+  },
+  {
+   "type": "counter",
+   "text": "The trick: almost nothing was built on site. 2,736 modules were made in a factory first.",
+   "to": 2736,
+   "unit": "MODULES",
+   "label": "made in a factory over about four and a half months",
+   "kicker": "THE TRICK",
+   "cue": "2,736",
+   "cueEnd": "modules",
+   "video": "pixabay:135849",
+   "source": "Illustrative factory footage"
+  },
+  {
+   "type": "list",
+   "text": "Then cranes stacked them like building blocks: 800 apartments, plus offices for about 4,000 people.",
+   "kicker": "MINI SKY CITY",
+   "items": [
+    {
+     "text": "57 floors, 204 m tall",
+     "cue": "stacked"
+    },
+    {
+     "text": "800 apartments",
+     "cue": "800"
+    },
+    {
+     "text": "Offices for ~4,000 people",
+     "cue": "offices"
+    }
+   ],
+   "video": "pixabay:42926",
+   "source": "Illustrative footage"
+  },
+  {
+   "type": "bars",
+   "text": "It was a warm-up for Sky City, a planned 838-meter tower that would have beaten the Burj Khalifa. It was never built.",
+   "kicker": "HEIGHT (METERS)",
+   "items": [
+    {
+     "label": "Sky City (planned, never built)",
+     "value": 838,
+     "highlight": true,
+     "cue": "Sky City"
+    },
+    {
+     "label": "Burj Khalifa",
+     "value": 828,
+     "cue": "Burj"
+    },
+    {
+     "label": "Mini Sky City",
+     "value": 204,
+     "cue": "never"
+    }
+   ]
+  },
+  {
+   "type": "outro",
+   "text": "Would you live in a tower built in 19 days?",
+   "say": "Would you live in a tower built in nineteen days?",
+   "question": "WOULD YOU LIVE HERE?",
+   "video": "pixabay:50042"
+  }
+ ],
+ "slug": "5-mini-sky-city"
+}

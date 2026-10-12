@@ -1,0 +1,20 @@
+{
+  "name": "mainland-unpacked-remotion",
+  "private": true,
+  "description": "Mainland Unpacked Shorts and recaps, rendered with Remotion (free for individuals / companies up to 3 people).",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/effects": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "@remotion/media": "4.0.529",
+    "@remotion/media-utils": "4.0.529",
+    "@remotion/transitions": "4.0.529",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.529"
+  }
+}

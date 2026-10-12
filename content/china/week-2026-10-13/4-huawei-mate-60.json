@@ -1,0 +1,127 @@
+{
+ "slug": "4-huawei-mate-60",
+ "title": "Huawei Is Now Building Chips in 3D #shorts",
+ "description": "In 2023 the Mate 60 Pro's 7 nm Kirin 9000S surprised Washington. Three years later Huawei unveiled the Tau Law and LogicFolding, a 3D design that stacks the compute die on the cache die, and shipped it in the Kirin 9050 Pro (Mate 90 Pro Max, Oct 2026). Density figures and the 2031 roadmap are Huawei's own claims.\n\nNew China Short every day; full reality-show recap every Saturday. Subscribe to @mainlandunpacked.\n\nSources: Tom's Hardware; The Next Web (Tau Law keynote, IEEE ISCAS, 25 May 2026); GSMArena (Geekbench, Oct 2026); Huawei Central (Mate 90 line-up). Footage: Geekerwan 极客湾, China News Service, Ray Borges (CC BY).",
+ "tags": [
+  "china",
+  "huawei",
+  "kirin 9050 pro",
+  "mate 90 pro max",
+  "tau law",
+  "logicfolding",
+  "3d chip",
+  "semiconductors",
+  "sanctions",
+  "shorts"
+ ],
+ "music": "tense",
+ "scenes": [
+  {
+   "type": "hook",
+   "text": "In 2023, this phone shocked Washington. Now Huawei is building chips in 3D.",
+   "headline": [
+    "CHIPS",
+    "IN 3D"
+   ],
+   "video": "yt:PpNFmPcBYPY",
+   "videoStart": 170
+  },
+  {
+   "type": "photo",
+   "text": "The Mate 60 Pro ran a 7-nanometer Kirin 9000S, made in China despite US sanctions.",
+   "say": "The Mate 60 Pro ran a seven nanometer Kirin nine thousand S, made in China despite US sanctions.",
+   "kicker": "2023",
+   "label": "Mate 60 Pro  •  Kirin 9000S",
+   "cue": "Kirin",
+   "video": "yt:S1wE9L7_EwM",
+   "videoStart": 8
+  },
+  {
+   "type": "photo",
+   "text": "But shrinking chips any further needs EUV machines, and China can't buy them.",
+   "kicker": "THE WALL",
+   "label": "No EUV machines for China",
+   "cue": "EUV",
+   "video": "yt:PpNFmPcBYPY",
+   "videoStart": 160
+  },
+  {
+   "type": "photo",
+   "text": "So in May 2026, HiSilicon chief He Tingbo unveiled the Tau Law: judge chips by how fast signals travel, not by how small transistors are.",
+   "kicker": "MAY 2026  •  TAU LAW",
+   "label": "He Tingbo, HiSilicon",
+   "cue": "Tau",
+   "video": "yt:PpNFmPcBYPY",
+   "videoStart": 200
+  },
+  {
+   "type": "vs",
+   "text": "Its trick is LogicFolding. A flat chip packs about 155 million transistors per square millimeter. Fold it in 3D, stacking compute on cache, and Huawei says you get 238 million.",
+   "kicker": "LOGICFOLDING",
+   "before": {
+    "label": "FLAT CHIP  •  PER mm²",
+    "value": "155M",
+    "cue": "155"
+   },
+   "after": {
+    "label": "FOLDED 3D  •  PER mm²",
+    "value": "238M",
+    "cue": "238"
+   },
+   "source": "Huawei's figures",
+   "video": "yt:PpNFmPcBYPY",
+   "videoStart": 250
+  },
+  {
+   "type": "photo",
+   "text": "On October 1st, 2026, it shipped: the Kirin 9050 Pro, inside the Mate 90 Pro Max.",
+   "say": "On October first, twenty twenty-six, it shipped: the Kirin ninety fifty Pro, inside the Mate ninety Pro Max.",
+   "kicker": "OCT 2026",
+   "label": "Mate 90 Pro Max  •  Kirin 9050 Pro",
+   "cue": "Kirin",
+   "video": "yt:mtyGPJOD_KA",
+   "videoStart": 54
+  },
+  {
+   "type": "counter",
+   "text": "In Geekbench it averages about 5,400 multi-core points, somewhere between Qualcomm's Snapdragon 8 Gen 1 and 8 Gen 2.",
+   "to": 5381,
+   "unit": "GEEKBENCH",
+   "label": "multi-core average, between Snapdragon 8 Gen 1 and 8 Gen 2",
+   "kicker": "HOW IT COMPARES",
+   "cue": "Geekbench",
+   "cueEnd": "points",
+   "source": "Source: GSMArena, Oct 2026",
+   "video": "yt:PpNFmPcBYPY",
+   "videoStart": 462
+  },
+  {
+   "type": "timeline",
+   "text": "So it's still behind today's best chips. But Huawei claims this path reaches 1.4-nanometer-class density by 2031, without EUV.",
+   "kicker": "THE BET",
+   "events": [
+    {
+     "year": "2023",
+     "text": "7 nm Kirin 9000S"
+    },
+    {
+     "year": "2026",
+     "text": "3D Kirin 9050 Pro",
+     "cue": "behind"
+    },
+    {
+     "year": "2031",
+     "text": "1.4 nm-class (Huawei's claim)",
+     "cue": "claims"
+    }
+   ]
+  },
+  {
+   "type": "outro",
+   "text": "Can 3D chips beat the sanctions? Tell me what you think.",
+   "question": "CAN 3D CHIPS BEAT SANCTIONS?",
+   "video": "yt:mtyGPJOD_KA",
+   "videoStart": 180
+  }
+ ]
+}
