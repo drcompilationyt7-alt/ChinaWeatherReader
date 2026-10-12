@@ -1041,6 +1041,54 @@
     "ovStyle": "ov-llm",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "3T6t4OoiFK4",
+   "url": "https://www.youtube.com/watch?v=3T6t4OoiFK4",
+   "postedAt": "2026-10-12T09:57:48.118Z",
+   "publishAt": "2026-10-12T12:00:00.000Z",
+   "song": "yoru ni kakeru",
+   "theme": "japanese",
+   "emoji": "⚡,🔥",
+   "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
+   "clipIds": [
+    "OpbgtXvki0I",
+    "8ZN40f8R7eg",
+    "b7ChuZdHHLc",
+    "5C9l5RgAU4g",
+    "srNWjMm7Aoo",
+    "vN3mSJUel0s",
+    "xom-quKQhLI",
+    "hKSMakt2D6Q"
+   ],
+   "clipChannels": [
+    "1MILLION Dance Studio",
+    "CHU008",
+    "CJDA_OFFICIAL",
+    "ChumChuNeun",
+    "M2",
+    "Miguel Soria",
+    "YOASOBI",
+    "kripsi"
+   ],
+   "followUpOf": "vRoEzBcd3rc",
+   "clipSource": "YOASOBI",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-drop",
+    "descHook": "drop"
+   }
   }
  ]
 }
