@@ -252,6 +252,17 @@
       "titleSource": "shape-ramp",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=KxNVlt879NI",
+      "title": "Guess the Anime Song: Can You Name All 3? 👀",
+      "country": "Global",
+      "postedAt": "2026-10-12T09:30:06.679Z",
+      "videoId": "KxNVlt879NI",
+      "category": "quiz-song",
+      "titleSource": "song-llm",
+      "quizFormat": "song",
+      "quizTheme": "anime"
     }
   ]
 }

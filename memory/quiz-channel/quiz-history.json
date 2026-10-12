@@ -550,6 +550,46 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "KxNVlt879NI",
+   "url": "https://www.youtube.com/watch?v=KxNVlt879NI",
+   "postedAt": "2026-10-12T09:30:06.436Z",
+   "publishAt": "2026-10-12T12:00:00.000Z",
+   "format": "song",
+   "theme": "anime",
+   "seed": 425243318,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Ready for a quick pop quiz?",
+     "template": "Ready for a quick pop quiz?",
+     "sec": 1.43
+    },
+    {
+     "slot": "outro",
+     "used": "ai-short",
+     "line": "Comment your final score below!",
+     "template": "Comment your final score below!",
+     "sec": 1.56
+    }
+   ],
+   "titleTemplate": "song-llm",
+   "title": "Guess the Anime Song: Can You Name All 3? 👀",
+   "answers": [
+    "song:blue bird|ikimono-gakari",
+    "song:unravel|tk from ling tosite sigure",
+    "song:peace sign|kenshi yonezu"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "two",
+    "titleStyle": "llm",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
