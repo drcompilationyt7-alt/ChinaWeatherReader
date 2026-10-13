@@ -148,6 +148,7 @@ class GeminiService {
               topP: options.topP || 0.9,
             },
           };
+          if (options.json) body.generationConfig.responseMimeType = 'application/json';   // structured-output mode (opt-in)
           if (options.systemInstruction) {
             body.systemInstruction = { parts: [{ text: options.systemInstruction }] };
           }

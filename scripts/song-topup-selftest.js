@@ -111,6 +111,28 @@ const deps = props => ({ propose: async () => props, search, probe, now: () => N
   const lose = top.findLosers(f2, { videos: vids }, { uploads: ups });
   check(lose.length === 1 && lose[0].name === 'loser', 'only a song with enough uploads far below the channel mean is retired');
 
+  // candidate sources: tolerant JSON, retries with fake LLM failures, trending scrape, seed fallback
+  const S = require('../pipeline/song-sources');
+  const row = n => '{"name":"' + n + '","query":"A ' + n + ' official audio","artist":"A","theme":"kpop","source":"A","kind":"group"}';
+  check(S.parseSongs('{"songs":[' + row('a1') + ',' + row('a2') + ',]}').length === 2, 'parse: trailing comma tolerated');
+  check(S.parseSongs('```json\n{"songs":[' + row('a1') + ',' + row('a2') + ',' + row('a3').slice(0, 40)).length === 2, 'parse: truncated output cut at the last complete object');
+  check(S.parseSongs('{"songs":[' + row('a1') + ' ' + row('a2') + ']}').length === 2, 'parse: missing comma between objects salvaged');
+  let calls = 0;
+  const flaky = async () => { calls++; if (calls % 4 === 1) throw new Error('503 overloaded'); if (calls % 4 === 2) return '{"songs":[' + row('x' + calls) + ','; if (calls % 4 === 3) return null; return '{"songs":[' + row('y' + calls) + ',' + row('z' + calls) + ']}'; };
+  const got = await S.askBatches(flaky, ['gurenge'], { rounds: 3, pauseMs: 1, sleep: async () => {} });
+  check(got.length >= 4, 'LLM batches survive 503 / malformed / empty answers (retry + more rounds): ' + got.length + ' songs');
+  check((await S.askBatches(async () => null, [], { rounds: 2, pauseMs: 1, sleep: async () => {} })).length === 0, 'a dead LLM returns nothing, no throw');
+  const upSearch = async q => /acapella|edit/.test(q) ? [
+    { id: 'u1', title: 'NewArtist - Fresh Song (Acapella Edit) #kpop', uploadDate: day(5) }, { id: 'u2', title: 'NewArtist - Fresh Song acapella', uploadDate: day(9) },
+    { id: 'u3', title: 'Old - Stale Song acapella', uploadDate: day(200) }, { id: 'u4', title: 'no separator here edit', uploadDate: day(3) }] : [];
+  const tr = await S.trendingCandidates(upSearch, { now: () => NOW });
+  check(tr.length === 1 && tr[0].name === 'fresh song' && tr[0].artist === 'NewArtist' && tr[0].trending >= 2, 'trending scrape: song names from recent acapella / edit uploads only');
+  const all = await S.gatherCandidates({ ask: async () => { throw new Error('all providers down'); }, search: upSearch, now: () => NOW, shows: new Map() }, ['sheesh', 'iris out'], { rounds: 1, pauseMs: 1, sleep: async () => {} });
+  check(all.length === S.SEEDS.length - 2 + 1 && all[0].name === 'fresh song' && !all.some(c => c.name === 'sheesh'), 'no-LLM fallback: trending + seeds, deduped against the existing list (' + all.length + ')');
+  check(S.SEEDS.length === 26 && S.SEEDS.every(c => c.name && c.query && c.theme && c.source && c.kind), '26 seed candidates, all well-formed');
+  const llmFirst = await S.gatherCandidates({ ask: async () => '{"songs":[' + row('sheesh') + ',' + row('brand new') + ']}', search: async () => [], now: () => NOW, shows: new Map() }, [], { rounds: 1, pauseMs: 1 });
+  check(llmFirst.filter(c => c.name === 'sheesh').length === 1 && llmFirst[0].name === 'sheesh' && llmFirst.some(c => c.name === 'brand new'), 'LLM rows are merged with the seeds and deduped');
+
   console.log(fails ? `\n${fails} FAILED` : '\nall passed');
   fs.rmSync(T, { recursive: true, force: true });
   process.exit(fails ? 1 : 0);

@@ -1,29 +1,50 @@
 /**
- * Monthly AUTOMATIC top-up of the stem edit's song list: candidates from the LLM chain (core/metadata/llm.js), checked by the
- * quality gates of pipeline/song-topup.js (niche, popular + trending, producible, not a duplicate, monthly limit), approved
- * songs go to config/song-candidates.json "approved" on probation, the report to memory/song-topup-YYYY-MM.json.
+ * Monthly AUTOMATIC top-up of the stem edit's song list. Candidates come from three merged sources (pipeline/song-sources.js):
+ * the LLM in small JSON batches (Gemini JSON mode, then the OpenRouter free models, tolerant parse, retries with patience), trending
+ * YouTube acapella / edit uploads of the last 60 days, and a hand-listed seed list that works with no LLM at all. They are checked by
+ * the quality gates of pipeline/song-topup.js; approved songs go to config/song-candidates.json on probation, the report to
+ * memory/song-topup-YYYY-MM.json.
  *
  *   node scripts/song-topup.js [--dry-run]     (dry run: gates run, nothing is written)
  */
-const llm = require('../core/metadata/llm');
 const top = require('../pipeline/song-topup');
+const src = require('../pipeline/song-sources');
 
 const dry = process.argv.includes('--dry-run');
+const num = (k, d) => (process.env[k] != null && process.env[k] !== '' ? Number(process.env[k]) : d);
+const race = (p, ms) => { let t; return Promise.race([Promise.resolve(p).catch(() => null), new Promise(r => { t = setTimeout(() => r(null), ms); })]).finally(() => clearTimeout(t)); };
+let lastProvider = null;
+
+/** one LLM call: Gemini in JSON mode (its own key / model rotation + backoff), then OpenRouter; returns raw text or null */
+async function ask(system, user) {
+  if (process.env.META_LLM === 'off') return null;
+  const ms = num('TOPUP_LLM_CALL_MIN', 8) * 60000;
+  if (Object.keys(process.env).some(k => /^GEMINI_API_KEY(_\d+)?$/.test(k) && process.env[k])) {
+    try {
+      const g = require('../core/gemini-service').getGeminiService();
+      const t = await race(g.chat(system, user, { temperature: 0.7, maxTokens: 4000, json: true }), ms);
+      if (t) { lastProvider = 'gemini'; return t; }
+    } catch {}
+  }
+  if (Object.keys(process.env).some(k => /^OPENROUTER_API_KEY(_\d+)?$/.test(k) && process.env[k])) {
+    try {
+      const q = require('../core/openrouter-qa').getOpenRouterQA();
+      const t = await race(q.chat(`${system}\n\nRespond ONLY with valid JSON.`, user, { temperature: 0.7, maxTokens: 2500, timeout: 60000, xTitle: 'song top-up' }), 4 * 60000);
+      if (t) { lastProvider = 'openrouter'; return t; }
+    } catch {}
+  }
+  return null;
+}
 
 async function propose(n, have) {
-  const system = 'You curate songs for an anime / J-pop / K-pop edit channel. Only real, existing songs; Japanese anime openings / endings / inserts, J-pop, K-pop and Chinese (C-pop / Mandopop / C-drama OST / donghua) only. Nothing else.';
-  const user = `Name ${n} songs that are trending or popular for edits right now (this month and last), from anime openings or endings, J-pop, K-pop or Chinese music. `
-    + `Not these (already used): ${have.slice(0, 150).join(', ')}.\n`
-    + 'Return JSON {"songs":[{"name":"short lowercase title","query":"Artist Title official audio","artist":"Artist","native":"title in its native script for Chinese / Japanese / Korean songs, else omit","theme":"anime|jpop|kpop|chinese",'
-    + '"source":"exact anime title (English or romaji), or the group / artist (official channel) for J-pop, K-pop and C-pop, or the C-drama / donghua title for a drama OST","kind":"anime|group|drama",'
-    + '"aliases":["lowercase character / member names and native-script title that clip titles would mention"]}]}';
-  const r = await llm.chatJSON(system, user, { timeoutMs: 90000, temperature: 0.7, maxTokens: 4000 });
-  // drop template echoes and malformed rows
-  return r && Array.isArray(r.songs) ? r.songs.filter(s => s && s.name && s.query && !/[|]|short lowercase title|Artist Title/i.test(`${s.name} ${s.query} ${s.source}`)) : [];
+  const rows = await src.gatherCandidates({ ask, search: top.ytSearch, now: () => new Date(), shows: top.knownSets() }, have,
+    { batch: 8, rounds: num('TOPUP_LLM_ROUNDS', 3), pauseMs: num('TOPUP_LLM_PAUSE_S', 90) * 1000, log: m => console.log(`  [candidates] ${m}`) });
+  return rows.slice(0, num('TOPUP_MAX_CANDIDATES', 40));
 }
 
 (async () => {
-  const out = await top.runTopup({ propose, search: top.ytSearch, probe: process.env.TOPUP_PROBE === 'off' ? null : top.probeSource, now: () => new Date() }, { write: !dry });
-  console.log(`candidates ${out.candidates}, approved ${out.approved.length}, retired ${out.retired.length} (LLM: ${llm.provider() || 'none'})${dry ? ' [dry run]' : ''}`);
+  const out = await top.runTopup({ propose, search: top.ytSearch, concurrency: num('TOPUP_CONCURRENCY', 2), probe: process.env.TOPUP_PROBE === 'off' ? null : top.probeSource, now: () => new Date() }, { write: !dry });
+  console.log(`candidates ${out.candidates}, approved ${out.approved.length}, retired ${out.retired.length} (LLM: ${lastProvider || 'none'})${dry ? ' [dry run]' : ''}`);
   for (const r of out.report) console.log(`  ${r.verdict.padEnd(8)} ${r.name} | ${r.why}`);
-})().catch(e => { console.error(`song top-up failed (the list stays as it is): ${e.message}`); process.exit(0); });
+  for (const a of out.approved) { const r = out.report.find(x => x.name.toLowerCase() === a); console.log(`APPROVED ${a} | ${r && r.artist} | ${r && r.theme} | ${r && r.source} | ${r && r.gates && r.gates.popular && r.gates.popular.why}`); }
+})().catch(e => { console.error(`song top-up failed (the list stays as it is): ${e.stack || e.message}`); process.exit(0); });

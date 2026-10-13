@@ -33,12 +33,13 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
   YT_COOKIES: /tmp/yt_cookies.txt
+  YT_JS_RUNTIMES: node
   MEME_PYTHON: python3
 
 jobs:
   topup:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     if: vars.SONG_TOPUP != 'off'
     permissions:
       contents: write
@@ -62,8 +63,10 @@ jobs:
       - name: Install
         if: steps.gate.outputs.go == 'true'
         run: |
-          python3 -m pip install yt-dlp yt-dlp-ejs --break-system-packages
-          curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH
+          # YouTube needs the JS challenge solver: yt-dlp[default] pulls yt-dlp-ejs, node (set up above) runs it
+          python3 -m pip install -U "yt-dlp[default]" --break-system-packages
+          mkdir -p ~/.config/yt-dlp && echo '--js-runtimes node' > ~/.config/yt-dlp/config   # also covers core/pools/source_probe.py
+          node --version && yt-dlp --version
           npm ci || npm install
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
       - name: Run the gates

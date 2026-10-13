@@ -44,6 +44,7 @@ const saveFile = f => { fs.mkdirSync(path.dirname(FILE()), { recursive: true });
 function ytSearch(query, { n = 10, byDate = false } = {}) {
   const py = process.env.MEME_PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
   const args = ['-m', 'yt_dlp', '--dump-json', '--skip-download', '--no-warnings', '--ignore-errors', '--socket-timeout', '20',
+    ...(process.env.YT_JS_RUNTIMES ? ['--js-runtimes', process.env.YT_JS_RUNTIMES] : []),   // YouTube needs the JS challenge solver (yt-dlp-ejs + node)
     ...(process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES) ? ['--cookies', process.env.YT_COOKIES] : []),
     `${byDate ? 'ytsearchdate' : 'ytsearch'}${n}:${query}`];
   return new Promise(resolve => {
@@ -260,11 +261,12 @@ async function evaluate(candidates, deps, ctx) {
   };
   // candidates are judged in parallel (deps.concurrency, default 1); the monthly limit is applied afterwards, in candidate order
   const report = new Array(candidates.length);
-  let next = 0;
+  let next = 0, passed = 0;
   const worker = async () => {
     while (next < candidates.length) {
       const i = next++;
-      try { report[i] = await judge(candidates[i]); } catch (e) {
+      if (passed >= room) { report[i] = { name: candidates[i].name, source: candidates[i].source, gates: {}, verdict: 'deferred', why: `monthly limit (${k.maxPerMonth}) already filled` }; continue; }
+      try { report[i] = await judge(candidates[i]); if (report[i].verdict === 'approved') passed++; } catch (e) {
         report[i] = { name: candidates[i].name, source: candidates[i].source, gates: {}, verdict: 'rejected', why: `error: ${String(e.message || e).slice(0, 100)}` };
       }
     }
@@ -348,4 +350,4 @@ async function runTopup(deps, { write = true } = {}) {
   return out;
 }
 
-module.exports = { sourceWeight, probeSource, runTopup, evaluate, findLosers, gateNiche, gateDuplicate, gatePopular, gateProducible, findOfficial, blockedSongs, ytSearch, cfg, norm, loadFile, FILE };
+module.exports = { knownSets, sourceWeight, probeSource, runTopup, evaluate, findLosers, gateNiche, gateDuplicate, gatePopular, gateProducible, findOfficial, blockedSongs, ytSearch, cfg, norm, loadFile, FILE };
