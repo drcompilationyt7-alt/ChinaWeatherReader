@@ -1,0 +1,80 @@
+name: Song list top-up (monthly, automatic)
+
+# Adds new trending Asian / anime songs to the stem edit's list (pipeline/meme-pipeline.js) with NO manual approval, but
+# only through quality gates (pipeline/song-topup.js): niche + known non-NSFW source, official upload with >= 1M views and a
+# recent trend, enough usable source clips (search-only dry run), not a duplicate / not blocked before, at most 10 a month.
+# New songs enter on probation; Thompson sampling keeps winners and the monthly run retires auto-added losers.
+# Every verdict is logged to memory/song-topup-YYYY-MM.json (committed with config/song-candidates.json).
+# ENABLED by default. Set the repository variable SONG_TOPUP=off to stop it. CPU only, no Kaggle.
+#
+# GitHub cron ORs day-of-month and day-of-week: it fires every Tuesday 05:30 UTC and the first step exits unless the day of
+# the month is <= 7 (= the first Tuesday). A manual run always goes.
+
+on:
+  schedule:
+    - cron: '30 5 * * 2'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run the gates and print the verdicts; write and commit nothing'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: song-topup
+  cancel-in-progress: false
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  YT_COOKIES: /tmp/yt_cookies.txt
+  MEME_PYTHON: python3
+
+jobs:
+  topup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: vars.SONG_TOPUP != 'off'
+    permissions:
+      contents: write
+    steps:
+      - name: First Tuesday only (scheduled runs)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%d)" -gt 7 ]; then
+            echo "Not the first Tuesday of the month: nothing to do."; echo "go=false" >> $GITHUB_OUTPUT
+          else
+            echo "go=true" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          node-version: 20
+      - name: Install
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          python3 -m pip install yt-dlp yt-dlp-ejs --break-system-packages
+          curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH
+          npm ci || npm install
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+      - name: Run the gates
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then node scripts/song-topup.js --dry-run; else node scripts/song-topup.js; fi
+      - name: Commit the new songs + the monthly report
+        if: steps.gate.outputs.go == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add config/song-candidates.json memory/song-topup-*.json 2>/dev/null || true
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Song list top-up $(date +%F)"
+          for i in 1 2 3; do git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break; sleep 5; done

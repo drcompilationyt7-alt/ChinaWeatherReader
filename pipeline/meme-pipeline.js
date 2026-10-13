@@ -163,6 +163,20 @@ const SONGS = [
   { name: 'eta', query: 'NewJeans ETA official audio', theme: 'kpop', source: 'NewJeans', kind: 'group',
     aliases: ['newjeans', 'new jeans', '뉴진스', 'minji', 'hanni', 'danielle', 'haerin', 'hyein'] },
 ];
+
+// songs added automatically by scripts/song-topup.js (quality gates, config/song-candidates.json "approved"); they enter on
+// probation (see pickSong) and are retired by the monthly run when they keep underperforming
+try {
+  const cand = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'song-candidates.json'), 'utf8'));
+  const have = new Set(SONGS.map(x => x.name));
+  for (const x of cand.approved || []) {
+    if (x && x.name && x.query && x.source && !have.has(x.name)) {
+      SONGS.push({ name: x.name, query: x.query, artist: x.artist, theme: x.theme || 'anime', source: x.source, kind: x.kind || 'anime',
+        aliases: x.aliases || [], probation: x.probation ? true : undefined });
+      have.add(x.name);
+    }
+  }
+} catch {}
 // one theme per short, chosen from the song: every clip in it follows that theme
 const CLIP_THEMES = {
   anime: ['anime'], jpop: ['anime', 'japanese'], kpop: ['kpop'], chinese: ['chinese'], asian: ['funny', 'cute'],
@@ -289,7 +303,9 @@ function pickSong(stats, history, trends) {
     const prior = srcObs.length ? (wmean(srcObs) + channelPrior) / 2 : channelPrior;
     const mine = done.filter(u => u.song === s.name);
     const n = mine.reduce((a, u) => a + u.w, 0);
-    const mean = (mine.reduce((a, u) => a + u.w * u.learn, 0) + prior) / (n + 1) + (!mine.length && s.trendCount ? 0.4 : 0);
+    // probation (auto-added songs): a small handicap until two scored uploads, so a new song is tried but does not crowd out proven ones
+    const mean = (mine.reduce((a, u) => a + u.w * u.learn, 0) + prior) / (n + 1) + (!mine.length && s.trendCount ? 0.4 : 0)
+      - (s.probation && mine.length < 2 ? 0.15 : 0);
     const draw = mean + gaussian() * 0.7 / Math.sqrt(n + 1);
     if (!best || draw > best.draw) best = { ...s, draw };
   }

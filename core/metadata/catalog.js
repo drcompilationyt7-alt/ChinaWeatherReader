@@ -169,12 +169,29 @@ const KPOP_EDIT = editSpec({
   extra: { samples: [{ group: 'aespa', member: 'Karina', song: 'supernova', theme: 'kpop' }] },
 });
 const SOUND_EDIT = editSpec({
-  describe: f => `A sound-design edit of ${f.source}: every hit, whoosh and bass drop lands on a cut${f.song ? `, on "${f.song}"` : ''}.`,
-  keyword: f => `${lower(f.source)} edit`,
-  must: f => [[lower(f.source)], ['edit', 'amv']],
-  subject: f => lower(f.character || f.source),
+  describe: f => `A sound-design edit${f.source ? ` of ${f.source}` : ''}: every hit, whoosh and bass drop lands on a cut${f.song ? `, on "${f.song}"` : ''}.`,
+  keyword: f => (f.source ? `${lower(f.source)} edit` : 'anime sound design edit'),
+  must: f => [[f.source ? lower(f.source) : 'anime'], ['edit', 'amv', 'sound']],
+  subject: f => lower(f.character || f.source || 'anime'),
   extra: { samples: [{ source: 'Demon Slayer', song: 'gurenge', theme: 'anime' }] },
 });
+const SLOWMO_EDIT = editSpec({
+  describe: f => `A cinematic slow-motion edit${f.source ? ` of ${f.source}` : ''}: ${f.vibe ? `${f.vibe} ` : ''}moments in slow motion${f.song ? `, on "${f.song}"` : ''}.`,
+  keyword: f => (f.source ? `${lower(f.source)} slow motion edit` : 'anime slow motion edit'),
+  must: f => [[f.source ? lower(f.source) : 'anime'], ['edit', 'amv', 'slow motion', 'slowmo']],
+  subject: f => lower(f.character || f.source || 'anime'),
+  extra: { samples: [{ source: 'Demon Slayer', vibe: 'calm', theme: 'anime' }, { source: null, vibe: 'epic', theme: 'anime' }] },
+});
+// full-length 16:9 versions (not Shorts) of the sound / slowmo shorts, uploaded about a week after the short and linking to it
+const longOf = base => editSpec({
+  describe: f => `${base.describe(f)} The full-length version${f.shortUrl ? `. Watch the Short: ${f.shortUrl}` : ''}.`,
+  keyword: f => `${base.keyword(f)} full`,
+  must: base.must,
+  subject: base.subject,
+  extra: { long: true, maxTitle: 100, samples: base.samples || [{ source: 'Demon Slayer', theme: 'anime' }] },
+});
+const SOUND_LONG = longOf(SOUND_EDIT);
+const SLOWMO_LONG = longOf(SLOWMO_EDIT);
 const LONG_EDIT = editSpec({
   describe: f => `A long 16:9 compilation of the week's ${f.source || 'anime and K-pop'} edits.`,
   keyword: f => (f.source ? `${lower(f.source)} edits` : 'anime edits'),
@@ -242,13 +259,16 @@ const SPECS = {
   'meme/dance-edit': DANCE_EDIT,
   'meme/kpop-edit': KPOP_EDIT,
   'meme/sound-edit': SOUND_EDIT,
+  'meme/slowmo-edit': SLOWMO_EDIT,
+  'meme/sound-long': SOUND_LONG,
+  'meme/slowmo-long': SLOWMO_LONG,
   'meme/long-edit': LONG_EDIT,
   'quiz/quiz': QUIZ,
 };
 
 const CHANNEL_ALIASES = { zeroyenotaku: 'meme', 'zero yen otaku': 'meme', edit: 'meme', edits: 'meme', asianpopquiz: 'quiz', 'asian pop quiz': 'quiz', pop: 'quiz' };
 const CT_ALIASES = { meme: 'stem-edit', acapella: 'stem-edit', stems: 'stem-edit', 'stem edit': 'stem-edit', amv: 'song-edit', edit: 'song-edit',
-  character: 'character-edit', dance: 'dance-edit', kpop: 'kpop-edit', sound: 'sound-edit', long: 'long-edit', weekly: 'long-edit' };
+  character: 'character-edit', dance: 'dance-edit', kpop: 'kpop-edit', sound: 'sound-edit', slowmo: 'slowmo-edit', 'slow motion': 'slowmo-edit', long: 'long-edit', weekly: 'long-edit' };
 
 function channelKey(channel) {
   const c = String(channel || 'meme').toLowerCase().replace(/^@/, '');

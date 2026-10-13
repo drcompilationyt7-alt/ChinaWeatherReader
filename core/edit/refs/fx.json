@@ -1,0 +1,2696 @@
+{
+ "group": "fx",
+ "name": "effect-heavy typography edits (After Effects style)",
+ "version": 1,
+ "created": "2026-09-20",
+ "summary": [
+  "WGvtliE1298 is a 16.8 s (plus a 4.3 s end card) 1920x1080 @30 typography AMV over Djo \"End of Beginning\", letterboxed to 2:1. It is a published After Effects project-file showcase, so it is the most effect-dense reference in the set: 32 distinct effect instances, 1.9 per second, 5.7 per bar.",
+  "The text is the subject and the lyric is the clock. Words become legible a median of 2.5 frames (83 ms) after the vocal-stem onset of their syllable, and the seven shot joins deliberately sit OFF the percussion beat (join phase 0.64 +- 0.12 of the 160 bpm pulse) so nothing competes with the word.",
+  "Every word lives in 3D: it has a depth, the camera reaches it, it grows x1.11 per frame to 13-25% of the picture height, and it exits by passing the lens motion blurred. Up to three words are alive at once at different depths. It never fades out.",
+  "Every join is hidden inside an extreme state. The two whips ramp their displacement geometrically at x1.30-1.48 per frame for 8-14 frames to 11-17% of the frame width in a single frame, one going to white (alpha 0.72) and one to black (alpha 0.71). Nothing is ever held at pure white or pure black.",
+  "Entries settle exponentially with tau ~5 frames @30: a 17-frame rack focus, a 57 degree spin unwind with a 68% scale settle, a 73% zoom settle with a 10 px defocus.",
+  "Half the sections are built graphics rather than anime clips - a 3D now-playing card in a bokeh field, a cracked-glass memory space with a filmstrip and polaroids, a white infinite studio with flying letters, and a live-action laptop plate with extruded 3D text. Only 4 of the 8 sections are anime footage, all of them slow, wide and shallow so the type can own the frame.",
+  "There is no sound design at all: the song alone at -14.7 LUFS / -3.8 dBTP, with spectral flatness <= 0.003 everywhere, so no whooshes, no risers, no sweeps, no ducking. And no RGB split, no strobe, no dissolve, no shake, no speed ramps and no freeze frames."
+ ],
+ "method": {
+  "downloads": "yt-dlp <=1080p highest fps into C:/Users/Home/AppData/Local/Temp/edit-refs/fx/, copied to C:/Users/Home/Desktop/edit-refs/fx/ (av01 1080p30 + m4a, merged to mp4)",
+  "frame_analysis": "analyze_ref.py at 320 px: every one of the 632 frames - motion-compensated difference and HSV histogram distance for cuts, DIS optical flow fitted with RANSAC for zoom / roll / pan, sharpness, luma percentiles, saturation, Lab split tone, vignette, grain, letterbox",
+  "features": "general_features.py: blur anisotropy, radial-vs-tangential gradient ratio (zoom blur), red-blue phase correlation (RGB split), frame-to-frame correlation, strongest straight edges, centre luma",
+  "events": "general_deep.py: per-shot table, per-cut curves from -6 to +8 frames, cut-to-transient offsets at 1.5 ms resolution and the beat subdivision each cut lands on",
+  "fx": "fx_measure.py (new, written for this group): directional gaussian-equivalent blur from the 1-D power spectrum of the rows and of the columns, fitted with an explicit noise floor - a plain re-blur or Laplacian ratio is fooled by AV1 noise in a heavily blurred frame and reports \"sharp\". Calibrated against known gaussians it is accurate to ~5% up to 1.6% of the frame width and saturates above that. Also glow, warm highlight bias, highlight centroid, particle blob count, letterform area and bounding box",
+  "sheets": "ref_sheets.py --every 1: contact sheets of all 632 frames (9 sheets) plus frame strips; fx_measure.py --strips: 480 px wide 4-column strips labelled with the measured blur, for 82:98, 104:120, 118:134, 144:160, 176:192, 192:208, 226:242, 286:302, 322:338, 376:392, 406:422, 468:504",
+  "audio": "refine_audio.py for the beat grid (bpm and phase searched in 5 ms steps against the kick), demucs htdemucs stems for vocal / kick / snare / hat onsets, librosa spectral flatness and >8 kHz energy at 10 ms hops to look for whooshes and risers, ffmpeg loudnorm for LUFS and true peak",
+  "by_eye": "every frame read on the contact sheets; the twelve strips read frame by frame against the measured curves; full-resolution crops of the type at f60, f153, f356, f488 to read the typeface, the glow and the extrusion",
+  "analysis_dir": "C:/Users/Home/AppData/Local/Temp/edit-refs/fx/analysis/",
+  "scripts": [
+   "core/edit/refs/analyze_ref.py",
+   "core/edit/refs/refine_audio.py",
+   "core/edit/refs/general_features.py",
+   "core/edit/refs/general_deep.py",
+   "core/edit/refs/ref_sheets.py",
+   "core/edit/refs/fx_measure.py"
+  ],
+  "caveats": [
+   "the blur estimator saturates above 1.6% of the frame width; the two or three most blurred frames of each transition are reported as \">= 1.7% W (saturated)\" rather than a number",
+   "blur is undefined on frames with almost no contrast (the white-out peaks and the black frames): those are marked flat",
+   "for motion blur the per-frame displacement from the optical-flow fit is the more reliable number, and is what the recipes use (a 180 degree shutter smears by half of it)",
+   "one reference only: treat every pooled number as a single observation"
+  ]
+ },
+ "references": {
+  "WGvtliE1298": {
+   "id": "WGvtliE1298",
+   "url": "https://youtu.be/WGvtliE1298",
+   "title": "End Of Beginning - Amv Typography | After Effects Projects File",
+   "uploader": "TFBAGAS",
+   "views": 571412,
+   "likes": 13747,
+   "categories": [
+    "Film & Animation"
+   ],
+   "tags": [
+    "after effects",
+    "typography",
+    "amv",
+    "anime",
+    "amv Typography",
+    "Remake",
+    "free Projects File"
+   ],
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/fx/WGvtliE1298.mp4 (copied to C:/Users/Home/Desktop/edit-refs/fx/)",
+   "width": 1920,
+   "height": 1080,
+   "fps": 30.0,
+   "frames": 632,
+   "duration_s": 21.13,
+   "vcodec": "av01",
+   "acodec": "aac",
+   "content_box_xyxy": [
+    0,
+    54,
+    1920,
+    1027
+   ],
+   "content_aspect": 1.973,
+   "letterbox": "5.0% black bars top and bottom on every frame (2:1 picture inside 16:9)",
+   "edit_body_frames": [
+    0,
+    503
+   ],
+   "edit_body_s": [
+    0.0,
+    16.767
+   ],
+   "end_card_frames": [
+    504,
+    631
+   ],
+   "end_card_note": "the creator glowing-logo outro (4.3 s) - excluded from every style number",
+   "song": "Djo - End of Beginning",
+   "lyric_fragments": [
+    "just trust me, you'll be fine",
+    "and when i'm back",
+    "in chicago",
+    "another version of me",
+    "i was in it"
+   ],
+   "tempo": {
+    "percussion_pulse_bpm": 160.207,
+    "musical_bpm": 80.1,
+    "beat_s": 0.3745,
+    "beat_frames30": 11.235,
+    "bar_s": 2.996,
+    "bar_frames30": 89.9,
+    "grid_phase_s": 0.06,
+    "note": "librosa and the refined grid both lock to the 160 bpm eighth pulse; the song itself is 80 bpm"
+   },
+   "loudness": {
+    "integrated_lufs": -14.7,
+    "true_peak_dbtp": -3.8,
+    "lra_lu": 19.3
+   },
+   "audio_treatment": {
+    "sfx": "none",
+    "risers": "none",
+    "filter_sweeps": "none",
+    "ducking": "none detectable",
+    "evidence": "spectral flatness stays <= 0.003 across the whole file; the only >8 kHz bursts coincide with the song's own hi-hats at f204/206; RMS around every join follows the song, not the picture"
+   },
+   "shots": [
+    {
+     "n": 1,
+     "f": [
+      0,
+      87
+     ],
+     "s": [
+      0.0,
+      2.9
+     ],
+     "dur_s": 2.93,
+     "kind": "CG",
+     "what": "Spotify-style now-playing card in a bokeh field"
+    },
+    {
+     "n": 2,
+     "f": [
+      88,
+      130
+     ],
+     "s": [
+      2.93,
+      4.37
+     ],
+     "dur_s": 1.43,
+     "kind": "anime",
+     "what": "Frieren, indoor close-up, shallow DOF, near-still"
+    },
+    {
+     "n": 3,
+     "f": [
+      131,
+      199
+     ],
+     "s": [
+      4.37,
+      6.67
+     ],
+     "dur_s": 2.3,
+     "kind": "anime",
+     "what": "Frieren at night, snow, drifting handheld"
+    },
+    {
+     "n": 4,
+     "f": [
+      200,
+      262
+     ],
+     "s": [
+      6.67,
+      8.77
+     ],
+     "dur_s": 2.1,
+     "kind": "anime",
+     "what": "sunset field with a torii gate, fast forward dolly"
+    },
+    {
+     "n": 5,
+     "f": [
+      263,
+      291
+     ],
+     "s": [
+      8.77,
+      9.73
+     ],
+     "dur_s": 0.97,
+     "kind": "anime",
+     "what": "night lantern street, forward dolly"
+    },
+    {
+     "n": 6,
+     "f": [
+      292,
+      330
+     ],
+     "s": [
+      9.73,
+      11.0
+     ],
+     "dur_s": 1.3,
+     "kind": "CG",
+     "what": "cracked-glass memory space, filmstrip, polaroids"
+    },
+    {
+     "n": 7,
+     "f": [
+      331,
+      413
+     ],
+     "s": [
+      11.0,
+      13.8
+     ],
+     "dur_s": 2.77,
+     "kind": "CG",
+     "what": "white infinite studio, 3D letters, leaves"
+    },
+    {
+     "n": 8,
+     "f": [
+      414,
+      503
+     ],
+     "s": [
+      13.8,
+      16.77
+     ],
+     "dur_s": 2.93,
+     "kind": "live",
+     "what": "laptop on a desk playing anime, slow orbit"
+    }
+   ],
+   "joins": [
+    {
+     "f": 88,
+     "phase_in_beat": 0.67,
+     "kind": "defocus_recede -> hard cut -> rack focus"
+    },
+    {
+     "f": 131,
+     "phase_in_beat": 0.5,
+     "kind": "whip left to white -> hard cut at the peak -> speedline settle"
+    },
+    {
+     "f": 200,
+     "phase_in_beat": 0.64,
+     "kind": "whip left to black -> 4 dark frames -> the new shot brightens"
+    },
+    {
+     "f": 292,
+     "phase_in_beat": 0.83,
+     "kind": "radial push -> hard cut -> spin blur settle"
+    },
+    {
+     "f": 333,
+     "phase_in_beat": 0.48,
+     "kind": "luma ramp to white over 11 frames, the next shot is white anyway"
+    },
+    {
+     "f": 414,
+     "phase_in_beat": 0.69,
+     "kind": "dolly out to white -> hard cut -> zoom settle + 10 px defocus"
+    },
+    {
+     "f": 502,
+     "phase_in_beat": 0.52,
+     "kind": "linear fade to black over 10 frames"
+    }
+   ],
+   "grade_by_shot": [
+    {
+     "shot": 1,
+     "luma": 85.1,
+     "p2": 0,
+     "p98": 175,
+     "contrast": 59.0,
+     "sat": 168.1,
+     "hue_deg": 202,
+     "grain": 0.32,
+     "vignette": 0.1,
+     "lab_shadow_ab": [
+      -0.9,
+      -6.0
+     ],
+     "lab_highlight_ab": [
+      -19.4,
+      -24.1
+     ]
+    },
+    {
+     "shot": 2,
+     "luma": 142.2,
+     "p2": 0,
+     "p98": 254,
+     "contrast": 76.0,
+     "sat": 24.8,
+     "hue_deg": 345,
+     "grain": 0.44,
+     "vignette": 0.68,
+     "lab_shadow_ab": [
+      1.0,
+      -0.7
+     ],
+     "lab_highlight_ab": [
+      1.2,
+      -0.3
+     ]
+    },
+    {
+     "shot": 3,
+     "luma": 84.1,
+     "p2": 0,
+     "p98": 208,
+     "contrast": 57.5,
+     "sat": 83.0,
+     "hue_deg": 219,
+     "grain": 0.51,
+     "vignette": 0.22,
+     "lab_shadow_ab": [
+      0.5,
+      -5.3
+     ],
+     "lab_highlight_ab": [
+      1.2,
+      -3.3
+     ]
+    },
+    {
+     "shot": "4+5",
+     "luma": 95.0,
+     "p2": 0,
+     "p98": 247,
+     "contrast": 79.8,
+     "sat": 93.9,
+     "hue_deg": 24,
+     "grain": 0.46,
+     "vignette": 0.46,
+     "lab_shadow_ab": [
+      3.1,
+      5.1
+     ],
+     "lab_highlight_ab": [
+      4.7,
+      17.6
+     ]
+    },
+    {
+     "shot": 6,
+     "luma": 50.4,
+     "p2": 0,
+     "p98": 229,
+     "contrast": 55.3,
+     "sat": 25.9,
+     "hue_deg": 314,
+     "grain": 0.43,
+     "vignette": 0.24,
+     "lab_shadow_ab": [
+      1.1,
+      -1.0
+     ],
+     "lab_highlight_ab": [
+      2.2,
+      0.8
+     ]
+    },
+    {
+     "shot": 7,
+     "luma": 216.9,
+     "p2": 0,
+     "p98": 254,
+     "contrast": 79.7,
+     "sat": 4.3,
+     "hue_deg": 311,
+     "grain": 0.0,
+     "vignette": 0.63,
+     "lab_shadow_ab": [
+      0.2,
+      -0.1
+     ],
+     "lab_highlight_ab": [
+      1.0,
+      -0.7
+     ]
+    },
+    {
+     "shot": 8,
+     "luma": 81.5,
+     "p2": 0,
+     "p98": 252,
+     "contrast": 56.5,
+     "sat": 137.0,
+     "hue_deg": 23,
+     "grain": 1.2,
+     "vignette": 0.99,
+     "lab_shadow_ab": [
+      6.0,
+      7.1
+     ],
+     "lab_highlight_ab": [
+      -0.5,
+      16.0
+     ]
+    }
+   ],
+   "effects": [
+    {
+     "name": "fade_in_from_black",
+     "frames": [
+      0,
+      8
+     ],
+     "t": [
+      0.0,
+      0.267
+     ],
+     "dur_frames30": 9,
+     "dur_beats160": 0.8,
+     "dur_beats_musical80": 0.4,
+     "family": "intro",
+     "beat_position": "starts on the first downbeat (phase 0.06 s, -60 ms)",
+     "measured": {
+      "luma_by_frame": [
+       0.2,
+       4.6,
+       13.7,
+       21.5,
+       28.2,
+       35.4,
+       41.7,
+       48.1,
+       54.3
+      ],
+      "shape": "linear in luma, 9 frames = 0.30 s = 0.8 beats160",
+      "camera": "the card flies in from far: zoom -42 %/frame at f3 decaying to -1 %/frame by f11, pan x -21 %W at f2"
+     },
+     "recipe": "img * k, k = i/9 linearly, together with a scale ramp s(i) = exp(-0.42 * 0.72**i) toward 1.0; the incoming camera is the effect, the fade only rides on it"
+    },
+    {
+     "name": "bokeh_particle_field",
+     "frames": [
+      4,
+      88
+     ],
+     "t": [
+      0.133,
+      2.933
+     ],
+     "dur_frames30": 85,
+     "dur_beats160": 7.57,
+     "dur_beats_musical80": 3.78,
+     "family": "overlay",
+     "measured": {
+      "blobs_per_frame_median": 57,
+      "blobs_p90": 114,
+      "first_frame_with_blobs": 4,
+      "blob_area_px_at_480_wide": "2..60",
+      "colour": "blue-violet, screen blended over black",
+      "drift": "slow, 1-3 px/frame, no beat reaction"
+     },
+     "recipe": "N ~ 60 defocused discs, radius 6..26 px @1920, colour (150,120,255)..(90,160,255), alpha 0.15..0.5, screen-blended; each disc gets a gaussian sigma = 0.35*radius so it reads as bokeh, not a dot"
+    },
+    {
+     "name": "card_3d_perspective_dolly",
+     "frames": [
+      0,
+      88
+     ],
+     "t": [
+      0.0,
+      2.933
+     ],
+     "dur_frames30": 89,
+     "dur_beats160": 7.92,
+     "dur_beats_musical80": 3.96,
+     "family": "camera+layout",
+     "measured": {
+      "zoom_rate_pct_per_frame_median": 1.33,
+      "roll_deg_per_frame_median": 0.1,
+      "displacement_px_per_frame_median": 6.4,
+      "net": "the card starts small, rotated ~25 deg about Y and ~8 deg about X, and ends filling the frame at f72-79 before receding again",
+      "perspective": "true perspective: the far edge of the card is 0.72x the height of the near edge at f8, 0.93x at f60"
+     },
+     "recipe": "fx.card_quad(size, cx, cy, w, h, rx, ry, rz, focal=1.8) + fx.warp_to_quad; animate ry 26 -> 3 deg, rx 9 -> 2 deg, card width 0.34 -> 1.6 of the canvas over 80 frames, ease-out"
+    },
+    {
+     "name": "typewriter_lyric",
+     "frames": [
+      6,
+      71
+     ],
+     "t": [
+      0.2,
+      2.367
+     ],
+     "dur_frames30": 66,
+     "dur_beats160": 5.87,
+     "dur_beats_musical80": 2.94,
+     "family": "text",
+     "measured": {
+      "text": "\"Just trust me, You'll be fine\" (29 chars)",
+      "chars": 29,
+      "frames": 66,
+      "frames_per_char": 2.28,
+      "chars_per_s": 13.2,
+      "per_char_fade_frames": 3,
+      "note": "each new character appears at ~35% alpha and reaches full over 3 frames, so 2-3 trailing characters are always faint",
+      "style": "white, no glow, Spotify-lyric look on a cyan card, cap height 4.0% of picture height"
+     },
+     "recipe": "text.Sprite.crop_letters(n, frac): n = floor(since * 13.2), frac = frac_part; the engine already exposes anim=\"type\" but with cps=24 fixed - this reference wants cps ~13"
+    },
+    {
+     "name": "defocus_recede_out",
+     "frames": [
+      80,
+      87
+     ],
+     "t": [
+      2.667,
+      2.9
+     ],
+     "dur_frames30": 8,
+     "dur_beats160": 0.71,
+     "dur_beats_musical80": 0.36,
+     "family": "transition_out",
+     "pairs_with": "hard_cut_on_blur@88",
+     "beat_position": "ends 4 frames (133 ms) before the percussion hit at f92; join phase 0.67 of the beat",
+     "measured": {
+      "zoom_pct_per_frame": [
+       -3.1,
+       -4.2,
+       -5.1,
+       -5.8,
+       -6.7,
+       -6.9,
+       -9.4,
+       -14.1
+      ],
+      "growth_per_frame": 1.24,
+      "luma": [
+       68,
+       64,
+       59,
+       54,
+       49,
+       42,
+       34,
+       24
+      ],
+      "luma_ratio_end_over_start": 0.36,
+      "sigma_pct_w": [
+       0.26,
+       0.29,
+       0.32,
+       0.32,
+       0.31,
+       0.32,
+       0.32,
+       0.17
+      ],
+      "sigma_px_1920": "5.0 -> 6.2 px, i.e. a mild defocus, the darkening carries the exit"
+     },
+     "recipe": "cam_out(u): ln s = -sum of the ramp (the shot pushes AWAY, not toward); fx.gauss_px(img, pw(0.0032) * k) and fx.gain_u8(img, 1 - 0.64 * k**1.6), k = 1 - u/pre, pre = 8 frames @30"
+    },
+    {
+     "name": "hard_cut_on_blur",
+     "frames": [
+      88,
+      88
+     ],
+     "t": [
+      2.933,
+      2.933
+     ],
+     "dur_frames30": 1,
+     "dur_beats160": 0.09,
+     "dur_beats_musical80": 0.04,
+     "family": "cut",
+     "beat_position": "join phase 0.64 +- 0.12 of the 160 bpm beat (OFF the beat, see pooled_measurements.join_beat_phase)",
+     "measured": {
+      "mc_residual_at_cut": 108.0,
+      "hist_distance": 0.64,
+      "luma_jump": "24 -> 143 (x5.9)",
+      "sat_jump": "164 -> 37",
+      "note": "the cut is invisible because both sides are near-featureless"
+     },
+     "recipe": "a plain hard cut; the whole craft is that the outgoing is dark+defocused and the incoming is white+defocused, so no frame reads as a join"
+    },
+    {
+     "name": "rack_focus_in",
+     "frames": [
+      88,
+      104
+     ],
+     "t": [
+      2.933,
+      3.467
+     ],
+     "dur_frames30": 17,
+     "dur_beats160": 1.51,
+     "dur_beats_musical80": 0.76,
+     "family": "transition_in",
+     "measured": {
+      "frames": 17,
+      "dur_s": 0.567,
+      "dur_beats160": 1.51,
+      "sigma_pct_w_by_frame": [
+       null,
+       0.32,
+       0.34,
+       0.38,
+       0.4,
+       0.4,
+       0.38,
+       0.31,
+       0.23,
+       0.19,
+       0.16,
+       0.15,
+       0.15,
+       0.15,
+       0.14,
+       0.14
+      ],
+      "sigma_px_1920_by_frame": [
+       ">17 (saturated)",
+       6.1,
+       6.5,
+       7.3,
+       7.7,
+       7.7,
+       7.3,
+       6.0,
+       4.4,
+       3.6,
+       3.1,
+       2.9,
+       2.9,
+       2.9,
+       2.7,
+       2.7
+      ],
+      "first_two_frames": "beyond the estimator range: visually a full-face blur, sigma >= 1.7% W (>= 33 px @1920)",
+      "shape": "exponential decay, tau ~ 5 frames @30 after a 6-frame plateau",
+      "exposure": "flat: luma 143 -> 153 (+7%), no flash",
+      "aniso": "0.99 -> 0.38 as detail returns"
+     },
+     "recipe": "fx_in(img, v): fx.gauss_px(img, pw(0.017) * exp(-max(0, v - 0.2)/0.17)) with the first 2 frames clamped to the max; NO gain pump (unlike the existing defocus_in which adds +20%)"
+    },
+    {
+     "name": "ink_blob_logo_reveal",
+     "frames": [
+      107,
+      121
+     ],
+     "t": [
+      3.567,
+      4.033
+     ],
+     "dur_frames30": 15,
+     "dur_beats160": 1.34,
+     "dur_beats_musical80": 0.67,
+     "family": "overlay_wipe",
+     "measured": {
+      "frames": 15,
+      "dur_s": 0.5,
+      "dur_beats160": 1.33,
+      "luma": [
+       147,
+       141,
+       137,
+       134,
+       131,
+       129,
+       128,
+       126,
+       125,
+       123,
+       115,
+       100,
+       93,
+       88,
+       84
+      ],
+      "coverage_at_peak_pct": 35,
+      "growth": "the blot enters from the top, grows with organic fingers, covers ~35% of the frame by f119",
+      "carried_text": "the channel word mark fades up inside the blot at f109-116, text_area 7.2% -> 13.2%"
+     },
+     "recipe": "an organic mask: blob_mask(size, progress) style - a low-frequency noise field thresholded at a moving level, blurred 0.4% W; multiply the frame by (1 - mask) toward black and alpha_composite the word mark inside the mask with alpha = clamp((progress-0.15)/0.3)"
+    },
+    {
+     "name": "whip_pan_left_to_white",
+     "frames": [
+      117,
+      130
+     ],
+     "t": [
+      3.9,
+      4.333
+     ],
+     "dur_frames30": 14,
+     "dur_beats160": 1.25,
+     "dur_beats_musical80": 0.62,
+     "family": "transition_out",
+     "pairs_with": "hard_cut@131",
+     "measured": {
+      "frames": 14,
+      "dur_s": 0.467,
+      "dur_beats160": 1.25,
+      "displacement_px_per_frame_1920": [
+       18,
+       23,
+       33,
+       42,
+       55,
+       67,
+       84,
+       108,
+       141,
+       181,
+       237,
+       322,
+       209,
+       9
+      ],
+      "growth_per_frame": 1.3,
+      "peak_px_per_frame": 322,
+      "peak_pct_w_per_frame": 16.8,
+      "direction_deg": 180.0,
+      "aniso": [
+       0.69,
+       0.64,
+       0.64,
+       0.66,
+       0.7,
+       0.77,
+       0.85,
+       0.92,
+       0.95,
+       0.96,
+       0.98,
+       0.99,
+       0.99,
+       1.0
+      ],
+      "luma": [
+       115,
+       100,
+       93,
+       88,
+       84,
+       82,
+       88,
+       101,
+       115,
+       129,
+       143,
+       159,
+       194,
+       206
+      ],
+      "white_overlay_alpha": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0.03,
+       0.1,
+       0.19,
+       0.27,
+       0.35,
+       0.45,
+       0.65,
+       0.72
+      ],
+      "white_pixel_share_peak_pct": 53.0,
+      "glow_peak": 34.1,
+      "alpha_shape": "ease-in, ~ (k/8)**2 over the last 8 frames"
+     },
+     "recipe": "cam_out(u): dx accumulates d(i) = 18 * 1.30**i px @1920 leftward; fx_out: fx.line_blur(img, 0.5 * d(i), angle=0) (180 deg shutter -> smear = half the per-frame move) then fx.fill_mix(img, (252,254,255), alpha(i)) with alpha(i) = 0.72 * (max(0, i-6)/8)**2"
+    },
+    {
+     "name": "hard_cut_at_white_peak",
+     "frames": [
+      131,
+      131
+     ],
+     "t": [
+      4.367,
+      4.367
+     ],
+     "dur_frames30": 1,
+     "dur_beats160": 0.09,
+     "dur_beats_musical80": 0.04,
+     "family": "cut",
+     "measured": {
+      "luma_before": 206,
+      "luma_after": 84,
+      "white_share_before_pct": 53.0,
+      "white_share_after_pct": 6.0,
+      "note": "the cut happens ON the brightest frame, not after a white hold; the incoming is immediately dark - the eye reads the blow-out, not the join"
+     },
+     "recipe": "no white hold frames at all (this is where WhiteOut differs: it holds 150 ms of pure white)"
+    },
+    {
+     "name": "speedline_streak_settle",
+     "frames": [
+      131,
+      144
+     ],
+     "t": [
+      4.367,
+      4.8
+     ],
+     "dur_frames30": 14,
+     "dur_beats160": 1.25,
+     "dur_beats_musical80": 0.62,
+     "family": "transition_in",
+     "measured": {
+      "frames": 14,
+      "aniso": [
+       0.92,
+       0.93,
+       0.94,
+       0.92,
+       0.92,
+       0.92,
+       0.94,
+       0.93,
+       0.91,
+       0.88,
+       0.8,
+       0.72,
+       0.69,
+       0.72
+      ],
+      "displacement_px_per_frame_1920": [
+       17,
+       6,
+       101,
+       12,
+       36,
+       20,
+       82,
+       132,
+       128,
+       74,
+       47,
+       39,
+       31,
+       28
+      ],
+      "blur_axis_deg": 180,
+      "sat_ramp": [
+       8,
+       14,
+       26,
+       43,
+       58,
+       69,
+       78,
+       83,
+       85,
+       88,
+       90,
+       90,
+       88,
+       86
+      ],
+      "note": "the new shot arrives as horizontal light streaks over black and resolves; the saturation ramp 8 -> 88 over 12 frames is what sells the \"arrival\""
+     },
+     "recipe": "fx_in: fx.line_blur(img, pw(0.09) * exp(-v/0.13), 0) and fx.saturation_u8(img, 0.1 + 0.9 * min(1, v/0.4))"
+    },
+    {
+     "name": "word_3d_flythrough",
+     "frames": [
+      149,
+      192
+     ],
+     "t": [
+      4.967,
+      6.4
+     ],
+     "dur_frames30": 44,
+     "dur_beats160": 3.92,
+     "dur_beats_musical80": 1.96,
+     "family": "text",
+     "instances": [
+      {
+       "word": "and",
+       "frames": [
+        148,
+        156
+       ],
+       "vocal_onset_frame": 146,
+       "lag_frames": 2
+      },
+      {
+       "word": "when",
+       "frames": [
+        159,
+        171
+       ],
+       "vocal_onset_frame": 158,
+       "lag_frames": 1
+      },
+      {
+       "word": "i'm",
+       "frames": [
+        172,
+        180
+       ],
+       "vocal_onset_frame": 168,
+       "lag_frames": 4
+      },
+      {
+       "word": "back",
+       "frames": [
+        181,
+        196
+       ],
+       "vocal_onset_frame": 179,
+       "lag_frames": 2
+      }
+     ],
+     "measured": {
+      "cap_height_pct_of_picture_by_frame": [
+       10.8,
+       12.5,
+       14.9,
+       19.2,
+       23.6,
+       20.2,
+       22.4,
+       24.9,
+       25.3
+      ],
+      "scale_growth_per_frame": 1.11,
+      "total_growth_over_8_frames": 2.34,
+      "drift_px_per_frame": "x +40, y +12 at 1920 (the word slides right and down as the camera passes it)",
+      "typeface": "geometric rounded sans, lowercase, single-storey a, near-circular o (Poppins / Century Gothic / Futura family)",
+      "fill": "pure white, peak 255, no stroke, no drop shadow",
+      "words_coexist": "up to 3 words are on screen at once at different depths (f172-179): the earlier words are still there, small, behind",
+      "exit": "the word leaves by passing the camera, motion blurred, never by fading"
+     },
+     "recipe": "per word keep a depth z; scale = f/(z - camera_z) so the growth is automatically exponential; blit with text.blit(..., scale) plus fx.line_blur on the SPRITE by 0.5 * |d(scale*size)|/frame; draw the words back-to-front so the near word occludes the far one"
+    },
+    {
+     "name": "text_outer_glow",
+     "frames": [
+      149,
+      192
+     ],
+     "t": [
+      4.967,
+      6.4
+     ],
+     "dur_frames30": 44,
+     "dur_beats160": 3.92,
+     "dur_beats_musical80": 1.96,
+     "family": "text",
+     "measured": {
+      "core_luma": 244,
+      "background_luma": 45,
+      "halo_excess_over_background_by_distance_px_1920": {
+       "2": 145,
+       "4.5": 98,
+       "8": 57,
+       "12.5": 35,
+       "18": 26,
+       "27": 21,
+       "38": 16,
+       "55": 11
+      },
+      "two_component_fit": {
+       "tight": {
+        "sigma_px_1920": 6,
+        "sigma_pct_w": 0.31,
+        "gain": 0.57
+       },
+       "broad": {
+        "sigma_px_1920": 38,
+        "sigma_pct_w": 2.0,
+        "gain": 0.07
+       }
+      },
+      "colour": "white glow (same hue as the fill), screen blend"
+     },
+     "recipe": "text.STYLES entry glow=[(6, 0.57, None), (38, 0.07, None)] at 1920 wide (scale both radii by W/1920); the broad component is what makes it read as a light source instead of a sticker"
+    },
+    {
+     "name": "lens_flare_bloom",
+     "frames": [
+      176,
+      182
+     ],
+     "t": [
+      5.867,
+      6.067
+     ],
+     "dur_frames30": 7,
+     "dur_beats160": 0.62,
+     "dur_beats_musical80": 0.31,
+     "family": "overlay",
+     "measured": {
+      "frames": 7,
+      "glow": [
+       12.3,
+       9.4,
+       9.2
+      ],
+      "white_share_peak_pct": 14.8,
+      "centre_bx_by": [
+       -0.06,
+       -0.2
+      ],
+      "colour": "neutral white, warm=-0.1 (no tint)",
+      "behaviour": "a bright source behind the subject blooms as the camera passes it, then is occluded"
+     },
+     "recipe": "fx.lens_flare(size, x, y, strength) screen-blended, strength ramped 0 -> 1 -> 0 over 7 frames; fx.bloom_boost(img, 0.35, threshold=0.62, sigma_frac=0.02) on top"
+    },
+    {
+     "name": "glass_shatter",
+     "frames": [
+      182,
+      192
+     ],
+     "t": [
+      6.067,
+      6.4
+     ],
+     "dur_frames30": 11,
+     "dur_beats160": 0.98,
+     "dur_beats_musical80": 0.49,
+     "family": "transition/overlay",
+     "beat_position": "starts +14 ms after the beat at f182; lasts 11 frames = 0.98 beats160",
+     "measured": {
+      "frames": 11,
+      "dur_s": 0.367,
+      "mean_gradient_edge": [
+       37,
+       48,
+       57,
+       60,
+       67,
+       74,
+       79,
+       82,
+       89,
+       95,
+       91
+      ],
+      "edge_growth": "x2.9 over 9 frames as the shards multiply",
+      "small_blob_count": [
+       14,
+       42,
+       85,
+       84,
+       107,
+       124,
+       133,
+       135,
+       148,
+       135,
+       135
+      ],
+      "luma": [
+       127,
+       120,
+       115,
+       110,
+       107,
+       102,
+       96,
+       91,
+       84,
+       78,
+       75
+      ],
+      "warm_R_minus_B": [
+       -5.2,
+       -9.1,
+       -10.5,
+       -10.9,
+       -9.1,
+       -6.4,
+       -1.8,
+       4.0,
+       6.5,
+       7.5,
+       9.7
+      ],
+      "warm_note": "the light behind the broken plane is warm: R-B swings -11 -> +10 over 8 frames",
+      "camera": "a constant +2..+4 %/frame push while the plane breaks",
+      "impact": "frame 182 has a single bright radiating star (a ~20-arm crack) at the impact point"
+     },
+     "recipe": "precompute a Voronoi shatter: 45-70 seeds, cv2.Subdiv2D -> triangle/polygon shards; a radial crack star drawn first (20 white lines, 2 px, from the impact point, length ramped 0 -> 0.6 W over 3 frames, blurred 3 px); then per shard warp the frame by a small similarity that moves the shard outward and rotates it by rng(-8, 8) deg * k, drawing a warm (255,180,90) gap layer behind"
+    },
+    {
+     "name": "polaroid_cards_3d",
+     "frames": [
+      186,
+      196
+     ],
+     "t": [
+      6.2,
+      6.533
+     ],
+     "dur_frames30": 11,
+     "dur_beats160": 0.98,
+     "dur_beats_musical80": 0.49,
+     "family": "overlay",
+     "also": [
+      376,
+      413
+     ],
+     "measured": {
+      "cards": 3,
+      "aspect": "square photo with a wide bottom border (polaroid), white, ~2.5% border",
+      "entry": "each card flies in from off-screen right with motion blur, 4-6 frames apart",
+      "size_pct_of_picture_height": [
+       18,
+       34
+      ],
+      "perspective": "true 3D: the cards are tilted about Y by 10-30 deg and occlude each other",
+      "exit": "at f400-413 the whole row recedes: scale -2.9 -> -5.6 %/frame while the frame whitens"
+     },
+     "recipe": "fx.bordered(still, 0.025) -> fx.card_quad + fx.warp_to_quad per card with its own ry/rz; fx.shadow_under for the drop shadow; sort by depth and composite back-to-front"
+    },
+    {
+     "name": "whip_pan_left_to_black",
+     "frames": [
+      192,
+      204
+     ],
+     "t": [
+      6.4,
+      6.8
+     ],
+     "dur_frames30": 13,
+     "dur_beats160": 1.16,
+     "dur_beats_musical80": 0.58,
+     "family": "transition",
+     "pairs_with": "hidden join ~f200-203",
+     "measured": {
+      "frames": 13,
+      "dur_s": 0.433,
+      "dur_beats160": 1.16,
+      "displacement_px_per_frame_1920": [
+       19,
+       43,
+       66,
+       88,
+       116,
+       143,
+       208,
+       295,
+       131,
+       74,
+       22,
+       40,
+       10
+      ],
+      "growth_per_frame": 1.4,
+      "peak_px_per_frame": 295,
+      "peak_pct_w_per_frame": 15.4,
+      "aniso": [
+       0.34,
+       0.68,
+       0.82,
+       0.89,
+       0.91,
+       0.92,
+       0.94,
+       0.96,
+       0.88,
+       0.57,
+       0.62,
+       0.74,
+       0.85
+      ],
+      "luma": [
+       75,
+       77,
+       80,
+       79,
+       74,
+       69,
+       60,
+       41,
+       23,
+       24,
+       24,
+       24,
+       26
+      ],
+      "black_overlay_alpha_peak": 0.71,
+      "dark_hold_frames": 4,
+      "note": "the mirror image of whip_pan_left_to_white: the SAME exponential smear, but the ramp goes to black and there is a 4-frame dark hold that hides the join"
+     },
+     "recipe": "as whip_pan_left_to_white but fx.gain_u8(img, 1 - 0.71 * k**1.6) instead of fill_mix to white; hold 4 frames at luma <= 25 before the new shot brightens back"
+    },
+    {
+     "name": "radial_zoom_push_blur",
+     "frames": [
+      204,
+      292
+     ],
+     "t": [
+      6.8,
+      9.733
+     ],
+     "dur_frames30": 89,
+     "dur_beats160": 7.92,
+     "dur_beats_musical80": 3.96,
+     "family": "camera",
+     "measured": {
+      "radtan_sunset": 0.79,
+      "radtan_lanterns": 0.72,
+      "radtan_static_reference": 1.17,
+      "radtan_meaning": "|grad . r| / |grad x r| about the centre; < 1 = smeared along the radius",
+      "zoom_pct_per_frame_median": [
+       1.64,
+       2.98
+      ],
+      "roll_deg_per_frame_median": [
+       0.15,
+       0.75
+      ],
+      "displacement_px_per_frame_median": [
+       38.0,
+       6.1
+      ],
+      "note": "a SUSTAINED radial blur across whole 30-90 frame shots, not a 2-frame burst"
+     },
+     "recipe": "fx.zoom_blur_c(img, strength) per frame with strength = 0.9 * zoom_rate_per_frame (so 0.03 at 3 %/frame), steps 8, applied inside the shot camera rather than at the cut"
+    },
+    {
+     "name": "ground_plane_3d_text",
+     "frames": [
+      216,
+      238
+     ],
+     "t": [
+      7.2,
+      7.933
+     ],
+     "dur_frames30": 23,
+     "dur_beats160": 2.05,
+     "dur_beats_musical80": 1.02,
+     "family": "text",
+     "measured": {
+      "word": "Chicago (only \"c...go\" is ever readable, the rest is under the camera)",
+      "vocal_onset_frame": 214,
+      "first_visible_frame": 218,
+      "lag_frames": 4,
+      "placement": "lying FLAT on the ground plane of the shot, matching its perspective; the camera dollies forward over it and it exits under the bottom edge",
+      "cap_height_pct_of_picture": "grows 6% -> 31% as the camera approaches",
+      "fill": "white with a soft grey underside, slight ambient occlusion where it meets the grass",
+      "blur": "the text inherits the shot radial blur (radtan 0.79) - it is blurred exactly as much as the plate, which is what makes it sit in the scene"
+     },
+     "recipe": "render the word to a sprite, warp it with fx.card_quad(rx=78 deg) so it lies on the floor, then apply the SAME fx.zoom_blur_c strength used on the plate; alpha 0.9 and a multiply pass of the plate luminance under it for contact shadow"
+    },
+    {
+     "name": "spin_blur_entry",
+     "frames": [
+      292,
+      306
+     ],
+     "t": [
+      9.733,
+      10.2
+     ],
+     "dur_frames30": 15,
+     "dur_beats160": 1.34,
+     "dur_beats_musical80": 0.67,
+     "family": "transition_in",
+     "beat_position": "join at f292, 2 frames before the percussion hit at f294; join phase 0.83",
+     "measured": {
+      "frames": 15,
+      "roll_deg_per_frame": [
+       1.5,
+       -13.7,
+       -8.2,
+       -6.4,
+       -5.9,
+       -3.7,
+       -3.8,
+       -3.3,
+       -2.8,
+       -2.2,
+       -1.8,
+       -1.6,
+       -1.4,
+       -1.3,
+       -1.1
+      ],
+      "total_roll_deg": -57.0,
+      "decay_factor_per_frame": 0.807,
+      "tau_frames": 4.7,
+      "tau_s": 0.156,
+      "zoom_pct_per_frame": [
+       3.3,
+       13.9,
+       12.5,
+       5.1,
+       7.5,
+       6.0,
+       4.7,
+       4.6,
+       3.7,
+       3.2,
+       2.5,
+       1.9,
+       1.5,
+       1.2,
+       0.7
+      ],
+      "total_zoom_settle_pct": 68,
+      "note": "the incoming starts at ~x1.68 and rolled ~57 deg and unwinds",
+      "rotational_blur": "blur axis rotates with the content (blur_deg 9 -> 177 -> 165 -> 155 -> 144 -> 141 over the first 6 frames) - a true rot blur, not a linear smear"
+     },
+     "recipe": "cam_in(v): ln s = ln(1.68) * exp(-v/0.156), roll = -57 * exp(-v/0.156); fx_in: fx.rot_blur(img, roll_rate_deg_per_frame * 1.5)  [the existing spin_blur has the right shape but only 12-20 deg of roll and no coupled scale settle]"
+    },
+    {
+     "name": "crack_web_and_filmstrip_set",
+     "frames": [
+      292,
+      330
+     ],
+     "t": [
+      9.733,
+      11.0
+     ],
+     "dur_frames30": 39,
+     "dur_beats160": 3.47,
+     "dur_beats_musical80": 1.74,
+     "family": "scene_graphics",
+     "measured": {
+      "backdrop": "a dark plane covered in white spider-web cracks, lit by 4-6 small specular sparks",
+      "filmstrip": "a 35 mm strip with sprocket holes running diagonally across the frame at ~28 deg, carrying 6-8 anime thumbnails",
+      "polaroid": "one polaroid rides the strip",
+      "camera": "slow dolly + roll -0.54 deg/frame, then a luma ramp to white"
+     },
+     "recipe": "crack layer: 60 random line segments from 8 seed points, 1-3 px, white, alpha 0.35, blurred 1 px, screen blended; filmstrip: an affine_layer strip texture with the thumbnails blitted into its frames"
+    },
+    {
+     "name": "luma_ramp_to_white_section",
+     "frames": [
+      322,
+      333
+     ],
+     "t": [
+      10.733,
+      11.1
+     ],
+     "dur_frames30": 12,
+     "dur_beats160": 1.07,
+     "dur_beats_musical80": 0.53,
+     "family": "transition",
+     "measured": {
+      "frames": 12,
+      "dur_s": 0.4,
+      "dur_beats160": 1.07,
+      "luma": [
+       63,
+       63,
+       77,
+       91,
+       108,
+       125,
+       145,
+       162,
+       178,
+       188,
+       205,
+       221
+      ],
+      "white_overlay_alpha": [
+       0,
+       0,
+       0.07,
+       0.15,
+       0.23,
+       0.32,
+       0.43,
+       0.52,
+       0.6,
+       0.65,
+       0.74,
+       0.83
+      ],
+      "alpha_shape": "near linear with a slight ease-out; peak 0.83, NOT held as pure white",
+      "white_pixel_share": [
+       1.7,
+       2.1,
+       2.4,
+       2.4,
+       2.5,
+       2.3,
+       2.0,
+       2.0,
+       2.8,
+       3.4,
+       52.4,
+       81.1
+      ],
+      "displacement_px_per_frame_1920": [
+       17,
+       9,
+       7,
+       15,
+       27,
+       40,
+       56,
+       75,
+       93,
+       167,
+       211,
+       22
+      ],
+      "aniso": [
+       0.24,
+       0.19,
+       0.23,
+       0.31,
+       0.49,
+       0.77,
+       0.93,
+       0.98,
+       0.99,
+       0.99,
+       0.99,
+       0.98
+      ],
+      "after": "the NEXT section stays at luma 217 for 83 frames - the white is a set, not a flash",
+      "beat": "the vocal onset of the chorus word \"another\" is at f328, mid-ramp, and the peak is 5 frames later"
+     },
+     "recipe": "fx.fill_mix(img, (255,255,255), alpha) with alpha = 0.83 * ease_out(i/11) combined with the same exponential line_blur as the whips; then CUT into a shot whose own background is white"
+    },
+    {
+     "name": "letters_fly_in_motion_blurred",
+     "frames": [
+      331,
+      375
+     ],
+     "t": [
+      11.033,
+      12.5
+     ],
+     "dur_frames30": 45,
+     "dur_beats160": 4.01,
+     "dur_beats_musical80": 2.0,
+     "family": "text",
+     "instances": [
+      {
+       "word": "ANOTHER",
+       "frames": [
+        331,
+        356
+       ],
+       "vocal_onset_frame": 328,
+       "lag_frames": 3
+      },
+      {
+       "word": "VERSION",
+       "frames": [
+        357,
+        375
+       ],
+       "vocal_onset_frame": null,
+       "lag_frames": null
+      },
+      {
+       "word": "OF ME",
+       "frames": [
+        383,
+        400
+       ],
+       "vocal_onset_frame": null,
+       "lag_frames": null
+      }
+     ],
+     "measured": {
+      "per_letter_interval_frames": [
+       2,
+       4
+      ],
+      "letters_arrive_from": "off-screen right, travelling left",
+      "arrival_blur": "each letter is smeared 60-140 px @1920 along its travel on its first 2 frames, then lands crisp",
+      "typeface": "condensed bold grotesque, UPPERCASE (Oswald / Archivo Narrow / Anton family)",
+      "fill": "dark charcoal with a warm bronze gradient toward the lit side (not flat black)",
+      "cap_height_pct_of_picture": 13.4,
+      "tracking": "tight, ~0.0 em",
+      "background": "pure white studio, luma 217, saturation 4"
+     },
+     "recipe": "per letter i: start x = 1.35 W, ease-out to its slot over 5 frames, delay i * 3 frames; fx.line_blur on the letter sprite by 0.5 * dx_per_frame; fill with a horizontal gradient from (45,45,50) to (150,120,70) BGR"
+    },
+    {
+     "name": "leaf_debris_particles",
+     "frames": [
+      331,
+      413
+     ],
+     "t": [
+      11.033,
+      13.767
+     ],
+     "dur_frames30": 83,
+     "dur_beats160": 7.39,
+     "dur_beats_musical80": 3.69,
+     "family": "overlay",
+     "measured": {
+      "blobs_per_frame_median": 48,
+      "blobs_p90": 227,
+      "colour": "brown/ochre leaf shapes on white",
+      "size_px_1920": [
+       8,
+       40
+      ],
+      "drift": "falling and tumbling, 3-12 px/frame, independent of the beat"
+     },
+     "recipe": "the existing particles overlay kind \"petals\" with a leaf sprite and colour (60,90,140) BGR, n ~ 70, opacity 0.9, plus per-particle rotation"
+    },
+    {
+     "name": "light_ray_streaks",
+     "frames": [
+      331,
+      413
+     ],
+     "t": [
+      11.033,
+      13.767
+     ],
+     "dur_frames30": 83,
+     "dur_beats160": 7.39,
+     "dur_beats_musical80": 3.69,
+     "family": "overlay",
+     "measured": {
+      "count": [
+       1,
+       3
+      ],
+      "orientation": "vertical, slightly tilted",
+      "width_px_1920": [
+       4,
+       12
+      ],
+      "contrast": "only 4-8 luma below the white background - extremely subtle"
+     },
+     "recipe": "fx.light_rays(img, x, y, strength=0.15) or a plain multiply of a few soft vertical bands at 0.97"
+    },
+    {
+     "name": "dolly_out_shrink_to_white",
+     "frames": [
+      400,
+      413
+     ],
+     "t": [
+      13.333,
+      13.767
+     ],
+     "dur_frames30": 14,
+     "dur_beats160": 1.25,
+     "dur_beats_musical80": 0.62,
+     "family": "transition_out",
+     "measured": {
+      "frames": 14,
+      "zoom_pct_per_frame": [
+       -2.9,
+       -2.0,
+       -2.8,
+       -2.8,
+       -3.5,
+       -4.4,
+       -5.6,
+       -3.5
+      ],
+      "luma": [
+       214,
+       215,
+       217,
+       218,
+       219,
+       220,
+       221,
+       223
+      ],
+      "white_share_pct": [
+       71,
+       72,
+       73,
+       75,
+       76,
+       78,
+       80,
+       82
+      ],
+      "aniso": [
+       0.79,
+       0.87,
+       0.92,
+       0.95,
+       0.97,
+       0.98,
+       0.99,
+       0.99
+      ],
+      "note": "the exit is a SCALE ramp, not a pan: the subject shrinks to nothing and the white background is all that is left"
+     },
+     "recipe": "cam_out: ln s ramp -0.03 -> -0.06 per frame; fx.gauss_px small + fill_mix to white alpha reaching 0.82"
+    },
+    {
+     "name": "hard_cut_whip_settle",
+     "frames": [
+      414,
+      424
+     ],
+     "t": [
+      13.8,
+      14.133
+     ],
+     "dur_frames30": 11,
+     "dur_beats160": 0.98,
+     "dur_beats_musical80": 0.49,
+     "family": "transition_in",
+     "measured": {
+      "luma_jump": "223 -> 76",
+      "sat_jump": "4 -> 157",
+      "zoom_pct_per_frame": [
+       -1.3,
+       -7.9,
+       -17.8,
+       -11.7,
+       -9.1,
+       -7.9,
+       -7.1,
+       -6.5,
+       -4.5
+      ],
+      "settle_tau_frames": 5.5,
+      "total_zoom_settle_pct": 73,
+      "sigma_pct_w": [
+       0.2,
+       0.26,
+       0.31,
+       0.5,
+       0.46,
+       0.52,
+       0.45,
+       0.34,
+       0.24
+      ],
+      "sigma_px_1920": [
+       3.8,
+       5.0,
+       6.0,
+       9.6,
+       8.8,
+       10.0,
+       8.6,
+       6.5,
+       4.6
+      ],
+      "aniso": [
+       0.95,
+       0.84,
+       0.64,
+       0.6,
+       0.53,
+       0.46,
+       0.33,
+       0.24,
+       0.19
+      ],
+      "note": "the biggest grade jump in the edit (white CG -> warm live-action), covered by a zoom-out settle and a 10 px defocus"
+     },
+     "recipe": "cam_in: ln s = ln(1.73) * exp(-v/0.18); fx_in: fx.gauss_px(img, pw(0.005) * exp(-v/0.18)) and fx.line_blur(img, pw(0.05) * exp(-v/0.08), 0)"
+    },
+    {
+     "name": "extruded_3d_text_in_scene",
+     "frames": [
+      472,
+      495
+     ],
+     "t": [
+      15.733,
+      16.5
+     ],
+     "dur_frames30": 24,
+     "dur_beats160": 2.14,
+     "dur_beats_musical80": 1.07,
+     "family": "text",
+     "measured": {
+      "text": "I WAS / IN IT (two lines)",
+      "per_letter_interval_frames": [
+       1,
+       4
+      ],
+      "extrusion": "real 3D: 10-14% of the cap height of side wall, visible bevel, specular highlight on the top edge",
+      "material": "gold / cream, (150, 190, 225) BGR body with a (90, 140, 195) side wall",
+      "occlusion": "the letters pass BEHIND the laptop screen edge (true depth sorting)",
+      "cast_shadow": "soft, offset down-right by ~3% of the cap height, sigma ~2% W, alpha 0.35",
+      "cap_height_pct_of_picture": 23.6,
+      "camera": "a slow orbit, 0.03 deg/frame roll, 0.46 %/frame zoom - the text tracks it exactly"
+     },
+     "recipe": "text.STYLES extrude=(n, (dx, dy), colour) gets the silhouette right but has no light: add a second pass that lightens the top row of the extrusion stack and a fx.shadow_under for the cast shadow; occlusion needs a per-shot depth matte (layouts.subject_matte is the closest thing we have)"
+    },
+    {
+     "name": "fade_out_to_black",
+     "frames": [
+      494,
+      503
+     ],
+     "t": [
+      16.467,
+      16.767
+     ],
+     "dur_frames30": 10,
+     "dur_beats160": 0.89,
+     "dur_beats_musical80": 0.45,
+     "family": "outro",
+     "measured": {
+      "luma": [
+       56,
+       49,
+       41,
+       35,
+       28,
+       21,
+       14,
+       7,
+       0,
+       0
+      ],
+      "frames": 10,
+      "dur_s": 0.333,
+      "shape": "linear in luma",
+      "lands": "5 frames after the percussion hit at f497"
+     },
+     "recipe": "fx.gain_u8(img, 1 - i/9); the edit ends here (f503), everything after is the creator end card"
+    },
+    {
+     "name": "watermark",
+     "frames": [
+      0,
+      502
+     ],
+     "t": [
+      0.0,
+      16.733
+     ],
+     "dur_frames30": 503,
+     "dur_beats160": 44.77,
+     "dur_beats_musical80": 22.39,
+     "family": "overlay",
+     "measured": {
+      "text": "TFBAGAS",
+      "position": "bottom left, x=0.02, y=0.955 of the picture box",
+      "cap_height_pct_of_picture": 2.4,
+      "fill": "white",
+      "opacity": 0.55,
+      "font": "plain bold sans, no glow",
+      "behaviour": "static for the whole edit, never animated"
+     },
+     "recipe": "the existing watermark overlay, style \"watermark\", opacity 0.55"
+    },
+    {
+     "name": "letterbox_2to1",
+     "frames": [
+      0,
+      631
+     ],
+     "t": [
+      0.0,
+      21.033
+     ],
+     "dur_frames30": 632,
+     "dur_beats160": 56.25,
+     "dur_beats_musical80": 28.13,
+     "family": "format",
+     "measured": {
+      "bars_top_px": 54,
+      "bars_bottom_px": 53,
+      "bar_frac_of_height": 0.05,
+      "picture_box": "1920 x 973, aspect 1.973:1",
+      "constant": "identical on every frame including the end card"
+     },
+     "recipe": "fx.letterbox_bars(img, 0.050) - note this is 2:1, not the 2.39:1 the cinematic styles use"
+    }
+   ]
+  }
+ },
+ "pooled_measurements": {
+  "n_references": 1,
+  "note": "one reference so far; every number is from WGvtliE1298 and should be re-pooled when more fx references arrive",
+  "edit_body_s": 16.767,
+  "n_content_shots": 8,
+  "n_joins": 7,
+  "shot_len_s": {
+   "min": 0.97,
+   "p50": 2.3,
+   "max": 2.93,
+   "mean": 2.09
+  },
+  "shot_len_beats160": {
+   "min": 2.6,
+   "p50": 6.1,
+   "max": 7.8,
+   "mean": 5.6
+  },
+  "shot_len_beats_musical80": {
+   "min": 1.3,
+   "p50": 3.1,
+   "max": 3.9,
+   "mean": 2.8
+  },
+  "cuts_per_s": 0.42,
+  "cuts_per_bar": 1.25,
+  "join_beat_phase": {
+   "values": [
+    0.67,
+    0.5,
+    0.64,
+    0.83,
+    0.48,
+    0.69,
+    0.52
+   ],
+   "median": 0.64,
+   "iqr": [
+    0.5,
+    0.69
+   ],
+   "meaning": "fraction of the 160 bpm beat at which the frame join falls; 0 = on the hit",
+   "conclusion": "joins sit on the OFF beat, never on it - general_deep agrees (subdivision share: beat 0.00, half 0.13, quarter 0.25, off 0.63)"
+  },
+  "join_to_nearest_percussion_ms": {
+   "values": [
+    -133,
+    200,
+    -133,
+    -67,
+    167,
+    -133,
+    167
+   ],
+   "median_abs": 133
+  },
+  "text_to_vocal_lag_frames30": {
+   "values": [
+    2,
+    1,
+    4,
+    2,
+    4,
+    3
+   ],
+   "median": 2.5,
+   "median_ms": 83,
+   "meaning": "frames between the demucs vocal-stem onset of a syllable and the first frame on which its word is legible"
+  },
+  "vocal_onset_frames30": [
+   23,
+   57,
+   125,
+   146,
+   158,
+   179,
+   190,
+   214,
+   247,
+   328
+  ],
+  "percussion_onset_frames30": [
+   24,
+   36,
+   47,
+   69,
+   92,
+   114,
+   125,
+   137,
+   148,
+   159,
+   182,
+   204,
+   215,
+   227,
+   238,
+   249,
+   272,
+   294,
+   305,
+   317,
+   328,
+   339,
+   362,
+   384,
+   395,
+   407,
+   418,
+   429,
+   452,
+   474,
+   485,
+   497,
+   508
+  ],
+  "effect_instances": 32,
+  "effects_per_s": 1.9,
+  "effects_per_bar": 5.7,
+  "effect_density_per_bar_by_section": [
+   {
+    "bar": 0,
+    "s": [
+     0.06,
+     3.06
+    ],
+    "effects": 4,
+    "note": "intro: fade, bokeh, card dolly, typewriter"
+   },
+   {
+    "bar": 1,
+    "s": [
+     3.06,
+     6.05
+    ],
+    "effects": 8,
+    "note": "rack focus, ink wipe, whip-white, speedlines, 2 words, glow"
+   },
+   {
+    "bar": 2,
+    "s": [
+     6.05,
+     9.05
+    ],
+    "effects": 7,
+    "note": "2 words, flare, shatter, polaroids, whip-black, radial push"
+   },
+   {
+    "bar": 3,
+    "s": [
+     9.05,
+     12.04
+    ],
+    "effects": 6,
+    "note": "ground text, spin blur, crack set, white ramp, letters"
+   },
+   {
+    "bar": 4,
+    "s": [
+     12.04,
+     15.04
+    ],
+    "effects": 5,
+    "note": "letters, polaroid row, leaves, rays, dolly out"
+   },
+   {
+    "bar": 5,
+    "s": [
+     15.04,
+     16.77
+    ],
+    "effects": 2,
+    "note": "3D text in scene, fade out"
+   }
+  ],
+  "whip_growth_per_frame30": {
+   "values": [
+    1.3,
+    1.4,
+    1.48
+   ],
+   "median": 1.4,
+   "meaning": "geometric growth of the per-frame displacement during a whip"
+  },
+  "whip_peak_px_per_frame_1920": {
+   "values": [
+    322,
+    295,
+    211
+   ],
+   "median": 295,
+   "as_pct_of_width": [
+    16.8,
+    15.4,
+    11.0
+   ]
+  },
+  "whip_length_frames30": {
+   "values": [
+    14,
+    13,
+    12,
+    8
+   ],
+   "median": 12.5
+  },
+  "flash_alpha_peak": {
+   "values": [
+    0.72,
+    0.83,
+    0.82
+   ],
+   "median": 0.82,
+   "note": "never a full 1.0 white frame anywhere in the edit"
+  },
+  "dark_alpha_peak": {
+   "values": [
+    0.71
+   ],
+   "note": "the black counterpart of the same ramp"
+  },
+  "white_frames_held": 0,
+  "black_frames_held": 0,
+  "settle_tau_frames30": {
+   "values": [
+    5.0,
+    4.7,
+    5.5
+   ],
+   "median": 5.0,
+   "note": "exponential time constant of every entry settle (defocus, roll, zoom)"
+  },
+  "entry_scale_pct": {
+   "values": [
+    68,
+    73
+   ],
+   "median": 70.5,
+   "note": "how much bigger the incoming starts than its settled size"
+  },
+  "entry_roll_deg": {
+   "values": [
+    57
+   ],
+   "note": "spin entry"
+  },
+  "defocus_peak_sigma_pct_w": {
+   "values": [
+    0.4,
+    0.52
+   ],
+   "median": 0.46,
+   "px_at_1920": [
+    7.7,
+    10.0
+   ],
+   "note": "plus two saturated frames per rack focus where sigma >= 1.7% W"
+  },
+  "text_cap_height_pct_of_picture": {
+   "hero_words": [
+    10.8,
+    25.3
+   ],
+   "set_words": 13.4,
+   "extruded_3d": 23.6,
+   "lyric_card": 4.0,
+   "watermark": 2.4,
+   "note": "hero words are 2-4x bigger than anything in the other reference groups"
+  },
+  "text_glow": {
+   "tight_sigma_pct_w": 0.31,
+   "tight_gain": 0.57,
+   "broad_sigma_pct_w": 2.0,
+   "broad_gain": 0.07
+  },
+  "typewriter_cps": 13.2,
+  "typewriter_per_char_fade_frames": 3,
+  "particles_per_frame": {
+   "bokeh": 57,
+   "snow": 86,
+   "petals_dust": 142,
+   "leaves": 48,
+   "leaves_p90": 227,
+   "live_plate_noise": 196
+  },
+  "radial_blur_radtan": {
+   "pushing_shots": [
+    0.72,
+    0.79
+   ],
+   "static_reference": 1.17,
+   "meaning": "< 1 = the picture is smeared along the radius"
+  },
+  "rgb_split_px_1920": {
+   "median": 0.4,
+   "p95": 2.7,
+   "conclusion": "NO chromatic split anywhere - this style does not use it"
+  },
+  "grain": {
+   "anime_shots": [
+    0.32,
+    0.51
+   ],
+   "cg_white_set": 0.0,
+   "live_plate": 1.2,
+   "note": "grain is inherited from the source, never added as a look"
+  },
+  "grade": {
+   "p2_every_shot": 0,
+   "p98": [
+    175,
+    254
+   ],
+   "split_tone": "warm highlights (Lab b* +16..+18) with neutral-to-cool shadows in the outdoor shots; the interior shot is warm all through; the CG sets are neutral",
+   "saturation_range": [
+    4,
+    168
+   ]
+  }
+ },
+ "style": {
+  "concept": [
+   "A typography edit, not a song edit: the SUBJECT of the video is the text. The anime footage is a backdrop that is deliberately slow, wide and out of focus so the lettering can own the frame.",
+   "The lyric drives everything. Words appear on their sung syllable (median 83 ms after the vocal onset), and the shot joins are hidden OFF the beat so nothing competes with them.",
+   "Every word lives in 3D space, not on a 2D overlay plane: it has a depth, the camera moves past it, it grows exponentially and it exits by passing the lens, motion blurred. It never fades out.",
+   "Half the \"shots\" are built graphics sets (a now-playing card, a cracked-glass memory space, a white studio) rather than anime clips. There are only 4 anime clips in 16.8 s.",
+   "Every join is hidden inside an extreme state - blown white, crushed black, 10 px of defocus or 300 px of smear per frame - so the viewer never sees a frame boundary."
+  ],
+  "formats": {
+   "canvas": "1920x1080 @30 fps",
+   "picture": "1920x973 inside a constant 5.0% letterbox (2:1)",
+   "shorts_adaptation": "for 1080x1920 the same grammar works if the hero word is kept at 13-25% of the PICTURE height and the fly-through axis is made vertical; the 2:1 bars become a 9:16 full frame with no bars"
+  },
+  "structure": {
+   "intro": "0.0-2.9 s: a now-playing card with the first lyric typed on it",
+   "body": "2.9-13.8 s: one word or phrase per lyric fragment, one graphics set per line",
+   "outro": "13.8-16.8 s: the last phrase as extruded 3D text in a live-action plate, then a 10-frame fade to black",
+   "length": "16.8 s of edit; a 4.3 s creator end card follows and is not part of the edit"
+  },
+  "cut_rules": {
+   "n_joins": 7,
+   "cuts_per_s": 0.42,
+   "shot_len_s": [
+    0.97,
+    2.93
+   ],
+   "beat_placement": "NEVER on the percussion hit: join phase 0.64 +- 0.12 of the 160 bpm beat",
+   "rationale": "the beat is carried by the word animation; a cut on the beat would double-hit",
+   "never": [
+    "a visible hard cut between two sharp frames",
+    "a cut inside a word animation"
+   ]
+  },
+  "camera": {
+   "inside_shot": "every shot moves: 0.5-3.0 %/frame zoom, 0.03-0.75 deg/frame roll, 1-38 px/frame pan at 1920",
+   "blur": "shots that push forward carry a SUSTAINED radial blur (radtan 0.72-0.79), not a burst",
+   "settles": "every entry settles exponentially with tau ~ 5 frames @30 (0.17 s)",
+   "entry_scale": "the incoming starts 68-73% bigger than its settled size",
+   "handheld": "none: all moves are smooth AE camera moves"
+  },
+  "transitions": {
+   "families": [
+    "defocus_recede + hard cut + rack focus",
+    "exponential whip to white + hard cut at the peak + streak settle",
+    "exponential whip to black + 4 dark frames",
+    "radial push + hard cut + spin-blur settle (57 deg, tau 4.7 frames)",
+    "luma ramp to white into a shot whose own background is white",
+    "dolly-out shrink to white + hard cut + zoom settle with 10 px defocus",
+    "linear fade to black"
+   ],
+   "whip_law": "displacement grows geometrically at x1.30-1.48 per frame for 8-14 frames, peaking at 11-17% of the frame width in one frame; the smear is half that (180 deg shutter)",
+   "flash_law": "the white / black overlay reaches alpha 0.72-0.83 and is NEVER held: 0 pure white frames and 0 pure black frames in the whole edit",
+   "forbidden": [
+    "RGB split / chromatic glitch (measured |shift| < 1 px)",
+    "strobe, invert, halftone",
+    "cross dissolve",
+    "shake"
+   ]
+  },
+  "text": {
+   "hero_typeface": "geometric rounded sans, lowercase, for the in-scene 3D words (Poppins / Century Gothic)",
+   "set_typeface": "condensed bold grotesque, UPPERCASE, for words on the white set (Oswald / Anton family)",
+   "extruded_typeface": "heavy grotesque caps with a real bevel and specular, for the closing line",
+   "size": "hero words 13-25% of the picture height; the lyric card line 4.0%; watermark 2.4%",
+   "colour": {
+    "hero": "pure white with a two-radius glow (sigma 0.31% W gain 0.57, sigma 2.0% W gain 0.07)",
+    "set": "dark charcoal with a warm bronze gradient toward the lit side",
+    "extruded": "cream / gold body with a darker side wall"
+   },
+   "animation": {
+    "entrance": "the word simply EXISTS in 3D and the camera reaches it, or its letters fly in from off-screen at 2-4 frame intervals with a 60-140 px smear",
+    "hold": "2-8 frames fully legible",
+    "exit": "it passes the camera, motion blurred; it never fades out"
+   },
+   "typewriter": {
+    "cps": 13.2,
+    "per_char_fade_frames": 3,
+    "used_for": "the intro lyric card only"
+   },
+   "sync": "word legible 1-4 frames (median 2.5, 83 ms) after the vocal onset of its syllable",
+   "coexistence": "up to 3 words on screen at once, at different depths, the earlier ones small and behind",
+   "watermark": {
+    "text": "the channel name",
+    "pos": [
+     0.02,
+     0.955
+    ],
+    "size_pct": 2.4,
+    "opacity": 0.55,
+    "static": true
+   }
+  },
+  "grade": {
+   "blacks": "crushed: p2 = 0 in every shot",
+   "highlights": "p98 175-254, the white set sits at luma 217",
+   "split_tone": "warm highlights (Lab b* +16..+18) over neutral or cool shadows outdoors; the interior plate is warm all through; the CG sets are neutral",
+   "saturation": "per shot 4 (white set) to 168 (the blue card) - the edit does NOT unify saturation",
+   "grain": "inherited from the source (0.32-0.51 on anime, 1.20 on the live plate, 0.00 on CG); never added",
+   "vignette": "0.10-0.99 depending on the plate; no added vignette"
+  },
+  "overlays": {
+   "particles": [
+    "bokeh in the intro (57/frame)",
+    "snow (86/frame)",
+    "petals + dust in the sunset shot (142/frame)",
+    "tumbling leaves on the white set (48/frame, 227 at p90)"
+   ],
+   "light": [
+    "one lens flare bloom as the camera passes a light source",
+    "1-3 near-invisible vertical light rays on the white set"
+   ],
+   "graphics": [
+    "polaroid photo cards flying in 3D",
+    "a 35 mm filmstrip across the frame",
+    "a white spider-web crack layer",
+    "an ink blot carrying the channel word mark"
+   ],
+   "letterbox": "constant 5.0% bars (2:1)"
+  },
+  "audio": {
+   "track": "the song only, untouched",
+   "sfx": "none",
+   "risers": "none",
+   "sweeps": "none",
+   "ducking": "none",
+   "loudness": "-14.7 LUFS integrated, -3.8 dBTP true peak, 19.3 LU range",
+   "note": "this is the single clearest difference from the sound-edit group: a typography edit adds NO sound design at all"
+  },
+  "clip_selection": {
+   "what_works": [
+    "wide, slow, atmospheric anime shots with a lot of empty sky, snow or field",
+    "shallow depth of field so the plate is already soft behind the type",
+    "shots whose own camera pushes forward, so the type can ride the same move",
+    "a dark or a blown-out area where the word can sit at full contrast"
+   ],
+   "avoid": [
+    "busy action",
+    "faces filling the frame",
+    "anything with its own text",
+    "fast native cutting - the plate must hold 1-3 s"
+   ],
+   "n_clips": "4 anime clips for 16.8 s; the other 4 sections are built graphics"
+  }
+ },
+ "recipes": {
+  "whip_to_white": {
+   "from_ref": [
+    "WGvtliE1298 f117-131"
+   ],
+   "pre_frames30": 14,
+   "post_frames30": 14,
+   "cam_out": "dx accumulates d(i) = 18 * 1.30**i px @1920 in one direction (measured 18 -> 322 over 11 frames)",
+   "fx_out": "fx.line_blur(img, 0.5 * d(i), 0) then fx.fill_mix(img, (252,254,255), 0.72 * (max(0, i-6)/8)**2)",
+   "cut": "on the brightest frame, no white hold",
+   "fx_in": "fx.line_blur(img, pw(0.09) * exp(-v/0.13), 0); fx.saturation_u8(img, 0.1 + 0.9 * min(1, v/0.4))",
+   "differs_from_engine": "WhiteOut holds 150 ms of pure white and fades the incoming up from white; this one cuts at alpha 0.72 straight into a dark frame"
+  },
+  "whip_to_black": {
+   "from_ref": [
+    "WGvtliE1298 f192-204"
+   ],
+   "pre_frames30": 13,
+   "post_frames30": 5,
+   "cam_out": "d(i) = 19 * 1.40**i px @1920 (measured 19 -> 295 over 7 frames)",
+   "fx_out": "fx.line_blur(img, 0.5 * d(i), 0); fx.gain_u8(img, 1 - 0.71 * k**1.6)",
+   "hold": "4 frames at luma <= 25",
+   "fx_in": "the new shot brightens back over 8 frames (luma 24 -> 53)"
+  },
+  "defocus_recede_cut_rack_focus": {
+   "from_ref": [
+    "WGvtliE1298 f80-104"
+   ],
+   "pre_frames30": 8,
+   "post_frames30": 17,
+   "cam_out": "ln s ramps -0.031 -> -0.141 per frame (the shot pushes AWAY)",
+   "fx_out": "fx.gauss_px(img, pw(0.0032) * k); fx.gain_u8(img, 1 - 0.64 * k**1.6)",
+   "fx_in": "fx.gauss_px(img, pw(0.017) * exp(-max(0, v - 0.2)/0.17)), first 2 frames clamped to the maximum; NO gain pump",
+   "differs_from_engine": "DefocusIn is 6 frames @60 (0.1 s) and adds +20% gain; this is 17 frames @30 (0.57 s), peak sigma >= 1.7% W and flat exposure"
+  },
+  "spin_blur_settle": {
+   "from_ref": [
+    "WGvtliE1298 f292-306"
+   ],
+   "post_frames30": 15,
+   "cam_in": "ln s = ln(1.68) * exp(-v/0.156); roll = -57 deg * exp(-v/0.156)",
+   "fx_in": "fx.rot_blur(img, (roll(v) - roll(v+1/fps)) * 1.5)",
+   "differs_from_engine": "SpinBlur uses 12-20 deg of roll and no coupled scale settle; measured is 57 deg with a 68% scale settle on the same tau"
+  },
+  "luma_ramp_into_white_set": {
+   "from_ref": [
+    "WGvtliE1298 f322-333"
+   ],
+   "pre_frames30": 12,
+   "fx_out": "fx.fill_mix(img, (255,255,255), 0.83 * ease_out(i/11)) with fx.line_blur growing 17 -> 211 px/frame",
+   "cut": "into a shot whose own background is white (luma 217), so the ramp never resolves back",
+   "note": "the anchor is the vocal onset of the chorus word, at the steepest point of the ramp, peak 5 frames later"
+  },
+  "zoom_out_settle_with_defocus": {
+   "from_ref": [
+    "WGvtliE1298 f414-424"
+   ],
+   "post_frames30": 11,
+   "cam_in": "ln s = ln(1.73) * exp(-v/0.18)",
+   "fx_in": "fx.gauss_px(img, pw(0.005) * exp(-v/0.18)); fx.line_blur(img, pw(0.05) * exp(-v/0.08), 0)",
+   "use": "to cover the biggest grade jump in an edit (white CG set -> warm live plate)"
+  },
+  "sustained_radial_push": {
+   "from_ref": [
+    "WGvtliE1298 f204-292"
+   ],
+   "where": "inside a shot, not at a cut",
+   "fx": "fx.zoom_blur_c(img, 0.9 * zoom_rate_per_frame, steps=8) every frame while the camera pushes 1.6-3.0 %/frame",
+   "measured": "radtan falls from 1.17 (static) to 0.72-0.79"
+  },
+  "word_3d_flythrough": {
+   "from_ref": [
+    "WGvtliE1298 f149-196"
+   ],
+   "geometry": "give every word a depth z; scale = f / (z - camera_z), so the growth is exponential (measured x1.11 per frame, x2.34 over 8 frames)",
+   "draw": "back-to-front so near words occlude far ones; up to 3 words alive at once",
+   "blur": "fx.line_blur on the sprite by 0.5 * |position change| per frame",
+   "glow": "text.STYLES glow=[(0.31%W, 0.57, None), (2.0%W, 0.07, None)]",
+   "timing": "the word becomes legible 1-4 frames after its vocal onset; it holds 2-8 frames and exits past the lens",
+   "size": "cap height 10.8% -> 25.3% of the picture height across the fly-through"
+  },
+  "letters_fly_in": {
+   "from_ref": [
+    "WGvtliE1298 f331-400"
+   ],
+   "per_letter": "start at x = 1.35 W, ease-out into its slot over 5 frames, delay i * 3 frames (measured 2-4)",
+   "blur": "fx.line_blur on the letter by 0.5 * dx per frame (60-140 px @1920 on the first 2 frames)",
+   "fill": "a horizontal gradient from (45,45,50) to (150,120,70) BGR, not flat black",
+   "background": "a white set at luma 217, saturation 4"
+  },
+  "ground_plane_text": {
+   "from_ref": [
+    "WGvtliE1298 f216-238"
+   ],
+   "warp": "fx.card_quad(rx ~ 78 deg) so the word lies on the floor of the plate, then fx.warp_to_quad",
+   "match": "apply the SAME fx.zoom_blur_c strength the plate has, and multiply the plate luminance under the word for a contact shadow; without both it floats"
+  },
+  "glass_shatter": {
+   "from_ref": [
+    "WGvtliE1298 f182-192"
+   ],
+   "frames30": 11,
+   "step1": "frame 0: 20 white radiating cracks, 2 px, from the impact point, length ramping to 0.6 W over 3 frames, gaussian 3 px",
+   "step2": "a Voronoi of 45-70 seeds (cv2.Subdiv2D); each shard warps outward by k * 0.04 W and rotates by rng(-8, 8) * k deg",
+   "step3": "a warm (90,180,255) BGR gap layer behind the shards; measured R-B swings -11 -> +10 over 8 frames",
+   "measured": "mean gradient x2.9, small-blob count x11, luma -43% over 11 frames, camera pushing +2..+4 %/frame"
+  },
+  "ink_blot_logo_reveal": {
+   "from_ref": [
+    "WGvtliE1298 f107-121"
+   ],
+   "frames30": 15,
+   "mask": "low-frequency noise thresholded at a moving level, blurred 0.4% W, entering from one edge, reaching 35% coverage",
+   "use": "multiply the frame toward black inside the mask and composite the channel word mark inside it (alpha = clamp((progress-0.15)/0.3))"
+  },
+  "music_card_intro_3d": {
+   "from_ref": [
+    "WGvtliE1298 f0-88"
+   ],
+   "card": "fx.card_quad(ry 26 -> 3 deg, rx 9 -> 2 deg), width 0.34 -> 1.6 of the canvas over 80 frames, ease-out",
+   "background": "60 bokeh discs, radius 6-26 px @1920, screen blended over black",
+   "lyric": "typed at 13.2 cps with a 3-frame per-character fade",
+   "differs_from_engine": "layouts.MusicCard is a flat 2D card at a fixed size with cps=24 and no bokeh"
+  },
+  "extruded_3d_text_in_plate": {
+   "from_ref": [
+    "WGvtliE1298 f472-495"
+   ],
+   "extrusion": "side wall 10-14% of the cap height, body (150,190,225) BGR, wall (90,140,195), a lighter top edge",
+   "shadow": "fx.shadow_under, offset down-right by 3% of the cap height, sigma 2% W, alpha 0.35",
+   "occlusion": "the letters must pass behind a foreground object - needs a depth matte (layouts.subject_matte is the closest thing the engine has)",
+   "size": "cap height 23.6% of the picture height"
+  },
+  "letterbox_2to1": {
+   "from_ref": [
+    "WGvtliE1298, every frame"
+   ],
+   "fx": "fx.letterbox_bars(img, 0.050)",
+   "note": "2:1, not the 2.39:1 the cinematic styles use"
+  },
+  "watermark": {
+   "from_ref": [
+    "WGvtliE1298, every frame"
+   ],
+   "spec": "channel name, bottom left (0.02, 0.955), cap height 2.4% of the picture height, white at 0.55 opacity, no glow, never animated"
+  },
+  "fade_out": {
+   "from_ref": [
+    "WGvtliE1298 f494-503"
+   ],
+   "fx": "fx.gain_u8(img, 1 - i/9) over 10 frames, linear in luma"
+  }
+ },
+ "quality_targets": {
+  "measure_with": {
+   "frame_analysis": "core/edit/refs/analyze_ref.py VIDEO --out DIR   (cuts, camera, grade, letterbox, audio)",
+   "features": "core/edit/refs/general_features.py VIDEO --raw RAW.json   (blur axis, radtan, rgb split, edges)",
+   "events": "core/edit/refs/general_deep.py RAW.json VIDEO   (shots, per-cut curves, beat subdivision)",
+   "fx": "core/edit/refs/fx_measure.py VIDEO --raw RAW.json --out DIR --strips a:b,c:d   (directional blur sigma from the 1-D spectrum with a noise floor, glow, warm, particles, letterform area; frame strips)",
+   "sheets": "core/edit/refs/ref_sheets.py VIDEO --raw RAW.json --out DIR --every 1 --range a:b",
+   "compare": "render our sample at the same fps, run the same four scripts on it, and put our frame strips next to the reference strips at the matching beat phase"
+  },
+  "targets": [
+   {
+    "name": "join beat phase",
+    "target": "median 0.55-0.75 of the percussion beat, no join within 0.12 of a hit",
+    "measured_on_ref": 0.64,
+    "tool": "general_deep.py sync.beats.subdivision"
+   },
+   {
+    "name": "text to vocal lag",
+    "target": "1-4 frames @30 (33-133 ms) after the vocal-stem onset",
+    "measured_on_ref": 2.5,
+    "tool": "demucs vocals + librosa onsets, see method.audio"
+   },
+   {
+    "name": "whip growth",
+    "target": "x1.25-1.50 per frame for 8-14 frames, peak 11-17% of the width in one frame",
+    "measured_on_ref": [
+     1.3,
+     1.4,
+     1.48
+    ],
+    "tool": "analyze_ref rows tx/ty"
+   },
+   {
+    "name": "flash alpha",
+    "target": "peak 0.70-0.85, zero pure-white and zero pure-black frames",
+    "measured_on_ref": [
+     0.72,
+     0.83
+    ],
+    "tool": "fx_measure white / analyze_ref luma"
+   },
+   {
+    "name": "settle tau",
+    "target": "4-6 frames @30 on every entry (defocus, roll, zoom)",
+    "measured_on_ref": 5.0,
+    "tool": "general_deep events"
+   },
+   {
+    "name": "hero text size",
+    "target": "cap height 13-25% of the picture height",
+    "measured_on_ref": [
+     10.8,
+     25.3
+    ],
+    "tool": "fx_measure text_box / a >200 mask"
+   },
+   {
+    "name": "text glow",
+    "target": "two components: sigma 0.3% W gain 0.55 and sigma 2% W gain 0.07",
+    "measured_on_ref": "0.31/0.57 + 2.0/0.07",
+    "tool": "distance transform around the >210 mask"
+   },
+   {
+    "name": "rgb split",
+    "target": "|shift| < 1 px @1920 everywhere - this style must not glitch",
+    "measured_on_ref": 0.4,
+    "tool": "general_features rows.x.rgb"
+   },
+   {
+    "name": "sustained radial blur on pushes",
+    "target": "radtan 0.70-0.85 while the camera pushes",
+    "measured_on_ref": [
+     0.72,
+     0.79
+    ],
+    "tool": "general_features rows.x.radtan"
+   },
+   {
+    "name": "cuts per second",
+    "target": "0.3-0.5 (shots 1.0-3.0 s)",
+    "measured_on_ref": 0.42,
+    "tool": "analyze_ref cuts"
+   },
+   {
+    "name": "audio",
+    "target": "-14 LUFS +- 0.5, true peak < -1 dBTP, NO added sfx (spectral flatness <= 0.005)",
+    "measured_on_ref": "-14.7 LUFS / -3.8 dBTP / flatness <= 0.003",
+    "tool": "ffmpeg loudnorm + librosa flatness"
+   },
+   {
+    "name": "letterbox",
+    "target": "constant 5.0% bars for 16:9 output (2:1 picture); none for 9:16",
+    "measured_on_ref": 0.05,
+    "tool": "analyze_ref rows lb_top/lb_bot"
+   },
+   {
+    "name": "render budget",
+    "target": "< 20 min for a 9:16 short and < 90 min for a long video on 2 cores; measure locally with engine --cpus 2 and say so",
+    "measured_on_ref": null,
+    "tool": "engine.py --cpus 2"
+   }
+  ],
+  "judging": "pass is >= 9/10 judged frame by frame against the reference strips, not on a single still: put our _fxstrip_a_b.jpg next to the reference _fxstrip_a_b.jpg for the same transition and compare the blur amount, the luma ramp and the text size frame by frame. 8.5 is a fail."
+ },
+ "gaps_vs_current_engine": [
+  {
+   "item": "hard cut / rack focus",
+   "status": "implemented",
+   "detail": "transitions.Hard and DefocusIn exist; DefocusIn is 6 frames @60 with a +20% gain pump, the reference needs 17 frames @30, peak sigma >= 1.7% W and flat exposure - a parameter change, not new code"
+  },
+  {
+   "item": "exponential whip pan",
+   "status": "partial",
+   "detail": "WhipHorizontal / WhipSlide exist but smear for only 3 frames at fixed 25/8/3% W; the reference ramps geometrically at x1.30-1.48 per frame for 8-14 frames to 11-17% W per frame. fx.line_blur is the right primitive; the envelope is what is missing"
+  },
+  {
+   "item": "whip to white with the cut at the peak",
+   "status": "partial",
+   "detail": "WhiteOut and FlashWhite exist but both hold pure white frames and fade the incoming up out of white; the reference reaches alpha 0.72-0.83, holds nothing and cuts into a dark frame"
+  },
+  {
+   "item": "whip to black with a dark hold",
+   "status": "implemented",
+   "detail": "DipBlack / DipBlackStrobe cover it; needs alpha 0.71 rather than pure black and a 4-frame hold"
+  },
+  {
+   "item": "spin-blur entry",
+   "status": "partial",
+   "detail": "SpinBlur exists with the right shape (rot_blur + unwind) but only 12-20 deg; the reference is 57 deg with a coupled 68% scale settle on the same tau 4.7 frames"
+  },
+  {
+   "item": "sustained radial blur during a push",
+   "status": "partial",
+   "detail": "fx.zoom_blur_c exists and RadialZoomBurst uses it for 2-3 frames at a cut; nothing applies it as a per-frame in-shot look for a whole 30-90 frame push (radtan 0.72-0.79)"
+  },
+  {
+   "item": "zoom-out settle with defocus",
+   "status": "implemented",
+   "detail": "BlurBridge and PunchSettle cover it; the reference values are ln(1.73) with tau 0.18 s and a 10 px defocus"
+  },
+  {
+   "item": "luma ramp into a white set",
+   "status": "partial",
+   "detail": "fx.fill_mix gives the ramp, but there is no scene/layout for a white infinite studio to cut into, and no transition whose ramp deliberately does not resolve"
+  },
+  {
+   "item": "fade in / fade out",
+   "status": "implemented",
+   "detail": "FadeIn and the fade overlay cover both"
+  },
+  {
+   "item": "letterbox 2:1",
+   "status": "implemented",
+   "detail": "fx.letterbox_bars and the letterbox overlay take any frac; 0.050 is the reference value"
+  },
+  {
+   "item": "typewriter lyric",
+   "status": "implemented",
+   "detail": "text.Sprite.crop_letters(n, frac) and engine anim=\"type\"; the engine hard-codes cps=24 and does not use frac, the reference is 13.2 cps with a 3-frame per-character fade"
+  },
+  {
+   "item": "two-radius text glow",
+   "status": "implemented",
+   "detail": "text.STYLES glow takes a list of (radius, alpha, colour); the measured pair is (0.31% W, 0.57) + (2.0% W, 0.07) - no style currently uses a broad second component"
+  },
+  {
+   "item": "hero text at 13-25% of the picture height",
+   "status": "implemented",
+   "detail": "text.render takes any size; no existing style goes above ~9%, so this is a preset value to add"
+  },
+  {
+   "item": "3D word fly-through (per-word depth, camera passes the word)",
+   "status": "missing",
+   "detail": "text.blit only does uniform scale + roll about the sprite centre. There is no depth per overlay, no perspective, no back-to-front ordering and no way for the camera move to drive the word scale. This is the single biggest gap: it is the core of the style"
+  },
+  {
+   "item": "motion blur on a moving text sprite",
+   "status": "missing",
+   "detail": "text.blit has blur_y only (a vertical box blur). The reference smears every moving letter by half its per-frame displacement along its travel; fx.line_blur exists but is never applied to a sprite"
+  },
+  {
+   "item": "letters flying in one at a time with a smear",
+   "status": "partial",
+   "detail": "engine anim=\"letters_3d\" and \"slam\" already stagger letters (3 frames apart) and scale them in, but they arrive by rotating from a random direction with no directional blur and no per-letter gradient fill"
+  },
+  {
+   "item": "text on the ground plane of a shot",
+   "status": "missing",
+   "detail": "fx.card_quad + fx.warp_to_quad can produce the perspective, but nothing warps a TEXT sprite that way, and nothing matches the plate blur or adds the contact shadow that makes it sit in the scene"
+  },
+  {
+   "item": "extruded 3D text with a bevel, specular and cast shadow",
+   "status": "partial",
+   "detail": "text.STYLES extrude=(n, (dx, dy), colour) stacks offset copies, which gives the silhouette but no lit top edge, no material and no cast shadow; fx.shadow_under exists and is not wired to text"
+  },
+  {
+   "item": "text occluded by scene depth",
+   "status": "partial",
+   "detail": "the overlay flag \"behind\" uses layouts.subject_matte (a GrabCut matte) to put text behind the subject; the reference needs a per-shot depth order for a hard object (a laptop edge), which the matte handles only roughly"
+  },
+  {
+   "item": "glass shatter",
+   "status": "missing",
+   "detail": "no shard / crack transition anywhere. fx.poly_mask, fx.blend_mask and fx.warp_to_quad give the pieces to build it; a Voronoi (cv2.Subdiv2D) shatter plus a radiating crack star is new code"
+  },
+  {
+   "item": "spider-web crack overlay",
+   "status": "missing",
+   "detail": "no crack / fracture layer generator"
+  },
+  {
+   "item": "ink blot reveal carrying a word mark",
+   "status": "partial",
+   "detail": "fx.blob_mask and BlobWipe give an organic growing mask; nothing composites a logo inside the mask, and blob_mask grows from a corner rather than as a blot with fingers"
+  },
+  {
+   "item": "polaroid cards flying in 3D",
+   "status": "partial",
+   "detail": "PhotoCollage, CardTiltIn and the postcard layouts all build bordered cards with shadows, but on a flat paper plane; the reference tilts each card about its own Y axis in a shared 3D space with depth sorting"
+  },
+  {
+   "item": "35 mm filmstrip element",
+   "status": "missing",
+   "detail": "no filmstrip generator"
+  },
+  {
+   "item": "music / now-playing card intro",
+   "status": "partial",
+   "detail": "layouts.MusicCard exists with the album square, title, artist, typed lyric line, channel line and waveform, but it is a flat 2D card at a fixed size; the reference flies a 3D-tilted card through a bokeh field for 2.9 s"
+  },
+  {
+   "item": "bokeh particle field",
+   "status": "partial",
+   "detail": "the particles overlay has a \"bokeh\" kind; the reference density is 57 discs/frame at radius 6-26 px @1920 with a 0.35 x radius gaussian - a parameter set"
+  },
+  {
+   "item": "snow / petals / tumbling leaves",
+   "status": "implemented",
+   "detail": "particles kinds petals, gold_dust, sparkles, bokeh, embers cover these; the leaf sprite wants its own rotation, which the current particles do not do"
+  },
+  {
+   "item": "lens flare bloom",
+   "status": "implemented",
+   "detail": "the lens_flare overlay + fx.bloom_boost"
+  },
+  {
+   "item": "vertical light rays",
+   "status": "implemented",
+   "detail": "the light_rays overlay (strength 0.15 for this style)"
+  },
+  {
+   "item": "speed lines / streak settle on entry",
+   "status": "implemented",
+   "detail": "fx.line_blur with an exponential decay plus a saturation ramp; BlurBridge already does the blur half"
+  },
+  {
+   "item": "word timing driven by the vocal",
+   "status": "missing",
+   "detail": "planners.py places words on beats. Nothing separates the vocal stem to find syllable onsets, and nothing offsets a word by the measured +2.5 frame lag. core/edit/music.py has beats and sections but no vocal onsets; core/edit/refs/general_music.py already runs demucs and could be reused"
+  },
+  {
+   "item": "RGB split",
+   "status": "implemented",
+   "detail": "RGBSplitGlitch and the \"+rgb\" modifier exist - and this preset must switch them OFF: the reference has no chromatic split at all"
+  },
+  {
+   "item": "added SFX / risers",
+   "status": "implemented",
+   "detail": "sound_edit.py can place clip hits - and this preset must not use it: the reference is the song alone"
+  }
+ ],
+ "not_observed": [
+  "RGB split / chromatic aberration anywhere (|shift| < 1 px @1920)",
+  "a pure white or a pure black frame (the ramps peak at alpha 0.72-0.83)",
+  "strobe, invert, halftone or any frame-level flicker",
+  "a cross dissolve",
+  "camera shake or handheld noise",
+  "speed ramps in the footage (every plate runs at its native speed)",
+  "freeze frames",
+  "added sound effects, risers, filter sweeps or ducking",
+  "split screens or tiled layouts",
+  "emoji or any non-Latin glyph",
+  "a face filling the frame while a word is on screen"
+ ]
+}

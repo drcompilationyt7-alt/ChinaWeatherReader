@@ -1,0 +1,2330 @@
+{
+ "generated": "2026-10-01",
+ "method": "* candidates: core/quiz/assets/anime-characters.json (AniList favourites, gender, age; unknown age = not adult)\n  * evidence: YouTube search results through the library's own Tube / pacer (cached, paced, shared with the other\n    agents): \"<name> <show> edit\" for every candidate, \"<name> aura edit\" for the top aura candidates and\n    \"<name> beautiful edit\" for the top female candidates. A result counts when its title names the character\n    and an edit-type word (edit / amv / twixtor / clips / 4k / capcut ...) and no off-type word; its weight is\n    log10(1 + views).\n  * weight 0-1 per list = 0.7 x edit evidence (normalised over the list) + 0.3 x favourites (log, normalised).",
+ "beauty": [
+  {
+   "name": "Makima",
+   "anime": "Chainsaw Man",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 22256,
+   "edit_results": 32,
+   "edit_score": 203.96,
+   "weight": 0.982
+  },
+  {
+   "name": "Maki Zenin",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "female",
+   "age": "16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13067,
+   "edit_results": 32,
+   "edit_score": 204.4,
+   "weight": 0.969
+  },
+  {
+   "name": "Mikasa Ackerman",
+   "anime": "Attack on Titan",
+   "gender": "female",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 25572,
+   "edit_results": 34,
+   "edit_score": 193.94,
+   "weight": 0.952
+  },
+  {
+   "name": "Nezuko Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "female",
+   "age": "12-14",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14632,
+   "edit_results": 32,
+   "edit_score": 192.9,
+   "weight": 0.933
+  },
+  {
+   "name": "Zero Two",
+   "anime": "DARLING in the FRANXX",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 14715,
+   "edit_results": 29,
+   "edit_score": 187.43,
+   "weight": 0.914
+  },
+  {
+   "name": "Shinobu Kocho",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "female",
+   "age": "18",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 9400,
+   "edit_results": 30,
+   "edit_score": 190.13,
+   "weight": 0.911
+  },
+  {
+   "name": "Violet Evergarden",
+   "anime": "Violet Evergarden",
+   "gender": "female",
+   "age": "14-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20383,
+   "edit_results": 33,
+   "edit_score": 177.65,
+   "weight": 0.89
+  },
+  {
+   "name": "Marin Kitagawa",
+   "anime": "My Dress-Up Darling",
+   "gender": "female",
+   "age": "15",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 17296,
+   "edit_results": 32,
+   "edit_score": 176.47,
+   "weight": 0.881
+  },
+  {
+   "name": "Nobara Kugisaki",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "female",
+   "age": "16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13734,
+   "edit_results": 29,
+   "edit_score": 165.75,
+   "weight": 0.838
+  },
+  {
+   "name": "Kana Arima",
+   "anime": "OSHI NO KO",
+   "gender": "female",
+   "age": "17-19",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 11806,
+   "edit_results": 33,
+   "edit_score": 162.02,
+   "weight": 0.821
+  },
+  {
+   "name": "Kaguya Shinomiya",
+   "anime": "Kaguya-sama: Love is War",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20489,
+   "edit_results": 38,
+   "edit_score": 152.16,
+   "weight": 0.803
+  },
+  {
+   "name": "Frieren",
+   "anime": "Frieren: Beyond Journey’s End",
+   "gender": "female",
+   "age": "1000+",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 22481,
+   "edit_results": 24,
+   "edit_score": 146.82,
+   "weight": 0.787
+  },
+  {
+   "name": "Kaori Miyazono",
+   "anime": "Your lie in April",
+   "gender": "female",
+   "age": "14",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9317,
+   "edit_results": 32,
+   "edit_score": 152.53,
+   "weight": 0.781
+  },
+  {
+   "name": "Nico Robin",
+   "anime": "ONE PIECE",
+   "gender": "female",
+   "age": "28-",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 14814,
+   "edit_results": 27,
+   "edit_score": 146.83,
+   "weight": 0.775
+  },
+  {
+   "name": "Akame",
+   "anime": "Akame ga Kill!",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7023,
+   "edit_results": 34,
+   "edit_score": 152.97,
+   "weight": 0.775
+  },
+  {
+   "name": "Yor Forger",
+   "anime": "SPY x FAMILY",
+   "gender": "female",
+   "age": "27",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 14402,
+   "edit_results": 22,
+   "edit_score": 140.15,
+   "weight": 0.751
+  },
+  {
+   "name": "Mai Sakurajima",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+   "gender": "female",
+   "age": "17-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 21185,
+   "edit_results": 32,
+   "edit_score": 136.19,
+   "weight": 0.749
+  },
+  {
+   "name": "Itsuki Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "gender": "female",
+   "age": "17-23",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 16028,
+   "edit_results": 37,
+   "edit_score": 138.42,
+   "weight": 0.749
+  },
+  {
+   "name": "Tatsumaki",
+   "anime": "One-Punch Man",
+   "gender": "female",
+   "age": "28",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8783,
+   "edit_results": 28,
+   "edit_score": 139.31,
+   "weight": 0.735
+  },
+  {
+   "name": "Power",
+   "anime": "Chainsaw Man",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20544,
+   "edit_results": 28,
+   "edit_score": 131.95,
+   "weight": 0.733
+  },
+  {
+   "name": "Ichigo",
+   "anime": "DARLING in the FRANXX",
+   "gender": "female",
+   "age": "14-17",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 15767,
+   "edit_results": 32,
+   "edit_score": 134.08,
+   "weight": 0.733
+  },
+  {
+   "name": "Yumeko Jabami",
+   "anime": "Kakegurui",
+   "gender": "female",
+   "age": "16-17",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 8735,
+   "edit_results": 32,
+   "edit_score": 136.09,
+   "weight": 0.723
+  },
+  {
+   "name": "Nino Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "gender": "female",
+   "age": "17-23",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10998,
+   "edit_results": 34,
+   "edit_score": 133.45,
+   "weight": 0.721
+  },
+  {
+   "name": "Kurumi Tokisaki",
+   "anime": "Date A Live",
+   "gender": "female",
+   "age": "17 (physically)",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 8049,
+   "edit_results": 33,
+   "edit_score": 133.83,
+   "weight": 0.713
+  },
+  {
+   "name": "Chisato Nishikigi",
+   "anime": "Lycoris Recoil",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7153,
+   "edit_results": 34,
+   "edit_score": 134.4,
+   "weight": 0.712
+  },
+  {
+   "name": "Chizuru Ichinose",
+   "anime": "Rent-a-Girlfriend",
+   "gender": "female",
+   "age": "19-",
+   "adult": true,
+   "nsfw_flag": true,
+   "favourites": 6812,
+   "edit_results": 38,
+   "edit_score": 133.47,
+   "weight": 0.707
+  },
+  {
+   "name": "Rukia Kuchiki",
+   "anime": "Bleach",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7389,
+   "edit_results": 29,
+   "edit_score": 129.69,
+   "weight": 0.697
+  },
+  {
+   "name": "Raphtalia",
+   "anime": "The Rising of the Shield Hero",
+   "gender": "female",
+   "age": "10 (mentally), 18 (biologically)",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 6848,
+   "edit_results": 35,
+   "edit_score": 129.35,
+   "weight": 0.693
+  },
+  {
+   "name": "Reze",
+   "anime": "Chainsaw Man – The Movie: Reze Arc",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10322,
+   "edit_results": 28,
+   "edit_score": 124.71,
+   "weight": 0.689
+  },
+  {
+   "name": "Nami",
+   "anime": "ONE PIECE",
+   "gender": "female",
+   "age": "18-",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 10204,
+   "edit_results": 25,
+   "edit_score": 124.32,
+   "weight": 0.687
+  },
+  {
+   "name": "Rikka Takanashi",
+   "anime": "Love, Chunibyo & Other Delusions",
+   "gender": "female",
+   "age": "15-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7930,
+   "edit_results": 33,
+   "edit_score": 124.7,
+   "weight": 0.682
+  },
+  {
+   "name": "Miku Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "gender": "female",
+   "age": "17-23",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 11974,
+   "edit_results": 29,
+   "edit_score": 119.51,
+   "weight": 0.676
+  },
+  {
+   "name": "Asuna Yuki",
+   "anime": "Sword Art Online",
+   "gender": "female",
+   "age": "15-19",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10156,
+   "edit_results": 32,
+   "edit_score": 120.84,
+   "weight": 0.675
+  },
+  {
+   "name": "Shoko Komi",
+   "anime": "Komi Can’t Communicate",
+   "gender": "female",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8035,
+   "edit_results": 30,
+   "edit_score": 121.16,
+   "weight": 0.67
+  },
+  {
+   "name": "Erza Scarlet",
+   "anime": "Fairy Tail",
+   "gender": "female",
+   "age": "19-21",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 7091,
+   "edit_results": 33,
+   "edit_score": 121.51,
+   "weight": 0.668
+  },
+  {
+   "name": "Asuka Langley Soryu",
+   "anime": "Neon Genesis Evangelion",
+   "gender": "female",
+   "age": "14",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 14664,
+   "edit_results": 22,
+   "edit_score": 115.06,
+   "weight": 0.666
+  },
+  {
+   "name": "Nazuna Nanakusa",
+   "anime": "Call of the Night",
+   "gender": "female",
+   "age": "40+",
+   "adult": true,
+   "nsfw_flag": true,
+   "favourites": 6817,
+   "edit_results": 33,
+   "edit_score": 120.74,
+   "weight": 0.664
+  },
+  {
+   "name": "Roxy Migurdia",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 11528,
+   "edit_results": 29,
+   "edit_score": 112.37,
+   "weight": 0.65
+  },
+  {
+   "name": "Taiga Aisaka",
+   "anime": "Toradora!",
+   "gender": "female",
+   "age": "17-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8438,
+   "edit_results": 28,
+   "edit_score": 115.1,
+   "weight": 0.65
+  },
+  {
+   "name": "Touka Kirishima",
+   "anime": "Tokyo Ghoul",
+   "gender": "female",
+   "age": "17-28",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8273,
+   "edit_results": 37,
+   "edit_score": 112.85,
+   "weight": 0.642
+  },
+  {
+   "name": "Mami Nanami",
+   "anime": "Rent-a-Girlfriend",
+   "gender": "female",
+   "age": "19",
+   "adult": true,
+   "nsfw_flag": true,
+   "favourites": 9746,
+   "edit_results": 30,
+   "edit_score": 110.44,
+   "weight": 0.639
+  },
+  {
+   "name": "Maomao",
+   "anime": "The Apothecary Diaries",
+   "gender": "female",
+   "age": "17-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 22367,
+   "edit_results": 21,
+   "edit_score": 102.54,
+   "weight": 0.635
+  },
+  {
+   "name": "Kyoko Hori",
+   "anime": "Horimiya",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 11929,
+   "edit_results": 29,
+   "edit_score": 105.11,
+   "weight": 0.626
+  },
+  {
+   "name": "Yukino Yukinoshita",
+   "anime": "My Teen Romantic Comedy SNAFU",
+   "gender": "female",
+   "age": "16-17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9871,
+   "edit_results": 29,
+   "edit_score": 106.75,
+   "weight": 0.626
+  },
+  {
+   "name": "Sakura Matou",
+   "anime": "Fate/Zero",
+   "gender": "female",
+   "age": "16-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 17770,
+   "edit_results": 28,
+   "edit_score": 100.59,
+   "weight": 0.622
+  },
+  {
+   "name": "Ai Hayasaka",
+   "anime": "Kaguya-sama: Love is War",
+   "gender": "female",
+   "age": "17-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10922,
+   "edit_results": 30,
+   "edit_score": 101.15,
+   "weight": 0.61
+  },
+  {
+   "name": "Rin Tohsaka",
+   "anime": "Fate/Zero",
+   "gender": "female",
+   "age": "17-19",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 12844,
+   "edit_results": 24,
+   "edit_score": 98.7,
+   "weight": 0.606
+  },
+  {
+   "name": "Eris Boreas Greyrat",
+   "anime": "Mushoku Tensei: Jobless Reincarnation",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 7200,
+   "edit_results": 29,
+   "edit_score": 103.24,
+   "weight": 0.605
+  },
+  {
+   "name": "Jolyne Kujo",
+   "anime": "JoJo's Bizarre Adventure: STONE OCEAN",
+   "gender": "female",
+   "age": "19",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 7939,
+   "edit_results": 26,
+   "edit_score": 100.76,
+   "weight": 0.6
+  },
+  {
+   "name": "Nana Oosaki",
+   "anime": "NANA",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 7955,
+   "edit_results": 25,
+   "edit_score": 99.94,
+   "weight": 0.597
+  },
+  {
+   "name": "Emilia",
+   "anime": "Re:ZERO -Starting Life in Another World-",
+   "gender": "female",
+   "age": "14-19",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 27685,
+   "edit_results": 24,
+   "edit_score": 89.43,
+   "weight": 0.596
+  },
+  {
+   "name": "Gabi Braun",
+   "anime": "Attack on Titan Final Season",
+   "gender": "female",
+   "age": "15",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9604,
+   "edit_results": 29,
+   "edit_score": 97.52,
+   "weight": 0.594
+  },
+  {
+   "name": "Anya Forger",
+   "anime": "SPY x FAMILY",
+   "gender": "female",
+   "age": "6 (self asserted)",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13282,
+   "edit_results": 21,
+   "edit_score": 94.31,
+   "weight": 0.592
+  },
+  {
+   "name": "Rei Ayanami",
+   "anime": "Neon Genesis Evangelion",
+   "gender": "female",
+   "age": "14",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 11534,
+   "edit_results": 24,
+   "edit_score": 95.49,
+   "weight": 0.592
+  },
+  {
+   "name": "Ryuko Matoi",
+   "anime": "Kill la Kill",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 8166,
+   "edit_results": 24,
+   "edit_score": 96.64,
+   "weight": 0.586
+  },
+  {
+   "name": "Shinobu Oshino",
+   "anime": "Bakemonogatari",
+   "gender": "female",
+   "age": "598-599",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 13919,
+   "edit_results": 25,
+   "edit_score": 91.59,
+   "weight": 0.584
+  },
+  {
+   "name": "Tohru Honda",
+   "anime": "Fruits Basket (2019)",
+   "gender": "female",
+   "age": "16-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8966,
+   "edit_results": 28,
+   "edit_score": 92.78,
+   "weight": 0.576
+  },
+  {
+   "name": "Chika Fujiwara",
+   "anime": "Kaguya-sama: Love is War",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 16165,
+   "edit_results": 25,
+   "edit_score": 86.37,
+   "weight": 0.571
+  },
+  {
+   "name": "Misa Amane",
+   "anime": "Death Note",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 6987,
+   "edit_results": 24,
+   "edit_score": 90.71,
+   "weight": 0.562
+  },
+  {
+   "name": "Lucy",
+   "anime": "Cyberpunk: Edgerunners",
+   "gender": "female",
+   "age": "~20",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8778,
+   "edit_results": 20,
+   "edit_score": 86.0,
+   "weight": 0.552
+  }
+ ],
+ "aura": [
+  {
+   "name": "Satoru Gojo",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "28",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 39390,
+   "edit_results": 29,
+   "edit_score": 218.36,
+   "weight": 0.99
+  },
+  {
+   "name": "Johan Liebert",
+   "anime": "Monster",
+   "gender": "male",
+   "age": "19-23, (30's in Another Monster)",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 11328,
+   "edit_results": 34,
+   "edit_score": 221.56,
+   "weight": 0.965
+  },
+  {
+   "name": "Makima",
+   "anime": "Chainsaw Man",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 22256,
+   "edit_results": 34,
+   "edit_score": 214.03,
+   "weight": 0.96
+  },
+  {
+   "name": "Maki Zenin",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "female",
+   "age": "16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13067,
+   "edit_results": 33,
+   "edit_score": 190.65,
+   "weight": 0.871
+  },
+  {
+   "name": "Zenitsu Agatsuma",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13783,
+   "edit_results": 36,
+   "edit_score": 187.66,
+   "weight": 0.863
+  },
+  {
+   "name": "Naruto Uzumaki",
+   "anime": "Naruto",
+   "gender": "male",
+   "age": "12-17 (Naruto), 27- (Boruto)",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 18183,
+   "edit_results": 31,
+   "edit_score": 184.3,
+   "weight": 0.86
+  },
+  {
+   "name": "Mikasa Ackerman",
+   "anime": "Attack on Titan",
+   "gender": "female",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 25572,
+   "edit_results": 32,
+   "edit_score": 166.21,
+   "weight": 0.813
+  },
+  {
+   "name": "Sukuna",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "1000+",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 11944,
+   "edit_results": 28,
+   "edit_score": 170.34,
+   "weight": 0.804
+  },
+  {
+   "name": "Nobara Kugisaki",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "female",
+   "age": "16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13734,
+   "edit_results": 29,
+   "edit_score": 165.0,
+   "weight": 0.791
+  },
+  {
+   "name": "Kiyotaka Ayanokoji",
+   "anime": "Classroom of the Elite",
+   "gender": "male",
+   "age": "16-17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 15826,
+   "edit_results": 27,
+   "edit_score": 158.79,
+   "weight": 0.776
+  },
+  {
+   "name": "Kyojuro Rengoku",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "20",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 11524,
+   "edit_results": 33,
+   "edit_score": 161.24,
+   "weight": 0.775
+  },
+  {
+   "name": "Marin Kitagawa",
+   "anime": "My Dress-Up Darling",
+   "gender": "female",
+   "age": "15",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 17296,
+   "edit_results": 31,
+   "edit_score": 155.57,
+   "weight": 0.768
+  },
+  {
+   "name": "Sasuke Uchiha",
+   "anime": "Naruto",
+   "gender": "male",
+   "age": "12-17 (Naruto) 27- (Boruto)",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 13043,
+   "edit_results": 30,
+   "edit_score": 156.34,
+   "weight": 0.763
+  },
+  {
+   "name": "Lelouch Lamperouge",
+   "anime": "Code Geass: Lelouch of the Rebellion",
+   "gender": "male",
+   "age": "17-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 28236,
+   "edit_results": 29,
+   "edit_score": 148.77,
+   "weight": 0.761
+  },
+  {
+   "name": "Gilgamesh",
+   "anime": "Fate/Zero",
+   "gender": "male",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7707,
+   "edit_results": 29,
+   "edit_score": 156.99,
+   "weight": 0.75
+  },
+  {
+   "name": "Nezuko Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "female",
+   "age": "12-14",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14632,
+   "edit_results": 29,
+   "edit_score": 150.39,
+   "weight": 0.747
+  },
+  {
+   "name": "Frieren",
+   "anime": "Frieren: Beyond Journey’s End",
+   "gender": "female",
+   "age": "1000+",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 22481,
+   "edit_results": 23,
+   "edit_score": 145.01,
+   "weight": 0.742
+  },
+  {
+   "name": "Itachi Uchiha",
+   "anime": "Naruto",
+   "gender": "male",
+   "age": "17-21",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 21439,
+   "edit_results": 28,
+   "edit_score": 144.02,
+   "weight": 0.738
+  },
+  {
+   "name": "Roronoa Zoro",
+   "anime": "ONE PIECE",
+   "gender": "male",
+   "age": "19-",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 28862,
+   "edit_results": 26,
+   "edit_score": 140.48,
+   "weight": 0.735
+  },
+  {
+   "name": "Violet Evergarden",
+   "anime": "Violet Evergarden",
+   "gender": "female",
+   "age": "14-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20383,
+   "edit_results": 32,
+   "edit_score": 135.81,
+   "weight": 0.71
+  },
+  {
+   "name": "Katsuki Bakugo",
+   "anime": "My Hero Academia",
+   "gender": "male",
+   "age": "14-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 16220,
+   "edit_results": 29,
+   "edit_score": 134.58,
+   "weight": 0.7
+  },
+  {
+   "name": "Kento Nanami",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "27",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 13729,
+   "edit_results": 29,
+   "edit_score": 136.05,
+   "weight": 0.7
+  },
+  {
+   "name": "Levi",
+   "anime": "Attack on Titan",
+   "gender": "male",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 38328,
+   "edit_results": 22,
+   "edit_score": 124.69,
+   "weight": 0.693
+  },
+  {
+   "name": "Monkey D. Luffy",
+   "anime": "ONE PIECE",
+   "gender": "male",
+   "age": "17-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 36000,
+   "edit_results": 22,
+   "edit_score": 124.81,
+   "weight": 0.692
+  },
+  {
+   "name": "Kakashi Hatake",
+   "anime": "Naruto",
+   "gender": "male",
+   "age": "25-29",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 20524,
+   "edit_results": 26,
+   "edit_score": 128.39,
+   "weight": 0.687
+  },
+  {
+   "name": "Suguru Geto",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "27",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8232,
+   "edit_results": 26,
+   "edit_score": 132.54,
+   "weight": 0.674
+  },
+  {
+   "name": "Shinobu Kocho",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "female",
+   "age": "18",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 9400,
+   "edit_results": 29,
+   "edit_score": 130.03,
+   "weight": 0.67
+  },
+  {
+   "name": "Ichigo Kurosaki",
+   "anime": "Bleach",
+   "gender": "male",
+   "age": "15-29",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14544,
+   "edit_results": 28,
+   "edit_score": 122.68,
+   "weight": 0.659
+  },
+  {
+   "name": "Kisuke Urahara",
+   "anime": "Bleach",
+   "gender": "male",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8390,
+   "edit_results": 26,
+   "edit_score": 127.57,
+   "weight": 0.659
+  },
+  {
+   "name": "Inosuke Hashibira",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "15",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14659,
+   "edit_results": 31,
+   "edit_score": 122.18,
+   "weight": 0.658
+  },
+  {
+   "name": "Sung Jinwoo",
+   "anime": "Solo Leveling",
+   "gender": "male",
+   "age": "23-24",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 15239,
+   "edit_results": 21,
+   "edit_score": 119.76,
+   "weight": 0.651
+  },
+  {
+   "name": "Asta",
+   "anime": "Black Clover",
+   "gender": "male",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9469,
+   "edit_results": 26,
+   "edit_score": 123.93,
+   "weight": 0.651
+  },
+  {
+   "name": "Tengen Uzui",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "23",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8011,
+   "edit_results": 30,
+   "edit_score": 123.82,
+   "weight": 0.646
+  },
+  {
+   "name": "Kaguya Shinomiya",
+   "anime": "Kaguya-sama: Love is War",
+   "gender": "female",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20489,
+   "edit_results": 28,
+   "edit_score": 112.93,
+   "weight": 0.638
+  },
+  {
+   "name": "Hisoka",
+   "anime": "Hunter x Hunter (2011)",
+   "gender": "male",
+   "age": "28",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 14145,
+   "edit_results": 23,
+   "edit_score": 116.13,
+   "weight": 0.638
+  },
+  {
+   "name": "Yoshikage Kira",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+   "gender": "male",
+   "age": "33",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8518,
+   "edit_results": 23,
+   "edit_score": 117.29,
+   "weight": 0.627
+  },
+  {
+   "name": "Reze",
+   "anime": "Chainsaw Man – The Movie: Reze Arc",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10322,
+   "edit_results": 27,
+   "edit_score": 115.11,
+   "weight": 0.626
+  },
+  {
+   "name": "Tatsumaki",
+   "anime": "One-Punch Man",
+   "gender": "female",
+   "age": "28",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8783,
+   "edit_results": 23,
+   "edit_score": 115.67,
+   "weight": 0.623
+  },
+  {
+   "name": "Chifuyu Matsuno",
+   "anime": "Tokyo Revengers",
+   "gender": "male",
+   "age": "14 (past), 26 (future)",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7065,
+   "edit_results": 27,
+   "edit_score": 117.27,
+   "weight": 0.622
+  },
+  {
+   "name": "Chrollo Lucilfer",
+   "anime": "Hunter x Hunter (2011)",
+   "gender": "male",
+   "age": "26",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 9556,
+   "edit_results": 24,
+   "edit_score": 112.7,
+   "weight": 0.616
+  },
+  {
+   "name": "Shoto Todoroki",
+   "anime": "My Hero Academia",
+   "gender": "male",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 16810,
+   "edit_results": 23,
+   "edit_score": 107.41,
+   "weight": 0.615
+  },
+  {
+   "name": "Megumi Fushiguro",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "15",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 17410,
+   "edit_results": 27,
+   "edit_score": 104.21,
+   "weight": 0.606
+  },
+  {
+   "name": "Musashi Miyamoto",
+   "anime": "Vagabond",
+   "gender": "male",
+   "age": "17-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9827,
+   "edit_results": 19,
+   "edit_score": 108.25,
+   "weight": 0.603
+  },
+  {
+   "name": "Howl",
+   "anime": "Howl‘s Moving Castle",
+   "gender": "male",
+   "age": "27",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 8473,
+   "edit_results": 27,
+   "edit_score": 107.82,
+   "weight": 0.597
+  },
+  {
+   "name": "Miku Nakano",
+   "anime": "The Quintessential Quintuplets",
+   "gender": "female",
+   "age": "17-23",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 11974,
+   "edit_results": 25,
+   "edit_score": 100.11,
+   "weight": 0.583
+  },
+  {
+   "name": "Yami Sukehiro",
+   "anime": "Black Clover",
+   "gender": "male",
+   "age": "28",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 10848,
+   "edit_results": 25,
+   "edit_score": 101.17,
+   "weight": 0.583
+  },
+  {
+   "name": "Kusuo Saiki",
+   "anime": "The Disastrous Life of Saiki K.",
+   "gender": "male",
+   "age": "15-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14714,
+   "edit_results": 20,
+   "edit_score": 97.65,
+   "weight": 0.581
+  },
+  {
+   "name": "Karma Akabane",
+   "anime": "Assassination Classroom",
+   "gender": "male",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 10563,
+   "edit_results": 22,
+   "edit_score": 100.25,
+   "weight": 0.579
+  },
+  {
+   "name": "Akame",
+   "anime": "Akame ga Kill!",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 7023,
+   "edit_results": 23,
+   "edit_score": 103.03,
+   "weight": 0.577
+  },
+  {
+   "name": "Chizuru Ichinose",
+   "anime": "Rent-a-Girlfriend",
+   "gender": "female",
+   "age": "19-",
+   "adult": true,
+   "nsfw_flag": true,
+   "favourites": 6812,
+   "edit_results": 27,
+   "edit_score": 103.06,
+   "weight": 0.576
+  },
+  {
+   "name": "Tanjiro Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "13-16",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 18037,
+   "edit_results": 25,
+   "edit_score": 93.21,
+   "weight": 0.572
+  },
+  {
+   "name": "Zero Two",
+   "anime": "DARLING in the FRANXX",
+   "gender": "female",
+   "age": null,
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 14715,
+   "edit_results": 19,
+   "edit_score": 91.77,
+   "weight": 0.562
+  },
+  {
+   "name": "Mob",
+   "anime": "Mob Psycho 100",
+   "gender": "male",
+   "age": "14",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 20544,
+   "edit_results": 17,
+   "edit_score": 86.87,
+   "weight": 0.556
+  },
+  {
+   "name": "Maomao",
+   "anime": "The Apothecary Diaries",
+   "gender": "female",
+   "age": "17-",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 22367,
+   "edit_results": 18,
+   "edit_score": 83.17,
+   "weight": 0.547
+  },
+  {
+   "name": "Taiga Aisaka",
+   "anime": "Toradora!",
+   "gender": "female",
+   "age": "17-18",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 8438,
+   "edit_results": 26,
+   "edit_score": 92.05,
+   "weight": 0.547
+  },
+  {
+   "name": "Toge Inumaki",
+   "anime": "JUJUTSU KAISEN",
+   "gender": "male",
+   "age": "17",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 9850,
+   "edit_results": 20,
+   "edit_score": 89.3,
+   "weight": 0.543
+  },
+  {
+   "name": "Sanji",
+   "anime": "ONE PIECE",
+   "gender": "male",
+   "age": "19-",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 15220,
+   "edit_results": 19,
+   "edit_score": 84.57,
+   "weight": 0.54
+  },
+  {
+   "name": "Giyu Tomioka",
+   "anime": "Demon Slayer: Kimetsu no Yaiba",
+   "gender": "male",
+   "age": "19-21",
+   "adult": true,
+   "nsfw_flag": false,
+   "favourites": 12479,
+   "edit_results": 27,
+   "edit_score": 84.6,
+   "weight": 0.535
+  },
+  {
+   "name": "Kurumi Tokisaki",
+   "anime": "Date A Live",
+   "gender": "female",
+   "age": "17 (physically)",
+   "adult": false,
+   "nsfw_flag": true,
+   "favourites": 8049,
+   "edit_results": 21,
+   "edit_score": 87.37,
+   "weight": 0.531
+  },
+  {
+   "name": "Jotaro Kujo",
+   "anime": "JoJo's Bizarre Adventure: Stardust Crusaders",
+   "gender": "male",
+   "age": "17-40",
+   "adult": false,
+   "nsfw_flag": false,
+   "favourites": 14224,
+   "edit_results": 18,
+   "edit_score": 80.25,
+   "weight": 0.525
+  }
+ ],
+ "known_characters": [
+  {
+   "name": "Satoru Gojo",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Levi",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Monkey D. Luffy",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Killua Zoldyck",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Eren Yeager",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Roronoa Zoro",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Lelouch Lamperouge",
+   "anime": "Code Geass: Lelouch of the Rebellion"
+  },
+  {
+   "name": "Emilia",
+   "anime": "Re:ZERO -Starting Life in Another World-"
+  },
+  {
+   "name": "L Lawliet",
+   "anime": "Death Note"
+  },
+  {
+   "name": "Ken Kaneki",
+   "anime": "Tokyo Ghoul"
+  },
+  {
+   "name": "Mikasa Ackerman",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Arataka Reigen",
+   "anime": "Mob Psycho 100"
+  },
+  {
+   "name": "Guts",
+   "anime": "Berserk"
+  },
+  {
+   "name": "Frieren",
+   "anime": "Frieren: Beyond Journey’s End"
+  },
+  {
+   "name": "Maomao",
+   "anime": "The Apothecary Diaries"
+  },
+  {
+   "name": "Kurisu Makise",
+   "anime": "Steins;Gate"
+  },
+  {
+   "name": "Thorfinn Karlsefni",
+   "anime": "Vinland Saga"
+  },
+  {
+   "name": "Makima",
+   "anime": "Chainsaw Man"
+  },
+  {
+   "name": "Itachi Uchiha",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Yuji Itadori",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Rintaro Okabe",
+   "anime": "Steins;Gate"
+  },
+  {
+   "name": "Mai Sakurajima",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai"
+  },
+  {
+   "name": "Denji",
+   "anime": "Chainsaw Man"
+  },
+  {
+   "name": "Kurapika",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Power",
+   "anime": "Chainsaw Man"
+  },
+  {
+   "name": "Mob",
+   "anime": "Mob Psycho 100"
+  },
+  {
+   "name": "Kakashi Hatake",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Kaguya Shinomiya",
+   "anime": "Kaguya-sama: Love is War"
+  },
+  {
+   "name": "Violet Evergarden",
+   "anime": "Violet Evergarden"
+  },
+  {
+   "name": "Light Yagami",
+   "anime": "Death Note"
+  },
+  {
+   "name": "Edward Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood"
+  },
+  {
+   "name": "Naruto Uzumaki",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Tanjiro Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Sakura Matou",
+   "anime": "Fate/Zero"
+  },
+  {
+   "name": "Megumi Fushiguro",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Marin Kitagawa",
+   "anime": "My Dress-Up Darling"
+  },
+  {
+   "name": "Joseph Joestar",
+   "anime": "JoJo's Bizarre Adventure (TV)"
+  },
+  {
+   "name": "Shoto Todoroki",
+   "anime": "My Hero Academia"
+  },
+  {
+   "name": "Megumin",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!"
+  },
+  {
+   "name": "Askeladd",
+   "anime": "Vinland Saga"
+  },
+  {
+   "name": "Osamu Dazai",
+   "anime": "Bungo Stray Dogs"
+  },
+  {
+   "name": "Rem",
+   "anime": "Re:ZERO -Starting Life in Another World-"
+  },
+  {
+   "name": "Katsuki Bakugo",
+   "anime": "My Hero Academia"
+  },
+  {
+   "name": "Chika Fujiwara",
+   "anime": "Kaguya-sama: Love is War"
+  },
+  {
+   "name": "Gintoki Sakata",
+   "anime": "Gintama"
+  },
+  {
+   "name": "Itsuki Nakano",
+   "anime": "The Quintessential Quintuplets"
+  },
+  {
+   "name": "Kiyotaka Ayanokoji",
+   "anime": "Classroom of the Elite"
+  },
+  {
+   "name": "Ichigo",
+   "anime": "DARLING in the FRANXX"
+  },
+  {
+   "name": "Senku Ishigami",
+   "anime": "Dr. STONE"
+  },
+  {
+   "name": "Subaru Natsuki",
+   "anime": "Re:ZERO -Starting Life in Another World-"
+  },
+  {
+   "name": "Gon Freecss",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Sung Jinwoo",
+   "anime": "Solo Leveling"
+  },
+  {
+   "name": "Sanji",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Miko Iino",
+   "anime": "Kaguya-sama: Love is War?"
+  },
+  {
+   "name": "Saitama",
+   "anime": "One-Punch Man"
+  },
+  {
+   "name": "Nico Robin",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Izumi Miyamura",
+   "anime": "Horimiya"
+  },
+  {
+   "name": "Hitagi Senjogahara",
+   "anime": "Bakemonogatari"
+  },
+  {
+   "name": "Aki Hayakawa",
+   "anime": "Chainsaw Man"
+  },
+  {
+   "name": "Zero Two",
+   "anime": "DARLING in the FRANXX"
+  },
+  {
+   "name": "Kusuo Saiki",
+   "anime": "The Disastrous Life of Saiki K."
+  },
+  {
+   "name": "Yu Ishigami",
+   "anime": "Kaguya-sama: Love is War"
+  },
+  {
+   "name": "Asuka Langley Soryu",
+   "anime": "Neon Genesis Evangelion"
+  },
+  {
+   "name": "Inosuke Hashibira",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Shoyo Hinata",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Nezuko Kamado",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Ichigo Kurosaki",
+   "anime": "Bleach"
+  },
+  {
+   "name": "Roy Mustang",
+   "anime": "Fullmetal Alchemist: Brotherhood"
+  },
+  {
+   "name": "Yor Forger",
+   "anime": "SPY x FAMILY"
+  },
+  {
+   "name": "Spike Spiegel",
+   "anime": "Cowboy Bebop"
+  },
+  {
+   "name": "Jotaro Kujo",
+   "anime": "JoJo's Bizarre Adventure: Stardust Crusaders"
+  },
+  {
+   "name": "Hisoka",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Armin Arlert",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Izuku Midoriya",
+   "anime": "My Hero Academia"
+  },
+  {
+   "name": "Shinobu Oshino",
+   "anime": "Bakemonogatari"
+  },
+  {
+   "name": "Hange Zoe",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Rimuru Tempest",
+   "anime": "That Time I Got Reincarnated as a Slime"
+  },
+  {
+   "name": "Zenitsu Agatsuma",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Nobara Kugisaki",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Kento Nanami",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Anya Forger",
+   "anime": "SPY x FAMILY"
+  },
+  {
+   "name": "Maki Zenin",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Sasuke Uchiha",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Erwin Smith",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Yato",
+   "anime": "Noragami"
+  },
+  {
+   "name": "Rin Tohsaka",
+   "anime": "Fate/Zero"
+  },
+  {
+   "name": "Hachiman Hikigaya",
+   "anime": "My Teen Romantic Comedy SNAFU"
+  },
+  {
+   "name": "Tobio Kageyama",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Koyomi Araragi",
+   "anime": "Bakemonogatari"
+  },
+  {
+   "name": "Giyu Tomioka",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Hitori Goto",
+   "anime": "BOCCHI THE ROCK!"
+  },
+  {
+   "name": "Homura Akemi",
+   "anime": "Puella Magi Madoka Magica"
+  },
+  {
+   "name": "Artoria Pendragon",
+   "anime": "Fate/Zero"
+  },
+  {
+   "name": "Miku Nakano",
+   "anime": "The Quintessential Quintuplets"
+  },
+  {
+   "name": "Sukuna",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Kyoko Hori",
+   "anime": "Horimiya"
+  },
+  {
+   "name": "Kana Arima",
+   "anime": "OSHI NO KO"
+  },
+  {
+   "name": "Yuta Okkotsu",
+   "anime": "JUJUTSU KAISEN Season 2"
+  },
+  {
+   "name": "Shoko Nishimiya",
+   "anime": "A Silent Voice"
+  },
+  {
+   "name": "Rei Ayanami",
+   "anime": "Neon Genesis Evangelion"
+  },
+  {
+   "name": "Roxy Migurdia",
+   "anime": "Mushoku Tensei: Jobless Reincarnation"
+  },
+  {
+   "name": "Kyojuro Rengoku",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Shinji Ikari",
+   "anime": "Neon Genesis Evangelion"
+  },
+  {
+   "name": "Johan Liebert",
+   "anime": "Monster"
+  },
+  {
+   "name": "Nino Nakano",
+   "anime": "The Quintessential Quintuplets"
+  },
+  {
+   "name": "Misato Katsuragi",
+   "anime": "Neon Genesis Evangelion"
+  },
+  {
+   "name": "C.C.",
+   "anime": "Code Geass: Lelouch of the Rebellion"
+  },
+  {
+   "name": "Ai Hayasaka",
+   "anime": "Kaguya-sama: Love is War"
+  },
+  {
+   "name": "Yami Sukehiro",
+   "anime": "Black Clover"
+  },
+  {
+   "name": "Shoya Ishida",
+   "anime": "A Silent Voice"
+  },
+  {
+   "name": "Sakuta Azusagawa",
+   "anime": "Rascal Does Not Dream of Bunny Girl Senpai"
+  },
+  {
+   "name": "Yu Nishinoya",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Karma Akabane",
+   "anime": "Assassination Classroom"
+  },
+  {
+   "name": "Kyo Sohma",
+   "anime": "Fruits Basket (2019)"
+  },
+  {
+   "name": "Trafalgar Law",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Reze",
+   "anime": "Chainsaw Man – The Movie: Reze Arc"
+  },
+  {
+   "name": "Nami",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Vladilena Milizé",
+   "anime": "86 EIGHTY-SIX"
+  },
+  {
+   "name": "Manjiro Sano",
+   "anime": "Tokyo Revengers"
+  },
+  {
+   "name": "Loid Forger",
+   "anime": "SPY x FAMILY"
+  },
+  {
+   "name": "Asuna Yuki",
+   "anime": "Sword Art Online"
+  },
+  {
+   "name": "Phosphophyllite",
+   "anime": "Land of the Lustrous"
+  },
+  {
+   "name": "Gyro Zeppeli",
+   "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 1st STAGE"
+  },
+  {
+   "name": "Yukino Yukinoshita",
+   "anime": "My Teen Romantic Comedy SNAFU"
+  },
+  {
+   "name": "Ray",
+   "anime": "The Promised Neverland"
+  },
+  {
+   "name": "Toge Inumaki",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Musashi Miyamoto",
+   "anime": "Vagabond"
+  },
+  {
+   "name": "Kenma Kozume",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Kurena Kukumila",
+   "anime": "86 EIGHTY-SIX"
+  },
+  {
+   "name": "Mami Nanami",
+   "anime": "Rent-a-Girlfriend"
+  },
+  {
+   "name": "Koro-sensei",
+   "anime": "Assassination Classroom"
+  },
+  {
+   "name": "Son Goku",
+   "anime": "Dragon Ball Z"
+  },
+  {
+   "name": "Gabi Braun",
+   "anime": "Attack on Titan Final Season"
+  },
+  {
+   "name": "Chrollo Lucilfer",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Dio Brando",
+   "anime": "JoJo's Bizarre Adventure (TV)"
+  },
+  {
+   "name": "Ash Lynx",
+   "anime": "BANANA FISH"
+  },
+  {
+   "name": "Asta",
+   "anime": "Black Clover"
+  },
+  {
+   "name": "Kazuma Sato",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!"
+  },
+  {
+   "name": "Shinobu Kocho",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Meruem",
+   "anime": "Hunter x Hunter (2011)"
+  },
+  {
+   "name": "Toru Oikawa",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Kaori Miyazono",
+   "anime": "Your lie in April"
+  },
+  {
+   "name": "Kamina",
+   "anime": "Gurren Lagann"
+  },
+  {
+   "name": "Miyuki Shirogane",
+   "anime": "Kaguya-sama: Love is War"
+  },
+  {
+   "name": "Portgas D. Ace",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Tohru Honda",
+   "anime": "Fruits Basket (2019)"
+  },
+  {
+   "name": "Kazuto Kirigaya",
+   "anime": "Sword Art Online"
+  },
+  {
+   "name": "Tatsumaki",
+   "anime": "One-Punch Man"
+  },
+  {
+   "name": "Lucy",
+   "anime": "Cyberpunk: Edgerunners"
+  },
+  {
+   "name": "Shota Aizawa",
+   "anime": "My Hero Academia"
+  },
+  {
+   "name": "Yumeko Jabami",
+   "anime": "Kakegurui"
+  },
+  {
+   "name": "Tony Tony Chopper",
+   "anime": "ONE PIECE"
+  },
+  {
+   "name": "Josuke Higashikata",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable"
+  },
+  {
+   "name": "Fern",
+   "anime": "Frieren: Beyond Journey’s End"
+  },
+  {
+   "name": "Hanako",
+   "anime": "Toilet-bound Hanako-kun"
+  },
+  {
+   "name": "Kenzo Tenma",
+   "anime": "Monster"
+  },
+  {
+   "name": "Yoshikage Kira",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable"
+  },
+  {
+   "name": "Rudeus Greyrat",
+   "anime": "Mushoku Tensei: Jobless Reincarnation"
+  },
+  {
+   "name": "Howl",
+   "anime": "Howl‘s Moving Castle"
+  },
+  {
+   "name": "Taiga Aisaka",
+   "anime": "Toradora!"
+  },
+  {
+   "name": "Shikamaru Nara",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Kisuke Urahara",
+   "anime": "Bleach"
+  },
+  {
+   "name": "Griffith",
+   "anime": "Berserk"
+  },
+  {
+   "name": "Touka Kirishima",
+   "anime": "Tokyo Ghoul"
+  },
+  {
+   "name": "Aqua",
+   "anime": "KONOSUBA -God's blessing on this wonderful world!"
+  },
+  {
+   "name": "Suguru Geto",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Ryuko Matoi",
+   "anime": "Kill la Kill"
+  },
+  {
+   "name": "Revy",
+   "anime": "Black Lagoon"
+  },
+  {
+   "name": "Sasha Blose",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Simon",
+   "anime": "Gurren Lagann"
+  },
+  {
+   "name": "Kurumi Tokisaki",
+   "anime": "Date A Live"
+  },
+  {
+   "name": "Shoko Komi",
+   "anime": "Komi Can’t Communicate"
+  },
+  {
+   "name": "Tengen Uzui",
+   "anime": "Demon Slayer: Kimetsu no Yaiba"
+  },
+  {
+   "name": "Kei Tsukishima",
+   "anime": "HAIKYU!!"
+  },
+  {
+   "name": "Lain Iwakura",
+   "anime": "Serial Experiments Lain"
+  },
+  {
+   "name": "Nana Oosaki",
+   "anime": "NANA"
+  },
+  {
+   "name": "Jolyne Kujo",
+   "anime": "JoJo's Bizarre Adventure: STONE OCEAN"
+  },
+  {
+   "name": "Rikka Takanashi",
+   "anime": "Love, Chunibyo & Other Delusions"
+  },
+  {
+   "name": "Shinei Nouzen",
+   "anime": "86 EIGHTY-SIX"
+  },
+  {
+   "name": "Tsubasa Hanekawa",
+   "anime": "Bakemonogatari"
+  },
+  {
+   "name": "Touji Fushiguro",
+   "anime": "JUJUTSU KAISEN Season 2"
+  },
+  {
+   "name": "Gilgamesh",
+   "anime": "Fate/Zero"
+  },
+  {
+   "name": "Reiner Braun",
+   "anime": "Attack on Titan"
+  },
+  {
+   "name": "Ban",
+   "anime": "The Seven Deadly Sins"
+  },
+  {
+   "name": "Eikichi Onizuka",
+   "anime": "GTO: Great Teacher Onizuka"
+  },
+  {
+   "name": "Rukia Kuchiki",
+   "anime": "Bleach"
+  },
+  {
+   "name": "Ranpo Edogawa",
+   "anime": "Bungo Stray Dogs"
+  },
+  {
+   "name": "Johnny Joestar",
+   "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 1st STAGE"
+  },
+  {
+   "name": "Momo Ayase",
+   "anime": "DAN DA DAN"
+  },
+  {
+   "name": "Alphonse Elric",
+   "anime": "Fullmetal Alchemist: Brotherhood"
+  },
+  {
+   "name": "Juzo Suzuya",
+   "anime": "Tokyo Ghoul"
+  },
+  {
+   "name": "Vegeta",
+   "anime": "Dragon Ball Z"
+  },
+  {
+   "name": "Gaara",
+   "anime": "Naruto"
+  },
+  {
+   "name": "Houtaro Oreki",
+   "anime": "Hyouka"
+  },
+  {
+   "name": "Aoi Toudo",
+   "anime": "JUJUTSU KAISEN"
+  },
+  {
+   "name": "Eris Boreas Greyrat",
+   "anime": "Mushoku Tensei: Jobless Reincarnation"
+  },
+  {
+   "name": "Chisato Nishikigi",
+   "anime": "Lycoris Recoil"
+  },
+  {
+   "name": "Erza Scarlet",
+   "anime": "Fairy Tail"
+  },
+  {
+   "name": "Ryuk",
+   "anime": "Death Note"
+  },
+  {
+   "name": "Chifuyu Matsuno",
+   "anime": "Tokyo Revengers"
+  },
+  {
+   "name": "Holo",
+   "anime": "Spice and Wolf"
+  },
+  {
+   "name": "Yoruichi Shihouin",
+   "anime": "Bleach"
+  },
+  {
+   "name": "Ken Ryuguji",
+   "anime": "Tokyo Revengers"
+  },
+  {
+   "name": "Sousuke Aizen",
+   "anime": "Bleach"
+  },
+  {
+   "name": "Akame",
+   "anime": "Akame ga Kill!"
+  },
+  {
+   "name": "Souma Yukihira",
+   "anime": "Food Wars!"
+  },
+  {
+   "name": "Cid Kageno",
+   "anime": "The Eminence in Shadow"
+  },
+  {
+   "name": "Misa Amane",
+   "anime": "Death Note"
+  },
+  {
+   "name": "Wolfgang Grimmer",
+   "anime": "Monster"
+  },
+  {
+   "name": "Koutaro Bokuto",
+   "anime": "HAIKYU!! 2nd Season"
+  },
+  {
+   "name": "Kiritsugu Emiya",
+   "anime": "Fate/Zero"
+  },
+  {
+   "name": "Nagisa Shiota",
+   "anime": "Assassination Classroom"
+  },
+  {
+   "name": "Toshinori Yagi",
+   "anime": "My Hero Academia"
+  },
+  {
+   "name": "Raphtalia",
+   "anime": "The Rising of the Shield Hero"
+  },
+  {
+   "name": "Rohan Kishibe",
+   "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable"
+  },
+  {
+   "name": "Chuya Nakahara",
+   "anime": "Bungo Stray Dogs"
+  },
+  {
+   "name": "Nazuna Nanakusa",
+   "anime": "Call of the Night"
+  },
+  {
+   "name": "Chizuru Ichinose",
+   "anime": "Rent-a-Girlfriend"
+  },
+  {
+   "name": "Giorno Giovanna",
+   "anime": "JoJo's Bizarre Adventure: Golden Wind"
+  },
+  {
+   "name": "Nijika Ijichi",
+   "anime": "BOCCHI THE ROCK!"
+  }
+ ]
+}

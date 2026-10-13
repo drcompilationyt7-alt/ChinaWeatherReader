@@ -1,0 +1,740 @@
+{
+ "version": 1,
+ "note": "Vibe definitions for the sound edit and the cinematic slow-mo edit pools (format: core/edit/refs/pool-format.md). Presets stay type-specific: a vibe only changes WHICH clips / songs feed its own preset, never the technique.",
+ "presets": {
+  "sound": {
+   "preset_id": "sound_hit_sync",
+   "library": {
+    "kind": "anime",
+    "preset": "sound_hit_sync",
+    "min_dur": 0.8,
+    "max_dur": 4.0,
+    "with_audio": true,
+    "need_sfx": true,
+    "count": 28
+   },
+   "min_fresh_clips": 70,
+   "min_fresh_events": 160,
+   "vibes": {
+    "impact": {
+     "label": "aura impacts: guns, swords, punches, stomps",
+     "queries": [
+      [
+       "mood",
+       "anime gun reload scene"
+      ],
+      [
+       "mood",
+       "anime gun cocking scene"
+      ],
+      [
+       "mood",
+       "anime gunshot scene 4k"
+      ],
+      [
+       "mood",
+       "anime shotgun pump scene"
+      ],
+      [
+       "mood",
+       "sakuga guns"
+      ],
+      [
+       "mood",
+       "anime sword clash scene"
+      ],
+      [
+       "mood",
+       "anime katana sheathe scene"
+      ],
+      [
+       "mood",
+       "anime sword draw scene"
+      ],
+      [
+       "mood",
+       "anime punch impact scene"
+      ],
+      [
+       "mood",
+       "anime kick impact scene"
+      ],
+      [
+       "mood",
+       "anime stomp scene"
+      ],
+      [
+       "mood",
+       "anime table slam scene"
+      ],
+      [
+       "source",
+       "Jujutsu Kaisen"
+      ],
+      [
+       "source",
+       "Chainsaw Man"
+      ],
+      [
+       "source",
+       "Sakamoto Days"
+      ],
+      [
+       "source",
+       "Demon Slayer"
+      ],
+      [
+       "source",
+       "Lycoris Recoil"
+      ],
+      [
+       "mood",
+       "Lycoris Recoil gun fight scene"
+      ],
+      [
+       "mood",
+       "Black Lagoon Revy gunfight"
+      ],
+      [
+       "source",
+       "Trigun Stampede"
+      ],
+      [
+       "mood",
+       "Cowboy Bebop Spike gun scene"
+      ],
+      [
+       "mood",
+       "Spy x Family Yor fight scene"
+      ],
+      [
+       "mood",
+       "Spy x Family Loid gun scene"
+      ],
+      [
+       "mood",
+       "Chainsaw Man gun devil scene"
+      ],
+      [
+       "mood",
+       "Jujutsu Kaisen fight scene 4k"
+      ],
+      [
+       "mood",
+       "anime mask breaking scene"
+      ],
+      [
+       "mood",
+       "Bleach hollow mask shatter"
+      ],
+      [
+       "mood",
+       "Tokyo Ghoul mask scene"
+      ],
+      [
+       "mood",
+       "Demon Slayer mask break scene"
+      ],
+      [
+       "mood",
+       "anime glass shatter scene"
+      ],
+      [
+       "mood",
+       "anime ice cracking scene"
+      ],
+      [
+       "mood",
+       "anime chains scene"
+      ],
+      [
+       "mood",
+       "Gangsta anime gun fight scene"
+      ],
+      [
+       "mood",
+       "Psycho-Pass Dominator shot scene"
+      ],
+      [
+       "mood",
+       "Samurai Champloo sword fight scene"
+      ],
+      [
+       "mood",
+       "Vinland Saga fight scene 4k"
+      ],
+      [
+       "mood",
+       "Trigun anime gunfight scene"
+      ],
+      [
+       "mood",
+       "Cowboy Bebop gunfight 4k"
+      ],
+      [
+       "mood",
+       "Black Lagoon gun reload scene"
+      ],
+      [
+       "mood",
+       "Lycoris Recoil gun reload scene"
+      ],
+      [
+       "mood",
+       "Tokyo Ghoul kagune fight scene"
+      ],
+      [
+       "mood",
+       "Bleach Ichigo hollow mask scene"
+      ],
+      [
+       "mood",
+       "Bleach sword clash scene 4k"
+      ],
+      [
+       "mood",
+       "Demon Slayer sword clash scene 4k"
+      ],
+      [
+       "mood",
+       "Jujutsu Kaisen punch impact scene 4k"
+      ],
+      [
+       "mood",
+       "Chainsaw Man fight scene 4k"
+      ],
+      [
+       "mood",
+       "Spy x Family Yor combat scene"
+      ],
+      [
+       "mood",
+       "anime shotgun blast scene"
+      ],
+      [
+       "mood",
+       "anime revolver cylinder spin cocking scene"
+      ],
+      [
+       "mood",
+       "anime sword unsheathe clash sparks"
+      ],
+      [
+       "mood",
+       "anime fist impact shockwave scene"
+      ],
+      [
+       "mood",
+       "anime window glass breaking scene"
+      ],
+      [
+       "mood",
+       "anime crystal shatter scene"
+      ],
+      [
+       "mood",
+       "anime brawl street fight scene"
+      ],
+      [
+       "mood",
+       "anime bullet hits metal sparks scene"
+      ],
+      [
+       "mood",
+       "anime knife clash scene"
+      ],
+      [
+       "source",
+       "Black Lagoon"
+      ],
+      [
+       "source",
+       "Cowboy Bebop"
+      ],
+      [
+       "source",
+       "Psycho-Pass"
+      ],
+      [
+       "source",
+       "Gangsta"
+      ],
+      [
+       "source",
+       "Samurai Champloo"
+      ],
+      [
+       "source",
+       "Vinland Saga"
+      ],
+      [
+       "source",
+       "Bleach"
+      ],
+      [
+       "source",
+       "Tokyo Ghoul"
+      ],
+      [
+       "source",
+       "Trigun"
+      ],
+      [
+       "source",
+       "Spy x Family"
+      ]
+     ],
+     "theme": "punch",
+     "songs": [
+      "s_shape_of_you",
+      "s_kick_back",
+      "s_fake",
+      "s_bling_bang",
+      "s_whiplash",
+      "s_wellerman"
+     ]
+    },
+    "crisp": {
+     "label": "crisp everyday hits: claps, snaps, clicks, knocks, slams",
+     "queries": [
+      [
+       "mood",
+       "anime clapping scene"
+      ],
+      [
+       "mood",
+       "anime hand clap close up"
+      ],
+      [
+       "mood",
+       "anime high five scene"
+      ],
+      [
+       "mood",
+       "anime finger snap scene"
+      ],
+      [
+       "mood",
+       "anime typing keyboard scene"
+      ],
+      [
+       "mood",
+       "anime chess piece scene"
+      ],
+      [
+       "mood",
+       "anime go stone scene"
+      ],
+      [
+       "mood",
+       "anime pen click scene"
+      ],
+      [
+       "mood",
+       "anime lighter flick scene"
+      ],
+      [
+       "mood",
+       "anime coin flip scene"
+      ],
+      [
+       "mood",
+       "anime knocking door scene"
+      ],
+      [
+       "mood",
+       "anime door slam scene"
+      ],
+      [
+       "mood",
+       "anime card slap scene"
+      ],
+      [
+       "mood",
+       "anime knuckle crack scene"
+      ],
+      [
+       "mood",
+       "naruto hand signs scene"
+      ]
+     ],
+     "theme": "clap",
+     "songs": [
+      "s_handclap",
+      "s_shut_down",
+      "s_shape_of_you",
+      "s_antifragile",
+      "s_bling_bang"
+     ]
+    }
+   }
+  },
+  "slowmo": {
+   "preset_id": "cinematic_slowmo",
+   "library": {
+    "kind": "anime",
+    "preset": "cinematic_slowmo",
+    "min_dur": 2.0,
+    "max_dur": 6.0,
+    "with_audio": false,
+    "need_sfx": false,
+    "count": 16
+   },
+   "min_fresh_clips": 70,
+   "vibes": {
+    "summer_glow": {
+     "label": "bright summer: water, beach, pool, sunlight, hair in the wind (female first)",
+     "queries": [
+      [
+       "mood",
+       "anime girl beach summer 4k"
+      ],
+      [
+       "mood",
+       "anime girl swimming pool scene 4k"
+      ],
+      [
+       "mood",
+       "anime girl ocean waves summer"
+      ],
+      [
+       "mood",
+       "anime girl sunlight hair wind 4k"
+      ],
+      [
+       "mood",
+       "anime summer girl smile 4k twixtor"
+      ],
+      [
+       "character",
+       "Zero Two"
+      ],
+      [
+       "character",
+       "Mai Sakurajima"
+      ],
+      [
+       "character",
+       "Chizuru Mizuhara"
+      ],
+      [
+       "character",
+       "Makima"
+      ],
+      [
+       "character",
+       "Yor Forger"
+      ],
+      [
+       "character",
+       "Kaguya Shinomiya"
+      ],
+      [
+       "character",
+       "Rem"
+      ]
+     ],
+     "songs": [
+      "s_blue_slowed",
+      "s_ditto_slowed",
+      "s_shinunoga_slowed",
+      "s_gaobai_slowed",
+      "s_masquerade_slowed"
+     ]
+    },
+    "dreamy_bloom": {
+     "label": "dreamy: sakura petals, snow, night lights, soft close-ups, a turn, a smile (female first)",
+     "queries": [
+      [
+       "mood",
+       "anime girl cherry blossom 4k"
+      ],
+      [
+       "mood",
+       "anime girl snow falling 4k"
+      ],
+      [
+       "mood",
+       "anime girl night city lights 4k"
+      ],
+      [
+       "mood",
+       "anime girl beautiful hair wind twixtor"
+      ],
+      [
+       "mood",
+       "anime girl smile flower petals"
+      ],
+      [
+       "character",
+       "Frieren"
+      ],
+      [
+       "character",
+       "Violet Evergarden"
+      ],
+      [
+       "character",
+       "Emilia"
+      ],
+      [
+       "character",
+       "Shinobu Kocho"
+      ],
+      [
+       "character",
+       "Mikasa Ackerman"
+      ],
+      [
+       "character",
+       "Kaoruko Waguri"
+      ],
+      [
+       "character",
+       "Hinata Hyuga"
+      ]
+     ],
+     "songs": [
+      "s_blue_slowed",
+      "s_shinunoga_slowed",
+      "s_ditto_slowed",
+      "s_masquerade_slowed",
+      "s_sparkle_slowed"
+     ]
+    }
+   }
+  }
+ },
+ "sounds": {
+  "s_kick_back": {
+   "title": "KICK BACK",
+   "artist": "Kenshi Yonezu",
+   "query": "Kenshi Yonezu KICK BACK official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact"
+   ],
+   "origin": "J-pop / anime (Chainsaw Man OP)"
+  },
+  "s_bling_bang": {
+   "title": "Bling-Bang-Bang-Born",
+   "artist": "Creepy Nuts",
+   "query": "Creepy Nuts Bling-Bang-Bang-Born official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact",
+    "sound/crisp"
+   ],
+   "origin": "J-pop / anime (Mashle OP)"
+  },
+  "s_whiplash": {
+   "title": "Whiplash",
+   "artist": "aespa",
+   "query": "aespa Whiplash official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact"
+   ],
+   "origin": "K-pop"
+  },
+  "s_shut_down": {
+   "title": "Shut Down",
+   "artist": "BLACKPINK",
+   "query": "BLACKPINK Shut Down official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/crisp"
+   ],
+   "origin": "K-pop"
+  },
+  "s_antifragile": {
+   "title": "ANTIFRAGILE",
+   "artist": "LE SSERAFIM",
+   "query": "LE SSERAFIM ANTIFRAGILE official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/fSMk1eTrSX0.m4a"
+   ],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/crisp"
+   ],
+   "origin": "K-pop"
+  },
+  "s_ditto_slowed": {
+   "title": "Ditto (slowed)",
+   "artist": "NewJeans",
+   "query": "NewJeans Ditto official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 0.9
+   },
+   "fits": [
+    "slowmo/summer_glow",
+    "slowmo/dreamy_bloom"
+   ],
+   "origin": "K-pop"
+  },
+  "s_shinunoga_slowed": {
+   "title": "Shinunoga E-Wa (slowed)",
+   "artist": "Fujii Kaze",
+   "query": "Fujii Kaze Shinunoga E-Wa official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 0.9
+   },
+   "fits": [
+    "slowmo/summer_glow",
+    "slowmo/dreamy_bloom"
+   ],
+   "origin": "J-pop"
+  },
+  "s_sparkle_slowed": {
+   "title": "Sparkle (slowed)",
+   "artist": "RADWIMPS",
+   "query": "RADWIMPS Sparkle Your Name official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 0.95
+   },
+   "fits": [
+    "slowmo/dreamy_bloom"
+   ],
+   "origin": "anime (Your Name)"
+  },
+  "s_gaobai_slowed": {
+   "title": "Gao Bai Qi Qiu (slowed)",
+   "artist": "Jay Chou",
+   "query": "Jay Chou 告白氣球 official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 0.92
+   },
+   "fits": [
+    "slowmo/summer_glow"
+   ],
+   "origin": "C-pop"
+  },
+  "s_shape_of_you": {
+   "title": "Shape of You",
+   "artist": "Ed Sheeran",
+   "query": "Ed Sheeran Shape of You official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/shape_of_you.m4a"
+   ],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact",
+    "sound/crisp"
+   ],
+   "origin": "Western (reference FB15TNFAHVU song)"
+  },
+  "s_fake": {
+   "title": "Fake",
+   "artist": "The Tech Thieves",
+   "query": "The Tech Thieves Fake official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/fake.m4a"
+   ],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact"
+   ],
+   "origin": "Western (reference n_NvC1IQUMQ song)"
+  },
+  "s_wellerman": {
+   "title": "Wellerman",
+   "artist": "Nathan Evans",
+   "query": "Nathan Evans Wellerman sea shanty official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/wellerman.m4a"
+   ],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/impact"
+   ],
+   "origin": "Western (reference h0HNYocSDE8 song)"
+  },
+  "s_handclap": {
+   "title": "HandClap",
+   "artist": "Fitz and The Tantrums",
+   "query": "Fitz and The Tantrums HandClap official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/handclap.m4a"
+   ],
+   "treatment": {
+    "speed": 1.0
+   },
+   "fits": [
+    "sound/crisp"
+   ],
+   "origin": "Western (sound edit staple)"
+  },
+  "s_blue_slowed": {
+   "title": "blue (slowed)",
+   "artist": "yung kai",
+   "query": "yung kai blue official audio",
+   "kind": "song",
+   "local": [],
+   "treatment": {
+    "speed": 0.95
+   },
+   "fits": [
+    "slowmo/summer_glow",
+    "slowmo/dreamy_bloom"
+   ],
+   "origin": "Western (remake new-song test)"
+  },
+  "s_masquerade_slowed": {
+   "title": "Masquerade (slowed)",
+   "artist": "Siouxxie",
+   "query": "Siouxxie Masquerade official audio",
+   "kind": "song",
+   "local": [
+    "Desktop/edit-refs/_songs/L2c39drDVuk@orig.m4a"
+   ],
+   "treatment": {
+    "speed": 0.9
+   },
+   "fits": [
+    "slowmo/summer_glow",
+    "slowmo/dreamy_bloom"
+   ],
+   "origin": "Western (reference L2c39drDVuk song)"
+  }
+ },
+ "licence_note": "All songs are commercial recordings we do not license. Uploading them means YouTube Content ID will claim the video (ad revenue to the rights holder; some can be blocked in some countries). This is the same practice as every reference edit. Clips are anime footage under fair-use-style transformative editing; the channel takes the claim risk. No lyrics are stored anywhere.",
+ "song_note": "Owner 2026-10-12: sound edit and slow-mo may use ANY famous songs (Western included). The K-pop / Chinese / J-pop / anime-only rule is for the stem edit only."
+}

@@ -10,6 +10,8 @@
  *   --mode temp      = Temp Explainer - channel shorts reposter
  *   --mode quiz      = World Quiz: original geography quiz shorts
  *   --mode meme      = "<song> acapella" meme shorts (beat-cut Asian / anime clips)
+ *   --mode edit      = edit shorts (pipeline/edit-pipeline.js): --type song|dance|character|kpop|sound
+ *                      (omit = the bandit picks), --long = the weekly 16:9 edit (--flavor song|dance|character|kpop)
  *   --count N        = (quiz) shorts per run, scheduled QUIZ_SPACING_HOURS apart
  *   --country X      = Override country pick
  */
@@ -328,42 +330,146 @@ class DailyRunner {
       logger.warn(`Performance sync failed: ${(e.message || '').substring(0, 80)}`);
       insights = loadInsights();
     }
-    const { runMemePipeline, recordUpload } = require('../pipeline/meme-pipeline');
+    const { runMemePipeline, recordUpload: recordStem } = require('../pipeline/meme-pipeline');
+    const rotation = require('../pipeline/daily-rotation');
+    const newTypes = require('../pipeline/newtype-pipeline');
+    const longform = require('../pipeline/longform-queue');
+    let recordUpload = recordStem;
     const spacing = parseFloat(process.env.QUIZ_SPACING_HOURS || '4');
     const base = process.env.PUBLISH_AT ? new Date(process.env.PUBLISH_AT) : null;
     const uploaded = [];
     const errors = [];
     for (let k = 0; k < count; k++) {
+      // daily rotation: stem / sound / slowmo (weighted, not the same type twice, stem is the last fallback)
+      let history = { uploads: [] };
+      try { history = require('../pipeline/meme-pipeline').loadHistory(); } catch {}
+      let sizes = {};
+      if (process.env.DAILY_ROTATION === 'on') { try { sizes = newTypes.poolSizes(); } catch {} }   // off (default): stem only, no pool lookups
+      const order = process.env.DAILY_ROTATION === 'on' ? rotation.dailyOrder({ history, poolSizes: sizes, poolMin: newTypes.poolMin(), enabled: true }) : ['stem'];
+      logger.info(`Daily type order: ${order.join(' > ')} (pools ${JSON.stringify(sizes)})`);
       let result = null;
-      for (let attempt = 1; attempt <= 2 && !result; attempt++) {
-        try {
-          result = await runMemePipeline({ outputDir: outDir, youtube: this.youtubeBridge && this.youtubeBridge.youtube });
-        } catch (e) {
-          logger.warn(`Meme attempt ${attempt} failed: ${(e.message || '').substring(0, 300)}`);
+      let kind = 'stem';
+      for (const type of order) {
+        if (result) break;
+        if (type === 'stem') {
+          for (let attempt = 1; attempt <= 2 && !result; attempt++) {
+            try {
+              result = await runMemePipeline({ outputDir: outDir, youtube: this.youtubeBridge && this.youtubeBridge.youtube });
+            } catch (e) {
+              logger.warn(`Meme attempt ${attempt} failed: ${(e.message || '').substring(0, 300)}`);
+            }
+          }
+          if (result) { kind = 'stem'; recordUpload = recordStem; }
+        } else {
+          try {
+            result = await newTypes.runNewType({ type, outputDir: outDir, wantLong: longform.shouldRender() });
+            kind = type;
+            recordUpload = newTypes.recordUpload;
+          } catch (e) {
+            logger.warn(`${type} edit failed, falling back: ${(e.message || '').substring(0, 300)}`);
+          }
         }
       }
-      if (!result) { errors.push('meme render failed'); continue; }
       const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
       if (process.env.DRY_RUN === 'true') {
-        logger.success(`[dry run] ${result.meme.song}: "${result.title}" -> ${result.videoPath}`);
+        logger.success(`[dry run] ${result.meme.song} [${kind}]: "${result.title}" -> ${result.videoPath}${result.longPath ? ' + long ' + result.longPath : ''}`);
         uploaded.push({ title: result.title, url: result.videoPath, country: result.country, editType: 'meme', geminiScore: null });
         continue;
       }
       const up = await this._uploadToYouTube({ ...result, publishAt });
       if (!up) { errors.push('upload failed'); continue; }
       try { recordUpload(result, { ...up, publishAt }); } catch (e) { logger.warn(`Meme history save failed: ${e.message}`); }
+      if (kind !== 'stem' && result.longPath) {
+        try { await longform.enqueue(result, { ...up, publishAt }); } catch (e) { logger.warn(`Long-form queue failed (the short is up): ${(e.message || '').substring(0, 200)}`); }
+      }
       this._trackPostedVideo(up.url, result.title, result.country, { videoId: up.videoId || null, category: result.category, titleSource: result.meme.song });
       this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
       this._saveMemory();
       uploaded.push({ title: result.title, url: up.url, country: result.country, editType: 'meme', geminiScore: null });
       logger.success(`✅ meme uploaded${publishAt ? ` (publishes ${publishAt})` : ''}: "${result.title}"`);
-      try { fs.rmSync(result.workDir, { recursive: true, force: true }); fs.unlinkSync(result.videoPath); } catch {}
+      try { fs.rmSync(result.workDir, { recursive: true, force: true }); fs.unlinkSync(result.videoPath); if (result.longPath) fs.unlinkSync(result.longPath); } catch {}
     }
     if (process.env.DRY_RUN !== 'true') {
       await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
     }
     logger.header('SUMMARY');
     logger.info(`${uploaded.length}/${count} meme shorts ${process.env.DRY_RUN === 'true' ? 'rendered (dry run)' : 'uploaded'}`);
+    return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
+  }
+
+  /**
+   * Long-form queue: upload the long version that is due (at most one per run; pipeline/longform-queue.js).
+   */
+  async runLongform() {
+    logger.header('LONG-FORM QUEUE');
+    const longform = require('../pipeline/longform-queue');
+    let perf = null;
+    try {
+      const stats = require('./performance-tracker').loadStats();
+      const byId = new Map(((stats && stats.videos) || []).map(v => [v.videoId, v]));
+      perf = it => { const v = byId.get(it.shortVideoId); return v && typeof v.lscore === 'number' ? v.lscore : 0; };
+    } catch {}
+    const r = await longform.uploadDue({ youtubeBridge: this.youtubeBridge, perf });
+    try { longform.saveQueue(longform.prune()); } catch {}
+    return { uploadedVideos: r && r.up ? [{ title: r.item.title, url: r.up.url, editType: 'long' }] : [], errors: [], exitCode: 0 };
+  }
+
+  /**
+   * Edit shorts (song / dance / character / K-pop / sound edits, pipeline/edit-pipeline.js) or, with
+   * --long, the weekly 16:9 edit. type: one of those, or null to let the pipeline's bandit pick.
+   */
+  async runEdit(count = 1, { type = null, long = false, flavor = null } = {}) {
+    logger.header(`EDIT STUDIO: ${long ? `long 16:9 edit${flavor ? ` (${flavor})` : ''}` : `${count} ${type || 'auto'} edit short(s)`}`);
+    const outDir = path.join(__dirname, '..', 'output', 'edit');
+    fs.mkdirSync(outDir, { recursive: true });
+    let insights = null;
+    try {
+      insights = await syncPerformance(this.youtubeBridge);
+    } catch (e) {
+      logger.warn(`Performance sync failed: ${(e.message || '').substring(0, 80)}`);
+      insights = loadInsights();
+    }
+    const { runEditPipeline, recordUpload } = require('../pipeline/edit-pipeline');
+    const spacing = parseFloat(process.env.QUIZ_SPACING_HOURS || '4');
+    const base = process.env.PUBLISH_AT ? new Date(process.env.PUBLISH_AT) : null;
+    const uploaded = [];
+    const errors = [];
+    const n = long ? 1 : count;
+    for (let k = 0; k < n; k++) {
+      let result = null;
+      for (let attempt = 1; attempt <= 2 && !result; attempt++) {
+        try {
+          // a failed attempt (too few good clips, a download blocked) re-picks the song / subject
+          result = await runEditPipeline({ outputDir: outDir, youtube: this.youtubeBridge && this.youtubeBridge.youtube, type, long, flavor });
+        } catch (e) {
+          logger.warn(`Edit attempt ${attempt} failed: ${(e.message || '').substring(0, 300)}`);
+        }
+      }
+      if (!result) { errors.push('edit render failed'); continue; }
+      const label = long ? 'long edit' : result.meme.contentType;
+      const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
+      if (process.env.DRY_RUN === 'true') {
+        logger.success(`[dry run] ${label}: "${result.title}" -> ${result.videoPath}`);
+        logger.info(`[dry run] description:\n${result.description}`);
+        uploaded.push({ title: result.title, url: result.videoPath, country: result.country, editType: 'edit', geminiScore: null });
+        continue;
+      }
+      const up = await this._uploadToYouTube({ ...result, publishAt });
+      if (!up) { errors.push('upload failed'); continue; }
+      try { recordUpload(result, { ...up, publishAt }); } catch (e) { logger.warn(`Edit history save failed: ${e.message}`); }
+      this._trackPostedVideo(up.url, result.title, result.country, { videoId: up.videoId || null, category: result.category,
+        titleSource: result.meme.song });
+      this.memory.totalVideosPosted = (this.memory.totalVideosPosted || 0) + 1;
+      this._saveMemory();
+      uploaded.push({ title: result.title, url: up.url, country: result.country, editType: 'edit', geminiScore: null });
+      logger.success(`✅ ${label} uploaded${publishAt ? ` (publishes ${publishAt})` : ''}: "${result.title}"`);
+      try { fs.rmSync(result.workDir, { recursive: true, force: true }); fs.unlinkSync(result.videoPath); } catch {}
+    }
+    if (process.env.DRY_RUN !== 'true') {
+      await this._sendDiscord({ videos: uploaded, countries: [], totalVideos: this.memory.totalVideosPosted || 0, errors, learning: insights ? insights.summaryLine : undefined });
+    }
+    logger.header('SUMMARY');
+    logger.info(`${uploaded.length}/${n} ${long ? 'long edit' : 'edit shorts'} ${process.env.DRY_RUN === 'true' ? 'rendered (dry run)' : 'uploaded'}`);
     return { uploadedVideos: uploaded, errors, exitCode: uploaded.length > 0 ? 0 : 1 };
   }
 
@@ -533,10 +639,10 @@ class DailyRunner {
     await this.initialize();
     const args = process.argv.slice(2);
     const mode = args.includes('--mode') ? args[args.indexOf('--mode') + 1] : 'none';
-    // Zero Yen Otaku (meme edits) and Asian Pop Quiz (quiz) are the only live pipelines. The old
-    // Mr. WorldWideWebster re-upload / explainer / nightly / weekly modes are retired for good:
-    // they re-posted other creators' clips.
-    if (!['meme', 'quiz'].includes(mode)) {
+    // Zero Yen Otaku (meme stem edits + the edit studio) and Asian Pop Quiz (quiz) are the only live
+    // pipelines. The old Mr. WorldWideWebster re-upload / explainer / nightly / weekly modes are retired
+    // for good: they re-posted other creators' clips.
+    if (!['meme', 'quiz', 'edit', 'longform'].includes(mode)) {
       logger.warn(`Mode "${mode}" is retired (old re-upload pipelines). Nothing to do.`);
       return 0;
     }
@@ -584,6 +690,23 @@ class DailyRunner {
       } else if (mode === 'meme') {
         const result = await this.runMeme(count);
         exitCode = result.exitCode || 0;
+      } else if (mode === 'longform') {
+        const result = await this.runLongform();
+        exitCode = result.exitCode || 0;
+      } else if (mode === 'edit') {
+        // --type song|dance|character|kpop|sound (omit: the pipeline's bandit picks), --long (the weekly 16:9
+        // edit), --flavor song|dance|character|kpop (long only)
+        const editType = args.includes('--type') ? args[args.indexOf('--type') + 1] : (process.env.EDIT_TYPE || null);
+        const long = args.includes('--long') || process.env.EDIT_LONG === 'true';
+        const flavor = args.includes('--flavor') ? args[args.indexOf('--flavor') + 1] : (process.env.EDIT_LONG_FLAVOR || null);
+        const known = ['song', 'dance', 'character', 'kpop', 'sound'];
+        if (editType && !known.includes(editType)) {
+          logger.error(`Unknown edit type "${editType}" (use ${known.join(', ')})`);
+          exitCode = 1;
+        } else {
+          const result = await this.runEdit(count, { type: editType, long, flavor });
+          exitCode = result.exitCode || 0;
+        }
       } else if (mode === 'nightly') {
         await this.runNightly();
       } else if (mode === 'temp') {

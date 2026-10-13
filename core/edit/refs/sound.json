@@ -1,0 +1,3349 @@
+{
+ "group": "sound",
+ "name": "anime sound edits",
+ "version": 1,
+ "created": "2026-09-19",
+ "summary": [
+  "A sound edit is a 8.5-11.3 s loop of a song's most percussive hook (4 bars) in which every shot contributes ONE audible hit from its own anime audio (punch, click, clap, stomp, gunshot, cork pop...), and that hit lands on a song onset: clip hit vs nearest song onset |dt| median 9 ms, 75 % within 25 ms, 78 % within 40 ms (55 hits, 4 waveform-aligned references).",
+  "The CUT does not sit on the beat: it comes a pre-roll BEFORE the hit (median 140 ms, p25 82, p75 210 ms = 2-5 frames at 24 fps) so the viewer sees the wind-up; only 10 % of cuts are within 40 ms of a song onset.",
+  "Shots are short and even: median 9 frames at 24 fps (0.375 s), p10 6, p90 13 frames; 1.6-3.2 cuts/s; 4-8 cuts per bar; the cut pattern repeats bar to bar (75-100 % of cuts repeat a 16th position of the previous bar) because it follows the song's riff.",
+  "Picture is plain: 112 of 114 cuts are hard cuts (two short cross-dissolves of 2 and 3 frames, both in FB15TNFAHVU), no added camera moves (median zoom per shot 0.0 %, 5/119 shots move > 4 % and those are the source's own camera), native speed (no slow motion, no ramps, no frame blending), no grade, no text except a faint creator watermark.",
+  "Audio: the song runs untouched at constant level (no ducking; gain change after a cut 0.0-1.7 dB) with the clip sounds on top: each hit peaks +5 dB (p25 +3, p75 +7) over the music RMS, is gated (-15 to -20 dB before the hit), decays -4 dB at 60 ms, -7 dB at 120 ms, -10 dB at 200 ms, and is bright (centroid 3.4 kHz vs 1.9 kHz for the song). Clip audio is NOT hard-cut at the picture cut (no spectral jump at any of 114 cuts): the cut falls in the quiet gap before the next hit.",
+  "Layout: the creator always edits in 16:9. Vertical uploads are that 16:9 master rotated 90 deg clockwise full-frame (3 of 5, including both refs with ~1 M views; verified shot by shot for FB15TNFAHVU) or letterboxed on black (9:16 and 1:1). No centre crop anywhere.",
+  "Clip choice is thematic and physical: close-ups of hands/objects producing a crisp transient; HandClap = only hands clapping/snapping, Wellerman = stomps and table bangs, Time Back = clicks/clacks (typewriter, chess, Go stones, gun racks, katana clicks). 11-20 different anime per 10 s, 1-2 shots per anime."
+ ],
+ "method": {
+  "downloads": "all 6 references downloaded at <= 1080p into C:/Users/Home/AppData/Local/Temp/edit-refs/sound/ (none blocked); the 5 original songs into .../sound/songs/ for alignment",
+  "frame_analysis": "core/edit/refs/sound_analyze.py: every frame at 360 px: luma/contrast/saturation/hue/colourfulness, Laplacian sharpness, frame difference + HSV-histogram Bhattacharyya distance (cuts), linear-blend residual (dissolves), Farneback flow magnitude, LK+RANSAC similarity transform per frame (zoom/rotation/pan/shake), flashes, content box (letterbox); contact sheets of EVERY frame and -4..+4 strips around every detected cut",
+  "cut_verification": "detected cuts checked by eye on the every-frame sheets; flicker inside a shot (flame, explosion flash, eye glint) removed; verified lists in core/edit/refs/sound_timing.py CUTS",
+  "song_alignment": "edit audio vs the original song: onset-envelope cross-correlation over speed 0.70-1.62, chroma check with pitch shifts, sample-accurate lag by waveform correlation, then a +-300 ms lag scan of complex-STFT least-squares subtraction (sharp maximum at 0 ms, 2.8-5.2 dB of energy explained, ~0 elsewhere) -> 4 of 5 references play the original master at speed 1.0, no pitch shift; Time Back uses another master (chroma 0.92 at 39.7 s, no waveform match) and its grid comes from the edit audio",
+  "clip_sound_layer": "edit audio minus the aligned song (complex STFT least squares, 6 bands, 0.25 s windows) = the clips' own sounds; its onsets are the hits; per shot the strongest onset from 2 frames before the cut to 0.45 s after (core/edit/refs/sound_timing.py)",
+  "layout_check": "FB15TNFAHVU vs its own tutorial N1gQySyUGXk (same timing, 16:9 master visible): each vertical frame rotated back 90 deg matches the master exactly (FB15TNFAHVU_rotation_check.png); watermark orientation confirms rotation for qgzBYo7gvhE and jKSxAkOS3JY",
+  "tools": {
+   "measure_any_video": "python core/edit/refs/sound_analyze.py VIDEO --out DIR",
+   "timing_vs_song": "python core/edit/refs/sound_timing.py ID --ref DIR (needs DIR/analysis/ID.json, ID_audio.json, songs/<song>.m4a, CUTS entry)"
+  }
+ },
+ "references": [
+  {
+   "id": "FB15TNFAHVU",
+   "url": "https://www.youtube.com/shorts/FB15TNFAHVU",
+   "title": "Shape of You「AMV - Mix」Anime Sound Edit",
+   "uploader": "JocoBesT",
+   "views": 1160230,
+   "likes": 26835,
+   "upload_date": "20231021",
+   "song": "Ed Sheeran - Shape of You",
+   "song_section": "intro marimba riff (song 0.27-9.44 s)",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/FB15TNFAHVU.mp4",
+   "width": 1080,
+   "height": 1920,
+   "fps": 24.0,
+   "frames": 220,
+   "duration_s": 9.174,
+   "content_box_xyxy": [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "layout": "rot90_cw_full",
+   "layout_note": "16:9 master rotated 90 deg clockwise to fill 1080x1920; all 22 shots verified against the 16:9 master shown in the tutorial N1gQySyUGXk (FB15TNFAHVU_rotation_check.png): zero crop, zero reframe",
+   "loudness": {
+    "lufs_i": -6.0,
+    "lra": 1.4,
+    "true_peak_dbtp": 4.8
+   },
+   "stereo_side_to_mid_db": -13.0,
+   "clip_themes": "punch + sparks, stand punch, cork pop, sword clash sparks, eye glint, match strike, brass knuckles, flame hand, bite/crunch, muzzle flash, knife past face, gun draw, gun cock, gunshot, coat swish, rifle sparks; faces only as the first/last shot",
+   "anime_listed": [
+    "Fate/stay night Heaven's Feel",
+    "Tensura",
+    "JoJo Diamond is Unbreakable",
+    "One Piece",
+    "Violet Evergarden",
+    "Afro Samurai",
+    "Chainsaw Man",
+    "Jujutsu Kaisen",
+    "Nichijou",
+    "Darling in the FranXX",
+    "No Game No Life Zero",
+    "..."
+   ],
+   "notes": "Most viewed reference (1.16 M). Cut pattern repeats every bar: cuts at 16th positions [2,5,7/8,10,13,15] = the marimba riff onsets minus the pre-roll.",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_frames_01.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_cuts_01.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_audio_split.png",
+    "one_per_shot": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_shots.png",
+    "clip_sound_layer_wav": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_clipsounds.wav",
+    "rotation_check": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/FB15TNFAHVU_rotation_check.png"
+   },
+   "alignment_with_original_song": {
+    "waveform_match": true,
+    "speed": 1.0,
+    "pitch_shift_semitones": 0,
+    "song_offset_s": 0.267,
+    "song_removed_db": 2.39,
+    "note": null
+   },
+   "cuts_verified_frames": [
+    11,
+    23,
+    31,
+    42,
+    50,
+    59,
+    70,
+    81,
+    90,
+    99,
+    111,
+    119,
+    129,
+    141,
+    151,
+    162,
+    171,
+    181,
+    190,
+    201,
+    209
+   ],
+   "transitions": {
+    "hard_cut": 19,
+    "cross_dissolve_2f": 1,
+    "cross_dissolve_3f": 1
+   },
+   "timing": {
+    "bpm": 96.0,
+    "beat_s": 0.625,
+    "sixteenth_ms": 156.2,
+    "fps": 24.0,
+    "edit_len_s": 9.173,
+    "edit_len_bars": 3.67,
+    "song_offset_s": 0.267,
+    "first_downbeat_s": 0.113,
+    "n_cuts": 21,
+    "cuts_per_s": 2.29,
+    "cuts_per_bar": 5.72,
+    "first_shot_s": 0.458,
+    "last_shot_s": 0.458,
+    "shot_frames_median": 10.0,
+    "shot_s_median": 0.417,
+    "shot_16ths_median": 2.67,
+    "shot_16ths_hist": {
+     "2": 9,
+     "3": 11
+    },
+    "pos16_hist": {
+     "0": 1,
+     "2": 4,
+     "5": 4,
+     "7": 2,
+     "8": 2,
+     "10": 3,
+     "13": 3,
+     "15": 2
+    },
+    "cut_to_16th_abs_ms_median": 33,
+    "cut_to_16th_ms_median": -20,
+    "cuts_within_1frame_of_16th_pct": 52,
+    "action_frame_offset_median": 4.5,
+    "action_frame_offset_hist": {
+     "1": 2,
+     "2": 4,
+     "3": 2,
+     "4": 3,
+     "5": 4,
+     "6": 2,
+     "7": 2,
+     "8": 1,
+     "10": 2
+    },
+    "action_to_16th_abs_ms_median": 32,
+    "shots_with_sfx_pct": 45,
+    "sfx_preroll_ms_median": 120,
+    "sfx_preroll_ms_p25_p75": [
+     92,
+     146
+    ],
+    "first_sfx_preroll_ms_median": 96,
+    "sfx_to_16th_abs_ms_median": 20,
+    "sfx_to_16th_ms_median": -10,
+    "sfx_within_30ms_of_16th_pct": 80,
+    "sfx_peak_db_vs_music_median": 7.4,
+    "sfx_decay_12db_ms_median": 310,
+    "clip_sound_db_vs_music_median": 0.1,
+    "clip_sound_centroid_hz_median": 3851,
+    "clip_sound_level_jump_at_cut_db_median": -1.4,
+    "music_gain_change_after_cut_db_median": 1.69,
+    "music_gain_vs_clip_sound_corr": 0.049,
+    "music_gain_db_p10_p90": [
+     -3.5,
+     2.2
+    ],
+    "n_clip_sound_onsets": 11,
+    "clip_sound_onsets_per_s": 1.2,
+    "clip_onsets_within_30ms_of_16th_pct": 82,
+    "cut_to_song_onset_ms_median": -107,
+    "cut_to_song_onset_abs_ms_median": 129,
+    "action_to_song_onset_abs_ms_median": 36,
+    "sfx_to_song_onset_ms_median": -14,
+    "sfx_to_song_onset_abs_ms_median": 18,
+    "sfx_within_40ms_of_song_onset_pct": 90,
+    "cut_within_40ms_of_song_onset_pct": 14,
+    "strong_song_onsets_per_s": 1.74,
+    "strong_song_onsets_covered_by_sfx_pct": 50,
+    "strong_song_onsets_covered_by_cut_pct": 44
+   },
+   "shots": [
+    {
+     "i": 0,
+     "start_frame": 0,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "action_frame_offset": 10,
+     "hit_preroll_ms": 99,
+     "hit_to_song_onset_ms": -8,
+     "hit_to_16th_ms": -15,
+     "hit_peak_db_vs_music": 8.5,
+     "hit_decay_12db_ms": 134,
+     "clip_sound_centroid_hz": 3604,
+     "luma": 0.291,
+     "label": "armour/hair swish (intro, 2-frame dissolve out)"
+    },
+    {
+     "i": 1,
+     "start_frame": 11,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -142,
+     "action_frame_offset": 8,
+     "clip_sound_centroid_hz": 5227,
+     "luma": 0.287,
+     "label": "cracked face"
+    },
+    {
+     "i": 2,
+     "start_frame": 23,
+     "frames": 8,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": -83,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 92,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": 0,
+     "hit_peak_db_vs_music": 5.4,
+     "clip_sound_centroid_hz": 5330,
+     "luma": 0.156,
+     "label": "fist impact + sparks"
+    },
+    {
+     "i": 3,
+     "start_frame": 31,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 8,
+     "cut_to_song_onset_ms": -63,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 67,
+     "hit_to_song_onset_ms": 3,
+     "hit_to_16th_ms": -5,
+     "hit_peak_db_vs_music": 3.3,
+     "hit_decay_12db_ms": 766,
+     "clip_sound_centroid_hz": 5462,
+     "luma": 0.44,
+     "label": "bite / debris burst"
+    },
+    {
+     "i": 4,
+     "start_frame": 42,
+     "frames": 8,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -99,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3850,
+     "luma": 0.515,
+     "label": "stand punch (speed lines)"
+    },
+    {
+     "i": 5,
+     "start_frame": 50,
+     "frames": 9,
+     "len_16ths": 2.4,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": -206,
+     "action_frame_offset": 6,
+     "hit_preroll_ms": 94,
+     "hit_to_song_onset_ms": -113,
+     "hit_to_16th_ms": 32,
+     "hit_peak_db_vs_music": 12.8,
+     "hit_decay_12db_ms": 331,
+     "clip_sound_centroid_hz": 3298,
+     "luma": 0.631,
+     "label": "bamboo cork pop"
+    },
+    {
+     "i": 6,
+     "start_frame": 59,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": -145,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 3158,
+     "luma": 0.332,
+     "label": "sword clash sparks"
+    },
+    {
+     "i": 7,
+     "start_frame": 70,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -180,
+     "action_frame_offset": 5,
+     "clip_sound_centroid_hz": 3852,
+     "luma": 0.074,
+     "label": "eye glint -> embers"
+    },
+    {
+     "i": 8,
+     "start_frame": 81,
+     "frames": 9,
+     "len_16ths": 2.4,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": -169,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 149,
+     "hit_to_song_onset_ms": -20,
+     "hit_to_16th_ms": -27,
+     "hit_peak_db_vs_music": 8.9,
+     "hit_decay_12db_ms": 470,
+     "clip_sound_centroid_hz": 3627,
+     "luma": 0.166,
+     "label": "match strike (3-frame dissolve out)"
+    },
+    {
+     "i": 9,
+     "start_frame": 90,
+     "frames": 9,
+     "len_16ths": 2.4,
+     "pos16_in_bar": 7,
+     "cut_to_song_onset_ms": -107,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3948,
+     "luma": 0.222,
+     "label": "brass-knuckle fist"
+    },
+    {
+     "i": 10,
+     "start_frame": 99,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -225,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 217,
+     "hit_to_song_onset_ms": -8,
+     "hit_to_16th_ms": 10,
+     "hit_peak_db_vs_music": 9.4,
+     "hit_decay_12db_ms": 534,
+     "clip_sound_centroid_hz": 4033,
+     "luma": 0.366,
+     "label": "burning hand"
+    },
+    {
+     "i": 11,
+     "start_frame": 111,
+     "frames": 8,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": -167,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 147,
+     "hit_to_song_onset_ms": -20,
+     "hit_to_16th_ms": -29,
+     "hit_peak_db_vs_music": 7.7,
+     "hit_decay_12db_ms": 104,
+     "clip_sound_centroid_hz": 3490,
+     "luma": 0.657,
+     "label": "crunch bite"
+    },
+    {
+     "i": 12,
+     "start_frame": 119,
+     "frames": 10,
+     "len_16ths": 2.67,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": -147,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 5478,
+     "luma": 0.622,
+     "label": "muzzle-flash burst"
+    },
+    {
+     "i": 13,
+     "start_frame": 129,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -206,
+     "action_frame_offset": 10,
+     "clip_sound_centroid_hz": 5435,
+     "luma": 0.229,
+     "label": "knife past eye"
+    },
+    {
+     "i": 14,
+     "start_frame": 141,
+     "frames": 10,
+     "len_16ths": 2.67,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": -25,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 3915,
+     "luma": 0.464,
+     "label": "gun draw"
+    },
+    {
+     "i": 15,
+     "start_frame": 151,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 8,
+     "cut_to_song_onset_ms": -44,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 1941,
+     "luma": 0.464,
+     "label": "explosion behind car"
+    },
+    {
+     "i": 16,
+     "start_frame": 162,
+     "frames": 9,
+     "len_16ths": 2.4,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -73,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 3266,
+     "luma": 0.252,
+     "label": "pistol in hand (cock)"
+    },
+    {
+     "i": 17,
+     "start_frame": 171,
+     "frames": 10,
+     "len_16ths": 2.67,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": 139,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 143,
+     "hit_to_song_onset_ms": -26,
+     "hit_to_16th_ms": -33,
+     "hit_peak_db_vs_music": 7.1,
+     "hit_decay_12db_ms": 261,
+     "clip_sound_centroid_hz": 2626,
+     "luma": 0.16,
+     "label": "coat swish"
+    },
+    {
+     "i": 18,
+     "start_frame": 181,
+     "frames": 9,
+     "len_16ths": 2.4,
+     "pos16_in_bar": 0,
+     "cut_to_song_onset_ms": -65,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 80,
+     "hit_to_song_onset_ms": 15,
+     "hit_to_16th_ms": 9,
+     "hit_peak_db_vs_music": 5.5,
+     "hit_decay_12db_ms": 290,
+     "clip_sound_centroid_hz": 2480,
+     "luma": 0.211,
+     "label": "gunshot in hedge maze"
+    },
+    {
+     "i": 19,
+     "start_frame": 190,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -27,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 141,
+     "hit_to_song_onset_ms": -20,
+     "hit_to_16th_ms": -25,
+     "hit_peak_db_vs_music": 6.0,
+     "clip_sound_centroid_hz": 3996,
+     "luma": 0.177,
+     "label": "steampunk slash sparks"
+    },
+    {
+     "i": 20,
+     "start_frame": 201,
+     "frames": 8,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": -27,
+     "action_frame_offset": 6,
+     "clip_sound_centroid_hz": 3279,
+     "luma": 0.216,
+     "label": "rifle sparks"
+    },
+    {
+     "i": 21,
+     "start_frame": 209,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 7,
+     "cut_to_song_onset_ms": -129,
+     "action_frame_offset": 5,
+     "clip_sound_centroid_hz": 4495,
+     "luma": 0.215,
+     "label": "close-up face (end sting)"
+    }
+   ]
+  },
+  {
+   "id": "N1gQySyUGXk",
+   "url": "https://www.youtube.com/shorts/N1gQySyUGXk",
+   "title": "Anime Sound Edit Tutorial #animesoundedit #anime #amv",
+   "uploader": "JocoBesT",
+   "views": 191943,
+   "likes": 7167,
+   "upload_date": "20240331",
+   "song": "Ed Sheeran - Shape of You",
+   "song_section": "same edit as FB15TNFAHVU",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/N1gQySyUGXk.mp4",
+   "width": 1080,
+   "height": 1920,
+   "fps": 24.0,
+   "frames": 220,
+   "duration_s": 9.174,
+   "content_box_xyxy": [
+    0.0,
+    0.1281,
+    1.0,
+    1.0
+   ],
+   "layout": "tutorial: 16:9 master (y 556-1304 of 1920) above a Premiere Pro timeline, \"SOUND EDIT TUTORIAL\" label",
+   "layout_note": null,
+   "loudness": {
+    "lufs_i": -5.9,
+    "lra": 1.5,
+    "true_peak_dbtp": 4.9
+   },
+   "stereo_side_to_mid_db": -13.1,
+   "clip_themes": "same shots as FB15TNFAHVU",
+   "anime_listed": null,
+   "notes": "Shows the construction: V1/V2 video tracks used alternately (V2 is not an overlay, V1 has a gap under it); A1-A3 three clip-audio tracks with MORE audio snippets than video shots (2-3 stacked snippets per hit, edges independent of the video cuts, most carry an fx badge = volume/EQ); one continuous music track (green). Evidence: N1gQySyUGXk_timeline_tracks.png",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_frames_01.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_cuts_01.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_audio_split.png",
+    "timeline_tracks": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/N1gQySyUGXk_timeline_tracks.png"
+   }
+  },
+  {
+   "id": "jKSxAkOS3JY",
+   "url": "https://www.youtube.com/shorts/jKSxAkOS3JY",
+   "title": "Time Back「AMV - Mix」Anime Sound Edit",
+   "uploader": "JocoBesT",
+   "views": 959405,
+   "likes": 29161,
+   "upload_date": "20230524",
+   "song": "Bad Style - Time Back",
+   "song_section": "hook (about 39 s into the original; the edit uses a different master/remix, no waveform match)",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/jKSxAkOS3JY.mp4",
+   "width": 1080,
+   "height": 1920,
+   "fps": 60.0,
+   "frames": 509,
+   "duration_s": 8.514,
+   "content_box_xyxy": [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "layout": "rot90_cw_full",
+   "layout_note": "rotated 90 deg clockwise (faces, rooms and the creator watermark are sideways); 60 fps container, 24 fps drawings, no interpolation",
+   "loudness": {
+    "lufs_i": -7.1,
+    "lra": 2.1,
+    "true_peak_dbtp": 4.4
+   },
+   "stereo_side_to_mid_db": -7.1,
+   "clip_themes": "typewriter keys, chess piece placed, Go stone slap, knife into wood (blood - excluded for us), fist crush, knuckles, eye glint, katana hilt click, gun slide rack, hammer cock, finger snap, table slap, sword draw",
+   "anime_listed": [
+    "Violet Evergarden",
+    "Attack on Titan",
+    "Hidan no Aria",
+    "Vanitas no Karte",
+    "Akame ga Kill",
+    "Spy x Family",
+    "Bungo Stray Dogs",
+    "Guilty Crown",
+    "Vivy",
+    "Kekkai Sensen",
+    "Blood-C",
+    "Monster Musume",
+    "Spriggan",
+    "Charlotte"
+   ],
+   "notes": "959 k views. Almost every shot is a hand/object close-up making a click/clack; the eye-glint shot is the same source clip as FB15 shot 7.",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_frames_01.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_frames_02.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_cuts_01.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_audio_split.png",
+    "one_per_shot": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_shots.png",
+    "clip_sound_layer_wav": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/jKSxAkOS3JY_clipsounds.wav"
+   },
+   "alignment_with_original_song": {
+    "waveform_match": false,
+    "speed": 1.0,
+    "pitch_shift_semitones": 0,
+    "song_offset_s": 38.934,
+    "song_removed_db": 0.0,
+    "note": "edit uses a different master/remix of Time Back: chroma match 0.92 at song 39.7 s speed 1.0, onset-env corr 0.585 at 38.934 s, no waveform match (complex subtraction removes 0.1 dB). Grid taken from the edit audio."
+   },
+   "cuts_verified_frames": [
+    24,
+    47,
+    67,
+    79,
+    96,
+    111,
+    126,
+    154,
+    186,
+    200,
+    216,
+    243,
+    257,
+    277,
+    303,
+    320,
+    334,
+    354,
+    364,
+    377,
+    394,
+    410,
+    425,
+    438,
+    469,
+    484,
+    497
+   ],
+   "transitions": {
+    "hard_cut": 27
+   },
+   "timing": {
+    "bpm": 119.84,
+    "beat_s": 0.5007,
+    "sixteenth_ms": 125.2,
+    "fps": 60.0,
+    "edit_len_s": 8.513,
+    "edit_len_bars": 4.25,
+    "song_offset_s": 38.934,
+    "first_downbeat_s": 1.667,
+    "n_cuts": 27,
+    "cuts_per_s": 3.17,
+    "cuts_per_bar": 6.35,
+    "first_shot_s": 0.4,
+    "last_shot_s": 0.2,
+    "shot_frames_median": 16.0,
+    "shot_s_median": 0.267,
+    "shot_16ths_median": 2.13,
+    "shot_16ths_hist": {
+     "1": 1,
+     "2": 16,
+     "3": 5,
+     "4": 4
+    },
+    "pos16_hist": {
+     "1": 2,
+     "2": 1,
+     "3": 4,
+     "5": 3,
+     "6": 1,
+     "7": 2,
+     "8": 1,
+     "9": 2,
+     "11": 3,
+     "12": 1,
+     "13": 4,
+     "15": 3
+    },
+    "cut_to_16th_abs_ms_median": 23,
+    "cut_to_16th_ms_median": 18,
+    "cuts_within_1frame_of_16th_pct": 33,
+    "action_frame_offset_median": 5.0,
+    "action_frame_offset_hist": {
+     "2": 3,
+     "3": 2,
+     "4": 4,
+     "5": 6,
+     "6": 2,
+     "7": 1,
+     "8": 3,
+     "9": 2,
+     "14": 1,
+     "15": 1,
+     "17": 2,
+     "26": 1
+    },
+    "action_to_16th_abs_ms_median": 38,
+    "shots_with_sfx_pct": 75,
+    "sfx_preroll_ms_median": 89,
+    "sfx_preroll_ms_p25_p75": [
+     72,
+     117
+    ],
+    "first_sfx_preroll_ms_median": 82,
+    "sfx_to_16th_abs_ms_median": 12,
+    "sfx_to_16th_ms_median": 0,
+    "sfx_within_30ms_of_16th_pct": 86,
+    "sfx_peak_db_vs_music_median": null,
+    "sfx_decay_12db_ms_median": 636,
+    "clip_sound_db_vs_music_median": null,
+    "clip_sound_centroid_hz_median": 3138,
+    "clip_sound_level_jump_at_cut_db_median": -0.8,
+    "music_gain_change_after_cut_db_median": null,
+    "music_gain_vs_clip_sound_corr": null,
+    "music_gain_db_p10_p90": [
+     0.0,
+     0.0
+    ],
+    "n_clip_sound_onsets": 27,
+    "clip_sound_onsets_per_s": 3.17,
+    "clip_onsets_within_30ms_of_16th_pct": 85
+   },
+   "shots": [
+    {
+     "i": 0,
+     "start_frame": 0,
+     "frames": 24,
+     "len_16ths": 3.2,
+     "action_frame_offset": 15,
+     "hit_preroll_ms": 52,
+     "hit_to_16th_ms": 12,
+     "clip_sound_centroid_hz": 1788,
+     "luma": 0.54
+    },
+    {
+     "i": 1,
+     "start_frame": 24,
+     "frames": 23,
+     "len_16ths": 3.06,
+     "pos16_in_bar": 6,
+     "action_frame_offset": 8,
+     "hit_preroll_ms": 35,
+     "hit_to_16th_ms": 20,
+     "clip_sound_centroid_hz": 2192,
+     "luma": 0.791
+    },
+    {
+     "i": 2,
+     "start_frame": 47,
+     "frames": 20,
+     "len_16ths": 2.66,
+     "pos16_in_bar": 9,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 111,
+     "hit_to_16th_ms": -22,
+     "clip_sound_centroid_hz": 1965,
+     "luma": 0.214
+    },
+    {
+     "i": 3,
+     "start_frame": 67,
+     "frames": 12,
+     "len_16ths": 1.6,
+     "pos16_in_bar": 12,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 62,
+     "hit_to_16th_ms": 12,
+     "clip_sound_centroid_hz": 2403,
+     "luma": 0.642
+    },
+    {
+     "i": 4,
+     "start_frame": 79,
+     "frames": 17,
+     "len_16ths": 2.26,
+     "pos16_in_bar": 13,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 117,
+     "hit_to_16th_ms": 17,
+     "clip_sound_centroid_hz": 2945,
+     "luma": 0.501
+    },
+    {
+     "i": 5,
+     "start_frame": 96,
+     "frames": 15,
+     "len_16ths": 2.0,
+     "pos16_in_bar": 15,
+     "action_frame_offset": 6,
+     "hit_preroll_ms": 72,
+     "hit_to_16th_ms": 5,
+     "hit_decay_12db_ms": 575,
+     "clip_sound_centroid_hz": 1732,
+     "luma": 0.716
+    },
+    {
+     "i": 6,
+     "start_frame": 111,
+     "frames": 15,
+     "len_16ths": 2.0,
+     "pos16_in_bar": 1,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 2709,
+     "luma": 0.456
+    },
+    {
+     "i": 7,
+     "start_frame": 126,
+     "frames": 28,
+     "len_16ths": 3.73,
+     "pos16_in_bar": 3,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 326,
+     "hit_to_16th_ms": 8,
+     "hit_decay_12db_ms": 906,
+     "clip_sound_centroid_hz": 1223,
+     "luma": 0.368
+    },
+    {
+     "i": 8,
+     "start_frame": 154,
+     "frames": 32,
+     "len_16ths": 4.26,
+     "pos16_in_bar": 7,
+     "action_frame_offset": 26,
+     "hit_preroll_ms": 40,
+     "hit_to_16th_ms": -62,
+     "hit_decay_12db_ms": 993,
+     "clip_sound_centroid_hz": 3259,
+     "luma": 0.129
+    },
+    {
+     "i": 9,
+     "start_frame": 186,
+     "frames": 14,
+     "len_16ths": 1.86,
+     "pos16_in_bar": 11,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 3372,
+     "luma": 0.43
+    },
+    {
+     "i": 10,
+     "start_frame": 200,
+     "frames": 16,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 13,
+     "action_frame_offset": 8,
+     "clip_sound_centroid_hz": 3913,
+     "luma": 0.654
+    },
+    {
+     "i": 11,
+     "start_frame": 216,
+     "frames": 27,
+     "len_16ths": 3.6,
+     "pos16_in_bar": 15,
+     "action_frame_offset": 14,
+     "hit_preroll_ms": 75,
+     "hit_to_16th_ms": 5,
+     "clip_sound_centroid_hz": 4116,
+     "luma": 0.192
+    },
+    {
+     "i": 12,
+     "start_frame": 243,
+     "frames": 14,
+     "len_16ths": 1.86,
+     "pos16_in_bar": 3,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 106,
+     "hit_to_16th_ms": -14,
+     "hit_decay_12db_ms": 104,
+     "clip_sound_centroid_hz": 2950,
+     "luma": 0.189
+    },
+    {
+     "i": 13,
+     "start_frame": 257,
+     "frames": 20,
+     "len_16ths": 2.66,
+     "pos16_in_bar": 5,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 140,
+     "hit_to_16th_ms": 3,
+     "clip_sound_centroid_hz": 2720,
+     "luma": 0.135
+    },
+    {
+     "i": 14,
+     "start_frame": 277,
+     "frames": 26,
+     "len_16ths": 3.46,
+     "pos16_in_bar": 8,
+     "action_frame_offset": 8,
+     "hit_preroll_ms": 51,
+     "hit_to_16th_ms": -4,
+     "clip_sound_centroid_hz": 4433,
+     "luma": 0.341
+    },
+    {
+     "i": 15,
+     "start_frame": 303,
+     "frames": 17,
+     "len_16ths": 2.26,
+     "pos16_in_bar": 11,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 116,
+     "hit_to_16th_ms": -5,
+     "clip_sound_centroid_hz": 3325,
+     "luma": 0.43
+    },
+    {
+     "i": 16,
+     "start_frame": 320,
+     "frames": 14,
+     "len_16ths": 1.86,
+     "pos16_in_bar": 13,
+     "action_frame_offset": 9,
+     "hit_preroll_ms": 89,
+     "hit_to_16th_ms": 0,
+     "hit_decay_12db_ms": 906,
+     "clip_sound_centroid_hz": 2869,
+     "luma": 0.282
+    },
+    {
+     "i": 17,
+     "start_frame": 334,
+     "frames": 20,
+     "len_16ths": 2.66,
+     "pos16_in_bar": 15,
+     "action_frame_offset": 17,
+     "hit_preroll_ms": 82,
+     "hit_to_16th_ms": -24,
+     "hit_decay_12db_ms": 929,
+     "clip_sound_centroid_hz": 3824,
+     "luma": 0.448
+    },
+    {
+     "i": 18,
+     "start_frame": 354,
+     "frames": 10,
+     "len_16ths": 1.33,
+     "pos16_in_bar": 2,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3449,
+     "luma": 0.068
+    },
+    {
+     "i": 19,
+     "start_frame": 364,
+     "frames": 13,
+     "len_16ths": 1.73,
+     "pos16_in_bar": 3,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 75,
+     "hit_to_16th_ms": -31,
+     "hit_decay_12db_ms": 952,
+     "clip_sound_centroid_hz": 3740,
+     "luma": 0.124
+    },
+    {
+     "i": 20,
+     "start_frame": 377,
+     "frames": 17,
+     "len_16ths": 2.26,
+     "pos16_in_bar": 5,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 120,
+     "hit_to_16th_ms": -20,
+     "hit_decay_12db_ms": 697,
+     "clip_sound_centroid_hz": 4023,
+     "luma": 0.338
+    },
+    {
+     "i": 21,
+     "start_frame": 394,
+     "frames": 16,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 7,
+     "action_frame_offset": 5,
+     "clip_sound_centroid_hz": 3978,
+     "luma": 0.562
+    },
+    {
+     "i": 22,
+     "start_frame": 410,
+     "frames": 15,
+     "len_16ths": 2.0,
+     "pos16_in_bar": 9,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 3018,
+     "luma": 0.608
+    },
+    {
+     "i": 23,
+     "start_frame": 425,
+     "frames": 13,
+     "len_16ths": 1.73,
+     "pos16_in_bar": 11,
+     "action_frame_offset": 6,
+     "hit_preroll_ms": 92,
+     "hit_to_16th_ms": 1,
+     "hit_decay_12db_ms": 342,
+     "clip_sound_centroid_hz": 2767,
+     "luma": 0.161
+    },
+    {
+     "i": 24,
+     "start_frame": 438,
+     "frames": 31,
+     "len_16ths": 4.13,
+     "pos16_in_bar": 13,
+     "action_frame_offset": 17,
+     "hit_preroll_ms": 368,
+     "hit_to_16th_ms": -7,
+     "hit_decay_12db_ms": 412,
+     "clip_sound_centroid_hz": 1882,
+     "luma": 0.627
+    },
+    {
+     "i": 25,
+     "start_frame": 469,
+     "frames": 15,
+     "len_16ths": 2.0,
+     "pos16_in_bar": 1,
+     "action_frame_offset": 9,
+     "hit_preroll_ms": 78,
+     "hit_to_16th_ms": -31,
+     "hit_decay_12db_ms": 197,
+     "clip_sound_centroid_hz": 4257,
+     "luma": 0.544
+    },
+    {
+     "i": 26,
+     "start_frame": 484,
+     "frames": 13,
+     "len_16ths": 1.73,
+     "pos16_in_bar": 3,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 118,
+     "hit_to_16th_ms": 9,
+     "hit_decay_12db_ms": 319,
+     "clip_sound_centroid_hz": 4333,
+     "luma": 0.344
+    },
+    {
+     "i": 27,
+     "start_frame": 497,
+     "frames": 12,
+     "len_16ths": 1.6,
+     "pos16_in_bar": 5,
+     "action_frame_offset": 5,
+     "clip_sound_centroid_hz": 3780,
+     "luma": 0.223
+    }
+   ]
+  },
+  {
+   "id": "n_NvC1IQUMQ",
+   "url": "https://www.youtube.com/shorts/n_NvC1IQUMQ",
+   "title": "Fake「AMV - Mix」Anime Sound Edit",
+   "uploader": "JocoBesT",
+   "views": 33900,
+   "likes": 2325,
+   "upload_date": "20241102",
+   "song": "The Tech Thieves - Fake",
+   "song_section": "chorus hook (song 44.5-55.8 s)",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/n_NvC1IQUMQ.mp4",
+   "width": 1080,
+   "height": 1920,
+   "fps": 24.0,
+   "frames": 271,
+   "duration_s": 11.314,
+   "content_box_xyxy": [
+    0.0,
+    0.3312,
+    1.0,
+    0.6687
+   ],
+   "layout": "letterbox_9x16",
+   "layout_note": "picture 1080x648 at y=636-1283 (0.331-0.669) on black 1080x1920 = the 16:9 master at 1152x648 with 36 px trimmed each side; nothing in the bars",
+   "loudness": {
+    "lufs_i": -9.2,
+    "lra": 1.0,
+    "true_peak_dbtp": 1.5
+   },
+   "stereo_side_to_mid_db": -8.4,
+   "clip_themes": "water-drop ripple, gun cock, sword draw, pointing, gavel knocks, stomps, card slapped on table, snaps, poses on the hit",
+   "anime_listed": [
+    "Naruto",
+    "Jujutsu Kaisen",
+    "Demon Slayer",
+    "Re:Creators",
+    "Genshin Impact",
+    "Hidan no Aria",
+    "Fate",
+    "Eminence in Shadow",
+    "Spy x Family",
+    "Bungo Stray Dogs",
+    "Tokyo Revengers",
+    "Promised Neverland",
+    "Tower of God",
+    "Chainsaw Man",
+    "Dragon Maid",
+    "..."
+   ],
+   "notes": "Loop: the last shot is the first clip again (Pain water ripple) so the Short loops seamlessly. Most shots per bar (7-8) of the set.",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_frames_01.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_cuts_01.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_cuts_02.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_audio_split.png",
+    "one_per_shot": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_shots.png",
+    "clip_sound_layer_wav": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/n_NvC1IQUMQ_clipsounds.wav"
+   },
+   "alignment_with_original_song": {
+    "waveform_match": true,
+    "speed": 1.0,
+    "pitch_shift_semitones": 0,
+    "song_offset_s": 44.513,
+    "song_removed_db": 4.0,
+    "note": null
+   },
+   "cuts_verified_frames": [
+    9,
+    24,
+    31,
+    41,
+    50,
+    59,
+    68,
+    79,
+    90,
+    98,
+    113,
+    126,
+    135,
+    143,
+    153,
+    162,
+    170,
+    174,
+    179,
+    185,
+    194,
+    203,
+    212,
+    238,
+    243,
+    253,
+    260
+   ],
+   "transitions": {
+    "hard_cut": 27
+   },
+   "timing": {
+    "bpm": 85.0,
+    "beat_s": 0.7059,
+    "sixteenth_ms": 176.5,
+    "fps": 24.0,
+    "edit_len_s": 11.313,
+    "edit_len_bars": 4.01,
+    "song_offset_s": 44.513,
+    "first_downbeat_s": 0.778,
+    "n_cuts": 27,
+    "cuts_per_s": 2.39,
+    "cuts_per_bar": 6.74,
+    "first_shot_s": 0.375,
+    "last_shot_s": 0.458,
+    "shot_frames_median": 9.0,
+    "shot_s_median": 0.375,
+    "shot_16ths_median": 2.12,
+    "shot_16ths_hist": {
+     "1": 4,
+     "2": 16,
+     "3": 3,
+     "4": 2,
+     "6": 1
+    },
+    "pos16_hist": {
+     "0": 1,
+     "1": 2,
+     "2": 1,
+     "3": 2,
+     "4": 2,
+     "5": 3,
+     "6": 2,
+     "7": 3,
+     "9": 3,
+     "10": 1,
+     "11": 1,
+     "12": 2,
+     "13": 1,
+     "14": 3
+    },
+    "cut_to_16th_abs_ms_median": 48,
+    "cut_to_16th_ms_median": -15,
+    "cuts_within_1frame_of_16th_pct": 26,
+    "action_frame_offset_median": 3.5,
+    "action_frame_offset_hist": {
+     "1": 4,
+     "2": 5,
+     "3": 5,
+     "4": 3,
+     "5": 2,
+     "6": 1,
+     "7": 6,
+     "8": 1,
+     "12": 1
+    },
+    "action_to_16th_abs_ms_median": 36,
+    "shots_with_sfx_pct": 50,
+    "sfx_preroll_ms_median": 76,
+    "sfx_preroll_ms_p25_p75": [
+     52,
+     190
+    ],
+    "first_sfx_preroll_ms_median": 76,
+    "sfx_to_16th_abs_ms_median": 10,
+    "sfx_to_16th_ms_median": 2,
+    "sfx_within_30ms_of_16th_pct": 86,
+    "sfx_peak_db_vs_music_median": 4.0,
+    "sfx_decay_12db_ms_median": 441,
+    "clip_sound_db_vs_music_median": -1.3,
+    "clip_sound_centroid_hz_median": 3116,
+    "clip_sound_level_jump_at_cut_db_median": -1.0,
+    "music_gain_change_after_cut_db_median": 0.04,
+    "music_gain_vs_clip_sound_corr": -0.272,
+    "music_gain_db_p10_p90": [
+     -1.1,
+     3.5
+    ],
+    "n_clip_sound_onsets": 15,
+    "clip_sound_onsets_per_s": 1.33,
+    "clip_onsets_within_30ms_of_16th_pct": 80,
+    "cut_to_song_onset_ms_median": -43,
+    "cut_to_song_onset_abs_ms_median": 126,
+    "action_to_song_onset_abs_ms_median": 83,
+    "sfx_to_song_onset_ms_median": 2,
+    "sfx_to_song_onset_abs_ms_median": 8,
+    "sfx_within_40ms_of_song_onset_pct": 79,
+    "cut_within_40ms_of_song_onset_pct": 7,
+    "strong_song_onsets_per_s": 1.06,
+    "strong_song_onsets_covered_by_sfx_pct": 42,
+    "strong_song_onsets_covered_by_cut_pct": 75
+   },
+   "shots": [
+    {
+     "i": 0,
+     "start_frame": 0,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 52,
+     "hit_to_song_onset_ms": -3,
+     "hit_to_16th_ms": -19,
+     "hit_peak_db_vs_music": 7.5,
+     "hit_decay_12db_ms": 836,
+     "clip_sound_centroid_hz": 3882,
+     "luma": 0.348
+    },
+    {
+     "i": 1,
+     "start_frame": 9,
+     "frames": 15,
+     "len_16ths": 3.54,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": 319,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 403,
+     "hit_to_song_onset_ms": 8,
+     "hit_to_16th_ms": 0,
+     "hit_peak_db_vs_music": 3.1,
+     "hit_decay_12db_ms": 447,
+     "clip_sound_centroid_hz": 3822,
+     "luma": 0.291
+    },
+    {
+     "i": 2,
+     "start_frame": 24,
+     "frames": 7,
+     "len_16ths": 1.65,
+     "pos16_in_bar": 1,
+     "cut_to_song_onset_ms": -130,
+     "action_frame_offset": 1,
+     "hit_preroll_ms": 132,
+     "hit_to_song_onset_ms": 2,
+     "hit_to_16th_ms": 1,
+     "hit_peak_db_vs_music": 0.4,
+     "hit_decay_12db_ms": 87,
+     "clip_sound_centroid_hz": 2350,
+     "luma": 0.333
+    },
+    {
+     "i": 3,
+     "start_frame": 31,
+     "frames": 10,
+     "len_16ths": 2.36,
+     "pos16_in_bar": 3,
+     "cut_to_song_onset_ms": 162,
+     "action_frame_offset": 6,
+     "clip_sound_centroid_hz": 2726,
+     "luma": 0.558
+    },
+    {
+     "i": 4,
+     "start_frame": 41,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": 231,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 4635,
+     "luma": 0.286
+    },
+    {
+     "i": 5,
+     "start_frame": 50,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 7,
+     "cut_to_song_onset_ms": -109,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 3754,
+     "luma": 0.239
+    },
+    {
+     "i": 6,
+     "start_frame": 59,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -82,
+     "action_frame_offset": 1,
+     "hit_preroll_ms": 73,
+     "hit_to_song_onset_ms": -9,
+     "hit_to_16th_ms": -11,
+     "hit_peak_db_vs_music": -3.0,
+     "hit_decay_12db_ms": 859,
+     "clip_sound_centroid_hz": 4034,
+     "luma": 0.229
+    },
+    {
+     "i": 7,
+     "start_frame": 68,
+     "frames": 11,
+     "len_16ths": 2.6,
+     "pos16_in_bar": 12,
+     "cut_to_song_onset_ms": -55,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 52,
+     "hit_to_song_onset_ms": -3,
+     "hit_to_16th_ms": -10,
+     "hit_peak_db_vs_music": 5.6,
+     "hit_decay_12db_ms": 435,
+     "clip_sound_centroid_hz": 3079,
+     "luma": 0.341
+    },
+    {
+     "i": 8,
+     "start_frame": 79,
+     "frames": 11,
+     "len_16ths": 2.6,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": -311,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 313,
+     "hit_to_song_onset_ms": 2,
+     "hit_to_16th_ms": 4,
+     "hit_peak_db_vs_music": 0.6,
+     "hit_decay_12db_ms": 250,
+     "clip_sound_centroid_hz": 2874,
+     "luma": 0.255
+    },
+    {
+     "i": 9,
+     "start_frame": 90,
+     "frames": 8,
+     "len_16ths": 1.89,
+     "pos16_in_bar": 1,
+     "cut_to_song_onset_ms": 148,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 203,
+     "hit_to_song_onset_ms": 2,
+     "hit_to_16th_ms": -1,
+     "hit_peak_db_vs_music": -2.8,
+     "hit_decay_12db_ms": 842,
+     "clip_sound_centroid_hz": 2172,
+     "luma": 0.402
+    },
+    {
+     "i": 10,
+     "start_frame": 98,
+     "frames": 15,
+     "len_16ths": 3.54,
+     "pos16_in_bar": 3,
+     "cut_to_song_onset_ms": 133,
+     "action_frame_offset": 12,
+     "clip_sound_centroid_hz": 3861,
+     "luma": 0.384
+    },
+    {
+     "i": 11,
+     "start_frame": 113,
+     "frames": 13,
+     "len_16ths": 3.07,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -305,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 220,
+     "hit_to_song_onset_ms": -85,
+     "hit_to_16th_ms": -84,
+     "hit_peak_db_vs_music": 5.0,
+     "hit_decay_12db_ms": 215,
+     "clip_sound_centroid_hz": 2971,
+     "luma": 0.78
+    },
+    {
+     "i": 12,
+     "start_frame": 126,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": -111,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": -55,
+     "hit_to_song_onset_ms": -166,
+     "hit_to_16th_ms": 6,
+     "hit_peak_db_vs_music": 0.2,
+     "clip_sound_centroid_hz": 2489,
+     "luma": 0.567
+    },
+    {
+     "i": 13,
+     "start_frame": 135,
+     "frames": 8,
+     "len_16ths": 1.89,
+     "pos16_in_bar": 11,
+     "cut_to_song_onset_ms": -85,
+     "action_frame_offset": 7,
+     "clip_sound_centroid_hz": 3071,
+     "luma": 0.615
+    },
+    {
+     "i": 14,
+     "start_frame": 143,
+     "frames": 10,
+     "len_16ths": 2.36,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": 249,
+     "action_frame_offset": 7,
+     "clip_sound_centroid_hz": 2985,
+     "luma": 0.434
+    },
+    {
+     "i": 15,
+     "start_frame": 153,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 0,
+     "cut_to_song_onset_ms": -60,
+     "action_frame_offset": 8,
+     "hit_preroll_ms": 69,
+     "hit_to_song_onset_ms": 8,
+     "hit_to_16th_ms": 19,
+     "hit_peak_db_vs_music": 6.0,
+     "hit_decay_12db_ms": 633,
+     "clip_sound_centroid_hz": 1855,
+     "luma": 0.251
+    },
+    {
+     "i": 16,
+     "start_frame": 162,
+     "frames": 8,
+     "len_16ths": 1.89,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -28,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 48,
+     "hit_to_song_onset_ms": 20,
+     "hit_to_16th_ms": 20,
+     "hit_peak_db_vs_music": 6.2,
+     "hit_decay_12db_ms": 221,
+     "clip_sound_centroid_hz": 2035,
+     "luma": 0.502
+    },
+    {
+     "i": 17,
+     "start_frame": 170,
+     "frames": 4,
+     "len_16ths": 0.94,
+     "pos16_in_bar": 4,
+     "cut_to_song_onset_ms": -43,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 51,
+     "hit_to_song_onset_ms": 8,
+     "hit_to_16th_ms": 4,
+     "hit_peak_db_vs_music": 6.7,
+     "hit_decay_12db_ms": 499,
+     "clip_sound_centroid_hz": 3798,
+     "luma": 0.518
+    },
+    {
+     "i": 18,
+     "start_frame": 174,
+     "frames": 5,
+     "len_16ths": 1.18,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": 124,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3776,
+     "luma": 0.214
+    },
+    {
+     "i": 19,
+     "start_frame": 179,
+     "frames": 6,
+     "len_16ths": 1.42,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": 332,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3468,
+     "luma": 0.206
+    },
+    {
+     "i": 20,
+     "start_frame": 185,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 7,
+     "cut_to_song_onset_ms": -126,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 152,
+     "hit_to_song_onset_ms": 26,
+     "hit_to_16th_ms": 24,
+     "hit_peak_db_vs_music": 5.7,
+     "clip_sound_centroid_hz": 3042,
+     "luma": 0.165
+    },
+    {
+     "i": 21,
+     "start_frame": 194,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": -105,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3433,
+     "luma": 0.637
+    },
+    {
+     "i": 22,
+     "start_frame": 203,
+     "frames": 9,
+     "len_16ths": 2.12,
+     "pos16_in_bar": 12,
+     "cut_to_song_onset_ms": -78,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 2697,
+     "luma": 0.521
+    },
+    {
+     "i": 23,
+     "start_frame": 212,
+     "frames": 26,
+     "len_16ths": 6.14,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": 297,
+     "action_frame_offset": 5,
+     "clip_sound_centroid_hz": 2720,
+     "luma": 0.152
+    },
+    {
+     "i": 24,
+     "start_frame": 238,
+     "frames": 5,
+     "len_16ths": 1.18,
+     "pos16_in_bar": 4,
+     "cut_to_song_onset_ms": -31,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 3427,
+     "luma": 0.87
+    },
+    {
+     "i": 25,
+     "start_frame": 243,
+     "frames": 10,
+     "len_16ths": 2.36,
+     "pos16_in_bar": 5,
+     "cut_to_song_onset_ms": 178,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 3346,
+     "luma": 0.79
+    },
+    {
+     "i": 26,
+     "start_frame": 253,
+     "frames": 7,
+     "len_16ths": 1.65,
+     "pos16_in_bar": 7,
+     "cut_to_song_onset_ms": -120,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 3152,
+     "luma": 0.447
+    },
+    {
+     "i": 27,
+     "start_frame": 260,
+     "frames": 11,
+     "len_16ths": 2.6,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": 172,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 80,
+     "hit_to_song_onset_ms": -102,
+     "hit_to_16th_ms": 77,
+     "hit_peak_db_vs_music": 1.1,
+     "hit_decay_12db_ms": 377,
+     "clip_sound_centroid_hz": 3601,
+     "luma": 0.34
+    }
+   ]
+  },
+  {
+   "id": "qgzBYo7gvhE",
+   "url": "https://www.youtube.com/shorts/qgzBYo7gvhE",
+   "title": "HandClap「AMV - Mix」Anime Sound Edit",
+   "uploader": "JocoBesT",
+   "views": 220712,
+   "likes": 5206,
+   "upload_date": "20230930",
+   "song": "Fitz and the Tantrums - HandClap",
+   "song_section": "chorus \"handclap\" (song 28.8-37.5 s)",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/qgzBYo7gvhE.mp4",
+   "width": 1080,
+   "height": 1920,
+   "fps": 24.0,
+   "frames": 209,
+   "duration_s": 8.734,
+   "content_box_xyxy": [
+    0.0,
+    0.0,
+    1.0,
+    1.0
+   ],
+   "layout": "rot90_cw_full",
+   "layout_note": "rotated 90 deg clockwise (the \"JocoBesT\" watermark reads top-to-bottom)",
+   "loudness": {
+    "lufs_i": -5.7,
+    "lra": 0.9,
+    "true_peak_dbtp": 3.9
+   },
+   "stereo_side_to_mid_db": -13.5,
+   "clip_themes": "HANDS ONLY: claps, hand seals, finger snaps, lighter flick, hand rubbing, palm slam, knuckle crack - the song title/lyric acted out",
+   "anime_listed": [
+    "Naruto Shippuden",
+    "No Guns Life",
+    "Hyouka",
+    "Jujutsu Kaisen",
+    "Demon Slayer",
+    "Bungo Stray Dogs",
+    "Attack on Titan",
+    "Hidan no Aria",
+    "Kaguya-sama",
+    "SK8 the Infinity",
+    "Bocchi the Rock"
+   ],
+   "notes": "Only reference with an intro shot (1.25 s) before the clap section; two micro shots of 2-3 frames for double claps.",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_frames_01.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_cuts_01.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_cuts_02.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_audio_split.png",
+    "one_per_shot": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_shots.png",
+    "clip_sound_layer_wav": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/qgzBYo7gvhE_clipsounds.wav"
+   },
+   "alignment_with_original_song": {
+    "waveform_match": true,
+    "speed": 1.0,
+    "pitch_shift_semitones": 0,
+    "song_offset_s": 28.781,
+    "song_removed_db": 4.29,
+    "note": null
+   },
+   "cuts_verified_frames": [
+    30,
+    46,
+    53,
+    62,
+    70,
+    78,
+    88,
+    95,
+    101,
+    108,
+    119,
+    129,
+    141,
+    150,
+    152,
+    160,
+    169,
+    176,
+    189,
+    192,
+    199
+   ],
+   "transitions": {
+    "hard_cut": 21
+   },
+   "timing": {
+    "bpm": 139.86,
+    "beat_s": 0.429,
+    "sixteenth_ms": 107.2,
+    "fps": 24.0,
+    "edit_len_s": 8.733,
+    "edit_len_bars": 5.09,
+    "song_offset_s": 28.781,
+    "first_downbeat_s": 1.283,
+    "n_cuts": 21,
+    "cuts_per_s": 2.4,
+    "cuts_per_bar": 4.13,
+    "first_shot_s": 1.25,
+    "last_shot_s": 0.417,
+    "shot_frames_median": 8.0,
+    "shot_s_median": 0.333,
+    "shot_16ths_median": 3.11,
+    "shot_16ths_hist": {
+     "1": 2,
+     "2": 1,
+     "3": 8,
+     "4": 6,
+     "5": 2,
+     "6": 1
+    },
+    "pos16_hist": {
+     "0": 1,
+     "1": 1,
+     "2": 3,
+     "6": 4,
+     "8": 1,
+     "9": 2,
+     "11": 2,
+     "12": 1,
+     "13": 1,
+     "14": 2,
+     "15": 3
+    },
+    "cut_to_16th_abs_ms_median": 29,
+    "cut_to_16th_ms_median": 17,
+    "cuts_within_1frame_of_16th_pct": 90,
+    "action_frame_offset_median": 3.0,
+    "action_frame_offset_hist": {
+     "1": 3,
+     "2": 5,
+     "3": 7,
+     "4": 2,
+     "5": 2,
+     "6": 1,
+     "8": 2
+    },
+    "action_to_16th_abs_ms_median": 33,
+    "shots_with_sfx_pct": 73,
+    "sfx_preroll_ms_median": 176,
+    "sfx_preroll_ms_p25_p75": [
+     148,
+     208
+    ],
+    "first_sfx_preroll_ms_median": 162,
+    "sfx_to_16th_abs_ms_median": 13,
+    "sfx_to_16th_ms_median": 2,
+    "sfx_within_30ms_of_16th_pct": 75,
+    "sfx_peak_db_vs_music_median": 4.5,
+    "sfx_decay_12db_ms_median": 621,
+    "clip_sound_db_vs_music_median": -4.0,
+    "clip_sound_centroid_hz_median": 3656,
+    "clip_sound_level_jump_at_cut_db_median": -3.1,
+    "music_gain_change_after_cut_db_median": -0.0,
+    "music_gain_vs_clip_sound_corr": -0.109,
+    "music_gain_db_p10_p90": [
+     -0.7,
+     0.4
+    ],
+    "n_clip_sound_onsets": 19,
+    "clip_sound_onsets_per_s": 2.18,
+    "clip_onsets_within_30ms_of_16th_pct": 79,
+    "cut_to_song_onset_ms_median": 53,
+    "cut_to_song_onset_abs_ms_median": 95,
+    "action_to_song_onset_abs_ms_median": 46,
+    "sfx_to_song_onset_ms_median": 0,
+    "sfx_to_song_onset_abs_ms_median": 14,
+    "sfx_within_40ms_of_song_onset_pct": 62,
+    "cut_within_40ms_of_song_onset_pct": 10,
+    "strong_song_onsets_per_s": 1.72,
+    "strong_song_onsets_covered_by_sfx_pct": 40,
+    "strong_song_onsets_covered_by_cut_pct": 40
+   },
+   "shots": [
+    {
+     "i": 0,
+     "start_frame": 0,
+     "frames": 30,
+     "len_16ths": 11.66,
+     "action_frame_offset": 8,
+     "hit_preroll_ms": 203,
+     "hit_to_song_onset_ms": 15,
+     "hit_to_16th_ms": -7,
+     "hit_peak_db_vs_music": 8.3,
+     "hit_decay_12db_ms": 859,
+     "clip_sound_centroid_hz": 2507,
+     "luma": 0.113
+    },
+    {
+     "i": 1,
+     "start_frame": 30,
+     "frames": 16,
+     "len_16ths": 6.22,
+     "pos16_in_bar": 0,
+     "cut_to_song_onset_ms": -53,
+     "action_frame_offset": 8,
+     "hit_preroll_ms": 195,
+     "hit_to_song_onset_ms": 142,
+     "hit_to_16th_ms": -52,
+     "hit_peak_db_vs_music": 5.4,
+     "hit_decay_12db_ms": 801,
+     "clip_sound_centroid_hz": 3593,
+     "luma": 0.352
+    },
+    {
+     "i": 2,
+     "start_frame": 46,
+     "frames": 7,
+     "len_16ths": 2.72,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": 196,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 109,
+     "hit_to_song_onset_ms": -101,
+     "hit_to_16th_ms": -8,
+     "hit_peak_db_vs_music": 3.0,
+     "hit_decay_12db_ms": 615,
+     "clip_sound_centroid_hz": 3509,
+     "luma": 0.447
+    },
+    {
+     "i": 3,
+     "start_frame": 53,
+     "frames": 9,
+     "len_16ths": 3.5,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": 81,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 288,
+     "hit_to_song_onset_ms": -78,
+     "hit_to_16th_ms": 34,
+     "hit_peak_db_vs_music": 7.1,
+     "hit_decay_12db_ms": 104,
+     "clip_sound_centroid_hz": 3110,
+     "luma": 0.233
+    },
+    {
+     "i": 4,
+     "start_frame": 62,
+     "frames": 8,
+     "len_16ths": 3.11,
+     "pos16_in_bar": 12,
+     "cut_to_song_onset_ms": 9,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 191,
+     "hit_to_song_onset_ms": -14,
+     "hit_to_16th_ms": -10,
+     "hit_peak_db_vs_music": 4.4,
+     "hit_decay_12db_ms": 807,
+     "clip_sound_centroid_hz": 4204,
+     "luma": 0.296
+    },
+    {
+     "i": 5,
+     "start_frame": 70,
+     "frames": 8,
+     "len_16ths": 3.11,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": 128,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 3926,
+     "luma": 0.36
+    },
+    {
+     "i": 6,
+     "start_frame": 78,
+     "frames": 10,
+     "len_16ths": 3.89,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -166,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 221,
+     "hit_to_song_onset_ms": 55,
+     "hit_to_16th_ms": 44,
+     "hit_peak_db_vs_music": 5.8,
+     "hit_decay_12db_ms": 110,
+     "clip_sound_centroid_hz": 3994,
+     "luma": 0.222
+    },
+    {
+     "i": 7,
+     "start_frame": 88,
+     "frames": 7,
+     "len_16ths": 2.72,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -196,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 4533,
+     "luma": 0.572
+    },
+    {
+     "i": 8,
+     "start_frame": 95,
+     "frames": 6,
+     "len_16ths": 2.33,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": 95,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 111,
+     "hit_to_song_onset_ms": -14,
+     "hit_to_16th_ms": -2,
+     "hit_peak_db_vs_music": 0.5,
+     "hit_decay_12db_ms": 900,
+     "clip_sound_centroid_hz": 4219,
+     "luma": 0.161
+    },
+    {
+     "i": 9,
+     "start_frame": 101,
+     "frames": 7,
+     "len_16ths": 2.72,
+     "pos16_in_bar": 11,
+     "cut_to_song_onset_ms": -84,
+     "action_frame_offset": 1,
+     "hit_preroll_ms": 93,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": 16,
+     "hit_peak_db_vs_music": -2.2,
+     "hit_decay_12db_ms": 702,
+     "clip_sound_centroid_hz": 4482,
+     "luma": 0.279
+    },
+    {
+     "i": 10,
+     "start_frame": 108,
+     "frames": 11,
+     "len_16ths": 4.27,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": -13,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 3273,
+     "luma": 0.209
+    },
+    {
+     "i": 11,
+     "start_frame": 119,
+     "frames": 10,
+     "len_16ths": 3.89,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -170,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 162,
+     "hit_to_song_onset_ms": -9,
+     "hit_to_16th_ms": -24,
+     "hit_peak_db_vs_music": -0.1,
+     "clip_sound_centroid_hz": 3423,
+     "luma": 0.256
+    },
+    {
+     "i": 12,
+     "start_frame": 129,
+     "frames": 12,
+     "len_16ths": 4.66,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": 246,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 204,
+     "hit_to_song_onset_ms": -206,
+     "hit_to_16th_ms": 6,
+     "hit_peak_db_vs_music": 2.8,
+     "hit_decay_12db_ms": 621,
+     "clip_sound_centroid_hz": 3558,
+     "luma": 0.215
+    },
+    {
+     "i": 13,
+     "start_frame": 141,
+     "frames": 9,
+     "len_16ths": 3.5,
+     "pos16_in_bar": 11,
+     "cut_to_song_onset_ms": 90,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 139,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": 12,
+     "hit_peak_db_vs_music": 6.6,
+     "hit_decay_12db_ms": 946,
+     "clip_sound_centroid_hz": 4250,
+     "luma": 0.367
+    },
+    {
+     "i": 14,
+     "start_frame": 150,
+     "frames": 2,
+     "len_16ths": 0.78,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": 53,
+     "action_frame_offset": 1,
+     "clip_sound_centroid_hz": 4537,
+     "luma": 0.402
+    },
+    {
+     "i": 15,
+     "start_frame": 152,
+     "frames": 8,
+     "len_16ths": 3.11,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": 137,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 4657,
+     "luma": 0.515
+    },
+    {
+     "i": 16,
+     "start_frame": 160,
+     "frames": 9,
+     "len_16ths": 3.5,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -180,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 160,
+     "hit_to_song_onset_ms": -20,
+     "hit_to_16th_ms": -33,
+     "hit_peak_db_vs_music": 7.2,
+     "hit_decay_12db_ms": 122,
+     "clip_sound_centroid_hz": 3639,
+     "luma": 0.308
+    },
+    {
+     "i": 17,
+     "start_frame": 169,
+     "frames": 7,
+     "len_16ths": 2.72,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": 195,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 151,
+     "hit_to_song_onset_ms": -96,
+     "hit_to_16th_ms": 11,
+     "hit_peak_db_vs_music": 4.5,
+     "hit_decay_12db_ms": 122,
+     "clip_sound_centroid_hz": 3911,
+     "luma": 0.39
+    },
+    {
+     "i": 18,
+     "start_frame": 176,
+     "frames": 13,
+     "len_16ths": 5.05,
+     "pos16_in_bar": 8,
+     "cut_to_song_onset_ms": 45,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 399,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": 14,
+     "hit_peak_db_vs_music": 3.3,
+     "hit_decay_12db_ms": 981,
+     "clip_sound_centroid_hz": 3419,
+     "luma": 0.234
+    },
+    {
+     "i": 19,
+     "start_frame": 189,
+     "frames": 3,
+     "len_16ths": 1.17,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": -69,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 3673,
+     "luma": 0.282
+    },
+    {
+     "i": 20,
+     "start_frame": 192,
+     "frames": 7,
+     "len_16ths": 2.72,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": 56,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 162,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": 15,
+     "hit_peak_db_vs_music": 3.4,
+     "hit_decay_12db_ms": 551,
+     "clip_sound_centroid_hz": 3430,
+     "luma": 0.333
+    },
+    {
+     "i": 21,
+     "start_frame": 199,
+     "frames": 10,
+     "len_16ths": 3.89,
+     "pos16_in_bar": 1,
+     "cut_to_song_onset_ms": 139,
+     "action_frame_offset": 6,
+     "hit_preroll_ms": 276,
+     "hit_to_song_onset_ms": 9,
+     "hit_to_16th_ms": -8,
+     "hit_peak_db_vs_music": 6.6,
+     "hit_decay_12db_ms": 145,
+     "clip_sound_centroid_hz": 3214,
+     "luma": 0.457
+    }
+   ]
+  },
+  {
+   "id": "h0HNYocSDE8",
+   "url": "https://www.youtube.com/shorts/h0HNYocSDE8",
+   "title": "Wellerman「AMV - Mix」Anime Sound Edit  #animesoundedit #anime #animeedit #amv",
+   "uploader": "JocoBesT",
+   "views": 92041,
+   "likes": 2614,
+   "upload_date": "20250707",
+   "song": "Nathan Evans - Wellerman",
+   "song_section": "intro \"There once was a ship\" stomp-clap (song 1.9-13.1 s)",
+   "file": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/h0HNYocSDE8.mp4",
+   "width": 1080,
+   "height": 1080,
+   "fps": 24.0,
+   "frames": 268,
+   "duration_s": 11.174,
+   "content_box_xyxy": [
+    0.0,
+    0.2167,
+    1.0,
+    0.7833
+   ],
+   "layout": "letterbox_1x1",
+   "layout_note": "1080x1080 upload; 16:9 picture 1080x614 at y=234-847, black bars",
+   "loudness": {
+    "lufs_i": -9.8,
+    "lra": 1.2,
+    "true_peak_dbtp": 2.0
+   },
+   "stereo_side_to_mid_db": -20.0,
+   "clip_themes": "stomps, fists banging a table, feet slamming the floor, glass slammed down, desk slam, guitar strum; comedy shows mixed with action",
+   "anime_listed": [
+    "Bungo Stray Dogs",
+    "Nozaki-kun",
+    "Jujutsu Kaisen",
+    "Kaiju No. 8",
+    "Regular Show",
+    "Bleach",
+    "Tenkuu Shinpan",
+    "NinKoro",
+    "Bocchi the Rock",
+    "JoJo Part 1",
+    "Scissor Seven S3",
+    "SYNDUALITY Noir",
+    "Undead Murder Farce"
+   ],
+   "notes": "Hits sit on the quarter notes (16th positions 0/4/8/12) = the stomp; cuts 1-2 sixteenths earlier (pre-roll 215 ms, the longest of the set).",
+   "sheets": {
+    "every_frame": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_frames_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_frames_01.png"
+    ],
+    "cut_strips_-4_+4": [
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_cuts_00.png",
+     "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_cuts_01.png"
+    ],
+    "timeline": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_timeline.png",
+    "audio_split": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_audio_split.png",
+    "one_per_shot": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_shots.png",
+    "clip_sound_layer_wav": "C:/Users/Home/AppData/Local/Temp/edit-refs/sound/analysis/h0HNYocSDE8_clipsounds.wav"
+   },
+   "alignment_with_original_song": {
+    "waveform_match": true,
+    "speed": 1.0,
+    "pitch_shift_semitones": 0,
+    "song_offset_s": 1.916,
+    "song_removed_db": 5.17,
+    "note": null
+   },
+   "cuts_verified_frames": [
+    15,
+    27,
+    44,
+    59,
+    71,
+    89,
+    104,
+    115,
+    135,
+    146,
+    175,
+    183,
+    196,
+    208,
+    219,
+    226,
+    242,
+    252
+   ],
+   "transitions": {
+    "hard_cut": 18
+   },
+   "timing": {
+    "bpm": 96.0,
+    "beat_s": 0.625,
+    "sixteenth_ms": 156.2,
+    "fps": 24.0,
+    "edit_len_s": 11.173,
+    "edit_len_bars": 4.47,
+    "song_offset_s": 1.916,
+    "first_downbeat_s": 0.224,
+    "n_cuts": 18,
+    "cuts_per_s": 1.61,
+    "cuts_per_bar": 4.03,
+    "first_shot_s": 0.625,
+    "last_shot_s": 0.667,
+    "shot_frames_median": 12.0,
+    "shot_s_median": 0.5,
+    "shot_16ths_median": 3.2,
+    "shot_16ths_hist": {
+     "2": 2,
+     "3": 8,
+     "4": 3,
+     "5": 3,
+     "8": 1
+    },
+    "pos16_hist": {
+     "2": 2,
+     "3": 3,
+     "6": 4,
+     "9": 1,
+     "10": 2,
+     "11": 1,
+     "13": 2,
+     "14": 1,
+     "15": 2
+    },
+    "cut_to_16th_abs_ms_median": 42,
+    "cut_to_16th_ms_median": 0,
+    "cuts_within_1frame_of_16th_pct": 50,
+    "action_frame_offset_median": 5.0,
+    "action_frame_offset_hist": {
+     "2": 4,
+     "3": 2,
+     "4": 3,
+     "5": 1,
+     "6": 2,
+     "7": 4,
+     "12": 2,
+     "14": 1
+    },
+    "action_to_16th_abs_ms_median": 57,
+    "shots_with_sfx_pct": 79,
+    "sfx_preroll_ms_median": 215,
+    "sfx_preroll_ms_p25_p75": [
+     198,
+     266
+    ],
+    "first_sfx_preroll_ms_median": 209,
+    "sfx_to_16th_abs_ms_median": 9,
+    "sfx_to_16th_ms_median": -9,
+    "sfx_within_30ms_of_16th_pct": 87,
+    "sfx_peak_db_vs_music_median": 4.0,
+    "sfx_decay_12db_ms_median": 331,
+    "clip_sound_db_vs_music_median": -5.0,
+    "clip_sound_centroid_hz_median": 3018,
+    "clip_sound_level_jump_at_cut_db_median": -3.1,
+    "music_gain_change_after_cut_db_median": 0.02,
+    "music_gain_vs_clip_sound_corr": 0.058,
+    "music_gain_db_p10_p90": [
+     -0.9,
+     1.0
+    ],
+    "n_clip_sound_onsets": 19,
+    "clip_sound_onsets_per_s": 1.7,
+    "clip_onsets_within_30ms_of_16th_pct": 79,
+    "cut_to_song_onset_ms_median": -132,
+    "cut_to_song_onset_abs_ms_median": 151,
+    "action_to_song_onset_abs_ms_median": 75,
+    "sfx_to_song_onset_ms_median": 0,
+    "sfx_to_song_onset_abs_ms_median": 5,
+    "sfx_within_40ms_of_song_onset_pct": 87,
+    "cut_within_40ms_of_song_onset_pct": 11,
+    "strong_song_onsets_per_s": 1.16,
+    "strong_song_onsets_covered_by_sfx_pct": 69,
+    "strong_song_onsets_covered_by_cut_pct": 31
+   },
+   "shots": [
+    {
+     "i": 0,
+     "start_frame": 0,
+     "frames": 15,
+     "len_16ths": 4.0,
+     "action_frame_offset": 5,
+     "hit_preroll_ms": 215,
+     "hit_to_song_onset_ms": 0,
+     "hit_to_16th_ms": -9,
+     "hit_peak_db_vs_music": 4.0,
+     "hit_decay_12db_ms": 778,
+     "clip_sound_centroid_hz": 3682,
+     "luma": 0.266
+    },
+    {
+     "i": 1,
+     "start_frame": 15,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 3,
+     "cut_to_song_onset_ms": -216,
+     "action_frame_offset": 3,
+     "hit_preroll_ms": 211,
+     "hit_to_song_onset_ms": -5,
+     "hit_to_16th_ms": -13,
+     "hit_peak_db_vs_music": 8.9,
+     "hit_decay_12db_ms": 93,
+     "clip_sound_centroid_hz": 3186,
+     "luma": 0.483
+    },
+    {
+     "i": 2,
+     "start_frame": 27,
+     "frames": 17,
+     "len_16ths": 4.53,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -30,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 326,
+     "hit_to_song_onset_ms": -17,
+     "hit_to_16th_ms": -23,
+     "hit_peak_db_vs_music": -1.5,
+     "clip_sound_centroid_hz": 3794,
+     "luma": 0.25
+    },
+    {
+     "i": 3,
+     "start_frame": 44,
+     "frames": 15,
+     "len_16ths": 4.0,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -268,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 268,
+     "hit_to_song_onset_ms": 0,
+     "hit_to_16th_ms": 3,
+     "hit_peak_db_vs_music": 7.0,
+     "hit_decay_12db_ms": 186,
+     "clip_sound_centroid_hz": 2902,
+     "luma": 0.268
+    },
+    {
+     "i": 4,
+     "start_frame": 59,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 14,
+     "cut_to_song_onset_ms": 67,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 235,
+     "hit_to_song_onset_ms": -5,
+     "hit_to_16th_ms": -30,
+     "hit_peak_db_vs_music": 2.3,
+     "hit_decay_12db_ms": 969,
+     "clip_sound_centroid_hz": 2876,
+     "luma": 0.725
+    },
+    {
+     "i": 5,
+     "start_frame": 71,
+     "frames": 18,
+     "len_16ths": 4.8,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": -25,
+     "action_frame_offset": 3,
+     "clip_sound_centroid_hz": 4478,
+     "luma": 0.585
+    },
+    {
+     "i": 6,
+     "start_frame": 89,
+     "frames": 15,
+     "len_16ths": 4.0,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -262,
+     "action_frame_offset": 6,
+     "clip_sound_centroid_hz": 4490,
+     "luma": 0.572
+    },
+    {
+     "i": 7,
+     "start_frame": 104,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 10,
+     "cut_to_song_onset_ms": -264,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 264,
+     "hit_to_song_onset_ms": 0,
+     "hit_to_16th_ms": -1,
+     "hit_peak_db_vs_music": 4.7,
+     "hit_decay_12db_ms": 789,
+     "clip_sound_centroid_hz": 4262,
+     "luma": 0.438
+    },
+    {
+     "i": 8,
+     "start_frame": 115,
+     "frames": 20,
+     "len_16ths": 5.33,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": -125,
+     "action_frame_offset": 7,
+     "hit_preroll_ms": 404,
+     "hit_to_song_onset_ms": -17,
+     "hit_to_16th_ms": -28,
+     "hit_peak_db_vs_music": 3.2,
+     "hit_decay_12db_ms": 778,
+     "clip_sound_centroid_hz": 3603,
+     "luma": 0.208
+    },
+    {
+     "i": 9,
+     "start_frame": 135,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 3,
+     "cut_to_song_onset_ms": -209,
+     "action_frame_offset": 4,
+     "hit_preroll_ms": 209,
+     "hit_to_song_onset_ms": 0,
+     "hit_to_16th_ms": -15,
+     "hit_peak_db_vs_music": 7.4,
+     "hit_decay_12db_ms": 110,
+     "clip_sound_centroid_hz": 3746,
+     "luma": 0.774
+    },
+    {
+     "i": 10,
+     "start_frame": 146,
+     "frames": 29,
+     "len_16ths": 7.73,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -232,
+     "action_frame_offset": 12,
+     "hit_preroll_ms": 238,
+     "hit_to_song_onset_ms": 6,
+     "hit_to_16th_ms": 4,
+     "hit_peak_db_vs_music": -12.2,
+     "clip_sound_centroid_hz": 3018,
+     "luma": 0.749
+    },
+    {
+     "i": 11,
+     "start_frame": 175,
+     "frames": 8,
+     "len_16ths": 2.13,
+     "pos16_in_bar": 13,
+     "cut_to_song_onset_ms": -109,
+     "action_frame_offset": 4,
+     "clip_sound_centroid_hz": 2193,
+     "luma": 0.757
+    },
+    {
+     "i": 12,
+     "start_frame": 183,
+     "frames": 13,
+     "len_16ths": 3.47,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": -101,
+     "action_frame_offset": 12,
+     "hit_preroll_ms": 107,
+     "hit_to_song_onset_ms": 6,
+     "hit_to_16th_ms": 8,
+     "hit_peak_db_vs_music": 2.7,
+     "hit_decay_12db_ms": 331,
+     "clip_sound_centroid_hz": 2633,
+     "luma": 0.914
+    },
+    {
+     "i": 13,
+     "start_frame": 196,
+     "frames": 12,
+     "len_16ths": 3.2,
+     "pos16_in_bar": 3,
+     "cut_to_song_onset_ms": 127,
+     "action_frame_offset": 6,
+     "hit_preroll_ms": 187,
+     "hit_to_song_onset_ms": 12,
+     "hit_to_16th_ms": 4,
+     "hit_peak_db_vs_music": 4.6,
+     "clip_sound_centroid_hz": 2755,
+     "luma": 0.433
+    },
+    {
+     "i": 14,
+     "start_frame": 208,
+     "frames": 11,
+     "len_16ths": 2.93,
+     "pos16_in_bar": 6,
+     "cut_to_song_onset_ms": -151,
+     "action_frame_offset": 2,
+     "clip_sound_centroid_hz": 2846,
+     "luma": 0.585
+    },
+    {
+     "i": 15,
+     "start_frame": 219,
+     "frames": 7,
+     "len_16ths": 1.87,
+     "pos16_in_bar": 9,
+     "cut_to_song_onset_ms": 151,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 209,
+     "hit_to_song_onset_ms": -261,
+     "hit_to_16th_ms": 48,
+     "hit_peak_db_vs_music": 6.4,
+     "clip_sound_centroid_hz": 2962,
+     "luma": 0.452
+    },
+    {
+     "i": 16,
+     "start_frame": 226,
+     "frames": 16,
+     "len_16ths": 4.27,
+     "pos16_in_bar": 11,
+     "cut_to_song_onset_ms": -179,
+     "action_frame_offset": 14,
+     "hit_preroll_ms": 173,
+     "hit_to_song_onset_ms": -5,
+     "hit_to_16th_ms": -9,
+     "hit_peak_db_vs_music": 1.6,
+     "hit_decay_12db_ms": 900,
+     "clip_sound_centroid_hz": 3529,
+     "luma": 0.384
+    },
+    {
+     "i": 17,
+     "start_frame": 242,
+     "frames": 10,
+     "len_16ths": 2.67,
+     "pos16_in_bar": 15,
+     "cut_to_song_onset_ms": -139,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 139,
+     "hit_to_song_onset_ms": 0,
+     "hit_to_16th_ms": -1,
+     "hit_peak_db_vs_music": 6.3,
+     "hit_decay_12db_ms": 226,
+     "clip_sound_centroid_hz": 2191,
+     "luma": 0.716
+    },
+    {
+     "i": 18,
+     "start_frame": 252,
+     "frames": 16,
+     "len_16ths": 4.27,
+     "pos16_in_bar": 2,
+     "cut_to_song_onset_ms": 278,
+     "action_frame_offset": 2,
+     "hit_preroll_ms": 274,
+     "hit_to_song_onset_ms": 552,
+     "hit_to_16th_ms": -75,
+     "hit_peak_db_vs_music": 2.8,
+     "hit_decay_12db_ms": 134,
+     "clip_sound_centroid_hz": 2445,
+     "luma": 0.559
+    }
+   ]
+  }
+ ],
+ "pooled_measurements": {
+  "n_shots": 119,
+  "n_cuts": 114,
+  "n_hits_with_song_reference": 55,
+  "n_hits_total": 76,
+  "hit_to_song_onset_ms": {
+   "p10": -99,
+   "p25": -18,
+   "median": 0,
+   "p75": 8,
+   "p90": 15,
+   "abs_median": 9,
+   "within_25ms_pct": 75,
+   "within_40ms_pct": 78
+  },
+  "hit_to_16th_grid_ms": {
+   "p10": -30,
+   "median": -1,
+   "p90": 20,
+   "abs_median": 12,
+   "within_30ms_pct": 83
+  },
+  "cut_to_song_onset_ms": {
+   "p10": -207,
+   "median": -65,
+   "p90": 185,
+   "abs_median": 129,
+   "within_40ms_pct": 10
+  },
+  "cut_to_16th_grid_ms": {
+   "abs_median": 36,
+   "within_1frame24_pct": 58
+  },
+  "preroll_cut_to_hit_ms": {
+   "p10": 52,
+   "p25": 82,
+   "median": 140,
+   "p75": 210,
+   "p90": 282,
+   "per_reference_median": {
+    "FB15TNFAHVU": 120,
+    "jKSxAkOS3JY": 89,
+    "n_NvC1IQUMQ": 76,
+    "qgzBYo7gvhE": 176,
+    "h0HNYocSDE8": 215
+   }
+  },
+  "visual_action_frame_after_cut_frames24": {
+   "p10": 1,
+   "p25": 2,
+   "median": 3,
+   "p75": 6,
+   "p90": 7
+  },
+  "shot_frames_at_24fps": {
+   "p10": 6,
+   "p25": 7,
+   "median": 9,
+   "p75": 11,
+   "p90": 13,
+   "min": 2,
+   "hist": {
+    "2": 1,
+    "3": 1,
+    "4": 2,
+    "5": 6,
+    "6": 11,
+    "7": 11,
+    "8": 14,
+    "9": 17,
+    "10": 10,
+    "11": 13,
+    "12": 8,
+    "13": 4,
+    "15": 4,
+    "16": 2,
+    ">=17": 5
+   }
+  },
+  "shot_len_16ths": {
+   "p10": 1.73,
+   "p25": 2.12,
+   "median": 2.66,
+   "p75": 3.2,
+   "p90": 4.16
+  },
+  "cuts_per_s": {
+   "FB15TNFAHVU": 2.29,
+   "jKSxAkOS3JY": 3.17,
+   "n_NvC1IQUMQ": 2.39,
+   "qgzBYo7gvhE": 2.4,
+   "h0HNYocSDE8": 1.61
+  },
+  "cuts_per_bar": {
+   "FB15TNFAHVU": [
+    6,
+    6,
+    6
+   ],
+   "jKSxAkOS3JY": [
+    5,
+    6,
+    6,
+    7
+   ],
+   "n_NvC1IQUMQ": [
+    7,
+    7,
+    8
+   ],
+   "qgzBYo7gvhE": [
+    4,
+    5,
+    5,
+    5
+   ],
+   "h0HNYocSDE8": [
+    4,
+    4,
+    4,
+    5
+   ]
+  },
+  "cut_pattern_repeat_from_previous_bar_pct": {
+   "FB15TNFAHVU": 100,
+   "jKSxAkOS3JY": 86,
+   "n_NvC1IQUMQ": 77,
+   "qgzBYo7gvhE": 75,
+   "h0HNYocSDE8": 79
+  },
+  "hit_peak_db_over_music_rms": {
+   "p10": 0,
+   "p25": 3,
+   "median": 5,
+   "p75": 7,
+   "p90": 8
+  },
+  "clip_sound_rms_db_vs_music_per_reference": {
+   "FB15TNFAHVU": 0.1,
+   "n_NvC1IQUMQ": -1.3,
+   "qgzBYo7gvhE": -4.0,
+   "h0HNYocSDE8": -5.0
+  },
+  "hit_envelope_db_rel_peak": {
+   "-300ms": -9.7,
+   "-200ms": -9.8,
+   "-120ms": -13.3,
+   "-60ms": -17.1,
+   "-30ms": -14.7,
+   "0ms": -0.5,
+   "+30ms": -1.8,
+   "+60ms": -4.1,
+   "+120ms": -7.3,
+   "+200ms": -9.7,
+   "+300ms": -9.9,
+   "+600ms": -9.3
+  },
+  "hit_decay_to_minus12db_ms": {
+   "p10": 110,
+   "p25": 216,
+   "median": 484,
+   "p75": 806,
+   "p90": 913
+  },
+  "clip_sound_centroid_hz": {
+   "p10": 2319,
+   "median": 3433,
+   "p90": 4479,
+   "song_at_hit_median": 1905
+  },
+  "timbre_match_song_vs_clip_hit": {
+   "corr_log_centroid": 0.22,
+   "corr_low_band_share": 0.33,
+   "reading": "weak: hits are chosen for crispness and theme, not to imitate the song's instrument"
+  },
+  "shots_with_detectable_hit_pct": {
+   "FB15TNFAHVU": 45,
+   "jKSxAkOS3JY": 75,
+   "n_NvC1IQUMQ": 50,
+   "qgzBYo7gvhE": 73,
+   "h0HNYocSDE8": 79
+  },
+  "strong_song_onsets_covered_by_a_clip_hit_pct": {
+   "FB15TNFAHVU": 50,
+   "n_NvC1IQUMQ": 42,
+   "qgzBYo7gvhE": 40,
+   "h0HNYocSDE8": 69
+  },
+  "music_gain_change_after_cut_db": {
+   "FB15TNFAHVU": 1.69,
+   "n_NvC1IQUMQ": 0.04,
+   "qgzBYo7gvhE": 0.0,
+   "h0HNYocSDE8": 0.02
+  },
+  "spectral_jump_in_clip_audio_at_cut": "flux at the cut instant / median flux = 0.67-1.03 (never a spike > 3x at any of 114 cuts): clip audio is not cut with the picture",
+  "camera_per_shot": {
+   "zoom_total_pct_p10_p50_p90": [
+    -1.2,
+    -0.02,
+    0.55
+   ],
+   "rotation_total_deg_p10_p50_p90": [
+    -0.4,
+    0.0,
+    0.35
+   ],
+   "shots_zoom_gt_4pct": "5/119 (source camera)",
+   "added_shake": "none (high shake values only on shots with big source action)"
+  },
+  "speed": {
+   "unique_drawings_per_s_median": [
+    19.4,
+    17.5,
+    18.0,
+    17.0,
+    18.4
+   ],
+   "dup_ratio_24fps_median": [
+    0.21,
+    0.31,
+    0.33,
+    0.25
+   ],
+   "blend_frames": "0 inside shots",
+   "reading": "native 24 fps anime timing (on 1s/2s/3s), no interpolation, no ramps"
+  },
+  "grade_per_reference_shot_medians": {
+   "luma": [
+    0.27,
+    0.4,
+    0.37,
+    0.3,
+    0.56
+   ],
+   "contrast_std": [
+    0.235,
+    0.24,
+    0.198,
+    0.253,
+    0.267
+   ],
+   "saturation": [
+    0.46,
+    0.43,
+    0.34,
+    0.49,
+    0.39
+   ],
+   "p05": [
+    0.03,
+    0.07,
+    0.12,
+    0.01,
+    0.08
+   ],
+   "p95": [
+    0.83,
+    0.87,
+    0.82,
+    0.78,
+    0.96
+   ],
+   "reading": "source colours; luma p10 of shots 0.13-0.26 (dark shots stay dark); no common tint, no vignette, no grain, no glow"
+  },
+  "loudness_references": {
+   "lufs_i": [
+    -6.0,
+    -7.1,
+    -9.2,
+    -5.7,
+    -9.8
+   ],
+   "true_peak_dbtp": [
+    4.8,
+    4.4,
+    1.5,
+    3.9,
+    2.0
+   ],
+   "side_to_mid_db": [
+    -13.0,
+    -7.1,
+    -8.4,
+    -13.5,
+    -20.0
+   ],
+   "reading": "clipped, very loud masters; we keep -14 LUFS / TP < -1 dBTP"
+  }
+ },
+ "style": {
+  "concept": "Each shot = one hit. Pick a percussive 4-bar hook, find the song's hit onsets, and for each hit place a clip whose OWN sound transient lands exactly on it; cut into the clip a short pre-roll earlier. Nothing else moves: the rhythm is carried by the clip sounds and the cut rhythm.",
+  "formats": {
+   "master": "render every sound edit as a 16:9 master 1920x1080 (the creator's working format)",
+   "short_layouts": [
+    {
+     "name": "rot90_cw_full",
+     "p": 0.6,
+     "size": [
+      1080,
+      1920
+     ],
+     "how": "rotate the whole 16:9 master 90 deg clockwise (content top -> right); zero crop; never mix rotated and upright shots in one video",
+     "refs": [
+      "FB15TNFAHVU",
+      "jKSxAkOS3JY",
+      "qgzBYo7gvhE"
+     ]
+    },
+    {
+     "name": "letterbox_9x16",
+     "p": 0.4,
+     "size": [
+      1080,
+      1920
+     ],
+     "how": "picture 1080x648 at y=636 on black (n_NvC1IQUMQ measured: the 16:9 master scaled to 1152x648 and 36 px cut off each side); bars stay empty (no blur fill, no text)",
+     "refs": [
+      "n_NvC1IQUMQ"
+     ]
+    },
+    {
+     "name": "letterbox_1x1",
+     "p": 0.0,
+     "size": [
+      1080,
+      1080
+     ],
+     "how": "1080x614 picture at y=234 on black (measured); reference only - our Shorts are 1080x1920",
+     "refs": [
+      "h0HNYocSDE8"
+     ]
+    }
+   ],
+   "long_form": "1920x1080 is the master itself; the references are Shorts only, so a weekly long video would be a compilation of several sound edits (not observed - see not_observed)",
+   "fps": {
+    "source_drawings": 24,
+    "output": 60,
+    "how": "60 fps container with native 24 fps drawings (3:2 repeat), exactly like jKSxAkOS3JY (dup ratio 0.76 at 60 fps); do NOT interpolate"
+   },
+   "duration_s": {
+    "min": 8.5,
+    "target": 10.0,
+    "max": 11.5,
+    "bars": [
+     3.7,
+     5.1
+    ]
+   },
+   "start": "t=0 is 50-220 ms before the first hit (the first song onset); the first shot already contains a hit; no title, no fade-in",
+   "end": "ends after the last shot (10-16 frames) mid-phrase, no fade-out; for a seamless loop reuse the first clip as the last shot (n_NvC1IQUMQ)"
+  },
+  "structure": {
+   "song_section": "the song's most percussive, recognisable hook: intro riff (Shape of You 0.27 s, Wellerman 1.9 s), chorus (HandClap 28.8 s, Fake 44.5 s, Time Back ~39 s); constant tempo 85-140 BPM; original speed and pitch (speed 1.0000, 0 semitones in 4/4 aligned refs)",
+   "optional_intro_shot": {
+    "p": 0.2,
+    "len_s": [
+     0.6,
+     1.3
+    ],
+    "when": "the percussive part enters after a pickup (qgzBYo7gvhE: 1.25 s before the claps)"
+   },
+   "energy": "no build-up / drop inside a sound edit: cuts per bar constant (+-1); allow +1 cut in the last full bar (2 of 5 refs)",
+   "bar_pattern": "choose the hit positions of bar 1 from the song, then repeat the same 16th positions in the next bars when the song repeats (target >= 75 % repeat)"
+  },
+  "hits": {
+   "detect_song_hits": "librosa onset_detect on the ORIGINAL song (hop 128 at 22.05 kHz, backtrack=False, delta 0.12, wait 60 ms) inside the section; strength = onset envelope / its p95; keep onsets with strength >= median of the section",
+   "rate_per_s": {
+    "min": 1.6,
+    "target": 2.4,
+    "max": 3.2
+   },
+   "min_gap_s": 0.25,
+   "micro_gap": {
+    "min_s": 0.083,
+    "max_share": 0.08,
+    "note": "2-3 frame shots only for a double hit (a double clap/knock): 2 of 109 shots are <= 3 frames@24, 4 of 109 are <= 4 frames"
+   },
+   "grid": "hits are real onsets, which sit on the 16th grid (83 % within 30 ms); snap nothing to the grid - align the clip hit to the song onset time itself",
+   "coverage": "cover about half of the strong song onsets (40-69 %); prefer the ones that repeat each bar and the downbeat/backbeat accents",
+   "selection_algorithm": "greedy over onsets sorted by strength: accept if >= 0.25 s from accepted hits (or a micro double hit within budget); then fill gaps > 0.6 s with the strongest remaining onset; stop at rate max"
+  },
+  "cuts": {
+   "rule": "cut_i = hit_i - preroll_i, rounded to the output frame grid; the audio hit is placed sample-accurately at hit_i regardless of the frame grid",
+   "preroll_ms": {
+    "default": 140,
+    "min": 50,
+    "max": 290,
+    "choose": "the clip's own wind-up: the frame where the visible motion toward the impact starts, clamped to [50, 290] ms; slower gestures (stomp, table bang) 200-260 ms, clicks/snaps 60-120 ms"
+   },
+   "shot_len": {
+    "frames24_median": 9,
+    "frames24_p10": 6,
+    "frames24_p90": 13,
+    "s_median": 0.375,
+    "s_range": [
+     0.23,
+     0.56
+    ],
+    "16ths_median": 2.66
+   },
+   "cuts_per_s": [
+    1.6,
+    3.2
+   ],
+   "cuts_per_bar": [
+    4,
+    8
+   ],
+   "cut_on_beat": "do NOT put cuts on song onsets (refs: 10 % within 40 ms); the hit inside the shot is what is on the beat",
+   "visual_sync": "the biggest visible change of the shot (impact frame) must fall 1-7 frames@24 after the cut (median 3) and within +-2 frames of the audio hit"
+  },
+  "speed": {
+   "rate": 1.0,
+   "slow_motion": false,
+   "ramps": false,
+   "frame_interpolation": false,
+   "reverse": false,
+   "freeze": false
+  },
+  "camera": {
+   "added_moves": "none",
+   "zoom_pct_per_shot": 0.0,
+   "shake": 0.0,
+   "rotation_deg": 0.0,
+   "motion_blur": false,
+   "note": "the Camera from edit_fx must return identity for this style"
+  },
+  "transitions": {
+   "list": [
+    {
+     "name": "hard_cut",
+     "p": 0.95,
+     "frames": 0
+    },
+    {
+     "name": "cross_dissolve",
+     "p": 0.05,
+     "frames_24fps": [
+      2,
+      3
+     ],
+     "note": "FB15TNFAHVU cut 11 (2 frames, out of the intro shot) and cut 90 (3 frames, match-strike glow into brass knuckles: two dark warm shots); use between shots of similar tone, never on the strongest hits"
+    }
+   ],
+   "forbidden": [
+    "flash",
+    "whip",
+    "zoom_blur",
+    "glitch",
+    "light_leak",
+    "dip_to_black",
+    "shake_cut",
+    "shape/mask wipes",
+    "split screen",
+    "3D tilt",
+    "speed-ramped cut"
+   ],
+   "max_non_hard_per_short": 2
+  },
+  "grade": {
+   "look": "neutral: source colours, no LUT, no S-curve, no split toning, no bloom, no grain, no vignette, no letterbox inside the picture",
+   "allowed": {
+    "cas_sharpen": [
+     0.0,
+     0.35
+    ],
+    "saturation": [
+     1.0,
+     1.05
+    ],
+    "exposure_normalisation": false
+   },
+   "note": "the 16:9 master in the tutorial and the published vertical have identical colours; shot-to-shot luma ranges 0.13-0.65, dark shots are left dark"
+  },
+  "overlays_text": {
+   "lyrics": false,
+   "titles": false,
+   "captions": false,
+   "emoji": false,
+   "particles": false,
+   "gradient_overlays": false,
+   "watermark": {
+    "use": "optional channel tag",
+    "text_style": "small italic sans, white",
+    "opacity": [
+     0.25,
+     0.35
+    ],
+    "height_frac_of_master": 0.025,
+    "position_master_xy": [
+     0.45,
+     0.07
+    ],
+    "note": "in the rotated layout it rotates with the master (reads top-to-bottom); Latin text only"
+   }
+  },
+  "audio": {
+   "music": {
+    "level": "constant, untouched, original master, speed 1.0; no ducking (keep gain within +-1 dB)",
+    "section": "hook window [s0, s0 + L]"
+   },
+   "clip_sounds": {
+    "source": "each shot's own anime audio around its hit (the tutorial shows 2-3 stacked snippets per hit on 3 audio tracks)",
+    "gate": "silent (<= -18 dB rel. hit peak) until 10 ms before the hit; 8 ms fade-in; natural decay; 30 ms fade-out ending 25 ms before the next hit or at hit + 0.9 s",
+    "level": "hit peak (max 20 ms RMS in the first 120 ms) = music RMS over +-300 ms + 5 dB (allowed +3..+7); whole-shot clip sound RMS between -5 and 0 dB vs music",
+    "eq": "high-pass 100 Hz except low hits (stomp/bang/kick-like: low-band share > 0.35); presence +2 dB @ 3.5 kHz Q 1; target centroid 2.3-4.5 kHz",
+    "stacking": "a weak hit may be doubled (second copy +0 dB, 0 ms offset) up to 3 layers instead of > +9 dB gain",
+    "overlap": "the tail of the previous hit may run into the next shot until the next hit's fade (audio edges independent of picture cuts)",
+    "speech": "no words: reject hits with talking within +-0.3 s (tonal low band), allow a short grunt/shout only as the hit itself"
+   },
+   "no_library_sfx": "no risers, whooshes or impacts from a library were detected (no energy at cuts, all hits have matching visible action)",
+   "master": {
+    "lufs_i": -14,
+    "true_peak_dbtp": -1.5,
+    "limiter": "alimiter / loudnorm two-pass",
+    "stereo": "mono-compatible (refs side/mid -7..-20 dB): clip sounds centred, music as is"
+   }
+  },
+  "clip_selection": {
+   "must": [
+    "visible physical action that makes a crisp transient: impact, clap, snap, click, clack, knock, stomp, slam, gunshot, gun cock/rack, sword click/clash, cork pop, match strike, typewriter/keys, chess/Go piece",
+    "the sound and the visible impact coincide within +-2 frames",
+    "close-up or medium close-up of hands / object / feet (about 80 % of shots); faces only as intro/outro stingers or when the face makes the sound",
+    "clean frame: no subtitles, no burned-in text, no credits, no watermark of another editor",
+    "safe: no blood/gore (drop the knife-into-flesh and finger-cut shots some refs use), no fan service (Monster Musume-type shows excluded), NudeNet + clip_judge as in clip_finder"
+   ],
+   "sound_detector": {
+    "base": "core/meme/align.py sfx_hits on the clip's own audio",
+    "thresholds_for_candidates": {
+     "flat_min": 0.12,
+     "tonal_min": 0.1,
+     "rise_db_min": 4.5,
+     "over_db_min": 3
+    },
+    "calibration": "reference hits: flatness p10/50/90 0.12/0.35/0.52, tonal 0.10/0.29/0.44, rise 4.5/11.4/23 dB; the current thresholds (0.18/0.12/6) catch only 62 % of reference hits",
+    "hit_decay_12db_ms": [
+     110,
+     900
+    ],
+    "centroid_hz": [
+     2300,
+     4500
+    ]
+   },
+   "theme": "when the song title or lyric names a sound (HandClap, Wellerman stomp, Fake gavel), >= 60 % of shots act it out; otherwise mix hit types, weakly matching timbre (low hits on kicks/stomps, bright clicks on hats/marimba; measured correlation only 0.2-0.33)",
+   "variety": {
+    "distinct_anime_per_10s": [
+     11,
+     20
+    ],
+    "max_shots_per_anime": 2,
+    "no_consecutive_same_anime": true
+   },
+   "pool_size": "about 3 candidate hit-clips per song hit so each hit can pick the best-fitting pre-roll and sound"
+  }
+ },
+ "recipes": {
+  "hit_sync_cut": {
+   "what": "the core timing of every shot",
+   "steps": [
+    "song hits H (edit time) from the original song section (see style.hits)",
+    "for clip j: its audio hits a_j (align.sfx_hits, then refine each to the onset-envelope peak at hop 64 = 2.9 ms) and its visual action frame v_j = argmax of mean |gray_k - gray_{k-1}| in a_j +- 3 frames",
+    "assign clips to hits (Hungarian or greedy best score) with score = sfx strength + theme + variety - |v_j - a_j| penalty",
+    "preroll_i = clamp(a_j - start of the visible wind-up, 0.05, 0.29) s, default 0.14 s",
+    "cut_i = round((H_i - preroll_i) * fps_out) / fps_out; shot i shows clip time t_clip = a_j + (t - H_i) for t in [cut_i, cut_{i+1})",
+    "reject a layout where cut_{i+1} - cut_i < 2 source frames or where t_clip leaves the clip (pick a shorter pre-roll or another clip)"
+   ],
+   "numbers": {
+    "preroll_ms": [
+     50,
+     140,
+     290
+    ],
+    "min_shot_s": 0.083,
+    "hit_alignment_tolerance_ms": 10
+   }
+  },
+  "native_frames": {
+   "what": "speed 1.0, anime timing untouched, 24 fps drawings in a 60 fps file",
+   "numpy": "k = floor(t_clip * src_fps + 1e-6); frame = cv2.imread(all_paths[k]) - i.e. a ShotFrames(native=True) mode that skips the duplicate-drop and DIS interpolation (ShotFrames.frame would otherwise synthesise in-betweens)",
+   "ffmpeg": "fps=60 (duplicates frames 3:2), never minterpolate"
+  },
+  "rot90_layout": {
+   "what": "vertical delivery of the 16:9 master (3 of 5 refs)",
+   "numpy": "out = cv2.rotate(master_1920x1080, cv2.ROTATE_90_CLOCKWISE)  # 1080x1920",
+   "ffmpeg": "-vf transpose=1",
+   "rules": "rotate every frame (the whole video), including the watermark; no crop, no scale"
+  },
+  "letterbox_layout": {
+   "what": "16:9 inside 9:16 on black (1 of 5 refs; 1:1 in another)",
+   "numpy": "canvas = np.zeros((1920,1080,3),np.uint8); pic = cv2.resize(master,(1152,648),interpolation=cv2.INTER_AREA)[:, 36:1116]; canvas[636:1284] = pic",
+   "ffmpeg": "-vf scale=1152:648:flags=lanczos,crop=1080:648,pad=1080:1920:0:636:black"
+  },
+  "cross_dissolve": {
+   "what": "the only soft transition seen: FB15TNFAHVU cut 11 (2 frames: incoming weight 0.35, 0.7) and cut 90 (3 frames: 0.35, 0.6, 0.85); both outgoing and incoming shots keep playing during the mix",
+   "numpy": "n = 2 or 3 source frames; for k in range(n): a = (k+1)/(n+1) (measured 0.35/0.7 and 0.35/0.6/0.85); out = cv2.addWeighted(A[t], 1-a, B[t], a, 0) with A continuing past its cut point; at 60 fps output: n60 = round(n*2.5), a = (k+1)/(n60+1); the incoming hit must still land after the mix ends",
+   "ffmpeg": "xfade=transition=fade:duration=0.083 (2 f) or 0.125 (3 f)",
+   "p": 0.05
+  },
+  "hard_cut": {
+   "what": "everything else",
+   "numpy": "frame switches at cut_i; no flash, no motion blur, no camera punch",
+   "p": 0.95
+  },
+  "clip_audio_gate_and_mix": {
+   "what": "clip hit on top of the untouched song",
+   "ffmpeg_per_shot": "[k:a]atrim=start={a_j-0.03}:end={a_j+min(0.9, H_{i+1}-H_i-0.025)},asetpts=PTS-STARTPTS,highpass=f=100,equalizer=f=3500:t=q:w=1:g=2,afade=t=in:st=0.012:d=0.008,afade=t=out:st={len-0.03}:d=0.03,volume={g_i}dB,adelay={(H_i-0.03)*1000}:all=1[s_i]",
+   "gain": "g_i = (music_rms_db(H_i +- 0.3 s) + 5) - hit_peak_db(clip, a_j .. a_j+0.12 s, 20 ms RMS); clamp to [-12, +12] dB; if > +9 dB stack a duplicate instead",
+   "mix": "[song][s_1]..[s_n]amix=inputs=n+1:normalize=0,alimiter=limit=0.89:attack=1:release=40,loudnorm=I=-14:TP=-1.5:LRA=9 (two-pass)",
+   "check": "re-run sound_timing.py on the render: hits within 25 ms of song onsets >= 75 %, hit peak over music +3..+7 dB, no spectral spike at cuts"
+  },
+  "loop_end": {
+   "what": "seamless Shorts loop (n_NvC1IQUMQ)",
+   "how": "the last shot is the first clip again (same clip, a later or identical hit), so frame N-1 flows into frame 0; audio: the song section is chosen so that its end + 1 hit returns to the first hit's bar position"
+  },
+  "watermark": {
+   "what": "faint creator tag on the master",
+   "pil": "draw 'ZeroYenOtaku' in an italic Latin font, cap height 0.025*1080 px, white, alpha 0.3, centred at (0.45*1920, 0.07*1080) on the 16:9 master before rotation",
+   "optional": true
+  }
+ },
+ "quality_targets": {
+  "measure_with": "sound_analyze.py (every frame) + sound_timing.py (song alignment is exact because we render the song ourselves: pass our own song window as the 'aligned' song)",
+  "targets": {
+   "hit_to_song_onset_abs_ms_median": {
+    "ref_range": [
+     5,
+     18
+    ],
+    "target_max": 15
+   },
+   "hits_within_40ms_of_song_onset_pct": {
+    "ref_range": [
+     62,
+     90
+    ],
+    "target_min": 75
+   },
+   "shots_with_detectable_hit_pct": {
+    "ref_range": [
+     45,
+     79
+    ],
+    "target_min": 70
+   },
+   "preroll_ms_median": {
+    "ref_range": [
+     76,
+     215
+    ],
+    "target": [
+     80,
+     220
+    ]
+   },
+   "cuts_within_40ms_of_song_onset_pct": {
+    "ref_range": [
+     7,
+     14
+    ],
+    "target_max": 25
+   },
+   "cuts_per_s": {
+    "ref_range": [
+     1.6,
+     3.2
+    ],
+    "target": [
+     1.6,
+     3.2
+    ]
+   },
+   "shot_s_median": {
+    "ref_range": [
+     0.267,
+     0.5
+    ],
+    "target": [
+     0.27,
+     0.5
+    ]
+   },
+   "hit_peak_db_over_music_median": {
+    "ref_range": [
+     4.0,
+     7.4
+    ],
+    "target": [
+     3,
+     7
+    ]
+   },
+   "music_gain_change_after_cut_db_abs": {
+    "target_max": 1.0
+   },
+   "hard_cut_share": {
+    "ref": 0.98,
+    "target_min": 0.93
+   },
+   "shots_with_added_zoom_gt_4pct": {
+    "ref": "0-2 per video, all source",
+    "target_max": 1
+   },
+   "duration_s": [
+    8.5,
+    11.5
+   ],
+   "lufs_i": [
+    -15,
+    -13
+   ],
+   "true_peak_dbtp_max": -1.0,
+   "frame_checks": "no subtitle/text band (edit_fx.text_band == 0), no blood/red-liquid dominated frames, no NudeNet hits"
+  }
+ },
+ "not_observed": {
+  "note": "things the owner may expect from other groups that these 6 sound-edit references do NOT use; keep them out of the sound-edit pipeline or mark them as our own extension",
+  "items": [
+   "slow motion / speed ramps",
+   "added camera zoom, shake, punch-ins",
+   "flash, whip, zoom-blur, glitch transitions",
+   "colour grading, bloom, grain, vignette",
+   "lyrics / captions / titles / emoji",
+   "split-screen, postcard or frame layouts, 3D tilts",
+   "long-form 16:9 uploads (all six are Shorts; a long-form sound-edit compilation would be our own extension: several 10 s sound edits of different songs joined with hard cuts on the song change)"
+  ]
+ }
+}

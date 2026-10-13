@@ -1,0 +1,254 @@
+name: Edit pool refresh (monthly, sound + slow-mo)
+
+# Monthly refresh of the vibe pools of the sound edit and the cinematic slow-mo edit (core/edit/refs/pool-format.md).
+# DISABLED until the owner approves: scheduled and real (non dry-run) runs need the repository variable EDIT_POOL_REFRESH=on.
+# A manual run with dry_run=true (the default) works without the variable: it builds a small batch, runs every gate and the
+# check, and promotes / pushes NOTHING.
+#
+# Jobs (each under the 6 h runner limit; the build is split into shards that run in parallel):
+#   plan   gate (first Tuesday / manual), YouTube preflight (cookies secret; a bot-block is reported, never fatal)
+#   build  4 shards: pull the live manifests -> yt-dlp source discovery + cutting (library.py: transient / HPSS hits, shot,
+#          subtitle, watermark, nudity / minors / hentai gates) -> the VISIBLE-SOURCE stamp of every new sound clip
+#          (core/pools/pool_visible.py = core/edit/sound_visible.py) -> artifact (new clips only)
+#   swap   pull the live pools -> merge the shards (de-duplicated against the live pool, the used ledger's moments, the
+#          blocklist, the other vibes and each other) -> check against the owner-approved QUALITY BASELINE
+#          (core/edit/assets/pools-baseline.json: weak items dropped, batch medians within 15 %, enough new HIT clips)
+#          -> validate -> promote (new + the live pool's UNUSED clips; used ones retire) -> push to the release `edit-pools`
+#          only after a successful promote. Any failure keeps the old pool. Contact sheets + report are artifacts.
+# No Kaggle: the work is CPU. If Kaggle is ever needed it is Mon-Thu only (this job runs on the first TUESDAY) with the
+# existing KAGGLE_API_TOKEN secret, never written to files.
+# GitHub cron ORs day-of-month and day-of-week, so it fires every Tuesday 05:00 UTC and `plan` exits unless the day is <= 7.
+
+on:
+  schedule:
+    - cron: '0 5 * * 2'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = small batch, every gate + check + validate, promote and push nothing'
+        required: false
+        default: 'true'
+      budget_min:
+        description: 'Build time budget per shard in minutes (real run; dry run uses 25)'
+        required: false
+        default: '270'
+
+concurrency:
+  group: edit-pool-refresh
+  cancel-in-progress: false
+
+env:
+  EDIT_POOL_DIR: output/edit-pools
+  EDIT_CACHE: /home/runner/.cache/clip_finder
+  YT_COOKIES: /tmp/yt_cookies.txt
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  GH_PAT: ${{ secrets.GH_PAT }}
+  GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
+  PYTHONIOENCODING: utf-8
+  EDIT_GPU: '0'
+  EDIT_THREADS: '4'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      go: ${{ steps.gate.outputs.go }}
+      dry: ${{ steps.gate.outputs.dry }}
+      blocked: ${{ steps.pre.outputs.blocked }}
+    steps:
+      - name: Gate (first Tuesday, repository variable, dry run)
+        id: gate
+        run: |
+          DRY="${{ github.event.inputs.dry_run || 'false' }}"
+          GO=true
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "$(date -u +%d)" -gt 7 ]; then echo "Not the first Tuesday of the month: nothing to do."; GO=false; fi
+            DRY=false
+          fi
+          if [ "$DRY" != "true" ] && [ "${{ vars.EDIT_POOL_REFRESH }}" != "on" ]; then
+            echo "::notice::Edit pool refresh is DISABLED (repository variable EDIT_POOL_REFRESH is not 'on'); only dry runs are allowed."
+            GO=false
+          fi
+          echo "go=$GO" >> $GITHUB_OUTPUT
+          echo "dry=$DRY" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.go == 'true'
+        with:
+          python-version: '3.11'
+
+      - name: YouTube preflight (cookies secret; a bot-block is reported, not fatal)
+        id: pre
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH && export PATH="$HOME/.deno/bin:$PATH"
+          python -m pip install -q yt-dlp yt-dlp-ejs numpy
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+          python core/pools/pool_refresh.py preflight | tee /tmp/preflight.json
+          if grep -q '"blocked": true' /tmp/preflight.json; then
+            echo "::warning::YouTube blocks this runner (bot-check / rate limit) - the refresh is skipped, the live pool stays. Fix: refresh the YOUTUBE_COOKIES secret, or run 'python core/pools/pool_refresh.py run' on the PC and 'node scripts/edit-pools-store.js push'."
+          fi
+          rm -f /tmp/yt_cookies.txt
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.go == 'true' && needs.plan.outputs.blocked != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg curl unzip libgl1 libglib2.0-0 libsndfile1
+          curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH
+          python -m pip install -U pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install yt-dlp yt-dlp-ejs opencv-python-headless numpy scipy pillow transformers sentencepiece protobuf librosa onnxruntime scikit-learn
+          npm ci || npm install
+
+      - name: Cache models (SigLIP, NudeNet, anime face)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/clip_finder
+          key: meme-models-v2
+
+      - name: Cookies
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+
+      - name: Pull the live manifests (dedupe against the live pool and the used ledger)
+        run: node scripts/edit-pools-store.js pull --manifests-only
+
+      - name: Source discovery + cutting + visible-source stamp (shard ${{ matrix.shard }} of 4)
+        env:
+          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '25' || github.event.inputs.budget_min || '270' }}
+          QUERIES: ${{ needs.plan.outputs.dry == 'true' && '2' || '' }}
+        run: |
+          python core/pools/pool_refresh.py shard --staging output/edit-pools-next --shard ${{ matrix.shard }}/4 \
+            --budget-min "$BUDGET" ${QUERIES:+--queries $QUERIES}
+          du -sh output/edit-pools-next || true
+          rm -f /tmp/yt_cookies.txt
+
+      - name: Upload the shard (new clips only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pool-shard-${{ matrix.shard }}
+          path: output/edit-pools-next
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 2
+
+  swap:
+    needs: [plan, build]
+    # runs when at least one shard finished (a failed shard only costs its new clips)
+    if: ${{ !cancelled() && needs.plan.outputs.go == 'true' && needs.plan.outputs.blocked != 'true' && (needs.build.result == 'success' || needs.build.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      DRY_RUN: ${{ needs.plan.outputs.dry }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libgl1 libglib2.0-0 libsndfile1
+          python -m pip install -U pip
+          python -m pip install opencv-python-headless numpy scipy pillow
+          npm ci || npm install
+
+      - name: Pull the live pools
+        run: node scripts/edit-pools-store.js pull
+
+      - name: Download the shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pool-shard-*
+          path: output/shards
+
+      - name: Merge, check against the baseline, validate, promote
+        id: swap
+        continue-on-error: true
+        env:
+          POOL_MIN_NEW: ${{ needs.plan.outputs.dry == 'true' && '1' || '20' }}
+          POOL_MIN_NEW_HITS: ${{ needs.plan.outputs.dry == 'true' && '1' || '40' }}
+        run: |
+          set -e
+          ls output/shards
+          # a dry run before the owner approved the baseline is checked against the PROPOSED baseline (the live pool's own stats)
+          if [ "$DRY_RUN" = "true" ] && [ ! -f core/edit/assets/pools-baseline.json ]; then export POOL_BASELINE=core/edit/assets/pools-baseline.proposed.json; fi
+          python core/pools/pool_refresh.py merge --staging output/edit-pools-next --from output/shards/*
+          python core/pools/pool_refresh.py check --staging output/edit-pools-next
+          python core/edit/vibe_pool.py validate --dir output/edit-pools-next
+          if [ "$DRY_RUN" = "true" ]; then echo "dry run: validated, not promoted"; exit 0; fi
+          python core/edit/vibe_pool.py promote --staging output/edit-pools-next
+
+      - name: Contact sheets of the new hit moments + counts
+        if: always()
+        run: |
+          python core/pools/pool_visible.py counts --dir output/edit-pools-next > output/edit-pools-next/counts.txt 2>&1 || true
+          python - <<'PY' || true
+          import json, os
+          p = 'output/edit-pools-next/'
+          ids = []
+          for v in ('impact', 'crisp'):
+              f = f'{p}sound/{v}/clips.json'
+              if os.path.isfile(f):
+                  ids += [i['id'] for i in json.load(open(f))['items'] if i.get('status') == 'fresh' and (i.get('vis') or {}).get('hit')]
+          json.dump(ids, open('/tmp/new-hits.json', 'w'))
+          PY
+          python core/pools/pool_visible.py sheet --dir output/edit-pools-next --only-new /tmp/new-hits.json --out output/edit-pools-next/sheets/pool-sheet || true
+          {
+            echo "### Edit pool refresh (dry run: $DRY_RUN)"
+            echo '```'; cat output/edit-pools-next/counts.txt 2>/dev/null; echo '```'
+            echo '```'; head -c 3000 output/edit-pools-next/check-report.json 2>/dev/null; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report and the sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edit-pool-refresh-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            output/edit-pools-next/check-report.json
+            output/edit-pools-next/counts.txt
+            output/edit-pools-next/sheets/*.jpg
+          retention-days: 30
+
+      - name: Push the promoted pools to the release
+        if: steps.swap.outcome == 'success' && env.DRY_RUN != 'true'
+        run: node scripts/edit-pools-store.js push
+
+      - name: Refresh not promoted - the live pool stays
+        if: steps.swap.outcome != 'success'
+        run: |
+          echo "::warning::Edit pool refresh not promoted: see check-report.json in the artifact. The daily job keeps the old pool."
+          head -c 4000 output/edit-pools-next/check-report.json 2>/dev/null || true
+          exit 1
