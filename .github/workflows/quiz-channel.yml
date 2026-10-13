@@ -62,7 +62,7 @@ env:
   # beach / festival ~1 in 4, winter and valentine in their windows), animated looping backgrounds, AI narrator lines (fixed pools as
   # fallback), moving watermark. Off until verified: POP_PRONOUNCE (phonetic respelling).
   POP_NEW_FORMATS: "1"
-  POP_THEMES: "halloween,beach,festival,winter,valentine"
+  POP_THEMES: "halloween,beach,festival,winter,valentine,glasses,villains,maid"
   POP_SEASONAL_RATE: "0.34"    # Halloween (Oct 15-31) on about 1 in 3 videos (owner 2026-10-12)
   POP_ANIM_BG: "1"
   POP_AI_LINES: "1"
