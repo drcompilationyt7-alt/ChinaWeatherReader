@@ -1,5 +1,206 @@
 {
  "approved": [],
  "retired": [],
- "rejected": []
+ "rejected": [
+  {
+   "name": "mugen",
+   "at": "2026-10-13",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "higher",
+   "at": "2026-10-13",
+   "why": "\"My Hero Academia Season 7\" has no AniList entry in anime-list.json"
+  },
+  {
+   "name": "sugar rush",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 36 found)"
+  },
+  {
+   "name": "ruriiro",
+   "at": "2026-10-13",
+   "why": "\"Oshi no Ko: Mother and Children\" has no AniList entry in anime-list.json"
+  },
+  {
+   "name": "armageddon",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 51 found)"
+  },
+  {
+   "name": "how sweet",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 48 found)"
+  },
+  {
+   "name": "accendio",
+   "at": "2026-10-13",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "feel the pop",
+   "at": "2026-10-13",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "gunjou",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 51 found)"
+  },
+  {
+   "name": "kaijuu no hana uta",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 55 found)"
+  },
+  {
+   "name": "ao to natsu",
+   "at": "2026-10-13",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "lemon",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 46 found)"
+  },
+  {
+   "name": "ao no sumika",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 36 found)"
+  },
+  {
+   "name": "hakujitsu",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 42 found)"
+  },
+  {
+   "name": "show",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 41 found)"
+  },
+  {
+   "name": "mela!",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 0 found)"
+  },
+  {
+   "name": "only you",
+   "at": "2026-10-13",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "the immortal promise",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "one thought",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "fearless",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "a ray of light",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "ten thousand miles",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "wishes",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "the world's peculiar taste",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "moonride",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "do it like this",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "backtrack vocals",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "click",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "saki live",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "jump live",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "| chinese c-pop r&b",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "“me in phase”",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "sheesh",
+   "at": "2026-10-13",
+   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 0 found)"
+  },
+  {
+   "name": "iris out",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "drip",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "crazy",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "heya",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "baddie",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "rockstar",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "gabriela",
+   "at": "2026-10-13",
+   "why": "no matching official upload found on YouTube"
+  }
+ ]
 }
