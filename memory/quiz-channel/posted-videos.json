@@ -263,6 +263,17 @@
       "titleSource": "song-llm",
       "quizFormat": "song",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=hsfj1lXqqFI",
+      "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
+      "country": "Global",
+      "postedAt": "2026-10-13T09:37:36.605Z",
+      "videoId": "hsfj1lXqqFI",
+      "category": "quiz-shape",
+      "titleSource": "shape-ramp",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }
