@@ -74,7 +74,14 @@ jobs:
         continue-on-error: true
         run: |
           ls -la /tmp/yt_cookies.txt || echo 'no cookies file'
-          python3 -m yt_dlp -v --js-runtimes node ${YT_COOKIES:+--cookies $YT_COOKIES} --skip-download --print '%(id)s h=%(height)s views=%(view_count)s %(title)s' 'ytsearch1:BABYMONSTER SHEESH official' 2>&1 | tail -25
+          Q='ytsearch2:BABYMONSTER SHEESH official'
+          P="%(id)s h=%(height)s views=%(view_count)s date=%(upload_date)s %(title).50s"
+          try() { echo "== $1"; shift; python3 -m yt_dlp --js-runtimes node --skip-download --ignore-errors --print "$P" "$@" "$Q" 2>&1 | grep -E 'h=|ERROR|Sign in|bot|unavailable' | cut -c1-200 | head -6; }
+          try "cookies, default clients" --cookies /tmp/yt_cookies.txt
+          try "no cookies, default clients"
+          try "no cookies, tv/web_safari/mweb clients" --extractor-args "youtube:player_client=tv,web_safari,mweb"
+          try "cookies, ios/tv clients" --cookies /tmp/yt_cookies.txt --extractor-args "youtube:player_client=ios,tv"
+          try "no cookies, android_vr" --extractor-args "youtube:player_client=android_vr"
       - name: Run the gates
         if: steps.gate.outputs.go == 'true'
         run: |
