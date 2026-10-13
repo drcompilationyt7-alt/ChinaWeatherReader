@@ -1089,6 +1089,50 @@
     "ovStyle": "ov-drop",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "DbIqVhDg5ho",
+   "url": "https://www.youtube.com/watch?v=DbIqVhDg5ho",
+   "postedAt": "2026-10-13T09:58:51.159Z",
+   "publishAt": "2026-10-13T12:00:00.000Z",
+   "song": "idol",
+   "theme": "anime",
+   "emoji": "🗿,⚡",
+   "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
+   "clipIds": [
+    "kNUM8wEnUwo",
+    "nNAYluY0ht0",
+    "FcxJPTzjSqw",
+    "8bH8AfMdthE",
+    "fkF00sUjRKU",
+    "0saw1cGIl1A",
+    "ZYlaUrj2Zkk"
+   ],
+   "clipChannels": [
+    "Ai",
+    "Anime　【OSHI NO KO】　Official Channel",
+    "KaizenK",
+    "Nesta Recaps",
+    "Pmglory Ch. ピエムギ",
+    "なりー。"
+   ],
+   "clipSource": "Oshi no Ko",
+   "settings": {
+    "drop": 14,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "layers"
+   },
+   "onVideoTitle": "full mix drops",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-suggest",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "layers"
+   }
   }
  ]
 }
