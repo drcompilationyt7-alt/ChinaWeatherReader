@@ -1,0 +1,23 @@
+{
+ "month": "2026-10",
+ "at": "2026-10-13T22:42:06.393Z",
+ "limits": {
+  "minViews": 1000000,
+  "evergreenViews": 100000000,
+  "minTrend": 2,
+  "trendDays": 60,
+  "minClips": 12,
+  "maxPerMonth": 10,
+  "retireAfter": 4,
+  "retireMargin": 0.5,
+  "minSustained": 6,
+  "sustainDays": 180,
+  "newDays": 120,
+  "llmAsk": 25
+ },
+ "candidates": 0,
+ "approved": [],
+ "retired": [],
+ "approvedThisMonthBefore": 0,
+ "report": []
+}
