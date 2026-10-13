@@ -69,6 +69,12 @@ jobs:
           node --version && yt-dlp --version
           npm ci || npm install
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+      - name: YouTube check (yt-dlp + JS solver + cookies)
+        if: steps.gate.outputs.go == 'true'
+        continue-on-error: true
+        run: |
+          ls -la /tmp/yt_cookies.txt || echo 'no cookies file'
+          python3 -m yt_dlp -v --js-runtimes node ${YT_COOKIES:+--cookies $YT_COOKIES} --skip-download --print '%(id)s h=%(height)s views=%(view_count)s %(title)s' 'ytsearch1:BABYMONSTER SHEESH official' 2>&1 | tail -25
       - name: Run the gates
         if: steps.gate.outputs.go == 'true'
         run: |

@@ -40,16 +40,26 @@ const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8'))
 const loadFile = () => ({ approved: [], retired: [], rejected: [], ...readJson(FILE(), {}) });
 const saveFile = f => { fs.mkdirSync(path.dirname(FILE()), { recursive: true }); fs.writeFileSync(FILE(), JSON.stringify(f, null, 1)); };
 
+// distinct yt-dlp error lines (bot check, JS challenge, rate limit...), each printed once so a failing runner is diagnosable
+const seenYtErr = new Set();
+function logYtErrors(q, stderr) {
+  for (const l of String(stderr || '').split('\n')) {
+    const m = l.replace(/\[[^\]]*\]\s*[\w-]{11}:\s*/, '').trim();
+    if (/ERROR|WARNING.*(JS|challenge|runtime|formats)|Sign in|bot|429/i.test(m) && !seenYtErr.has(m.slice(0, 90)) && seenYtErr.size < 12) { seenYtErr.add(m.slice(0, 90)); console.log(`  [yt-dlp] "${q.slice(0, 40)}": ${m.slice(0, 220)}`); }
+  }
+}
+
 // ─── YouTube search (yt-dlp, metadata only) ─────────────────────────────────────────────────────
 function ytSearch(query, { n = 10, byDate = false } = {}) {
   const py = process.env.MEME_PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-  const args = ['-m', 'yt_dlp', '--dump-json', '--skip-download', '--no-warnings', '--ignore-errors', '--socket-timeout', '20',
+  const args = ['-m', 'yt_dlp', '--dump-json', '--skip-download', '--ignore-errors', '--socket-timeout', '20',
     ...(process.env.YT_JS_RUNTIMES ? ['--js-runtimes', process.env.YT_JS_RUNTIMES] : []),   // YouTube needs the JS challenge solver (yt-dlp-ejs + node)
     ...(process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES) ? ['--cookies', process.env.YT_COOKIES] : []),
     `${byDate ? 'ytsearchdate' : 'ytsearch'}${n}:${query}`];
   return new Promise(resolve => {
-    execFile(py, args, { timeout: 240000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }, (err, stdout) => {
+    execFile(py, args, { timeout: 240000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }, (err, stdout, stderr) => {
       const out = [];
+      logYtErrors(query, stderr);
       for (const l of String(stdout || '').split('\n')) {
         try {
           const j = JSON.parse(l);
