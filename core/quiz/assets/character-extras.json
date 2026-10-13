@@ -39043,6 +39043,7 @@
       "theme_tags": [
        "halloween_costume"
       ],
+      "srctype": "FAN ART",
       "licence": "Fan art by nihu (credited, post https://danbooru.donmai.us/posts/10154542); character (c) its rights holders",
       "onmodel": {
        "sim": 0.862,
@@ -39055,6 +39056,251 @@
      "theme_hit": [
       "halloween",
       "halloween_costume"
+     ],
+     "dir": "theme/halloween/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 257562,
+     "name": "Hitori Goto",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 12410,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b257562-Ru35NYPfsqhY.png",
+     "edition": "halloween",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.97,
+       "sensitive": 0.03,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8932645",
+      "file": "https://cdn.donmai.us/sample/c0/8c/sample-c08c5c33b125984ae6073fb8c54de8c2.jpg",
+      "artist": "fier(tes.)",
+      "origin": "https://i.pximg.net/img-original/img/2022/11/07/01/43/40/102580825_p0.png",
+      "rating": "g",
+      "score": 18,
+      "res": "2048x2048",
+      "tag": "gotoh_hitori",
+      "theme_tags": [
+       "ghost",
+       "halloween",
+       "jack-o'-lantern",
+       "pumpkin",
+       "witch_hat"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by fier(tes.) (credited, post https://danbooru.donmai.us/posts/8932645); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.839,
+       "margin": 0.081,
+       "hair": 0.707,
+       "face": true,
+       "eye": 0.788
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume",
+      "witch_hat",
+      "witch",
+      "jack-o'-lantern",
+      "pumpkin",
+      "ghost"
+     ],
+     "dir": "theme/halloween/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 1111,
+     "name": "C.C.",
+     "anime": "Code Geass: Lelouch of the Rebellion",
+     "favourites": 10923,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age around 300",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1111-UhmlFtRFrnWa.png",
+     "edition": "halloween",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.89,
+       "questionable": 0.13,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/10114454",
+      "file": "https://cdn.donmai.us/original/3d/d3/3dd3e935a57359980548c1499e6083e7.jpg",
+      "artist": "kaname_aomame",
+      "origin": "https://i.pximg.net/img-original/img/2025/10/13/18/45/56/136230275_p0.jpg",
+      "rating": "s",
+      "score": 14,
+      "res": "1000x1416",
+      "tag": "c.c.",
+      "theme_tags": [
+       "witch_hat"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kaname_aomame (credited, post https://danbooru.donmai.us/posts/10114454); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.856,
+       "margin": 0.073,
+       "hair": 0.711,
+       "face": true,
+       "eye": 0.792
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "witch_hat"
+     ],
+     "dir": "theme/halloween/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 81929,
+     "name": "Tatsumaki",
+     "anime": "One-Punch Man",
+     "favourites": 8783,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "28",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+     "edition": "halloween",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.97,
+       "questionable": 0.03,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": [
+       "bare_legs"
+      ]
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8280814",
+      "file": "https://cdn.donmai.us/sample/1e/b1/sample-1eb119b03edac0736580c585e69f9539.jpg",
+      "artist": "lewdrover",
+      "origin": "https://i.pximg.net/img-original/img/2023/10/15/20/09/41/112576700_p0.jpg",
+      "rating": "s",
+      "score": 99,
+      "res": "3533x5017",
+      "tag": "tatsumaki",
+      "theme_tags": [
+       "halloween",
+       "halloween_costume",
+       "jack-o'-lantern",
+       "witch_hat"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by lewdrover (credited, post https://danbooru.donmai.us/posts/8280814); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.798,
+       "margin": 0.129,
+       "hair": 0.747,
+       "face": true,
+       "eye": 0.655
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume",
+      "witch_hat",
+      "witch",
+      "jack-o'-lantern",
+      "pumpkin"
+     ],
+     "dir": "theme/halloween/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 6,
+     "name": "Rukia Kuchiki",
+     "anime": "Bleach",
+     "favourites": 7389,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Lieutenant\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+     "edition": "halloween",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.95,
+       "sensitive": 0.04,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6832968",
+      "file": "https://cdn.donmai.us/original/94/f5/94f505e7ae486d52dcc68592ec4791fe.jpg",
+      "artist": "rinner373",
+      "origin": "https://twitter.com/rinner373/status/1719308741416497537",
+      "rating": "g",
+      "score": 19,
+      "res": "1448x2048",
+      "tag": "kuchiki_rukia",
+      "theme_tags": [
+       "bat_(animal)",
+       "enmaided",
+       "ghost",
+       "halloween",
+       "halloween_costume",
+       "jack-o'-lantern",
+       "maid",
+       "maid_apron",
+       "maid_headdress",
+       "pumpkin"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by rinner373 (credited, post https://danbooru.donmai.us/posts/6832968); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.836,
+       "margin": 0.07,
+       "hair": 0.352,
+       "face": true,
+       "eye": 0.403
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume",
+      "pumpkin",
+      "bat_(animal)"
      ],
      "dir": "theme/halloween/character",
      "gate_class": "adult"
@@ -39101,6 +39347,7 @@
        "witch",
        "witch_hat"
       ],
+      "srctype": "FAN ART",
       "licence": "Fan art by jiujiuyatou_(yayanzz) (credited, post https://danbooru.donmai.us/posts/3673945); character (c) its rights holders",
       "onmodel": {
        "sim": 0.826,
@@ -39119,15 +39366,5336 @@
      ],
      "dir": "theme/halloween/character",
      "gate_class": "adult"
+    },
+    {
+     "id": 127292,
+     "name": "Marcille Donato",
+     "anime": "Delicious in Dungeon",
+     "favourites": 4241,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "50",
+     "age_class": "adult",
+     "age_evidence": "AniList age 50",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127292-MAWgxbS0Cbrs.png",
+     "edition": "halloween",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.92,
+       "sensitive": 0.08,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6833742",
+      "file": "https://cdn.donmai.us/original/ba/eb/baeb868462b6f11ed415485623c2aa60.jpg",
+      "artist": "frs2",
+      "origin": "https://twitter.com/go99g0/status/1719355829391089907",
+      "rating": "g",
+      "score": 26,
+      "res": "1058x1593",
+      "tag": "marcille_donato",
+      "theme_tags": [
+       "pumpkin"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by frs2 (credited, post https://danbooru.donmai.us/posts/6833742); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.845,
+       "margin": 0.067,
+       "hair": 0.49,
+       "face": true,
+       "eye": 0.2
+      }
+     },
+     "theme_hit": [
+      "pumpkin"
+     ],
+     "dir": "theme/halloween/character",
+     "gate_class": "adult"
     }
    ],
-   "silhouette": [],
-   "outfit": []
+   "silhouette": [
+    {
+     "id": 138102,
+     "name": "Yor Forger",
+     "anime": "SPY x FAMILY",
+     "favourites": 14402,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b138102-ZOAu9jI2d5ke.png",
+     "edition": "halloween",
+     "col": null,
+     "mask": null,
+     "size": [
+      307,
+      520
+     ],
+     "stats": {
+      "fill": 0.44,
+      "solidity": 0.56,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.98,
+       "questionable": 0.02,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": [
+       "barefoot"
+      ]
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/10154542",
+      "file": "https://cdn.donmai.us/original/f8/c5/f8c53a33e660a22baa33ec7aa757f296.jpg",
+      "artist": "nihu",
+      "origin": "https://twitter.com/Nihu77/status/1980679261821514197",
+      "rating": "s",
+      "score": 102,
+      "res": "1596x2800",
+      "tag": "yor_briar",
+      "theme_tags": [
+       "halloween_costume"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by nihu (credited, post https://danbooru.donmai.us/posts/10154542); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.862,
+       "margin": 0.073,
+       "hair": 0.69,
+       "face": true,
+       "eye": 0.237
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume"
+     ],
+     "dir": "theme/halloween/silhouette",
+     "gate_class": "adult"
+    },
+    {
+     "id": 81929,
+     "name": "Tatsumaki",
+     "anime": "One-Punch Man",
+     "favourites": 8783,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "28",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+     "edition": "halloween",
+     "col": null,
+     "mask": null,
+     "size": [
+      353,
+      520
+     ],
+     "stats": {
+      "fill": 0.6,
+      "solidity": 0.7,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.98,
+       "questionable": 0.02,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": [
+       "bare_legs"
+      ]
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8280814",
+      "file": "https://cdn.donmai.us/sample/1e/b1/sample-1eb119b03edac0736580c585e69f9539.jpg",
+      "artist": "lewdrover",
+      "origin": "https://i.pximg.net/img-original/img/2023/10/15/20/09/41/112576700_p0.jpg",
+      "rating": "s",
+      "score": 99,
+      "res": "3533x5017",
+      "tag": "tatsumaki",
+      "theme_tags": [
+       "halloween",
+       "halloween_costume",
+       "jack-o'-lantern",
+       "witch_hat"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by lewdrover (credited, post https://danbooru.donmai.us/posts/8280814); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.798,
+       "margin": 0.129,
+       "hair": 0.747,
+       "face": true,
+       "eye": 0.655
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume",
+      "witch_hat",
+      "witch",
+      "jack-o'-lantern",
+      "pumpkin"
+     ],
+     "dir": "theme/halloween/silhouette",
+     "gate_class": "adult"
+    },
+    {
+     "id": 136072,
+     "name": "Mitsuri Kanroji",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 6583,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "19",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136072-xVwyRUKdpybi.png",
+     "edition": "halloween",
+     "col": null,
+     "mask": null,
+     "size": [
+      349,
+      520
+     ],
+     "stats": {
+      "fill": 0.47,
+      "solidity": 0.63,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.17,
+       "sensitive": 0.81,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "ai",
+      "srctype": "AI",
+      "artist": "AI-generated (Illustrious-XL v1.0)",
+      "post": "",
+      "model": "Illustrious-XL v1.0",
+      "seed": 13743274,
+      "prompt": "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest, adult, mature female, 1girl, solo, kanroji mitsuri, pink hair, vampire costume, cape, green hair, green eyes, mole under eye, braid, full body, standing, looking at viewer, simple background, white background, sfw",
+      "onmodel": {
+       "sim": 0.883,
+       "margin": 0.118,
+       "hair": 0.578,
+       "face": true,
+       "eye": 0.646
+      },
+      "licence": "Generated with Illustrious-XL v1.0 (CreativeML OpenRAIL++-M); character (c) its rights holders"
+     },
+     "theme_hit": [
+      "vampire_costume"
+     ],
+     "dir": "theme/halloween/silhouette",
+     "gate_class": "adult"
+    }
+   ],
+   "outfit": [
+    {
+     "id": 81929,
+     "name": "Tatsumaki",
+     "anime": "One-Punch Man",
+     "favourites": 8783,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "28",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+     "edition": "halloween",
+     "full": null,
+     "crop": [
+      0.0444,
+      0.465,
+      0.9734,
+      0.9762
+     ],
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.97,
+       "questionable": 0.03,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "crop_rating": {
+       "general": 0.01,
+       "sensitive": 0.9,
+       "questionable": 0.1,
+       "explicit": 0.0
+      },
+      "swimwear": [
+       "bare_legs"
+      ]
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8280814",
+      "file": "https://cdn.donmai.us/sample/1e/b1/sample-1eb119b03edac0736580c585e69f9539.jpg",
+      "artist": "lewdrover",
+      "origin": "https://i.pximg.net/img-original/img/2023/10/15/20/09/41/112576700_p0.jpg",
+      "rating": "s",
+      "score": 99,
+      "res": "3533x5017",
+      "tag": "tatsumaki",
+      "theme_tags": [
+       "halloween",
+       "halloween_costume",
+       "jack-o'-lantern",
+       "witch_hat"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by lewdrover (credited, post https://danbooru.donmai.us/posts/8280814); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.798,
+       "margin": 0.129,
+       "hair": 0.747,
+       "face": true,
+       "eye": 0.655
+      }
+     },
+     "theme_hit": [
+      "halloween",
+      "halloween_costume",
+      "witch_hat",
+      "witch",
+      "jack-o'-lantern",
+      "pumpkin"
+     ],
+     "dir": "theme/halloween/outfit",
+     "gate_class": "adult"
+    },
+    {
+     "id": 136072,
+     "name": "Mitsuri Kanroji",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 6583,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "19",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136072-xVwyRUKdpybi.png",
+     "edition": "halloween",
+     "full": null,
+     "crop": [
+      0.0,
+      0.4888,
+      1.0,
+      1.0
+     ],
+     "gate": {
+      "rating": {
+       "general": 0.21,
+       "sensitive": 0.77,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "crop_rating": {
+       "general": 0.05,
+       "sensitive": 0.95,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "swimwear": [
+       "bare_legs"
+      ]
+     },
+     "source": {
+      "kind": "ai",
+      "srctype": "AI",
+      "artist": "AI-generated (Illustrious-XL v1.0)",
+      "post": "",
+      "model": "Illustrious-XL v1.0",
+      "seed": 13743274,
+      "prompt": "masterpiece, best quality, amazing quality, very aesthetic, absurdres, newest, adult, mature female, 1girl, solo, kanroji mitsuri, pink hair, vampire costume, cape, green hair, green eyes, mole under eye, braid, full body, standing, looking at viewer, simple background, white background, sfw",
+      "onmodel": {
+       "sim": 0.883,
+       "margin": 0.118,
+       "hair": 0.578,
+       "face": true,
+       "eye": 0.646
+      },
+      "licence": "Generated with Illustrious-XL v1.0 (CreativeML OpenRAIL++-M); character (c) its rights holders"
+     },
+     "theme_hit": [
+      "vampire_costume"
+     ],
+     "dir": "theme/halloween/outfit",
+     "gate_class": "adult"
+    }
+   ]
   },
   "villains": {
-   "character": [],
-   "silhouette": [],
-   "eyes": []
+   "character": [
+    {
+     "id": 40,
+     "name": "Monkey D. Luffy",
+     "anime": "ONE PIECE",
+     "favourites": 36000,
+     "difficulty": 1,
+     "gender": "Male",
+     "age": "17-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b40-MNypXsxSRb1R.png",
+     "edition": "villains"
+    },
+    {
+     "id": 176754,
+     "name": "Frieren",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 22481,
+     "difficulty": 1,
+     "gender": "Female",
+     "age": "1000+",
+     "age_class": "adult",
+     "age_evidence": "AniList age 1000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png",
+     "edition": "villains"
+    },
+    {
+     "id": 35252,
+     "name": "Rintaro Okabe",
+     "anime": "Steins;Gate",
+     "favourites": 21227,
+     "difficulty": 1,
+     "gender": "Male",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b35252-DY9TW6pusqeh.png",
+     "edition": "villains"
+    },
+    {
+     "id": 719,
+     "name": "Johan Liebert",
+     "anime": "Monster",
+     "favourites": 11328,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "19-23, (30's in Another Monster)",
+     "age_class": "unknown",
+     "age_evidence": "AniList age 19-23, but \"child\" in description",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b719-y984mDWyGf5n.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 58,
+     "name": "Chrollo Lucilfer",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 9556,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "26",
+     "age_class": "minor",
+     "age_evidence": "wiki age 26 Hunter × Hunter - Volume 11, Chapter 95  Hunter × Hunter Hunter Association Official Issue: Hunter's Guide; Character & World Official Databook        28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b58-USOmsz3nursi.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 23277,
+     "name": "Meruem",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 9368,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "40 Days",
+     "age_class": "adult",
+     "age_evidence": "role: \"mother\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+     "edition": "villains"
+    },
+    {
+     "id": 133699,
+     "name": "Suguru Geto",
+     "anime": "JUJUTSU KAISEN",
+     "favourites": 8232,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b133699-FCnXaISgazAi.png",
+     "edition": "villains"
+    },
+    {
+     "id": 12659,
+     "name": "Rohan Kishibe",
+     "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+     "favourites": 6840,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20-27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20-27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12659-hgT3g7q7oHnU.png",
+     "edition": "villains"
+    },
+    {
+     "id": 89277,
+     "name": "Garo",
+     "anime": "One-Punch Man Season 2",
+     "favourites": 6508,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89277-xBGb4B5YISXg.png",
+     "edition": "villains"
+    },
+    {
+     "id": 125619,
+     "name": "Himiko Toga",
+     "anime": "My Hero Academia Season 2",
+     "favourites": 6141,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "16-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125619-iQxQoGHJvjRJ.png",
+     "edition": "villains"
+    },
+    {
+     "id": 126378,
+     "name": "Dabi",
+     "anime": "My Hero Academia Season 2",
+     "favourites": 5517,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "24-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 24-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126378-RFSljq5koy5U.png",
+     "edition": "villains"
+    },
+    {
+     "id": 184311,
+     "name": "Himmel",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 4634,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age ~26  This would make him approximately 16 years old at the start of the journey and approximately 26 years old by the end.}}   ~76",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b184311-wQFySqYXEqf1.png",
+     "edition": "villains"
+    },
+    {
+     "id": 123328,
+     "name": "Isaac Foster",
+     "anime": "Angels of Death",
+     "favourites": 4177,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123328-NZApzipm9Qwy.png",
+     "edition": "villains"
+    },
+    {
+     "id": 128036,
+     "name": "Milim Nava",
+     "anime": "That Time I Got Reincarnated as a Slime",
+     "favourites": 3797,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "2000+",
+     "age_class": "adult",
+     "age_evidence": "AniList age 2000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128036-lW0dxNwerqw4.png",
+     "edition": "villains"
+    },
+    {
+     "id": 914,
+     "name": "Piccolo",
+     "anime": "Dragon Ball Z",
+     "favourites": 3493,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b914-KuS8AWjqBrqa.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 69725,
+     "name": "Shogo Makishima",
+     "anime": "PSYCHO-PASS",
+     "favourites": 3226,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n69725-Seck1SZfwQiR.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 8087,
+     "name": "Jonathan Joestar",
+     "anime": "JoJo's Bizarre Adventure (TV)",
+     "favourites": 3129,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "12-20",
+     "age_class": "minor",
+     "age_evidence": "AniList age 12-20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b8087-GTrObHQvujB5.png",
+     "edition": "villains"
+    },
+    {
+     "id": 20147,
+     "name": "Funny Valentine",
+     "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 2nd - 3rd STAGE",
+     "favourites": 3074,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "48",
+     "age_class": "adult",
+     "age_evidence": "AniList age 48",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b20147-paS2fNaB3yOv.png",
+     "edition": "villains"
+    },
+    {
+     "id": 124077,
+     "name": "Katakuri Charlotte",
+     "anime": "ONE PIECE",
+     "favourites": 2590,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "48",
+     "age_class": "adult",
+     "age_evidence": "AniList age 48",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124077-TODX2ThCdyx2.png",
+     "edition": "villains"
+    },
+    {
+     "id": 89621,
+     "name": "Teruki Hanazawa",
+     "anime": "Mob Psycho 100",
+     "favourites": 2355,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "14",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89621-3uLnmhFOGYFv.png",
+     "edition": "villains"
+    },
+    {
+     "id": 70733,
+     "name": "Satan Jacob",
+     "anime": "The Devil is a Part-Timer!",
+     "favourites": 2275,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b70733-d564H7iUj7Y2.png",
+     "edition": "villains"
+    },
+    {
+     "id": 128034,
+     "name": "Veldora Tempest",
+     "anime": "That Time I Got Reincarnated as a Slime",
+     "favourites": 2215,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "2000+",
+     "age_class": "adult",
+     "age_evidence": "AniList age 2000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128034-Gg5MrpTFNSv8.png",
+     "edition": "villains"
+    },
+    {
+     "id": 89276,
+     "name": "Kayo Hinazuki",
+     "anime": "ERASED",
+     "favourites": 2204,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "10-11 (Past)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 10-11",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/89276-LjlYvXfOnjHB.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 74167,
+     "name": "Onsoku no Sonic",
+     "anime": "One-Punch Man",
+     "favourites": 2169,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "25",
+     "age_class": "adult",
+     "age_evidence": "AniList age 25",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b74167-FE8EtGtHUM77.png",
+     "edition": "villains"
+    },
+    {
+     "id": 151495,
+     "name": "Sherlock Holmes",
+     "anime": "Moriarty the Patriot",
+     "favourites": 2165,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "24-27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 24-27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b151495-MQz2Bntpg1sO.png",
+     "edition": "villains"
+    },
+    {
+     "id": 65523,
+     "name": "Junko Enoshima",
+     "anime": "Danganronpa: The Animation",
+     "favourites": 2163,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age, \"High School\"",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65523-OztiX9PhydrG.png",
+     "edition": "villains"
+    },
+    {
+     "id": 129132,
+     "name": "Muzan Kibutsuji",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 2140,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "1000+",
+     "age_class": "minor",
+     "age_evidence": "wiki age > 19      > 1,000",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129132-4nIZakUZ1o8W.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 128038,
+     "name": "Benimaru",
+     "anime": "That Time I Got Reincarnated as a Slime",
+     "favourites": 2097,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Commander\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b128038-VgVcqf6NDGJ5.png",
+     "edition": "villains"
+    },
+    {
+     "id": 89589,
+     "name": "Jin Bubaigawara",
+     "anime": "My Hero Academia Season 3",
+     "favourites": 2027,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "31",
+     "age_class": "adult",
+     "age_evidence": "AniList age 31",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89589-0ICQRy2iXj2l.png",
+     "edition": "villains"
+    },
+    {
+     "id": 129137,
+     "name": "Katarina Claes",
+     "anime": "My Next Life as a Villainess: All Routes Lead to Doom!",
+     "favourites": 1977,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age 8 years old",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129137-jTXVGAICPfvX.png",
+     "edition": "villains"
+    },
+    {
+     "id": 2455,
+     "name": "Orochimaru",
+     "anime": "Naruto",
+     "favourites": 1878,
+     "difficulty": 3,
+     "gender": "Non-binary",
+     "age": "50-51",
+     "age_class": "adult",
+     "age_evidence": "AniList age 50-51",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n2455-V9tLMS3TIgJW.png",
+     "edition": "villains"
+    },
+    {
+     "id": 126357,
+     "name": "Kai Chisaki",
+     "anime": "My Hero Academia Season 3",
+     "favourites": 1866,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "27-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/126357-d5wTLYqKchRv.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 129563,
+     "name": "Aurora Suya Rhys Kaymin",
+     "anime": "Sleepy Princess in the Demon Castle",
+     "favourites": 1809,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129563-jHUu5LCMVMtp.png",
+     "edition": "villains"
+    },
+    {
+     "id": 126031,
+     "name": "Nimura Furuta",
+     "anime": "Tokyo Ghoul:re",
+     "favourites": 1624,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20-25",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20-25",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126031-3tBpl6tvYwaZ.png",
+     "edition": "villains"
+    },
+    {
+     "id": 14314,
+     "name": "Tomodachi",
+     "anime": "20th Century Boys",
+     "favourites": 1612,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/14314.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 22751,
+     "name": "Jellal Fernandes",
+     "anime": "Fairy Tail",
+     "favourites": 1566,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b22751-ITQZWdiz8Ym7.png",
+     "edition": "villains"
+    },
+    {
+     "id": 27155,
+     "name": "Diavolo",
+     "anime": "JoJo's Bizarre Adventure: Golden Wind",
+     "favourites": 1543,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "~33",
+     "age_class": "minor",
+     "age_evidence": "wiki age 33 Diavolo is said to be born during Summer 1967 and Part 5 takes place in  Timeline#Vento Aureo Begins|April 2001",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b27155-ZqYlVLxAZjzV.png",
+     "edition": "villains"
+    },
+    {
+     "id": 3694,
+     "name": "Freeza",
+     "anime": "Dragon Ball Z",
+     "favourites": 1461,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Father of\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3694-bDfOdSSdFfPv.png",
+     "edition": "villains"
+    },
+    {
+     "id": 4945,
+     "name": "Broly",
+     "anime": "Dragon Ball Super: Broly",
+     "favourites": 1406,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "48",
+     "age_class": "adult",
+     "age_evidence": "AniList age 48",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b4945-iE59qIP7TxPu.png",
+     "edition": "villains"
+    },
+    {
+     "id": 159840,
+     "name": "Jack the Ripper",
+     "anime": "Record of Ragnarok II",
+     "favourites": 1386,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b159840-MvF5LfHGiZdB.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 3029,
+     "name": "Xiaolang Li",
+     "anime": "Cardcaptor Sakura",
+     "favourites": 1385,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "11-12",
+     "age_class": "minor",
+     "age_evidence": "AniList age 11-12",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3029-urpwynZhFdbi.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 70735,
+     "name": "Emilia Justina",
+     "anime": "The Devil is a Part-Timer!",
+     "favourites": 1355,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b70735-DmmbHRLKpS0E.png",
+     "edition": "villains"
+    },
+    {
+     "id": 65529,
+     "name": "Touko Fukawa",
+     "anime": "Danganronpa: The Animation",
+     "favourites": 1317,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age, \"High School\"",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65529-oy5acbdyUy4r.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 127587,
+     "name": "Akane Shinjo",
+     "anime": "SSSS.GRIDMAN",
+     "favourites": 1245,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b127587-DZBuSJgxunUq.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 1906,
+     "name": "Touta Matsuda",
+     "anime": "Death Note",
+     "favourites": 1190,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 25-26     30-31     34     40",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n1906-JCWKEGGook3Z.png",
+     "edition": "villains"
+    },
+    {
+     "id": 42502,
+     "name": "Judar",
+     "anime": "Magi: The Labyrinth of Magic",
+     "favourites": 1094,
+     "difficulty": 3,
+     "gender": null,
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b42502-suDfjEugIuVT.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 36045,
+     "name": "Erika Furudo",
+     "anime": "Umineko When They Cry Episode 8: Twilight of the Golden Witch",
+     "favourites": 1080,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"detective\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b36045-M9i8Oa3sSXlR.png",
+     "edition": "villains"
+    },
+    {
+     "id": 137269,
+     "name": "Chobei Aza",
+     "anime": "Hell’s Paradise",
+     "favourites": 1072,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "19-20",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19-20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b137269-8sLwiijk0bti.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 143399,
+     "name": "Akihito Narihisago",
+     "anime": "ID: INVADED",
+     "favourites": 1066,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age, timeskip",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b143399-px9n0OzJKvot.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 126067,
+     "name": "Chizome Akaguro",
+     "anime": "My Hero Academia Season 2",
+     "favourites": 1063,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "31-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 31-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126067-ZL6sRFyaqX9c.png",
+     "edition": "villains"
+    },
+    {
+     "id": 83103,
+     "name": "Lucifer",
+     "anime": "The Devil is a Part-Timer!",
+     "favourites": 995,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b83103-fksjOXqJCmxd.png",
+     "edition": "villains"
+    },
+    {
+     "id": 126199,
+     "name": "Goku Black",
+     "anime": "Dragon Ball Super",
+     "favourites": 990,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126199-SKYF7o73fQtX.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 16252,
+     "name": "Yu Narukami",
+     "anime": "Persona 4 the Animation",
+     "favourites": 987,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "16-17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16-17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b16252-SaKL2WgvSoMU.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 2882,
+     "name": "Sonic the Hedgehog",
+     "anime": "Sonic X",
+     "favourites": 980,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2882-i2rD5jJr1zlZ.png",
+     "edition": "villains"
+    },
+    {
+     "id": 125039,
+     "name": "Yuki Anzai",
+     "anime": "Devils' Line",
+     "favourites": 943,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "21",
+     "age_class": "adult",
+     "age_evidence": "AniList age 21",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/125039-e7FxmnxkzF80.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 141624,
+     "name": "Ristarte",
+     "anime": "Cautious Hero: The Hero Is Overpowered but Overly Cautious",
+     "favourites": 942,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 100+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141624-gTy9Jhhc9UAk.png",
+     "edition": "villains"
+    },
+    {
+     "id": 207783,
+     "name": "Fenrys",
+     "anime": "Chillin' in Another World with Level 2 Super Cheat Powers",
+     "favourites": 917,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"married\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b207783-xTQPxVkbufxk.png",
+     "edition": "villains"
+    },
+    {
+     "id": 70737,
+     "name": "Alciel",
+     "anime": "The Devil is a Part-Timer!",
+     "favourites": 901,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"commander\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b70737-lDeBmECttJCK.png",
+     "edition": "villains"
+    },
+    {
+     "id": 2511,
+     "name": "Kenshiro",
+     "anime": "Fist of the North Star",
+     "favourites": 899,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age, \"young girl\"",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2511-I5ff3jioC5Ze.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 1745,
+     "name": "Heiji Hattori",
+     "anime": "Detective Conan",
+     "favourites": 871,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1745-EleoviDvO7qh.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 225724,
+     "name": "Kaina Tsutsumi",
+     "anime": "My Hero Academia Season 6",
+     "favourites": 854,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age Late 30s",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b225724-5rFhG41RpHF2.png",
+     "edition": "villains"
+    },
+    {
+     "id": 20766,
+     "name": "Tatsumi Oga",
+     "anime": "Beelzebub",
+     "favourites": 805,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b20766-cNWY0sMyC7fI.png",
+     "edition": "villains"
+    },
+    {
+     "id": 37480,
+     "name": "N Harmonia",
+     "anime": "Pokémon Generations",
+     "favourites": 768,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b37480-Pnu5dXXtqswY.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 196217,
+     "name": "Ruti Ragnason",
+     "anime": "Banished from the Hero’s Party, I Decided to Live a Quiet Life in the Countryside",
+     "favourites": 653,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b196217-L25DApAADCu5.png",
+     "edition": "villains"
+    },
+    {
+     "id": 713,
+     "name": "Meryl Stryfe",
+     "anime": "Trigun",
+     "favourites": 584,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "21-23",
+     "age_class": "adult",
+     "age_evidence": "AniList age 21-23",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b713-ARN91UwGfe3A.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 2589,
+     "name": "Tetsuo Shima",
+     "anime": "Akira",
+     "favourites": 545,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2589-HR4oPhkLGq6q.png",
+     "edition": "villains"
+    },
+    {
+     "id": 130477,
+     "name": "Ariel",
+     "anime": "So I'm a Spider, So What?",
+     "favourites": 513,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b130477-Szp3TMGbCCab.png",
+     "edition": "villains"
+    },
+    {
+     "id": 154397,
+     "name": "Tamotsu Fukuda",
+     "anime": "ID: INVADED",
+     "favourites": 283,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 29   32   33",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b154397-tPaDD3hiqkgH.png",
+     "edition": "villains"
+    },
+    {
+     "id": 24843,
+     "name": "Biwamaru",
+     "anime": "Dororo",
+     "favourites": 257,
+     "difficulty": 3,
+     "gender": null,
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"doctor\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n24843-aemlGiDa6lk8.png",
+     "edition": "villains"
+    },
+    {
+     "id": 155704,
+     "name": "Haine",
+     "anime": "Summer Time Rendering",
+     "favourites": 239,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b155704-2cdpcDFmNmXw.jpg",
+     "edition": "villains"
+    },
+    {
+     "id": 189232,
+     "name": "Ha Tuntian",
+     "anime": "The Daily Life of the Immortal King",
+     "favourites": 221,
+     "difficulty": 3,
+     "gender": null,
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "description age 10",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b189232-LBGe2nuoyHjX.png",
+     "edition": "villains"
+    },
+    {
+     "id": 129385,
+     "name": "Cartaphilus",
+     "anime": "The Ancient Magus' Bride",
+     "favourites": 188,
+     "difficulty": 3,
+     "gender": null,
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 2000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n129385-jdRVhN7MJUTb.png",
+     "edition": "villains"
+    }
+   ],
+   "silhouette": [
+    {
+     "id": 176754,
+     "name": "Frieren",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 22481,
+     "difficulty": 1,
+     "gender": "Female",
+     "age": "1000+",
+     "age_class": "adult",
+     "age_evidence": "AniList age 1000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png",
+     "col": null,
+     "mask": null,
+     "size": [
+      197,
+      520
+     ],
+     "stats": {
+      "fill": 0.46,
+      "solidity": 0.64,
+      "mask": "alpha"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.97,
+       "sensitive": 0.03,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult-modest",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "frieren",
+      "page": "https://frieren.fandom.com/wiki/Frieren",
+      "file": "https://static.wikia.nocookie.net/frieren/images/5/5f/Frieren_manga_profile.png/revision/latest?cb=20221007040835",
+      "name": "File:Frieren manga profile.png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 141624,
+     "name": "Ristarte",
+     "anime": "Cautious Hero: The Hero Is Overpowered but Overly Cautious",
+     "favourites": 942,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 100+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141624-gTy9Jhhc9UAk.png",
+     "col": null,
+     "mask": null,
+     "size": [
+      200,
+      520
+     ],
+     "stats": {
+      "fill": 0.49,
+      "solidity": 0.66,
+      "mask": "alpha"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.02,
+       "sensitive": 0.96,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "cautioushero",
+      "page": "https://cautioushero.fandom.com/wiki/Ristarte",
+      "file": "https://static.wikia.nocookie.net/kono-yuusha-ga-ore-tueee/images/6/66/Ristarte2.png/revision/latest?cb=20191004143807",
+      "name": "File:Ristarte2.png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 225724,
+     "name": "Kaina Tsutsumi",
+     "anime": "My Hero Academia Season 6",
+     "favourites": 854,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age Late 30s",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b225724-5rFhG41RpHF2.png",
+     "col": null,
+     "mask": null,
+     "size": [
+      233,
+      520
+     ],
+     "stats": {
+      "fill": 0.5,
+      "solidity": 0.67,
+      "mask": "alpha"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.22,
+       "sensitive": 0.77,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "bokunoheroacademia",
+      "page": "https://bokunoheroacademia.fandom.com/wiki/Kaina_Tsutsumi",
+      "file": "https://static.wikia.nocookie.net/bokunoheroacademia/images/6/65/Kaina_Tsutsumi_Villain_Costume_%28Anime%29.png/revision/latest?cb=20240615230825",
+      "name": "File:Kaina Tsutsumi Villain Costume (Anime).png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    }
+   ],
+   "eyes": [
+    {
+     "id": 176754,
+     "name": "Frieren",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 22481,
+     "difficulty": 1,
+     "gender": "Female",
+     "age": "1000+",
+     "age_class": "adult",
+     "age_evidence": "AniList age 1000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b176754-PCnpqIOkjhFk.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4652,
+      0.2986,
+      0.8087,
+      0.4551
+     ],
+     "eye_px": 44,
+     "gate": {
+      "rating": {
+       "general": 0.99,
+       "sensitive": 0.01,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/176754",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 35252,
+     "name": "Rintaro Okabe",
+     "anime": "Steins;Gate",
+     "favourites": 21227,
+     "difficulty": 1,
+     "gender": "Male",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b35252-DY9TW6pusqeh.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5217,
+      0.3536,
+      0.813,
+      0.4899
+     ],
+     "eye_px": 38,
+     "gate": {
+      "rating": {
+       "general": 0.63,
+       "sensitive": 0.38,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/35252",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 719,
+     "name": "Johan Liebert",
+     "anime": "Monster",
+     "favourites": 11328,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "19-23, (30's in Another Monster)",
+     "age_class": "unknown",
+     "age_evidence": "AniList age 19-23, but \"child\" in description",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b719-y984mDWyGf5n.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5696,
+      0.3536,
+      0.8348,
+      0.4754
+     ],
+     "eye_px": 34,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.04,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/719",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 23277,
+     "name": "Meruem",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 9368,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "40 Days",
+     "age_class": "adult",
+     "age_evidence": "role: \"mother\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1026,
+      0.2892,
+      0.5009,
+      0.5644
+     ],
+     "eye_px": 239,
+     "gate": {
+      "rating": {
+       "general": 0.73,
+       "sensitive": 0.31,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "hunterxhunter",
+      "page": "https://hunterxhunter.fandom.com/wiki/Meruem",
+      "file": "https://static.wikia.nocookie.net/hunterxhunter/images/5/58/Meruem_CA_Portrait.png/revision/latest?cb=20190419124312",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 12659,
+     "name": "Rohan Kishibe",
+     "anime": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+     "favourites": 6840,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20-27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20-27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12659-hgT3g7q7oHnU.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.6478,
+      0.2486,
+      0.9,
+      0.3642
+     ],
+     "eye_px": 32,
+     "gate": {
+      "rating": {
+       "general": 0.74,
+       "sensitive": 0.27,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/12659",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 123328,
+     "name": "Isaac Foster",
+     "anime": "Angels of Death",
+     "favourites": 4177,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b123328-NZApzipm9Qwy.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4783,
+      0.2754,
+      0.7696,
+      0.4087
+     ],
+     "eye_px": 38,
+     "gate": {
+      "rating": {
+       "general": 0.2,
+       "sensitive": 0.81,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/123328",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 20147,
+     "name": "Funny Valentine",
+     "anime": "STEEL BALL RUN JoJo's Bizarre Adventure 2nd - 3rd STAGE",
+     "favourites": 3074,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "48",
+     "age_class": "adult",
+     "age_evidence": "AniList age 48",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b20147-paS2fNaB3yOv.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.513,
+      0.3275,
+      0.8174,
+      0.4667
+     ],
+     "eye_px": 39,
+     "gate": {
+      "rating": {
+       "general": 0.72,
+       "sensitive": 0.29,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/20147",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 124077,
+     "name": "Katakuri Charlotte",
+     "anime": "ONE PIECE",
+     "favourites": 2590,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "48",
+     "age_class": "adult",
+     "age_evidence": "AniList age 48",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b124077-TODX2ThCdyx2.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5391,
+      0.3536,
+      0.7913,
+      0.4696
+     ],
+     "eye_px": 33,
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.06,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/124077",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 89621,
+     "name": "Teruki Hanazawa",
+     "anime": "Mob Psycho 100",
+     "favourites": 2355,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "14",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89621-3uLnmhFOGYFv.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4195,
+      0.1475,
+      0.578,
+      0.185
+     ],
+     "eye_px": 37,
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.06,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "mob-psycho-100",
+      "page": "https://mob-psycho-100.fandom.com/wiki/Teruki_Hanazawa",
+      "file": "https://static.wikia.nocookie.net/mob-psycho-100/images/e/ee/Tumblr_pibgder0zQ1usxrt2_540.png/revision/latest?cb=20220519072240",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 89276,
+     "name": "Kayo Hinazuki",
+     "anime": "ERASED",
+     "favourites": 2204,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "10-11 (Past)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 10-11",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/89276-LjlYvXfOnjHB.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1696,
+      0.2598,
+      0.487,
+      0.3994
+     ],
+     "eye_px": 34,
+     "gate": {
+      "rating": {
+       "general": 0.72,
+       "sensitive": 0.27,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/89276",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 74167,
+     "name": "Onsoku no Sonic",
+     "anime": "One-Punch Man",
+     "favourites": 2169,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "25",
+     "age_class": "adult",
+     "age_evidence": "AniList age 25",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b74167-FE8EtGtHUM77.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5609,
+      0.4203,
+      0.9,
+      0.5768
+     ],
+     "eye_px": 39,
+     "gate": {
+      "rating": {
+       "general": 0.84,
+       "sensitive": 0.15,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/74167",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 151495,
+     "name": "Sherlock Holmes",
+     "anime": "Moriarty the Patriot",
+     "favourites": 2165,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "24-27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 24-27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b151495-MQz2Bntpg1sO.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5174,
+      0.1971,
+      0.7826,
+      0.3188
+     ],
+     "eye_px": 34,
+     "gate": {
+      "rating": {
+       "general": 0.47,
+       "sensitive": 0.51,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/151495",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 129132,
+     "name": "Muzan Kibutsuji",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 2140,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "1000+",
+     "age_class": "minor",
+     "age_evidence": "wiki age > 19      > 1,000",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129132-4nIZakUZ1o8W.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.2304,
+      0.3449,
+      0.6087,
+      0.5159
+     ],
+     "eye_px": 48,
+     "gate": {
+      "rating": {
+       "general": 0.78,
+       "sensitive": 0.22,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/129132",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 129563,
+     "name": "Aurora Suya Rhys Kaymin",
+     "anime": "Sleepy Princess in the Demon Castle",
+     "favourites": 1809,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129563-jHUu5LCMVMtp.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.0087,
+      0.3652,
+      0.5217,
+      0.6029
+     ],
+     "eye_px": 66,
+     "gate": {
+      "rating": {
+       "general": 0.86,
+       "sensitive": 0.14,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/129563",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 126031,
+     "name": "Nimura Furuta",
+     "anime": "Tokyo Ghoul:re",
+     "favourites": 1624,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "20-25",
+     "age_class": "adult",
+     "age_evidence": "AniList age 20-25",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126031-3tBpl6tvYwaZ.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5522,
+      0.3478,
+      0.787,
+      0.458
+     ],
+     "eye_px": 31,
+     "gate": {
+      "rating": {
+       "general": 0.44,
+       "sensitive": 0.55,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/126031",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 3029,
+     "name": "Xiaolang Li",
+     "anime": "Cardcaptor Sakura",
+     "favourites": 1385,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "11-12",
+     "age_class": "minor",
+     "age_evidence": "AniList age 11-12",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b3029-urpwynZhFdbi.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1391,
+      0.3739,
+      0.4696,
+      0.5246
+     ],
+     "eye_px": 38,
+     "gate": {
+      "rating": {
+       "general": 0.89,
+       "sensitive": 0.13,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/3029",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 65529,
+     "name": "Touko Fukawa",
+     "anime": "Danganronpa: The Animation",
+     "favourites": 1317,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age, \"High School\"",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b65529-oy5acbdyUy4r.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1522,
+      0.4696,
+      0.5043,
+      0.6319
+     ],
+     "eye_px": 45,
+     "gate": {
+      "rating": {
+       "general": 0.75,
+       "sensitive": 0.25,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/65529",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 1906,
+     "name": "Touta Matsuda",
+     "anime": "Death Note",
+     "favourites": 1190,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 25-26     30-31     34     40",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n1906-JCWKEGGook3Z.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4812,
+      0.3402,
+      0.6435,
+      0.499
+     ],
+     "eye_px": 63,
+     "gate": {
+      "rating": {
+       "general": 0.71,
+       "sensitive": 0.32,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "deathnote",
+      "page": "https://deathnote.fandom.com/wiki/Touta_Matsuda",
+      "file": "https://static.wikia.nocookie.net/deathnote/images/5/5a/Manga_matsuda.jpg/revision/latest?cb=20250630055529",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 42502,
+     "name": "Judar",
+     "anime": "Magi: The Labyrinth of Magic",
+     "favourites": 1094,
+     "difficulty": 3,
+     "gender": null,
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b42502-suDfjEugIuVT.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5043,
+      0.4,
+      0.8217,
+      0.5478
+     ],
+     "eye_px": 41,
+     "gate": {
+      "rating": {
+       "general": 0.43,
+       "sensitive": 0.59,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/42502",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 126199,
+     "name": "Goku Black",
+     "anime": "Dragon Ball Super",
+     "favourites": 990,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b126199-SKYF7o73fQtX.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.2478,
+      0.2974,
+      0.5826,
+      0.4519
+     ],
+     "eye_px": 43,
+     "gate": {
+      "rating": {
+       "general": 0.78,
+       "sensitive": 0.22,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/126199",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 16252,
+     "name": "Yu Narukami",
+     "anime": "Persona 4 the Animation",
+     "favourites": 987,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "16-17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16-17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b16252-SaKL2WgvSoMU.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5348,
+      0.2986,
+      0.8,
+      0.4174
+     ],
+     "eye_px": 34,
+     "gate": {
+      "rating": {
+       "general": 0.85,
+       "sensitive": 0.18,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/16252",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 125039,
+     "name": "Yuki Anzai",
+     "anime": "Devils' Line",
+     "favourites": 943,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "21",
+     "age_class": "adult",
+     "age_evidence": "AniList age 21",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/125039-e7FxmnxkzF80.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1652,
+      0.3994,
+      0.4174,
+      0.5112
+     ],
+     "eye_px": 32,
+     "gate": {
+      "rating": {
+       "general": 0.63,
+       "sensitive": 0.38,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/125039",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 141624,
+     "name": "Ristarte",
+     "anime": "Cautious Hero: The Hero Is Overpowered but Overly Cautious",
+     "favourites": 942,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 100+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b141624-gTy9Jhhc9UAk.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.475,
+      0.0965,
+      0.626,
+      0.1368
+     ],
+     "eye_px": 55,
+     "gate": {
+      "rating": {
+       "general": 0.02,
+       "sensitive": 0.96,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "cautioushero",
+      "page": "https://cautioushero.fandom.com/wiki/Ristarte",
+      "file": "https://static.wikia.nocookie.net/kono-yuusha-ga-ore-tueee/images/6/66/Ristarte2.png/revision/latest?cb=20191004143807",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 70737,
+     "name": "Alciel",
+     "anime": "The Devil is a Part-Timer!",
+     "favourites": 901,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"commander\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b70737-lDeBmECttJCK.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4043,
+      0.3913,
+      0.7217,
+      0.5362
+     ],
+     "eye_px": 41,
+     "gate": {
+      "rating": {
+       "general": 0.88,
+       "sensitive": 0.13,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/70737",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 37480,
+     "name": "N Harmonia",
+     "anime": "Pokémon Generations",
+     "favourites": 768,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b37480-Pnu5dXXtqswY.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5261,
+      0.3913,
+      0.8522,
+      0.542
+     ],
+     "eye_px": 42,
+     "gate": {
+      "rating": {
+       "general": 0.97,
+       "sensitive": 0.04,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/37480",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 713,
+     "name": "Meryl Stryfe",
+     "anime": "Trigun",
+     "favourites": 584,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "21-23",
+     "age_class": "adult",
+     "age_evidence": "AniList age 21-23",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b713-ARN91UwGfe3A.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.2402,
+      0.4583,
+      0.4965,
+      0.6204
+     ],
+     "eye_px": 143,
+     "gate": {
+      "rating": {
+       "general": 0.9,
+       "sensitive": 0.11,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "trigun",
+      "page": "https://trigun.fandom.com/wiki/Meryl_Stryfe",
+      "file": "https://static.wikia.nocookie.net/trigun/images/b/b7/Stampede_Meryl.jpg/revision/latest?cb=20230121182010",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 154397,
+     "name": "Tamotsu Fukuda",
+     "anime": "ID: INVADED",
+     "favourites": 283,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 29   32   33",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b154397-tPaDD3hiqkgH.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1609,
+      0.2783,
+      0.413,
+      0.3942
+     ],
+     "eye_px": 32,
+     "gate": {
+      "rating": {
+       "general": 0.39,
+       "sensitive": 0.59,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/154397",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    },
+    {
+     "id": 129385,
+     "name": "Cartaphilus",
+     "anime": "The Ancient Magus' Bride",
+     "favourites": 188,
+     "difficulty": 3,
+     "gender": null,
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 2000+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/n129385-jdRVhN7MJUTb.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.3957,
+      0.3565,
+      0.6435,
+      0.468
+     ],
+     "eye_px": 32,
+     "gate": {
+      "rating": {
+       "general": 0.81,
+       "sensitive": 0.21,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/129385",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "villains"
+    }
+   ]
+  },
+  "festival": {
+   "outfit": [],
+   "silhouette": [
+    {
+     "id": 81373,
+     "name": "Nyanta",
+     "anime": "Log Horizon",
+     "favourites": 364,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age Over 40",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/81373-oG4Bngt03jKk.jpg",
+     "edition": "festival",
+     "col": null,
+     "mask": null,
+     "size": [
+      344,
+      520
+     ],
+     "stats": {
+      "fill": 0.43,
+      "solidity": 0.55,
+      "mask": "alpha"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.92,
+       "sensitive": 0.09,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "log-horizon",
+      "page": "https://log-horizon.fandom.com/wiki/Nyanta",
+      "file": "https://static.wikia.nocookie.net/log-horizon/images/5/53/Nyanta_sng_3D111022401.png/revision/latest?cb=20170826021150",
+      "name": "File:Nyanta sng yukata.png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "theme_hit": [
+      "kimono"
+     ],
+     "dir": "theme/festival/silhouette",
+     "gate_class": "adult"
+    }
+   ],
+   "character": [
+    {
+     "id": 81929,
+     "name": "Tatsumaki",
+     "anime": "One-Punch Man",
+     "favourites": 8783,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "28",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81929-WPVp2LQoWgkc.png",
+     "edition": "festival",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.85,
+       "sensitive": 0.14,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/4789613",
+      "file": "https://cdn.donmai.us/original/62/9c/629c1d2ca16588a36f8bf39e615679f4.jpg",
+      "artist": "mogudan",
+      "origin": "https://twitter.com/mogudan555/status/1439587413290938376",
+      "rating": "g",
+      "score": 45,
+      "res": "1495x2295",
+      "tag": "tatsumaki",
+      "theme_tags": [
+       "kimono",
+       "yukata"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by mogudan (credited, post https://danbooru.donmai.us/posts/4789613); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.88,
+       "margin": 0.163,
+       "hair": 0.747,
+       "face": true,
+       "eye": 0.662
+      }
+     },
+     "theme_hit": [
+      "yukata",
+      "kimono"
+     ],
+     "dir": "theme/festival/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 203384,
+     "name": "Akane Kurokawa",
+     "anime": "OSHI NO KO",
+     "favourites": 6429,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b203384-YuSppFDMw2wn.png",
+     "edition": "festival",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.04,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9294736",
+      "file": "https://cdn.donmai.us/sample/a8/68/sample-a8685c06afbf74db3c254c2c54450b99.jpg",
+      "artist": "hirayama_kanna",
+      "origin": "https://twitter.com/anime_oshinoko/status/1921857302564426034",
+      "rating": "g",
+      "score": 22,
+      "res": "2535x3584",
+      "tag": "kurokawa_akane",
+      "theme_tags": [
+       "kimono",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by hirayama_kanna (credited, post https://danbooru.donmai.us/posts/9294736); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.851,
+       "margin": 0.094,
+       "hair": 0.497,
+       "face": true,
+       "eye": 0.289
+      }
+     },
+     "theme_hit": [
+      "kimono"
+     ],
+     "dir": "theme/festival/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 125309,
+     "name": "Mejiro McQueen",
+     "anime": "Umamusume: Pretty Derby",
+     "favourites": 940,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125309-nhewmUEllCnU.png",
+     "edition": "festival",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.95,
+       "sensitive": 0.05,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/10257031",
+      "file": "https://cdn.donmai.us/sample/71/b7/sample-71b72685eacc504bb03a1a10c312eb78.jpg",
+      "artist": "anbutter_siruko",
+      "origin": "https://twitter.com/anbutter_siruko/status/1983494114600472630",
+      "rating": "g",
+      "score": 23,
+      "res": "3601x4048",
+      "tag": "mejiro_mcqueen_(umamusume)",
+      "theme_tags": [
+       "kimono",
+       "yukata"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by anbutter_siruko (credited, post https://danbooru.donmai.us/posts/10257031); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.875,
+       "margin": 0.086,
+       "hair": 0.495,
+       "face": true,
+       "eye": 0.483
+      }
+     },
+     "theme_hit": [
+      "yukata",
+      "kimono"
+     ],
+     "dir": "theme/festival/character",
+     "gate_class": "unknown"
+    },
+    {
+     "id": 81373,
+     "name": "Nyanta",
+     "anime": "Log Horizon",
+     "favourites": 364,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age Over 40",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/81373-oG4Bngt03jKk.jpg",
+     "edition": "festival",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.06,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": [
+       "barefoot"
+      ]
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "log-horizon",
+      "page": "https://log-horizon.fandom.com/wiki/Nyanta",
+      "file": "https://static.wikia.nocookie.net/log-horizon/images/5/53/Nyanta_sng_3D111022401.png/revision/latest?cb=20170826021150",
+      "name": "File:Nyanta sng yukata.png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "theme_hit": [
+      "kimono"
+     ],
+     "dir": "theme/festival/character",
+     "gate_class": "adult"
+    }
+   ]
+  },
+  "glasses": {
+   "character": [
+    {
+     "id": 71121,
+     "name": "Hange Zoe",
+     "anime": "Attack on Titan",
+     "favourites": 13864,
+     "difficulty": 2,
+     "gender": null,
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Commander\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71121-7R7CnQd3lHgt.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 134167,
+     "name": "Maki Zenin",
+     "anime": "JUJUTSU KAISEN",
+     "favourites": 13067,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b134167-5TCytk45YByD.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 67329,
+     "name": "Kei Tsukishima",
+     "anime": "HAIKYU!!",
+     "favourites": 8000,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "15-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67329-k7mDdqQ6rJ4w.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 89201,
+     "name": "Ranpo Edogawa",
+     "anime": "Bungo Stray Dogs",
+     "favourites": 7379,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "26",
+     "age_class": "adult",
+     "age_evidence": "AniList age 26",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89201-K0X5HNq88Oub.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 1086,
+     "name": "Sousuke Aizen",
+     "anime": "Bleach",
+     "favourites": 7030,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Captain of the\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 21044,
+     "name": "Rei Kiriyama",
+     "anime": "March comes in like a lion",
+     "favourites": 6532,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "17-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21044-K0pEhdOEmAwG.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 29,
+     "name": "Leorio Paradinight",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 6437,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "19-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b29-RgzoSeKmDYzl.jpg",
+     "edition": "glasses"
+    },
+    {
+     "id": 162,
+     "name": "Vash the Stampede",
+     "anime": "Trigun",
+     "favourites": 5674,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b162-kfdfqsX7Xjf0.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 69407,
+     "name": "Kousei Arima",
+     "anime": "Your lie in April",
+     "favourites": 4811,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "14-15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14-15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69407-eyIvpsFPeARS.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 222593,
+     "name": "Ken Takakura",
+     "anime": "DAN DA DAN",
+     "favourites": 4701,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b222593-qBqUvpodooAI.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 122189,
+     "name": "Hirotaka Nifuji",
+     "anime": "Wotakoi: Love is Hard for Otaku",
+     "favourites": 4333,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "26",
+     "age_class": "adult",
+     "age_evidence": "AniList age 26",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122189-ai5CYyRv1CAH.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 21173,
+     "name": "Azusa Nakano",
+     "anime": "K-ON!",
+     "favourites": 4236,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "15-17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21173-0RB5dOJdGt9y.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 129841,
+     "name": "Qifrey",
+     "anime": "Witch Hat Atelier",
+     "favourites": 3501,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"teacher\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129841-brgGFuOv1h0n.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 125661,
+     "name": "Zeke",
+     "anime": "Attack on Titan Season 2",
+     "favourites": 3430,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "25-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 25-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125661-FiqFvAtNlL0v.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 81751,
+     "name": "Mirai Kuriyama",
+     "anime": "Beyond the Boundary",
+     "favourites": 3230,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "14-15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14-15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81751-nUEIrhRFlkKc.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 122191,
+     "name": "Hanako Koyanagi",
+     "anime": "Wotakoi: Love is Hard for Otaku",
+     "favourites": 3063,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122191-sigwgpeam2U1.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 16058,
+     "name": "Shin",
+     "anime": "Dorohedoro",
+     "favourites": 2958,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "28",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b16058-WGqEK3I9bH7c.jpg",
+     "edition": "glasses"
+    },
+    {
+     "id": 89275,
+     "name": "Satoru Fujinuma",
+     "anime": "ERASED",
+     "favourites": 2907,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "10-11 (Past), 29 (Present)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 10-11  , 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89275-xCGzh6jAGe2v.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 69,
+     "name": "Maes Hughes",
+     "anime": "Fullmetal Alchemist: Brotherhood",
+     "favourites": 2858,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "29",
+     "age_class": "adult",
+     "age_evidence": "AniList age 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69-MRetSG8Qevvu.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 1742,
+     "name": "Conan Edogawa",
+     "anime": "Detective Conan",
+     "favourites": 2638,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "6-7 (as Conan); 17 (as Shinichi)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 6-7  ; 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1742-NiV278NBFOvZ.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 5833,
+     "name": "Shizuku Murasaki",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 2623,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/5833.jpg",
+     "edition": "glasses"
+    },
+    {
+     "id": 121590,
+     "name": "Ren Amamiya",
+     "anime": "PERSONA5 the Animation",
+     "favourites": 2484,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "16-18",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16-18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b121590-0IyliPlkGSZa.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 67689,
+     "name": "Kiyoko Shimizu",
+     "anime": "HAIKYU!!",
+     "favourites": 2442,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17-23",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17-23",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67689-QaYw1qDMjwKM.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 88946,
+     "name": "Kisho Arima",
+     "anime": "Tokyo Ghoul",
+     "favourites": 2349,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "29",
+     "age_class": "adult",
+     "age_evidence": "AniList age 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88946-YbTQAGJAdpoH.jpg",
+     "edition": "glasses"
+    },
+    {
+     "id": 12960,
+     "name": "Grell Sutcliff",
+     "anime": "Black Butler",
+     "favourites": 2334,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b12960-TU6by6WTq5By.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 23,
+     "name": "Kyoya Ootori",
+     "anime": "Ouran High School Host Club",
+     "favourites": 2300,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b23-8TQAV1BRyqxa.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 88915,
+     "name": "Asuka Tanaka",
+     "anime": "Sound! Euphonium",
+     "favourites": 2272,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88915-t3WXoIoc6sAz.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 8446,
+     "name": "Franken Stein",
+     "anime": "Soul Eater",
+     "favourites": 2266,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"doctor\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b8446-uTTlVv5DRQnr.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 234824,
+     "name": "Seiko Ayase",
+     "anime": "DAN DA DAN Season 2",
+     "favourites": 2197,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b234824-i3s64ueaBqGq.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 89222,
+     "name": "Tenya Iida",
+     "anime": "My Hero Academia",
+     "favourites": 1895,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "15-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89222-TL8MQM3wJgEB.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 196522,
+     "name": "Taro Sakamoto",
+     "anime": "SAKAMOTO DAYS",
+     "favourites": 1848,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b196522-phOzXgufOs7R.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 89200,
+     "name": "Doppo Kunikida",
+     "anime": "Bungo Stray Dogs",
+     "favourites": 1848,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "22",
+     "age_class": "adult",
+     "age_evidence": "AniList age 22",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89200-mZJo7iEwJGzg.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 30579,
+     "name": "Watashi",
+     "anime": "The Tatami Galaxy",
+     "favourites": 1845,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b30579-Idk9XLwfnYft.png",
+     "edition": "glasses"
+    },
+    {
+     "id": 564,
+     "name": "Uryu Ishida",
+     "anime": "Bleach",
+     "favourites": 1804,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "15-27",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b564-a6LJitrjSfKC.jpg",
+     "edition": "glasses"
+    }
+   ],
+   "eyes": [
+    {
+     "id": 71121,
+     "name": "Hange Zoe",
+     "anime": "Attack on Titan",
+     "favourites": 13864,
+     "difficulty": 2,
+     "gender": null,
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Commander\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b71121-7R7CnQd3lHgt.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.2913,
+      0.2779,
+      0.5739,
+      0.4069
+     ],
+     "eye_px": 36,
+     "gate": {
+      "rating": {
+       "general": 0.8,
+       "sensitive": 0.26,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/71121",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 67329,
+     "name": "Kei Tsukishima",
+     "anime": "HAIKYU!!",
+     "favourites": 8000,
+     "difficulty": 2,
+     "gender": "Male",
+     "age": "15-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b67329-k7mDdqQ6rJ4w.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5188,
+      0.3147,
+      0.6564,
+      0.4905
+     ],
+     "eye_px": 105,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.03,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "haikyuu",
+      "page": "https://haikyuu.fandom.com/wiki/Kei_Tsukishima",
+      "file": "https://static.wikia.nocookie.net/haikyuu/images/7/73/Tsukishima_s4-e6-2.png/revision/latest?cb=20200519170528",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 1086,
+     "name": "Sousuke Aizen",
+     "anime": "Bleach",
+     "favourites": 7030,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Captain of the\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1086-qR9218BjZTC0.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1652,
+      0.3217,
+      0.4609,
+      0.4609
+     ],
+     "eye_px": 38,
+     "gate": {
+      "rating": {
+       "general": 0.9,
+       "sensitive": 0.11,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/1086",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 21044,
+     "name": "Rei Kiriyama",
+     "anime": "March comes in like a lion",
+     "favourites": 6532,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "17-",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21044-K0pEhdOEmAwG.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.3913,
+      0.3391,
+      0.6304,
+      0.4493
+     ],
+     "eye_px": 31,
+     "gate": {
+      "rating": {
+       "general": 0.91,
+       "sensitive": 0.09,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/21044",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 29,
+     "name": "Leorio Paradinight",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 6437,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "19-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b29-RgzoSeKmDYzl.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.3676,
+      0.2139,
+      0.4824,
+      0.2935
+     ],
+     "eye_px": 70,
+     "gate": {
+      "rating": {
+       "general": 0.72,
+       "sensitive": 0.3,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "hunterxhunter",
+      "page": "https://hunterxhunter.fandom.com/wiki/Leorio_Paradinight",
+      "file": "https://static.wikia.nocookie.net/hunterxhunter/images/7/73/HxH2011_EP145_Leorio_Portrait.png/revision/latest?cb=20230902193715",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 69407,
+     "name": "Kousei Arima",
+     "anime": "Your lie in April",
+     "favourites": 4811,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "14-15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14-15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69407-eyIvpsFPeARS.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5469,
+      0.3724,
+      0.7174,
+      0.582
+     ],
+     "eye_px": 130,
+     "gate": {
+      "rating": {
+       "general": 0.95,
+       "sensitive": 0.07,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "shigatsu-wa-kimi-no-uso",
+      "page": "https://shigatsu-wa-kimi-no-uso.fandom.com/wiki/Kousei_Arima",
+      "file": "https://static.wikia.nocookie.net/shigatsu-wa-kimi-no-uso/images/c/c9/Kousei_Arima_Infobox.png/revision/latest?cb=20210707230921",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 222593,
+     "name": "Ken Takakura",
+     "anime": "DAN DA DAN",
+     "favourites": 4701,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b222593-qBqUvpodooAI.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5652,
+      0.3391,
+      0.9522,
+      0.5188
+     ],
+     "eye_px": 50,
+     "gate": {
+      "rating": {
+       "general": 0.87,
+       "sensitive": 0.14,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/222593",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 122189,
+     "name": "Hirotaka Nifuji",
+     "anime": "Wotakoi: Love is Hard for Otaku",
+     "favourites": 4333,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "26",
+     "age_class": "adult",
+     "age_evidence": "AniList age 26",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122189-ai5CYyRv1CAH.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.3429,
+      0.2872,
+      0.4851,
+      0.3848
+     ],
+     "eye_px": 86,
+     "gate": {
+      "rating": {
+       "general": 0.65,
+       "sensitive": 0.33,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "wotaku-ni-koi-wa-muzukashii",
+      "page": "https://wotaku-ni-koi-wa-muzukashii.fandom.com/wiki/Hirotaka_Nifuji",
+      "file": "https://static.wikia.nocookie.net/wotaku-ni-koi-wa-muzukashii/images/5/53/Hirotaka_Nifuji.jpg/revision/latest?cb=20260211215200",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 21173,
+     "name": "Azusa Nakano",
+     "anime": "K-ON!",
+     "favourites": 4236,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "15-17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 15-17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b21173-0RB5dOJdGt9y.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5055,
+      0.3869,
+      0.739,
+      0.5532
+     ],
+     "eye_px": 109,
+     "gate": {
+      "rating": {
+       "general": 0.75,
+       "sensitive": 0.26,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "k-on",
+      "page": "https://k-on.fandom.com/wiki/Azusa_Nakano",
+      "file": "https://static.wikia.nocookie.net/k-on/images/e/ed/Azusa_Nakano_new_mugshot.png/revision/latest?cb=20130713162804",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 81751,
+     "name": "Mirai Kuriyama",
+     "anime": "Beyond the Boundary",
+     "favourites": 3230,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "14-15",
+     "age_class": "minor",
+     "age_evidence": "AniList age 14-15",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b81751-nUEIrhRFlkKc.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4782,
+      0.2926,
+      0.7443,
+      0.4713
+     ],
+     "eye_px": 139,
+     "gate": {
+      "rating": {
+       "general": 0.84,
+       "sensitive": 0.14,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "kyoukainokanata",
+      "page": "https://kyoukainokanata.fandom.com/wiki/Mirai_Kuriyama",
+      "file": "https://static.wikia.nocookie.net/kyoukainokanata/images/7/79/Miraiiiii.png/revision/latest?cb=20210618053535",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 122191,
+     "name": "Hanako Koyanagi",
+     "anime": "Wotakoi: Love is Hard for Otaku",
+     "favourites": 3063,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122191-sigwgpeam2U1.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5725,
+      0.2625,
+      0.7525,
+      0.3867
+     ],
+     "eye_px": 121,
+     "gate": {
+      "rating": {
+       "general": 0.42,
+       "sensitive": 0.6,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "wotaku-ni-koi-wa-muzukashii",
+      "page": "https://wotaku-ni-koi-wa-muzukashii.fandom.com/wiki/Hanako_Koyanagi",
+      "file": "https://static.wikia.nocookie.net/wotaku-ni-koi-wa-muzukashii/images/0/01/Hanako_Koyanagi.jpg/revision/latest?cb=20260721083012",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 89275,
+     "name": "Satoru Fujinuma",
+     "anime": "ERASED",
+     "favourites": 2907,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "10-11 (Past), 29 (Present)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 10-11  , 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89275-xCGzh6jAGe2v.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5271,
+      0.2926,
+      0.7475,
+      0.4583
+     ],
+     "eye_px": 146,
+     "gate": {
+      "rating": {
+       "general": 0.69,
+       "sensitive": 0.33,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "bokudakegainaimachi",
+      "page": "https://bokudakegainaimachi.fandom.com/wiki/Satoru_Fujinuma",
+      "file": "https://static.wikia.nocookie.net/bokudakegainaimachi/images/e/e7/Satoru_Fujinuma.png/revision/latest?cb=20160110004005",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 69,
+     "name": "Maes Hughes",
+     "anime": "Fullmetal Alchemist: Brotherhood",
+     "favourites": 2858,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "29",
+     "age_class": "adult",
+     "age_evidence": "AniList age 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b69-MRetSG8Qevvu.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.5174,
+      0.2899,
+      0.8304,
+      0.4319
+     ],
+     "eye_px": 40,
+     "gate": {
+      "rating": {
+       "general": 0.78,
+       "sensitive": 0.24,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/69",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 1742,
+     "name": "Conan Edogawa",
+     "anime": "Detective Conan",
+     "favourites": 2638,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "6-7 (as Conan); 17 (as Shinichi)",
+     "age_class": "minor",
+     "age_evidence": "AniList age 6-7  ; 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1742-NiV278NBFOvZ.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.4565,
+      0.229,
+      1.0,
+      0.4783
+     ],
+     "eye_px": 70,
+     "gate": {
+      "rating": {
+       "general": 0.89,
+       "sensitive": 0.11,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/1742",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 88946,
+     "name": "Kisho Arima",
+     "anime": "Tokyo Ghoul",
+     "favourites": 2349,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "29",
+     "age_class": "adult",
+     "age_evidence": "AniList age 29",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b88946-YbTQAGJAdpoH.jpg",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.1435,
+      0.429,
+      0.4696,
+      0.5797
+     ],
+     "eye_px": 42,
+     "gate": {
+      "rating": {
+       "general": 0.49,
+       "sensitive": 0.5,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/88946",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    },
+    {
+     "id": 89200,
+     "name": "Doppo Kunikida",
+     "anime": "Bungo Stray Dogs",
+     "favourites": 1848,
+     "difficulty": 3,
+     "gender": "Male",
+     "age": "22",
+     "age_class": "adult",
+     "age_evidence": "AniList age 22",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b89200-mZJo7iEwJGzg.png",
+     "kind": "eye1",
+     "eye": null,
+     "portrait": null,
+     "eye_box": [
+      0.3826,
+      0.2551,
+      0.7478,
+      0.4203
+     ],
+     "eye_px": 47,
+     "gate": {
+      "rating": {
+       "general": 0.72,
+       "sensitive": 0.27,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok"
+     },
+     "source": {
+      "kind": "anilist",
+      "page": "https://anilist.co/character/89200",
+      "licence": "AniList character art; (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    }
+   ],
+   "silhouette": [
+    {
+     "id": 122191,
+     "name": "Hanako Koyanagi",
+     "anime": "Wotakoi: Love is Hard for Otaku",
+     "favourites": 3063,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "27",
+     "age_class": "adult",
+     "age_evidence": "AniList age 27",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b122191-sigwgpeam2U1.png",
+     "col": null,
+     "mask": null,
+     "size": [
+      169,
+      520
+     ],
+     "stats": {
+      "fill": 0.52,
+      "solidity": 0.68,
+      "mask": "alpha"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.17,
+       "sensitive": 0.83,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "fandom",
+      "wiki": "wotaku-ni-koi-wa-muzukashii",
+      "page": "https://wotaku-ni-koi-wa-muzukashii.fandom.com/wiki/Hanako_Koyanagi",
+      "file": "https://static.wikia.nocookie.net/wotaku-ni-koi-wa-muzukashii/images/e/e4/Hanako_full_view.png/revision/latest?cb=20200924123955",
+      "name": "File:Hanako full view.png",
+      "licence": "Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character"
+     },
+     "edition": "glasses"
+    }
+   ]
+  },
+  "maid": {
+   "character": [
+    {
+     "id": 34470,
+     "name": "Kurisu Makise",
+     "anime": "Steins;Gate",
+     "favourites": 22354,
+     "difficulty": 1,
+     "gender": "Female",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b34470-Jw2LXZBL5R8i.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.01,
+       "sensitive": 0.98,
+       "questionable": 0.01,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/1350895",
+      "file": "https://cdn.donmai.us/sample/b4/80/sample-b4808993f7b237f175529c900701c3e1.jpg",
+      "artist": "sakai_kyuuta",
+      "origin": "Image board.",
+      "rating": "s",
+      "score": 58,
+      "res": "4101x5901",
+      "tag": "makise_kurisu",
+      "theme_tags": [
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by sakai_kyuuta (credited, post https://danbooru.donmai.us/posts/1350895); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.838,
+       "margin": 0.057,
+       "hair": 0.523,
+       "face": true,
+       "eye": 0.21
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 61,
+     "name": "Nico Robin",
+     "anime": "ONE PIECE",
+     "favourites": 14814,
+     "difficulty": 1,
+     "gender": "Female",
+     "age": "28-",
+     "age_class": "adult",
+     "age_evidence": "AniList age 28-",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b61-ywXUyyocEEqt.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.22,
+       "sensitive": 0.78,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9374002",
+      "file": "https://cdn.donmai.us/sample/55/00/sample-55004d94a7ea74c6e16a215b34c97fed.jpg",
+      "artist": "kasumi_6",
+      "origin": "https://twitter.com/kasumi6_/status/1927348526649851923",
+      "rating": "g",
+      "score": 38,
+      "res": "1612x2048",
+      "tag": "nico_robin",
+      "theme_tags": [
+       "heart",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kasumi_6 (credited, post https://danbooru.donmai.us/posts/9374002); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.789,
+       "margin": 0.073,
+       "hair": 0.532,
+       "face": true,
+       "eye": 0.302
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 188783,
+     "name": "Kana Arima",
+     "anime": "OSHI NO KO",
+     "favourites": 11806,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "17-19",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17-19",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b188783-77orwP7vNuNg.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.98,
+       "sensitive": 0.02,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8423287",
+      "file": "https://cdn.donmai.us/original/ba/68/ba6813cb1878c5e61fed661b3125590a.jpg",
+      "artist": "xiang_yu_pai",
+      "origin": "https://twitter.com/kcNnxTh2oc1gyDb/status/1855083724775604691",
+      "rating": "g",
+      "score": 32,
+      "res": "1448x2048",
+      "tag": "arima_kana",
+      "theme_tags": [
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by xiang_yu_pai (credited, post https://danbooru.donmai.us/posts/8423287); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.867,
+       "margin": 0.053,
+       "hair": 0.473,
+       "face": true,
+       "eye": 0.421
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 1111,
+     "name": "C.C.",
+     "anime": "Code Geass: Lelouch of the Rebellion",
+     "favourites": 10923,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age around 300",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b1111-UhmlFtRFrnWa.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.02,
+       "sensitive": 0.98,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/2947742",
+      "file": "https://cdn.donmai.us/original/19/4b/194bd98e08ee790326a7671f550af83d.png",
+      "artist": "lucky_keai",
+      "origin": "https://i.pximg.net/img-original/img/2017/11/10/16/23/46/65828480_p6.png",
+      "rating": "s",
+      "score": 28,
+      "res": "1000x1500",
+      "tag": "c.c.",
+      "theme_tags": [
+       "heart",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by lucky_keai (credited, post https://danbooru.donmai.us/posts/2947742); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.877,
+       "margin": 0.08,
+       "hair": 0.742,
+       "face": true,
+       "eye": 0.902
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 136070,
+     "name": "Shinobu Kocho",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 9400,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136070-MC9LLxJsHyHE.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.99,
+       "questionable": 0.01,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/11321510",
+      "file": "https://cdn.donmai.us/sample/00/57/sample-0057b441463339c279a07f62298276fd.jpg",
+      "artist": "brian_(delknoder)",
+      "origin": "https://x.com/delknoder/status/1967559019960123476",
+      "rating": "s",
+      "score": 30,
+      "res": "3277x4096",
+      "tag": "kochou_shinobu",
+      "theme_tags": [
+       "maid"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by brian_(delknoder) (credited, post https://danbooru.donmai.us/posts/11321510); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.854,
+       "margin": 0.077,
+       "hair": 0.5,
+       "face": true,
+       "eye": 0.429
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 183965,
+     "name": "Fern",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 8661,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age 9   13    15   16   16–17   18   19–20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b183965-uGFohBjlFoTp.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.05,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6879103",
+      "file": "https://cdn.donmai.us/original/e0/c8/e0c8b29d716821f116682a3ef4da6e5b.jpg",
+      "artist": "95_(jiuwujiang)",
+      "origin": "https://i.pximg.net/img-original/img/2023/11/14/20/27/23/113406763_p0.jpg",
+      "rating": "g",
+      "score": 79,
+      "res": "1382x1836",
+      "tag": "fern_(sousou_no_frieren)",
+      "theme_tags": [
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by 95_(jiuwujiang) (credited, post https://danbooru.donmai.us/posts/6879103); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.884,
+       "margin": 0.1,
+       "hair": 0.801,
+       "face": true,
+       "eye": 0.714
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 6,
+     "name": "Rukia Kuchiki",
+     "anime": "Bleach",
+     "favourites": 7389,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "role: \"Lieutenant\" (description)",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b6-25WoBeWMZXBc.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.03,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/7594357",
+      "file": "https://cdn.donmai.us/sample/98/b5/sample-98b53fe2c6694928f941df675c09ad6f.jpg",
+      "artist": "gwao_(_ul_13)",
+      "origin": "https://twitter.com/_UL_13/status/1790042534720217287",
+      "rating": "g",
+      "score": 20,
+      "res": "2004x2664",
+      "tag": "kuchiki_rukia",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by gwao_(_ul_13) (credited, post https://danbooru.donmai.us/posts/7594357); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.786,
+       "margin": 0.109,
+       "hair": 0.353,
+       "face": true,
+       "eye": 0.365
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 136072,
+     "name": "Mitsuri Kanroji",
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "favourites": 6583,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "19",
+     "age_class": "adult",
+     "age_evidence": "AniList age 19",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b136072-xVwyRUKdpybi.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.0,
+       "sensitive": 0.98,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6466077",
+      "file": "https://cdn.donmai.us/sample/7a/74/sample-7a7496da5dbc310f26685ee64015c400.jpg",
+      "artist": "jaguarsee",
+      "origin": "https://i.pximg.net/img-original/img/2023/04/28/12/36/35/107565797_p0.png",
+      "rating": "s",
+      "score": 120,
+      "res": "3382x4096",
+      "tag": "kanroji_mitsuri",
+      "theme_tags": [
+       "enmaided",
+       "heart",
+       "maid"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by jaguarsee (credited, post https://danbooru.donmai.us/posts/6466077); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.821,
+       "margin": 0.077,
+       "hair": 0.625,
+       "face": true,
+       "eye": 0.639
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 203384,
+     "name": "Akane Kurokawa",
+     "anime": "OSHI NO KO",
+     "favourites": 6429,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b203384-YuSppFDMw2wn.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.04,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9294736",
+      "file": "https://cdn.donmai.us/sample/a8/68/sample-a8685c06afbf74db3c254c2c54450b99.jpg",
+      "artist": "hirayama_kanna",
+      "origin": "https://twitter.com/anime_oshinoko/status/1921857302564426034",
+      "rating": "g",
+      "score": 22,
+      "res": "2535x3584",
+      "tag": "kurokawa_akane",
+      "theme_tags": [
+       "kimono",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by hirayama_kanna (credited, post https://danbooru.donmai.us/posts/9294736); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.851,
+       "margin": 0.094,
+       "hair": 0.497,
+       "face": true,
+       "eye": 0.289
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 264529,
+     "name": "Ryo Yamada",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 6349,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b264529-BvEusZnJLD2Y.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.82,
+       "sensitive": 0.18,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8257424",
+      "file": "https://cdn.donmai.us/original/b1/54/b1549d391eb4141049dcd400caf21b98.jpg",
+      "artist": "bigrabbitcookie",
+      "origin": "https://twitter.com/bigrabbitcookie/status/1784094562723766504",
+      "rating": "g",
+      "score": 35,
+      "res": "1440x1920",
+      "tag": "yamada_ryo",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by bigrabbitcookie (credited, post https://danbooru.donmai.us/posts/8257424); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.916,
+       "margin": 0.138,
+       "hair": 0.425,
+       "face": true,
+       "eye": 0.449
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 129330,
+     "name": "Echidna",
+     "anime": "Re:ZERO -Starting Life in Another World- Season 2",
+     "favourites": 5970,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 19   Mid 20s   400+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129330-ZUtYw4n7N0uH.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.01,
+       "sensitive": 0.98,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/5229539",
+      "file": "https://cdn.donmai.us/sample/9d/94/sample-9d94113b36a35cbdc85f07b5727b77ad.jpg",
+      "artist": "yuunamida_uyu",
+      "origin": "https://twitter.com/uyuta__/status/1508376803601428488",
+      "rating": "s",
+      "score": 95,
+      "res": "2136x3592",
+      "tag": "echidna_(re:zero)",
+      "theme_tags": [
+       "maid"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by yuunamida_uyu (credited, post https://danbooru.donmai.us/posts/5229539); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.935,
+       "margin": 0.107,
+       "hair": 0.454,
+       "face": true,
+       "eye": 0.222
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 266041,
+     "name": "Ikuyo Kita",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 4073,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b266041-1HKgjJGP2MmM.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.07,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/5965147",
+      "file": "https://cdn.donmai.us/original/5b/3e/5b3e645d440afe421dd576272cc13cd5.jpg",
+      "artist": "shiro_(siro_kuten)",
+      "origin": "https://twitter.com/_yamado/status/1608861610017427456",
+      "rating": "g",
+      "score": 49,
+      "res": "1450x2048",
+      "tag": "kita_ikuyo",
+      "theme_tags": [
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by shiro_(siro_kuten) (credited, post https://danbooru.donmai.us/posts/5965147); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.898,
+       "margin": 0.098,
+       "hair": 0.525,
+       "face": true,
+       "eye": 0.614
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    },
+    {
+     "id": 16059,
+     "name": "Noi",
+     "anime": "Dorohedoro",
+     "favourites": 3169,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "24",
+     "age_class": "adult",
+     "age_evidence": "AniList age 24",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b16059-mUfErMfV09e5.jpg",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.01,
+       "sensitive": 0.98,
+       "questionable": 0.01,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8747762",
+      "file": "https://cdn.donmai.us/sample/2b/c0/sample-2bc069ec53b261ad305c66f2d39894e1.jpg",
+      "artist": "park_ongjol",
+      "origin": "https://i.pximg.net/img-original/img/2025/01/22/23/06/24/126473572_p0.jpg",
+      "rating": "s",
+      "score": 58,
+      "res": "1996x2640",
+      "tag": "noi_(dorohedoro)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by park_ongjol (credited, post https://danbooru.donmai.us/posts/8747762); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.839,
+       "margin": 0.09,
+       "hair": 0.573,
+       "face": true,
+       "eye": 0.212
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 205434,
+     "name": "MEM-cho",
+     "anime": "OSHI NO KO",
+     "favourites": 1816,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "18",
+     "age_class": "adult",
+     "age_evidence": "AniList age 18",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b205434-AuBcR4M05f6s.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.99,
+       "sensitive": 0.01,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8865655",
+      "file": "https://cdn.donmai.us/sample/7e/5c/sample-7e5c0285a0e3c23bf28ca2809adf261b.jpg",
+      "artist": "nm_(blue-rapid)",
+      "origin": "https://twitter.com/nm_rakugaki/status/1881320053909643473",
+      "rating": "g",
+      "score": 26,
+      "res": "2166x3063",
+      "tag": "memcho",
+      "theme_tags": [
+       "maid",
+       "maid_apron"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by nm_(blue-rapid) (credited, post https://danbooru.donmai.us/posts/8865655); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.889,
+       "margin": 0.082,
+       "hair": 0.709,
+       "face": true,
+       "eye": 0.304
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 5830,
+     "name": "Machi Komacine",
+     "anime": "Hunter x Hunter (2011)",
+     "favourites": 1498,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "24",
+     "age_class": "adult",
+     "age_evidence": "AniList age 24",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b5830-IEl8BCasHZvG.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.79,
+       "sensitive": 0.21,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9047682",
+      "file": "https://cdn.donmai.us/sample/2f/ed/sample-2fed9ffe566d499dfd53d3a6b40c5879.jpg",
+      "artist": "re_tae44",
+      "origin": "https://i.pximg.net/img-original/img/2024/06/19/22/55/22/119789400_p16.jpg",
+      "rating": "g",
+      "score": 20,
+      "res": "1748x2480",
+      "tag": "machi_komacine",
+      "theme_tags": [
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by re_tae44 (credited, post https://danbooru.donmai.us/posts/9047682); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.902,
+       "margin": 0.129,
+       "hair": 0.558,
+       "face": true,
+       "eye": 0.517
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "adult"
+    },
+    {
+     "id": 233425,
+     "name": "Tao Hu",
+     "anime": "Genshin Comic Anthology",
+     "favourites": 1497,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b233425-lnVgEzLegxwv.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.95,
+       "sensitive": 0.05,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/5700123",
+      "file": "https://cdn.donmai.us/original/ac/04/ac04d6327dfdb7c4e5c5c8b67635573d.jpg",
+      "artist": "kanase_(mcbrwn18)",
+      "origin": "https://twitter.com/mcbrwn18/status/1573955237357842434",
+      "rating": "g",
+      "score": 121,
+      "res": "1133x1771",
+      "tag": "hu_tao_(genshin_impact)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kanase_(mcbrwn18) (credited, post https://danbooru.donmai.us/posts/5700123); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.888,
+       "margin": 0.117,
+       "hair": 0.913,
+       "face": true,
+       "eye": 0.293
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "unknown"
+    },
+    {
+     "id": 2171,
+     "name": "Kagami Hiiragi",
+     "anime": "Lucky☆Star",
+     "favourites": 1215,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age 16-18, 31",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b2171-OTMMewsamHiC.png",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.96,
+       "sensitive": 0.05,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9956758",
+      "file": "https://cdn.donmai.us/original/4c/0e/4c0e8f2c83318acf1852ee0180513b55.jpg",
+      "artist": "niyane",
+      "origin": "https://twitter.com/niyane/status/1966871834781249913",
+      "rating": "g",
+      "score": 26,
+      "res": "1536x2048",
+      "tag": "hiiragi_kagami",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by niyane (credited, post https://danbooru.donmai.us/posts/9956758); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.901,
+       "margin": 0.074,
+       "hair": 0.821,
+       "face": true,
+       "eye": 0.627
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "minor"
+    }
+   ],
+   "outfit": [
+    {
+     "id": 129330,
+     "name": "Echidna",
+     "anime": "Re:ZERO -Starting Life in Another World- Season 2",
+     "favourites": 5970,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 19   Mid 20s   400+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129330-ZUtYw4n7N0uH.png",
+     "edition": "maid",
+     "full": null,
+     "crop": [
+      0.0,
+      0.4788,
+      0.9811,
+      0.9775
+     ],
+     "gate": {
+      "rating": {
+       "general": 0.16,
+       "sensitive": 0.79,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "crop_rating": {
+       "general": 0.28,
+       "sensitive": 0.75,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/10420302",
+      "file": "https://cdn.donmai.us/sample/c4/0c/sample-c40c50cc7ba205e0fa5bb787740e6b6d.jpg",
+      "artist": "kirishima_kate",
+      "origin": "https://i.pximg.net/img-original/img/2025/08/20/01/34/54/134096910_p0.png",
+      "rating": "g",
+      "score": 32,
+      "res": "3472x5262",
+      "tag": "echidna_(re:zero)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "witch"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kirishima_kate (credited, post https://danbooru.donmai.us/posts/10420302); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.921,
+       "margin": 0.108,
+       "hair": 0.452,
+       "face": true,
+       "eye": 0.201
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "enmaided"
+     ],
+     "dir": "theme/maid/outfit",
+     "gate_class": "adult"
+    }
+   ],
+   "silhouette": [
+    {
+     "id": 257562,
+     "name": "Hitori Goto",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 12410,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b257562-Ru35NYPfsqhY.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      316,
+      520
+     ],
+     "stats": {
+      "fill": 0.52,
+      "solidity": 0.72,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.98,
+       "sensitive": 0.01,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/7693944",
+      "file": "https://cdn.donmai.us/original/ee/9a/ee9a9f7437ab76052d4cd984e018a9e6.png",
+      "artist": "kotatsu-mazoku",
+      "origin": "https://i.pximg.net/img-original/img/2023/11/29/08/36/25/113800222_p0.png",
+      "rating": "g",
+      "score": 20,
+      "res": "1360x2048",
+      "tag": "gotoh_hitori",
+      "theme_tags": [
+       "heart",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kotatsu-mazoku (credited, post https://danbooru.donmai.us/posts/7693944); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.868,
+       "margin": 0.061,
+       "hair": 0.972,
+       "face": true,
+       "eye": 0.934
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "minor"
+    },
+    {
+     "id": 183965,
+     "name": "Fern",
+     "anime": "Frieren: Beyond Journey’s End",
+     "favourites": 8661,
+     "difficulty": 2,
+     "gender": "Female",
+     "age": null,
+     "age_class": "minor",
+     "age_evidence": "wiki age 9   13    15   16   16–17   18   19–20",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b183965-uGFohBjlFoTp.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      295,
+      520
+     ],
+     "stats": {
+      "fill": 0.43,
+      "solidity": 0.65,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.94,
+       "sensitive": 0.06,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6879103",
+      "file": "https://cdn.donmai.us/original/e0/c8/e0c8b29d716821f116682a3ef4da6e5b.jpg",
+      "artist": "95_(jiuwujiang)",
+      "origin": "https://i.pximg.net/img-original/img/2023/11/14/20/27/23/113406763_p0.jpg",
+      "rating": "g",
+      "score": 79,
+      "res": "1382x1836",
+      "tag": "fern_(sousou_no_frieren)",
+      "theme_tags": [
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by 95_(jiuwujiang) (credited, post https://danbooru.donmai.us/posts/6879103); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.884,
+       "margin": 0.1,
+       "hair": 0.801,
+       "face": true,
+       "eye": 0.714
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "minor"
+    },
+    {
+     "id": 264529,
+     "name": "Ryo Yamada",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 6349,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "17",
+     "age_class": "minor",
+     "age_evidence": "AniList age 17",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b264529-BvEusZnJLD2Y.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      202,
+      520
+     ],
+     "stats": {
+      "fill": 0.42,
+      "solidity": 0.6,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.81,
+       "sensitive": 0.19,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/8257424",
+      "file": "https://cdn.donmai.us/original/b1/54/b1549d391eb4141049dcd400caf21b98.jpg",
+      "artist": "bigrabbitcookie",
+      "origin": "https://twitter.com/bigrabbitcookie/status/1784094562723766504",
+      "rating": "g",
+      "score": 35,
+      "res": "1440x1920",
+      "tag": "yamada_ryo",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by bigrabbitcookie (credited, post https://danbooru.donmai.us/posts/8257424); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.916,
+       "margin": 0.138,
+       "hair": 0.425,
+       "face": true,
+       "eye": 0.449
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "minor"
+    },
+    {
+     "id": 129330,
+     "name": "Echidna",
+     "anime": "Re:ZERO -Starting Life in Another World- Season 2",
+     "favourites": 5970,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "adult",
+     "age_evidence": "wiki age 19   Mid 20s   400+",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b129330-ZUtYw4n7N0uH.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      346,
+      520
+     ],
+     "stats": {
+      "fill": 0.44,
+      "solidity": 0.72,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.17,
+       "sensitive": 0.78,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "adult ok (sensitive)",
+      "class": "adult",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/10420302",
+      "file": "https://cdn.donmai.us/sample/c4/0c/sample-c40c50cc7ba205e0fa5bb787740e6b6d.jpg",
+      "artist": "kirishima_kate",
+      "origin": "https://i.pximg.net/img-original/img/2025/08/20/01/34/54/134096910_p0.png",
+      "rating": "g",
+      "score": 32,
+      "res": "3472x5262",
+      "tag": "echidna_(re:zero)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "witch"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by kirishima_kate (credited, post https://danbooru.donmai.us/posts/10420302); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.921,
+       "margin": 0.108,
+       "hair": 0.452,
+       "face": true,
+       "eye": 0.201
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "enmaided"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "adult"
+    },
+    {
+     "id": 266041,
+     "name": "Ikuyo Kita",
+     "anime": "BOCCHI THE ROCK!",
+     "favourites": 4073,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": "16",
+     "age_class": "minor",
+     "age_evidence": "AniList age 16",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b266041-1HKgjJGP2MmM.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      247,
+      520
+     ],
+     "stats": {
+      "fill": 0.49,
+      "solidity": 0.7,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.89,
+       "sensitive": 0.12,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "minor",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/7002939",
+      "file": "https://cdn.donmai.us/original/99/67/996768f9e2edd7d5a756187676116702.jpg",
+      "artist": "hellfire00001",
+      "origin": "https://twitter.com/hellfire00001/status/1642338099488493570",
+      "rating": "g",
+      "score": 21,
+      "res": "1536x2048",
+      "tag": "kita_ikuyo",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by hellfire00001 (credited, post https://danbooru.donmai.us/posts/7002939); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.917,
+       "margin": 0.083,
+       "hair": 0.498,
+       "face": true,
+       "eye": 0.387
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "minor"
+    },
+    {
+     "id": 233425,
+     "name": "Tao Hu",
+     "anime": "Genshin Comic Anthology",
+     "favourites": 1497,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b233425-lnVgEzLegxwv.png",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      257,
+      520
+     ],
+     "stats": {
+      "fill": 0.49,
+      "solidity": 0.71,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.9,
+       "sensitive": 0.11,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/9425961",
+      "file": "https://cdn.donmai.us/original/4b/57/4b57c587bc77b07a31a7c7fba9c8a809.png",
+      "artist": "maru_(est3562)",
+      "origin": "https://i.pximg.net/img-original/img/2025/06/06/22/40/01/131252427_p0.png",
+      "rating": "g",
+      "score": 34,
+      "res": "1036x2081",
+      "tag": "hu_tao_(genshin_impact)",
+      "theme_tags": [
+       "enmaided",
+       "heart",
+       "maid",
+       "maid_headdress",
+       "track_jacket"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by maru_(est3562) (credited, post https://danbooru.donmai.us/posts/9425961); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.841,
+       "margin": 0.101,
+       "hair": 0.947,
+       "face": true,
+       "eye": 0.335
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "unknown"
+    }
+   ]
   }
  }
 }

@@ -2292,6 +2292,10 @@ def plan_from_bank(fmt, topic=None, seed=None, n=None, country=None, edition=Non
                 cand = [x for x in ok if x.get('difficulty', 2) == d] or ok
                 if not cand:
                     break
+                fem = [x for x in cand if x.get('gender') == 'Female']   # owner 2026-10-11: themed rounds ~75 % women
+                men = [x for x in cand if x.get('gender') != 'Female']
+                if fem and men:
+                    cand = fem if rng.random() < 0.75 else men
                 it = rng.choice(cand)
                 used.add(id(it))
                 rounds.append({**it, 'answer': it['name']})

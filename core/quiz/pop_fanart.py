@@ -54,6 +54,9 @@ ALT_LOOK = {'alternate_costume', 'enmaided', 'playboy_bunny', 'casual', 'contemp
 LOW_QUALITY = {'sketch', 'lineart', 'unfinished', 'lowres', 'jpeg_artifacts', 'traditional_media', '3d', 'photorealistic',
                'ai-generated', 'ai-assisted', 'md5_mismatch', 'bad_id', 'resized', 'upscaled', 'blurry', 'rough', 'work_in_progress'}
 MIN_SCORE, GOOD_SCORE, MIN_SIDE = 20, 50, 1000
+AI_TAGS = {'ai-generated', 'ai-assisted'}
+AI_ARTEFACT = {'bad_hands', 'bad_anatomy', 'bad_feet', 'extra_arms', 'extra_digits', 'fewer_digits', 'missing_limb', 'deformed', 'mutated_hands'}
+_ALLOW_AI = [False]   # set only by ai_candidates(): Danbooru ai-generated posts (owner 2026-10-10: allowed if good and very on-model)
 PAYWALL = re.compile(r'fanbox|patreon|fantia|gumroad|subscribestar|ci-en|boosty|skeb\.jp|fanbox\.cc', re.I)
 import os as _os
 THEMES = json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'themes.json'), encoding='utf-8'))['themes']
@@ -208,8 +211,10 @@ def _clean(p, cls, rating, tag=None, min_score=None, alts=(), canon=frozenset())
     artist = p.get('tag_string_artist', '').split()
     if 'banned_artist' in meta or not artist or PAYWALL.search(p.get('source') or ''):
         return rej('artist / paywall')
-    if (tags | meta) & LOW_QUALITY:
+    if (tags | meta) & (LOW_QUALITY - AI_TAGS if _ALLOW_AI[0] else LOW_QUALITY):
         return rej('low-quality tag')
+    if _ALLOW_AI[0] and (tags & AI_ARTEFACT or 'ai-generated' not in (tags | meta)):
+        return rej('ai artefact tag / not ai')
     if (p.get('score') or 0) < ms:
         return rej(f'score < {ms}')
     if min(p.get('image_width', 0), p.get('image_height', 0)) < MIN_SIDE:
@@ -243,7 +248,7 @@ def _clean(p, cls, rating, tag=None, min_score=None, alts=(), canon=frozenset())
             'rating': rating, 'swim': bool(swim), 'swim_tags': swim, 'origin': (p.get('source') or '')[:200],
             'framing': sorted(tags & (set().union(*FRAMING.values()) | {'cowboy_shot', 'standing', 'feet_out_of_frame', 'legs_out_of_frame', 'upper_body', 'portrait'})), 'alt': bool(tags & ALT_LOOK),
             'swimwear': bool(tags & {'swimsuit', 'bikini', 'one-piece_swimsuit'}), 'ttags': sorted(tags & THEME_TAGS),
-            'srctype': 'GAME' if 'game_cg' in tags else 'PROMO' if 'official_art' in tags else 'FAN ART'}
+            'srctype': 'AI' if (tags | meta) & AI_TAGS else 'GAME' if 'game_cg' in tags else 'PROMO' if 'official_art' in tags else 'FAN ART'}
 
 
 def posts(c, tag, cls, cache, extra=None, min_score=None):
@@ -338,10 +343,11 @@ def candidates(c, fmt, titles, cache, limit=4, cls=None, official=True, only_off
 COSTUME_ALT = re.compile(r'swim|summer|beach|bikini|resort|pool|sea|ocean|vacation', re.I)
 
 
-def costume_tags(c, tag, cache):
+def costume_tags(c, tag, cache, pattern=None):
     """Official themed costume character tags of this character (e.g. `mash_kyrielight_(swimsuit_of_perpetual_summer)`):
     `<tag base>_(*)` tags whose qualifier names a swimsuit / summer / beach look. Cached as dbalt:<id>."""
-    key = f"dbalt:{c['id']}"
+    rx = re.compile(pattern, re.I) if pattern else COSTUME_ALT
+    key = f"dbalt:{c['id']}" + (f":{__import__('zlib').crc32(pattern.encode()) % 10**6}" if pattern else '')
     hit = cache.get(key)
     if hit is not None:
         return hit
@@ -351,7 +357,7 @@ def costume_tags(c, tag, cache):
     except RuntimeError:
         return []
     out = [t['name'] for t in res if t['name'] != tag and (t.get('post_count') or 0) >= 3
-           and re.sub(r'_\([^()]*\)$', '', t['name']) == base and COSTUME_ALT.search(_qualifier(t['name']) or '')][:4]
+           and re.sub(r'_\([^()]*\)$', '', t['name']) == base and rx.search(_qualifier(t['name']) or '')][:4]
     cache.put(key, out)
     return out
 
@@ -383,7 +389,7 @@ def theme_candidates(c, fmt, titles, cache, theme, cls, limit=None, per_tag=None
         queries.append('full_body')
     queries += list(OFFICIAL_TAGS)   # official promotional / game art that also carries a theme tag (kept by the theme-tag check below)
     names = [(tag, ())]
-    alts = costume_tags(c, tag, cache) if art.get('costume_tags') else []
+    alts = costume_tags(c, tag, cache, art.get('costume_re')) if art.get('costume_tags') else []
     for at in alts:
         names.append((at, tuple(alts) + (tag,)))
     for nm, al in names:
@@ -429,6 +435,52 @@ def theme_candidates(c, fmt, titles, cache, theme, cls, limit=None, per_tag=None
         src = {'kind': 'danbooru', 'post': x['post'], 'file': x['url'], 'artist': x['artist'], 'origin': x['origin'], 'rating': x['rating'],
                'score': x['score'], 'res': x.get('res'), 'tag': tag, 'theme_tags': x.get('ttags'), 'srctype': x.get('srctype', 'FAN ART'),
                'licence': _licence(x)}
+        keep.append((x['url'], src, x['swim']))
+        if len(keep) >= limit:
+            break
+    return keep
+
+
+def ai_candidates(c, fmt, titles, cache, theme, cls, limit=4, min_score=5):
+    """Danbooru ai-generated posts of the character (`<tag> ai-generated rating:g|s score:>=N`; 2 tags), same filters as fan art plus the post's own
+    artefact tags; themed (theme=dict) keeps posts carrying a theme tag, plain (theme=None) silhouette / outfit keep full-body ones. Caller applies the
+    STRICTER on-model check and the WD14 artefact tags. [(url, source, swim)], srctype 'AI'."""
+    tag = find_tag(c, titles, cache)
+    if not tag:
+        return []
+    adult = cls in pv.ADULT_CLASSES
+    want = set(theme['art']['danbooru']) if theme else set()
+    canon = _canon(c, cache) if adult else set()
+    out, seen = [], set()
+    _ALLOW_AI[0] = True
+    try:
+        for rating in (('g', 's') if adult else ('g',)):
+            key = f"dbai1:{c['id']}:{rating}:{'a' if adult else 's'}{'c' if canon else ''}"
+            hit = cache.get(key)
+            if hit is None:
+                try:
+                    res = _get('posts.json', {'tags': f'{tag} ai-generated rating:{rating} score:>={min_score}', 'limit': 200})
+                except RuntimeError:
+                    continue
+                hit = sorted((x for x in (_clean(p, cls, rating, tag, min_score=min_score, canon=canon) for p in res) if x), key=lambda x: -x['score'])[:60]
+                cache.put(key, hit)
+            for x in hit:
+                if x['id'] not in seen:
+                    seen.add(x['id'])
+                    out.append(x)
+    finally:
+        _ALLOW_AI[0] = False
+    keep = []
+    for x in sorted(out, key=lambda x: -x['score']):
+        fr, ar = set(x['framing']), x['h'] / max(1, x['w'])
+        if theme and not set(x.get('ttags') or []) & want:
+            continue
+        if fmt in ('silhouette', 'outfit') and not ('full_body' in fr and 1.15 <= ar <= 4.6):
+            continue
+        if not adult and (x['rating'] != 'g' or x['swim']):
+            continue
+        src = {'kind': 'danbooru', 'post': x['post'], 'file': x['url'], 'artist': x['artist'], 'origin': x['origin'], 'rating': x['rating'], 'score': x['score'],
+               'res': x.get('res'), 'tag': tag, 'theme_tags': x.get('ttags'), 'srctype': 'AI', 'licence': _licence(x)}
         keep.append((x['url'], src, x['swim']))
         if len(keep) >= limit:
             break

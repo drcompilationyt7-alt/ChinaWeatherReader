@@ -1,5 +1,45 @@
 # Quiz new formats (silhouette / eyes / outfit): handoff
 
+## SESSION 2026-10-12 HALLOWEEN FOCUS - STATE (PAUSED by coordinator: no local processes until told)
+- Halloween pool before: character 2 / silhouette 0 / outfit 0. Danbooru Halloween rebuild (themes.json halloween art widened: min_score 10, loose_framing,
+  costume_tags + art.costume_re, 12 tag queries; pop_fanart.costume_tags takes a pattern) got 7 / 2 / 1 after 240 of 2172 characters (~3 % yield; cache
+  theme:halloween:*, resumes; backup scratchpad/bak1012-extras.json). Build is NOT running; restart (when allowed) at IDLE priority, POP_THREADS=2, POP_MIN_FREE_GB=4:
+  `--phase theme --theme halloween --minutes N`, then pe.finish_theme('halloween').
+- Kaggle AI art: prompts = 330 (halloween, 110 chars x 3 seeds) in output/ai-art/prompts.jsonl. Kernel apq-ai-art-gen fixed twice (input dir found by walk;
+  compel padding done by hand) and run3 was RUNNING on Kaggle (started ~13:45 EDT, 110 min box). The `run` driver died, so fetch by hand:
+  `kaggle kernels output john123abc/apq-ai-art-gen -p output/ai-art/result`, copy result/out/* into pop_gen.OUT, record minutes in memory/ai-art-kaggle.json
+  (W42 used ~110 + 9 min), then `python scripts/pop-ai-art-kaggle.py score --scopes halloween`, finish_theme, sheets, sample, commit (owner approved the Halloween push).
+- Other non-seasonal themes (beach, festival, glasses, villains, maid, gym) to enable in POP_THEMES once pools pass: not started.
+
+## SESSION 2026-10-11 night (other themes + AI art) - STATE
+Scratchpad = ...\claude\c--Users-Home-Desktop-ChinaWeatherReader\c0dd8c36-cb0d-48fb-93cb-4f90a6450d45\scratchpad. Nothing committed / pushed.
+CHAINS (mine, acapvenv, one model process at a time): chain6 (grow halloween/beach/festival) STOPPED after festival; `chain7.sh` = villains (done:
+ character 72 / sil 3 / eyes 28) -> glasses (done: character 34 / eyes 16 / sil 1) -> maid -> gym -> winter -> valentine (30-min batches, finish_theme each);
+ `chain8.sh` waits for chain7, then `--phase aipost` per scope (base, beach, halloween, festival, maid, gym, winter, valentine). Check:
+ `grep -E "^== |^theme [a-z]+: \{|aipost" run1010.log | tail`. `touch STOP2` stops after the batch, `touch HOLD` pauses.
+ Selector themes (glasses, villains) take silhouette / outfit / eyes from the BASE pools: their silhouette pools stay at 1-3 until base silhouettes grow
+ (scope `base` of the AI paths below targets exactly the characters those two themes selected).
+THEME TEXT: themes.json topics for maid / gym / glasses / villains rewritten with explicit safety words (no fan service, 16+, no gore) and formats widened
+ (maid +wyr/trivia/emoji, gym/glasses/villains +wyr/emoji). The LLM fact-check path (pop-quiz-content.js verify) is unchanged; a dry run needs Gemini
+ (was 503 / empty at test time): `TMPMEM=<scratchpad>/llmmem node <scratchpad>/llmtest.js villains glasses gym maid` (writes a temp bank, not memory/).
+FLAG (NOT applied): `scratchpad/flag_change.txt` = sed adding maid,gym,glasses,villains to POP_THEMES in .github/workflows/quiz-channel.yml; apply after the owner OKs the samples.
+AI ART (owner: generation on KAGGLE, never the local GPU; the local run was abandoned: the 6.9 GB checkpoint went to CPU under the edit agent's RAM load):
+ - Model: Illustrious-XL v1.0 (OnomaAIResearch, licence sdxl-license = CreativeML OpenRAIL++-M, commercial use of outputs OK). NoobAI-XL REJECTED: its licence
+   prohibits commercial use of outputs. Checkpoint also cached at ~/.cache/pop_quiz_models/gen/ (6.9 GB; delete if the disk is needed).
+ - core/quiz/pop_gen.py: plan_prompts (Kaggle job list: popular first, ~75 % women, theme outfit prompts, adults-only swimwear/suggestive, strict-class
+   characters get general prompts, appearance tags from WD14 on the official portrait, negative prompt with NSFW/child terms), score_dir (local gates:
+   WD14 gate + age class, artefact tags >= 0.30, theme tag, STRICTER on-model margin >= 0.10 / hair >= 0.55 / eye >= 0.35, then the normal do_* builders),
+   aipost (Danbooru ai-generated posts, same strict checks). Results in ~/.cache/pop_quiz_models/ai-cache.json (key ai:<scope>:<id>), pictures staged in
+   gen/stage; pop_extras.merge_ai_theme / merge_ai_base add an AI item ONLY where no real item exists for that character + format (real art wins), source
+   kind 'ai' (own) or 'danbooru' with srctype 'AI'. The shared extras cache is never written by pop_gen (AICacheView overlay -> ai-dbcache.json).
+ - Kaggle: scripts/kaggle/ai_art_kernel.py + scripts/pop-ai-art-kaggle.py (`plan` -> output/ai-art/prompts.jsonl, `bundle`, `run` (Mon-Thu only, both UTC and
+   local clock; <= 180 GPU min / week; names apq-ai-art-input / apq-ai-art-gen; never touches other kernels; never reads or prints the token), `score`).
+   Bundle built and checked (nothing pushed, no run: it is Sunday). FIRST RUN = Monday: `plan --scopes base,beach,halloween,festival --chars 120 --seeds 3`,
+   `run --minutes 120`, `score --scopes ...`, then gate sheets. The kernel is UNTESTED on Kaggle (compel long-prompt path, 28 steps, 768x1152, T4/P100).
+ - Pass-rate of AI art: not measured yet (no image generated). Smoke test of score_dir with real fan art: strict check rejects it as designed.
+ - Gate sheets label AI (pink) vs PROMO / GAME / FAN ART / WIKI; credit lines in pop-quiz-meta.js now include AI items ("Art: AI-generated (Illustrious-XL v1.0)").
+ - Fixed: pop_extras.heavy_running matched its own powershell command line (always "edit render running" without POP_MIN_FREE_GB).
+
 ## 2026-10-11 strict list update (owner review, via coordinator)
 Tatsumaki and Fenrys REMOVED from assets/appearance-overrides.json (petite adults: full adult rules). Strict list now: Senko, Rory Mercury,
 Charmy Pappitson, Milim Nava, Yachiru Kusajishi (normal art only). Items already built for those two under the strict rules stay as they are;
@@ -496,3 +536,10 @@ NO GITHUB PUSH / RUNNER until the owner approves the runner idea (owner 2026-10-
 - **Owner addendum 2026-10-11:** include MALE characters too, for every theme where it fits (beach: swim trunks / shirtless adult men; halloween; festival; winter; gym; etc.). Male swimwear / shirtless follows the same adult-only rule.
 - **Order:** start with the MOST POPULAR (favourites), then also sample RANDOM characters from the wider list (e.g. after the top ~500, alternate popular and random picks), so the pools aren't only the same famous faces. Difficulty still comes from popularity.
 - **Owner:** focus on WOMEN: build and pick roughly 70-80 % women and 20-30 % men in the theme pools and in round selection.
+
+## 2026-10-12 later: Kaggle run3 DONE, 256 of 330 AI pictures fetched (24.6 s/image, 106 min, ledger W42 ~119 min used) and copied to ~/.cache/pop_quiz_models/gen/out/halloween.
+Not scored yet (local gating paused by coordinator): `python scripts/pop-ai-art-kaggle.py score --scopes halloween` (IDLE priority, 2 threads, >= 4 GB free), then finish_theme('halloween'), sheets, sample, push.
+
+## 2026-10-12 PAUSED again (coordinator: owner priority = sound edit). Only the scoring step (`pop-ai-art-kaggle.py score --scopes halloween`, log scratchpad/score1013.log, idle priority) was allowed to finish.
+After it: NO merge / sheet / sample / push until the coordinator says go (Halloween has until Oct 15). Then: pe.finish_theme('halloween') (merges AI + cached Danbooru items), `python scripts/pop-gate-sheets.py`,
+Halloween sample (`--format character --edition halloween --ci-voice --anim-bg`), quiz-assets-only commit, push as drcompilationyt7-alt. Then beach/festival/glasses/villains/maid/gym pools + POP_THEMES commit.

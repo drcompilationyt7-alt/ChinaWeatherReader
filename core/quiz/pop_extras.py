@@ -693,7 +693,7 @@ def heavy_running():
     if os.environ.get('POP_MIN_FREE_GB'):
         return free_ram_gb() < float(os.environ['POP_MIN_FREE_GB'])
     import subprocess
-    cmd = ("Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'compose_blocks|aep_replay|edit-pipeline|ffmpeg.*libx264' } "
+    cmd = ("Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -match 'compose_blocks|aep_replay|edit-pipeline|ffmpeg.*libx264' } "
            "| Measure-Object | Select-Object -ExpandProperty Count")
     try:
         r = subprocess.run(['powershell', '-NoProfile', '-Command', cmd], capture_output=True, text=True, timeout=30)
@@ -1009,6 +1009,40 @@ def build_eyes_v2(pool, cache, t_end, batch_wait=60):
     finish_v2(cache)
 
 
+def merge_ai_base(out, chars, rank):
+    """AI-generated silhouette / outfit items (pop_gen scope 'base') join the normal pools only where the character has no real item."""
+    import shutil
+    try:
+        ai = json.load(open(os.path.join(pv.MODELS, 'ai-cache.json'), encoding='utf-8'))
+    except (OSError, ValueError):
+        return
+    have = {f: {it['id'] for it in out[f]} for f in ('silhouette', 'outfit')}
+    for k, v in ai.items():
+        if not k.startswith('ai:base:') or not isinstance(v, dict):
+            continue
+        cid = int(k.split(':')[2])
+        c = chars.get(cid)
+        if not c:
+            continue
+        for f in ('silhouette', 'outfit'):
+            r = v.get(f)
+            if not isinstance(r, dict) or 'dropped' in r or cid in have[f]:
+                continue
+            if f == 'outfit' and (c.get('age_class') != 'adult' or c.get('gender') != 'Female'):
+                continue
+            src = os.path.join(pv.MODELS, 'gen', 'stage', 'base', f, f'{cid}.jpg')
+            if not os.path.exists(src):
+                continue
+            d = 'sil' if f == 'silhouette' else 'outfit'
+            os.makedirs(os.path.join(POP2, d), exist_ok=True)
+            shutil.copyfile(src, os.path.join(POP2, d, f'{cid}.jpg'))
+            if f == 'silhouette':
+                shutil.copyfile(src[:-4] + '.png', os.path.join(POP2, 'sil', f'{cid}.png'))
+            out[f].append({'id': cid, 'name': c['name'], 'anime': c['anime'], 'favourites': c['favourites'],
+                           'difficulty': 1 if rank[cid] < 60 else 2 if rank[cid] < 180 else 3, 'gender': c.get('gender'), 'age': c.get('age'),
+                           'age_class': c['age_class'], 'age_evidence': c.get('age_evidence'), 'image': c['image'], **r})
+
+
 def finish_v2(cache=None):
     """Merge the v2 silhouette / outfit results with the stored eyes into character-extras.json; drop orphan files."""
     cache = cache or Cache()
@@ -1048,6 +1082,7 @@ def finish_v2(cache=None):
             out[name].append({'id': cid, 'name': c['name'], 'anime': c['anime'], 'favourites': c['favourites'],
                               'difficulty': 1 if rank[cid] < 60 else 2 if rank[cid] < 180 else 3, 'gender': c.get('gender'), 'age': c.get('age'),
                               'age_class': c['age_class'], 'age_evidence': c.get('age_evidence'), 'image': c['image'], **r})
+    merge_ai_base(out, chars, rank)
     for k in out:
         out[k].sort(key=lambda it: -it['favourites'])
     used = set()
@@ -1110,6 +1145,36 @@ def do_character_art(c, img, cls):
             'swimwear': sorted(k for k in ('swimsuit', 'bikini', 'one-piece_swimsuit', 'barefoot', 'bare_legs') if t['tags'].get(k, 0) >= 0.28)}}, 'ok'
 
 
+def theme_order(pool, top_n=500, women_share=0.75, seed=20261011):
+    """Processing order for theme builds (owner plan 2026-10-11): ~75 % women / 25 % men, most popular (AniList favourites) first for the
+    top `top_n`, then alternating the next most popular with a RANDOM pick from the wider list, so the pools are not only famous faces.
+    Characters of other / unknown gender follow the men's stream."""
+    import random
+    rng = random.Random(seed)
+    w = sorted([c for c in pool if c.get('gender') == 'Female'], key=lambda c: -c['favourites'])
+    m = sorted([c for c in pool if c.get('gender') != 'Female'], key=lambda c: -c['favourites'])
+    out, wi, mi, k = [], [], [], 0
+    wl, ml = list(w), list(m)
+
+    def take(lst, popular):
+        if not lst:
+            return None
+        if popular or len(out) < top_n:
+            return lst.pop(0)
+        return lst.pop(rng.randrange(len(lst)))
+    toggle = 0
+    while wl or ml:
+        want_w = (len(out) % 4 != 3) if (wl and ml) else bool(wl)   # 3 women : 1 man
+        lst = wl if want_w else ml
+        c = take(lst, popular=(toggle % 2 == 0))
+        if c is None:
+            continue
+        out.append(c)
+        if len(out) >= top_n:
+            toggle += 1
+    return out
+
+
 def build_theme(tid, minutes=40, batch_wait=60):
     """Theme pool for one themes.json entry: art themes get themed art per character (wiki pictures named for the theme,
     then themed fan art; same quality / on-model / WD14 gates + the theme check); selector themes (villains, glasses)
@@ -1127,8 +1192,13 @@ def build_theme(tid, minutes=40, batch_wait=60):
     if sel:
         if sel.get('desc'):
             rx = re.compile(sel['desc'], re.I)
+            nx = re.compile(sel['not_desc'], re.I) if sel.get('not_desc') else None
+            names = {n.lower() for n in sel.get('names', [])}       # hand-checked famous ones (owner: a "villains" edition must not show heroes)
+            excl = {n.lower() for n in sel.get('exclude', [])}
             for c in pool:
-                cache.put(f'themesel:{tid}:{c["id"]}', bool(rx.search(cache.get(f"desc:{c['id']}") or '')))
+                d = cache.get(f"desc:{c['id']}") or ''
+                hit = c['name'].lower() in names or bool(rx.search(d) and not (nx and nx.search(d)))
+                cache.put(f'themesel:{tid}:{c["id"]}', bool(hit and c['name'].lower() not in excl))
         else:
             for c in sorted(pool, key=lambda c: -c['favourites']):
                 k = f'themesel:{tid}:{c["id"]}'
@@ -1149,8 +1219,7 @@ def build_theme(tid, minutes=40, batch_wait=60):
     fmts = [f for f in th['formats'] if f in ART_FORMATS and f != 'eyes']   # eye crops do not show a theme
     wiki_rx = re.compile(th['art'].get('wiki') or r'^$', re.I)
     # adult women first (outfit rounds + most themed art), then other adults, then everyone else; popular first
-    order = sorted(pool, key=lambda c: (0 if (c.get('age_class') == 'adult' and c.get('gender') == 'Female') else 1 if c.get('age_class') == 'adult' else 2,
-                                        -c['favourites']))
+    order = theme_order(pool)
     done = 0
     fun = cache.get(f'funnel:{tid}') or {'chars': 0, 'with_tag': 0, 'with_candidates': {}, 'passed': {}, 'images': {}, 'posts': {}}
     for c in order:
@@ -1331,6 +1400,36 @@ def build_topup(minutes=40, scopes=('base', 'beach', 'halloween'), batch_wait=60
     log(f'topup done ({done} tried, {got} new)')
 
 
+def merge_ai_theme(tid, out, chars, base):
+    """AI-generated items (pop_gen: ai-cache.json, staged pictures) join a theme pool ONLY where the character has no real item
+    for that format (real art wins). The staged picture is copied into assets/pop2/theme/<tid>/<format>/."""
+    import shutil
+    try:
+        ai = json.load(open(os.path.join(pv.MODELS, 'ai-cache.json'), encoding='utf-8'))
+    except (OSError, ValueError):
+        return
+    have = {f: {it['id'] for it in out[f]} for f in out}
+    for k, v in ai.items():
+        if not k.startswith(f'ai:{tid}:') or not isinstance(v, dict):
+            continue
+        cid = int(k.split(':')[2])
+        c = chars.get(cid)
+        if not c:
+            continue
+        for f, r in v.items():
+            if f not in out or not isinstance(r, dict) or 'dropped' in r or cid in have[f]:
+                continue
+            src = os.path.join(pv.MODELS, 'gen', 'stage', tid, f, f'{cid}.jpg')
+            if not os.path.exists(src):
+                continue
+            d = f'theme/{tid}/{f}'
+            os.makedirs(os.path.join(POP2, d), exist_ok=True)
+            shutil.copyfile(src, os.path.join(POP2, d, f'{cid}.jpg'))
+            if f == 'silhouette':
+                shutil.copyfile(src[:-4] + '.png', os.path.join(POP2, d, f'{cid}.png'))
+            out[f].append({**base(c), **r, 'dir': d, 'gate_class': v.get('class')})
+
+
 def finish_theme(tid, cache=None):
     """Merge a theme pool into character-extras.json -> themes.<tid>.<format> (items carry 'dir' + 'edition')."""
     cache = cache or Cache()
@@ -1367,6 +1466,8 @@ def finish_theme(tid, cache=None):
                 if not os.path.exists(os.path.join(POP2, d, f'{cid}.jpg')):
                     continue
                 out[f].append({**base(c), **r, 'dir': d, 'gate_class': v.get('class')})
+    if not th.get('select'):
+        merge_ai_theme(tid, out, chars, base)
     for f in out:
         out[f].sort(key=lambda it: -it['favourites'])
     ex.setdefault('themes', {})[tid] = out

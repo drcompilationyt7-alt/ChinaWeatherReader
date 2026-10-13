@@ -218,15 +218,21 @@
     "10-31"
    ],
    "art": {
-    "query_tags": 3,
+    "query_tags": 9,
     "framing_query": true,
     "danbooru": [
      "halloween",
      "halloween_costume",
      "witch_hat",
-     "jack-o'-lantern",
+     "witch",
      "vampire",
-     "witch"
+     "jack-o'-lantern",
+     "pumpkin",
+     "mummy",
+     "vampire_costume",
+     "ghost_costume",
+     "devil_costume",
+     "demon_costume"
     ],
     "wiki": "halloween|witch|vampire|pumpkin",
     "confirm": [
@@ -238,8 +244,15 @@
      "pumpkin",
      "vampire",
      "bat_(animal)",
-     "ghost"
-    ]
+     "ghost",
+     "mummy",
+     "vampire_costume"
+    ],
+    "fan_limit_adult": 12,
+    "min_score": 10,
+    "costume_tags": true,
+    "loose_framing": true,
+    "costume_re": "hallow|witch|vampire|devil|demon|ghost|mummy|pumpkin|zombie|wolf|cat_ears|nun|succubus|trick"
    },
    "formats": [
     "character",
@@ -393,7 +406,10 @@
     "character",
     "outfit",
     "silhouette",
-    "duel"
+    "duel",
+    "wyr",
+    "trivia",
+    "emoji"
    ],
    "duel_questions": [
     {
@@ -403,7 +419,7 @@
      "q": "Who makes the best latte art?"
     }
    ],
-   "topic": "maid cafes and maid characters in popular anime"
+   "topic": "maid cafe episodes and iconic maid characters in popular anime (wholesome and funny, no fan service, characters aged 16 or older only)"
   },
   "gym": {
    "name": "Gym / Sports",
@@ -467,7 +483,9 @@
     "outfit",
     "silhouette",
     "duel",
-    "trivia"
+    "trivia",
+    "wyr",
+    "emoji"
    ],
    "duel_questions": [
     {
@@ -480,7 +498,7 @@
      "q": "Who's the team captain?"
     }
    ],
-   "topic": "sports anime and sports festival episodes"
+   "topic": "sports anime (volleyball, basketball, soccer, swimming, running, tennis, baseball), famous teams, rivalries, training arcs and sports festival episodes (no fan service)"
   },
   "valentine": {
    "name": "Valentine's",
@@ -600,7 +618,9 @@
     "eyes",
     "silhouette",
     "duel",
-    "trivia"
+    "trivia",
+    "wyr",
+    "emoji"
    ],
    "duel_questions": [
     {
@@ -610,7 +630,7 @@
      "q": "Who would win a chess match?"
     }
    ],
-   "topic": "anime characters who wear glasses"
+   "topic": "famous anime characters who wear glasses: the shows they are in, their abilities, rivalries and iconic moments (facts about the characters, never their looks or bodies)"
   },
   "villains": {
    "name": "Villains",
@@ -646,14 +666,79 @@
    ],
    "age_rule": "any",
    "select": {
-    "desc": "\\b(villain|antagonist|main antagonist|arch-?enemy|nemesis|demon lord|demon king|serial killer|mastermind|leader of the (akatsuki|phantom troupe|espada|upper moons))\\b"
+    "desc": "\\b(?:(?:is|was|as|becomes|became|serves as|served as|known as|being)\\s+(?:a|an|the|one of the)?\\s*(?:former |main |primary |secondary |central |major |recurring |true |final |current |secret |real |ultimate |overall |chief )*(?:villain|villainess|antagonist|arch-?enemy|mastermind|serial killer)|(?:main|primary|central|final|major|true) (?:villain|antagonist)|villain affiliated|leader of the (?:akatsuki|phantom troupe|espada|upper moons)|boss of (?:passione|a crime))\\b",
+    "not_desc": "\\b(?:protagonist|reincarnat\\w*|the hero|hero of|victim|defeat the|vash isn't)\\b",
+    "names": [
+     "Johan Liebert",
+     "Light Yagami",
+     "Dio Brando",
+     "Freeza",
+     "Cell",
+     "Muzan Kibutsuji",
+     "Sousuke Aizen",
+     "Madara Uchiha",
+     "Orochimaru",
+     "Pain",
+     "Meruem",
+     "Chrollo Lucilfer",
+     "Donquixote Doflamingo",
+     "Griffith",
+     "Tomura Shigaraki",
+     "Dabi",
+     "Himiko Toga",
+     "Kai Chisaki",
+     "Garo",
+     "Yoshikage Kira",
+     "Diavolo",
+     "Enrico Pucci",
+     "Funny Valentine",
+     "Kars",
+     "Suguru Geto",
+     "Mahito",
+     "Makima",
+     "Akaza",
+     "Daki",
+     "Envy",
+     "King Bradley",
+     "Gin Ichimaru",
+     "Mayuri Kurotsuchi",
+     "Junko Enoshima",
+     "Monokuma",
+     "Shogo Makishima",
+     "Goku Black",
+     "Broly",
+     "Tomodachi",
+     "Nimura Furuta",
+     "Kirei Kotomine"
+    ],
+    "exclude": [
+     "Sherlock Holmes",
+     "Heiji Hattori",
+     "Rohan Kishibe",
+     "Katarina Claes",
+     "Teruki Hanazawa",
+     "Xiaolang Li",
+     "Claire François",
+     "Cartaphilus",
+     "Onsoku no Sonic",
+     "Akane Shinjo",
+     "Judar",
+     "Erika Furudo",
+     "N Harmonia",
+     "Haine",
+     "Jin Bubaigawara",
+     "Katakuri Charlotte",
+     "Jellal Fernandes"
+    ]
    },
    "formats": [
     "character",
     "silhouette",
     "eyes",
     "duel",
-    "trivia"
+    "trivia",
+    "wyr",
+    "emoji"
    ],
    "duel_questions": [
     {
@@ -666,7 +751,7 @@
      "q": "Who wins in a fight?"
     }
    ],
-   "topic": "famous anime villains and antagonists"
+   "topic": "famous anime villains and antagonists: their shows, abilities, rivalries and iconic arcs (no gore details, no real-world violence)"
   }
  }
 }

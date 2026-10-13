@@ -252,7 +252,7 @@ function popCredits(p) {
     case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
       + 'All characters belong to their agencies and creators.\n';
     case 'duel': {
-      const fan = p.rounds.flatMap((r, i) => [r.a, r.b].filter(c => c && c.source && c.source.kind === 'danbooru' && c.source.artist)
+      const fan = p.rounds.flatMap((r, i) => [r.a, r.b].filter(c => c && c.source && ['danbooru', 'ai'].includes(c.source.kind) && c.source.artist)
         .map(c => `${i + 1}. ${c.name}: Art: ${String(c.source.artist).split(' ').join(', ')}${c.source.post ? ` ${c.source.post}` : ''}`));
       return 'Character art and favorite counts via AniList (anilist.co)' + (fan.length ? ', fan art credited below' : '') + '.\n'
         + (fan.length ? `${fan.join('\n')}\n` : '');
@@ -261,7 +261,7 @@ function popCredits(p) {
     case 'voice': return `Voice clips from: ${p.rounds.map(r => (r.source && r.source.video ? `${r.name} ${yt(r.source.video)}` : r.name)).join('; ')}. Character art via AniList.\n`;
     case 'silhouette': case 'eyes': case 'outfit': {
       // fan art (Danbooru): one "Art: <artist>" credit line per round that uses it, with the post link
-      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && r.source.kind === 'danbooru' && r.source.artist);
+      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && ['danbooru', 'ai'].includes(r.source.kind) && r.source.artist);
       const fanLines = fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}`);
       return 'Character art via AniList and the characters Fandom wikis (text CC-BY-SA)'
         + (fan.length ? ', and fan art credited below' : '') + '. '
@@ -269,7 +269,7 @@ function popCredits(p) {
         + (fanLines.length ? `${fanLines.join('\n')}\n` : '');
     }
     case 'character': case 'opening': {
-      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && r.source.kind === 'danbooru' && r.source.artist);
+      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && ['danbooru', 'ai'].includes(r.source.kind) && r.source.artist);
       return 'Character art and covers via AniList' + (fan.length ? ' and the fan art credited below' : '') + '.\n'
         + fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}\n`).join('');
     }

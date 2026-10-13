@@ -481,8 +481,11 @@ async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null }
     for (const d of [...(RAMPS[n] || RAMPS[5]), ...(SPARES[fmt] || [])]) {
       const any = pool.filter(i => !chosen.includes(i) && !chosen.some(c => sameSeries(i.anime, c.anime)));
       const c = any.filter(i => (i.difficulty || 2) === d);
-      const src = c.length ? c : any;
+      let src = c.length ? c : any;
       if (!src.length) break;
+      // owner 2026-10-11: themed rounds are ~75 % women / 25 % men (when both are available at this difficulty)
+      const fem = src.filter(i => i.gender === 'Female'), men = src.filter(i => i.gender !== 'Female');
+      if (fem.length && men.length) src = Math.random() < 0.75 ? fem : men;
       chosen.push(src[Math.floor(Math.random() * src.length)]);
     }
     const spare = (SPARES[fmt] || []).length;

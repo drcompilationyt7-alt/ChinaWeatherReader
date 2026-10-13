@@ -109,7 +109,12 @@ def sheet(items, kind, name, cols, tw, th, rows=4):
                 tx((x, y + th + 57), str(it.get('age_evidence', ''))[:46], font=F, fill=(160, 160, 175))
             src = it.get('source') or {}
             k = src.get('kind')
-            if k == 'danbooru':
+            if k == 'ai':
+                om_ = src.get('onmodel') or {}
+                stext = f"AI: {src.get('model', '?')} seed {src.get('seed')}"
+                stext2 = f"margin {om_.get('margin', 0):+.2f} hair {om_.get('hair', 0):.2f}" + (f" eye {om_['eye']:.2f}" if om_.get('eye') is not None else '')
+                scol = (255, 110, 200)
+            elif k == 'danbooru':
                 om_ = src.get('onmodel') or {}
                 stext = f"{src.get('srctype') or 'FAN ART'}: {src.get('artist', '?')}"
                 stext2 = (f"score {src.get('score')}  {src.get('res')}  margin {om_.get('margin', 0):+.2f} hair {om_.get('hair', 0):.2f}"
@@ -121,8 +126,8 @@ def sheet(items, kind, name, cols, tw, th, rows=4):
                 nm = src.get('name') or 'infobox'
                 stext = ('WIKI (infobox)' if nm == 'infobox' or kind == 'eyes' else 'WIKI GALLERY: ' + nm.replace('File:', '')) + f" {src.get('wiki') or ''}"
                 scol = (140, 190, 255)
-            tx((x, y + th + 74), stext[:46], font=FB if k == 'danbooru' else F, fill=scol)
-            if k == 'danbooru':
+            tx((x, y + th + 74), stext[:46], font=FB if k in ('danbooru', 'ai') else F, fill=scol)
+            if k in ('danbooru', 'ai'):
                 tx((x, y + th + 92), stext2[:60], font=_font(REG, 12), fill=scol)
             if it.get('theme_hit'):
                 lab = lab + ['THEME: ' + it['theme_hit'][0]]

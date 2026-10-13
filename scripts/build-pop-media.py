@@ -565,6 +565,9 @@ if __name__ == '__main__':
             for t in arg('--scopes', 'base,beach,halloween').split(','):
                 if t != 'base':
                     pop_extras.finish_theme(t)
+        elif arg('--phase', 'light') == 'aipost':   # Danbooru ai-generated posts (stricter checks): --scopes beach,halloween,base
+            import pop_gen
+            pop_gen.aipost(arg('--scopes', 'beach').split(','), minutes=float(arg('--minutes', 40)))
         elif arg('--phase', 'light') == 'finish':
             pop_extras.finish_v2()
         else:
