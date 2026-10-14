@@ -615,6 +615,30 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "fRR7P_ng4nA",
+   "url": "https://www.youtube.com/watch?v=fRR7P_ng4nA",
+   "postedAt": "2026-10-14T07:51:21.688Z",
+   "publishAt": "2026-10-14T12:00:00.000Z",
+   "format": "city",
+   "theme": "CN",
+   "seed": 626216482,
+   "length": "quick",
+   "titleTemplate": "city-guess",
+   "title": "Guess the Chinese City From the Map 🔥 #china",
+   "answers": [
+    "city:CN:beijing",
+    "city:CN:chongqing",
+    "city:CN:sanya"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

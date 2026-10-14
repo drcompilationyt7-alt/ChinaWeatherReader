@@ -274,6 +274,17 @@
       "titleSource": "shape-ramp",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=fRR7P_ng4nA",
+      "title": "Guess the Chinese City From the Map 🔥 #china",
+      "country": "Global",
+      "postedAt": "2026-10-14T07:51:21.910Z",
+      "videoId": "fRR7P_ng4nA",
+      "category": "quiz-city",
+      "titleSource": "city-guess",
+      "quizFormat": "city",
+      "quizTheme": "CN"
     }
   ]
 }
