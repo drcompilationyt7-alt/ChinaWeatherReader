@@ -73,7 +73,8 @@ function ytSearch(query, { n = 10, byDate = false } = {}) {
         try {
           const j = JSON.parse(l);
           out.push({ id: j.id, title: j.title || '', channel: j.channel || j.uploader || '', views: j.view_count || 0, duration: j.duration || 0,
-            uploadDate: j.upload_date || null, height: j.height || 0, description: String(j.description || '').slice(0, 400),
+            uploadDate: j.upload_date || null, height: Math.max(j.height || 0, ...(j.formats || []).map(x => x.height || 0)),   // best listed format (the default pick can be 360p)
+            description: String(j.description || '').slice(0, 400),
             tags: (j.tags || []).slice(0, 15), verified: !!j.channel_is_verified });
         } catch {}
       }
@@ -356,7 +357,9 @@ async function runTopup(deps, { write = true } = {}) {
   const candidates = (await deps.propose(k.llmAsk, [...have])) || [];
   const { approved, report } = await evaluate(candidates, deps, ctx);
   file.approved.push(...approved);
-  for (const r of report) if (r.verdict === 'rejected') file.rejected.push({ name: r.name, at: now.toISOString().slice(0, 10), why: r.why });
+  // infrastructure failures (YouTube blocked: nothing found, nothing downloadable) say nothing about the song: not remembered
+  const infra = r => /weighted 0.0 <|no matching official upload|^error:|preview unavailable|probe failed|no free resources/.test(r.why || '');
+  for (const r of report) if (r.verdict === 'rejected' && !infra(r)) file.rejected.push({ name: r.name, at: now.toISOString().slice(0, 10), why: r.why });
   file.rejected = file.rejected.slice(-300);
   const out = { month, at: now.toISOString(), limits: k, candidates: candidates.length, approved: approved.map(a => a.name),
     retired: losers, approvedThisMonthBefore: ctx.approvedThisMonth, report };

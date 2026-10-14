@@ -43,6 +43,12 @@ async function propose(n, have) {
 }
 
 (async () => {
+  // canary: if YouTube is unreachable from here (bot check, cookies rejected) nothing can be judged: stop and leave everything unchanged
+  const canary = await top.ytSearch('BABYMONSTER SHEESH official', { n: 2 });
+  if (!canary.length || !canary.some(r => r.views > 0 && r.height > 0)) {
+    console.log('infra blocked: YouTube search returned no usable metadata (bot check / cookies). The list and the rejections stay unchanged.');
+    return;
+  }
   const out = await top.runTopup({ propose, search: top.ytSearch, concurrency: num('TOPUP_CONCURRENCY', 2), probe: process.env.TOPUP_PROBE === 'off' ? null : top.probeSource, now: () => new Date() }, { write: !dry });
   console.log(`candidates ${out.candidates}, approved ${out.approved.length}, retired ${out.retired.length} (LLM: ${lastProvider || 'none'})${dry ? ' [dry run]' : ''}`);
   for (const r of out.report) console.log(`  ${r.verdict.padEnd(8)} ${r.name} | ${r.why}`);
