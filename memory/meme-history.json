@@ -1133,6 +1133,48 @@
     "ovStyle": "op-ov-stem-event",
     "descHook": "layers"
    }
+  },
+  {
+   "videoId": "CF1iIdJ02T4",
+   "url": "https://www.youtube.com/watch?v=CF1iIdJ02T4",
+   "postedAt": "2026-10-14T08:16:20.038Z",
+   "publishAt": "2026-10-14T12:00:00.000Z",
+   "song": "seishun complex",
+   "theme": "anime",
+   "emoji": "🎧,🔥",
+   "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
+   "clipIds": [
+    "8HEWJiRmw3g",
+    "bMeOCctRG-8",
+    "wBB4X6UoFbA",
+    "gX9m-rCtSqc",
+    "Yd8kUoB72xU",
+    "vIpzAad2f8k"
+   ],
+   "clipChannels": [
+    "AniverseFX",
+    "Just a Channel",
+    "Meester Man",
+    "Sears",
+    "アニメ「ぼっち・ざ・ろっく！」公式チャンネル"
+   ],
+   "clipSource": "Bocchi the Rock",
+   "settings": {
+    "drop": 14,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "drop"
+   },
+   "onVideoTitle": "seishun complex acapella",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "kw-source",
+    "ovStyle": "ov-kw",
+    "descHook": "drop"
+   }
   }
  ]
 }

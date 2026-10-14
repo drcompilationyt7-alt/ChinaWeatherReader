@@ -1,47 +1,47 @@
 {
-  "updatedAt": "2026-10-13T09:47:32.503Z",
+  "updatedAt": "2026-10-14T08:04:52.494Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 7,
-    "totalViews": 2520,
-    "totalVideos": 24
+    "totalViews": 3496,
+    "totalVideos": 25
   },
-  "sampleSize": 23,
+  "sampleSize": 24,
   "reliable": true,
-  "globalMeanScore": 33.5,
-  "typicalScore": 2.2,
+  "globalMeanScore": 40.8,
+  "typicalScore": 2.8,
   "topTitles": [
+    {
+      "videoId": "3T6t4OoiFK4",
+      "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
+      "views": 941,
+      "score": 515.7,
+      "country": "Global",
+      "ageDays": 1.8
+    },
     {
       "videoId": "2ETGsUNONIc",
       "title": "odoriko acapella but the drums kick in 🗿🔥",
-      "views": 1071,
-      "score": 565.6,
+      "views": 1073,
+      "score": 294,
       "country": "Global",
-      "ageDays": 1.9
+      "ageDays": 2.8
     },
     {
       "videoId": "vRoEzBcd3rc",
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
-      "views": 1018,
-      "score": 178.8,
+      "views": 1020,
+      "score": 143.8,
       "country": "Global",
-      "ageDays": 2.9
+      "ageDays": 3.8
     },
     {
       "videoId": "sCoxfXm2XPA",
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
       "views": 46,
-      "score": 3.7,
+      "score": 3.4,
       "country": "Global",
-      "ageDays": 9.9
-    },
-    {
-      "videoId": "450-mzMj98U",
-      "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "views": 27,
-      "score": 2.9,
-      "country": "Global",
-      "ageDays": 5.9
+      "ageDays": 10.8
     },
     {
       "videoId": "kY-fbtjVQ7c",
@@ -49,23 +49,23 @@
       "views": 74,
       "score": 2.7,
       "country": "Global",
-      "ageDays": 19.9
+      "ageDays": 20.8
+    },
+    {
+      "videoId": "450-mzMj98U",
+      "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
+      "views": 28,
+      "score": 2.6,
+      "country": "Global",
+      "ageDays": 6.8
     },
     {
       "videoId": "20gtifoxMCw",
       "title": "magnetic acapella ✨⚡",
-      "views": 33,
-      "score": 2.6,
+      "views": 34,
+      "score": 2.1,
       "country": "Global",
-      "ageDays": 3.9
-    },
-    {
-      "videoId": "I3Sn-81uwrE",
-      "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
-      "views": 12,
-      "score": 1.8,
-      "country": "Global",
-      "ageDays": 4.9
+      "ageDays": 4.8
     },
     {
       "videoId": "ULfXOR-LeQc",
@@ -73,15 +73,15 @@
       "views": 21,
       "score": 1.6,
       "country": "Global",
-      "ageDays": 22.9
+      "ageDays": 23.8
     },
     {
-      "videoId": "g3-PyhfIecA",
-      "title": "kick back acapella ⚡🔥",
-      "views": 35,
+      "videoId": "I3Sn-81uwrE",
+      "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
+      "views": 13,
       "score": 1.5,
       "country": "Global",
-      "ageDays": 11.9
+      "ageDays": 5.8
     },
     {
       "videoId": "wFuMHySFyWw",
@@ -89,7 +89,7 @@
       "views": 36,
       "score": 1.5,
       "country": "Global",
-      "ageDays": 18.9
+      "ageDays": 19.8
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 1,
       "score": 0.1,
       "country": "Global",
-      "ageDays": 14.9
+      "ageDays": 15.8
     },
     {
       "videoId": "dXj0c9t-rqY",
@@ -107,7 +107,7 @@
       "views": 3,
       "score": 0.1,
       "country": "Global",
-      "ageDays": 10.9
+      "ageDays": 11.8
     },
     {
       "videoId": "aJ9WPdgjEoU",
@@ -115,7 +115,7 @@
       "views": 4,
       "score": 0.2,
       "country": "Global",
-      "ageDays": 6.9
+      "ageDays": 7.8
     },
     {
       "videoId": "TU8oZz2apfk",
@@ -123,106 +123,110 @@
       "views": 6,
       "score": 0.3,
       "country": "Global",
-      "ageDays": 15.9
+      "ageDays": 16.8
     },
     {
       "videoId": "h469omNRzVE",
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
       "views": 3,
-      "score": 0.4,
+      "score": 0.3,
       "country": "Global",
-      "ageDays": 12.9
+      "ageDays": 13.8
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
       "n": 11,
-      "lift": 0.83
+      "lift": 0.58
     }
   ],
   "countries": {
     "Global": {
-      "n": 23,
-      "meanScore": 33.5,
+      "n": 24,
+      "meanScore": 40.8,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
     "meme-japanese": {
-      "n": 4,
-      "meanScore": 186.8,
+      "n": 5,
+      "meanScore": 191.3,
       "weight": 1.6
     },
     "meme-anime": {
       "n": 13,
-      "meanScore": 1.3,
-      "weight": 0.71
+      "meanScore": 1.2,
+      "weight": 0.61
     },
     "meme-kpop": {
       "n": 6,
-      "meanScore": 1.2,
-      "weight": 0.74
+      "meanScore": 1.1,
+      "weight": 0.65
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
+      "score": 6.248
+    },
+    {
       "title": "odoriko acapella but the drums kick in 🗿🔥",
-      "score": 6.34
+      "score": 5.687
     },
     {
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
-      "score": 5.192
+      "score": 4.975
     },
     {
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
-      "score": 1.54
-    },
-    {
-      "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "score": 1.357
+      "score": 1.473
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
       "score": 1.311
     },
     {
-      "title": "magnetic acapella ✨⚡",
-      "score": 1.276
+      "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
+      "score": 1.277
     },
     {
-      "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
-      "score": 1.024
+      "title": "magnetic acapella ✨⚡",
+      "score": 1.147
     },
     {
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "score": 0.942
     },
     {
-      "title": "kick back acapella ⚡🔥",
-      "score": 0.909
+      "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
+      "score": 0.916
     },
     {
       "title": "unravel acapella 🗿",
       "score": 0.902
     },
     {
-      "title": "god's menu acapella but the stems stack up 🎶🎧",
-      "score": 0.836
+      "title": "kick back acapella ⚡🔥",
+      "score": 0.865
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "score": 0.791
+      "score": 0.895
+    },
+    {
+      "title": "god's menu acapella but the stems stack up 🎶🎧",
+      "score": 0.781
     },
     {
       "title": "dynamite acapella bts ✨🔥",
-      "score": 0.658
+      "score": 0.655
     },
     {
       "title": "otonoke acapella 🎧🎶 #dandadan",
-      "score": 0.649
+      "score": 0.62
     },
     {
       "title": "redo acapella but the drums kick in 🎶🎧",
@@ -234,7 +238,7 @@
     },
     {
       "title": "pokemon theme acapella 🗿",
-      "score": 0.56
+      "score": 0.514
     },
     {
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
@@ -242,7 +246,7 @@
     },
     {
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
-      "score": 0.309
+      "score": 0.291
     },
     {
       "title": "crossing field acapella 🗿🔥",
@@ -250,17 +254,17 @@
     },
     {
       "title": "iro kousui acapella (horimiya edit) 🔥 #horimiya",
-      "score": 0.161
+      "score": 0.143
     },
     {
       "title": "super shy acapella 🗿 #newjeans",
-      "score": 0.126
+      "score": 0.117
     },
     {
       "title": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥",
       "score": 0.069
     }
   ],
-  "promptSummary": "Based on 23 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 2.2/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"odoriko acapella but the drums kick in 🗿🔥\" (1,071 views, Global)\n  - \"yoru ni kakeru acapella yoasobi edit 🔥\" (1,018 views, Global)\n  - \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (46 views, Global)\n  - \"chaos ga kiwamaru acapella (blue lock edit) 🔥\" (27 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (74 views, Global)\n  - \"magnetic acapella ✨⚡\" (33 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (3 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (4 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.83)",
-  "summaryLine": "Best recent: \"odoriko acapella but the drums kick in 🗿🔥\" (1,071 views, 565.6/day) — typical short 2.2/day over 23 shorts"
+  "promptSummary": "Based on 24 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 2.8/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"yoru ni kakeru acapella but the beat drops ⚡🔥\" (941 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥\" (1,073 views, Global)\n  - \"yoru ni kakeru acapella yoasobi edit 🔥\" (1,020 views, Global)\n  - \"idol acapella yoasobi oshi no ko edit 🔥 #oshinoko\" (46 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥 #vaundy\" (74 views, Global)\n  - \"chaos ga kiwamaru acapella (blue lock edit) 🔥\" (28 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (3 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (4 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.58)",
+  "summaryLine": "Best recent: \"yoru ni kakeru acapella but the beat drops ⚡🔥\" (941 views, 515.7/day) — typical short 2.8/day over 24 shorts"
 }
