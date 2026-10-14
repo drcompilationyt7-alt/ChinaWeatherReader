@@ -24,6 +24,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execFile } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
@@ -52,14 +53,22 @@ function logYtErrors(q, stderr) {
 // ─── YouTube search (yt-dlp, metadata only) ─────────────────────────────────────────────────────
 function ytSearch(query, { n = 10, byDate = false } = {}) {
   const py = process.env.MEME_PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-  const args = ['-m', 'yt_dlp', '--dump-json', '--skip-download', '--ignore-errors', '--socket-timeout', '20',
-    ...(process.env.YT_JS_RUNTIMES ? ['--js-runtimes', process.env.YT_JS_RUNTIMES] : []),   // YouTube needs the JS challenge solver (yt-dlp-ejs + node)
-    ...(process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES) ? ['--cookies', process.env.YT_COOKIES] : []),
+  // same call style as core/meme/clip_finder.py (works on the runner): --force-ipv4, retries, a private cookie-jar copy per call
+  // (yt-dlp rewrites the jar on exit; parallel calls on one file corrupt it), deno (default) or the JS runtime in YT_JS_RUNTIMES
+  let jar = null;
+  if (process.env.YT_COOKIES && fs.existsSync(process.env.YT_COOKIES)) {
+    jar = path.join(os.tmpdir(), `topup_cookies_${process.pid}_${Math.random().toString(36).slice(2)}.txt`);
+    fs.copyFileSync(process.env.YT_COOKIES, jar);
+  }
+  const args = ['-m', 'yt_dlp', '--dump-json', '--skip-download', '--ignore-errors', '--socket-timeout', '20', '--retries', '2', '--force-ipv4',
+    ...(process.env.YT_JS_RUNTIMES ? ['--js-runtimes', process.env.YT_JS_RUNTIMES] : []),
+    ...(jar ? ['--cookies', jar] : []),
     `${byDate ? 'ytsearchdate' : 'ytsearch'}${n}:${query}`];
   return new Promise(resolve => {
     execFile(py, args, { timeout: 240000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }, (err, stdout, stderr) => {
       const out = [];
       logYtErrors(query, stderr);
+      if (jar) { try { fs.unlinkSync(jar); } catch {} }
       for (const l of String(stdout || '').split('\n')) {
         try {
           const j = JSON.parse(l);
@@ -75,7 +84,6 @@ function ytSearch(query, { n = 10, byDate = false } = {}) {
 
 // Owner's hard resource limits for preview downloads / probes: ONE at a time, IDLE priority, 2 threads, and only started when
 // free RAM >= PROBE_MIN_FREE_GB (4) and CPU < PROBE_MAX_CPU (60 %).
-const os = require('os');
 let probeChain = Promise.resolve();
 function cpuBusy(ms = 1000) {
   const snap = () => os.cpus().reduce((a, c) => { const t = Object.values(c.times).reduce((x, y) => x + y, 0); return [a[0] + t, a[1] + c.times.idle]; }, [0, 0]);

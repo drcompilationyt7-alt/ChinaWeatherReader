@@ -33,7 +33,7 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_TOPUP || secrets.YOUTUBE_COOKIES }}   # spare-account cookies for the top-up only (owner 2026-10-13)
   YT_COOKIES: /tmp/yt_cookies.txt
-  YT_JS_RUNTIMES: node
+  YT_JS_RUNTIMES: deno
   MEME_PYTHON: python3
 
 jobs:
@@ -65,23 +65,23 @@ jobs:
         run: |
           # YouTube needs the JS challenge solver: yt-dlp[default] pulls yt-dlp-ejs, node (set up above) runs it
           python3 -m pip install -U "yt-dlp[default]" --break-system-packages
-          mkdir -p ~/.config/yt-dlp && echo '--js-runtimes node' > ~/.config/yt-dlp/config   # also covers core/pools/source_probe.py
-          node --version && yt-dlp --version
+          # same JS runtime as daily-create.yml (deno)
+          curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH && export PATH="$HOME/.deno/bin:$PATH"
+          mkdir -p ~/.config/yt-dlp && echo '--js-runtimes deno' > ~/.config/yt-dlp/config   # also covers core/pools/source_probe.py
+          deno --version | head -1; yt-dlp --version
           npm ci || npm install
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
       - name: YouTube check (yt-dlp + JS solver + cookies)
         if: steps.gate.outputs.go == 'true'
         continue-on-error: true
         run: |
-          ls -la /tmp/yt_cookies.txt || echo 'no cookies file'
-          Q='ytsearch2:BABYMONSTER SHEESH official'
-          P="%(id)s h=%(height)s views=%(view_count)s date=%(upload_date)s %(title).50s"
-          try() { echo "== $1"; shift; python3 -m yt_dlp --js-runtimes node --skip-download --ignore-errors --print "$P" "$@" "$Q" 2>&1 | grep -E 'h=|ERROR|Sign in|bot|unavailable' | cut -c1-200 | head -6; }
-          try "cookies, default clients" --cookies /tmp/yt_cookies.txt
-          try "no cookies, default clients"
-          try "no cookies, tv/web_safari/mweb clients" --extractor-args "youtube:player_client=tv,web_safari,mweb"
-          try "cookies, ios/tv clients" --cookies /tmp/yt_cookies.txt --extractor-args "youtube:player_client=ios,tv"
-          try "no cookies, android_vr" --extractor-args "youtube:player_client=android_vr"
+          export PATH="$HOME/.deno/bin:$PATH"
+          if [ -f /tmp/yt_cookies.txt ]; then
+            echo "cookies: $(wc -c < /tmp/yt_cookies.txt) bytes, $(wc -l < /tmp/yt_cookies.txt) lines, $(awk -F'\t' 'NF>=7' /tmp/yt_cookies.txt | wc -l) tab-separated rows, $(grep -c 'youtube.com' /tmp/yt_cookies.txt) youtube rows, header: $(head -1 /tmp/yt_cookies.txt | cut -c1-40)"
+            echo "cookie names: $(awk -F'\t' 'NF>=7 && $1 !~ /^#/ {print $6}' /tmp/yt_cookies.txt | sort -u | tr '\n' ' ' | cut -c1-300)"
+          else echo 'no cookies file'; fi
+          cp /tmp/yt_cookies.txt /tmp/jar.txt 2>/dev/null
+          python3 -m yt_dlp --ignore-config --no-warnings --force-ipv4 --retries 2 --js-runtimes deno --cookies /tmp/jar.txt --skip-download --ignore-errors --print "%(id)s h=%(height)s views=%(view_count)s %(title).50s" 'ytsearch2:BABYMONSTER SHEESH official' 2>&1 | cut -c1-200 | head -8
       - name: Run the gates
         if: steps.gate.outputs.go == 'true'
         run: |

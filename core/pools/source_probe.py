@@ -14,6 +14,7 @@ import argparse
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -122,14 +123,22 @@ def text_bands(path):
         return 0.0, 0.0
 
 
+LAST_ERR = ''
+
+
 def download(vid, start, seconds, out_dir):
     cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '-q', '-f', 'bv*[height<=720]+ba/b[height<=720]/worst',
            '--merge-output-format', 'mp4', '--download-sections', f'*{start}-{start + seconds}', '--force-keyframes-at-cuts', '--postprocessor-args', 'ffmpeg:-threads 2', '--socket-timeout', '20',
            '-o', os.path.join(out_dir, 'prev.%(ext)s'), f'https://www.youtube.com/watch?v={vid}']
+    cmd[3:3] = ['--force-ipv4', '--retries', '2']   # same flags as core/meme/clip_finder.py (works on the runner)
     ck = os.environ.get('YT_COOKIES')
     if ck and os.path.exists(ck):
-        cmd[3:3] = ['--cookies', ck]
-    subprocess.run(cmd, capture_output=True, timeout=300)
+        tmp = os.path.join(out_dir, 'cookies.txt')   # yt-dlp rewrites the jar on exit: work on a private copy
+        shutil.copyfile(ck, tmp)
+        cmd[3:3] = ['--cookies', tmp]
+    r = subprocess.run(cmd, capture_output=True, timeout=300, text=True)
+    global LAST_ERR
+    LAST_ERR = ' '.join((r.stderr or '').strip().splitlines()[-1:])[:160]
     fs = [f for f in glob.glob(os.path.join(out_dir, 'prev.*')) if not f.endswith('.part')]
     merged = [f for f in fs if '.f' not in os.path.basename(f)[4:9]]   # prev.f401.mp4 = an unmerged stream
     fs = merged or fs
@@ -146,7 +155,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='probe-') as d:
         path = a.file or (download(a.id, a.start, a.seconds, d) if a.id else None)
         if not path:
-            print(json.dumps({'ok': False, 'clean': False, 'reasons': ['preview unavailable']}))
+            print(json.dumps({'ok': False, 'clean': False, 'reasons': ['preview unavailable' + (': ' + LAST_ERR if LAST_ERR else '')]}))
             return
         try:
             res = analyse(read_frames(path), text_bands(path))
