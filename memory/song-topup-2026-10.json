@@ -1,6 +1,6 @@
 {
  "month": "2026-10",
- "at": "2026-10-14T00:05:43.199Z",
+ "at": "2026-10-14T00:42:25.459Z",
  "limits": {
   "minViews": 1000000,
   "evergreenViews": 100000000,
@@ -32,12 +32,333 @@
      "why": "\"Pokémon Concierge\" has no AniList entry in anime-list.json"
     },
     "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "\"Pokémon Concierge\" has no AniList entry in anime-list.json"
+  },
+  {
+   "name": "todome no ichigeki",
+   "artist": "Vaundy",
+   "theme": "anime",
+   "source": "SPY x FAMILY Code: White",
+   "query": "Vaundy Todome no Ichigeki feat. Cory Wong official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"SPY x FAMILY Code: White\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "official upload has 24097 views < 1000000",
+     "official": {
+      "id": "zFddsDI5ecY",
+      "title": "TVアニメ『SPY x FAMILY』-  ENDING 3  |  4K  |  60FPS  |  EDテーマ：Vaundy「Todome no Ichigeki」",
+      "channel": "Anicrad",
+      "views": 24097,
+      "duration": 125,
+      "uploadDate": "20231007",
+      "height": 360,
+      "description": "Anime: SPY x FAMILY Season 2\nSong: Todome no Ichigeki\nArtist: Cory Wong\" by Vaundy\n\n------------------------------------------------------------------------------------------\n\nDiscord: http://discord.anicrad.com\n\nSupport me: http://donate.anicrad.com\n\nEndcard-Wallpaper: https://steamcommunity.com/profiles/76561198100381301\n\nYoutube-Banner by Jaze (Discord-Tag: JazeFX# 0703)\n\nSubtitle-Artists: (Bru",
+      "tags": [
+       "anime",
+       "opening",
+       "creidltess",
+       "hd",
+       "japan",
+       "60",
+       "fps",
+       "60fps",
+       "full hd",
+       "1080p",
+       "1440p",
+       "2k",
+       "germany",
+       "season",
+       "new"
+      ],
+      "verified": false
+     }
+    }
+   },
+   "verdict": "rejected",
+   "why": "official upload has 24097 views < 1000000"
+  },
+  {
+   "name": "kura kura",
+   "artist": "Ado",
+   "theme": "anime",
+   "source": "SPY x FAMILY Season 2",
+   "query": "Ado Kura Kura official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"SPY x FAMILY Season 2\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
+     "official": {
+      "id": "BSS8Y-0hOlY",
+      "title": "TWICE 「Kura Kura」 Music Video",
+      "channel": "TWICE JAPAN OFFICIAL YouTube Channel",
+      "views": 65555804,
+      "duration": 255,
+      "uploadDate": "20210420",
+      "height": 360,
+      "description": "TWICE JAPAN 8th SINGLE『Kura Kura』    \n2021.05.12 Release!\n\n【いい音楽で一度、素晴らしいパフォーマンスで二度魅了させる】と言う意味を持つ、Asia No.1最強ガールズグループTWICE。\n\nTWICE JAPAN 8th SINGLE『Kura Kura』（読み：クラクラ）を5月12日（水）にリリース！\n\n静かで平和な休日の午前に集まった9人の女の子たちが、美味しそうなブランチを目の前にして、それぞれの恋についてのガールズトークをはじめる。\n自分のペースで成長する彼女たちは「君」という特別な存在に恋をし、揺れ動く恋心を、別れに悲しむ愛、終わりのない幸せに溢れる愛など、人の数だけ様々な形で存在するということをメンバー全員が異なるシチュエーションで表現。\n9人の感情は花が咲くように盛り上がり、咲いては壊れたりなど、愛の明暗を表現した作",
+      "tags": [
+       "TWICE",
+       "トワイス",
+       "トゥワイス",
+       "ナヨン",
+       "ジョンヨン",
+       "モモ",
+       "サナ",
+       "ジヒョ",
+       "ミナ",
+       "ダヒョン",
+       "チェヨン",
+       "ツウィ",
+       "K-POP",
+       "TT",
+       "Official Music Video"
+      ],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    }
+   },
+   "verdict": "rejected",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "ano band",
+   "artist": "Kessoku Band",
+   "theme": "anime",
+   "source": "Bocchi the Rock!",
+   "query": "Kessoku Band Ano Band official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"Bocchi the Rock!\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
+     "official": {
+      "id": "WdXd6xznH1o",
+      "title": "BOCCHI THE ROCK! | Ep #08 Insert | \"That Band\" (あのバンド) by Kessoku Band (English subtitles)",
+      "channel": "ANIPLUS Asia",
+      "views": 2064927,
+      "duration": 133,
+      "uploadDate": "20221130",
+      "height": 360,
+      "description": "Lyrics: Ai Higuchi\nComposer: Kayoko Kusano\nArrangement: Ritsuo Mitsui\n\nTV anime \"BOCCHI THE ROCK!\" is simulcasting on ANIPLUS Fall 2022✨\n\nNew Episodes on SATs, 24:30 [GMT+8]\n*Broadcast timing may change.\n\n▼CAST\nYoshino Aoyama as Hitori Gotoh\nSayumi Suzushiro as Nijika Ijichi\nSaku Mizuno as Ryo Yamada\nIkumi Hasegawa as Ikuyo Kita\n\n▼STAFF\nOriginal Story: Aki Hamazi\nDirector: Keiichiro Saito\nSeries C",
+      "tags": [
+       "anime",
+       "aniplus"
+      ],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    }
+   },
+   "verdict": "rejected",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "aitai",
+   "artist": "MAISONdes",
+   "theme": "anime",
+   "source": "Urusei Yatsura Season 2",
+   "query": "MAISONdes Aitai feat. yama & Iriomote Neko official audio",
+   "gates": {
+    "niche": {
+     "pass": false,
+     "why": "\"Urusei Yatsura Season 2\" has no AniList entry in anime-list.json"
+    },
+    "duplicate": {
      "pass": true,
      "why": "new"
     }
    },
    "verdict": "rejected",
-   "why": "\"Pokémon Concierge\" has no AniList entry in anime-list.json"
+   "why": "\"Urusei Yatsura Season 2\" has no AniList entry in anime-list.json"
+  },
+  {
+   "name": "one spark",
+   "artist": "TWICE",
+   "theme": "kpop",
+   "source": "TWICE",
+   "query": "TWICE One Spark official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"TWICE\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views",
+     "official": {
+      "id": "jCzez_q8si0",
+      "title": "TWICE \"ONE SPARK\" M/V",
+      "channel": "JYP Entertainment",
+      "views": 74135507,
+      "duration": 193,
+      "uploadDate": "20240223",
+      "height": 360,
+      "description": "TWICE \"ONE SPARK\" M/V\n\nTWICE 13TH MINI ALBUM \"With YOU-th\"\n\n+*:ꔫ:* 𝐿𝑖𝑠𝑡𝑒𝑛 𝑊𝑖𝑡ℎ 𝑌𝑂𝑈-𝑡ℎ *:ꔫ:*+\nhttps://TWICE.lnk.to/WithYOU-th \n\nTWICE Official Shop: https://TWICE.lnk.to/Shop\nTWICE Official YouTube: http://www.youtube.com/c/TWICE\nTWICE Official Facebook: http://www.facebook.com/JYPETWICE\nTWICE Official X(Twitter): http://www.twitter.com/JYPETWICE\nTWICE Official TikTok : https://www.tik",
+      "tags": [
+       "JYP Entertainment",
+       "JYP",
+       "TWICE",
+       "트와이스",
+       "트와이스 미니 13집",
+       "TWICE 13TH MINI ALBUM",
+       "트와이스 위드 유스",
+       "TWICE WITH YOUTH",
+       "위드 유스",
+       "WITH YOUTH",
+       "트와이스 컴백",
+       "TWICE 컴백",
+       "TWICE COMEBACK",
+       "TWICE ONE SPARK",
+       "트와이스 ONE SPARK"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 1,
+     "fresh": false
+    }
+   },
+   "verdict": "rejected",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "dash",
+   "artist": "NMIXX",
+   "theme": "kpop",
+   "source": "NMIXX",
+   "query": "NMIXX DASH official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"NMIXX\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
+     "official": {
+      "id": "7UecFm_bSTU",
+      "title": "NMIXX “DASH” M/V",
+      "channel": "JYP Entertainment",
+      "views": 47112419,
+      "duration": 215,
+      "uploadDate": "20240115",
+      "height": 360,
+      "description": "NMIXX “DASH” M/V\n\nNMIXX Official YouTube ▶ https://www.youtube.com/c/NMIXXOfficial\nNMIXX Official X(Twitter) ▶ https://twitter.com/NMIXX_official\nNMIXX Official Instagram ▶ https://www.instagram.com/nmixx_official/\nNMIXX Official Facebook ▶ https://www.facebook.com/NMIXXOfficial/\nNMIXX Official TikTok ▶ https://www.tiktok.com/@nmixx_official\nNMIXX Official Weibo ▶ https://weibo.com/NMIXXOfficial\nN",
+      "tags": [
+       "JYP Entertainment",
+       "JYP",
+       "NMIXX",
+       "엔믹스",
+       "릴리",
+       "LILY",
+       "LILY M",
+       "해원",
+       "HAEWON",
+       "오해원",
+       "설윤",
+       "SULLYOON",
+       "설윤아",
+       "배이",
+       "BAE"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    }
+   },
+   "verdict": "rejected",
+   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+  },
+  {
+   "name": "super lady",
+   "artist": "(G)I-DLE",
+   "theme": "kpop",
+   "source": "(G)I-DLE",
+   "query": "(G)I-DLE Super Lady official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"(G)I-DLE\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "official upload has 473590 views < 1000000",
+     "official": {
+      "id": "hr-BvIJyGTE",
+      "title": "(G)I-DLE - 'Super Lady' Official Audio",
+      "channel": "DONGHYUN",
+      "views": 473590,
+      "duration": 152,
+      "uploadDate": "20240129",
+      "height": 360,
+      "description": "Provided to YouTube by Kakao Entertainment\n\nSuper Lady • (G)I-DLE\n\n2\n\n℗ 2024 CUBE Entertainment,under license to Kakao Entertainment\n\nReleased on: 2024-01-29\n\nAuthor: 전소연\nComposer: 전소연\nComposer: Pop Time\nComposer: Daily\nComposer: Likey\nArranger: Pop Time\nArranger: Daily\nArranger: Likey\nArranger: 전소연\n\nAuto-generated by YouTube.",
+      "tags": [
+       "(G)I-DLE",
+       "Super Lady",
+       "(G)I-DLE - Super Lady",
+       "Super Lady Audio",
+       "Super Lady Official Audio",
+       "(G)I-DLE - Super Lady Audio",
+       "(G)I-DLE - Super Lady Official Audio",
+       "g idle super lady",
+       "gidle super lady",
+       "gidle super lady audio",
+       "gidle super lady official audio",
+       "(G)I-DLE - Topic"
+      ],
+      "verified": false
+     }
+    }
+   },
+   "verdict": "rejected",
+   "why": "official upload has 473590 views < 1000000"
   },
   {
    "name": "untouchable",
@@ -51,187 +372,12 @@
      "why": "group \"ITZY\" is in the known list"
     },
     "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
      "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
-     "official": {
-      "id": "5e3rKInegeU",
-      "title": "ITZY \"UNTOUCHABLE\" M/V @ITZY",
-      "channel": "JYP Entertainment",
-      "views": 45475837,
-      "duration": 217,
-      "uploadDate": "20240108",
-      "height": 360,
-      "description": "ITZY \"UNTOUCHABLE\" M/V\n\nITZY “BORN TO BE” - UNTOUCHABLE\n🔥 Melon https://kko.to/H1Pbs5MKtK\n🔥 M/V https://youtu.be/5e3rKInegeU\n🔥 ALBUM https://ITZY.lnk.to/BORNTOBE\n\n[ITZY Official]\n▶ https://www.youtube.com/c/ITZY\n▶ https://www.instagram.com/itzy.all.in.us\n▶ https://www.tiktok.com/@itzyofficial\n▶ http://www.twitter.com/ITZYOfficial\n▶ http://www.facebook.com/OfficialITZY\n▶ https://www.weibo.com/u/",
-      "tags": [
-       "JYP Entertainment",
-       "JYP",
-       "ITZY",
-       "있지",
-       "イッチ",
-       "예지",
-       "리아",
-       "류진",
-       "채령",
-       "유나",
-       "YEJI",
-       "LIA",
-       "RYUJIN",
-       "CHAERYEONG",
-       "YUNA"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
+     "why": "rejected in an earlier month"
     }
    },
    "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "lalalala",
-   "artist": "Stray Kids",
-   "theme": "kpop",
-   "source": "Stray Kids",
-   "query": "Stray Kids LALALALA official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"Stray Kids\" is in the known list"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 362651113 views (dBDkYofMUs4); evergreen hit (363M official views, popularity alone)",
-     "official": {
-      "id": "dBDkYofMUs4",
-      "title": "Stray Kids \"락 (樂) (LALALALA)\" M/V",
-      "channel": "JYP Entertainment",
-      "views": 362651113,
-      "duration": 200,
-      "uploadDate": "20231110",
-      "height": 360,
-      "description": "Stray Kids(스트레이 키즈) \"락 (樂) (LALALALA)\" M/V\n\nListen to \"樂-STAR\" now🤘\nhttps://Stray-Kids.lnk.to/ROCK-STAR\n\nStray Kids \"樂-STAR\"\niTunes & Apple Music: https://Stray-Kids.lnk.to/ROCK-STAR/AppleMusic\nSpotify: https://Stray-Kids.lnk.to/ROCK-STAR/Spotify\n\nStray Kids Official YouTube: https://www.youtube.com/c/StrayKids\nStray Kids Official Facebook: https://www.facebook.com/JYPEStrayKids/\nStray Kids Offic",
-      "tags": [
-       "JYP",
-       "Stray Kids",
-       "스트레이 키즈",
-       "SKZ",
-       "스키즈",
-       "방찬",
-       "BANG CHAN",
-       "리노",
-       "LEE KNOW",
-       "창빈",
-       "서창빈",
-       "CHANGBIN",
-       "SEOCHANGBIN",
-       "현진",
-       "황현진"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 1,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 56 found)"
-    }
-   },
-   "verdict": "rejected",
-   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 56 found)"
-  },
-  {
-   "name": "god of music",
-   "artist": "SEVENTEEN",
-   "theme": "kpop",
-   "source": "SEVENTEEN",
-   "query": "SEVENTEEN GOD OF MUSIC official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"SEVENTEEN\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "official upload has 506 views < 1000000",
-     "official": {
-      "id": "FxgUPlPXeCM",
-      "title": "SEVENTEEN - God of Music (Extended Version)",
-      "channel": "Blessed By Music",
-      "views": 506,
-      "duration": 276,
-      "uploadDate": "20231023",
-      "height": 360,
-      "description": "SEVENTEEN - God of Music (Extended Version)",
-      "tags": [],
-      "verified": false
-     }
-    }
-   },
-   "verdict": "rejected",
-   "why": "official upload has 506 views < 1000000"
-  },
-  {
-   "name": "deja vu",
-   "artist": "TXT",
-   "theme": "kpop",
-   "source": "TXT",
-   "query": "TXT Deja Vu official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"TXT\" not in the known list (decided by the popularity gate); official channel + 104556587 views accepted"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 104556587 views (DiHUEWBRQEI); evergreen hit (105M official views, popularity alone)",
-     "official": {
-      "id": "DiHUEWBRQEI",
-      "title": "TXT (투모로우바이투게더) 'Deja Vu' Official MV",
-      "channel": "HYBE LABELS",
-      "views": 104556587,
-      "duration": 241,
-      "uploadDate": "20240401",
-      "height": 250,
-      "description": "TXT (투모로우바이투게더) 'Deja Vu' Official MV\n\nCredits:\nWritten and Directed By YU KWANG GOENG\n\n[ MMAT ]\nExecutive Producer : KIM YONG MIN\nProducer : SONG YUN WON, LEE JAE YEON, LEE GA WON, PARK SI EUN\nAssistant Director : PARK JAE YONG\nCreative Coordinator : JUNG SAE BYEOL\n\nDirector Of Photography : LEE JIN HYUK\n1ST AC : HONG KANG\n2ND AC : JEONG GUN WOO\nDIT : LEE DA IN\n3RD AC : KIM MIN HO\n\nGaffer : PARK ",
-      "tags": [
-       "HYBE",
-       "HYBE LABELS",
-       "하이브",
-       "하이브레이블즈"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 53 found)"
-    }
-   },
-   "verdict": "rejected",
-   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 53 found)"
+   "why": "rejected in an earlier month"
   },
   {
    "name": "love 119",
@@ -243,60 +389,6 @@
     "niche": {
      "pass": null,
      "why": "group \"RIIZE\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views",
-     "official": {
-      "id": "0TAAUWHo4Ec",
-      "title": "RIIZE 라이즈 'Love 119' MV",
-      "channel": "SMTOWN",
-      "views": 32954053,
-      "duration": 255,
-      "uploadDate": "20240105",
-      "height": 360,
-      "description": "RIIZE's new single \"Love 119\" is out!\nListen and download on your favorite platform: https://RIIZE.lnk.to/Love119 \n\n☃ 'Love 119 (Japanese Ver.)' MV https://youtu.be/-Y47YS2jr7k\n\nSubscribe to RIIZE Official YouTube Channel!\nhttps://www.youtube.com/@RIIZE_official?sub_confirmation=1\n\nRIIZE Official \nhttps://youtube.com/@RIIZE_official\nhttp://www.riizeofficial.com   \nhttps://www.instagram.com/riize_o",
-      "tags": [
-       "sm",
-       "smtown",
-       "RIIZE",
-       "SHOTARO",
-       "SUNGCHAN",
-       "SOHEE",
-       "WONBIN",
-       "EUNSEOK",
-       "ANTON",
-       "Rise and Realize",
-       "라이즈",
-       "성찬",
-       "쇼타로",
-       "소희",
-       "원빈"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 1,
-     "fresh": false
-    }
-   },
-   "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 1 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "sheesh",
-   "artist": "BABYMONSTER",
-   "theme": "kpop",
-   "source": "BABYMONSTER",
-   "query": "BABYMONSTER SHEESH official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"BABYMONSTER\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": false,
@@ -318,47 +410,42 @@
      "why": "group \"TWS\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
      "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
-     "official": {
-      "id": "WU6EK5WH7P8",
-      "title": "plot twist (Japanese ver.)",
-      "channel": "TWS",
-      "views": 1475109,
-      "duration": 152,
-      "uploadDate": "20250518",
-      "height": 360,
-      "description": "Provided to YouTube by Universal Music Group\n\nplot twist (Japanese ver.) · TWS\n\nplot twist\n\n℗ 2025 PLEDIS ENTERTAINMENT\n\nReleased on: 2025-05-19\n\nComposer, Recordingarranger, Lyricist: WASURENAI\nLyricist, Recordingarranger, Composer: Jin Jeon\nComposer, Recordingarranger: Nmore\nRecordingarranger: Building Owner\nComposer, Recordingarranger: Ohway!\nBackground Vocalist, Composer: Heon Seo\nMixing Engin",
-      "tags": [
-       "TWS",
-       "トゥアス",
-       "plot twist",
-       "プロットツイスト"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
+     "why": "rejected in an earlier month"
     }
    },
    "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
+   "why": "rejected in an earlier month"
   },
   {
-   "name": "midas touch",
-   "artist": "KISS OF LIFE",
+   "name": "lalalala",
+   "artist": "Stray Kids",
    "theme": "kpop",
-   "source": "KISS OF LIFE",
-   "query": "KISS OF LIFE Midas Touch official audio",
+   "source": "Stray Kids",
+   "query": "Stray Kids LALALALA official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"Stray Kids\" is in the known list"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "crush",
+   "artist": "ZEROBASEONE",
+   "theme": "kpop",
+   "source": "ZEROBASEONE",
+   "query": "ZEROBASEONE CRUSH official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"KISS OF LIFE\" not in the known list (decided by the popularity gate)"
+     "why": "group \"ZEROBASEONE\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -368,30 +455,30 @@
      "pass": false,
      "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
      "official": {
-      "id": "oKVYm8mIUdo",
-      "title": "KISS OF LIFE (키스오브라이프) 'Midas Touch' Official Music Video",
-      "channel": "KISS OF LIFE",
-      "views": 51006563,
-      "duration": 169,
-      "uploadDate": "20240403",
+      "id": "AZoZbtI67Yk",
+      "title": "ZEROBASEONE (제로베이스원) 'CRUSH (가시)' MV",
+      "channel": "ZEROBASEONE",
+      "views": 44384562,
+      "duration": 175,
+      "uploadDate": "20231106",
       "height": 360,
-      "description": "KISS OF LIFE (키스오브라이프) 'Midas Touch' Official Music Video\n#KISSOFLIFE #키스오브라이프 #Midas_Touch\n-\n'Midas Touch'\nComposed by Strawberrybananaclub, Ondine, Samson\nLyrics by 미아(153/Joombas), Ondine, Samson, Strawberrybananaclub, 조윤경\nArranged by Strawberrybananaclub\n-\nKISS OF LIFE (키스오브라이프) 1st Single Album [Midas Touch] is OUT NOW!\nㅤ\n🎧 Melon : https://buly.kr/8ToF1fQ\n🎧 Bugs : https://buly.kr/HHa84TP\n🎧",
+      "description": "ZEROBASEONE (제로베이스원) 'CRUSH (가시)' MV\n\nMore about ZEROBASEONE\nhttps://linktr.ee/zb1_official\n\nZEROBASEONE The 2nd Mini Album\n[𝗠𝗘𝗟𝗧𝗜𝗡𝗚 𝗣𝗢𝗜𝗡𝗧]\n2023.11.06 18:00 (KST)\n\n#ZEROBASEONE #ZB1\n#제로베이스원\n#MELTINGPOINT #CRUSH #가시\n#ZEROBASEONE_CRUSH",
       "tags": [
-       "KISS OF LIFE",
-       "키오프",
-       "키스오브라이프",
-       "뮤직비디오",
-       "mv",
-       "뮤비",
-       "kpop",
-       "케이팝",
-       "유튜브",
-       "쥴리",
-       "나띠",
-       "벨",
-       "하늘",
-       "심혜원",
-       "한쥴리"
+       "ZEROBASEONE",
+       "제로베이스원",
+       "제베원",
+       "ZB1",
+       "ZERO BASE ONE",
+       "ZEROBASEONE official",
+       "ZERO BASE ONE official",
+       "제로즈",
+       "성한빈",
+       "김지웅",
+       "장하오",
+       "석매튜",
+       "김태래",
+       "리키",
+       "김규빈"
       ],
       "verified": true
      },
@@ -407,12 +494,12 @@
    "name": "gunjou",
    "artist": "YOASOBI",
    "theme": "jpop",
-   "source": "YOASOBI Official Channel",
+   "source": "YOASOBI",
    "query": "YOASOBI Gunjou official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "group \"YOASOBI Official Channel\" not in the known list (decided by the popularity gate)"
+     "pass": true,
+     "why": "group \"YOASOBI\" is in the known list"
     },
     "duplicate": {
      "pass": false,
@@ -423,15 +510,15 @@
    "why": "rejected in an earlier month"
   },
   {
-   "name": "kaijuu no hana uta",
-   "artist": "Vaundy",
-   "theme": "jpop",
-   "source": "Vaundy Official Channel",
-   "query": "Vaundy 怪獣の花唄 official audio",
+   "name": "flower",
+   "artist": "Zhou Shen",
+   "theme": "chinese",
+   "source": "Zhou Shen",
+   "query": "Zhou Shen Flower official audio",
    "gates": {
     "niche": {
-     "pass": false,
-     "why": "unknown kind \"artist\""
+     "pass": null,
+     "why": "group \"Zhou Shen\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": false,
@@ -439,133 +526,56 @@
     }
    },
    "verdict": "rejected",
-   "why": "unknown kind \"artist\""
+   "why": "rejected in an earlier month"
   },
   {
-   "name": "usseewa",
-   "artist": "Ado",
-   "theme": "jpop",
-   "source": "Ado Official Channel",
-   "query": "Ado うっせぇわ official audio",
-   "gates": {
-    "niche": {
-     "pass": false,
-     "why": "unknown kind \"artist\""
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    }
-   },
-   "verdict": "rejected",
-   "why": "unknown kind \"artist\""
-  },
-  {
-   "name": "pretender",
-   "artist": "Official髭男dism",
-   "theme": "jpop",
-   "source": "Official髭男dism Official Channel",
-   "query": "Official髭男dism Pretender official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"Official髭男dism Official Channel\" not in the known list (decided by the popularity gate); official channel + 658007663 views accepted"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 658007663 views (TQ8WlA2GXbk); evergreen hit (658M official views, popularity alone)",
-     "official": {
-      "id": "TQ8WlA2GXbk",
-      "title": "Official髭男dism - Pretender［Official Video］",
-      "channel": "OFFICIAL HIGE DANDISM",
-      "views": 658007663,
-      "duration": 336,
-      "uploadDate": "20190416",
-      "height": 360,
-      "description": "LISTEN & DL「Pretender」\nhttps://lnk.to/Pretender_\n\n映画『コンフィデンスマンJP ロマンス編』主題歌\n\nMORE INFO\nhttps://officialhigedandism.ponycanyon.co.jp\n\nFOLLOW \"HIGEDAN\"\nWebsite: http://higedan.com/\nInstagram: https://www.instagram.com/officialhigedandism/\nTwitter: https://twitter.com/officialhige\nLINE: https://line.me/ti/p/%40higedan\n\nMUSIC CREDIT\nWords & music & programing: Satoshi Fujihara\nArrangement: Official髭男di",
-      "tags": [
-       "鍵盤",
-       "ピアノ",
-       "スキマスイッチ",
-       "秦基博",
-       "大橋トリオ",
-       "aiko",
-       "スピッツ",
-       "星野源",
-       "ハナレグミ",
-       "山下達郎",
-       "サカナクション",
-       "the band apart",
-       "base ball bear",
-       "フジファブリック",
-       "風味堂"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 49 found)"
-    }
-   },
-   "verdict": "rejected",
-   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 49 found)"
-  },
-  {
-   "name": "matsuri",
-   "artist": "Fujii Kaze",
-   "theme": "jpop",
-   "source": "Fujii Kaze Official Channel",
-   "query": "Fujii Kaze まつり official audio",
-   "gates": {
-    "niche": {
-     "pass": false,
-     "why": "unknown kind \"artist\""
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    }
-   },
-   "verdict": "rejected",
-   "why": "unknown kind \"artist\""
-  },
-  {
-   "name": "dramaturgy",
-   "artist": "Eve",
-   "theme": "jpop",
-   "source": "Eve Official Channel",
-   "query": "Eve ドラマツルギー official audio",
-   "gates": {
-    "niche": {
-     "pass": false,
-     "why": "unknown kind \"artist\""
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    }
-   },
-   "verdict": "rejected",
-   "why": "unknown kind \"artist\""
-  },
-  {
-   "name": "flower",
-   "artist": "Zhou Shen",
+   "name": "light",
+   "artist": "INTO1",
    "theme": "chinese",
-   "source": "Immortal Samsara",
-   "query": "Zhou Shen Flower official audio",
+   "source": "INTO1",
+   "query": "INTO1 Light official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "drama source \"Immortal Samsara\" (decided by the popularity and clip-quality gates)"
+     "why": "group \"INTO1\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "wishes",
+   "artist": "Faye Wong",
+   "theme": "chinese",
+   "source": "Faye Wong",
+   "query": "Faye Wong Wishes official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"Faye Wong\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "unrestrained",
+   "artist": "Xiao Zhan & Wang Yibo",
+   "theme": "chinese",
+   "source": "The Untamed",
+   "query": "Xiao Zhan & Wang Yibo Unrestrained official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "drama source \"The Untamed\" (decided by the popularity and clip-quality gates)"
     },
     "duplicate": {
      "pass": true,
@@ -573,34 +583,50 @@
     },
     "popular": {
      "pass": false,
-     "why": "official upload has 172767 views < 1000000",
+     "why": "official upload has 848673 views < 1000000",
      "official": {
-      "id": "OVVpKyTcxy4",
-      "title": "OST White Snake 2 | Ask the Flower (問花) - Zhou Shen (周深)",
-      "channel": "Springmusic06_",
-      "views": 172767,
-      "duration": 282,
-      "uploadDate": "20210731",
+      "id": "klgrMgfNYpw",
+      "title": "[Eng Sub/PinYin] Xiao Zhan Wang Yibo sing Wuji 'Unrestrained', the theme of Untamed @Nanjing 肖战王一博无羁",
+      "channel": "wenwen1111",
+      "views": 848673,
+      "duration": 202,
+      "uploadDate": "20191202",
       "height": 360,
-      "description": "Original Soundtrack of White Snake 2: The Tribulation of the Green Snake (2021).\n\nTitle: 白蛇2：青蛇劫起 / Báishé: Qīngshé Jiéqǐ\n\nEnglish Title : White Snake 2: The Tribulation of the Green Snake\n\nGenres: Romance, Fantasy\n\nType : Movie\n\nCountry : China\n\nYear : 2021\n\n—————————————————\n\n\n#白蛇2 #問花 #WhiteSnake2 #周深",
-      "tags": [],
+      "description": "XiaoZhan Wang Yi Bo sing Wuji on the first night of the Nanjing concert. This is their performance on the first night. What surprises me is how lightheartedly they sing this song even though it is heavy content.\n肖战 王一博 陈情令南京演唱会 无羁\n\nBy this stage, XiaoZhan's tonsillitis is really getting to him so he has trouble hitting the high notes. But it's ok... Because Wang Yi Bo comes to the rescue :D\n\nI am ",
+      "tags": [
+       "XiaoZhan",
+       "肖战",
+       "Xiao Zhan",
+       "Wei wu xian",
+       "Wei wuxian",
+       "Wei ying",
+       "魏无羡",
+       "魏婴",
+       "王一博",
+       "蓝忘机",
+       "蓝湛",
+       "Wang yibo",
+       "Wang Yi Bo",
+       "Lan wangji",
+       "Lan wang ji"
+      ],
       "verified": false
      }
     }
    },
    "verdict": "rejected",
-   "why": "official upload has 172767 views < 1000000"
+   "why": "official upload has 848673 views < 1000000"
   },
   {
-   "name": "unforgettable love",
-   "artist": "Li Runqi",
+   "name": "a love story",
+   "artist": "Jin Run Ji",
    "theme": "chinese",
-   "source": "Li Runqi",
-   "query": "Li Runqi Nan Que official audio",
+   "source": "Ashes of Love",
+   "query": "Jin Run Ji A Love Story official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Li Runqi\" not in the known list (decided by the popularity gate)"
+     "why": "drama source \"Ashes of Love\" (decided by the popularity and clip-quality gates)"
     },
     "duplicate": {
      "pass": true,
@@ -616,15 +642,15 @@
    "why": "no matching official upload found on YouTube"
   },
   {
-   "name": "red scarf",
-   "artist": "ACCK",
+   "name": "a game of missing you",
+   "artist": "Zhang Yuan",
    "theme": "chinese",
-   "source": "音阙诗听",
-   "query": "ACCK Hong Zhao Yuan official audio",
+   "source": "Lost You Forever",
+   "query": "Zhang Yuan A Game of Missing You official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"音阙诗听\" not in the known list (decided by the popularity gate)"
+     "why": "drama source \"Lost You Forever\" (decided by the popularity and clip-quality gates)"
     },
     "duplicate": {
      "pass": true,
@@ -640,15 +666,15 @@
    "why": "no matching official upload found on YouTube"
   },
   {
-   "name": "light",
-   "artist": "Lu Siqing",
+   "name": "chongzi",
+   "artist": "Zhou Shen",
    "theme": "chinese",
-   "source": "Lu Siqing",
-   "query": "Lu Siqing Guang official audio",
+   "source": "The Journey of Chongzi",
+   "query": "Zhou Shen Chongzi official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Lu Siqing\" not in the known list (decided by the popularity gate)"
+     "why": "drama source \"The Journey of Chongzi\" (decided by the popularity and clip-quality gates)"
     },
     "duplicate": {
      "pass": true,
@@ -664,135 +690,15 @@
    "why": "no matching official upload found on YouTube"
   },
   {
-   "name": "lone brave",
-   "artist": "Eason Chan",
+   "name": "love in separation",
+   "artist": "Faye Zhan",
    "theme": "chinese",
-   "source": "League of Legends",
-   "query": "Eason Chan Gu Yong Zhe official audio",
+   "source": "Love Between Fairy and Devil",
+   "query": "Faye Zhan Love in Separation official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "drama source \"League of Legends\" (decided by the popularity and clip-quality gates)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views",
-     "official": {
-      "id": "Hlp8XD0R5qo",
-      "title": "《孤勇者》（《英雄聯盟：雙城之戰》動畫劇集中文主題曲）陳奕迅 Eason Chan [Official MV]",
-      "channel": "Eason Chan",
-      "views": 87028198,
-      "duration": 273,
-      "uploadDate": "20211108",
-      "height": 360,
-      "description": "陳奕迅 Eason Chan 孤勇者（《英雄聯盟：雙城之戰》動畫劇集中文主題曲）\n\n詞：唐恬\n曲：錢雷\n編：錢雷\n監：錢雷\n\n詞版權管理方：北京夢織音傳媒有限公司 \n曲版權管理方：索尼音樂版權代理（北京）有限公司\n\n都 是勇敢的\n你額頭的傷口 你的 不同 你犯的錯\n都 不必隱藏\n你破舊的玩偶 你的 面具 你的自我\n \n他們說 要帶著光 馴服每一頭怪獸\n他們說 要縫好你的傷 沒有人愛小丑\n為何孤獨 不可 光榮\n人只有不完美 值得歌頌\n誰說污泥滿身的不算英雄\n \n愛你孤身走暗巷\n愛你不跪的模樣\n愛你對峙過絕望\n不肯哭一場\n \n愛你破爛的衣裳\n卻敢堵命運的槍\n愛你和我那麼像\n缺口都一樣\n \n去嗎？配嗎？這襤褸的披風\n戰嗎？戰啊！以最卑微的夢\n致那黑夜中的嗚咽與怒吼\n誰說站在光里的才算英雄\n \n他們說 要戒了你的狂 就像擦掉了污垢\n他們說 要順台階而上 而代價是低頭\n那就讓我 不可 乘風\n你一樣驕",
-      "tags": [],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    }
-   },
-   "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "love like a galaxy",
-   "artist": "Zeng Yike",
-   "theme": "chinese",
-   "source": "Love Like The Galaxy",
-   "query": "Zeng Yike Ai Ru Xing He official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "drama source \"Love Like The Galaxy\" (decided by the popularity and clip-quality gates)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "nocturne",
-   "artist": "Jay Chou",
-   "theme": "chinese",
-   "source": "Jay Chou",
-   "query": "Jay Chou Ye Qu official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"Jay Chou\" not in the known list (decided by the popularity gate); official channel + 106693676 views accepted"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 106693676 views (6Q0Pd53mojY); evergreen hit (107M official views, popularity alone)",
-     "official": {
-      "id": "6Q0Pd53mojY",
-      "title": "周杰倫 Jay Chou【夜曲 Nocturne】-Official Music Video",
-      "channel": "周杰倫 Jay Chou",
-      "views": 106693676,
-      "duration": 234,
-      "uploadDate": "20130424",
-      "height": 360,
-      "description": "夜曲\n詞:方文山  曲:周杰倫\niTunes: https://itunes.apple.com/tw/album/ye-qu/id536009641?i=536009642\n\n專輯的第一主打，是專輯當中最早完成的作品，具有古典氣息，也可說是整張專輯的精神所在，因為歌名其實就是源自於蕭邦的知名作品「夜曲」。「為你彈奏蕭邦的夜曲，紀念我死去的愛情，跟夜風一樣的聲音，心碎的很好聽...」，由淡淡吉他聲及簡單節奏作開場，引導人們逐漸走進這個心碎的場景，屬於一首融合饒舌與旋律的小調情歌！這首歌曲描述主角為了懷念逝去的戀人，因戀人最愛聽的就是蕭邦夜曲，所以他選擇用彈奏夜曲的方式，紀念已死去的愛情。這首歌曲，也是杰倫所有作品當中，首度描寫女主角已過世的歌曲，因此不論是歌曲或MV都十分具有戲劇化張力，那帶著痛徹心扉的悲傷氣味，著實讓人感受到一絲淒美的氛圍⋯\n\n【飄移】http://youtu.be/X2",
-      "tags": [
-       "台湾",
-       "好艺人",
-       "杰威尔",
-       "周傑倫",
-       "Music",
-       "Official",
-       "Jvr Music",
-       "袁詠琳",
-       "杨瑞代",
-       "梁心颐",
-       "袁咏琳",
-       "梁心頤",
-       "周杰伦",
-       "Jvrmuzic",
-       "楊瑞代"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 54 found)"
-    }
-   },
-   "verdict": "rejected",
-   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 54 found)"
-  },
-  {
-   "name": "waiting for the snow",
-   "artist": "Su Xing",
-   "theme": "chinese",
-   "source": "Su Xing",
-   "query": "Su Xing Deng Xue Lai official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Su Xing\" not in the known list (decided by the popularity gate)"
+     "why": "drama source \"Love Between Fairy and Devil\" (decided by the popularity and clip-quality gates)"
     },
     "duplicate": {
      "pass": true,
@@ -865,6 +771,30 @@
    "why": "rejected in an earlier month"
   },
   {
+   "name": "made my night",
+   "artist": "LE SSERAFIM",
+   "theme": "kpop",
+   "source": "LE SSERAFIM",
+   "query": "LE SSERAFIM made my night official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"LE SSERAFIM\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "no matching official upload found on YouTube",
+     "official": null
+    }
+   },
+   "verdict": "rejected",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
    "name": "&team",
    "artist": "Good Boy",
    "theme": "kpop",
@@ -876,28 +806,12 @@
      "why": "group \"Good Boy\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
      "pass": false,
-     "why": "official upload has 2041 views < 1000000",
-     "official": {
-      "id": "10VrLG3Di9E",
-      "title": "&TEAM 'Good Boy' Official Audio",
-      "channel": "JXS_BP Official",
-      "views": 2041,
-      "duration": 154,
-      "uploadDate": "20260908",
-      "height": 360,
-      "description": "&TEAM • KR 2nd Mini Album [Mark on Me]\n\nReleased: 09.08.2026\n\n℗ 2026 YX LABELS\n\n#andTEAM #MarkonMe #andTEAM_MarkonMe",
-      "tags": [],
-      "verified": false
-     }
+     "why": "rejected in an earlier month"
     }
    },
    "verdict": "rejected",
-   "why": "official upload has 2041 views < 1000000"
+   "why": "rejected in an earlier month"
   },
   {
    "name": "jump live",
@@ -947,6 +861,25 @@
     "niche": {
      "pass": null,
      "why": "group \"RUOXI\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "sheesh",
+   "artist": "BABYMONSTER",
+   "theme": "kpop",
+   "source": "BABYMONSTER",
+   "query": "BABYMONSTER sheesh official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"BABYMONSTER\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": false,
@@ -1118,41 +1051,6 @@
     "niche": {
      "pass": true,
      "why": "group \"(G)I-DLE\" is in the known list"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "official upload has 144933 views < 1000000",
-     "official": {
-      "id": "LhSdYi3GWoM",
-      "title": "(G)I-DLE - '클락션 (Klaxon)' Official Audio",
-      "channel": "DONGHYUN",
-      "views": 144933,
-      "duration": 175,
-      "uploadDate": "20240708",
-      "height": 640,
-      "description": "Provided to YouTube by Kakao Entertainment\n\n클락션 (Klaxon) · (G)I-DLE\n\nI SWAY\n\n℗ 2024 CUBE Entertainment,under license to Kakao Entertainment\n\nReleased on: 2024-07-08\n\nAuthor: 소연\nComposer: 소연\nComposer: Pop Time\nComposer: Daily\nComposer: Likey\nArranger: Pop Time\nArranger: Daily\nArranger: Likey\nArranger: 소연\n\nAuto-generated by YouTube.",
-      "tags": [],
-      "verified": false
-     }
-    }
-   },
-   "verdict": "rejected",
-   "why": "official upload has 144933 views < 1000000"
-  },
-  {
-   "name": "how sweet",
-   "artist": "NewJeans",
-   "theme": "kpop",
-   "source": "NewJeans",
-   "query": "NewJeans how sweet official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"NewJeans\" is in the known list"
     },
     "duplicate": {
      "pass": false,
