@@ -31,7 +31,7 @@ env:
   GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
-  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_TOPUP || secrets.YOUTUBE_COOKIES }}   # spare-account cookies for the top-up only (owner 2026-10-13)
   YT_COOKIES: /tmp/yt_cookies.txt
   YT_JS_RUNTIMES: node
   MEME_PYTHON: python3
