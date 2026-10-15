@@ -64,6 +64,7 @@ jobs:
         if: steps.gate.outputs.go == 'true'
         run: |
           # YouTube needs the JS challenge solver: yt-dlp[default] pulls yt-dlp-ejs, node (set up above) runs it
+          sudo apt-get install -y -qq ffmpeg || true   # yt-dlp --download-sections (sample check previews) needs it
           python3 -m pip install -U "yt-dlp[default]" opencv-python-headless numpy pillow --break-system-packages   # opencv/numpy/pillow: core/pools/source_probe.py (sample check)
           # same JS runtime as daily-create.yml (deno)
           curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH && export PATH="$HOME/.deno/bin:$PATH"

@@ -3,91 +3,6 @@
  "retired": [],
  "rejected": [
   {
-   "name": "biri-biri",
-   "at": "2026-10-14",
-   "why": "\"Pokémon Concierge\" has no AniList entry in anime-list.json"
-  },
-  {
-   "name": "lilac",
-   "at": "2026-10-14",
-   "why": "\"Boukyaku Battery\" has no AniList entry in anime-list.json"
-  },
-  {
-   "name": "guitar to kodoku to aoi hoshi",
-   "at": "2026-10-14",
-   "why": "official upload has 21628 views < 1000000"
-  },
-  {
-   "name": "show",
-   "at": "2026-10-14",
-   "why": "\"ONE PIECE FILM RED\" has no AniList entry in anime-list.json"
-  },
-  {
-   "name": "todome no ichigeki",
-   "at": "2026-10-14",
-   "why": "official upload has 24097 views < 1000000"
-  },
-  {
-   "name": "adventure",
-   "at": "2026-10-14",
-   "why": "official upload has 648 views < 1000000"
-  },
-  {
-   "name": "super lady",
-   "at": "2026-10-14",
-   "why": "official upload has 473591 views < 1000000"
-  },
-  {
-   "name": "baddie",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "get a guitar",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "god of music",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "plot twist",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "yu qing",
-   "at": "2026-10-14",
-   "why": "official upload has 967 views < 1000000"
-  },
-  {
-   "name": "do it like this",
-   "at": "2026-10-14",
-   "why": "official upload has 2799 views < 1000000"
-  },
-  {
-   "name": "&team",
-   "at": "2026-10-14",
-   "why": "official upload has 2042 views < 1000000"
-  },
-  {
-   "name": "| chinese c-pop r&b",
-   "at": "2026-10-14",
-   "why": "official upload has 79 views < 1000000"
-  },
-  {
-   "name": "sheesh",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
-   "name": "rockstar",
-   "at": "2026-10-14",
-   "why": "trend: 0 acapella / edit uploads in 60 days (< 2), 0 in 180 (< 6), not a new release, under 100M views"
-  },
-  {
    "name": "tokyo shandy rendezvous",
    "at": "2026-10-15",
    "why": "source quality: weighted 11.6 < 12 (9 at 1080p+, 4 at 720p, of 55 found)"
@@ -113,34 +28,9 @@
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
-   "name": "show",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
    "name": "god-ish",
    "at": "2026-10-15",
    "why": "source quality: weighted 1.3 < 12 (1 at 1080p+, 0 at 720p, of 2 found)"
-  },
-  {
-   "name": "do it like this",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "&team",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "| chinese c-pop r&b",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "“me in phase”",
-   "at": "2026-10-15",
-   "why": "official upload has 112 views < 1000000"
   },
   {
    "name": "work",
@@ -148,59 +38,14 @@
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
-   "name": "tokyo shandy rendezvous",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
    "name": "brave shine",
    "at": "2026-10-15",
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
-   "name": "plot twist",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "deja vu",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "show",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
    "name": "ao to natsu",
    "at": "2026-10-15",
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
-  },
-  {
-   "name": "do it like this",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "&team",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "| chinese c-pop r&b",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "“me in phase”",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "sheesh",
-   "at": "2026-10-15",
-   "why": "rejected in an earlier month"
   }
  ]
 }

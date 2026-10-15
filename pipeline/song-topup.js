@@ -204,8 +204,10 @@ function findOfficial(c, results) {
 async function gatePopular(c, deps, k) {
   const a = c.artist || '';
   const seenO = new Map();
+  let qi = 0;
   for (const q of [c.query, `${a} ${c.name} official MV`, `${a} ${c.name} official audio`, `${a} ${c.name} music video`, `${c.name} ${a}`].map(x => x.replace(/ +/g, ' ').trim())) {
     for (const r of (await deps.search(q, { n: 8 })) || []) if (r.id && !seenO.has(r.id)) seenO.set(r.id, r);
+    if (++qi >= 3 && findOfficial(c, [...seenO.values()])) break;   // enough queries once a match exists (fewer searches = fewer bot checks)
   }
   const off = findOfficial(c, [...seenO.values()]);
   if (off) console.log(`  [official] ${c.name} / ${a}: ${off.id} "${String(off.title).slice(0, 60)}" by ${off.channel} (${off.views} views) out of ${seenO.size} results`);
@@ -400,7 +402,8 @@ async function runTopup(deps, { write = true } = {}) {
   file.approved.push(...approved);
   // infrastructure failures (YouTube blocked: nothing found, nothing downloadable) say nothing about the song: not remembered
   const infra = r => /weighted 0.0 <|no matching official upload|^error:|preview unavailable|probe failed|no free resources/.test(r.why || '');
-  for (const r of report) if (r.verdict === 'rejected' && !infra(r)) file.rejected.push({ name: r.name, at: now.toISOString().slice(0, 10), why: r.why });
+  const dupWhy = r => /^(already in the song list|alias of|region-blocked|rejected in an earlier month)/.test(r.why || '');   // not re-stored
+  for (const r of report) if (r.verdict === 'rejected' && !infra(r) && !dupWhy(r)) file.rejected.push({ name: r.name, at: now.toISOString().slice(0, 10), why: r.why });
   file.rejected = file.rejected.slice(-300);
   const out = { month, at: now.toISOString(), limits: k, candidates: candidates.length, approved: approved.map(a => a.name),
     retired: losers, approvedThisMonthBefore: ctx.approvedThisMonth, report };
