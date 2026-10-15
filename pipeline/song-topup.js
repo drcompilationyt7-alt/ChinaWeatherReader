@@ -6,8 +6,9 @@
  *                  an anime that has an AniList entry (core/quiz/assets/
  *                  anime-list.json) and is not NSFW-flagged, or a known group (curated list / KPOP_MEMBERS) -- the same
  *                  source rules the edit pipeline uses (nsfwSets)
- *   2 popular      the official upload is found on YouTube with >= TOPUP_MIN_VIEWS views (default 1M), and a trend signal:
- *                  >= TOPUP_MIN_TREND uploads titled with the song + acapella / edit / amv in the last 60 days
+ *   2 popular      the official upload (best of several queries: the title + artist match with the most views, official / Topic / VEVO /
+ *                  label channels first) has >= TOPUP_MIN_VIEWS views (default 1M), and ANY trend signal: >= 1 acapella / edit / amv
+ *                  upload in 90 days, or official views >= 20M (popular-evergreen), or >= 100M, or a release under 120 days old
  *   3 producible   clean, sharp, unsubtitled SOURCES: a search-only dry run (yt-dlp metadata) must find >= TOPUP_MIN_CLIPS (12)
  *                  weighted sources: 1080p+ counts 1, 720p counts 0.5 (below that 0); titles / descriptions with sub / lyrics / AMV /
  *                  mirrored / cropped / reaction... are dropped; creditless / NCOP / NCED / 4K / Blu-ray / official channels get
@@ -32,7 +33,7 @@ const FILE = () => path.resolve(ROOT, process.env.SONG_CANDIDATES_FILE || 'confi
 const MEM = () => path.resolve(ROOT, process.env.MEMORY_DIR || 'memory');
 const num = (k, d) => (process.env[k] != null && process.env[k] !== '' ? Number(process.env[k]) : d);
 const cfg = () => ({
-  minViews: num('TOPUP_MIN_VIEWS', 1000000), evergreenViews: num('TOPUP_EVERGREEN_VIEWS', 100000000), minTrend: num('TOPUP_MIN_TREND', 2), trendDays: num('TOPUP_TREND_DAYS', 60),
+  minViews: num('TOPUP_MIN_VIEWS', 1000000), evergreenViews: num('TOPUP_EVERGREEN_VIEWS', 100000000), minTrend: num('TOPUP_MIN_TREND', 1), trendDays: num('TOPUP_TREND_DAYS', 90), popularViews: num('TOPUP_POPULAR_VIEWS', 20000000),
   minClips: num('TOPUP_MIN_CLIPS', 12), maxPerMonth: num('TOPUP_MAX_PER_MONTH', 10), retireAfter: num('TOPUP_RETIRE_AFTER', 4),
   retireMargin: num('TOPUP_RETIRE_MARGIN', 0.5), minSustained: num('TOPUP_MIN_SUSTAINED', 6), sustainDays: num('TOPUP_SUSTAIN_DAYS', 180), newDays: num('TOPUP_NEW_DAYS', 120), llmAsk: num('TOPUP_ASK', 25),
 });
@@ -130,21 +131,48 @@ function knownSets() {
   return shows;
 }
 
+// Live AniList lookup (GraphQL, search by title) for shows missing from the local snapshot; cached in memory/anilist-cache.json
+const ANILIST_Q = 'query($s:String){Page(perPage:6){media(search:$s,type:ANIME,sort:SEARCH_MATCH){id title{romaji english native} synonyms isAdult genres}}}';
+let aniCache = null;
+const aniFile = () => path.join(MEM(), 'anilist-cache.json');
+async function anilistLookup(title, fetchFn = globalThis.fetch) {
+  const key = norm(title);
+  if (!key) return null;
+  if (!aniCache) aniCache = readJson(aniFile(), {});
+  if (key in aniCache) return aniCache[key];
+  let media;
+  try {
+    const r = await fetchFn('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ query: ANILIST_Q, variables: { s: String(title) } }) });
+    if (!r.ok) return null;   // transient failure: not cached
+    media = (((await r.json()).data || {}).Page || {}).media || [];
+  } catch { return null; }
+  const names = m => [m.title.romaji, m.title.english, m.title.native, ...(m.synonyms || [])].map(norm).filter(Boolean);
+  const match = media.filter(m => names(m).some(n => n === key || (key.length >= 6 && (n.includes(key) || (n.length >= 6 && key.includes(n))))));
+  const m = match[0];
+  const hit = m ? { id: m.id, title: m.title.english || m.title.romaji, nsfw: match.some(x => x.isAdult || (x.genres || []).includes('Hentai')) } : null;
+  aniCache[key] = hit;
+  try { fs.mkdirSync(MEM(), { recursive: true }); fs.writeFileSync(aniFile(), JSON.stringify(aniCache, null, 1)); } catch {}
+  return hit;
+}
+
 // the owner's niche: K-pop, Chinese (C-pop / Mandopop / viral / C-drama OST) and J-pop / anime. Nothing else.
 const NICHE = ['anime', 'jpop', 'kpop', 'chinese'];
-function gateNiche(c, { shows, groups, skip }) {
+async function gateNiche(c, { shows, groups, skip }, deps = {}) {
   if (c.theme === 'cpop') c.theme = 'chinese';
   if (!NICHE.includes(c.theme)) return { pass: false, why: `theme "${c.theme}" is not K-pop / Chinese / J-pop / anime` };
   if (!c.source) return { pass: false, why: 'no clip source identified' };
   const src = norm(c.source);
-  if (c.kind === 'anime' && c.theme === 'chinese' && !shows.get(src)) {   // donghua / Chinese animation not in AniList: same proof as a group
+  const live = async () => { const f = deps.anilist === undefined ? anilistLookup : deps.anilist; if (!f) return null; for (const a of [c.source, ...(c.aliases || [])].slice(0, 2)) { const h = await f(a); if (h) return h; } return null; };
+  if (c.kind === 'anime' && c.theme === 'chinese' && !shows.get(src) && !(await live())) {   // donghua / Chinese animation not in AniList: same proof as a group
     return { pass: null, why: `Chinese animation source "${c.source}" (decided by the popularity and clip-quality gates)` };
   }
   if (c.kind === 'anime') {
-    const hit = shows.get(src) || [...(c.aliases || []), c.source].map(norm).map(a => shows.get(a)).find(Boolean);
-    if (!hit) return { pass: false, why: `"${c.source}" has no AniList entry in anime-list.json` };
+    let hit = shows.get(src) || [...(c.aliases || []), c.source].map(norm).map(a => shows.get(a)).find(Boolean);
+    let how = 'known';
+    if (!hit) { hit = await live(); how = 'found live on AniList'; }
+    if (!hit) return { pass: false, why: `"${c.source}" has no AniList entry (anime-list.json snapshot and live AniList search)` };
     if (hit.nsfw || skip.has(src)) return { pass: false, why: `"${c.source}" is NSFW / skip-listed` };
-    return { pass: true, why: `anime source "${c.source}" known, not NSFW` };
+    return { pass: true, why: `anime source "${c.source}" ${how}, not NSFW` };
   }
   if (c.kind === 'group') {
     if (groups.has(src)) return { pass: true, why: `group "${c.source}" is in the known list` };
@@ -157,18 +185,27 @@ function gateNiche(c, { shows, groups, skip }) {
 }
 
 const tokens = s => norm(s).split(' ').filter(w => w.length > 1);
+const BAD_AUDIO = /\b(cover|reaction|live|remix|nightcore|lyrics?|piano|instrumental|karaoke|8d|slowed|sped|acapella|a cappella|edit|amv|tutorial|dance practice|teaser|trailer|shorts?)\b/i;
+const OFFICIAL_CH = /official|topic|records|music|entertainment|\bvevo\b|sony|avex|universal|warner|hybe|jyp|smtown|yg|label|pony canyon|kadokawa|aniplex|lantis|king record|tencent|netease|emi/i;
+/** the upload that matches song title AND artist (in title or channel); official / Topic / VEVO / label / artist channels first; the MOST views wins */
 function findOfficial(c, results) {
   const want = tokens(c.name);
-  const art = norm(c.artist || '');
-  const ok = results.filter(r => r.duration >= 60 && r.duration <= 420 && (want.every(w => norm(r.title).includes(w)) || (c.native && r.title.includes(c.native)))
-    && !/\b(cover|reaction|live|remix|nightcore|lyrics?|piano|instrumental|karaoke|8d|slowed|sped)\b/i.test(r.title));
-  const official = ok.filter(r => (art && norm(r.channel).includes(art.split(' ')[0])) || /official|topic|records|music|entertainment|\bvevo\b|sony|avex|universal|warner|hybe|jyp|smtown|yg/i.test(r.channel));
-  return (official.length ? official : ok).sort((a, b) => b.views - a.views)[0] || null;
+  const artToks = tokens(c.artist || '').filter(w => w.length > 2).slice(0, 3);
+  const nativeHit = r => c.native && r.title.includes(c.native);
+  const artistHit = r => !artToks.length || artToks.some(w => norm(r.title + ' ' + r.channel).includes(w));
+  const ok = results.filter(r => r.duration >= 60 && r.duration <= 480 && (want.every(w => norm(r.title).includes(w)) || nativeHit(r)) && !BAD_AUDIO.test(r.title) && artistHit(r));
+  const official = ok.filter(r => (artToks.length && norm(r.channel).includes(artToks[0])) || OFFICIAL_CH.test(r.channel) || r.verified);
+  return (official.length ? official : ok).sort((x, y) => y.views - x.views)[0] || null;
 }
 
 async function gatePopular(c, deps, k) {
-  const res = await deps.search(c.query, { n: 8 });
-  const off = findOfficial(c, res);
+  const a = c.artist || '';
+  const seenO = new Map();
+  for (const q of [c.query, `${a} ${c.name} official MV`, `${a} ${c.name} official audio`, `${a} ${c.name} music video`, `${c.name} ${a}`].map(x => x.replace(/ +/g, ' ').trim())) {
+    for (const r of (await deps.search(q, { n: 8 })) || []) if (r.id && !seenO.has(r.id)) seenO.set(r.id, r);
+  }
+  const off = findOfficial(c, [...seenO.values()]);
+  if (off) console.log(`  [official] ${c.name} / ${a}: ${off.id} "${String(off.title).slice(0, 60)}" by ${off.channel} (${off.views} views) out of ${seenO.size} results`);
   if (!off) return { pass: false, why: 'no matching official upload found on YouTube', official: null };
   if (off.views < k.minViews) return { pass: false, why: `official upload has ${off.views} views < ${k.minViews}`, official: off };
   const day = n => new Date(deps.now().getTime() - n * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
@@ -183,11 +220,12 @@ async function gatePopular(c, deps, k) {
   const sustained = [...seenT.values()].filter(r => isEdit(r) && r.uploadDate >= day(k.sustainDays));
   const fresh = off.uploadDate && off.uploadDate >= day(k.newDays);
   const sig = hits.length >= k.minTrend ? `${hits.length} edit / acapella uploads in ${k.trendDays} days`
-    : sustained.length >= k.minSustained ? `${sustained.length} edit / acapella uploads in ${k.sustainDays} days (sustained)`
-    : fresh ? `new release (official upload ${off.uploadDate})`
-    : off.views >= k.evergreenViews ? `evergreen hit (${Math.round(off.views / 1e6)}M official views, popularity alone)` : null;
+    : off.views >= k.evergreenViews ? `evergreen hit (${Math.round(off.views / 1e6)}M official views, popularity alone)`
+    : off.views >= k.popularViews ? `popular-evergreen (${Math.round(off.views / 1e6)}M official views, on probation)`
+    : fresh ? `new release (official upload ${off.uploadDate}, ${off.views} views)`
+    : sustained.length >= k.minSustained ? `${sustained.length} edit / acapella uploads in ${k.sustainDays} days (sustained)` : null;
   const detail = { trend: hits.length, trend180: sustained.length, fresh: !!fresh };
-  if (!sig) return { pass: false, why: `trend: ${hits.length} acapella / edit uploads in ${k.trendDays} days (< ${k.minTrend}), ${sustained.length} in ${k.sustainDays} (< ${k.minSustained}), not a new release, under ${Math.round(k.evergreenViews / 1e6)}M views`, official: off, ...detail };
+  if (!sig) return { pass: false, why: `trend: ${hits.length} acapella / edit uploads in ${k.trendDays} days (< ${k.minTrend}), not a new release, under ${Math.round(k.popularViews / 1e6)}M views`, official: off, ...detail };
   return { pass: true, why: `official ${off.views} views (${off.id}); ${sig}`, official: off, ...detail };
 }
 
@@ -262,7 +300,7 @@ async function evaluate(candidates, deps, ctx) {
   const room = Math.max(0, k.maxPerMonth - ctx.approvedThisMonth);
   const judge = async c => {
     const row = { name: c.name, artist: c.artist || null, theme: c.theme, source: c.source, query: c.query, gates: {}, verdict: 'rejected' };
-    const g1 = gateNiche(c, ctx);
+    const g1 = await gateNiche(c, ctx, deps);
     row.gates.niche = g1;
     const g4 = gateDuplicate(c, ctx);
     row.gates.duplicate = g4;
@@ -371,4 +409,4 @@ async function runTopup(deps, { write = true } = {}) {
   return out;
 }
 
-module.exports = { knownSets, sourceWeight, probeSource, runTopup, evaluate, findLosers, gateNiche, gateDuplicate, gatePopular, gateProducible, findOfficial, blockedSongs, ytSearch, cfg, norm, loadFile, FILE };
+module.exports = { anilistLookup, knownSets, sourceWeight, probeSource, runTopup, evaluate, findLosers, gateNiche, gateDuplicate, gatePopular, gateProducible, findOfficial, blockedSongs, ytSearch, cfg, norm, loadFile, FILE };
