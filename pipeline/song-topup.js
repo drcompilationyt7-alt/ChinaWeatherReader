@@ -106,8 +106,11 @@ function probeOnce(r) {
   const py = process.env.MEME_PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
   return new Promise(resolve => {
     const child = execFile(py, [path.join(ROOT, 'core', 'pools', 'source_probe.py'), '--id', r.id, '--start', String(Math.min(40, Math.floor((r.duration || 80) / 3)))],
-      { timeout: 420000, env: { ...process.env, PYTHONIOENCODING: 'utf-8', OMP_NUM_THREADS: '2', OPENBLAS_NUM_THREADS: '2', MKL_NUM_THREADS: '2', PROBE_THREADS: '2' } }, (err, stdout) => {
-        try { resolve(JSON.parse(String(stdout).trim().split(String.fromCharCode(10)).pop())); } catch { resolve({ ok: false, clean: false, reasons: ['probe failed'] }); }
+      { timeout: 420000, env: { ...process.env, PYTHONIOENCODING: 'utf-8', OMP_NUM_THREADS: '2', OPENBLAS_NUM_THREADS: '2', MKL_NUM_THREADS: '2', PROBE_THREADS: '2' } }, (err, stdout, stderr) => {
+        try { resolve(JSON.parse(String(stdout).trim().split(String.fromCharCode(10)).pop())); } catch {
+          const why = String(stderr || (err && err.message) || '').trim().split(String.fromCharCode(10)).pop().slice(0, 120);   // e.g. ModuleNotFoundError: cv2
+          resolve({ ok: false, clean: false, reasons: ['probe failed' + (why ? ': ' + why : '')] });
+        }
       });
     try { os.setPriority(child.pid, os.constants.priority.PRIORITY_LOW); } catch {}   // idle class on Windows, nice 19 elsewhere (children inherit it)
   });
