@@ -55,6 +55,18 @@ const FALLBACK_WEIGHTS = FORMATS.some(isPop)
     cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.25, eyes: 0.25, outfit: 0.2 }   // new formats: owner 2026-10-12 asked for higher odds
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
+// owner 2026-10-15: no format repeats within NO_REPEAT_DAYS uploads, geography at most 1 in GEO_EVERY uploads,
+// and the view data only steers half of the picks (EXPLORE_SHARE)
+const NO_REPEAT_DAYS = Number(process.env.QUIZ_NO_REPEAT || 3);
+const GEO_EVERY = Number(process.env.QUIZ_GEO_EVERY || 7);
+const EXPLORE_SHARE = Number(process.env.QUIZ_EXPLORE_SHARE || 0.5);
+const GEO_SET = new Set([...GEO_FORMATS, 'city']);
+function blockedFormats(history) {
+  const ups = history.uploads || [];
+  const out = new Set(ups.slice(-NO_REPEAT_DAYS).map(u => u.format));
+  if (FORMATS.some(isPop) && ups.slice(-(GEO_EVERY - 1)).some(u => GEO_SET.has(u.format))) for (const f of GEO_SET) out.add(f);
+  return out;
+}
 const THEMES = [['world', 0.62], ['asia', 0.16], ['europe', 0.08], ['africa', 0.07], ['americas', 0.07]];
 const THEMED_FORMATS = new Set(['flag', 'shape', 'capital']);
 
@@ -231,19 +243,19 @@ function pickWeighted(pairs) {
  */
 function pickFormat(stats, history, forced) {
   if (forced && FORMATS.includes(forced)) return { format: forced, why: 'forced' };
-  const recent = history.uploads.slice(-ROTATE_RECENT).map(u => u.format);
-  const last = recent[recent.length - 1];
-  const allowed = FORMATS.length > 1 ? FORMATS.filter(f => f !== last) : FORMATS;
+  const blocked = blockedFormats(history);
+  let allowed = FORMATS.filter(f => !blocked.has(f));
+  if (!allowed.length) allowed = FORMATS;
   const scored = percentileRewards(scoredQuizUploads(stats, history));
-  if (Math.random() < 0.15 || scored.length < 6) {
-    const f = pickWeighted(allowed.map(f => [f, (FALLBACK_WEIGHTS[f] || 0.1) * (recent.includes(f) ? 0.3 : 1)]));
+  // owner 2026-10-15: views steer the pick, but not much -> half of the picks ignore the view data
+  if (Math.random() < EXPLORE_SHARE || scored.length < 6) {
+    const f = pickWeighted(allowed.map(f => [f, FALLBACK_WEIGHTS[f] || 0.1]));
     return { format: f, why: scored.length < 6 ? `exploring (${scored.length} scored quizzes so far)` : 'exploration draw' };
   }
   let best = null;
   const draws = [];
   for (const f of allowed) {
-    const { n, draw: d } = weightedDraw(scored.filter(u => u.format === f).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
-    const draw = d - (recent.includes(f) ? 0.15 : 0);
+    const { n, draw } = weightedDraw(scored.filter(u => u.format === f).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
     draws.push(`${f}=${draw.toFixed(2)}(${n.toFixed(1)})`);
     if (!best || draw > best.draw) best = { f, draw };
   }
@@ -484,8 +496,8 @@ async function runWorldQuizPipeline(opts = {}) {
 
   const forcedFormat = opts.format || process.env.QUIZ_FORMAT;
   const lastFormat = (history.uploads[history.uploads.length - 1] || {}).format;
-  let hit = !forcedFormat && Math.random() < 0.5 ? findHit(stats, history) : null;
-  if (hit && hit.format === lastFormat && FORMATS.length > 1) hit = null;  // a follow-up waits a day: consecutive days rotate
+  let hit = !forcedFormat && Math.random() < 0.2 ? findHit(stats, history) : null;
+  if (hit && (hit.format === lastFormat || blockedFormats(history).has(hit.format)) && FORMATS.length > 1) hit = null;  // follow-ups obey the no-repeat / geography caps
   let format, why, theme, length;
   if (hit && FORMATS.includes(hit.format)) {
     ({ format, theme } = hit);
