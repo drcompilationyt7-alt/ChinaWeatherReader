@@ -1,29 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=svODUI3Z_t8",
-      "title": "Bubble Tea Shop Dance Vibes! 🧋✨",
-      "country": "China",
-      "postedAt": "2026-09-14T09:53:55.995Z"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=4PHljPZE59U",
-      "title": "Bought a Mountain of Glue When Bored! 😱🖌️",
-      "country": "China",
-      "postedAt": "2026-09-15T07:39:36.169Z",
-      "videoId": "4PHljPZE59U",
-      "sourceChannel": "BB_BrainBoost",
-      "sourceUrl": "https://www.youtube.com/watch?v=ACq6Vp-cbQ0",
-      "sourceTitle": "I Bought a Ton of Glue Because I Was Bored",
-      "summary": "A Chinese creator pours glue on the floor, causing friends to get hilariously stuck in a pile.",
-      "category": "comedy",
-      "eggs": [
-        "spidey-popcorn"
-      ],
-      "titleSource": "gemini",
-      "watermark": "cover"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=fe0RiOcwuE0",
       "title": "Top 5 Chibi Naruto Funniest Moments",
       "country": "Japan",
@@ -378,6 +355,15 @@
       "videoId": "CF1iIdJ02T4",
       "category": "meme-anime",
       "titleSource": "seishun complex"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=NyccBq4DC_E",
+      "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
+      "country": "Global",
+      "postedAt": "2026-10-15T07:58:56.652Z",
+      "videoId": "NyccBq4DC_E",
+      "category": "meme-anime",
+      "titleSource": "idol"
     }
   ]
 }

@@ -1175,6 +1175,53 @@
     "ovStyle": "ov-kw",
     "descHook": "drop"
    }
+  },
+  {
+   "videoId": "NyccBq4DC_E",
+   "url": "https://www.youtube.com/watch?v=NyccBq4DC_E",
+   "postedAt": "2026-10-15T07:58:56.650Z",
+   "publishAt": "2026-10-15T12:00:00.000Z",
+   "song": "idol",
+   "theme": "anime",
+   "emoji": "🎧,🔥",
+   "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
+   "clipIds": [
+    "S-UmqvA7uR8",
+    "DdBuJIUfYqA",
+    "AUv64iM73o4",
+    "evorCO-GZ9k",
+    "Ie4D-wmqeGI",
+    "PgBvV9ofjmA",
+    "IIqBGDwVEE4",
+    "widPhhhLpzw"
+   ],
+   "clipChannels": [
+    "1vsjbc",
+    "Anime　【OSHI NO KO】　Official Channel",
+    "Bruh Clan ++",
+    "Nekomon",
+    "Nogu",
+    "Nyx the Nova",
+    "RED ROC D ACE"
+   ],
+   "followUpOf": "DbIqVhDg5ho",
+   "clipSource": "Oshi no Ko",
+   "settings": {
+    "drop": 14,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "layers"
+   },
+   "onVideoTitle": "full drop hits",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-suggest",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "layers"
+   }
   }
  ]
 }
