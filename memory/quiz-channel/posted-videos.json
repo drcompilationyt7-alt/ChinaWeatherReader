@@ -285,6 +285,17 @@
       "titleSource": "city-guess",
       "quizFormat": "city",
       "quizTheme": "CN"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=LKgGgjz7D88",
+      "title": "guess the country by its shape asia quiz 👀 #geography",
+      "country": "Global",
+      "postedAt": "2026-10-15T07:38:18.344Z",
+      "videoId": "LKgGgjz7D88",
+      "category": "quiz-shape",
+      "titleSource": "shape-llm",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }

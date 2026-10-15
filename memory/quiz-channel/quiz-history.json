@@ -639,6 +639,30 @@
     "titleStyle": "keyword",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "LKgGgjz7D88",
+   "url": "https://www.youtube.com/watch?v=LKgGgjz7D88",
+   "postedAt": "2026-10-15T07:38:18.341Z",
+   "publishAt": "2026-10-15T12:00:00.000Z",
+   "format": "shape",
+   "theme": "asia",
+   "seed": 514487817,
+   "length": "quick",
+   "titleTemplate": "shape-llm",
+   "title": "guess the country by its shape asia quiz 👀 #geography",
+   "answers": [
+    "JP",
+    "PK",
+    "KR"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
