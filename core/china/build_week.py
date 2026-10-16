@@ -33,8 +33,20 @@ NPX = 'npx.cmd' if os.name == 'nt' else 'npx'
 LOW = {'creationflags': 0x00004000} if os.name == 'nt' else {}   # BELOW_NORMAL_PRIORITY_CLASS
 
 
+# Owner 2026-10-16: "the current pace and just 2x it" (from the week of 2026-10-20 on). The finished edit is sped up
+# as a whole (picture, voice, SFX, music together; the voice keeps its pitch), so every cue stays in sync.
+PACE = float(os.environ.get('CHINA_PACE', '2.0'))
+
+
 def master(src, dst):
     tmp = dst + '.a.wav'
+    sped = dst + '.pace.mp4'
+    if abs(PACE - 1.0) > 1e-3:
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-filter_complex',
+                        f'[0:v]setpts=PTS/{PACE},fps=30[v];[0:a]atempo={PACE}[a]', '-map', '[v]', '-map', '[a]',
+                        '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le',
+                        sped.replace('.mp4', '.mkv')], check=True, **LOW)
+        src = sped.replace('.mp4', '.mkv')
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', str(sound.SR), tmp], check=True)
     with wave.open(tmp) as w:
         x = np.frombuffer(w.readframes(w.getnframes()), np.int16) / 32768.0
@@ -42,6 +54,8 @@ def master(src, dst):
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-i', tmp, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
                     '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', dst], check=True)
     os.remove(tmp)
+    if src.endswith('.pace.mkv'):
+        os.remove(src)
 
 
 def render_one(spec_path, slug, props_path, mp4):
