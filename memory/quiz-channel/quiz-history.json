@@ -663,6 +663,68 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "MT7z0qewSPs",
+   "url": "https://www.youtube.com/watch?v=MT7z0qewSPs",
+   "postedAt": "2026-10-16T07:26:32.610Z",
+   "publishAt": "2026-10-16T12:00:00.000Z",
+   "format": "eyes",
+   "theme": "anime",
+   "seed": 741436281,
+   "length": "quick",
+   "edition": "glasses",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Glasses edition! Time to focus and test your smarts!",
+     "template": "Glasses edition! Time to focus and test your smarts!",
+     "sec": 3.01
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How well did you do? Comment your score below!",
+     "template": "How well did you do? Comment your score below!",
+     "sec": 2.37
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai-short",
+     "line": "That is Kei Tsukishima!",
+     "template": "That is {a}!",
+     "sec": 1.85
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Did you catch Hange Zoe right away?",
+     "template": "Did you catch {a} right away?",
+     "sec": 1.61
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "It is Azusa Nakano!",
+     "template": "It is {a}!",
+     "sec": 1.65
+    }
+   ],
+   "titleTemplate": "eyes-ramp",
+   "title": "GLASSES EDITION 👓 Anime Eyes Quiz: Easy to IMPOSSIBLE 🎧",
+   "answers": [
+    "eyes:kei tsukishima",
+    "eyes:hange zoe",
+    "eyes:azusa nakano"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "format3",
+    "titleStyle": "ramp",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
