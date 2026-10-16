@@ -1,41 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=fe0RiOcwuE0",
-      "title": "Top 5 Chibi Naruto Funniest Moments",
-      "country": "Japan",
-      "postedAt": "2026-09-15T11:16:53.612Z",
-      "videoId": "fe0RiOcwuE0",
-      "sourceChannel": "kazuya_wat",
-      "sourceUrl": "https://www.youtube.com/watch?v=U_JWPh_UBgE",
-      "sourceTitle": "Top 5 Chibi Naruto Funniest Moments",
-      "summary": "This video showcases a countdown of funny moments featuring chibi characters from the popular Japanese anime series, Naruto.",
-      "category": "anime",
-      "eggs": [
-        "spidey-chase",
-        "gwen-tap"
-      ],
-      "titleSource": "fallback",
-      "watermark": "cover"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=hzmtUuvSoMc",
-      "title": "#trending #dance",
-      "country": "China",
-      "postedAt": "2026-09-16T06:57:42.874Z",
-      "videoId": "hzmtUuvSoMc",
-      "sourceChannel": "Dance-p2d",
-      "sourceUrl": "https://www.youtube.com/watch?v=L-Wwu6j4kos",
-      "sourceTitle": "#trending #dance",
-      "summary": "A young woman performs a dance routine in front of a decorative gold screen.",
-      "category": "dance",
-      "eggs": [
-        "gwen-stick"
-      ],
-      "titleSource": "fallback",
-      "watermark": "default"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=7YLLlQ6sWy0",
       "title": "Insane Sketch Transformation! 🎨✨",
       "country": "China",
@@ -364,6 +329,15 @@
       "videoId": "NyccBq4DC_E",
       "category": "meme-anime",
       "titleSource": "idol"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1_n7d7E6wO8",
+      "title": "how you like that acapella but the beat drops 🗿⚡",
+      "country": "Global",
+      "postedAt": "2026-10-16T07:45:15.408Z",
+      "videoId": "1_n7d7E6wO8",
+      "category": "meme-kpop",
+      "titleSource": "how you like that"
     }
   ]
 }
