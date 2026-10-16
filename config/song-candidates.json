@@ -1,5 +1,161 @@
 {
- "approved": [],
+ "approved": [
+  {
+   "name": "fatal",
+   "query": "GEMN fatal official audio",
+   "artist": "GEMN",
+   "theme": "anime",
+   "source": "Oshi no Ko Season 2",
+   "kind": "anime",
+   "aliases": [
+    "ファタール",
+    "oshi no ko season 2 op",
+    "aqua",
+    "ruby"
+   ],
+   "officialId": "8tQiWHXSGN0",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "mephisto",
+   "query": "QUEEN BEE Mephisto official audio",
+   "artist": "QUEEN BEE",
+   "theme": "anime",
+   "source": "Oshi no Ko",
+   "kind": "anime",
+   "aliases": [
+    "メフィスト",
+    "oshi no ko ed",
+    "ziyoou-vachi",
+    "aqua hoshino"
+   ],
+   "officialId": "Yo83M-KOc7k",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "the rumbling",
+   "query": "SiM The Rumbling official audio",
+   "artist": "SiM",
+   "theme": "anime",
+   "source": "Attack on Titan",
+   "kind": "anime",
+   "aliases": [
+    "shingeki no kyojin",
+    "eren yeager",
+    "aot op 7"
+   ],
+   "officialId": "OBqw818mQ1E",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "kaibutsu",
+   "query": "YOASOBI Kaibutsu official audio",
+   "artist": "YOASOBI",
+   "theme": "anime",
+   "source": "BEASTARS",
+   "kind": "anime",
+   "aliases": [
+    "怪物",
+    "monster",
+    "beastars op 2",
+    "legoshi"
+   ],
+   "officialId": "dy90tA3TT1c",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "chainsaw blood",
+   "query": "Vaundy CHAINSAW BLOOD official audio",
+   "artist": "Vaundy",
+   "theme": "anime",
+   "source": "Chainsaw Man",
+   "kind": "anime",
+   "aliases": [
+    "chainsaw man ed 1",
+    "denji",
+    "makima"
+   ],
+   "officialId": "FL1QjjkZVm4",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "sheesh",
+   "query": "BABYMONSTER SHEESH official audio",
+   "artist": "BABYMONSTER",
+   "theme": "kpop",
+   "source": "BABYMONSTER",
+   "kind": "group",
+   "aliases": [
+    "ruka",
+    "pharita",
+    "asa",
+    "ahyeon",
+    "rami",
+    "rora",
+    "chiquita",
+    "쉬시"
+   ],
+   "officialId": "2wA_b6YHjqQ",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "show",
+   "query": "Ado Show official audio",
+   "artist": "Ado",
+   "theme": "jpop",
+   "source": "Ado",
+   "kind": "group",
+   "aliases": [
+    "唱",
+    "ado show"
+   ],
+   "officialId": "pgXpM4l_MwI",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "do it like this",
+   "query": "ALLDAY PROJECT do it like this official audio",
+   "artist": "ALLDAY PROJECT",
+   "theme": "kpop",
+   "source": "ALLDAY PROJECT",
+   "kind": "group",
+   "aliases": [],
+   "officialId": "KQM9hYlMXsI",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "moonride",
+   "query": "Hearts2Hearts moonride official audio",
+   "artist": "Hearts2Hearts",
+   "theme": "kpop",
+   "source": "Hearts2Hearts",
+   "kind": "group",
+   "aliases": [],
+   "officialId": "gNUMxMuxH20",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "made my night",
+   "query": "LE SSERAFIM made my night official audio",
+   "artist": "LE SSERAFIM",
+   "theme": "kpop",
+   "source": "LE SSERAFIM",
+   "kind": "group",
+   "aliases": [],
+   "officialId": "Y1Lah0BM0KQ",
+   "probation": true,
+   "approvedAt": "2026-10-16"
+  }
+ ],
  "retired": [],
  "rejected": [
   {
@@ -46,6 +202,71 @@
    "name": "ao to natsu",
    "at": "2026-10-15",
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "abyss",
+   "at": "2026-10-15",
+   "why": "sample check: 0/3 clean previews (CFjI21M9wZs: borders (0.21); VRFFN7DV55w: burned-in text (0.00 top / 0.12 bottom); Htl2qw-puHs: burned-in text (0.00 top / 0.12 bottom))"
+  },
+  {
+   "name": "crazy",
+   "at": "2026-10-15",
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "plot twist",
+   "at": "2026-10-15",
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "spot!",
+   "at": "2026-10-15",
+   "why": "sample check: 1/3 clean previews (bdjhwTGmVRg: borders (0.23); TL-STjtiAYQ: burned-in text (0.12 top / 0.11 bottom); da2SVbzOI7Q: clean)"
+  },
+  {
+   "name": "rabbit hole",
+   "at": "2026-10-15",
+   "why": "sample check: 1/3 clean previews (Akx45HCYgf0: clean; b6VhAvtekeU: borders (0.33); LE1XskraNfI: burned-in text (0.39 top / 0.45 bottom))"
+  },
+  {
+   "name": "overdose",
+   "at": "2026-10-15",
+   "why": "sample check: 1/3 clean previews (LZrCYX88DwA: clean; gNg2Qw5R-Q4: borders (0.18); IuSAC8ZDf1A: burned-in text (0.00 top / 0.15 bottom))"
+  },
+  {
+   "name": "king",
+   "at": "2026-10-15",
+   "why": "source quality: weighted 6.4 < 12 (5 at 1080p+, 1 at 720p, of 59 found)"
+  },
+  {
+   "name": "phony",
+   "at": "2026-10-15",
+   "why": "official upload has 416 views < 1000000"
+  },
+  {
+   "name": "cage",
+   "at": "2026-10-15",
+   "why": "official upload has 867 views < 1000000"
+  },
+  {
+   "name": "unrestrained",
+   "at": "2026-10-15",
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "big fish",
+   "at": "2026-10-15",
+   "why": "source quality: weighted 9.3 < 12 (6 at 1080p+, 3 at 720p, of 41 found)"
+  },
+  {
+   "name": "as one wishes",
+   "at": "2026-10-15",
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "love like fire",
+   "at": "2026-10-15",
+   "why": "official upload has 12239 views < 1000000"
   }
  ]
 }

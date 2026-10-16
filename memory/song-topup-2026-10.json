@@ -1,6 +1,6 @@
 {
  "month": "2026-10",
- "at": "2026-10-15T22:58:11.606Z",
+ "at": "2026-10-15T23:52:49.478Z",
  "limits": {
   "minViews": 1000000,
   "evergreenViews": 100000000,
@@ -17,7 +17,18 @@
   "llmAsk": 25
  },
  "candidates": 40,
- "approved": [],
+ "approved": [
+  "fatal",
+  "mephisto",
+  "the rumbling",
+  "kaibutsu",
+  "chainsaw blood",
+  "sheesh",
+  "show",
+  "do it like this",
+  "moonride",
+  "made my night"
+ ],
  "retired": [],
  "approvedThisMonthBefore": 0,
  "report": [
@@ -25,12 +36,12 @@
    "name": "fatal",
    "artist": "GEMN",
    "theme": "anime",
-   "source": "Oshi no Ko",
-   "query": "GEMN Fatal official audio",
+   "source": "Oshi no Ko Season 2",
+   "query": "GEMN fatal official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "anime source \"Oshi no Ko\" known, not NSFW"
+     "why": "anime source \"Oshi no Ko Season 2\" found live on AniList, not NSFW"
     },
     "duplicate": {
      "pass": true,
@@ -38,12 +49,12 @@
     },
     "popular": {
      "pass": true,
-     "why": "official 81450541 views (8tQiWHXSGN0); popular-evergreen (81M official views, on probation)",
+     "why": "official 81451614 views (8tQiWHXSGN0); popular-evergreen (81M official views, on probation)",
      "official": {
       "id": "8tQiWHXSGN0",
       "title": "ファタール / GEMN - Fatal / GEMN",
       "channel": "キタニタツヤ / Tatsuya Kitani",
-      "views": 81450541,
+      "views": 81451614,
       "duration": 218,
       "uploadDate": "20240705",
       "height": 2160,
@@ -72,89 +83,46 @@
      "fresh": false
     },
     "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (i7TRmojTJT0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; qXVWHhE-SCc: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; RDI1OgHl3BQ: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)",
+     "pass": true,
+     "why": "weighted sources 15.0 (12 at 1080p+), audio 8tQiWHXSGN0 (218s), 2/3 sample previews clean",
      "probes": [
       {
-       "ok": false,
-       "clean": false,
+       "sharp": 493.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.389,
        "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+        "borders (0.39)"
+       ],
+       "clean": false,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 973,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 322.2,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       }
      ]
     }
    },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (i7TRmojTJT0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; qXVWHhE-SCc: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; RDI1OgHl3BQ: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)"
-  },
-  {
-   "name": "work",
-   "artist": "millennium parade & Sheena Ringo",
-   "theme": "anime",
-   "source": "Hell's Paradise: Jigokuraku",
-   "query": "millennium parade Sheena Ringo WORK official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "anime source \"Hell's Paradise: Jigokuraku\" found live on AniList, not NSFW"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
-     "official": {
-      "id": "04WuoQMhhxw",
-      "title": "Hell's Paradise Opening 1 | \"Work\" by Ringo Sheena and Millennium Parade",
-      "channel": "Crunchyroll",
-      "views": 15697489,
-      "duration": 100,
-      "uploadDate": "20230407",
-      "height": 1080,
-      "description": "Hell's Paradise OP 1 \"Work\" by Ringo Sheena and Millennium Parade. Watch Hell's Paradise on Crunchyroll! https://got.cr/cc-hpop\n\nMore Hell's Paradise Openings:\nhttps://youtu.be/3zgow3WAYs8\n\nWatch Hell's Paradise Best Moments:\nhttps://www.youtube.com/playlist?list=PLRe9ARNnYSY66BYhpazj5n-Rb2g6FFVfg\n\nABOUT HELL'S PARADISE\nGabimaru reigns as the strongest and most ruthless assassin in his village. Bu",
-      "tags": [
-       "hells paradise",
-       "jigokuraku",
-       "地獄楽",
-       "hells paradise anime",
-       "jigokuraku anime",
-       "hell's paradise opening",
-       "hell's paradise op",
-       "work",
-       "millenium parade",
-       "crunchyroll",
-       "anime",
-       "anime trailer",
-       "anime preview",
-       "anime full episode",
-       "crunchyroll collection"
-      ],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    }
-   },
-   "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
    "name": "mephisto",
@@ -173,12 +141,12 @@
     },
     "popular": {
      "pass": true,
-     "why": "official 23117761 views (Yo83M-KOc7k); popular-evergreen (23M official views, on probation)",
+     "why": "official 23117896 views (Yo83M-KOc7k); popular-evergreen (23M official views, on probation)",
      "official": {
       "id": "Yo83M-KOc7k",
       "title": "女王蜂『メフィスト(Mephisto)』Official MV",
       "channel": "女王蜂 / QUEEN BEE official YouTube channel",
-      "views": 23117761,
+      "views": 23117896,
       "duration": 256,
       "uploadDate": "20230517",
       "height": 1600,
@@ -199,223 +167,57 @@
      "fresh": false
     },
     "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (qXVWHhE-SCc: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; i7TRmojTJT0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; RDI1OgHl3BQ: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)",
+     "pass": true,
+     "why": "weighted sources 19.8 (16 at 1080p+), audio Yo83M-KOc7k (256s), 2/3 sample previews clean",
      "probes": [
       {
-       "ok": false,
-       "clean": false,
+       "sharp": 493.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.389,
        "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+        "borders (0.39)"
+       ],
+       "clean": false,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 322.2,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 973,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       }
      ]
     }
    },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (qXVWHhE-SCc: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; i7TRmojTJT0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; RDI1OgHl3BQ: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
-   "name": "taidada",
-   "artist": "ZUTOMAYO",
+   "name": "work",
+   "artist": "millennium parade & Ringo Sheena",
    "theme": "anime",
-   "source": "Dandadan",
-   "query": "ZUTOMAYO TAIDADA official audio",
+   "source": "Hell's Paradise",
+   "query": "millennium parade Ringo Sheena WORK official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "anime source \"Dandadan\" known, not NSFW"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 53916580 views (IeyCdm9WwXM); popular-evergreen (54M official views, on probation)",
-     "official": {
-      "id": "IeyCdm9WwXM",
-      "title": "ずっと真夜中でいいのに。『TAIDADA』MV (ZUTOMAYO - TAIDADA)【ダンダダン MAD】",
-      "channel": "ずっと真夜中でいいのに。 ZUTOMAYO",
-      "views": 53916580,
-      "duration": 226,
-      "uploadDate": "20241205",
-      "height": 1080,
-      "description": "TVアニメ「ダンダダン」Endingが好きなのでMAD MVを作成しました\nRespect ターボババア\n\n『TAIDADA』\nDL/STREAMING：https://lnk.to/ZTMY_KIKT\nOff Vocal [Inst] FREE DL : https://piapro.jp/t/1Mpp\n\nLyrics & Music & Vocal - ACAね\nArrangement - 煮ル果実, 100回嘔吐, ZTMY\nDrums - Yoshihiro Kawamura\nBass - Takashi Adachi\nGuitar - Yuya Komoguchi\nRec & Mix Engineer - Toru Matake\nMastering Engineer - Takeo Kira\nSound Director - Kohei Matsumoto\n\nMV\n監督 - ゴル",
-      "tags": [],
-      "verified": true
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (a4na2opArGY: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; feFmQysFn7U: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; JgYbi6n66nU: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)",
-     "probes": [
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
-      },
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
-      },
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
-      }
-     ]
-    }
-   },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (a4na2opArGY: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; feFmQysFn7U: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; JgYbi6n66nU: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)"
-  },
-  {
-   "name": "guitar, loneliness and blue planet",
-   "artist": "Kessoku Band",
-   "theme": "anime",
-   "source": "Bocchi the Rock!",
-   "query": "Kessoku Band Guitar Loneliness and Blue Planet official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "anime source \"Bocchi the Rock!\" known, not NSFW"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 26858587 views (SDk1RA4g8CA); popular-evergreen (27M official views, on probation)",
-     "official": {
-      "id": "SDk1RA4g8CA",
-      "title": "Guitar, Loneliness and Blue Planet",
-      "channel": "kessoku band - Topic",
-      "views": 26858587,
-      "duration": 229,
-      "uploadDate": "20221105",
-      "height": 1080,
-      "description": "Provided to YouTube by Aniplex Inc.\n\nGuitar, Loneliness and Blue Planet · kessoku band\n\nGuitar, Loneliness and Blue Planet\n\n℗ 2022 Aniplex Inc.\n\nReleased on: 2022-11-06\n\nLyricist: ZAQ\nComposer: otoha\nArranger: Akkin\n\nAuto-generated by YouTube.",
-      "tags": [
-       "kessoku band",
-       "結束バンド",
-       "ケッソクバンド",
-       "Guitar, Loneliness and Blue Planet"
-      ],
-      "verified": false
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (dlSbEP4V-gI: preview unavailable: ERROR: [youtube] dlSbEP4V-gI: Video unavailable; wbQEA_nxLaE: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; QjmnsAWGm8E: preview unavailable: ERROR: [youtube] QjmnsAWGm8E: Video unavailable)",
-     "probes": [
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: [youtube] dlSbEP4V-gI: Video unavailable"
-       ]
-      },
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
-      },
-      {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: [youtube] QjmnsAWGm8E: Video unavailable"
-       ]
-      }
-     ]
-    }
-   },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (dlSbEP4V-gI: preview unavailable: ERROR: [youtube] dlSbEP4V-gI: Video unavailable; wbQEA_nxLaE: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; QjmnsAWGm8E: preview unavailable: ERROR: [youtube] QjmnsAWGm8E: Video unavailable)"
-  },
-  {
-   "name": "shukufuku",
-   "artist": "YOASOBI",
-   "theme": "anime",
-   "source": "Mobile Suit Gundam: The Witch from Mercury",
-   "query": "YOASOBI Shukufuku official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "anime source \"Mobile Suit Gundam: The Witch from Mercury\" found live on AniList, not NSFW"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": true,
-     "why": "official 187396959 views (3eytpBOkOFA); evergreen hit (187M official views, popularity alone)",
-     "official": {
-      "id": "3eytpBOkOFA",
-      "title": "YOASOBI「祝福」Official Music Video (『機動戦士ガンダム 水星の魔女』オープニングテーマ)",
-      "channel": "YOASOBI",
-      "views": 187396959,
-      "duration": 198,
-      "uploadDate": "20221002",
-      "height": 1080,
-      "description": "ストリーミング＆ダウンロード配信中！\nhttps://orcd.co/shukufuku\n\n『機動戦士ガンダム 水星の魔女』\n毎週日曜午後5時～MBS/TBS系全国28局ネットにて放送\nhttps://g-witch.net/\n\n○原作小説 「ゆりかごの星」\n原作:矢立 肇 富野由悠季\n著:大河内一楼\nhttps://g-witch.net/music/novel/\n\n--\nMusic : Ayase (https://twitter.com/ayase_0404)\nVocal : ikura (https://twitter.com/ikutalilas)\n\nGuitar : Takeruru (https://twitter.com/Takeruru_rururu)\nBass : やまもとひかる (https://x.com/Yamahika_da)\n\n○インスト音源\nhttps://",
-      "tags": [],
-      "verified": false
-     },
-     "trend": 0,
-     "trend180": 0,
-     "fresh": false
-    },
-    "producible": {
-     "pass": false,
-     "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 8 found)"
-    }
-   },
-   "verdict": "rejected",
-   "why": "source quality: weighted 0.0 < 12 (0 at 1080p+, 0 at 720p, of 8 found)"
-  },
-  {
-   "name": "tokyo shandy rendezvous",
-   "artist": "MAISONdes ft. Tsumiki, KAF",
-   "theme": "anime",
-   "source": "Urusei Yatsura",
-   "query": "MAISONdes Tokyo Shandy Rendezvous official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "anime source \"Urusei Yatsura\" found live on AniList, not NSFW"
+     "why": "anime source \"Hell's Paradise\" known, not NSFW"
     },
     "duplicate": {
      "pass": false,
@@ -426,63 +228,361 @@
    "why": "rejected in an earlier month"
   },
   {
-   "name": "brave shine",
-   "artist": "Aimer",
+   "name": "the rumbling",
+   "artist": "SiM",
    "theme": "anime",
-   "source": "Fate/stay night: Unlimited Blade Works",
-   "query": "Aimer Brave Shine official audio",
+   "source": "Attack on Titan",
+   "query": "SiM The Rumbling official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "anime source \"Fate/stay night: Unlimited Blade Works\" known, not NSFW"
+     "why": "anime source \"Attack on Titan\" known, not NSFW"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
-     "pass": false,
-     "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
+     "pass": true,
+     "why": "official 101955028 views (OBqw818mQ1E); evergreen hit (102M official views, popularity alone)",
      "official": {
-      "id": "byPofX1IEZY",
-      "title": "Aimer - Brave Shine [Full] Fate/Stay Night Unlimited Blade Works (2015) OP",
-      "channel": "Im Hendrik",
-      "views": 11295130,
-      "duration": 234,
-      "uploadDate": "20150628",
-      "height": 360,
-      "description": "Full Version of Aimer's Brave Shine ( Fate Stay Night Opening )\nI do not own this song.\nNo copyright infringements intended.\nCredit to Aimer and her record label( ^ - ^ )\n\nLyrics : \n\nAs the wish concealed in my left hand remained a wish \nI saw a an unending dream\nIn my right hand was an empty memory, I stood at the ends of an unknown world \nStruck by an ending rain\nThe strength to protect what's d",
+      "id": "OBqw818mQ1E",
+      "title": "SiM – The Rumbling (OFFICIAL VIDEO)",
+      "channel": "SiM Official YouTube Channel",
+      "views": 101955028,
+      "duration": 223,
+      "uploadDate": "20220302",
+      "height": 1080,
+      "description": "Watch the official video for “The Rumbling”\n\nTV Animation “Attack on Titan” The Final Season Part 2 Opening Theme\n\nStreaming & Download Out Now!!\n\nFull Size\nhttps://lnk.to/therumbling_full\n\nTV Size\nhttps://lnk.to/therumbling_tvsize\n\nTVアニメ「進撃の巨人」The Final Season Part 2 ノンクレジットOP\nhttps://youtu.be/2S4qGKmzBJE\n\nSiM Official site\nhttps://sxixm.com/\n\n「The Rumbling」Special site\nhttps://sim2022.ponycanyon",
+      "tags": [],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 39.0 (32 at 1080p+), audio OBqw818mQ1E (223s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 1596.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 405.5,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1332.6,
+       "text_top": 0,
+       "text_bottom": 0.109,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.00 top / 0.11 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "kaibutsu",
+   "artist": "YOASOBI",
+   "theme": "anime",
+   "source": "BEASTARS",
+   "query": "YOASOBI Kaibutsu official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"BEASTARS\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 478617757 views (dy90tA3TT1c); evergreen hit (479M official views, popularity alone)",
+     "official": {
+      "id": "dy90tA3TT1c",
+      "title": "YOASOBI「怪物」Official Music Video　(YOASOBI - Monster)",
+      "channel": "YOASOBI",
+      "views": 478617757,
+      "duration": 208,
+      "uploadDate": "20210113",
+      "height": 1080,
+      "description": "Download＆Streaming配信中:https://orcd.co/kaibutsu\nTVアニメ『BEASTARS』第二期オープニングテーマ\n『BEASTARS』原作者・板垣巴瑠先生がこの楽曲の原作小説として書き下ろした「自分の胸に自分の耳を押し当てて」はTVアニメBEASTARS公式HP[MUSIC]タブにて公開中！\nhttps://bst-anime.com/\n--\nTVアニメ『BEASTARS』第二期エンディングテーマ「優しい彗星」もぜひ合わせてお聴きください。\nhttps://youtu.be/VyvhvlYvRnc\n--\nシングル『怪物/優しい彗星』3月24日発売！ご予約はこちら。\n-アニメ盤\nhttps://yoasobi.lnk.to/XSCL-54\n\n-YOASOBIオフィシャルファンクラブ\"CLUB 夜遊\"限定盤\nhttps://yoasobi-fc.com/03",
       "tags": [
-       "Brave Shine",
-       "Aimer (Musical Artist)",
-       "Music (TV Genre)",
-       "Video Game (Industry)",
-       "Anime (TV Genre)",
-       "Fate/stay Night (Video Game)",
-       "Fate/Stay Night: Unlimited Blade Works (Film)",
-       "Karaoke",
-       "Thailand"
+       "YOASOBI",
+       "ヨアソビ",
+       "夜に駆ける",
+       "BEASTARS",
+       "BEASTERS",
+       "ビースターズ",
+       "怪物",
+       "MONSTER",
+       "Ayase",
+       "ikura",
+       "幾田りら",
+       "幾多りら"
       ],
       "verified": false
      },
      "trend": 0,
      "trend180": 0,
      "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 27.8 (22 at 1080p+), audio dy90tA3TT1c (208s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 1124,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "ok": false,
+       "clean": false,
+       "reasons": [
+        "probe failed: source_probe.py: error: argument --id: expected one argument"
+       ]
+      },
+      {
+       "sharp": 311.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
     }
    },
-   "verdict": "rejected",
-   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
-   "name": "tick-tack",
-   "artist": "ILLIT",
-   "theme": "kpop",
-   "source": "ILLIT",
-   "query": "ILLIT Tick-Tack official audio",
+   "name": "abyss",
+   "artist": "YUNGBLUD",
+   "theme": "anime",
+   "source": "Kaiju No. 8",
+   "query": "YUNGBLUD Abyss official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "group \"ILLIT\" is in the known list"
+     "why": "anime source \"Kaiju No. 8\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 23302186 views (CFjI21M9wZs); popular-evergreen (23M official views, on probation)",
+     "official": {
+      "id": "CFjI21M9wZs",
+      "title": "アニメ『怪獣８号』ノンクレジットOP｜YUNGBLUD「Abyss」｜毎週土曜23時～放送・配信",
+      "channel": "TOHO animation",
+      "views": 23302186,
+      "duration": 90,
+      "uploadDate": "20240420",
+      "height": 2160,
+      "description": "アニメ『怪獣８号』ノンクレジットオープニング映像\nOPテーマ：YUNGBLUD「Abyss」\n\n毎週土曜23:00より放送･配信中！\n\n【放送･配信情報】\n4月13日より毎週土曜23:00～\nテレ東系列ほかにて放送／Xにて全世界リアルタイム配信中\n各種動画配信サービスにて23:30より順次配信開始\n\n▼OPテーマ：YUNGBLUD「Abyss」配信中\nhttps://umj.lnk.to/YB_AbyssSR\n\n【スタッフ】\n原作：松本直也（集英社「少年ジャンプ＋」連載）\n監督：宮繁之　神谷友美\nシリーズ構成・脚本：大河内一楼\nキャラクターデザイン・総作画監督：西尾鉄也\n怪獣デザイン：前田真宏\n美術監督： 木村真二\n色彩設計：広瀬いづみ\n3D監督：松本勝\n撮影監督：荒井栄児\n編集：肥田文\n音響監督：郷文裕貴\n音楽：坂東祐大\n怪獣デザイン＆ワークス：スタジオカラー\nアニメーション制作：Pro",
+      "tags": [
+       "東宝",
+       "TOHO",
+       "anime",
+       "公式",
+       "オフィシャル",
+       "アニメ",
+       "Entertainment",
+       "配給",
+       "宣伝",
+       "キャラクター",
+       "声優",
+       "怪獣8号",
+       "TOHO animation",
+       "怪獣",
+       "８号"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": false,
+     "why": "sample check: 0/3 clean previews (CFjI21M9wZs: borders (0.21); VRFFN7DV55w: burned-in text (0.00 top / 0.12 bottom); Htl2qw-puHs: burned-in text (0.00 top / 0.12 bottom))",
+     "probes": [
+      {
+       "sharp": 940.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.211,
+       "reasons": [
+        "borders (0.21)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 322.3,
+       "text_top": 0,
+       "text_bottom": 0.12,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.00 top / 0.12 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 649.7,
+       "text_top": 0,
+       "text_bottom": 0.12,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.00 top / 0.12 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "rejected",
+   "why": "sample check: 0/3 clean previews (CFjI21M9wZs: borders (0.21); VRFFN7DV55w: burned-in text (0.00 top / 0.12 bottom); Htl2qw-puHs: burned-in text (0.00 top / 0.12 bottom))"
+  },
+  {
+   "name": "chainsaw blood",
+   "artist": "Vaundy",
+   "theme": "anime",
+   "source": "Chainsaw Man",
+   "query": "Vaundy CHAINSAW BLOOD official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"Chainsaw Man\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 20573131 views (FL1QjjkZVm4); popular-evergreen (21M official views, on probation)",
+     "official": {
+      "id": "FL1QjjkZVm4",
+      "title": "CHAINSAW BLOOD / Vaundy：MUSIC VIDEO",
+      "channel": "Vaundy",
+      "views": 20573131,
+      "duration": 227,
+      "uploadDate": "20221018",
+      "height": 2160,
+      "description": "助けてチェンソーマン\n\nMade in Vaundy_ART Work Studio\n\n「CHAINSAW BLOOD」\n2022.10.12 Digital Release\nhttps://lnk.to/CHAINSAW_BLOOD\n\nTVアニメ「チェンソーマン」第1話 エンディング・テーマ\nhttps://chainsawman.dog/\n2022年10月11日(火)24:00より テレビ東京他にて放送開始\n2022年10月11日(火)25:00よりPrime Videoにて最速配信\n2022年10月12日(水)25:00より各プラットフォームにて見逃し配信\n漫画第二部「少年ジャンプ＋」にて連載中！\n\n- - - - - \n〈TAKCOM / 土屋貴史 監督コメント〉\n悪魔のようなギターリフと契約してしまったのです。\n血湧き肉躍る、しかないでしょう。\nVaundy最高です。\nこの生活続",
+      "tags": [
+       "Vaundy",
+       "バウンディ",
+       "バウンディー",
+       "HERO",
+       "ヒーロー",
+       "裸の勇者",
+       "はだかのゆうしゃ",
+       "二人話",
+       "ふたりばなし",
+       "王様ランキング",
+       "踊り子",
+       "勇者",
+       "裸",
+       "怪獣の花唄",
+       "東京フラッシュ"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 1,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 25.0 (21 at 1080p+), audio FL1QjjkZVm4 (227s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 150.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1118.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 677.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "haru",
+   "artist": "Yorushika",
+   "theme": "anime",
+   "source": "Sousou no Frieren",
+   "query": "Yorushika Haru official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"Sousou no Frieren\" known, not NSFW"
     },
     "duplicate": {
      "pass": true,
@@ -522,15 +622,15 @@
    "why": "no matching official upload found on YouTube"
   },
   {
-   "name": "drip",
-   "artist": "BABYMONSTER",
+   "name": "crazy",
+   "artist": "LE SSERAFIM",
    "theme": "kpop",
-   "source": "BABYMONSTER",
-   "query": "BABYMONSTER DRIP official audio",
+   "source": "LE SSERAFIM",
+   "query": "LE SSERAFIM CRAZY official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "group \"BABYMONSTER\" not in the known list (decided by the popularity gate)"
+     "pass": true,
+     "why": "group \"LE SSERAFIM\" is in the known list"
     },
     "duplicate": {
      "pass": true,
@@ -538,12 +638,31 @@
     },
     "popular": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
+     "official": {
+      "id": "exU4ueUgAc8",
+      "title": "LE SSERAFIM (르세라핌) 'CRAZY' Official Visualizer",
+      "channel": "HYBE LABELS",
+      "views": 1165576,
+      "duration": 167,
+      "uploadDate": "20240831",
+      "height": 2160,
+      "description": "LE SSERAFIM (르세라핌) 'CRAZY' Official Visualizer \n\nCreative Director : Nu Kim  \n\nVisual Creative Coordinating : Yujoo Kim  \nStyle Directing : Yoon Cho, Soo Lee, Jay Kim\nBrand Experience Design : Yoovin Baek, Hyemin Yoo, Myungryol Shin  \nContent Production : Yurok Jang  \n\nA&R : Kyuyoung Kim, Yujeong Kim, Soyoon Park, Jennie Lee  \n\nFilm Director : Taejong Song\n1st AD : Seoyun Jang\n2nd AD : Yoonseo Na\n",
+      "tags": [
+       "HYBE",
+       "HYBE LABELS",
+       "하이브",
+       "하이브레이블즈"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
    "name": "armageddon",
@@ -570,28 +689,23 @@
    "why": "no matching official upload found on YouTube"
   },
   {
-   "name": "bite me",
-   "artist": "ENHYPEN",
+   "name": "deja vu",
+   "artist": "TOMORROW X TOGETHER",
    "theme": "kpop",
-   "source": "ENHYPEN",
-   "query": "ENHYPEN Bite Me official audio",
+   "source": "TOMORROW X TOGETHER",
+   "query": "TOMORROW X TOGETHER Deja Vu official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"ENHYPEN\" not in the known list (decided by the popularity gate)"
+     "why": "group \"TOMORROW X TOGETHER\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "rejected in an earlier month"
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "rejected in an earlier month"
   },
   {
    "name": "midas touch",
@@ -622,92 +736,11 @@
    "artist": "TWS",
    "theme": "kpop",
    "source": "TWS",
-   "query": "TWS Plot Twist official audio",
+   "query": "TWS plot twist official audio",
    "gates": {
     "niche": {
      "pass": null,
      "why": "group \"TWS\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "deja vu",
-   "artist": "TOMORROW X TOGETHER",
-   "theme": "kpop",
-   "source": "TOMORROW X TOGETHER",
-   "query": "TOMORROW X TOGETHER Deja Vu official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"TOMORROW X TOGETHER\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "kaijuu no hanauta",
-   "artist": "Vaundy",
-   "theme": "jpop",
-   "source": "Vaundy",
-   "query": "Vaundy Kaijuu no Hana Uta official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "group \"Vaundy\" is in the known list"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "show",
-   "artist": "Ado",
-   "theme": "anime",
-   "source": "ONE PIECE FILM RED",
-   "query": "Ado Show official audio",
-   "gates": {
-    "niche": {
-     "pass": true,
-     "why": "anime source \"ONE PIECE FILM RED\" found live on AniList, not NSFW"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "ao to natsu",
-   "artist": "Mrs. GREEN APPLE",
-   "theme": "jpop",
-   "source": "Mrs. GREEN APPLE",
-   "query": "Mrs. GREEN APPLE Ao to Natsu official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Mrs. GREEN APPLE\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -717,21 +750,27 @@
      "pass": false,
      "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
      "official": {
-      "id": "OEuw4MPNb2g",
-      "title": "Ao To Natsu (Remastered 2020)",
-      "channel": "Mrs. GREEN APPLE",
-      "views": 8564716,
-      "duration": 274,
-      "uploadDate": "20200706",
-      "height": 360,
-      "description": "Provided to YouTube by Universal Music Group\n\nAo To Natsu (Remastered 2020) · Mrs. GREEN APPLE\n\n5\n\n℗ 2020 UNIVERSAL MUSIC LLC\n\nReleased on: 2020-07-07\n\nComposer Lyricist, Vocalist, Recordingarranger, Background Vocalist, Programmer: Motoki Ohmori\nProducer: Mrs. GREEN APPLE\nProgrammer: Ryoka Fujisawa\n\nAuto-generated by YouTube.",
+      "id": "mE7IfXnSjVM",
+      "title": "plot twist - TWS [Music Bank] | KBS WORLD TV 240202",
+      "channel": "KBS WORLD TV",
+      "views": 2037187,
+      "duration": 177,
+      "uploadDate": "20240202",
+      "height": 1080,
+      "description": "#MusicBank #뮤직뱅크 #ミュージックバンク #音乐银行\n#HUHYUNJIN #허윤진 #LESSERAFIM #르세라핌 #LeeChaeMin #이채민\n\nFri 17:10 | Re-run : Sun 04:35, 12:40 (Seoul, UTC+9)\nKBS WORLD TV YouTube LIVE : 5:10PM (Seoul, UTC+9)\n\n#plottwist #TWS\n\n➕ Music Bank\n2023 : https://youtube.com/playlist?list=PLMf7VY8La5RHGe90QRg_fH__B1NrbOcOb\n2022 : https://youtube.com/playlist?list=PLMf7VY8La5REOohUTNebLTtU4Je5V4vft\n2021 : https://youtube.com/p",
       "tags": [
-       "Mrs. GREEN APPLE",
-       "ミセスグリーンアップル",
-       "5",
-       "Ao To Natsu",
-       "アオトナツ",
-       "青と夏"
+       "kbs",
+       "kbsworld",
+       "kbs world",
+       "KBSWorld",
+       "KBS",
+       "kbsworldTV",
+       "kbs월드",
+       "월드TV",
+       "kbs 월드",
+       "world tv",
+       "KBS WORLD TV",
+       "yt:cc=on"
       ],
       "verified": true
      },
@@ -744,111 +783,508 @@
    "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
-   "name": "gunjou",
-   "artist": "YOASOBI",
-   "theme": "jpop",
-   "source": "YOASOBI",
-   "query": "YOASOBI Gunjou official audio",
+   "name": "sheesh",
+   "artist": "BABYMONSTER",
+   "theme": "kpop",
+   "source": "BABYMONSTER",
+   "query": "BABYMONSTER SHEESH official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "group \"YOASOBI\" is in the known list"
+     "why": "group \"BABYMONSTER\" not in the known list (decided by the popularity gate); official channel + 422957991 views accepted"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
+     "pass": true,
+     "why": "official 422957991 views (2wA_b6YHjqQ); 1 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "2wA_b6YHjqQ",
+      "title": "BABYMONSTER - ‘SHEESH’ M/V",
+      "channel": "BABYMONSTER",
+      "views": 422957991,
+      "duration": 185,
+      "uploadDate": "20240331",
+      "height": 2160,
+      "description": "BABYMONSTER — SHEESH\n\nDa la lun dun\nDa la lun dun\nDa la lun dun\n\nBABY I’mma MONSTER\n\nMano a mano\nI see you in slow mo’\nYou know you’re in trouble\nOoh hoo hoo hoo\n\n발버둥 쳐봐\n어차피 손바닥\n위에서 못 나가\nYou know that\n\n눈을 뜬 순간\n피어나\nAll eyes on me\n불을 질러라\n\nDo or die\nOn my life\nYeah you ain’t seen nothing yet\n\nGot them all going\nSheesh Sheesh\nSheesh Sheesh Sheesh yeah\n\nB.A.B.Y.M.O.N\nSheesh Sheesh\nSheesh Sheesh Sheesh ",
+      "tags": [
+       "BABYMONSTER",
+       "베이비몬스터",
+       "베몬",
+       "BABYMON",
+       "BAEMON",
+       "하람",
+       "아현",
+       "루카",
+       "치키타",
+       "파리타",
+       "로라",
+       "아사",
+       "HARAM",
+       "AHYEON",
+       "RUKA"
+      ],
+      "verified": true
+     },
+     "trend": 1,
+     "trend180": 2,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 47.8 (39 at 1080p+), audio 2wA_b6YHjqQ (185s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 359.9,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 966.5,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 957.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "spot!",
+   "artist": "ZICO",
+   "theme": "kpop",
+   "source": "ZICO",
+   "query": "ZICO SPOT! feat JENNIE official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"ZICO\" not in the known list (decided by the popularity gate); official channel + 160907004 views accepted"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 160907004 views (xfqBQ2XhBCg); evergreen hit (161M official views, popularity alone)",
+     "official": {
+      "id": "xfqBQ2XhBCg",
+      "title": "ZICO (지코) ‘SPOT! (feat. JENNIE)’ Official MV",
+      "channel": "HYBE LABELS",
+      "views": 160907004,
+      "duration": 192,
+      "uploadDate": "20240426",
+      "height": 2160,
+      "description": "ZICO 11th Digital Single ‘SPOT! (feat. JENNIE)’\n\n🎧http://zico.lnk.to/SPOT \n\n#ZICO #지코 #JENNIE #제니 #SPOT #스팟\n      \nCredits:\n\nDIRECTOR | YONGSEOK CHOI (LUMPENS) \nCO-DIRECTOR | RAN RO (LUMPENS)\n\nPRODUCTION HOUSE | NEWYEAR     \nEXECUTIVE PRODUCER | YEONJIN KIM\nPRODUCER | HYUNSIK BANG\nPRODUCTION ASSISTANT | WONSUNG YOON, DONGHUN LEE, DOHOON LEE, WONHWA YOON, BOM LEE, TAEIN JUNG, INSEOP SIM, SUNGYONG ",
+      "tags": [
+       "HYBE",
+       "HYBE LABELS",
+       "하이브",
+       "하이브레이블즈"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "sample check: 1/3 clean previews (bdjhwTGmVRg: borders (0.23); TL-STjtiAYQ: burned-in text (0.12 top / 0.11 bottom); da2SVbzOI7Q: clean)",
+     "probes": [
+      {
+       "sharp": 1854.1,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.226,
+       "reasons": [
+        "borders (0.23)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 2611.7,
+       "text_top": 0.119,
+       "text_bottom": 0.109,
+       "watermark": false,
+       "border": 0.016,
+       "reasons": [
+        "burned-in text (0.12 top / 0.11 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 1247.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "sample check: 1/3 clean previews (bdjhwTGmVRg: borders (0.23); TL-STjtiAYQ: burned-in text (0.12 top / 0.11 bottom); da2SVbzOI7Q: clean)"
   },
   {
-   "name": "subtitle",
-   "artist": "Official HIGE DANdism",
+   "name": "mesmerizer",
+   "artist": "32ki",
    "theme": "jpop",
-   "source": "Official HIGE DANdism",
-   "query": "Official HIGE DANdism Subtitle official audio",
+   "source": "32ki",
+   "query": "32ki Mesmerizer official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Official HIGE DANdism\" not in the known list (decided by the popularity gate)"
+     "why": "group \"32ki\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "rabbit hole",
+   "artist": "DECO*27",
+   "theme": "jpop",
+   "source": "DECO*27",
+   "query": "DECO27 Rabbit Hole official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"DECO*27\" not in the known list (decided by the popularity gate); official channel + 126981527 views accepted"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
+     "pass": true,
+     "why": "official 126981527 views (eSW2LVbPThw); evergreen hit (127M official views, popularity alone)",
+     "official": {
+      "id": "eSW2LVbPThw",
+      "title": "DECO*27 - ラビットホール feat. 初音ミク",
+      "channel": "DECO*27",
+      "views": 126981527,
+      "duration": 162,
+      "uploadDate": "20230519",
+      "height": 2160,
+      "description": "「死ぬまでピュアピュアやってんのん？」\nListen & Download: https://karent.jp/album/3592\n\n2024年11月27日発売\n9th Album 「TRANSFORM」 特設サイト\nhttps://nbcuni-music.com/deco27\n\nLyrics & Music: DECO*27\nArrangement: tepe\nBass: 堀江晶太(kemu)\n\nMovie by OTOIRO\nDirector: yuka fujii\nIllustrator: おむたつ\nDesigner: yuka fujii, lowpolydog\nCG Artist: あわしま\nComposite / Motion Graphics: Yuma Saito\nAssistant: Naoki Hasegawa\n\nProject Manager: Iori Maj",
+      "tags": [],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "sample check: 1/3 clean previews (Akx45HCYgf0: clean; b6VhAvtekeU: borders (0.33); LE1XskraNfI: burned-in text (0.39 top / 0.45 bottom))",
+     "probes": [
+      {
+       "sharp": 1462.1,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1037,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.331,
+       "reasons": [
+        "borders (0.33)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 4530.5,
+       "text_top": 0.391,
+       "text_bottom": 0.45,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.39 top / 0.45 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "sample check: 1/3 clean previews (Akx45HCYgf0: clean; b6VhAvtekeU: borders (0.33); LE1XskraNfI: burned-in text (0.39 top / 0.45 bottom))"
   },
   {
-   "name": "gira gira",
+   "name": "show",
    "artist": "Ado",
    "theme": "jpop",
    "source": "Ado",
-   "query": "Ado Gira Gira official audio",
+   "query": "Ado Show official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "group \"Ado\" not in the known list (decided by the popularity gate)"
+     "pass": true,
+     "why": "group \"Ado\" not in the known list (decided by the popularity gate); official channel + 280244262 views accepted"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "pass": true,
+     "why": "official 280244262 views (pgXpM4l_MwI); evergreen hit (280M official views, popularity alone)",
+     "official": {
+      "id": "pgXpM4l_MwI",
+      "title": "【Ado】 唱",
+      "channel": "Ado",
+      "views": 280244262,
+      "duration": 189,
+      "uploadDate": "20230906",
+      "height": 1080,
+      "description": "✨🧟‍♀️💃🧟‍♂️‼️食らっちゃいな‼️🧟‍♀️💃🧟‍♂️✨\n\n2023.9.6 Release「唱」\nStreaming & Download\nhttps://ado.lnk.to/showID\n\ninst\nhttps://piapro.jp/t/lG3i\n\n歌い方呪文\nhttps://89.gigafile.nu/1228-d8ab355f03d56a126c1c1498136fe00ee\n\nユニバーサル･スタジオ･ジャパン「ゾンビ・デ・ダンス」新テーマソング\n\nVocal：Ado\nhttps://twitter.com/ado1024imokenp\n\nMusic & Arrange ：Giga様 \nhttps://twitter.com/GigaMozuku\n\nMusic & Arrange：TeddyLoid様\nhttps://twitter.com/TeddyLoi",
+      "tags": [],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 29.5 (23 at 1080p+), audio pgXpM4l_MwI (189s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 802.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.009,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 870.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.051,
+       "reasons": [
+        "borders (0.05)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 5438.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.006,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
     }
    },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
-   "name": "dance hall",
-   "artist": "Mrs. GREEN APPLE",
+   "name": "overdose",
+   "artist": "natori",
    "theme": "jpop",
-   "source": "Mrs. GREEN APPLE",
-   "query": "Mrs. GREEN APPLE Dance Hall official audio",
+   "source": "natori",
+   "query": "natori Overdose official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "group \"Mrs. GREEN APPLE\" not in the known list (decided by the popularity gate)"
+     "pass": true,
+     "why": "group \"natori\" not in the known list (decided by the popularity gate); official channel + 276854842 views accepted"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
+     "pass": true,
+     "why": "official 276854842 views (H08YWE4CIFQ); 2 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "H08YWE4CIFQ",
+      "title": "なとり - Overdose",
+      "channel": "なとり / natori",
+      "views": 276854842,
+      "duration": 193,
+      "uploadDate": "20220907",
+      "height": 2160,
+      "description": "2022.9.7 「Overdose」 Release\nStreaming / DL：https://orcd.co/natori_overdose\n\n作詞・作曲・編曲：なとり\nミックス：さぶろう\nイラスト：ハチナナ\n\nInst：https://piapro.jp/t/PcM9\nStem：https://www.dropbox.com/sh/7rhl4qdpv7n33os/AAB7Hmyp2Ms6JEJtFF70xPBWa?dl=0\n\n＜Live Information＞\nなとり ONE-MAN LIVE TOUR「行進」\nなとり史上過去最大規模でのホールツアーの開催が決定！\n\n2026年6月12日(金) 宮城 │ 東京エレクトロンホール宮城\n2026年6月13日(土) 宮城 │ 東京エレクトロンホール宮城\n2026年6月27日(土) 愛知 │ 愛知県芸術劇場　大ホール\n2026年6月28",
+      "tags": [],
+      "verified": true
+     },
+     "trend": 2,
+     "trend180": 2,
+     "fresh": false
+    },
+    "producible": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "sample check: 1/3 clean previews (LZrCYX88DwA: clean; gNg2Qw5R-Q4: borders (0.18); IuSAC8ZDf1A: burned-in text (0.00 top / 0.15 bottom))",
+     "probes": [
+      {
+       "sharp": 103.5,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 803.2,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.182,
+       "reasons": [
+        "borders (0.18)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 1168.7,
+       "text_top": 0,
+       "text_bottom": 0.148,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.00 top / 0.15 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "sample check: 1/3 clean previews (LZrCYX88DwA: clean; gNg2Qw5R-Q4: borders (0.18); IuSAC8ZDf1A: burned-in text (0.00 top / 0.15 bottom))"
   },
   {
-   "name": "lemon",
-   "artist": "Kenshi Yonezu",
+   "name": "king",
+   "artist": "Kanaria",
    "theme": "jpop",
-   "source": "Kenshi Yonezu",
-   "query": "Kenshi Yonezu Lemon official audio",
+   "source": "Kanaria",
+   "query": "Kanaria KING official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"Kanaria\" not in the known list (decided by the popularity gate); official channel + 107270648 views accepted"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 107270648 views (cm-l2h6GB8Q); evergreen hit (107M official views, popularity alone)",
+     "official": {
+      "id": "cm-l2h6GB8Q",
+      "title": "【GUMI】KING【Kanaria】",
+      "channel": "Kanaria",
+      "views": 107270648,
+      "duration": 135,
+      "uploadDate": "20200802",
+      "height": 720,
+      "description": "2nd Album 「Kanaria.code」\n\n◆9/21発売\n下記サイトで予約受付中です。\nタワーレコード：https://tower.jp/item/5503017/Kanaria-code\n楽天：https://books.rakuten.co.jp/rb/17234820/\nアニメイト：https://www.animate-onlineshop.jp/pn/pd/2135303/\nHMV：https://www.hmv.co.jp/artist_Kanaria_000000000852228/item_Kanaria-code_13155919\nAmazon：https://www.amazon.co.jp/dp/B0B8YDYPGZ/\n\n通販価格¥2,500+税\n\nKanariaです。\n\nMusic / Kanaria\n・twitter　https://twitter.co",
+      "tags": [
+       "VOLACOID",
+       "ボーカロイド",
+       "ボカロ",
+       "GUMI",
+       "Kanaria",
+       "のう",
+       "KING"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": false,
+     "why": "source quality: weighted 6.4 < 12 (5 at 1080p+, 1 at 720p, of 59 found)"
+    }
+   },
+   "verdict": "rejected",
+   "why": "source quality: weighted 6.4 < 12 (5 at 1080p+, 1 at 720p, of 59 found)"
+  },
+  {
+   "name": "god-ish",
+   "artist": "PinocchioP",
+   "theme": "jpop",
+   "source": "PinocchioP",
+   "query": "PinocchioP God-ish official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Kenshi Yonezu\" not in the known list (decided by the popularity gate)"
+     "why": "group \"PinocchioP\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "phony",
+   "artist": "tsumiki",
+   "theme": "jpop",
+   "source": "tsumiki",
+   "query": "tsumiki Phony official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"tsumiki\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -856,23 +1292,177 @@
     },
     "popular": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "official upload has 416 views < 1000000",
+     "official": {
+      "id": "rUehnfDzhIE",
+      "title": "【Hololive】フォニイ(phony) / Tsumiki (Hoshimachi Suisei, Anya Melfissa, Omaru Polka & Murasaki Shion)",
+      "channel": "Tundra Ch.",
+      "views": 416,
+      "duration": 188,
+      "uploadDate": "20211208",
+      "height": 1080,
+      "description": "フォニイ(phony) Mashup Cover by Hoshimachi Suisei, Anya Melfissa, Omaru Polka and Murasaki Shion ~~\n\nOriginal music: https://youtu.be/9QLT1Aw_45s\n----------------------------------------------------------------------------\nSource:\nHoshimachi Suisei\nhttps://youtu.be/N029UUlH1Dc\n\nAnya Melfissa\nhttps://youtu.be/mqwRg9ZgANI\n\nOmaru Polka\nhttps://youtu.be/zK3Lev1A2NY\n\nMurasaki Shion\nhttps://youtu.be/7TCcgdM",
+      "tags": [
+       "phony hololive",
+       "phony hololive mashup"
+      ],
+      "verified": false
+     }
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "official upload has 416 views < 1000000"
   },
   {
-   "name": "mo he wu ting",
-   "artist": "Liu Shuang",
+   "name": "tokyo shandy rendezvous",
+   "artist": "MAISONdes",
+   "theme": "jpop",
+   "source": "MAISONdes",
+   "query": "MAISONdes Tokyo Shandy Rendezvous official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"MAISONdes\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": false,
+     "why": "rejected in an earlier month"
+    }
+   },
+   "verdict": "rejected",
+   "why": "rejected in an earlier month"
+  },
+  {
+   "name": "cage",
+   "artist": "Zhang Bichen",
    "theme": "chinese",
-   "source": "Liu Shuang (official channel)",
-   "query": "Liu Shuang Mo He Wu Ting official audio",
+   "source": "Lost in the Stars",
+   "query": "Zhang Bichen Cage official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Liu Shuang (official channel)\" not in the known list (decided by the popularity gate)"
+     "why": "drama source \"Lost in the Stars\" (decided by the popularity and clip-quality gates)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "official upload has 867 views < 1000000",
+     "official": {
+      "id": "Ew305r6Kn5w",
+      "title": "Zhang BiChen 张碧晨｜消失的她片尾曲 Lost in the Stars Theme Song「笼｜Cage」",
+      "channel": "JY. Music",
+      "views": 867,
+      "duration": 272,
+      "uploadDate": "20230628",
+      "height": 1080,
+      "description": "OST x Lost in the Stars\n\n「人人都想要真诚与偏爱，可这世间到处都是 虚伪与新鲜感」\n\nALL RIGHTS RESERVED TO THE OWNER OF THIS SONG\n--------------------\nPlease subscribe if you like this song track, thank you!\nFeel free to comment below for the songs you would like to hear~",
+      "tags": [],
+      "verified": false
+     }
+    }
+   },
+   "verdict": "rejected",
+   "why": "official upload has 867 views < 1000000"
+  },
+  {
+   "name": "flowers bloom in farewell",
+   "artist": "Jing Long",
+   "theme": "chinese",
+   "source": "Jing Long",
+   "query": "Jing Long Flowers Bloom in Farewell official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"Jing Long\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "no matching official upload found on YouTube",
+     "official": null
+    }
+   },
+   "verdict": "rejected",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "unrestrained",
+   "artist": "Xiao Zhan & Wang Yibo",
+   "theme": "chinese",
+   "source": "The Untamed",
+   "query": "Xiao Zhan Wang Yibo Unrestrained official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "drama source \"The Untamed\" (decided by the popularity and clip-quality gates)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
+     "official": {
+      "id": "w8tXZXwxv9A",
+      "title": "【ENG SUB】王一博YIBO、肖战XiaoZhan天天向上合唱陈情令主题曲《无羁》《Wu Ji/The Untamed》，太好听了！",
+      "channel": "湖南国际频道 Hunan TV International  Official Channel",
+      "views": 4350929,
+      "duration": 148,
+      "uploadDate": "20220204",
+      "height": 1080,
+      "description": "天天向上11周年音乐盛典，迎来肖战王一博两人现场合唱《无羁》，\n“一战组合”合作舞台太养眼，不管是唱歌还是跳舞，\n两人都配合默契！\n @王一博Wangyibo_bar @Vương Nhất Bác 王一博 1st Vietnamese Fanpage   @王一博   @Wang Yibo_王一博   @王一博 WYH 85   @Vương Nhất Bác 王一博 - UNIQ's Wang Yibo   @WangYibo 王一博   @肖战-王一博!最美的就是你们 !   @Xiaozhan and wangyibo fandom  \n @Wang Yibo Uniq   @Wang Yibo Xiao Zhan   @XiaoZhan Forever   @Xiao Zhan肖战   @XiaoZhan TikTok   @Xiao Zhan's World   @yibo_ ",
+      "tags": [],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    }
+   },
+   "verdict": "rejected",
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
+  },
+  {
+   "name": "fated",
+   "artist": "Faye",
+   "theme": "chinese",
+   "source": "Love Between Fairy and Devil",
+   "query": "Faye Fated official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "drama source \"Love Between Fairy and Devil\" (decided by the popularity and clip-quality gates)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "no matching official upload found on YouTube",
+     "official": null
+    }
+   },
+   "verdict": "rejected",
+   "why": "no matching official upload found on YouTube"
+  },
+  {
+   "name": "to the clouds",
+   "artist": "XiAOXiA & Haiyang Bo",
+   "theme": "chinese",
+   "source": "XiAOXiA",
+   "query": "XiAOXiA Haiyang Bo To the Clouds official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"XiAOXiA\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -891,36 +1481,54 @@
    "name": "big fish",
    "artist": "Zhou Shen",
    "theme": "chinese",
-   "source": "Big Fish & Begonia (movie)",
+   "source": "Big Fish & Begonia",
    "query": "Zhou Shen Big Fish official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "drama source \"Big Fish & Begonia (movie)\" (decided by the popularity and clip-quality gates)"
+     "pass": true,
+     "why": "anime source \"Big Fish & Begonia\" found live on AniList, not NSFW"
     },
     "duplicate": {
      "pass": true,
      "why": "new"
     },
     "popular": {
+     "pass": true,
+     "why": "official 37997495 views (-aMdBA00Ijc); popular-evergreen (38M official views, on probation)",
+     "official": {
+      "id": "-aMdBA00Ijc",
+      "title": "【HD】周深 - 大魚 [歌詞字幕][動畫電影《大魚海棠》印象曲][完整高清音質] Big Fish & Begonia Theme Song (Zhou Shen - Big Fish)",
+      "channel": "BELLA PING MUSIC CHANNEL",
+      "views": 37997495,
+      "duration": 315,
+      "uploadDate": "20160520",
+      "height": 1080,
+      "description": "歡迎訂閱BELLA PING音樂頻道！\n好聽華語音樂，天天不漏放～\n① Bella Ping 01 頻道：https://goo.gl/U5p7yl\n② Bella Ping 02 頻道：https://goo.gl/TNkWB1\n喜歡的話也可以點贊分享喔～！\n－－－－－－－－－(｡･ω･｡)ﾉ－－－－－－－－－－－\n\n大魚 周深\n動畫電影《大魚海棠》印象曲\n作曲 : 錢雷\n作詞 : 尹約\n海浪無聲將夜幕深深淹沒\n漫過天空盡頭的角落\n大魚在夢境的縫隙裡游過\n凝望你沉睡的輪廓\n \n看海天一色 聽風起雨落\n執子手吹散蒼茫茫煙波\n大魚的翅膀 已經太遼闊\n我鬆開時間的繩索\n \n怕你飛遠去 怕你離我而去\n更怕你永遠停留在這裡\n每一滴淚水 都向你流淌去\n倒流進天空的海底\n \n海浪無聲將夜幕深深淹沒\n漫過天空盡頭的角落\n大魚在夢境的縫隙裡游過\n凝望你沉睡的輪廓\n \n看海天一色 聽風起雨落\n執子手吹散蒼茫",
+      "tags": [],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "source quality: weighted 9.3 < 12 (6 at 1080p+, 3 at 720p, of 41 found)"
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "source quality: weighted 9.3 < 12 (6 at 1080p+, 3 at 720p, of 41 found)"
   },
   {
-   "name": "wuji",
-   "artist": "Xiao Zhan & Wang Yibo",
+   "name": "as one wishes",
+   "artist": "Faye Wong",
    "theme": "chinese",
-   "source": "The Untamed (drama)",
-   "query": "Xiao Zhan Wang Yibo Wuji official audio",
+   "source": "Faye Wong",
+   "query": "Faye Wong As One Wishes official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "drama source \"The Untamed (drama)\" (decided by the popularity and clip-quality gates)"
+     "why": "group \"Faye Wong\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -928,23 +1536,41 @@
     },
     "popular": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views",
+     "official": {
+      "id": "ZoJCN0pV7Qs",
+      "title": "如愿",
+      "channel": "Faye Wong Official Channel 王菲 官方頻道",
+      "views": 11087270,
+      "duration": 265,
+      "uploadDate": "20220110",
+      "height": 1080,
+      "description": "電影「我和我的父輩」主題曲\n演唱 : 王菲\nLabel：KC Digital Ltd.\n\n作詞: 唐恬\nOP：北京梦织音传媒有限公司\n\n作曲 : 錢雷 \nOP：索尼音乐版权代理（北京）有限公司\n\n\n#王菲\n#Faye Wong\n#我和我的父輩",
+      "tags": [
+       "王菲",
+       "我和我的父輩",
+       "FayeWong"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "trend: 0 acapella / edit uploads in 90 days (< 1), not a new release, under 20M views"
   },
   {
-   "name": "mang zhong",
-   "artist": "Zhao Fangjing",
+   "name": "love like fire",
+   "artist": "Na Yina",
    "theme": "chinese",
-   "source": "Zhao Fangjing (official channel)",
-   "query": "Zhao Fangjing Mang Zhong official audio",
+   "source": "Na Yina",
+   "query": "Na Yina Love Like Fire official audio",
    "gates": {
     "niche": {
      "pass": null,
-     "why": "group \"Zhao Fangjing (official channel)\" not in the known list (decided by the popularity gate)"
+     "why": "group \"Na Yina\" not in the known list (decided by the popularity gate)"
     },
     "duplicate": {
      "pass": true,
@@ -952,108 +1578,23 @@
     },
     "popular": {
      "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
+     "why": "official upload has 12239 views < 1000000",
+     "official": {
+      "id": "l23m7BU1GhI",
+      "title": "Heart beating is love like fire! -Na Yina.-Love is like fire（爱如火）",
+      "channel": "jiahe ren",
+      "views": 12239,
+      "duration": 121,
+      "uploadDate": "20230222",
+      "height": 480,
+      "description": "",
+      "tags": [],
+      "verified": false
+     }
     }
    },
    "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "a love like before",
-   "artist": "Angela Chang",
-   "theme": "chinese",
-   "source": "One and Only (drama)",
-   "query": "Angela Chang A Love Like Before official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "drama source \"One and Only (drama)\" (decided by the popularity and clip-quality gates)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "light",
-   "artist": "Zhou Shen",
-   "theme": "chinese",
-   "source": "Zhou Shen (official channel)",
-   "query": "Zhou Shen Light official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Zhou Shen (official channel)\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "the sound of snow",
-   "artist": "Lu Hu",
-   "theme": "chinese",
-   "source": "Story of Yanxi Palace (drama)",
-   "query": "Lu Hu The Sound of Snow official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "drama source \"Story of Yanxi Palace (drama)\" (decided by the popularity and clip-quality gates)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "unparalleled in the world",
-   "artist": "Xu Song",
-   "theme": "chinese",
-   "source": "Xu Song (official channel)",
-   "query": "Xu Song Unparalleled in the World official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Xu Song (official channel)\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
+   "why": "official upload has 12239 views < 1000000"
   },
   {
    "name": "do it like this",
@@ -1063,16 +1604,75 @@
    "query": "ALLDAY PROJECT do it like this official audio",
    "gates": {
     "niche": {
-     "pass": null,
-     "why": "group \"ALLDAY PROJECT\" not in the known list (decided by the popularity gate)"
+     "pass": true,
+     "why": "group \"ALLDAY PROJECT\" not in the known list (decided by the popularity gate); official channel + 7781495 views accepted"
     },
     "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 7781495 views (KQM9hYlMXsI); 3 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "KQM9hYlMXsI",
+      "title": "ALLDAY PROJECT - ‘DO IT LIKE THIS’ M/V",
+      "channel": "THEBLACKLABEL",
+      "views": 7781495,
+      "duration": 136,
+      "uploadDate": "20260924",
+      "height": 2160,
+      "description": "🔗  https://orcd.co/ALLDAYPROJECTCRASH\n\nALLDAY PROJECT - ‘DO IT LIKE THIS’ M/V\n\nDance watch me dance\nWatch me do my dance\nWe ain’t got no plans\nWe just runnin’ up the bands\nSwag over 10\nHundred million\nHundred million fans\nTryna slide in my DMs, I’m like\n\nHandsome the boy is handsome\nI done took the game for ransom\nGot that and then some\nYeah they got a lotta questions\nWe got the answers\nNow you t",
+      "tags": [],
+      "verified": false
+     },
+     "trend": 3,
+     "trend180": 3,
+     "fresh": true
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 19.3 (16 at 1080p+), audio KQM9hYlMXsI (136s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 1768.6,
+       "text_top": 0.119,
+       "text_bottom": 0.226,
+       "watermark": true,
+       "border": 0.062,
+       "reasons": [
+        "burned-in text (0.12 top / 0.23 bottom)",
+        "static watermark / logo",
+        "borders (0.06)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 676.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1266.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
     }
    },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
    "name": "moonride",
@@ -1083,7 +1683,7 @@
    "gates": {
     "niche": {
      "pass": true,
-     "why": "group \"Hearts2Hearts\" not in the known list (decided by the popularity gate); official channel + 4438564 views accepted"
+     "why": "group \"Hearts2Hearts\" not in the known list (decided by the popularity gate); official channel + 4440496 views accepted"
     },
     "duplicate": {
      "pass": true,
@@ -1091,12 +1691,12 @@
     },
     "popular": {
      "pass": true,
-     "why": "official 4438564 views (gNUMxMuxH20); 5 edit / acapella uploads in 90 days",
+     "why": "official 4440496 views (gNUMxMuxH20); 5 edit / acapella uploads in 90 days",
      "official": {
       "id": "gNUMxMuxH20",
       "title": "Hearts2Hearts 하츠투하츠 'Moonride' MV",
       "channel": "Hearts2Hearts",
-      "views": 4438564,
+      "views": 4440496,
       "duration": 193,
       "uploadDate": "20260909",
       "height": 2160,
@@ -1125,127 +1725,57 @@
      "fresh": true
     },
     "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (eD3Vj-g4QCY: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; kNtVrCoQ74c: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; c330ov8bsxI: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)",
+     "pass": true,
+     "why": "weighted sources 37.8 (31 at 1080p+), audio gNUMxMuxH20 (193s), 2/3 sample previews clean",
      "probes": [
       {
-       "ok": false,
-       "clean": false,
+       "sharp": 975.2,
+       "text_top": 0.141,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
        "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+        "burned-in text (0.14 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 2656.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 2025.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       }
      ]
     }
    },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (eD3Vj-g4QCY: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; kNtVrCoQ74c: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; c330ov8bsxI: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
-   "name": "&team",
-   "artist": "Good Boy",
+   "name": "made my night",
+   "artist": "LE SSERAFIM",
    "theme": "kpop",
-   "source": "Good Boy",
-   "query": "Good Boy &team official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Good Boy\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "jump live",
-   "artist": "Mayuka, Nina & Rima",
-   "theme": "jpop",
-   "source": "Mayuka, Nina & Rima",
-   "query": "Mayuka, Nina & Rima jump live official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"Mayuka, Nina & Rima\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": true,
-     "why": "new"
-    },
-    "popular": {
-     "pass": false,
-     "why": "no matching official upload found on YouTube",
-     "official": null
-    }
-   },
-   "verdict": "rejected",
-   "why": "no matching official upload found on YouTube"
-  },
-  {
-   "name": "| chinese c-pop r&b",
-   "artist": "无价",
-   "theme": "chinese",
-   "source": "无价",
-   "query": "无价 | chinese c-pop r&b official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"无价\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "“me in phase”",
-   "artist": "RUOXI",
-   "theme": "chinese",
-   "source": "RUOXI",
-   "query": "RUOXI “me in phase” official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"RUOXI\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
-  },
-  {
-   "name": "master of humanity",
-   "artist": "Lord Verity",
-   "theme": "chinese",
-   "source": "Lord Verity",
-   "query": "Lord Verity master of humanity official audio",
+   "source": "LE SSERAFIM",
+   "query": "LE SSERAFIM made my night official audio",
    "gates": {
     "niche": {
      "pass": true,
-     "why": "group \"Lord Verity\" not in the known list (decided by the popularity gate); official channel + 21244717 views accepted"
+     "why": "group \"LE SSERAFIM\" is in the known list"
     },
     "duplicate": {
      "pass": true,
@@ -1253,86 +1783,99 @@
     },
     "popular": {
      "pass": true,
-     "why": "official 21244717 views (lhCPiauHI-g); 2 edit / acapella uploads in 90 days",
+     "why": "official 16038130 views (Y1Lah0BM0KQ); 14 edit / acapella uploads in 90 days",
      "official": {
-      "id": "lhCPiauHI-g",
-      "title": "Lord Verity - Master of Humanity (song)",
-      "channel": "Horror Skunx",
-      "views": 21244717,
-      "duration": 141,
-      "uploadDate": "20260911",
-      "height": 2160,
-      "description": "\"Lord Verity - Master of Humanity\" is NOW on ALL Streaming Platforms!\n\nCredits to @ThatMob for creating Verity!\n\nThanks to @BurgerEXP for inspiring us and @churgneygurgney9895 & @marleyjauz for creating the inspiration album.\n\nLyrics:\n[Chorus]\nThey call me Lord Verity\nMaster of Humanity\n\nI said Lord Verity\nCall me master, master\nOw!\n\n[Verse 1]\nKneel, stop!\nI want this thing to never, never end\nNev",
+      "id": "Y1Lah0BM0KQ",
+      "title": "LE SSERAFIM (르세라핌) 'Made My Night' OFFICIAL MV with OVERWATCH",
+      "channel": "HYBE LABELS",
+      "views": 16038130,
+      "duration": 167,
+      "uploadDate": "20260910",
+      "height": 1608,
+      "description": "LE SSERAFIM (르세라핌) 'Made My Night' OFFICIAL MV with OVERWATCH\n\n✰ 2nd Single Album 'Made My Night'\n2026.09.11 1PM (KST) | 12AM (ET)\n\n💿Pre-save & Pre-order\nhttps://le-sserafim.lnk.to/MadeMyNight\n\nCreative Director : Gabriel Cho\n\nVisual Creative Lead : Yoon Cho\nStyle Directing : Hye Lin Im, Jisun Ha\nContent Production : Chansol Bok, Kyuri Park\nBrand Experience Design : Yoovin Baek, Hyemin Yoo, Myung",
       "tags": [
-       "horror skunx",
-       "skunx horror",
-       "horror skunks",
-       "horror skunx music",
-       "verity lord",
-       "lord verity",
-       "verity song",
-       "lord verity music video",
-       "verity its me",
-       "its me its verity",
-       "master of humanity",
-       "master",
-       "call me master"
+       "HYBE",
+       "HYBE LABELS",
+       "하이브",
+       "하이브레이블즈"
       ],
-      "verified": true
+      "verified": false
      },
-     "trend": 2,
-     "trend180": 2,
+     "trend": 14,
+     "trend180": 14,
      "fresh": true
     },
     "producible": {
-     "pass": false,
-     "why": "sample check: 0/3 clean previews (TkGbJoEAcXU: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; Tc3I0ZX5lR0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; ax2nJkyhACs: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)",
+     "pass": true,
+     "why": "weighted sources 50.0 (40 at 1080p+), audio Y1Lah0BM0KQ (167s), 2/3 sample previews clean",
      "probes": [
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 1038.5,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       },
       {
        "ok": false,
        "clean": false,
        "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
+        "probe failed: source_probe.py: error: argument --id: expected one argument"
        ]
       },
       {
-       "ok": false,
-       "clean": false,
-       "reasons": [
-        "preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting"
-       ]
+       "sharp": 1015.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
       }
      ]
     }
    },
-   "verdict": "rejected",
-   "why": "sample check: 0/3 clean previews (TkGbJoEAcXU: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; Tc3I0ZX5lR0: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting; ax2nJkyhACs: preview unavailable: ERROR: You have requested downloading the video partially, but ffmpeg is not installed. Aborting)"
+   "verdict": "approved",
+   "why": "all gates passed"
   },
   {
-   "name": "sheesh",
-   "artist": "BABYMONSTER",
-   "theme": "kpop",
-   "source": "BABYMONSTER",
-   "query": "BABYMONSTER sheesh official audio",
-   "gates": {
-    "niche": {
-     "pass": null,
-     "why": "group \"BABYMONSTER\" not in the known list (decided by the popularity gate)"
-    },
-    "duplicate": {
-     "pass": false,
-     "why": "rejected in an earlier month"
-    }
-   },
-   "verdict": "rejected",
-   "why": "rejected in an earlier month"
+   "name": "&team",
+   "source": "Good Boy",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "jump live",
+   "source": "Mayuka, Nina & Rima",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "gumi",
+   "source": "| Catch You Catch Me",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "| chinese c-pop r&b",
+   "source": "无价",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "master of humanity",
+   "source": "Lord Verity",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
   }
  ]
 }
