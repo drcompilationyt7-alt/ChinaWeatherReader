@@ -174,6 +174,7 @@ def accept(v, bar):
 def judge(mini, hit_t, tag=None, tmp=None):
     """{'ok', 'word', 'votes': [{model, answer, ok, why}], 'why'}"""
     tmp = tmp or tempfile.mkdtemp(prefix='hitvis-')
+    os.makedirs(tmp, exist_ok=True)
     base = os.path.splitext(os.path.basename(mini))[0]
     sm = small(mini, os.path.join(tmp, base + '.640.mp4'))
     st, (a, b) = strip(sm, float(hit_t), os.path.join(tmp, base + '.strip.jpg'))

@@ -134,7 +134,6 @@ jobs:
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install "yt-dlp[default]" yt-dlp-ejs opencv-python-headless numpy scipy pillow transformers sentencepiece protobuf \
             "librosa==0.11.0" onnxruntime scikit-learn psutil soundfile
-          npm ci || npm install
 
       - name: Cache models (SigLIP, NudeNet, anime face)
         uses: actions/cache@v4
@@ -200,7 +199,6 @@ jobs:
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install opencv-python-headless numpy scipy pillow transformers sentencepiece protobuf "librosa==0.11.0" \
             onnxruntime scikit-learn psutil soundfile kaggle
-          npm ci || npm install
 
       - name: Cache models
         uses: actions/cache@v4
