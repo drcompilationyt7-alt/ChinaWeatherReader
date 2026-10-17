@@ -57,6 +57,9 @@ def pick_vibe(kind, forced, rng):
     return v[0], v[1]
 
 
+VERIFIED_P = os.path.join(HERE, 'assets', 'sound-song-verified.json')
+
+
 def sound_history():
     """[{id, at}] of the sound edits posted (memory/meme-history.json, oldest first): the music pool's cooldown input."""
     mem = os.environ.get('MEMORY_DIR') or os.path.join(os.path.dirname(os.path.dirname(HERE)), 'memory')
@@ -80,7 +83,26 @@ def music_pool_song(forced, rng):
         s = {'id': rec['id'], 'song': rec['song'], 'artist': rec['artist'], 'audio_path': path,
              'section_start': sec.get('start'), 'section_end': sec.get('end'), 'tempo': rec.get('tempo')}
     else:
-        s = MP.pick_song(sound_history(), fetch=True, rng=rng)
+        pool_path = None
+        if os.environ.get('SOUND_MUSIC_VERIFIED_ONLY', '1') != '0':
+            # only songs whose pool section rendered at the approved (sound_11b) quality on CI: core/edit/assets/sound-song-verified.json
+            # (written after a judge_sound PASS of a .github/workflows/sound-song-verify.yml render); none verified = the vibe songs
+            ver = {k for k, v in (VP.read_json(VERIFIED_P, {}) or {}).get('songs', {}).items() if v.get('pass')}
+            pool = MP.load_pool()
+            pool['songs'] = [x for x in pool['songs'] if x['id'] in ver]
+            if not pool['songs']:
+                log('music pool: no verified song yet: the vibe songs')
+                return None
+            import tempfile
+            fd, pool_path = tempfile.mkstemp(suffix='.json')
+            os.close(fd)
+            with open(pool_path, 'w', encoding='utf-8') as f:
+                json.dump(pool, f)
+        try:
+            s = MP.pick_song(sound_history(), pool_path=pool_path, fetch=True, rng=rng)
+        finally:
+            if pool_path:
+                os.remove(pool_path)
     if not s or not s.get('audio_path') or not os.path.exists(s['audio_path']):
         log('music pool: no audio for', (s or {}).get('id'))
         return None

@@ -194,4 +194,4 @@ function recordUpload(result, upload) {
   if (m.metaChoice) recordMetadataChoice(m.metaChoice, { videoId: upload.videoId });
 }
 
-module.exports = { runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, CT };
+module.exports = { runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, CT };

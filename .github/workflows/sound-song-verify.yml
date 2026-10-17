@@ -1,0 +1,103 @@
+name: Sound edit song verification (render only)
+
+# Renders the sound edit (the exact daily settings: pipeline/newtype-pipeline.js SOUND_ENV) on music-pool songs at their picked
+# section, one job per song, and keeps each render + plan as an artifact. The renders are judged with core/edit/judge_sound.py
+# against the owner-approved bar (sound_11b: every criterion >= 8, overall >= 8.5, zero frozen frames); a song that passes is
+# added to core/edit/assets/sound-song-verified.json, and only verified songs are picked by the daily sound edit
+# (SOUND_MUSIC_VERIFIED_ONLY=1). Manual only; uploads nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      songs:
+        description: 'Comma-separated music-pool ids, or "unverified" (every pool song not yet in sound-song-verified.json)'
+        required: true
+        default: 'unverified'
+      seed:
+        description: 'Render seed'
+        required: false
+        default: '41'
+
+env:
+  EDIT_POOL_DIR: output/edit-pools
+  YT_COOKIES: /tmp/yt_cookies.txt
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
+  GH_PAT: ${{ secrets.GH_PAT }}
+  GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
+  PYTHONIOENCODING: utf-8
+  MEME_PYTHON: python3
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      songs: ${{ steps.s.outputs.songs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: s
+        run: |
+          python3 - <<'PY' >> $GITHUB_OUTPUT
+          import json, os
+          want = "${{ github.event.inputs.songs }}".strip()
+          pool = json.load(open('core/edit/assets/sound-music-pool.json'))['songs']
+          try:
+              ver = json.load(open('core/edit/assets/sound-song-verified.json')).get('songs', {})
+          except OSError:
+              ver = {}
+          if want == 'unverified':
+              ids = [s['id'] for s in pool if s.get('status') in ('active', 'probation') and not (ver.get(s['id']) or {}).get('pass')]
+          else:
+              ids = [x.strip() for x in want.split(',') if x.strip()]
+          print('songs=' + json.dumps(ids[:200]))
+          PY
+
+  render:
+    needs: list
+    if: needs.list.outputs.songs != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        song: ${{ fromJson(needs.list.outputs.songs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libgl1 libglib2.0-0
+          python3 -m pip install -U pip --break-system-packages
+          python3 -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu --break-system-packages
+          python3 -m pip install demucs "librosa==0.11.0" "yt-dlp[default]" yt-dlp-ejs opencv-python-headless numpy pillow transformers \
+            sentencepiece protobuf scipy onnxruntime psutil soundfile --break-system-packages
+          npm ci --ignore-scripts || npm install --ignore-scripts
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/clip_finder
+          key: meme-models-v2
+      - name: Cookies
+        run: if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+      - name: Pull the sound pool
+        run: node scripts/edit-pools-store.js pull --preset sound
+      - name: Render ${{ matrix.song }} (daily sound settings)
+        run: |
+          node -e "const t=require('./pipeline/newtype-pipeline'); for (const [k,v] of Object.entries(t.typeEnv('sound'))) console.log(k+'='+v)" >> $GITHUB_ENV
+      - run: |
+          python3 core/edit/vibe_edit.py --type sound --song "${{ matrix.song }}" --seed "${{ github.event.inputs.seed || '41' }}" --no-mark --out out/${{ matrix.song }} | tail -c 1500
+          rm -f /tmp/yt_cookies.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-${{ matrix.song }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            out/*/*-short.mp4
+            out/*/result.json
+            out/*/work-*/short/plan.json

@@ -1,0 +1,43 @@
+{
+ "version": 1,
+ "note": "music-pool songs whose picked section rendered on CI (daily sound settings) and passed core/edit/judge_sound.py at the sound_11b bar (every criterion >= 8 vs FB15TNFAHVU and the mean with jKSxAkOS3JY, overall >= 8.5, no still run > 0.2 s). Only these are picked (vibe_edit SOUND_MUSIC_VERIFIED_ONLY=1). Add songs after a .github/workflows/sound-song-verify.yml render passes the judge.",
+ "songs": {
+  "dua_lipa_levitating": {
+   "pass": true,
+   "run": 39074660478,
+   "section": [
+    11.036,
+    38.984
+   ],
+   "duration": 27.25,
+   "overall_mean": 9.6,
+   "worst": "8 length 8.4",
+   "still_max_s": 0.133,
+   "date": "2026-10-17"
+  },
+  "lady_gaga_poker_face": {
+   "pass": false,
+   "run": 39077402735,
+   "why": "16 drum onsets recreated 7.8",
+   "date": "2026-10-17"
+  },
+  "the_tech_thieves_fake": {
+   "pass": false,
+   "run": 39077414493,
+   "why": "5 density 7.5",
+   "date": "2026-10-17"
+  },
+  "stevie_wonder_superstition": {
+   "pass": false,
+   "run": 39077424300,
+   "why": "17 frozen frame 0.30 s at the end (before the hold re-plan)",
+   "date": "2026-10-17"
+  },
+  "ed_sheeran_shape_of_you": {
+   "pass": false,
+   "run": 39077148074,
+   "why": "8 length 7.6 (26.05 s; before the length re-plan)",
+   "date": "2026-10-17"
+  }
+ }
+}

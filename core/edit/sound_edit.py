@@ -4509,7 +4509,14 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         # beat remake: the edit may end early at the last shot's clean end (no freeze allowed); a Short under SOUND_MIN_SHORT_S
         # (26.8 s = judge criterion 8 >= 8) is re-planned with other seeds (another clip order / last shot; ~2.5 min each on CI)
         min_s = float(os.environ.get('SOUND_MIN_SHORT_S', '26.8'))
-        if REMAKE and not long_form and plan['duration'] < min_s:
+        max_hold = float(os.environ.get('SOUND_MAX_HOLD_S', '0.15'))     # judge 17: no still run > 0.2 s
+
+        def _ok(pl):
+            return pl['duration'] >= min_s and float(pl['sound_edit'].get('hold_s_max') or 0.0) <= max_hold
+
+        def _rank(pl):
+            return (float(pl['sound_edit'].get('hold_s_max') or 0.0) <= max_hold, pl['duration'])
+        if REMAKE and not long_form and not _ok(plan):
             for extra in range(1, 1 + int(os.environ.get('SOUND_REPLAN_TRIES', '3'))):
                 try:
                     alt = plan_sound_edit(song, shots, music_start=music_start, duration=target, mode='accent',
@@ -4519,10 +4526,11 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                                           rate=RATE_SHORT, loop_end=False, lufs=VIBE_LUFS, hit_db=VIBE_HIT_DB)
                 except TooFewEvents:
                     continue
-                log(f'replan {extra}: {alt["duration"]:.2f} s (was {plan["duration"]:.2f} s)')
-                if alt['duration'] > plan['duration'] and (alt['sound_edit'].get('holds') or 0) <= (plan['sound_edit'].get('holds') or 0):
+                log(f'replan {extra}: {alt["duration"]:.2f} s, hold max {alt["sound_edit"].get("hold_s_max")} '
+                    f'(was {plan["duration"]:.2f} s, {plan["sound_edit"].get("hold_s_max")})')
+                if _rank(alt) > _rank(plan):
                     plan = alt
-                if plan['duration'] >= min_s:
+                if _ok(plan):
                     break
         if plan['duration'] < lo - 0.5:
             res['reason'] = (f'pool_low_shortened: {plan["duration"]:.1f} s instead of >= {lo:.0f} s '
