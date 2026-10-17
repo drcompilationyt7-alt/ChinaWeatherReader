@@ -178,7 +178,8 @@ def merge(pool, shards, new_out):
     import pool_visible as PV
     led, bl = VP.load_ledger(), VP.load_blocklist()
     allow = read_json(ALLOW_P, {'version': 1, 'clips': {}})
-    hblock = set((read_json(HIT_BLOCK_P, {'clips': {}}).get('clips') or {}).keys())
+    hb = read_json(HIT_BLOCK_P, {'clips': []}).get('clips') or []
+    hblock = set(hb.keys() if isinstance(hb, dict) else hb)
     mans = {v: VP.load_manifest('sound', v, root=pool) for v in ('impact', 'crisp')}
     live = [it for m in mans.values() for it in m['items']]
     fetch_state = read_json(FETCH_STATE, {'seen': {}, 'queries': {}})

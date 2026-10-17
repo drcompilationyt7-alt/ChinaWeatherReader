@@ -160,7 +160,7 @@ BOTBLOCK_RE = re.compile(r"confirm(?:\s+that)?\s+you(?:'re| are)?\s+not\s+a\s+bo
 
 def _yt(args, timeout=900):
     cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '--socket-timeout', '25', '--sleep-requests', '1', '--sleep-interval', '3', '--max-sleep-interval', '6',
-           '--js-runtimes', 'node'] + args   # yt-dlp[default] (EJS solver) + node: YouTube's JS challenge
+           '--js-runtimes', os.environ.get('YT_JS_RUNTIMES', 'node')] + args   # yt-dlp[default] (EJS solver) + node: YouTube's JS challenge
     if os.environ.get('YT_FORCE_IPV4') == '1':          # GitHub runners (the song top-up's working recipe)
         cmd[3:3] = ['--force-ipv4']
     ck = os.environ.get('YT_COOKIES')
@@ -255,7 +255,9 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
                     write_json(st_p, st)
                     log('bot-block on download: stop fetching')
                     return st
-                st['seen'][vid] = 'download failed'
+                err = [ln for ln in (r.stderr or '').splitlines() if 'ERROR' in ln or 'WARNING' in ln]
+                st['seen'][vid] = 'download failed: ' + (err[-1] if err else (r.stderr or '').strip()[-160:])[:200]
+                log(f'{vid}: {st["seen"][vid]}')
                 continue
             pacer.reward()
             ok, why = source_clean(f[0], os.path.join(work, 'tmp'))
