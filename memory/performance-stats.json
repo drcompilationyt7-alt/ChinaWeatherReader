@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T23:04:04.035Z",
+  "updatedAt": "2026-10-17T23:04:26.708Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 10,
@@ -32,7 +32,7 @@
       "ageDays": 2.5,
       "velocity": 457.9,
       "engagement": 0.042,
-      "score": 265.4,
+      "score": 265.3,
       "lscore": 5.585,
       "reward": 1.711,
       "rewardFinal": false,
@@ -126,7 +126,7 @@
       "velocity": 166.1,
       "engagement": 0.007,
       "score": 128.5,
-      "lscore": 4.864,
+      "lscore": 4.863,
       "reward": 1.7,
       "rewardFinal": false,
       "v7": 544
@@ -157,7 +157,7 @@
       "velocity": 243.4,
       "engagement": 0.02,
       "score": 121.3,
-      "lscore": 4.807,
+      "lscore": 4.806,
       "reward": 1.621,
       "rewardFinal": false,
       "v7": 522
