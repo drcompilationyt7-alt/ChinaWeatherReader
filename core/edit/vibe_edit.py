@@ -58,6 +58,18 @@ def pick_vibe(kind, forced, rng):
 
 
 def pick_song(kind, vibe, forced, rng):
+    # HOOK (2026-10-17): the music pool / song-section picker (core/edit/music_pool.py, built by another agent) takes over
+    # when SOUND_MUSIC_POOL=1 and the module has the adapter music_pool.vibe_song(kind, vibe, forced, rng) ->
+    # {id, title, artist, file (local audio path), ...} or None (None = the vibe's own songs below). Off by default until
+    # it is verified; a section start for sound_edit would travel in the returned dict (not wired yet).
+    if kind == 'sound' and os.environ.get('SOUND_MUSIC_POOL') == '1':
+        try:
+            import music_pool as MP
+            s = MP.vibe_song(kind, vibe, forced, rng)
+            if s and s.get('file') and os.path.exists(s['file']):
+                return s
+        except Exception as e:  # noqa: BLE001
+            log('music_pool hook failed, using the vibe songs:', repr(e)[:200])
     songs = VP.song_ok(kind, vibe)
     if forced:
         songs = [s for s in songs if s['id'] == forced] or [s for s in VP.load_manifest(kind, vibe, 'sounds')['items']
@@ -94,6 +106,7 @@ def is_rot90(plan_path):
 
 
 def render(kind, song, shots, out, aspect, length, seed, workdir, vibe_def):
+    os.environ.setdefault('EDIT_NO_SHAKE', '1')          # owner 2026-10-13: no shake / wiggle / jitter in the sound and slow-mo edits (default)
     if kind == 'sound':
         import sound_edit as M
         if aspect != '9:16':
@@ -102,6 +115,17 @@ def render(kind, song, shots, out, aspect, length, seed, workdir, vibe_def):
         # owner 2026-10-12: a REAL vertical Short. The edit is planned and rendered as its 16:9 master (sync, hits and
         # mix untouched), then core/edit/reframe.py crops every shot to 9:16 around its subject (face / action centre,
         # one eased move per shot). The references deliver rot90 / letterbox; the owner overruled both.
+        if os.environ.get('SOUND_VERTICAL_NATIVE', '1') == 'rot90':
+            # owner 2026-10-13: the reference's own layout is fine: the full 16:9 frame turned 90 deg into 9:16 (whole action, no crop upscale);
+            # the watermark is burned upright in the master's orientation by watermark.burn(rot90=True)
+            os.environ['SOUND_DELIVER'] = 'rot90'
+            return M.render_vibe(song['file'], shots, out, aspect=aspect, length=length, seed=seed, workdir=workdir,
+                                 theme=vibe_def.get('theme'), title=song.get('title'))
+        if os.environ.get('SOUND_VERTICAL_NATIVE', '1') != '0':
+            # judge 2026-10-13: crop the 9:16 window from the SOURCE-resolution clips, compose the vertical natively at 1080x1920
+            os.environ['SOUND_DELIVER'] = 'vertical'
+            return M.render_vibe(song['file'], shots, out, aspect=aspect, length=length, seed=seed, workdir=workdir,
+                                 theme=vibe_def.get('theme'), title=song.get('title'))
         os.environ['SOUND_DELIVER'] = 'master'
         master = os.path.splitext(out)[0] + '_master.mp4'
         r = M.render_vibe(song['file'], shots, master, aspect=aspect, length=length, seed=seed, workdir=workdir,
@@ -155,7 +179,42 @@ def main():
         done(2)
     res.update(vibe=vibe, song=song['id'], song_title=song.get('title'), song_artist=song.get('artist'),
                sound_used=song['id'], licence=VP.load_vibes().get('licence_note'))
-    shots = VP.fresh_clips(kind, vibe)
+    def get_shots():
+        sh = VP.fresh_clips(kind, vibe)
+        for xv in [v for v in os.environ.get('SOUND_EXTRA_VIBES', '').split(',') if v and v != vibe and kind == 'sound']:
+            sh += VP.fresh_clips(kind, xv)          # 2026-10-15: the eye-approved crisp hits (snap / drop) join an impact short
+        return sh
+
+    # Clip cooldown (sound clips are reused; the last SOUND_COOLDOWN_VIDEOS videos' clips are skipped). With the
+    # eye-approved hit pool (SOUND_ALLOW_ONLY=1, ~60 pins, ~40 per short) a hard cooldown would starve every second
+    # short, so the cooldown is relaxed step by step (3 -> 2 -> 1 -> 0) until enough pinned clips are free
+    # (SOUND_RELAX_MIN_PINS, default 45) and again when the render reports pool_low. SOUND_COOLDOWN_RELAX=0 = hard cooldown.
+    cooldowns = [VP.sound_cooldown()]
+    if kind == 'sound' and os.environ.get('SOUND_COOLDOWN_RELAX', '1') != '0':
+        cooldowns += list(range(cooldowns[0] - 1, -1, -1))
+
+    def pins(sh):
+        try:
+            import sound_edit as SE
+            SE.hit_allow('x', 0)
+            return sum(1 for s in sh if s.get('pool_id') in (SE._ALLOW or {}))
+        except Exception:  # noqa: BLE001
+            return len(sh)
+
+    need_pins = int(os.environ.get('SOUND_RELAX_MIN_PINS', '45'))
+    if kind == 'sound' and len(cooldowns) > 1:
+        os.environ['SOUND_COOLDOWN_VIDEOS'] = '0'
+        need_pins = min(need_pins, pins(get_shots()))
+        while len(cooldowns) > 1:
+            os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
+            n = pins(get_shots())
+            if n >= need_pins:
+                break
+            log(f'cooldown {cooldowns[0]}: {n} pinned clips free (< {need_pins}): relaxing')
+            cooldowns.pop(0)
+        os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
+    shots = get_shots()
+    res['cooldown_videos'] = cooldowns[0] if kind == 'sound' else None
     log(f'{kind}/{vibe}: {len(shots)} fresh clips, song {song["id"]} ({song["file"]}), seed {seed}')
     work = os.path.join(a.out, f'work-{kind}-{vibe}')
     os.makedirs(work, exist_ok=True)
@@ -166,6 +225,13 @@ def main():
             raw = os.path.join(work, 'short_raw.mp4')
             t0 = time.time()
             r = render(kind, song, shots, raw, '9:16', SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
+            while not r.get('ok') and r.get('reason') == 'pool_low' and len(cooldowns) > 1:
+                cooldowns.pop(0)
+                os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
+                shots = get_shots()
+                res['cooldown_videos'] = cooldowns[0]
+                log(f'pool_low: retry with clip cooldown {cooldowns[0]} ({len(shots)} clips)')
+                r = render(kind, song, shots, raw, '9:16', SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
             res['render_s']['short'] = round(time.time() - t0, 1)
             if not r.get('ok'):
                 res.update(reason=r.get('reason') or 'short_failed', short_report=r)

@@ -345,7 +345,10 @@ class DailyRunner {
       try { history = require('../pipeline/meme-pipeline').loadHistory(); } catch {}
       let sizes = {};
       if (process.env.DAILY_ROTATION === 'on') { try { sizes = newTypes.poolSizes(); } catch {} }   // off (default): stem only, no pool lookups
-      const order = process.env.DAILY_ROTATION === 'on' ? rotation.dailyOrder({ history, poolSizes: sizes, poolMin: newTypes.poolMin(), enabled: true }) : ['stem'];
+      let order = process.env.DAILY_ROTATION === 'on' ? rotation.dailyOrder({ history, poolSizes: sizes, poolMin: newTypes.poolMin(), enabled: true }) : ['stem'];
+      // DAILY_FORCE_TYPE (workflow_dispatch input "type", for dry runs / a manual post): that type first, stem stays the fallback
+      const forced = String(process.env.DAILY_FORCE_TYPE || '').trim();
+      if (rotation.ALL.includes(forced)) order = forced === 'stem' ? ['stem'] : [forced, 'stem'];
       logger.info(`Daily type order: ${order.join(' > ')} (pools ${JSON.stringify(sizes)})`);
       let result = null;
       let kind = 'stem';

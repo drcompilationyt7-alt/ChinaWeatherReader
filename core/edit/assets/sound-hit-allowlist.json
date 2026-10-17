@@ -1,0 +1,510 @@
+{
+ "version": 1,
+ "reason": "owner rule 2026-10-14: every sound hit shows the action that makes the sound, nameable in one word. These moments were approved BY EYE on hit strips (hit -0.6..+0.12 s) where the motion / tag gate was unsure; sound_edit.visible_pass lets an event within 0.12 s of an approved t pass, with 'action' (a sound_visible source tag) as its source. The blocklist still wins.",
+ "clips": {
+  "c_krc6M4vPx28_36300": [
+   {
+    "t": 0.72,
+    "action": "gun",
+    "word": "shoot",
+    "note": "Lycoris Recoil: pistol fired mid-jump, muzzle flash on the hit"
+   }
+  ],
+  "c_X0Y72O8mY-w_6900": [
+   {
+    "t": 1.49,
+    "action": "sword",
+    "word": "clash",
+    "note": "two swordsmen clash, medium shot"
+   }
+  ],
+  "c_bZdd8k6wKsI_676873": [
+   {
+    "t": 0.157,
+    "action": "fist",
+    "word": "punch",
+    "note": "Bebop: fist lands on the jaw, man thrown back (2026-10-15 dense strip)"
+   }
+  ],
+  "c_4ELLzfNns00_9664": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (Jormungand - You'll Be Punished  - Official Clip)"
+   }
+  ],
+  "c_TDIDoMDQ6nY_2269": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (Taking out a sniper [Genocidal Organ / Gyakusatsu )"
+   }
+  ],
+  "c_iWR7Q5i0JpQ_45435": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (Sword Art Online II   Kirito deflects bullets in G)"
+   }
+  ],
+  "c_OcbcJ4Urg5k_434697": [
+   {
+    "t": 1.209,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "by-eye dense strip 2026-10-15 (black lagoon - roberta scenes eps 8-10 (dub))"
+   }
+  ],
+  "c_4j1TyN4nLZA_59982": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (Black Lagoon - Roberta at the bar)"
+   }
+  ],
+  "c_K39jx5VkIPw_790875": [
+   {
+    "t": 1.281,
+    "action": "object",
+    "word": "snap",
+    "note": "by-eye dense strip 2026-10-15 (trigun badlands rumble but it’s every time Nichola)"
+   }
+  ],
+  "c_lDzXBSxAxKw_53147": [
+   {
+    "t": 0.712,
+    "action": "impact",
+    "word": "slam",
+    "note": "by-eye dense strip 2026-10-15 (Sukuna vs Mahoraga Blu-Ray Full Fight [4K 60FPS] D)"
+   }
+  ],
+  "c_utLWiscq8d4_35350": [
+   {
+    "t": 1.175,
+    "action": "object",
+    "word": "drop",
+    "note": "by-eye dense strip 2026-10-15 (Cowboy Bebop fight scene)"
+   }
+  ],
+  "c_z1In_sZL7xg_155531": [
+   {
+    "t": 1.4,
+    "action": "reload",
+    "word": "reload",
+    "note": "by-eye dense strip 2026-10-15 ([Sound Effect] Anime scene《Reload Guns》- [ FREE TO)"
+   }
+  ],
+  "c_OcbcJ4Urg5k_528463": [
+   {
+    "t": 1.297,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (black lagoon - roberta scenes eps 8-10 (dub))"
+   }
+  ],
+  "c_XVH-xPpl_Dw_38260": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-15 (Devil May Cry Netflix Anime Season 2 Dante VS Verg)"
+   }
+  ],
+  "c_bZdd8k6wKsI_667122": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (The Best Fights of Spike Spiegel, Baby... | Cowboy)"
+   }
+  ],
+  "c_xT66YPk0Q5w_201106": [
+   {
+    "t": 0.535,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-15 (Sword Of The Stranger - Final battle)"
+   }
+  ],
+  "c_tx49TtGjyv8_21800": [
+   {
+    "t": 1.318,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_xT66YPk0Q5w_125200": [
+   {
+    "t": 0.157,
+    "action": "sword",
+    "word": "clash",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_FMPhCF4YnmA_27100": [
+   {
+    "t": 1.022,
+    "action": "sword",
+    "word": "slash",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_c1rBk7XAlj0_10400": [
+   {
+    "t": 0.366,
+    "action": "sword",
+    "word": "slash",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_Ipr0YNnwlXA_40900": [
+   {
+    "t": 0.865,
+    "action": "kick",
+    "word": "kick",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_Cw9_Kh3KSrA_50500": [
+   {
+    "t": 1.683,
+    "action": "kick",
+    "word": "kick",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_biPUhMQn8Qw_161771": [
+   {
+    "t": 1.028,
+    "action": "sword",
+    "word": "clash",
+    "note": "gate hit, by-eye ok on the hit strip (2026-10-14/15); pinned to its stamped moment"
+   }
+  ],
+  "c_Zq4zTcIM0yQ_6828": [
+   {
+    "t": 1.357,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (Drive Like Hell | Cyberpunk: Edgerunners | Clips |)"
+   }
+  ],
+  "c_xoLBt2vayAc_359763": [
+   {
+    "t": 0.284,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (All David usage of Sandevistan | Cyberpunk Edgerun)"
+   }
+  ],
+  "c_IFYCx3opUn4_17269": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-15 (Samurai Champloo EP1-Mugen&Jin's first fight [1080)"
+   }
+  ],
+  "c_P8j50ByEd7w_29601": [
+   {
+    "t": 1.084,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (Dorohedoro | Multi-Audio Clip: Caiman and Nikaido')"
+   }
+  ],
+  "c_P8j50ByEd7w_37150": [
+   {
+    "t": 0.513,
+    "action": "impact",
+    "word": "slam",
+    "note": "by-eye dense strip 2026-10-15 (Dorohedoro | Multi-Audio Clip: Caiman and Nikaido')"
+   }
+  ],
+  "c_zv5lApSubRw_357242": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "slash",
+    "note": "by-eye dense strip 2026-10-15 (Maki Zenin Scenepack)"
+   }
+  ],
+  "c_MnELmsLLEwY_17629": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "by-eye dense strip 2026-10-15 (GANGSTA. - Official Clip - Place Your Bets)"
+   }
+  ],
+  "c_zUiJ3TahSqE_37647": [
+   {
+    "t": 0.503,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (Ohma vs Inaba Ryo - Kengan Ashura Battle [4K 60FPS)"
+   }
+  ],
+  "c_zUiJ3TahSqE_28681": [
+   {
+    "t": 1.44,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (Ohma vs Inaba Ryo - Kengan Ashura Battle [4K 60FPS)"
+   }
+  ],
+  "c_Ei37mjbcqGQ_4952": [
+   {
+    "t": 0.516,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (Choso vs Naoya 4K Highlight - Jujutsu Kaisen S3 E2)"
+   }
+  ],
+  "c_KbjmnBu7scU_45969": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-15 (Yor vs Loid Clips 4K RAW | spy x family clips for )"
+   }
+  ],
+  "c_3iKoZbmQKo0_76816": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-15 (Will Vs Devander Final Battle 4k Raw Clips For Edi)"
+   }
+  ],
+  "c_43Tn1OiBGt4_95263": [
+   {
+    "t": 0.426,
+    "action": "sword",
+    "word": "slash",
+    "note": "by-eye dense strip 2026-10-15 (Toji Vs Dagon English Dub | Jujutsu Kaisen (4K))"
+   }
+  ],
+  "c_EsUbAFAOXE8_119363": [
+   {
+    "t": 0.255,
+    "action": "kick",
+    "word": "kick",
+    "note": "by-eye dense strip 2026-10-15 (Biscuit Olivia Vs Shobun Ron | Baki (2020) episode)"
+   }
+  ],
+  "c_qseGE2MSIWo_76085": [
+   {
+    "t": 1.4,
+    "action": "sheath",
+    "word": "unsheathe",
+    "note": "by-eye dense strip 2026-10-15 (Baccano - Firo vs Dallas)"
+   }
+  ],
+  "c_94gGChbw7Lk_4368": [
+   {
+    "t": 0.497,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "by-eye dense strip 2026-10-17 (Ichigo vs Byakuya 4K/8K - Bleach EP 58/59)"
+   }
+  ],
+  "c_CCsSSL4kRM0_64521": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-17 (Fate/Stay night Archer vs Lancer HD)"
+   }
+  ],
+  "c_NUrQ9c6y2SQ_113910": [
+   {
+    "t": 1.4,
+    "action": "clap",
+    "word": "clap",
+    "note": "by-eye dense strip 2026-10-17 (Takamura vs Eagle)"
+   }
+  ],
+  "c_BTNEyBRynJQ_10332": [
+   {
+    "t": 0.349,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (MEGALOBOX 2: NOMAD | Episode 1 Highlight | Joe vs.)"
+   }
+  ],
+  "c_BTNEyBRynJQ_84746": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (MEGALOBOX 2: NOMAD | Episode 1 Highlight | Joe vs.)"
+   }
+  ],
+  "c_DQ6WAHp7R-o_154219": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Sakura vs Togame Full Fight | Wind Breaker | ウインドブ)"
+   }
+  ],
+  "c_DQ6WAHp7R-o_168209": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Sakura vs Togame Full Fight | Wind Breaker | ウインドブ)"
+   }
+  ],
+  "c_y9omcRhbnqM_117363": [
+   {
+    "t": 0.792,
+    "action": "sword",
+    "word": "slash",
+    "note": "by-eye dense strip 2026-10-17 (Blue Eye Samurai | Mizu vs The Four Fangs fight sc)"
+   }
+  ],
+  "c_bZdd8k6wKsI_238135": [
+   {
+    "t": 1.32,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "by-eye dense strip 2026-10-17 (The Best Fights of Spike Spiegel, Baby... | Cowboy)"
+   }
+  ],
+  "c_xT66YPk0Q5w_149513": [
+   {
+    "t": 1.079,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-17 (Sword Of The Stranger - Final battle)"
+   }
+  ],
+  "c_xT66YPk0Q5w_366354": [
+   {
+    "t": 0.485,
+    "action": "sword",
+    "word": "stab",
+    "note": "by-eye dense strip 2026-10-17 (Sword Of The Stranger - Final battle)"
+   }
+  ],
+  "c_L1TVoSHBDKc_93140": [
+   {
+    "t": 1.4,
+    "action": "stomp",
+    "word": "step",
+    "note": "by-eye dense strip 2026-10-17 (BAKI Shadow Boxing With IRON MICHAEL The World Hea)"
+   }
+  ],
+  "c_VeIXoZwoy4Y_16463": [
+   {
+    "t": 1.057,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (This Was The Fight You Wanted | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_VeIXoZwoy4Y_6228": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (This Was The Fight You Wanted | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_vktZkdhfs4s_69026": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "slash",
+    "note": "by-eye dense strip 2026-10-17 (Mizu VS Thousand Claw Army | Blue Eye Samurai)"
+   }
+  ],
+  "c_mBpBTRnhDl0_115884": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-17 (Shinra vs Sho [4K QUALITY 60FPS] Full Fight | Fire)"
+   }
+  ],
+  "c_mBpBTRnhDl0_192447": [
+   {
+    "t": 0.313,
+    "action": "kick",
+    "word": "kick",
+    "note": "by-eye dense strip 2026-10-17 (Shinra vs Sho [4K QUALITY 60FPS] Full Fight | Fire)"
+   }
+  ],
+  "c_JDshI0lKP7U_113330": [
+   {
+    "t": 1.4,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "by-eye dense strip 2026-10-17 (Hellsing ULTIMATE EP3 Alucard vs Alehambra [Dubbed)"
+   }
+  ],
+  "c_Z1bq3cyZMVQ_131012": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Cyberpunk Edgerunners - David vs Bully round 1 and)"
+   }
+  ],
+  "c_e5ctO_lhS8Y_22302": [
+   {
+    "t": 0.303,
+    "action": "object",
+    "word": "drop",
+    "note": "by-eye dense strip 2026-10-17 (Assassin Fight | Lazarus | adult swim)"
+   }
+  ],
+  "c_u9xaEqXmOnc_50114": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "by-eye dense strip 2026-10-17 (Sung Jin-Woo vs Igris Full Fight | Solo Leveling E)"
+   }
+  ],
+  "c_O2JRxaMNK_c_28850": [
+   {
+    "t": 1.115,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Sachio vs Joe | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_O2JRxaMNK_c_80566": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Sachio vs Joe | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_O2JRxaMNK_c_44074": [
+   {
+    "t": 1.309,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Sachio vs Joe | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_mfrrwZ8U8t0_218363": [
+   {
+    "t": 0.867,
+    "action": "fist",
+    "word": "punch",
+    "note": "by-eye dense strip 2026-10-17 (Kengan ashura - fight ep 1-3 eng dub)"
+   }
+  ]
+ }
+}

@@ -1453,7 +1453,7 @@ class BlurInPunch(T):
         else:
             lns = math.log(1 + self.A * ex(v, self.tau))
         rot = self.rot0 * ex(v, 0.03) if self.variant == 'rotate' else 0.0
-        dx = 0.03 * ex(v / F60, 4) * math.sin(2 * math.pi * 11 * v) if self.variant == 'shake' else 0.0
+        dx = 0.03 * ex(v / F60, 4) * math.sin(2 * math.pi * 11 * v) if (self.variant == 'shake' and os.environ.get('EDIT_NO_SHAKE', '0') != '1') else 0.0
         return (lns, rot, dx, 0.0)
 
     def fx_in(self, img, v):

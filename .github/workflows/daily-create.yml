@@ -24,9 +24,17 @@ on:
         required: false
         default: ''
       dry_run:
-        description: 'Quiz mode: render only, attach the mp4s to the run, upload nothing'
+        description: 'Render only, attach the mp4s to the run, upload nothing (quiz and meme modes)'
         required: false
         default: 'false'
+      type:
+        description: 'Meme mode: force the edit type (sound / slowmo / stem; empty = daily rotation). stem stays the fallback'
+        required: false
+        default: ''
+      newtype_args:
+        description: 'Extra vibe_edit.py args for a sound / slowmo test (e.g. "--song s_kick_back --seed 41")'
+        required: false
+        default: ''
 
 env:
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -69,10 +77,14 @@ env:
   # the same type twice in a row; a new type with an empty pool or a failed render falls back to stem.
   # Override the weights with the repository variable DAILY_TYPE_WEIGHTS (e.g. "stem:2,sound:1,slowmo:1"; 0 = off),
   # DAILY_ROTATION=off goes back to stem only.
-  # SWITCHED OFF (owner, 2026-10-12): the channel posts stem edits only until the sound / slow-mo clips are better. To switch on, set the
-  # repository variables DAILY_ROTATION=on and DAILY_TYPE_WEIGHTS (e.g. stem:1,sound:1,slowmo:0), and LONG_ENABLED=on for the long versions.
-  DAILY_ROTATION: ${{ vars.DAILY_ROTATION || 'off' }}
-  DAILY_TYPE_WEIGHTS: ${{ vars.DAILY_TYPE_WEIGHTS || 'stem:1,sound:0,slowmo:0' }}
+  # 2026-10-17 owner: SOUND EDIT approved (sound_11b) -> repo variables DAILY_ROTATION=on, DAILY_TYPE_WEIGHTS=stem:1,sound:1,slowmo:0.
+  # The sound render settings (sound_11b: beat remake, pinned hits, rotated layout + hint, no shake) are in pipeline/newtype-pipeline.js SOUND_ENV.
+  DAILY_ROTATION: ${{ (github.event.inputs.type == 'sound' || github.event.inputs.type == 'slowmo') && 'on' || vars.DAILY_ROTATION || 'off' }}
+  DAILY_TYPE_WEIGHTS: ${{ vars.DAILY_TYPE_WEIGHTS || 'stem:1,sound:1,slowmo:0' }}
+  DAILY_FORCE_TYPE: ${{ github.event.inputs.type || '' }}
+  NEWTYPE_CLI_ARGS: ${{ github.event.inputs.newtype_args || '' }}
+  # sound short: ~5-15 min on the 4-core runner (CPU, libx264); the cap leaves room for a cold model cache
+  NEWTYPE_TIMEOUT_MIN: ${{ vars.NEWTYPE_TIMEOUT_MIN || '60' }}
   # Long versions of the sound / slowmo shorts (pipeline/longform-queue.js): rendered with the short, parked in a release
   # asset, uploaded 7 days after the short. LONG_ENABLED=off disables; the cadence is capped (see the queue header).
   LONG_ENABLED: ${{ vars.LONG_ENABLED || 'off' }}
@@ -165,7 +177,9 @@ jobs:
         run: |
           # torchaudio from the same CPU index as torch (demucs pulls torchaudio; a PyPI one would not match), SigLIP/transformers are above
           python3 -m pip install torchaudio --index-url https://download.pytorch.org/whl/cpu --break-system-packages
-          python3 -m pip install scipy onnxruntime --break-system-packages
+          # librosa pinned to the version the approved sound_11b was rendered with (0.11.0); psutil = IDLE priority / RAM checks
+          python3 -m pip install "librosa==0.11.0" scipy onnxruntime psutil soundfile --break-system-packages
+          python3 -c "import librosa, scipy, cv2, torch, torchaudio, transformers, onnxruntime, psutil, soundfile; print('sound deps ok', librosa.__version__, torch.__version__)"
 
       - name: Cache meme models (Demucs, SigLIP, anime face / nudity filters)
         if: env.CONTENT_MODE == 'meme'
@@ -278,6 +292,9 @@ jobs:
           path: |
             output/quiz/*.mp4
             output/meme/*.mp4
+            output/meme/work-*/*.mp4
+            output/meme/work-*/result.json
+            output/meme/work-*/work-*/short/plan.json
           retention-days: 7
 
       - name: Save memory

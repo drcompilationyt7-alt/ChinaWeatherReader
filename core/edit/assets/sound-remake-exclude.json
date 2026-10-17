@@ -1,0 +1,8 @@
+{
+  "note": "Beat-remake sound edits (SOUND_BEAT_REMAKE=1, sound_11+): clips NOT used as hits because a visible action of theirs cannot get its own on-beat sound (continuous / rapid fire with no separate transients). Hit use in the remake only; the clips stay in the pool and in the allowlist for the other sound edits. By eye on the s39 hit sheets, 2026-10-16. 2026-10-16 later: continuous fights are now cut right after the hit by the loud-onset rule (REMAKE_LOUD_DB), so c_bZdd8k6wKsI_667122 is back in use.",
+  "clips": {
+    "c_iWR7Q5i0JpQ_45435": "machine gun: muzzle flashes on every frame around the hit, one transient",
+    "c_Zq4zTcIM0yQ_6828": "rapid fire: flashes at -2 and +2 frames of the single transient",
+    "c_OcbcJ4Urg5k_434697": "walking boots: every step is visible, the weaker steps after the hit would be ducked"
+  }
+}

@@ -36,8 +36,8 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
-VERSION = 7
-TAG_VERSION = 6           # tags cache (prompts); measure changes do not invalidate it
+VERSION = 9
+TAG_VERSION = 7           # tags cache (prompts); measure changes do not invalidate it
 AW = 192                     # analysis width (px)
 EVENT_WIN = 2.0              # frames@24 either side of the transient
 SYNC_MAX = 2.0               # |event - hit| frames@24 for a visible source (refs: action within +-2 frames)
@@ -45,8 +45,10 @@ PROM_MIN = float(os.environ.get('SOUND_VIS_PROM', '1.8'))
 AREA_MIN = float(os.environ.get('SOUND_VIS_AREA', '0.05'))      # bbox area share of the frame (close-up / medium)
 FIT_MIN = float(os.environ.get('SOUND_VIS_FIT', '0.5'))        # residual-motion energy inside the best 9:16 window
 STRONG_MARGIN, STRONG_SRC, PROM_MIN_STRONG = 4.0, -2.5, 1.0
-TAG_MARGIN = float(os.environ.get('SOUND_VIS_MARGIN', '1.9'))   # best source tag minus best non-source tag
-SRC_MIN = float(os.environ.get('SOUND_VIS_SRC', '-3.8'))         # best source tag logit (absolute)
+SMALL_AREA = 0.12
+PEAK_MIN = float(os.environ.get('SOUND_VIS_PEAK', '3.0'))        # residual motion at the event (analysis px / frame)
+TAG_MARGIN = float(os.environ.get('SOUND_VIS_MARGIN', '2.6'))   # best source tag minus best non-source tag
+SRC_MIN = float(os.environ.get('SOUND_VIS_SRC', '-3.3'))         # best source tag logit (absolute)
 FACE_MARGIN = float(os.environ.get('SOUND_VIS_FACE', '-0.5'))   # source tag minus face tag (logits)
 CROP_W = (1080 / 1920) * (9 / 16)                               # 9:16 window width as a share of a 16:9 frame (0.316)
 
@@ -58,11 +60,14 @@ SOURCE_TAGS = {
     'sword': ['two swords clashing with sparks', 'a sword slash', 'a character drawing a katana from its sheath',
               'a blade swung in a fight'],
     'fist': ['a fist punching a face', 'a punch landing on a body', 'a close-up of a clenched fist hitting'],
-    'kick': ['a kick hitting an opponent', 'a foot stomping the ground'],
-    'clap': ['hands clapping', 'fingers snapping', 'a hand slamming a table'],
-    'object': ['an object being struck', 'a door slammed shut', 'a lighter flicked open', 'a coin flipped by a thumb',
-               'a chess piece placed on a board', 'a cup set down on a table'],
+    'kick': ['a kick hitting an opponent', 'a kick landing on a body'],
+    'clap': ['hands clapping', 'fingers snapping', 'a hand slamming down on a table', 'a slap across a face', 'a knock on a door'],
+    'object': ['a door slammed shut', 'a car door slammed', 'a can hitting the ground', 'a lighter flicked open', 'a pen being clicked',
+               'a whip cracking', 'knuckles being cracked'],
     'impact': ['a character smashed into a wall', 'a body hitting the ground hard', 'a car crash'],
+    'stomp': ['a boot stomping hard on a floor', 'a foot slamming into the ground', 'footsteps on a hard floor with a heavy boot',
+              'a character landing from a jump on the ground', 'a fist slamming into the ground'],
+    'sheath': ['a sword being sheathed with a click', 'a katana pulled from its scabbard', 'a blade snapping into its sheath'],
     # owner 2026-10-12: breaking / cracking sounds, as in the reference (crystal crushed in a fist, an earring shattering)
     'glass': ['glass shattering into shards', 'a crystal crushed in a hand', 'a window breaking', 'a glass cup breaking'],
     'mask': ['a mask cracking on a face', 'a white mask shattering into pieces', 'a cracked mask falling off a face'],
@@ -75,6 +80,8 @@ NONSOURCE_TAGS = {
     'eyes': ['an extreme close-up of eyes'],
     'scenery': ['a landscape or building with no people', 'the sky', 'an empty room'],
     'wide': ['a wide shot with tiny distant characters', 'a dark wide battlefield seen from far away'],
+    'gesture': ['a character saluting', 'a character waving or pointing', 'a character posing', 'a character gently placing an object down',
+                'a character turning their head', 'a hand sign or a gesture', 'a character walking without a hard footstep', 'a character bowing'],
     'fx': ['an abstract flash of light', 'an energy aura effect filling the frame', 'a white screen flash',
            'an explosion filling the whole frame'],
 }
@@ -146,6 +153,7 @@ def measure(path, t, box=None, use_cache=True, t_min=None, t_max=None):
     G = np.zeros(n)          # global share of moving pixels
     L = g.mean(axis=(1, 2)) / 255.0
     maps = {}
+    pos = {}
     for a, b in zip(keep[:-1], keep[1:]):
         f = cv2.calcOpticalFlowFarneback(g[a].astype(np.uint8), g[b].astype(np.uint8), None, 0.5, 3, 13, 3, 5, 1.1, 0)
         f = f - np.median(f.reshape(-1, 2), axis=0)                  # remove the camera pan
@@ -158,6 +166,7 @@ def measure(path, t, box=None, use_cache=True, t_min=None, t_max=None):
         S[b] = float(np.percentile(np.clip(dd, 0, None), 99.5)) / 255.0
         G[b] = float((m > max(1.0, 0.5 * thr)).mean())
         maps[b] = m
+        pos[b] = np.clip(dd, 0, None) / 255.0
     k_hit = int(np.argmin(np.abs(times - t)))
     scale24 = fps / 24.0
     kf = sorted(maps)
@@ -233,6 +242,60 @@ def measure(path, t, box=None, use_cache=True, t_min=None, t_max=None):
         if acc >= 0.85 * tot:
             break
     bbox = [xs0 / ww, ys0 / hh, xs1 / ww, ys1 / hh] if xs1 > xs0 else [0, 0, 0, 0]
+    # CAUSE box (owner 2026-10-13: the 9:16 crop must hold what MAKES the sound): the new bright blob at the event (muzzle
+    # flash / spark / shatter) if there is one, else the motion component holding the peak of the smoothed motion energy
+    # (blade contact, fist, hand), merged with neighbours only while they still fit one 9:16 window.
+    src_box, src_fit, src_wide, src_cx = None, None, False, focus_x
+    try:
+        pm = pos[k_ev] if k_ev in pos else np.zeros_like(m)
+        if pk in pos:
+            pm = np.maximum(pm, pos[pk])
+        flash_mask = (pm >= 0.30).astype(np.uint8)
+        flash_mask = cv2.morphologyEx(flash_mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+        cand = flash_mask if flash_mask.sum() >= 0.0004 * hh * ww else mask
+        wmap = (pm * 8.0 + m) * cand
+        sm = cv2.GaussianBlur(wmap.astype(np.float32), (0, 0), max(2.0, hh / 40.0))
+        py_, px_ = np.unravel_index(int(np.argmax(sm)), sm.shape)
+        nl, lb, st2, _c = cv2.connectedComponentsWithStats(cand, 8)
+        if nl > 1:
+            ci = int(lb[py_, px_])
+            if ci == 0:             # the peak sits between blobs: the nearest one
+                d_ = [(abs(st2[i][0] + st2[i][2] / 2 - px_) + abs(st2[i][1] + st2[i][3] / 2 - py_), i) for i in range(1, nl)]
+                ci = min(d_)[1]
+            x0_, y0_, bw_, bh_, _a = st2[ci]
+            X0, Y0, X1, Y1 = x0_, y0_, x0_ + bw_, y0_ + bh_
+            for e_, i in sorted([(float(wmap[lb == i].sum()), i) for i in range(1, nl) if i != ci], reverse=True):
+                x, y, bw, bh, _a = st2[i]
+                nx0, nx1 = min(X0, x), max(X1, x + bw)
+                if (nx1 - nx0) <= 0.85 * cw and e_ >= 0.2 * float(wmap[lb == ci].sum()):
+                    X0, Y0, X1, Y1 = nx0, min(Y0, y), nx1, max(Y1, y + bh)
+            src_wide = bool((X1 - X0) > 0.9 * cw)
+            mg = 0.06 * cw
+            # window centre keeping the box (+ margin) inside, nearest the box centre; wide: centre on the peak blob
+            if src_wide:
+                bc = x0_ + bw_ / 2
+                c_win = float(np.clip(bc, cw / 2, ww - cw / 2))
+                X0, X1 = x0_, x0_ + bw_
+            else:
+                lo_c, hi_c = X1 + mg - cw / 2, X0 - mg + cw / 2
+                bc = (X0 + X1) / 2
+                c_win = float(np.clip(bc, min(lo_c, hi_c), max(lo_c, hi_c)))
+                c_win = float(np.clip(c_win, cw / 2, ww - cw / 2))
+            wl, wr = c_win - cw / 2, c_win + cw / 2
+            inside = max(0.0, min(X1, wr) - max(X0, wl)) / max(1.0, X1 - X0)
+            src_box = [round(X0 / ww, 4), round(Y0 / hh, 4), round(X1 / ww, 4), round(Y1 / hh, 4)]
+            src_fit, src_cx = round(float(inside), 3), round(c_win / ww, 4)
+            # localisation check: the cause blob has to sit on the main motion (the 85 %-energy box); a blob off it (a flash
+            # on a sky / a tiny edge fragment) is not trusted: keep the energy window (focus_x / fit)
+            mb = bbox
+            bcx, bcy = ((X0 + X1) / 2) / ww, ((Y0 + Y1) / 2) / hh
+            if mb[2] > mb[0] and not (mb[0] - 0.02 <= bcx <= mb[2] + 0.02 and mb[1] - 0.02 <= bcy <= mb[3] + 0.02):
+                src_box = [round(mb[0], 4), round(mb[1], 4), round(mb[2], 4), round(mb[3], 4)]
+                src_cx = focus_x
+                inside = max(0.0, min(mb[2], (focus_x + cw / ww / 2)) - max(mb[0], (focus_x - cw / ww / 2))) / max(1e-6, mb[2] - mb[0])
+                src_fit = round(float(inside), 3)
+    except Exception:  # noqa: BLE001
+        pass
     area = float((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]))
     mask_share = float(mask.mean())
     # pure FX flash: a luma jump with motion everywhere at the event
@@ -246,7 +309,7 @@ def measure(path, t, box=None, use_cache=True, t_min=None, t_max=None):
     out.update(spark=round(float(S[k_ev]), 3), base=round(base, 3), peak=round(peak, 3), prom=round(prom, 2), offset_f24=round(off24, 2), kind=kind,
                event_t=round(float(times[k_ev]), 4), windup_t=round(float(times[k_w]), 4), windup_s=round(windup_s, 3),
                bbox=[round(x, 3) for x in bbox], area=round(area, 3), mask_share=round(mask_share, 3),
-               fit=round(fit, 3), focus_x=round(focus_x, 3), global_share=round(float(G[k_ev]), 3),
+               fit=round(fit, 3), focus_x=round(focus_x, 3), src_box=src_box, src_fit=src_fit, src_wide=src_wide, src_cx=src_cx, global_share=round(float(G[k_ev]), 3),
                luma_jump=round(luma_jump, 3), flash=flash, held=len(keep) < 0.5 * n)
     _save(cp, out)
     return out
@@ -352,8 +415,13 @@ def gate(m, tg=None):
         strong = _mg >= STRONG_MARGIN and tg.get(_src, -99) >= STRONG_SRC
     if m['prom'] < (PROM_MIN_STRONG if strong else PROM_MIN):
         return False, 'nothing_visible'
-    if m['area'] < AREA_MIN:
-        return False, 'source_too_small'
+    # absolute motion at the event: a held / near-still frame with a sword in it is not a sword hit (pool check:
+    # a static Sword of the Stranger close-up peaked 1.4-2.2, the real sources >= 4.8; the reference's weakest real hit,
+    # a wide muzzle flash, 3.0 with a strong spark)
+    if m.get('peak') is not None and m['peak'] < PEAK_MIN and float(m.get('spark') or 0) < 0.6:
+        return False, 'nothing_visible'
+    if m['area'] < AREA_MIN or (m['area'] < SMALL_AREA and float(m.get('spark') or 0) < 0.6):
+        return False, 'source_too_small'      # a tiny action reads only with a bright flash (the ref's wide muzzle flash)
     if m['fit'] < FIT_MIN:
         return False, 'source_off_crop'
     if tg:
@@ -362,11 +430,17 @@ def gate(m, tg=None):
             return False, 'face_only'
         if non in ('scenery', 'fx', 'wide') and margin < -1.0:
             return False, f'{non}_only'
+        if non == 'gesture' and margin < 1.0:
+            return False, 'gesture_only'            # a salute / a wave / a placed object has no inherent sound
+        if src in ('object', 'impact') and margin < 4.0:
+            return False, 'source_ambiguous'        # owner 2026-10-13: a first-time viewer must know what made the sound
+        if src == 'fist' and margin < 3.2:
+            return False, 'punch_unclear'           # a punch counts only with the contact plainly visible
         # sound_4 by-eye check (28 hits): the clear sources had margin >= 1.9 and a source logit >= -3.8; FX / faces /
         # smears sat at margin -0.3..1.6 (core/edit/refs/sound-visible-source.md)
         if margin < TAG_MARGIN or tg.get(src, -99) < SRC_MIN:
             return False, 'source_unclear'
-    if (m.get('region_luma') is not None and m['region_luma'] < 0.16 and float(m.get('spark') or 0) < 0.4)             or (m.get('frame_luma') is not None and m['frame_luma'] < 0.12):
+    if (m.get('region_luma') is not None and m['region_luma'] < 0.16 and float(m.get('spark') or 0) < 0.4)             or (m.get('frame_luma') is not None and m['frame_luma'] < 0.16 and float(m.get('spark') or 0) < 0.4):
         return False, 'dark'
     return True, None
 

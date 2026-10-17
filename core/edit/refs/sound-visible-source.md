@@ -65,3 +65,44 @@ a wrong reject only costs pool size, while a wrong accept is the fault the owner
 Pool check by eye (8 random passes, 8 random rejects of sound/impact):
 - The rejects were right: an opening-credit frame, hair in the wind, energy FX, an aura over a hand.
 - The wrong passes (a tiny dark wide fight, a face close-up) led to the `wide` tag and the face margin -0.5 (`SOUND_VIS_FACE`).
+
+## Pool calibration (gate v7, 2026-10-12 evening)
+
+Every passing sound-pool event was checked by eye on contact sheets (hit -3..+2 frames). Rules added from what failed:
+
+| rule | why (example) |
+|---|---|
+| tag margin >= 1.9 and source logit >= -3.8 | FX / faces / smears passed at margin -0.3..1.6 (sound_4 first render: ~15 / 28 audible hits showed no source) |
+| strong tag (margin >= 4, logit >= -2.5): onset floor 1.0 | continuous blade fights (Sword of the Stranger, Greed vs Wrath) have no still frame before the hit |
+| motion peak >= 3.0 unless spark >= 0.6 | a still close-up with a sword in it is not a sword hit (peak 1.4-2.2; real sources >= 4.8; the ref's wide muzzle flash 3.0) |
+| box < 12 % only with a spark >= 0.6 | tiny dark wide fights; the ref's wide muzzle flash is kept by its flash |
+| dark: frame / region luma < 0.16 without a spark | dark smears read as nothing on a phone |
+| audible hit needs pre-roll >= 55 ms (plan) | a hit on its own cut frame shows no cause |
+
+Result: 27 events in 22 of 263 pool clips pass; ~24 / 27 by eye are real sources. The best new material is gun action:
+Lycoris Recoil and Black Lagoon clips give a muzzle flash on the hit frame, like the reference's #17 but in close / medium shots.
+
+## SECOND reference: jKSxAkOS3JY ("Anime Sound Edit 9", song: Bad Style - Time Back; added by the owner 2026-10-13)
+
+File: `C:/Users/Home/Desktop/edit-refs/sound/jKSxAkOS3JY.mp4` (8.5 s, 1080x1920 @ 60 fps; the same ROTATED layout as FB15: the full 16:9 frame turned 90 deg).
+Measured with `core/edit/judge_sound.py CAND REF --cand-song edit-refs/_songs/time_back.m4a` (this video as the candidate, FB15 as the reference), eye checks on 35 hit strips:
+
+| measure | FB15TNFAHVU | jKSxAkOS3JY |
+|---|---|---|
+| duration | 9.17 s | 8.51 s |
+| cuts per second | 2.29 | **3.18** (28 shots) |
+| shot length p10 / median / p90 | 0.33 / 0.42 / 0.50 s | **0.22 / 0.27 / 0.46 s** |
+| cut -> hit (lead) median | 0.12 s | **0.08 s** (p10 0.04, p90 0.31) |
+| clear clip hits per second | 1.64 | **4.1** (35 hits: gun 7, whoosh 10, blade / metal 5, thud / punch 4, crack / glass 3, other 6) |
+| strong song onsets with a clear hit | 50 % | 45 % |
+| cause visible / visible and centred (judge) | 0.67 / 0.60 | 0.86 / 0.60 |
+| clip layer present | 96 % | 99.9 % |
+| loudness | -6 LUFS | -7.1 LUFS, true peak +4.4 dBTP |
+| sharpness (Laplacian, 640 px) | 741 | 564 |
+
+What it shows (by eye): boots stomping on a wooden floor (R0-R3: the foot lands, repeated), a hand placing a go stone / a chess piece on the board (R5-R7: a clear click), blood spattering on ice (R8), a fist clenched (R9, R10), plus guns, blades and glass. The hit frame is
+almost always the SAME close-up as the 2-4 frames before it (the object is already there), the cause is large (a boot, a hand, a board), and the layout is the full rotated frame. Like FB15 it never cuts to a person doing a gesture.
+
+Shared by both references (the target for sound_10): (1) the cause is an object in a large close-up that is intact / in place 2-4 frames before the sound, (2) the picture does not change between lead-in and hit, (3) the rotated full frame, (4) the cut -> hit lead is short (0.08-0.12 s), (5) the clip bed is present nearly all the time, (6) every shot is a cause-and-sound moment (no gestures, no faces).
+
+DIFFERENCE: jKSxAkOS3JY is much FASTER than FB15 (3.2 vs 2.3 cuts/s, 4.1 vs 1.6 clear hits/s). The owner's own preference (slower, obvious causes: 1.2-1.6 cuts/s, hit shots 0.6-1.2 s) wins over both references on speed; the measured shared structure above is what we copy.

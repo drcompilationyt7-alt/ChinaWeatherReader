@@ -108,11 +108,8 @@ PAN_MAX = float(os.environ.get('REFRAME_PAN_MAX', '0.12'))
 _WH = {}
 
 
-def _focus_master(s):
-    """The shot's sound-source x (sound_visible focus_x, 0-1 of the clip's content box) in master coordinates."""
-    fx = s.get('focus_x')
-    if fx is None or not (s.get('visible') or {}).get('ok', True) or not s.get('sfx'):
-        return None
+def master_x(s, fx):
+    """x (0-1 of the clip's content box) -> master x (0-1 of the 16:9 master) for a shot."""
     p = s.get('path')
     if p not in _WH:
         try:
@@ -122,9 +119,19 @@ def _focus_master(s):
     w, h = _WH[p]
     x0, y0, x1, y1 = s.get('content_box') or [0, 0, 1, 1]
     ca = (w * (x1 - x0)) / max(1.0, h * (y1 - y0))
-    if s.get('layout') == 'letterbox' or ca > 16 / 9:
-        return 0.5 + (float(fx) - 0.5) * min(ca, 16 / 9) / (16 / 9) if s.get('layout') == 'letterbox' else             0.5 + (float(fx) - 0.5) * ca / (16 / 9)
+    if s.get('layout') == 'letterbox':
+        return 0.5 + (float(fx) - 0.5) * min(ca, 16 / 9) / (16 / 9)
+    if ca > 16 / 9:
+        return 0.5 + (float(fx) - 0.5) * ca / (16 / 9)
     return float(fx)
+
+
+def _focus_master(s):
+    """The shot's sound-source x (sound_visible cause box / focus_x, 0-1 of the clip's content box) in master coordinates."""
+    fx = s.get('focus_x')
+    if fx is None or not (s.get('src_box') or (s.get('visible') or {}).get('ok', True)) or not (s.get('sfx') or s.get('hit')):
+        return None
+    return master_x(s, fx)
 
 
 def plan_track(samples, half, dur=1.0):
@@ -192,9 +199,8 @@ def reframe(src, plan_path, out, threads=2, crf=17):
         a, b = tracks[k]
         c = float(np.clip(fx, half, 1 - half))
         # a face track that already holds the source inside the window is kept (less jump between shots)
-        if abs((a + b) / 2 - fx) > half * 0.6:
-            tracks[k] = (c, c)
-            n_focus += 1
+        tracks[k] = (c, c)                 # held on the cause for the whole shot (0.3-0.6 s): no drift off the source
+        n_focus += 1
     log(f'focus on the sound source: {n_focus} of {sum(1 for s in shots if _focus_master(s) is not None)} hit shots re-centred')
     log('tracks:', ' '.join(f'{a:.2f}>{b:.2f}' for a, b in tracks))
 
@@ -218,12 +224,17 @@ def reframe(src, plan_path, out, threads=2, crf=17):
         # sub-pixel position: shift by the fractional part with an affine warp (no jitter on slow pans)
         M = np.float32([[OUT_H / h, 0, -(x0 - ix) * OUT_H / h], [0, OUT_H / h, 0]])
         v = cv2.warpAffine(crop, M, (OUT_W, OUT_H), flags=cv2.INTER_LANCZOS4, borderMode=cv2.BORDER_REPLICATE)
-        bl = cv2.GaussianBlur(v, (0, 0), 1.2)
-        v = cv2.addWeighted(v, 1.35, bl, -0.35, 0)
+        bl = cv2.GaussianBlur(v, (0, 0), 1.5)
+        v = cv2.addWeighted(v, 2.8, bl, -1.8, 0)      # judge: the 9:16 crop of 1080p is a 1.78x upscale, sharpen after it
         enc.stdin.write(v.tobytes())
     enc.stdin.close()
     if enc.wait() != 0 or not os.path.exists(out):
         raise RuntimeError('reframe encode failed')
+    try:
+        with open(out + '.tracks.json', 'w', encoding='utf-8') as f:
+            json.dump({'tracks': tracks, 'bounds': bounds, 'half': half, 'w': w, 'h': h}, f)
+    except OSError:
+        pass
     return {'out': out, 'tracks': tracks}
 
 

@@ -171,6 +171,9 @@ def load_plan(path_or_dict):
 
 # ---------------------------------------------------------------------------------------------- time maps
 
+NO_SHAKE = lambda: os.environ.get('EDIT_NO_SHAKE', '0') == '1'      # owner 2026-10-13: sound / slow-mo vibe edits: no shake, wiggle, handheld, bounce
+
+
 class TimeMap:
     """Output time -> clip time for one shot (dense table, linear interpolation, clamped to the clip)."""
 
@@ -570,6 +573,8 @@ class Engine:
         dy = float(c['pan'][1]) * (e - 0.5) + kdy
         rot = float(c['roll']) * (e - 0.5) + krot
         hh = float(cam_st.get('handheld', 0.0)) * float(c.get('handheld', 1.0))
+        if NO_SHAKE():
+            hh = 0.0
         if hh > 0:
             sd = c['_hh_seed']
             f = cam_st.get('handheld_hz', 3.0)
@@ -588,7 +593,7 @@ class Engine:
             lns += amt
             if 0 <= left < dur:
                 lns -= amt * (1 - left / dur) ** 2
-        b = float(c.get('bounce') or 0.0)
+        b = 0.0 if NO_SHAKE() else float(c.get('bounce') or 0.0)
         if b > 0 and self.beats:
             k = int(np.searchsorted(self.beats, t, side='right')) - 1
             if k >= 0:
@@ -710,6 +715,8 @@ class Engine:
             if pc is None:
                 f = (s.get('_cam') or {}).get('focus') or [0.5, 0.42]
                 pc = [0.5, float(np.clip(float(f[1]), 0.22, 0.52))]
+            if NO_SHAKE():
+                items = [it for it in items if it.get('kind') not in ('shake', 'bounce', 'shake_blur')]
             for it in items:
                 sg = 1.0 if rng.random() < 0.5 else -1.0
                 c = it.get('center', pc)
@@ -717,7 +724,7 @@ class Engine:
                                      amount=float(it.get('amount', 1.0)), center=c))
             # phrase shakes / drop punch
             ps = float(self.style['camera'].get('phrase_shake') or 0.0)
-            if ps > 0:
+            if ps > 0 and not NO_SHAKE():
                 for p in list(self.phrases) + [self.drop_t]:
                     if s['t0'] - 0.05 <= p < s['t1']:
                         lst.append(TR.Accent('shake', p, ctx, amount=ps / 0.015))

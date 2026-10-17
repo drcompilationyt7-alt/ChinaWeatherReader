@@ -226,6 +226,10 @@ def colour_gate(path, vibe_kind):
         ok = (sc['black_point'] <= 90 and sc['sat'] >= 30 and sc['centre_sat'] >= 20 and 50 <= sc['luma'] <= 235
               and sc['skin_a'] >= -8.0)
         sc['milky'] = bool(sc['black_point'] > 45 or sc['sat'] < 55)
+    elif vibe_kind == 'sound':
+        # 2026-10-14: the sound edit needs a VISIBLE CAUSE, not rich colour; gun / noir sources (Black Lagoon, Edgerunners,
+        # Jormungand) are graded low-saturation and the old floor (sat 30) dropped most of them. Still no grey / washed-out frames.
+        ok = sc['black_point'] <= 70 and sc['sat'] >= 16 and sc['luma'] >= 30
     else:
         ok = sc['black_point'] <= 60 and sc['sat'] >= 30 and sc['luma'] >= 35
     sc['face_ok'] = bool(ok)
@@ -478,8 +482,15 @@ def fresh_clips(preset, vibe, root=None):
     out = []
     reviewed_only = os.environ.get('EDIT_POOL_REVIEWED_ONLY', '1') != '0'
     bl = load_blocklist()
+    reuse = preset in REUSE_PRESETS
+    recent = sound_recent_ids(preset, vibe, led) if reuse else set()
     for it in man['items']:
-        if it.get('status') != 'fresh' or key(preset, vibe, 'clip', it['id']) in led['items']:
+        if reuse:
+            # owner 2026-10-13 (sound): clips are reused across videos, never retired; only the last
+            # SOUND_COOLDOWN_VIDEOS videos' clips are skipped (never twice in one video: the planner's moment keys)
+            if it.get('status') not in ('fresh', 'used') or it['id'] in recent:
+                continue
+        elif it.get('status') != 'fresh' or key(preset, vibe, 'clip', it['id']) in led['items']:
             continue
         # the library's gore gate missed blood shots (2026-10-12): a clip is shown only after a visual review
         # (core/edit/pool_review.py sheets -> 'reviewed' stamp); EDIT_POOL_REVIEWED_ONLY=0 turns this off
@@ -512,12 +523,52 @@ def song_ok(preset, vibe, root=None):
                 continue
         if it.get('file') and os.path.exists(it['file']):
             ok.append(it)
+            continue
+        # CI / after a release pull: 'file' is an owner-PC path; the song ships in the vibe's sounds/ (or the shared _sounds/)
+        vd = vibe_dir(preset, vibe, root)
+        here = [h for d in (os.path.join(vd, 'sounds'), os.path.join(root or pool_root(), '_sounds'))
+                for h in glob.glob(os.path.join(d, it['id'] + '.*')) if not h.endswith(('.json', '.part'))]
+        if here:
+            ok.append(dict(it, file=here[0]))
     return ok
+
+
+REUSE_PRESETS = ('sound',)          # owner 2026-10-13: these pools only GROW; used clips come back after a cooldown
+
+
+def sound_cooldown():
+    try:
+        return max(0, int(os.environ.get('SOUND_COOLDOWN_VIDEOS', '3')))
+    except ValueError:
+        return 3
+
+
+def sound_recent_ids(preset, vibe, led=None):
+    """Clip ids shown in the last SOUND_COOLDOWN_VIDEOS videos of this preset / vibe (ledger 'recent')."""
+    led = led or load_ledger()
+    n = sound_cooldown()
+    hist = (led.get('recent') or {}).get(f'{preset}/{vibe}') or []
+    return {c for h in (hist[-n:] if n else []) for c in h.get('clips') or []}
 
 
 def mark_used(preset, vibe, clip_ids, clips_by_id=None, sound_id=None, video='', role='short', root=None):
     led = load_ledger()
     t = now()
+    if preset in REUSE_PRESETS:
+        # no retirement: a history entry per video (the cooldown reads the last N); status stays 'fresh'
+        hist = led.setdefault('recent', {}).setdefault(f'{preset}/{vibe}', [])
+        hist.append({'at': t, 'video': os.path.basename(video), 'role': role, 'clips': list(clip_ids)})
+        del hist[:-50]
+        man = load_manifest(preset, vibe, root=root)
+        for it in man['items']:
+            if it['id'] in set(clip_ids):
+                it['used_at'], it['used_in'] = t, os.path.basename(video)
+                it['uses'] = int(it.get('uses') or 0) + 1
+        if sound_id:
+            led['items'][key(preset, vibe, 'sound', sound_id)] = {'used_at': t, 'video': os.path.basename(video), 'role': role}
+        save_ledger(led)
+        save_manifest(preset, vibe, man, root=root)
+        return
     man = load_manifest(preset, vibe, root=root)
     by = {it['id']: it for it in man['items']}
     for cid in clip_ids:
@@ -594,7 +645,7 @@ def promote(staging):
         for vn in pd['vibes']:
             sman = load_manifest(p, vn, root=staging)
             lman = load_manifest(p, vn, root=live)
-            keep = [it for it in lman['items'] if it.get('status') == 'fresh']
+            keep = [it for it in lman['items'] if it.get('status') == 'fresh' or (p in REUSE_PRESETS and it.get('status') == 'used')]
             ids = {it['id'] for it in keep}
             for it in sman['items']:
                 if it.get('status') == 'fresh' and it['id'] not in ids:
@@ -625,7 +676,10 @@ def prune(root=None):
             man = load_manifest(p, vn, root=root)
             keep = []
             for it in man['items']:
-                used = it.get('status') in ('used', 'retired', 'rejected') or key(p, vn, 'clip', it['id']) in led['items']
+                if p in REUSE_PRESETS:
+                    used = it.get('status') in ('rejected', 'broken')       # only broken / rejected media leave a growing pool
+                else:
+                    used = it.get('status') in ('used', 'retired', 'rejected') or key(p, vn, 'clip', it['id']) in led['items']
                 if used:
                     f = os.path.join(vibe_dir(p, vn, root), it['file'])
                     for g in glob.glob(f + '*'):

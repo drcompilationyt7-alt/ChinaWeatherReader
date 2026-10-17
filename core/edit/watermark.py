@@ -83,7 +83,7 @@ def _probe(path):
     return int(s['width']), int(s['height']), float(num) / float(den)
 
 
-def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, letterbox=False):
+def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, letterbox=False, rotate_hint=None):
     """rot90: the picture is a 16:9 master turned 90 deg clockwise into 9:16 (sound edit 'rot90' delivery); the handle
     is then written upright in the MASTER's frame (it turns with the picture, as the references' own marks do)."""
     text = os.environ.get('EDIT_WATERMARK', '@zeroyenotaku') if text is None else text
@@ -91,6 +91,17 @@ def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, l
         shutil.copy2(src, dst)
         return dst
     w, h, fps = _probe(src)
+    # owner 2026-10-13: ROTATED deliveries (rot90) get the small 'rotate phone' corner hint (upright, over the playing video, never on landscape longs)
+    hint = (rot90 if rotate_hint is None else rotate_hint) and os.environ.get('EDIT_ROTATE_HINT', '1') != '0' and h > w
+    shows = None
+    if hint:
+        import rotate_hint as RH
+        try:
+            dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src],
+                                       capture_output=True, text=True).stdout.strip() or 0)
+        except ValueError:
+            dur = 0.0
+        shows = RH.shows_for(dur)
     dec = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', src, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
                            stdout=subprocess.PIPE)
     enc_cmd = ['ffmpeg', '-y', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{w}x{h}', '-r', f'{fps:.6f}',
@@ -111,6 +122,8 @@ def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, l
             fr = np.ascontiguousarray(np.rot90(apply(up, k / fps, text, WM_SAFE_ROT90), -1))
         else:
             fr = apply(fr, k / fps, text, WM_SAFE_LETTERBOX if letterbox else None)
+        if hint:
+            fr = np.ascontiguousarray(RH.apply(fr, k / fps, shows))
         enc.stdin.write(fr.tobytes())
         k += 1
     enc.stdin.close()

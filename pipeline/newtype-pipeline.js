@@ -59,10 +59,31 @@ function readyVibes(type) {
 function poolSizes() { return { sound: readyVibes('sound'), slowmo: readyVibes('slowmo') }; }
 const poolMin = () => Number(process.env.NEWTYPE_POOL_MIN || 1);
 
-function runCli(args, timeoutMin) {
+/**
+ * The owner-approved SOUND EDIT = sound_11b (2026-10-17, output/newtypes/s48; core/edit/refs/new-types-progress.md):
+ * beat remake (the clip sounds rebuild the song's drum onsets), eye-approved pinned hits only, the references' rotated
+ * 9:16 layout (+ rotate-phone hint, burned by watermark.py), no shake (vibe_edit default), zero-freeze remake defaults
+ * (SOUND_REMAKE_STILL_*, TAIL_MAX, SUB_ORDER are the sound_edit.py defaults), allow / hit-block / remake-exclude lists
+ * in core/edit/assets. A variable already set in the environment (repo variable, test) wins.
+ */
+const SOUND_ENV = {
+  SOUND_BEAT_REMAKE: '1', SOUND_SRC_CAP: '2', SOUND_PREROLL_MAX: '1.1', SOUND_EXTRA_VIBES: 'crisp', SOUND_ROT_CAS: '0.7',
+  SOUND_RATE_MIN: '1.1', SOUND_GAP_MAX: '1.35', SOUND_RATE_SHORT: '1.3', SOUND_VERTICAL_NATIVE: 'rot90', SOUND_VIS_DROP: '1',
+  SOUND_PICTURE_FILL: '0', SOUND_AUDIBLE_MIN: '1.0', SOUND_VIS_LEAD_MIN: '0.4', SOUND_ALLOW_ONLY: '1',
+  EDIT_NO_SHAKE: '1', EDIT_ROTATE_HINT: '1', EDIT_POOL_REVIEWED_ONLY: '1', SOUND_COOLDOWN_VIDEOS: '3', SOUND_COOLDOWN_RELAX: '1',
+  EDIT_GPU: '0',
+};
+const typeEnv = type => {
+  const base = type === 'sound' ? SOUND_ENV : { EDIT_NO_SHAKE: '1', EDIT_GPU: '0' };
+  const out = {};
+  for (const [k, v] of Object.entries(base)) out[k] = process.env[k] !== undefined && process.env[k] !== '' ? process.env[k] : v;
+  return out;
+};
+
+function runCli(args, timeoutMin, extraEnv = {}) {
   return new Promise(resolve => {
     execFile(python(), args, { timeout: timeoutMin * 60000, maxBuffer: 128 * 1024 * 1024,
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8', EDIT_POOL_DIR: poolRoot() } }, (err, stdout, stderr) => {
+      env: { ...process.env, ...extraEnv, PYTHONIOENCODING: 'utf-8', EDIT_POOL_DIR: poolRoot() } }, (err, stdout, stderr) => {
       if (stderr) process.stderr.write(String(stderr).slice(-3000));
       resolve({ err, stdout: String(stdout || '') });
     });
@@ -76,9 +97,12 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   const cli = CORE('vibe_edit.py');
   if (!fs.existsSync(cli)) throw new Error(`render CLI missing: ${cli}`);
   const args = [cli, '--type', type, '--out', work, ...(wantLong ? ['--landscape-long'] : []),
+    ...(process.env.DRY_RUN === 'true' ? ['--no-mark'] : []),   // a dry run never touches the pool ledger
     ...(process.env.NEWTYPE_CLI_ARGS ? process.env.NEWTYPE_CLI_ARGS.split(' ').filter(Boolean) : [])];
   const t0 = Date.now();
-  const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 75 : 30)));
+  const tenv = typeEnv(type);
+  logger.info(`${type} render env: ${Object.entries(tenv).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+  const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 90 : 45)), tenv);
   const rep = readJson(path.join(work, 'result.json'), null);
   if (!rep || rep.ok === false || err) {
     throw new Error(`${type} render failed: ${rep && rep.reason ? rep.reason : ((err && err.message) || 'no result').slice(0, 200)}`);
