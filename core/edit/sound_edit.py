@@ -2934,9 +2934,12 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
     elif L > LEN_MAX:
         n_bars -= 1
         L = n_bars * 4 * P
-    if REMAKE and length_range and music_start is None:
+    if REMAKE and length_range:
         # beat remake: the clip hits re-create the drum pattern, so the section needs drums all through (no drumless break): the
-        # 4-bar step nearest the hook whose drum onsets never pause > REMAKE_DRUM_GAP s
+        # 4-bar step nearest the hook whose drum onsets never pause > REMAKE_DRUM_GAP s. With a music-pool section (music_start)
+        # the search starts AT that section (k = 0 first) and a step must also give the remake's even-gap hit grid
+        # (select_hits_remake; the pool's section score does not guarantee onsets every <= 1.6 s, e.g. Shape of You 190 s).
+        hinted = music_start is not None
         best = None
         for k in sorted(range(-60, 61), key=abs):
             dk = d + k * 16 * P
@@ -2944,10 +2947,19 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
                 continue
             w = window_drum_onsets(music, dk, L)
             gmax = float(np.max(np.diff(np.concatenate([[0.0], w, [L]])))) if len(w) else 99.0
+            if hinted and gmax <= REMAKE_DRUM_GAP:
+                P_k, ph_k = song.fit_grid(dk - 6, dk + L + 6, 60 / song.P)
+                d_k = ph_k + round((dk - ph_k) / P_k) * P_k
+                n_bars_k = max(1, int(os.environ.get('SOUND_REMAKE_MIN_BARS', '11')))
+                if not select_hits_remake(song, d_k, n_bars_k * 4 * P_k, max(8, int(n_bars_k * 4 * P_k / 0.75)), P_k):
+                    log(f'beat remake: section {dk:.2f} s has no even-gap hit grid: next step')
+                    continue
             if best is None or gmax < best[1] - 1e-6:
                 best = (dk, gmax)
             if gmax <= REMAKE_DRUM_GAP:
                 break
+        if hinted and best:
+            log(f'beat remake: music-pool section {music_start:.2f} s -> {best[0]:.2f} s')
         if best and abs(best[0] - d) > 1e-3:
             P, ph = song.fit_grid(best[0] - 6, best[0] + L + 6, 60 / song.P)
             d = ph + round((best[0] - ph) / P) * P
