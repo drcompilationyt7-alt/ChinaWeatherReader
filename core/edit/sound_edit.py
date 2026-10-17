@@ -1783,7 +1783,8 @@ def mix(music_win, shots_ev, L, target_db=HIT_OVER_MUSIC_DB, level_ref=None, rng
                 layers = 2
         if e.get('remake_end') is not None:
             # beat remake: each kept on-beat hit of the clip gets its own reference tail (one envelope would duck the later hits)
-            bnd = [0] + [int(round((0.03 + x - 0.03) * MSR)) for x in (e.get('subs') or [])] + [len(seg)]
+            # boundaries clipped to the snippet and sorted (a second hit past the snippet's end gave an empty slice: CI 2026-10-17)
+            bnd = sorted({0, len(seg)} | {min(len(seg), max(0, int(round((0.03 + x - 0.03) * MSR)))) for x in (e.get('subs') or [])})
             g_all = np.ones(len(seg))
             for p0, p1 in zip(bnd[:-1], bnd[1:]):
                 if p1 - p0 > int(0.04 * MSR):
