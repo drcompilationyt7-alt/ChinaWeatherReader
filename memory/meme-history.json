@@ -1270,6 +1270,53 @@
     "ovStyle": "op-ov-stem-event",
     "descHook": "layers"
    }
+  },
+  {
+   "videoId": "QZvICmvLzfI",
+   "url": "https://www.youtube.com/watch?v=QZvICmvLzfI",
+   "postedAt": "2026-10-17T07:22:49.287Z",
+   "publishAt": "2026-10-17T12:00:00.000Z",
+   "song": "idol",
+   "theme": "anime",
+   "emoji": "🔥,🗿",
+   "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
+   "clipIds": [
+    "5nxYLcGQAi4",
+    "G0LcDvr6FtA",
+    "24nGiql-_wE",
+    "GRJ3cdMLphI",
+    "QgIQbeRzkkc",
+    "fhN3cx1SeVs",
+    "ZWvFR00t-NE",
+    "RDI1OgHl3BQ"
+   ],
+   "clipChannels": [
+    "Anime　【OSHI NO KO】　Official Channel",
+    "AniverseFX",
+    "Kupnoodls",
+    "Nesta Recaps",
+    "Samy- san",
+    "pê hắc A Tê ết",
+    "▪︎ Lord Ennard ▪︎"
+   ],
+   "followUpOf": "NyccBq4DC_E",
+   "clipSource": "Oshi no Ko",
+   "settings": {
+    "drop": 18,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": true,
+    "hook": "layers"
+   },
+   "onVideoTitle": "vocals only first",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "title-source",
+    "titleStyle": "kw-suggest",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "layers"
+   }
   }
  ]
 }
