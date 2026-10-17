@@ -1,4 +1,8 @@
 {
+ "guess the anime character by outfit": {
+  "at": "2026-10-17T07:08:32.421Z",
+  "s": []
+ },
  "guess the anime character by eyes": {
   "at": "2026-10-16T07:26:11.442Z",
   "s": [
@@ -194,19 +198,6 @@
    "guess the kpop song by emoji old",
    "guess the kpop song by emoji easy",
    "guess the kpop song by emoji 2020"
-  ]
- },
- "guess the vtuber": {
-  "at": "2026-09-25T08:01:27.897Z",
-  "s": [
-   "guess the vtuber",
-   "guess the vtuber by voice",
-   "guess the vtuber quiz",
-   "guess the vtuber merryweather",
-   "guess the vtuber laugh",
-   "shoto guess the vtuber",
-   "luca kaneshiro guess the vtuber",
-   "vtubers guess the logo"
   ]
  }
 }

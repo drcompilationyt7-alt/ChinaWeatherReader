@@ -725,6 +725,60 @@
     "titleStyle": "ramp",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "KHEouuyMYHQ",
+   "url": "https://www.youtube.com/watch?v=KHEouuyMYHQ",
+   "postedAt": "2026-10-17T07:08:43.270Z",
+   "publishAt": "2026-10-17T12:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 237752252,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the character from their outfit?",
+     "template": "Can you guess the character from their outfit?",
+     "sec": 2.28
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Frieren!",
+     "template": null,
+     "sec": 0.99
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai-short",
+     "line": "We have Shinobu Kocho!",
+     "template": "We have {a}!",
+     "sec": 1.62
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Spot on, Hizuru Minakata!",
+     "template": "Spot on, {a}!",
+     "sec": 1.9
+    }
+   ],
+   "titleTemplate": "outfit-design",
+   "title": "Can You Name These Anime Characters From Their Costume? 🎧 #anime",
+   "answers": [
+    "outfit:frieren",
+    "outfit:shinobu kocho",
+    "outfit:hizuru minakata"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
