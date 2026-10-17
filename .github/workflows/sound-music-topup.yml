@@ -1,0 +1,86 @@
+name: Sound music pool top-up (monthly, automatic)
+
+# Adds new good songs for the SOUND edit to core/edit/assets/sound-music-pool.json with NO manual approval:
+# candidates (LLM + trending sound-edit titles + seed list) -> gates (official upload >= 2M views, tempo 85-140, clear steady
+# drums by HPSS / onset regularity / tempo stability, a good 25-35 s section) -> probation (Thompson sampling decides) ->
+# underperformers retired. Code: core/edit/music_pool.py (topup). CPU only, no Kaggle. Audio is NOT committed (fetched at render time).
+# Off with the repository variable SOUND_MUSIC_TOPUP=off. GitHub cron ORs day-of-month and day-of-week, so it fires every
+# Wednesday and the first step exits unless the day of the month is <= 7 (= the first Wednesday). A manual run always goes.
+
+on:
+  schedule:
+    - cron: '45 5 * * 3'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run the gates and print the verdicts; write and commit nothing'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: sound-music-topup
+  cancel-in-progress: false
+
+env:
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_TOPUP || secrets.YOUTUBE_COOKIES }}
+  YT_COOKIES: /tmp/yt_cookies.txt
+  YT_JS_RUNTIMES: node
+  MUSIC_KEEP_AUDIO: '0'
+  MUSIC_POOL_CACHE: /tmp/music-pool-audio
+
+jobs:
+  topup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    if: vars.SOUND_MUSIC_TOPUP != 'off'
+    permissions:
+      contents: write
+    steps:
+      - name: First Wednesday only (scheduled runs)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%d)" -gt 7 ]; then
+            echo "Not the first Wednesday of the month: nothing to do."; echo "go=false" >> $GITHUB_OUTPUT
+          else
+            echo "go=true" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.go == 'true'
+        with:
+          python-version: '3.11'
+      - name: Install
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          sudo apt-get install -y -qq ffmpeg || true
+          python -m pip install -U "yt-dlp[default]" "librosa<0.11" numpy scipy soundfile
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
+          node --version; yt-dlp --version
+      - name: Selftest
+        if: steps.gate.outputs.go == 'true'
+        run: python core/edit/music_pool.py selftest
+      - name: Top-up
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then python core/edit/music_pool.py topup --dry-run; else python core/edit/music_pool.py topup; fi
+      - name: Commit the pool + the monthly report
+        if: steps.gate.outputs.go == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          git add core/edit/assets/sound-music-pool.json memory/sound-music-topup-*.json 2>/dev/null || true
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Sound music pool top-up $(date +%F)"
+          for i in 1 2 3; do git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break; sleep 5; done

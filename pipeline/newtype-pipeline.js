@@ -70,6 +70,7 @@ const SOUND_ENV = {
   SOUND_BEAT_REMAKE: '1', SOUND_SRC_CAP: '2', SOUND_PREROLL_MAX: '1.1', SOUND_EXTRA_VIBES: 'crisp', SOUND_ROT_CAS: '0.7',
   SOUND_RATE_MIN: '1.1', SOUND_GAP_MAX: '1.35', SOUND_RATE_SHORT: '1.3', SOUND_VERTICAL_NATIVE: 'rot90', SOUND_VIS_DROP: '1',
   SOUND_PICTURE_FILL: '0', SOUND_AUDIBLE_MIN: '1.0', SOUND_VIS_LEAD_MIN: '0.4', SOUND_ALLOW_ONLY: '1',
+  SOUND_MUSIC_POOL: '1', YT_JS_RUNTIMES: 'node',   // song + section from core/edit/music_pool.py (falls back to the vibe songs)
   EDIT_NO_SHAKE: '1', EDIT_ROTATE_HINT: '1', EDIT_POOL_REVIEWED_ONLY: '1', SOUND_COOLDOWN_VIDEOS: '3', SOUND_COOLDOWN_RELAX: '1',
   EDIT_GPU: '0',
 };
@@ -92,6 +93,7 @@ function runCli(args, timeoutMin, extraEnv = {}) {
 
 async function runNewType({ type, outputDir, wantLong = false } = {}) {
   if (!CT[type]) throw new Error(`unknown new type "${type}"`);
+  if (type === 'sound') musicPoolFeedback();
   const work = path.join(outputDir, `work-${type}-${Date.now()}`);
   fs.mkdirSync(work, { recursive: true });
   const cli = CORE('vibe_edit.py');
@@ -125,9 +127,41 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     category: `edit-${type}`, editType: 'edit', long: false, facts,
     meme: { song: song || rep.vibe || type, theme: 'anime', emoji: meta.emoji, clipIds: rep.clips_used || [], clipChannels: [],
       settings: { vibe: rep.vibe, duration: rep.duration_short, pool: type, render_s: rep.render_s }, onVideoTitle: meta.onVideoTitle,
-      meta: meta.arms, metaChoice: meta.choice, contentType: CT[type], why: `rotation ${type}`, long: false, vibe: rep.vibe },
+      meta: meta.arms, metaChoice: meta.choice, contentType: CT[type], why: `rotation ${type}`, long: false, vibe: rep.vibe,
+      musicPoolId: rep.music_pool ? rep.song : null, songSection: rep.song_section || null },
     workDir: work,
   };
+}
+
+/** a small python call into core/edit/music_pool.py (never throws; the pool file is committed by the workflow) */
+function musicPy(code, what) {
+  try {
+    execFileSync(python(), ['-c', `import sys; sys.path.insert(0, ${JSON.stringify(path.join(ROOT, 'core', 'edit'))}); import music_pool as MP; ${code}`],
+      { timeout: 60000, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+    return true;
+  } catch (e) { logger.warn(`${what}: ${(e.message || '').slice(0, 160)}`); return false; }
+}
+
+/**
+ * Music-pool learning: every sound upload whose stats are >= 7 days old feeds its lscore to music_pool.record_performance once
+ * (2 scores end a song's probation); then retire_underperformers(pool, channel mean) retires auto-added songs that stay below.
+ */
+function musicPoolFeedback() {
+  try {
+    const h = readJson(HISTORY_FILE(), { uploads: [] });
+    const stats = readJson(path.join(MEM(), 'performance-stats.json'), { videos: [] });
+    const byId = new Map((stats.videos || []).map(v => [v.videoId, v]));
+    const scored = (h.uploads || []).map(u => ({ u, s: byId.get(u.videoId) })).filter(x => x.s && typeof x.s.lscore === 'number' && (x.s.ageDays || 0) >= 7);
+    const todo = scored.filter(x => x.u.musicPoolId && x.u.musicPerf === undefined);
+    if (!todo.length) return;
+    const mean = scored.reduce((a, x) => a + x.s.lscore, 0) / scored.length;
+    const calls = todo.map(x => `MP.record_performance(${JSON.stringify(x.u.musicPoolId)}, ${Number(x.s.lscore)})`).join('; ');
+    if (musicPy(`${calls}; p = MP.load_pool(); n = MP.retire_underperformers(p, ${mean}); MP.save_pool(p); print(n)`, 'music pool feedback')) {
+      for (const x of todo) x.u.musicPerf = x.s.lscore;
+      fs.writeFileSync(HISTORY_FILE(), JSON.stringify(h, null, 1));
+      logger.info(`music pool: ${todo.length} upload score(s) recorded`);
+    }
+  } catch (e) { logger.warn(`music pool feedback: ${(e.message || '').slice(0, 160)}`); }
 }
 
 /** idempotent: the render already marks its items; this repeats it from result.json (memory/edit-pool-used.json) */
@@ -148,14 +182,16 @@ function recordUpload(result, upload) {
     contentType: m.contentType, song: m.song, theme: m.theme, emoji: m.emoji, title: result.title, clipIds: m.clipIds,
     clipChannels: m.clipChannels, settings: m.settings, onVideoTitle: m.onVideoTitle, meta: m.meta,
     vibe: m.vibe, longQueued: !!result.longPath || undefined,
+    musicPoolId: m.musicPoolId || undefined, songSection: m.songSection || undefined,
   });
   fs.mkdirSync(MEM(), { recursive: true });
   fs.writeFileSync(HISTORY_FILE(), JSON.stringify(h, null, 1));
   markUsed(result);
+  if (m.musicPoolId) musicPy(`MP.mark_used(${JSON.stringify(m.musicPoolId)})`, 'music pool mark_used');
   appendDecision({ vid: upload.videoId, ch: 'meme', title: result.title,
     arm: { contentType: m.contentType, song: m.song, source: null, theme: m.theme, vibe: m.vibe || null, ...(m.settings || {}), ...(m.meta || {}) },
     mode: m.why });
   if (m.metaChoice) recordMetadataChoice(m.metaChoice, { videoId: upload.videoId });
 }
 
-module.exports = { runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, CT };
+module.exports = { runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, CT };

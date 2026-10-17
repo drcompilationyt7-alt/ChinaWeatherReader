@@ -57,19 +57,50 @@ def pick_vibe(kind, forced, rng):
     return v[0], v[1]
 
 
+def sound_history():
+    """[{id, at}] of the sound edits posted (memory/meme-history.json, oldest first): the music pool's cooldown input."""
+    mem = os.environ.get('MEMORY_DIR') or os.path.join(os.path.dirname(os.path.dirname(HERE)), 'memory')
+    try:
+        with open(os.path.join(mem, 'meme-history.json'), encoding='utf-8') as f:
+            ups = json.load(f).get('uploads') or []
+    except (OSError, ValueError):
+        return []
+    return [{'id': u.get('musicPoolId') or u.get('song'), 'at': u.get('postedAt')} for u in ups
+            if u.get('contentType') == 'sound-edit' and not u.get('long')]
+
+
+def music_pool_song(forced, rng):
+    import music_pool as MP
+    if forced:
+        rec = next((x for x in MP.load_pool()['songs'] if x['id'] == forced), None)
+        if not rec:
+            return None
+        path = MP.fetch_audio(rec)
+        sec = rec.get('section') or {}
+        s = {'id': rec['id'], 'song': rec['song'], 'artist': rec['artist'], 'audio_path': path,
+             'section_start': sec.get('start'), 'section_end': sec.get('end'), 'tempo': rec.get('tempo')}
+    else:
+        s = MP.pick_song(sound_history(), fetch=True, rng=rng)
+    if not s or not s.get('audio_path') or not os.path.exists(s['audio_path']):
+        log('music pool: no audio for', (s or {}).get('id'))
+        return None
+    log(f"music pool: {s['id']} section {s.get('section_start')}-{s.get('section_end')} s")
+    return {'id': s['id'], 'title': s['song'], 'artist': s['artist'], 'file': s['audio_path'], 'music_pool': True,
+            'section': [s.get('section_start'), s.get('section_end')], 'tempo': s.get('tempo')}
+
+
 def pick_song(kind, vibe, forced, rng):
-    # HOOK (2026-10-17): the music pool / song-section picker (core/edit/music_pool.py, built by another agent) takes over
-    # when SOUND_MUSIC_POOL=1 and the module has the adapter music_pool.vibe_song(kind, vibe, forced, rng) ->
-    # {id, title, artist, file (local audio path), ...} or None (None = the vibe's own songs below). Off by default until
-    # it is verified; a section start for sound_edit would travel in the returned dict (not wired yet).
-    if kind == 'sound' and os.environ.get('SOUND_MUSIC_POOL') == '1':
+    # MUSIC POOL (2026-10-17, core/edit/music_pool.py + core/edit/assets/sound-music-pool.json): with SOUND_MUSIC_POOL=1 the
+    # sound edit's song AND its section come from the pool (Thompson sampling, never the last song, 30-day cooldown); the audio
+    # is fetched at render time (yt-dlp, cached in output/music-pool/audio). --song <pool id> forces a pool song; a vibe song id
+    # (s_...) or any music-pool failure falls back to the vibe's own songs below (the planner then picks the section).
+    if kind == 'sound' and os.environ.get('SOUND_MUSIC_POOL') == '1' and not (forced and str(forced).startswith('s_')):
         try:
-            import music_pool as MP
-            s = MP.vibe_song(kind, vibe, forced, rng)
-            if s and s.get('file') and os.path.exists(s['file']):
+            s = music_pool_song(forced, rng)
+            if s:
                 return s
         except Exception as e:  # noqa: BLE001
-            log('music_pool hook failed, using the vibe songs:', repr(e)[:200])
+            log('music pool failed, using the vibe songs:', repr(e)[:200])
     songs = VP.song_ok(kind, vibe)
     if forced:
         songs = [s for s in songs if s['id'] == forced] or [s for s in VP.load_manifest(kind, vibe, 'sounds')['items']
@@ -107,6 +138,7 @@ def is_rot90(plan_path):
 
 def render(kind, song, shots, out, aspect, length, seed, workdir, vibe_def):
     os.environ.setdefault('EDIT_NO_SHAKE', '1')          # owner 2026-10-13: no shake / wiggle / jitter in the sound and slow-mo edits (default)
+    ms = (song.get('section') or [None])[0] if kind == 'sound' else None     # the music pool's section start (song seconds)
     if kind == 'sound':
         import sound_edit as M
         if aspect != '9:16':
@@ -120,7 +152,7 @@ def render(kind, song, shots, out, aspect, length, seed, workdir, vibe_def):
             # the watermark is burned upright in the master's orientation by watermark.burn(rot90=True)
             os.environ['SOUND_DELIVER'] = 'rot90'
             return M.render_vibe(song['file'], shots, out, aspect=aspect, length=length, seed=seed, workdir=workdir,
-                                 theme=vibe_def.get('theme'), title=song.get('title'))
+                                 theme=vibe_def.get('theme'), title=song.get('title'), music_start=ms)
         if os.environ.get('SOUND_VERTICAL_NATIVE', '1') != '0':
             # judge 2026-10-13: crop the 9:16 window from the SOURCE-resolution clips, compose the vertical natively at 1080x1920
             os.environ['SOUND_DELIVER'] = 'vertical'
@@ -178,7 +210,8 @@ def main():
         res.update(vibe=vibe, reason='no_song')
         done(2)
     res.update(vibe=vibe, song=song['id'], song_title=song.get('title'), song_artist=song.get('artist'),
-               sound_used=song['id'], licence=VP.load_vibes().get('licence_note'))
+               sound_used=song['id'], licence=VP.load_vibes().get('licence_note'),
+               music_pool=bool(song.get('music_pool')), song_section=song.get('section'))
     def get_shots():
         sh = VP.fresh_clips(kind, vibe)
         for xv in [v for v in os.environ.get('SOUND_EXTRA_VIBES', '').split(',') if v and v != vibe and kind == 'sound']:

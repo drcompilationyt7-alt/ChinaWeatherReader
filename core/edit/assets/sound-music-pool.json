@@ -1,0 +1,2551 @@
+{
+ "version": 1,
+ "note": "Music pool for the sound edit. No lyrics. Audio is fetched at render time; section = best 25-35 s whole-bar window.",
+ "songs": [
+  {
+   "id": "ed_sheeran_shape_of_you",
+   "song": "Shape of You",
+   "artist": "Ed Sheeran",
+   "video_id": "unRZbBIrri4",
+   "url": "https://www.youtube.com/watch?v=unRZbBIrri4",
+   "query": "Ed Sheeran Shape of You official audio",
+   "views": 6826794821,
+   "trend_uploads": 6,
+   "source": "seed",
+   "tempo": 96.04,
+   "bar_s": 2.4991,
+   "downbeat": 0.268,
+   "duration": 231.78,
+   "section": {
+    "start": 190.199,
+    "end": 220.188,
+    "bars": 12,
+    "score": 0.763,
+    "parts": {
+     "density": 0.567,
+     "regularity": 0.763,
+     "energy": 0.973,
+     "hook": 0.912,
+     "boundary": 0.901,
+     "dead_bars": 0.083,
+     "break_s": 0.0,
+     "drums_per_s": 2.301
+    },
+    "alternatives": [
+     [
+      100.231,
+      130.22,
+      0.732
+     ],
+     [
+      40.253,
+      70.242,
+      0.698
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.57,
+    "regularity": 0.75,
+    "tempo_stability": 0.511,
+    "drum_share": 0.514,
+    "audio": 0.592,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.763
+   },
+   "total": 0.735,
+   "status": "probation",
+   "added": "2026-10-17T21:12:24Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_tech_thieves_fake",
+   "song": "Fake",
+   "artist": "The Tech Thieves",
+   "video_id": "8DJav4RfFng",
+   "url": "https://www.youtube.com/watch?v=8DJav4RfFng",
+   "query": "The Tech Thieves Fake official audio",
+   "views": 19915470,
+   "trend_uploads": 7,
+   "source": "seed",
+   "tempo": 84.98,
+   "bar_s": 2.8243,
+   "downbeat": 1.476,
+   "duration": 141.15,
+   "section": {
+    "start": 91.855,
+    "end": 120.098,
+    "bars": 10,
+    "score": 0.843,
+    "parts": {
+     "density": 0.799,
+     "regularity": 0.881,
+     "energy": 0.908,
+     "hook": 0.907,
+     "boundary": 0.677,
+     "dead_bars": 0.0,
+     "break_s": 0.859,
+     "drums_per_s": 3.116
+    },
+    "alternatives": [
+     [
+      46.666,
+      74.909,
+      0.821
+     ],
+     [
+      18.422,
+      46.666,
+      0.436
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.813,
+    "regularity": 0.831,
+    "tempo_stability": 1.0,
+    "drum_share": 0.512,
+    "audio": 0.795,
+    "popularity": 0.72,
+    "trend": 1.0,
+    "section": 0.843
+   },
+   "total": 0.811,
+   "status": "probation",
+   "added": "2026-10-17T21:13:05Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "fitz_and_the_tantrums_handclap",
+   "song": "HandClap",
+   "artist": "Fitz and The Tantrums",
+   "video_id": "D6UXPmpW0XQ",
+   "url": "https://www.youtube.com/watch?v=D6UXPmpW0XQ",
+   "query": "Fitz and The Tantrums HandClap official audio",
+   "views": 165932842,
+   "trend_uploads": 2,
+   "source": "seed",
+   "tempo": 140.24,
+   "bar_s": 1.7114,
+   "downbeat": 0.108,
+   "duration": 195.05,
+   "section": {
+    "start": 89.101,
+    "end": 116.483,
+    "bars": 16,
+    "score": 0.823,
+    "parts": {
+     "density": 0.704,
+     "regularity": 0.767,
+     "energy": 0.829,
+     "hook": 0.885,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.25
+    },
+    "alternatives": [
+     [
+      13.799,
+      41.182,
+      0.78
+     ],
+     [
+      157.557,
+      184.94,
+      0.761
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.621,
+    "regularity": 0.694,
+    "tempo_stability": 0.632,
+    "drum_share": 0.585,
+    "audio": 0.634,
+    "popularity": 1.0,
+    "trend": 0.333,
+    "section": 0.823
+   },
+   "total": 0.662,
+   "status": "probation",
+   "added": "2026-10-17T21:13:48Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "nathan_evans_wellerman",
+   "song": "Wellerman",
+   "artist": "Nathan Evans",
+   "video_id": "BeUws6x2mNY",
+   "url": "https://www.youtube.com/watch?v=BeUws6x2mNY",
+   "query": "Nathan Evans Wellerman official audio",
+   "views": 508107659,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 95.99,
+   "bar_s": 2.5002,
+   "downbeat": 2.011,
+   "duration": 155.41,
+   "section": {
+    "start": 2.011,
+    "end": 29.514,
+    "bars": 11,
+    "score": 0.697,
+    "parts": {
+     "density": 0.745,
+     "regularity": 0.538,
+     "energy": 0.744,
+     "hook": 0.759,
+     "boundary": 0.4,
+     "dead_bars": 0.0,
+     "break_s": 0.348,
+     "drums_per_s": 2.982
+    },
+    "alternatives": [
+     [
+      62.017,
+      92.02,
+      0.692
+     ],
+     [
+      112.021,
+      139.524,
+      0.672
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.526,
+    "regularity": 0.805,
+    "tempo_stability": 1.0,
+    "drum_share": 0.573,
+    "audio": 0.7,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.697
+   },
+   "total": 0.655,
+   "status": "probation",
+   "added": "2026-10-17T21:14:32Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "kenshi_yonezu_kick_back",
+   "song": "KICK BACK",
+   "artist": "Kenshi Yonezu",
+   "video_id": "494STlRAn3A",
+   "url": "https://www.youtube.com/watch?v=494STlRAn3A",
+   "query": "Kenshi Yonezu KICK BACK official audio",
+   "views": 16404344,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 102.05,
+   "bar_s": 2.3519,
+   "downbeat": 0.716,
+   "duration": 195.77,
+   "section": {
+    "start": 0.716,
+    "end": 31.29,
+    "bars": 13,
+    "score": 0.719,
+    "parts": {
+     "density": 0.697,
+     "regularity": 0.639,
+     "energy": 0.816,
+     "hook": 0.735,
+     "boundary": 0.4,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 4.448
+    },
+    "alternatives": [
+     [
+      141.827,
+      172.401,
+      0.706
+     ],
+     [
+      38.346,
+      68.92,
+      0.701
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.275,
+    "regularity": 0.665,
+    "tempo_stability": 0.658,
+    "drum_share": 0.653,
+    "audio": 0.525,
+    "popularity": 0.686,
+    "trend": 0.0,
+    "section": 0.719
+   },
+   "total": 0.478,
+   "status": "probation",
+   "added": "2026-10-17T21:15:47Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "creepy_nuts_bling_bang_bang_born",
+   "song": "Bling-Bang-Bang-Born",
+   "artist": "Creepy Nuts",
+   "video_id": "CjlZpiFPX8Q",
+   "url": "https://www.youtube.com/watch?v=CjlZpiFPX8Q",
+   "query": "Creepy Nuts Bling-Bang-Bang-Born official audio",
+   "views": 526659423,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 104.72,
+   "bar_s": 2.2919,
+   "downbeat": 0.572,
+   "duration": 169.37,
+   "section": {
+    "start": 92.247,
+    "end": 119.75,
+    "bars": 12,
+    "score": 0.839,
+    "parts": {
+     "density": 0.709,
+     "regularity": 0.627,
+     "energy": 0.968,
+     "hook": 0.895,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.891
+    },
+    "alternatives": [
+     [
+      18.907,
+      46.41,
+      0.749
+     ],
+     [
+      55.577,
+      85.372,
+      0.678
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.573,
+    "regularity": 0.487,
+    "tempo_stability": 0.469,
+    "drum_share": 0.609,
+    "audio": 0.538,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.839
+   },
+   "total": 0.55,
+   "status": "probation",
+   "added": "2026-10-17T21:16:46Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "aespa_whiplash",
+   "song": "Whiplash",
+   "artist": "aespa",
+   "video_id": "kngr_3FvB-M",
+   "url": "https://www.youtube.com/watch?v=kngr_3FvB-M",
+   "query": "aespa Whiplash official audio",
+   "views": 322766174,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 126.05,
+   "bar_s": 1.904,
+   "downbeat": 1.536,
+   "duration": 183.34,
+   "section": {
+    "start": 9.152,
+    "end": 37.713,
+    "bars": 15,
+    "score": 0.835,
+    "parts": {
+     "density": 0.728,
+     "regularity": 0.718,
+     "energy": 0.957,
+     "hook": 0.906,
+     "boundary": 0.92,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 4.097
+    },
+    "alternatives": [
+     [
+      58.657,
+      89.122,
+      0.803
+     ],
+     [
+      151.955,
+      180.515,
+      0.671
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.542,
+    "regularity": 0.829,
+    "tempo_stability": 0.629,
+    "drum_share": 0.607,
+    "audio": 0.644,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.835
+   },
+   "total": 0.619,
+   "status": "probation",
+   "added": "2026-10-17T21:17:38Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "blackpink_shut_down",
+   "song": "Shut Down",
+   "artist": "BLACKPINK",
+   "video_id": "G44BDlcLkLo",
+   "url": "https://www.youtube.com/watch?v=G44BDlcLkLo",
+   "query": "BLACKPINK Shut Down official audio",
+   "views": 828659314,
+   "trend_uploads": 1,
+   "source": "seed",
+   "tempo": 109.96,
+   "bar_s": 2.1827,
+   "downbeat": 1.046,
+   "duration": 176.45,
+   "section": {
+    "start": 5.411,
+    "end": 35.968,
+    "bars": 14,
+    "score": 0.716,
+    "parts": {
+     "density": 0.78,
+     "regularity": 0.643,
+     "energy": 0.748,
+     "hook": 0.754,
+     "boundary": 0.832,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.174
+    },
+    "alternatives": [
+     [
+      53.43,
+      79.622,
+      0.685
+     ],
+     [
+      81.805,
+      107.997,
+      0.658
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.372,
+    "regularity": 0.866,
+    "tempo_stability": 1.0,
+    "drum_share": 0.513,
+    "audio": 0.649,
+    "popularity": 1.0,
+    "trend": 0.167,
+    "section": 0.716
+   },
+   "total": 0.647,
+   "status": "probation",
+   "added": "2026-10-17T21:18:27Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "le_sserafim_antifragile",
+   "song": "ANTIFRAGILE",
+   "artist": "LE SSERAFIM",
+   "video_id": "vsgdqdbQuc8",
+   "url": "https://www.youtube.com/watch?v=vsgdqdbQuc8",
+   "query": "LE SSERAFIM ANTIFRAGILE official audio",
+   "views": 287110437,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 105.05,
+   "bar_s": 2.2847,
+   "downbeat": 0.016,
+   "duration": 184.51,
+   "section": {
+    "start": 9.155,
+    "end": 36.571,
+    "bars": 12,
+    "score": 0.856,
+    "parts": {
+     "density": 0.813,
+     "regularity": 0.807,
+     "energy": 0.88,
+     "hook": 0.926,
+     "boundary": 0.843,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.429
+    },
+    "alternatives": [
+     [
+      82.264,
+      109.68,
+      0.826
+     ],
+     [
+      45.709,
+      73.125,
+      0.775
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.754,
+    "regularity": 0.812,
+    "tempo_stability": 0.4,
+    "drum_share": 0.595,
+    "audio": 0.666,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.856
+   },
+   "total": 0.633,
+   "status": "probation",
+   "added": "2026-10-17T21:19:17Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "mark_ronson_uptown_funk",
+   "song": "Uptown Funk",
+   "artist": "Mark Ronson",
+   "video_id": "i-FZAsWu-UI",
+   "url": "https://www.youtube.com/watch?v=i-FZAsWu-UI",
+   "query": "Mark Ronson Uptown Funk official audio",
+   "views": 5921577401,
+   "trend_uploads": 2,
+   "source": "seed",
+   "tempo": 114.96,
+   "bar_s": 2.0877,
+   "downbeat": 0.606,
+   "duration": 272.32,
+   "section": {
+    "start": 134.219,
+    "end": 167.622,
+    "bars": 16,
+    "score": 0.782,
+    "parts": {
+     "density": 0.819,
+     "regularity": 0.676,
+     "energy": 0.794,
+     "hook": 0.836,
+     "boundary": 0.48,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.173
+    },
+    "alternatives": [
+     [
+      59.062,
+      92.465,
+      0.774
+     ],
+     [
+      217.727,
+      246.955,
+      0.749
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.817,
+    "regularity": 0.752,
+    "tempo_stability": 0.906,
+    "drum_share": 0.506,
+    "audio": 0.756,
+    "popularity": 1.0,
+    "trend": 0.333,
+    "section": 0.782
+   },
+   "total": 0.741,
+   "status": "probation",
+   "added": "2026-10-17T21:20:08Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "michael_jackson_smooth_criminal",
+   "song": "Smooth Criminal",
+   "artist": "Michael Jackson",
+   "video_id": "cy42sn8-Wcs",
+   "url": "https://www.youtube.com/watch?v=cy42sn8-Wcs",
+   "query": "Michael Jackson Smooth Criminal official audio",
+   "views": 129651582,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 118.16,
+   "bar_s": 2.0311,
+   "downbeat": 1.671,
+   "duration": 257.9,
+   "section": {
+    "start": 99.164,
+    "end": 131.661,
+    "bars": 16,
+    "score": 0.779,
+    "parts": {
+     "density": 0.832,
+     "regularity": 0.755,
+     "energy": 0.81,
+     "hook": 0.786,
+     "boundary": 0.383,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.139
+    },
+    "alternatives": [
+     [
+      196.657,
+      225.092,
+      0.772
+     ],
+     [
+      50.418,
+      78.853,
+      0.768
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 1.0,
+    "regularity": 0.674,
+    "tempo_stability": 0.82,
+    "drum_share": 0.517,
+    "audio": 0.786,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.779
+   },
+   "total": 0.711,
+   "status": "probation",
+   "added": "2026-10-17T21:21:05Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "michael_jackson_billie_jean",
+   "song": "Billie Jean",
+   "artist": "Michael Jackson",
+   "video_id": "QRidtXn0u7k",
+   "url": "https://www.youtube.com/watch?v=QRidtXn0u7k",
+   "query": "Michael Jackson Billie Jean official audio",
+   "views": 2357956382,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 117.22,
+   "bar_s": 2.0474,
+   "downbeat": 1.172,
+   "duration": 294.82,
+   "section": {
+    "start": 5.267,
+    "end": 33.931,
+    "bars": 14,
+    "score": 0.839,
+    "parts": {
+     "density": 0.913,
+     "regularity": 0.825,
+     "energy": 0.874,
+     "hook": 0.863,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.733
+    },
+    "alternatives": [
+     [
+      197.726,
+      226.39,
+      0.777
+     ],
+     [
+      164.967,
+      193.631,
+      0.746
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.806,
+    "regularity": 0.797,
+    "tempo_stability": 0.737,
+    "drum_share": 0.437,
+    "audio": 0.716,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.839
+   },
+   "total": 0.665,
+   "status": "probation",
+   "added": "2026-10-17T21:21:58Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "billie_eilish_bad_guy",
+   "song": "bad guy",
+   "artist": "Billie Eilish",
+   "video_id": "YD4utuFiexw",
+   "url": "https://www.youtube.com/watch?v=YD4utuFiexw",
+   "query": "Billie Eilish bad guy official audio",
+   "views": 1359284433,
+   "trend_uploads": 11,
+   "source": "seed",
+   "tempo": 135.05,
+   "bar_s": 1.7771,
+   "downbeat": 0.556,
+   "duration": 194.17,
+   "section": {
+    "start": 0.556,
+    "end": 30.766,
+    "bars": 17,
+    "score": 0.719,
+    "parts": {
+     "density": 0.7,
+     "regularity": 0.549,
+     "energy": 0.821,
+     "hook": 0.798,
+     "boundary": 0.4,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.781
+    },
+    "alternatives": [
+     [
+      121.397,
+      149.83,
+      -0.308
+     ],
+     [
+      87.633,
+      116.066,
+      -0.375
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.496,
+    "regularity": 0.648,
+    "tempo_stability": 0.541,
+    "drum_share": 0.539,
+    "audio": 0.552,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.719
+   },
+   "total": 0.709,
+   "status": "probation",
+   "added": "2026-10-17T21:22:51Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "imagine_dragons_believer",
+   "song": "Believer",
+   "artist": "Imagine Dragons",
+   "video_id": "IhP3J0j9JmY",
+   "url": "https://www.youtube.com/watch?v=IhP3J0j9JmY",
+   "query": "Imagine Dragons Believer official audio",
+   "views": 3063253417,
+   "trend_uploads": 12,
+   "source": "seed",
+   "tempo": 125.05,
+   "bar_s": 1.9193,
+   "downbeat": 0.316,
+   "duration": 202.87,
+   "section": {
+    "start": 7.993,
+    "end": 36.782,
+    "bars": 15,
+    "score": 0.725,
+    "parts": {
+     "density": 0.804,
+     "regularity": 0.67,
+     "energy": 0.679,
+     "hook": 0.544,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.474
+    },
+    "alternatives": [
+     [
+      77.087,
+      105.876,
+      0.633
+     ],
+     [
+      161.535,
+      192.243,
+      0.629
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.497,
+    "regularity": 0.652,
+    "tempo_stability": 0.846,
+    "drum_share": 0.592,
+    "audio": 0.624,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.725
+   },
+   "total": 0.756,
+   "status": "probation",
+   "added": "2026-10-17T21:23:59Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_white_stripes_seven_nation_army",
+   "song": "Seven Nation Army",
+   "artist": "The White Stripes",
+   "video_id": "CBEJo18auXE",
+   "url": "https://www.youtube.com/watch?v=CBEJo18auXE",
+   "query": "The White Stripes Seven Nation Army official audio",
+   "views": 861651946,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 123.67,
+   "bar_s": 1.9407,
+   "downbeat": 1.318,
+   "duration": 230.09,
+   "section": {
+    "start": 9.081,
+    "end": 40.133,
+    "bars": 16,
+    "score": 0.801,
+    "parts": {
+     "density": 0.839,
+     "regularity": 0.458,
+     "energy": 0.851,
+     "hook": 0.886,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.253
+    },
+    "alternatives": [
+     [
+      78.947,
+      108.058,
+      0.771
+     ],
+     [
+      164.339,
+      193.45,
+      0.756
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.633,
+    "regularity": 0.643,
+    "tempo_stability": 0.356,
+    "drum_share": 0.464,
+    "audio": 0.546,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.801
+   },
+   "total": 0.555,
+   "status": "probation",
+   "added": "2026-10-17T21:24:54Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "queen_another_one_bites_the_dust",
+   "song": "Another One Bites the Dust",
+   "artist": "Queen",
+   "video_id": "rY0WxgSXdEE",
+   "url": "https://www.youtube.com/watch?v=rY0WxgSXdEE",
+   "query": "Queen Another One Bites the Dust official audio",
+   "views": 725322639,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 110.4,
+   "bar_s": 2.1739,
+   "downbeat": 0.16,
+   "duration": 218.87,
+   "section": {
+    "start": 147.988,
+    "end": 174.076,
+    "bars": 12,
+    "score": 0.691,
+    "parts": {
+     "density": 0.681,
+     "regularity": 0.465,
+     "energy": 0.728,
+     "hook": 0.856,
+     "boundary": 0.713,
+     "dead_bars": 0.0,
+     "break_s": 0.325,
+     "drums_per_s": 2.76
+    },
+    "alternatives": [
+     [
+      184.945,
+      211.033,
+      0.688
+     ],
+     [
+      17.552,
+      43.639,
+      0.668
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 1.0,
+    "regularity": 0.781,
+    "tempo_stability": 0.714,
+    "drum_share": 0.427,
+    "audio": 0.774,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.691
+   },
+   "total": 0.703,
+   "status": "probation",
+   "added": "2026-10-17T21:25:44Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "tones_and_i_dance_monkey",
+   "song": "Dance Monkey",
+   "artist": "Tones and I",
+   "video_id": "4nsORR-kkOg",
+   "url": "https://www.youtube.com/watch?v=4nsORR-kkOg",
+   "query": "Tones and I Dance Monkey official audio",
+   "views": 2315488019,
+   "trend_uploads": 3,
+   "source": "seed",
+   "tempo": 98.0,
+   "bar_s": 2.449,
+   "downbeat": 0.812,
+   "duration": 209.51,
+   "section": {
+    "start": 167.345,
+    "end": 199.182,
+    "bars": 13,
+    "score": 0.789,
+    "parts": {
+     "density": 0.679,
+     "regularity": 0.561,
+     "energy": 0.954,
+     "hook": 0.952,
+     "boundary": 0.743,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.638
+    },
+    "alternatives": [
+     [
+      108.569,
+      140.406,
+      0.76
+     ],
+     [
+      49.792,
+      79.181,
+      0.681
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.418,
+    "regularity": 0.675,
+    "tempo_stability": 0.875,
+    "drum_share": 0.592,
+    "audio": 0.609,
+    "popularity": 1.0,
+    "trend": 0.5,
+    "section": 0.789
+   },
+   "total": 0.671,
+   "status": "probation",
+   "added": "2026-10-17T21:26:34Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "psy_gangnam_style",
+   "song": "Gangnam Style",
+   "artist": "PSY",
+   "video_id": "k3kIKlt4OkY",
+   "url": "https://www.youtube.com/watch?v=k3kIKlt4OkY",
+   "query": "PSY Gangnam Style official audio",
+   "views": 6095488730,
+   "trend_uploads": 11,
+   "source": "seed",
+   "tempo": 131.98,
+   "bar_s": 1.8184,
+   "downbeat": 0.487,
+   "duration": 219.61,
+   "section": {
+    "start": 15.034,
+    "end": 44.128,
+    "bars": 16,
+    "score": 0.799,
+    "parts": {
+     "density": 0.77,
+     "regularity": 0.534,
+     "energy": 0.897,
+     "hook": 0.859,
+     "boundary": 0.821,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.609
+    },
+    "alternatives": [
+     [
+      87.77,
+      118.683,
+      0.74
+     ],
+     [
+      149.595,
+      180.508,
+      0.697
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.566,
+    "regularity": 0.959,
+    "tempo_stability": 0.643,
+    "drum_share": 0.556,
+    "audio": 0.678,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.799
+   },
+   "total": 0.791,
+   "status": "probation",
+   "added": "2026-10-17T21:27:31Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "dua_lipa_don_t_start_now",
+   "song": "Don't Start Now",
+   "artist": "Dua Lipa",
+   "video_id": "jIgs-JMAjlU",
+   "url": "https://www.youtube.com/watch?v=jIgs-JMAjlU",
+   "query": "Dua Lipa Don't Start Now official audio",
+   "views": 780065730,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 124.04,
+   "bar_s": 1.9349,
+   "downbeat": 0.856,
+   "duration": 183.41,
+   "section": {
+    "start": 147.906,
+    "end": 178.864,
+    "bars": 16,
+    "score": 0.792,
+    "parts": {
+     "density": 0.682,
+     "regularity": 0.711,
+     "energy": 0.947,
+     "hook": 0.895,
+     "boundary": 1.0,
+     "dead_bars": 0.062,
+     "break_s": 0.0,
+     "drums_per_s": 2.713
+    },
+    "alternatives": [
+     [
+      8.595,
+      37.618,
+      0.748
+     ],
+     [
+      47.293,
+      76.316,
+      0.743
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.703,
+    "regularity": 0.838,
+    "tempo_stability": 0.971,
+    "drum_share": 0.544,
+    "audio": 0.759,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.792
+   },
+   "total": 0.693,
+   "status": "probation",
+   "added": "2026-10-17T21:28:34Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "dua_lipa_levitating",
+   "song": "Levitating",
+   "artist": "Dua Lipa",
+   "video_id": "ovG2QwiObhk",
+   "url": "https://www.youtube.com/watch?v=ovG2QwiObhk",
+   "query": "Dua Lipa Levitating official audio",
+   "views": 1171443858,
+   "trend_uploads": 10,
+   "source": "seed",
+   "tempo": 103.05,
+   "bar_s": 2.329,
+   "downbeat": 1.72,
+   "duration": 202.08,
+   "section": {
+    "start": 11.036,
+    "end": 38.984,
+    "bars": 12,
+    "score": 0.83,
+    "parts": {
+     "density": 0.797,
+     "regularity": 0.62,
+     "energy": 0.935,
+     "hook": 0.875,
+     "boundary": 0.998,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.614
+    },
+    "alternatives": [
+     [
+      160.09,
+      190.366,
+      0.75
+     ],
+     [
+      94.879,
+      122.826,
+      0.74
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.438,
+    "regularity": 0.664,
+    "tempo_stability": 0.821,
+    "drum_share": 0.614,
+    "audio": 0.606,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.83
+   },
+   "total": 0.744,
+   "status": "probation",
+   "added": "2026-10-17T21:29:26Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_weeknd_blinding_lights",
+   "song": "Blinding Lights",
+   "artist": "The Weeknd",
+   "video_id": "_sJcB3yKDQ0",
+   "url": "https://www.youtube.com/watch?v=_sJcB3yKDQ0",
+   "query": "The Weeknd Blinding Lights official audio",
+   "views": 1074009930,
+   "trend_uploads": 2,
+   "source": "seed",
+   "tempo": 85.53,
+   "bar_s": 2.8059,
+   "downbeat": 2.668,
+   "duration": 201.64,
+   "section": {
+    "start": 13.892,
+    "end": 41.951,
+    "bars": 10,
+    "score": 0.788,
+    "parts": {
+     "density": 0.815,
+     "regularity": 0.826,
+     "energy": 0.866,
+     "hook": 0.732,
+     "boundary": 0.612,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.172
+    },
+    "alternatives": [
+     [
+      70.01,
+      100.875,
+      0.746
+     ],
+     [
+      126.128,
+      154.187,
+      0.733
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.326,
+    "regularity": 0.813,
+    "tempo_stability": 0.923,
+    "drum_share": 0.538,
+    "audio": 0.609,
+    "popularity": 1.0,
+    "trend": 0.333,
+    "section": 0.788
+   },
+   "total": 0.646,
+   "status": "probation",
+   "added": "2026-10-17T21:30:19Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "kanye_west_stronger",
+   "song": "Stronger",
+   "artist": "Kanye West",
+   "video_id": "wZWZT14tSzk",
+   "url": "https://www.youtube.com/watch?v=wZWZT14tSzk",
+   "query": "Kanye West Stronger official audio",
+   "views": 560316702,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 103.98,
+   "bar_s": 2.3081,
+   "downbeat": 0.184,
+   "duration": 313.1,
+   "section": {
+    "start": 37.113,
+    "end": 64.81,
+    "bars": 12,
+    "score": 0.757,
+    "parts": {
+     "density": 0.702,
+     "regularity": 0.773,
+     "energy": 0.931,
+     "hook": 0.886,
+     "boundary": 0.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.827
+    },
+    "alternatives": [
+     [
+      87.89,
+      115.587,
+      0.742
+     ],
+     [
+      207.91,
+      235.606,
+      0.732
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.38,
+    "regularity": 0.877,
+    "tempo_stability": 1.0,
+    "drum_share": 0.684,
+    "audio": 0.689,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.757
+   },
+   "total": 0.648,
+   "status": "probation",
+   "added": "2026-10-17T21:31:19Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "eminem_lose_yourself",
+   "song": "Lose Yourself",
+   "artist": "Eminem",
+   "video_id": "xFYQQPAOz7Y",
+   "url": "https://www.youtube.com/watch?v=xFYQQPAOz7Y",
+   "query": "Eminem Lose Yourself official audio",
+   "views": 1439701116,
+   "trend_uploads": 2,
+   "source": "seed",
+   "tempo": 85.7,
+   "bar_s": 2.8003,
+   "downbeat": 1.052,
+   "duration": 327.56,
+   "section": {
+    "start": 269.883,
+    "end": 300.687,
+    "bars": 11,
+    "score": 0.811,
+    "parts": {
+     "density": 0.774,
+     "regularity": 0.902,
+     "energy": 0.936,
+     "hook": 0.947,
+     "boundary": 0.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.922
+    },
+    "alternatives": [
+     [
+      202.676,
+      230.679,
+      0.767
+     ],
+     [
+      157.87,
+      188.674,
+      0.762
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.6,
+    "regularity": 0.787,
+    "tempo_stability": 0.828,
+    "drum_share": 0.512,
+    "audio": 0.675,
+    "popularity": 1.0,
+    "trend": 0.333,
+    "section": 0.811
+   },
+   "total": 0.689,
+   "status": "probation",
+   "added": "2026-10-17T21:32:22Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "post_malone_sunflower",
+   "song": "Sunflower",
+   "artist": "Post Malone",
+   "video_id": "2xRfeHRVF1I",
+   "url": "https://www.youtube.com/watch?v=2xRfeHRVF1I",
+   "query": "Post Malone Sunflower official audio",
+   "views": 3178942898,
+   "trend_uploads": 4,
+   "source": "seed",
+   "tempo": 89.95,
+   "bar_s": 2.6683,
+   "downbeat": 0.112,
+   "duration": 159.71,
+   "section": {
+    "start": 21.458,
+    "end": 50.809,
+    "bars": 11,
+    "score": 0.771,
+    "parts": {
+     "density": 0.82,
+     "regularity": 0.788,
+     "energy": 0.747,
+     "hook": 0.815,
+     "boundary": 0.285,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.305
+    },
+    "alternatives": [
+     [
+      72.155,
+      101.506,
+      0.709
+     ],
+     [
+      106.842,
+      136.193,
+      0.657
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.731,
+    "regularity": 0.609,
+    "tempo_stability": 0.433,
+    "drum_share": 0.638,
+    "audio": 0.623,
+    "popularity": 1.0,
+    "trend": 0.667,
+    "section": 0.771
+   },
+   "total": 0.705,
+   "status": "probation",
+   "added": "2026-10-17T21:33:14Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "lil_nas_x_old_town_road",
+   "song": "Old Town Road",
+   "artist": "Lil Nas X",
+   "video_id": "I6QReueRAQ0",
+   "url": "https://www.youtube.com/watch?v=I6QReueRAQ0",
+   "query": "Lil Nas X Old Town Road official audio",
+   "views": 1555292668,
+   "trend_uploads": 6,
+   "source": "seed",
+   "tempo": 136.0,
+   "bar_s": 1.7647,
+   "downbeat": 0.685,
+   "duration": 106.56,
+   "section": {
+    "start": 21.862,
+    "end": 51.862,
+    "bars": 17,
+    "score": 0.817,
+    "parts": {
+     "density": 0.803,
+     "regularity": 0.757,
+     "energy": 0.79,
+     "hook": 0.798,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.267
+    },
+    "alternatives": [
+     [
+      57.156,
+      87.156,
+      0.76
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.451,
+    "regularity": 0.945,
+    "tempo_stability": 1.0,
+    "drum_share": 0.62,
+    "audio": 0.718,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.817
+   },
+   "total": 0.817,
+   "status": "probation",
+   "added": "2026-10-17T21:34:01Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "major_lazer_lean_on",
+   "song": "Lean On",
+   "artist": "Major Lazer",
+   "video_id": "EY98Q6kwoTU",
+   "url": "https://www.youtube.com/watch?v=EY98Q6kwoTU",
+   "query": "Major Lazer Lean On official audio",
+   "views": 3979677107,
+   "trend_uploads": 5,
+   "source": "seed",
+   "tempo": 98.0,
+   "bar_s": 2.449,
+   "downbeat": 0.092,
+   "duration": 176.38,
+   "section": {
+    "start": 134.787,
+    "end": 166.625,
+    "bars": 13,
+    "score": 0.834,
+    "parts": {
+     "density": 0.771,
+     "regularity": 0.842,
+     "energy": 0.942,
+     "hook": 0.919,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.769
+    },
+    "alternatives": [
+     [
+      49.072,
+      78.46,
+      0.784
+     ],
+     [
+      98.052,
+      127.44,
+      0.726
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.532,
+    "regularity": 0.942,
+    "tempo_stability": 0.706,
+    "drum_share": 0.548,
+    "audio": 0.672,
+    "popularity": 1.0,
+    "trend": 0.833,
+    "section": 0.834
+   },
+   "total": 0.762,
+   "status": "probation",
+   "added": "2026-10-17T21:35:10Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "luis_fonsi_despacito",
+   "song": "Despacito",
+   "artist": "Luis Fonsi",
+   "video_id": "72UO0v5ESUo",
+   "url": "https://www.youtube.com/watch?v=72UO0v5ESUo",
+   "query": "Luis Fonsi Despacito official audio",
+   "views": 9148778747,
+   "trend_uploads": 13,
+   "source": "seed",
+   "tempo": 88.98,
+   "bar_s": 2.6972,
+   "downbeat": 1.385,
+   "duration": 229.0,
+   "section": {
+    "start": 66.117,
+    "end": 98.483,
+    "bars": 12,
+    "score": 0.802,
+    "parts": {
+     "density": 0.812,
+     "regularity": 0.69,
+     "energy": 0.905,
+     "hook": 0.784,
+     "boundary": 0.641,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.275
+    },
+    "alternatives": [
+     [
+      152.426,
+      184.792,
+      0.802
+     ],
+     [
+      109.271,
+      138.94,
+      0.745
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.468,
+    "regularity": 0.872,
+    "tempo_stability": 0.159,
+    "drum_share": 0.593,
+    "audio": 0.532,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.802
+   },
+   "total": 0.696,
+   "status": "probation",
+   "added": "2026-10-17T21:36:05Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "camila_cabello_havana",
+   "song": "Havana",
+   "artist": "Camila Cabello",
+   "video_id": "HCjNJDNzw8Y",
+   "url": "https://www.youtube.com/watch?v=HCjNJDNzw8Y",
+   "query": "Camila Cabello Havana official audio",
+   "views": 2083419502,
+   "trend_uploads": 4,
+   "source": "seed",
+   "tempo": 105.05,
+   "bar_s": 2.2847,
+   "downbeat": 0.999,
+   "duration": 218.57,
+   "section": {
+    "start": 119.801,
+    "end": 147.217,
+    "bars": 12,
+    "score": 0.819,
+    "parts": {
+     "density": 0.688,
+     "regularity": 0.698,
+     "energy": 0.872,
+     "hook": 0.907,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.663
+    },
+    "alternatives": [
+     [
+      165.495,
+      195.195,
+      0.795
+     ],
+     [
+      28.415,
+      55.831,
+      0.726
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.317,
+    "regularity": 0.747,
+    "tempo_stability": 0.929,
+    "drum_share": 0.578,
+    "audio": 0.599,
+    "popularity": 1.0,
+    "trend": 0.667,
+    "section": 0.819
+   },
+   "total": 0.689,
+   "status": "probation",
+   "added": "2026-10-17T21:36:53Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "lady_gaga_poker_face",
+   "song": "Poker Face",
+   "artist": "Lady Gaga",
+   "video_id": "Fn1o0p7a3Sw",
+   "url": "https://www.youtube.com/watch?v=Fn1o0p7a3Sw",
+   "query": "Lady Gaga Poker Face official audio",
+   "views": 1815950620,
+   "trend_uploads": 1,
+   "source": "seed",
+   "tempo": 119.0,
+   "bar_s": 2.0169,
+   "downbeat": 1.621,
+   "duration": 215.11,
+   "section": {
+    "start": 17.756,
+    "end": 50.026,
+    "bars": 16,
+    "score": 0.803,
+    "parts": {
+     "density": 0.751,
+     "regularity": 0.832,
+     "energy": 0.727,
+     "hook": 0.694,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.161
+    },
+    "alternatives": [
+     [
+      130.701,
+      160.955,
+      0.72
+     ],
+     [
+      82.296,
+      112.549,
+      0.71
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.723,
+    "regularity": 0.96,
+    "tempo_stability": 1.0,
+    "drum_share": 0.64,
+    "audio": 0.821,
+    "popularity": 1.0,
+    "trend": 0.167,
+    "section": 0.803
+   },
+   "total": 0.759,
+   "status": "probation",
+   "added": "2026-10-17T21:37:49Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "lady_gaga_bad_romance",
+   "song": "Bad Romance",
+   "artist": "Lady Gaga",
+   "video_id": "_5-QkAVRkqU",
+   "url": "https://www.youtube.com/watch?v=_5-QkAVRkqU",
+   "query": "Lady Gaga Bad Romance official audio",
+   "views": 2088850878,
+   "trend_uploads": 3,
+   "source": "seed",
+   "tempo": 119.0,
+   "bar_s": 2.0169,
+   "downbeat": 1.549,
+   "duration": 292.76,
+   "section": {
+    "start": 25.751,
+    "end": 58.021,
+    "bars": 16,
+    "score": 0.84,
+    "parts": {
+     "density": 0.778,
+     "regularity": 0.827,
+     "energy": 0.873,
+     "hook": 0.815,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.595
+    },
+    "alternatives": [
+     [
+      74.157,
+      106.427,
+      0.775
+     ],
+     [
+      114.494,
+      144.748,
+      0.768
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.223,
+    "regularity": 0.94,
+    "tempo_stability": 0.912,
+    "drum_share": 0.588,
+    "audio": 0.613,
+    "popularity": 1.0,
+    "trend": 0.5,
+    "section": 0.84
+   },
+   "total": 0.673,
+   "status": "probation",
+   "added": "2026-10-17T21:39:03Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "imagine_dragons_radioactive",
+   "song": "Radioactive",
+   "artist": "Imagine Dragons",
+   "video_id": "LA0DixxSksA",
+   "url": "https://www.youtube.com/watch?v=LA0DixxSksA",
+   "query": "Imagine Dragons Radioactive official audio",
+   "views": 1573863883,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 136.55,
+   "bar_s": 1.7577,
+   "downbeat": 1.175,
+   "duration": 218.11,
+   "section": {
+    "start": 43.359,
+    "end": 73.239,
+    "bars": 17,
+    "score": 0.654,
+    "parts": {
+     "density": 0.433,
+     "regularity": 0.522,
+     "energy": 0.834,
+     "hook": 0.673,
+     "boundary": 1.0,
+     "dead_bars": 0.059,
+     "break_s": 0.0,
+     "drums_per_s": 1.941
+    },
+    "alternatives": [
+     [
+      85.542,
+      115.423,
+      0.63
+     ],
+     [
+      154.091,
+      182.214,
+      0.514
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.194,
+    "regularity": 0.809,
+    "tempo_stability": 0.786,
+    "drum_share": 0.705,
+    "audio": 0.569,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.654
+   },
+   "total": 0.57,
+   "status": "probation",
+   "added": "2026-10-17T21:39:57Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ac_dc_thunderstruck",
+   "song": "Thunderstruck",
+   "artist": "AC/DC",
+   "video_id": "v2AC41dglnM",
+   "url": "https://www.youtube.com/watch?v=v2AC41dglnM",
+   "query": "AC/DC Thunderstruck official audio",
+   "views": 1789353135,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 133.31,
+   "bar_s": 1.8003,
+   "downbeat": 1.18,
+   "duration": 292.99,
+   "section": {
+    "start": 165.006,
+    "end": 193.811,
+    "bars": 16,
+    "score": 0.73,
+    "parts": {
+     "density": 0.609,
+     "regularity": 0.639,
+     "energy": 0.888,
+     "hook": 0.818,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.5
+    },
+    "alternatives": [
+     [
+      116.399,
+      145.203,
+      0.666
+     ],
+     [
+      202.813,
+      231.617,
+      0.65
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.418,
+    "regularity": 0.779,
+    "tempo_stability": 0.596,
+    "drum_share": 0.601,
+    "audio": 0.581,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.73
+   },
+   "total": 0.578,
+   "status": "probation",
+   "added": "2026-10-17T21:41:00Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "stevie_wonder_superstition",
+   "song": "Superstition",
+   "artist": "Stevie Wonder",
+   "video_id": "Oz4m9Tb6bys",
+   "url": "https://www.youtube.com/watch?v=Oz4m9Tb6bys",
+   "query": "Stevie Wonder Superstition official audio",
+   "views": 179604716,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 99.84,
+   "bar_s": 2.404,
+   "downbeat": 1.722,
+   "duration": 267.87,
+   "section": {
+    "start": 11.338,
+    "end": 42.589,
+    "bars": 13,
+    "score": 0.687,
+    "parts": {
+     "density": 0.818,
+     "regularity": 0.516,
+     "energy": 0.447,
+     "hook": 0.622,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.872
+    },
+    "alternatives": [
+     [
+      97.88,
+      126.728,
+      0.676
+     ],
+     [
+      49.801,
+      78.649,
+      0.643
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.812,
+    "regularity": 0.549,
+    "tempo_stability": 0.365,
+    "drum_share": 0.542,
+    "audio": 0.603,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.687
+   },
+   "total": 0.592,
+   "status": "probation",
+   "added": "2026-10-17T21:42:07Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_chainsmokers_closer",
+   "song": "Closer",
+   "artist": "The Chainsmokers",
+   "video_id": "Lv6EV478u3U",
+   "url": "https://www.youtube.com/watch?v=Lv6EV478u3U",
+   "query": "The Chainsmokers Closer official audio",
+   "views": 3474135193,
+   "trend_uploads": 8,
+   "source": "seed",
+   "tempo": 95.04,
+   "bar_s": 2.5253,
+   "downbeat": 0.432,
+   "duration": 243.07,
+   "section": {
+    "start": 192.356,
+    "end": 220.134,
+    "bars": 11,
+    "score": 0.825,
+    "parts": {
+     "density": 0.604,
+     "regularity": 0.836,
+     "energy": 0.974,
+     "hook": 0.966,
+     "boundary": 0.714,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.412
+    },
+    "alternatives": [
+     [
+      61.039,
+      91.343,
+      0.694
+     ],
+     [
+      111.546,
+      139.324,
+      0.673
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.576,
+    "regularity": 0.596,
+    "tempo_stability": 0.745,
+    "drum_share": 0.649,
+    "audio": 0.629,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.825
+   },
+   "total": 0.759,
+   "status": "probation",
+   "added": "2026-10-17T21:42:59Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "eminem_mockingbird",
+   "song": "Mockingbird",
+   "artist": "Eminem",
+   "video_id": "vq4VwD22174",
+   "url": "https://www.youtube.com/watch?v=vq4VwD22174",
+   "query": "Eminem Mockingbird official audio",
+   "views": 1615040617,
+   "trend_uploads": 1,
+   "source": "seed",
+   "tempo": 84.6,
+   "bar_s": 2.8369,
+   "downbeat": 2.332,
+   "duration": 250.08,
+   "section": {
+    "start": 206.59,
+    "end": 234.959,
+    "bars": 10,
+    "score": 0.756,
+    "parts": {
+     "density": 0.691,
+     "regularity": 0.749,
+     "energy": 0.951,
+     "hook": 0.881,
+     "boundary": 0.045,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.785
+    },
+    "alternatives": [
+     [
+      25.027,
+      53.396,
+      0.74
+     ],
+     [
+      93.113,
+      124.319,
+      0.733
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.442,
+    "regularity": 0.896,
+    "tempo_stability": 1.0,
+    "drum_share": 0.654,
+    "audio": 0.709,
+    "popularity": 1.0,
+    "trend": 0.167,
+    "section": 0.756
+   },
+   "total": 0.686,
+   "status": "probation",
+   "added": "2026-10-17T21:46:42Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_kid_laroi_stay",
+   "song": "Stay",
+   "artist": "The Kid LAROI",
+   "video_id": "Qb8q4ijHk_M",
+   "url": "https://www.youtube.com/watch?v=Qb8q4ijHk_M",
+   "query": "The Kid LAROI Stay official audio",
+   "views": 1140939217,
+   "trend_uploads": 11,
+   "source": "seed",
+   "tempo": 84.97,
+   "bar_s": 2.8246,
+   "downbeat": 1.278,
+   "duration": 141.06,
+   "section": {
+    "start": 46.471,
+    "end": 74.717,
+    "bars": 10,
+    "score": 0.77,
+    "parts": {
+     "density": 0.831,
+     "regularity": 0.773,
+     "energy": 0.822,
+     "hook": 0.865,
+     "boundary": 0.06,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.54
+    },
+    "alternatives": [
+     [
+      12.576,
+      40.822,
+      0.726
+     ],
+     [
+      91.664,
+      122.735,
+      0.672
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.386,
+    "regularity": 0.944,
+    "tempo_stability": 0.926,
+    "drum_share": 0.584,
+    "audio": 0.673,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.77
+   },
+   "total": 0.787,
+   "status": "probation",
+   "added": "2026-10-17T21:48:41Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "lil_nas_x_montero",
+   "song": "Montero",
+   "artist": "Lil Nas X",
+   "video_id": "nwR-S6KcLHE",
+   "url": "https://www.youtube.com/watch?v=nwR-S6KcLHE",
+   "query": "Lil Nas X Montero official audio",
+   "views": 641120327,
+   "trend_uploads": 12,
+   "source": "seed",
+   "tempo": 89.51,
+   "bar_s": 2.6812,
+   "downbeat": 1.737,
+   "duration": 144.13,
+   "section": {
+    "start": 108.984,
+    "end": 138.477,
+    "bars": 11,
+    "score": 0.781,
+    "parts": {
+     "density": 0.695,
+     "regularity": 0.669,
+     "energy": 0.786,
+     "hook": 0.83,
+     "boundary": 0.779,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.052
+    },
+    "alternatives": [
+     [
+      44.636,
+      74.129,
+      0.774
+     ],
+     [
+      76.81,
+      106.303,
+      0.627
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.515,
+    "regularity": 0.85,
+    "tempo_stability": 0.556,
+    "drum_share": 0.5,
+    "audio": 0.604,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.781
+   },
+   "total": 0.743,
+   "status": "probation",
+   "added": "2026-10-17T21:50:17Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "sia_cheap_thrills",
+   "song": "Cheap Thrills",
+   "artist": "Sia",
+   "video_id": "J1b22l1kFKY",
+   "url": "https://www.youtube.com/watch?v=J1b22l1kFKY",
+   "query": "Sia Cheap Thrills official audio",
+   "views": 1988377472,
+   "trend_uploads": 9,
+   "source": "seed",
+   "tempo": 90.04,
+   "bar_s": 2.6656,
+   "downbeat": 0.108,
+   "duration": 212.97,
+   "section": {
+    "start": 149.382,
+    "end": 181.369,
+    "bars": 12,
+    "score": 0.87,
+    "parts": {
+     "density": 0.717,
+     "regularity": 0.836,
+     "energy": 0.97,
+     "hook": 0.943,
+     "boundary": 0.796,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.751
+    },
+    "alternatives": [
+     [
+      85.407,
+      117.395,
+      0.82
+     ],
+     [
+      32.095,
+      64.083,
+      0.806
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.511,
+    "regularity": 0.743,
+    "tempo_stability": 0.537,
+    "drum_share": 0.588,
+    "audio": 0.589,
+    "popularity": 1.0,
+    "trend": 1.0,
+    "section": 0.87
+   },
+   "total": 0.733,
+   "status": "probation",
+   "added": "2026-10-17T21:53:55Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "bad_style_time_back",
+   "song": "Time Back",
+   "artist": "Bad Style",
+   "video_id": "7S1-pJjvsDA",
+   "url": "https://www.youtube.com/watch?v=7S1-pJjvsDA",
+   "query": "Bad Style Time Back official audio",
+   "views": 2000551,
+   "trend_uploads": 12,
+   "source": "seed",
+   "tempo": 120.07,
+   "bar_s": 1.9989,
+   "downbeat": 0.208,
+   "duration": 190.37,
+   "section": {
+    "start": 56.178,
+    "end": 86.161,
+    "bars": 15,
+    "score": 0.785,
+    "parts": {
+     "density": 0.745,
+     "regularity": 0.693,
+     "energy": 0.878,
+     "hook": 0.92,
+     "boundary": 0.51,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.368
+    },
+    "alternatives": [
+     [
+      144.13,
+      174.113,
+      0.766
+     ],
+     [
+      96.156,
+      128.138,
+      0.757
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.603,
+    "regularity": 0.933,
+    "tempo_stability": 0.892,
+    "drum_share": 0.536,
+    "audio": 0.73,
+    "popularity": 0.32,
+    "trend": 1.0,
+    "section": 0.785
+   },
+   "total": 0.689,
+   "status": "probation",
+   "added": "2026-10-17T21:55:05Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "beyonce_crazy_in_love",
+   "song": "Crazy in Love",
+   "artist": "Beyonce",
+   "video_id": "XKeUvUhxBCg",
+   "url": "https://www.youtube.com/watch?v=XKeUvUhxBCg",
+   "query": "Beyonce Crazy in Love official audio",
+   "views": 2419969,
+   "trend_uploads": 0,
+   "source": "seed",
+   "tempo": 99.28,
+   "bar_s": 2.4173,
+   "downbeat": 1.581,
+   "duration": 276.78,
+   "section": {
+    "start": 98.272,
+    "end": 127.28,
+    "bars": 12,
+    "score": 0.782,
+    "parts": {
+     "density": 0.464,
+     "regularity": 0.657,
+     "energy": 0.906,
+     "hook": 0.944,
+     "boundary": 0.886,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.448
+    },
+    "alternatives": [
+     [
+      190.129,
+      219.137,
+      0.719
+     ],
+     [
+      49.926,
+      78.934,
+      0.707
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.54,
+    "regularity": 0.747,
+    "tempo_stability": 0.907,
+    "drum_share": 0.638,
+    "audio": 0.685,
+    "popularity": 0.354,
+    "trend": 0.0,
+    "section": 0.782
+   },
+   "total": 0.516,
+   "status": "probation",
+   "added": "2026-10-17T21:56:03Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  }
+ ],
+ "rejected": [
+  {
+   "song": "Toxic",
+   "artist": "Britney Spears",
+   "at": "2026-10-17T21:44:53Z",
+   "why": "tempo 71.49 outside 85-140"
+  },
+  {
+   "song": "Can't Hold Us",
+   "artist": "Macklemore",
+   "at": "2026-10-17T21:45:48Z",
+   "why": "tempo 75.1 outside 85-140"
+  },
+  {
+   "song": "Sicko Mode",
+   "artist": "Travis Scott",
+   "at": "2026-10-17T21:47:47Z",
+   "why": "tempo 77.45 outside 85-140"
+  },
+  {
+   "song": "Pump It",
+   "artist": "Black Eyed Peas",
+   "at": "2026-10-17T21:51:08Z",
+   "why": "tempo 76.83 outside 85-140"
+  },
+  {
+   "song": "Rockstar",
+   "artist": "Post Malone",
+   "at": "2026-10-17T21:52:02Z",
+   "why": "tempo 80.03 outside 85-140"
+  },
+  {
+   "song": "Humble",
+   "artist": "Kendrick Lamar",
+   "at": "2026-10-17T21:53:00Z",
+   "why": "tempo 75.03 outside 85-140"
+  },
+  {
+   "song": "Titanium",
+   "artist": "David Guetta",
+   "at": "2026-10-17T21:54:06Z",
+   "why": "drums not clear enough (audio 0.45)",
+   "scores": {
+    "drum_clarity": 0.23,
+    "regularity": 0.608,
+    "tempo_stability": 0.383,
+    "drum_share": 0.705,
+    "audio": 0.45,
+    "popularity": 1.0,
+    "trend": 0.167,
+    "section": 0.822
+   }
+  },
+  {
+   "song": "Heat Waves",
+   "artist": "Glass Animals",
+   "at": "2026-10-17T21:54:06Z",
+   "why": "drums not clear enough (audio 0.457)",
+   "scores": {
+    "drum_clarity": 0.425,
+    "regularity": 0.463,
+    "tempo_stability": 0.477,
+    "drum_share": 0.486,
+    "audio": 0.457,
+    "popularity": 1.0,
+    "trend": 0.667,
+    "section": 0.786
+   }
+  }
+ ]
+}

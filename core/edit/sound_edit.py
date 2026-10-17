@@ -4442,7 +4442,7 @@ def vibe_events(shots, cache_dir=None, voiced_budget=None):
 
 
 def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0, workdir=None, theme=None, title=None,
-                threads=None):
+                threads=None, music_start=None):
     """One sound edit from a vibe pool. song: the song file (played untouched, speed 1.0); shots: pool / library
     shot dicts ('path', 'pool_id', 'sfx' [{t}] ...). aspect '9:16' = the Short over `length` (default 30-50 s:
     one continuous section of the song, whole bars, its riff pattern re-found every 4 bars); '16:9' with e.g.
@@ -4481,7 +4481,8 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         plan, last = None, None
         for k, rr in enumerate(ranges):
             try:
-                plan = plan_sound_edit(song, shots, duration=target, mode='accent',
+                # music_start: the section start the music pool picked (core/edit/music_pool.py; None = the planner's own choice)
+                plan = plan_sound_edit(song, shots, music_start=music_start, duration=target, mode='accent',
                                        deliver='master' if long_form else os.environ.get('SOUND_DELIVER', 'rot90'), theme=theme, title=title,
                                        watermark=None, seed=seed, workdir=os.path.join(workdir, 'plan'),
                                        events=[dict(e) for e in events], aspect=aspect, length_range=rr,
