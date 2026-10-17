@@ -114,7 +114,7 @@ def _call(model, key, parts, timeout=120):
         time.sleep(wait)
     _LAST['t'] = time.time()
     body = json.dumps({'contents': [{'role': 'user', 'parts': parts}],
-                       'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json', 'maxOutputTokens': 400}}).encode()
+                       'generationConfig': {'temperature': 0, 'responseMimeType': 'application/json', 'maxOutputTokens': 4096}}).encode()
     req = urllib.request.Request(f'{BASE}/models/{model}:generateContent', data=body,
                                  headers={'Content-Type': 'application/json', 'x-goog-api-key': key})
     with urllib.request.urlopen(req, timeout=timeout) as r:
