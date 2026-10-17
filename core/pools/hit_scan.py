@@ -74,13 +74,19 @@ def resources_ok(min_gb=4.0, max_cpu=60.0):
     return psutil.virtual_memory().available >= min_gb * 2 ** 30 and psutil.cpu_percent(interval=2.0) < max_cpu
 
 
+_STARTED = {'ok': False}
+
+
 def wait_resources(max_wait_min=240):
+    """Start condition (>= 4 GB free RAM, CPU < 60 %) once per process; afterwards only a floor (>= 1 GB free, CPU < 90 %), so a run
+    that already holds its memory is not starved by another process that arrived later."""
     t0 = time.time()
-    while not resources_ok():
+    while not (resources_ok(1.0, 90.0) if _STARTED['ok'] else resources_ok()):
         if time.time() - t0 > max_wait_min * 60:
             return False
         log('waiting for >= 4 GB free RAM and CPU < 60 % ...')
         time.sleep(60)
+    _STARTED['ok'] = True
     return True
 
 
@@ -112,7 +118,7 @@ def title_ok(meta):
     txt = f"{meta['title']} {' '.join(meta.get('tags') or [])}"
     if SUB_RE.search(meta['title']):
         return False, 'subtitled title'
-    if SKIP_RE.search(meta['title']):
+    if SKIP_RE.search(meta['title']) and not re.search(r'fight|battle|gunfight|duel|clash', meta['title'], re.I):
         return False, 'not a hit source (twixtor / OP / ED / AMV ...)'
     if re.search(r'\b(hentai|nsfw|18\+|uncensored|ecchi compilation)\b', txt, re.I):
         return False, 'explicit title'
@@ -153,11 +159,28 @@ BOTBLOCK_RE = re.compile(r"confirm(?:\s+that)?\s+you(?:'re| are)?\s+not\s+a\s+bo
 
 
 def _yt(args, timeout=900):
-    cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '--socket-timeout', '25'] + args
+    cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '--socket-timeout', '25', '--sleep-requests', '1', '--sleep-interval', '3', '--max-sleep-interval', '6',
+           '--js-runtimes', 'node'] + args   # yt-dlp[default] (EJS solver) + node: YouTube's JS challenge
+    if os.environ.get('YT_FORCE_IPV4') == '1':          # GitHub runners (the song top-up's working recipe)
+        cmd[3:3] = ['--force-ipv4']
     ck = os.environ.get('YT_COOKIES')
+    tmp_ck = None
     if ck and os.path.isfile(ck) and os.path.getsize(ck) > 100:
-        cmd[3:3] = ['--cookies', ck]
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        if os.environ.get('YT_COOKIE_COPY') == '1':     # yt-dlp rewrites its jar: a private copy per call keeps the secret's jar intact
+            import shutil
+            import tempfile
+            fd, tmp_ck = tempfile.mkstemp(suffix='.txt')
+            os.close(fd)
+            shutil.copyfile(ck, tmp_ck)
+        cmd[3:3] = ['--cookies', tmp_ck or ck, '--sleep-requests', '1', '--sleep-interval', '3', '--max-sleep-interval', '6']   # owner cookies: polite pacing
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    finally:
+        if tmp_ck:
+            try:
+                os.remove(tmp_ck)
+            except OSError:
+                pass
 
 
 def source_clean(path, tmp):
@@ -223,8 +246,8 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
                 continue
             pacer.wait('download')
             out = os.path.join(dest, f'{vid}__all.%(ext)s')
-            r = _yt(['--no-playlist', '-f', 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]', '--merge-output-format', 'mkv',
-                     '--max-filesize', '450M', '-o', out, f'https://www.youtube.com/watch?v={vid}'])
+            r = _yt(['--no-playlist', '-f', os.environ.get('HIT_SCAN_FORMAT') or 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]', '--merge-output-format', 'mkv',
+                     '--max-filesize', os.environ.get('HIT_SCAN_MAXSIZE', '450M'), '-o', out, f'https://www.youtube.com/watch?v={vid}'])
             f = glob.glob(os.path.join(dest, vid + '__all.mkv'))
             if r.returncode != 0 or not f:
                 if BOTBLOCK_RE.search(r.stderr or ''):
@@ -276,6 +299,10 @@ def taken(vp_mod, sid, t0, t1, led, items, bl):
     return vp_mod.moment_taken(sid, t0, t1, led, items) or vp_mod.blocked(sid, t0, t1, bl)
 
 
+LOOSE = os.environ.get('HIT_SCAN_LOOSE', '0') == '1'
+LOOSE_OK = ('source_ambiguous', 'source_unclear', 'punch_unclear', 'source_off_crop', 'source_too_wide_for_9x16', 'event_off_sync', 'wide_only')
+
+
 def scan_source(path, work, max_per_source=10, tags=True, existing=None):
     """Kept hit moments of one source: [{t, scene, event_t, vis{...}, tag}]."""
     import sound_visible as SV
@@ -286,8 +313,12 @@ def scan_source(path, work, max_per_source=10, tags=True, existing=None):
     w, h, fps, dur = probe(path)
     if min(w, h) < 700 or dur < 20:
         return meta, [], {'skip': f'lowres/short ({w}x{h}, {dur:.0f}s)'}
-    cands = audio_candidates(path, dur)
+    cands = audio_candidates(path, dur, per_min=int(os.environ.get('HIT_SCAN_PER_MIN', '8')))
     cap = int(min(60, max(max_per_source, round(dur / 30.0))))          # a long compilation holds many distinct hits
+    # 2026-10-17 beat remake (shots = short build-up + hit + quick cut): env knobs for a denser mining of fight scenes
+    spacing = float(os.environ.get('HIT_SCAN_SPACING', '6.0'))
+    pre_min, post_min = float(os.environ.get('HIT_SCAN_PRE_MIN', '0.25')), float(os.environ.get('HIT_SCAN_POST_MIN', '0.45'))
+    cap = int(os.environ.get('HIT_SCAN_CAP') or cap)
     stats = {'cands': len(cands)}
     led, bl, items = existing
     import vibe_pool as VP
@@ -295,7 +326,7 @@ def scan_source(path, work, max_per_source=10, tags=True, existing=None):
     for t, st in sorted(cands, key=lambda x: -x[1]):
         if len(kept) >= cap * 2:
             break
-        if any(abs(t - k['t']) < 6.0 for k in kept):               # distinct moments
+        if any(abs(t - k['t']) < spacing for k in kept):           # distinct moments
             continue
         if taken(VP, meta['source_id'], t - 1.0, t + 1.5, led, items, bl):
             stats['moment_used'] = stats.get('moment_used', 0) + 1
@@ -304,7 +335,7 @@ def scan_source(path, work, max_per_source=10, tags=True, existing=None):
         before = [c for c in cuts if c <= t + 0.02]
         after = [c for c in cuts if c > t + 0.02]
         t_min, t_max = (before[-1] if before else t - 2.0), (after[0] if after else t + 2.0)
-        if t - t_min < 0.25 or t_max - t < 0.45:
+        if t - t_min < pre_min or t_max - t < post_min:
             stats['scene_room'] = stats.get('scene_room', 0) + 1
             continue
         m = SV.measure(path, t, t_min=t_min, t_max=t_max)
@@ -316,6 +347,11 @@ def scan_source(path, work, max_per_source=10, tags=True, existing=None):
         if tags and m.get('event_t') is not None:
             tg = SV.tags(path, [max(t_min + 0.01, m['event_t'] - 1 / fps), m['event_t']], region=m.get('bbox'))
         ok, why = SV.gate(m, tg)
+        if not ok and LOOSE and ok0 and why in LOOSE_OK:
+            # 2026-10-14: the by-eye review of the hit strips is the bar (sound-hit-allowlist.json); keep motion-clear
+            # moments the tag gate is only unsure about, as review candidates (they need an eye approval to be a hit)
+            stats['loose_' + why] = stats.get('loose_' + why, 0) + 1
+            ok = True
         if not ok:
             stats[why] = stats.get(why, 0) + 1
             continue
@@ -391,7 +427,7 @@ def cut(work, threads=2):
             out = os.path.join(mini_dir, name + '.mp4')
             if name not in side or not os.path.isfile(out):
                 r = subprocess.run(['ffmpeg', '-y', '-v', 'error', '-nostdin', '-ss', f'{a:.3f}', '-i', s['path'], '-t', f'{b - a:.3f}',
-                                    '-vf', "scale=-2:'min(1080,ih)'", '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', '-threads', str(threads),
+                                    '-vf', "scale=-2:'min(%s,ih)'" % os.environ.get('HIT_SCAN_CUT_H', '2160'), '-c:v', 'libx264', '-crf', '16', '-preset', 'veryfast', '-threads', str(threads),
                                     '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out], capture_output=True, text=True)
                 if r.returncode != 0 or not os.path.isfile(out):
                     log('cut failed', name, (r.stderr or '')[-120:])
@@ -469,13 +505,36 @@ def grow(work, globs=None, max_per_source=10, limit=None, budget_min=None, gate=
     return res
 
 
+def prune_sources(work, only_fetched=True):
+    """Owner storage rule 2026-10-13: once a source's hit clips are cut and gated, delete the (large, hi-res) source file at once and
+    keep its URL in the pool metadata (work/sources-pruned.json + scan.json 'url') so it can be re-fetched. Only files fetched
+    into WORK/src are removed (never the shared edit-cache)."""
+    state = read_json(os.path.join(work, 'scan.json'), {'sources': {}})
+    rec_p = os.path.join(work, 'sources-pruned.json')
+    rec = read_json(rec_p, {})
+    src_dir = os.path.abspath(os.path.join(work, 'src'))
+    freed = 0
+    for sid, s in state['sources'].items():
+        p = s.get('path')
+        if not p or not os.path.isfile(p) or (only_fetched and not os.path.abspath(p).startswith(src_dir)):
+            continue
+        freed += os.path.getsize(p)
+        rec[sid] = {'url': f'https://www.youtube.com/watch?v={sid}', 'title': (s.get('meta') or {}).get('title'), 'bytes': os.path.getsize(p)}
+        s['url'], s['pruned'] = rec[sid]['url'], True
+        os.remove(p)
+    write_json(os.path.join(work, 'scan.json'), state)
+    write_json(rec_p, rec)
+    log(f'pruned {len(rec)} source files, {freed / 1048576:.0f} MB freed (URLs in {rec_p})')
+    return freed
+
+
 def queries_for_shard(k, n):
     return DEFAULT_SOURCE_QUERIES[k::n]
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['fetch', 'scan', 'cut', 'import', 'grow'])
+    ap.add_argument('cmd', choices=['fetch', 'scan', 'cut', 'import', 'grow', 'prune'])
     ap.add_argument('--work', required=True)
     ap.add_argument('--src', nargs='*')
     ap.add_argument('--max-per-source', type=int, default=10)
@@ -494,6 +553,8 @@ def main():
     elif a.cmd == 'scan':
         st = scan(a.work, a.src, a.max_per_source, a.limit_sources, a.budget_min, a.gate, not a.no_tags)
         print(json.dumps({'sources': len(st['sources']), 'kept': sum(len(s.get('kept') or []) for s in st['sources'].values())}))
+    elif a.cmd == 'prune':
+        print(json.dumps({'freed_mb': round(prune_sources(a.work) / 1048576)}))
     elif a.cmd == 'cut':
         print(json.dumps({'mini': cut(a.work)}))
     elif a.cmd == 'import':

@@ -248,9 +248,11 @@ def main():
     ap.add_argument('--out')
     ap.add_argument('--only-new')
     ap.add_argument('--per', type=int, default=48)
+    ap.add_argument('--ids', help='JSON list of clip ids: stamp only these (the refresh stamps its new clips)')
     a = ap.parse_args()
     if a.cmd == 'stamp':
-        print(json.dumps(stamp(a.dir, a.vibe, a.force, a.limit, not a.no_tags)))
+        ids = set(json.load(open(a.ids))) if a.ids else None
+        print(json.dumps(stamp(a.dir, a.vibe, a.force, a.limit, not a.no_tags, ids)))
     elif a.cmd == 'counts':
         c = counts(a.dir)
         if a.json:

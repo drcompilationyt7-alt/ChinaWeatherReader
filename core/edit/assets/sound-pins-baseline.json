@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "built": "2026-10-17",
+ "source": "the eye-approved pins of the sound_11b pool (owner-approved 2026-10-17)",
+ "n": 63,
+ "sharp": {
+  "p10": 10.3,
+  "p25": 21.9,
+  "p50": 33.0
+ },
+ "luma": {
+  "p10": 36.3,
+  "p25": 46.8,
+  "p50": 69.1
+ }
+}
