@@ -176,7 +176,10 @@ def judge(mini, hit_t, tag=None, tmp=None):
     tmp = tmp or tempfile.mkdtemp(prefix='hitvis-')
     os.makedirs(tmp, exist_ok=True)
     base = os.path.splitext(os.path.basename(mini))[0]
-    sm = small(mini, os.path.join(tmp, base + '.640.mp4'))
+    try:
+        sm = small(mini, os.path.join(tmp, base + '.640.mp4'))
+    except subprocess.CalledProcessError as e:
+        return {'ok': False, 'why': 'ffmpeg: ' + (e.stderr or b'')[-120:].decode(errors='replace'), 'votes': []}
     st, (a, b) = strip(sm, float(hit_t), os.path.join(tmp, base + '.strip.jpg'))
     if not st:
         return {'ok': False, 'why': 'no frames', 'votes': []}
