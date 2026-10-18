@@ -23,9 +23,16 @@
   },
   "the_tech_thieves_fake": {
    "pass": false,
-   "run": 39077414493,
-   "why": "5 density 7.5",
-   "date": "2026-10-17"
+   "run": 39080054144,
+   "section": [
+    91.855,
+    120.098
+   ],
+   "duration": 30.25,
+   "overall": 9.5,
+   "overall_mean": 9.5,
+   "worst": "5_density_no_dead 7.7, 15_transients_on_onsets 8.0",
+   "date": "2026-10-18"
   },
   "stevie_wonder_superstition": {
    "pass": false,
@@ -34,10 +41,218 @@
    "date": "2026-10-17"
   },
   "ed_sheeran_shape_of_you": {
+   "pass": true,
+   "run": 39081890780,
+   "section_pool": [
+    190.199,
+    220.188
+   ],
+   "section_used": [
+    99.59,
+    127.8
+   ],
+   "duration": 28.23,
+   "overall": 9.7,
+   "overall_mean": 9.7,
+   "worst": "6_vertical_framing_quality 8.1 (FB15) / 8.7 (mean)",
+   "still_max_s": 0.133,
+   "note": "the definitive go-live dry run: pool section 190 s has a 4.2 s drum pause -> the remake moved it to 99.6 s; re-planned 26.05 -> 28.23 s",
+   "date": "2026-10-18"
+  },
+  "mark_ronson_uptown_funk": {
    "pass": false,
-   "run": 39077148074,
-   "why": "8 length 7.6 (26.05 s; before the length re-plan)",
-   "date": "2026-10-17"
+   "run": 39080054144,
+   "section": [
+    134.219,
+    167.622
+   ],
+   "duration": 27.567,
+   "overall": 9.5,
+   "overall_mean": 9.5,
+   "worst": "16_drum_onsets_recreated 7.6, 5_density_no_dead 8.4",
+   "date": "2026-10-18"
+  },
+  "blackpink_shut_down": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    5.411,
+    35.968
+   ],
+   "duration": 31.433,
+   "overall": 7.5,
+   "overall_mean": 7.5,
+   "worst": "17_no_frozen_frames 5.0, 5_density_no_dead 8.1",
+   "date": "2026-10-18"
+  },
+  "creepy_nuts_bling_bang_bang_born": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    92.247,
+    119.75
+   ],
+   "duration": 29.833,
+   "overall": 9.5,
+   "overall_mean": 9.5,
+   "worst": "16_drum_onsets_recreated 7.2, 6_vertical_framing_quality 8.6",
+   "date": "2026-10-18"
+  },
+  "fitz_and_the_tantrums_handclap": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    89.101,
+    116.483
+   ],
+   "duration": 28.183,
+   "overall": 9.5,
+   "overall_mean": 9.6,
+   "worst": "6_vertical_framing_quality 8.3, 16_drum_onsets_recreated 8.5",
+   "date": "2026-10-18"
+  },
+  "le_sserafim_antifragile": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    9.155,
+    36.571
+   ],
+   "duration": 27.817,
+   "overall": 9.5,
+   "overall_mean": 9.5,
+   "worst": "16_drum_onsets_recreated 8.4, 15_transients_on_onsets 8.6",
+   "date": "2026-10-18"
+  },
+  "michael_jackson_billie_jean": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    5.267,
+    33.931
+   ],
+   "duration": 28.033,
+   "overall": 9.7,
+   "overall_mean": 9.7,
+   "worst": "6_vertical_framing_quality 8.6, 8_length_30_50s 8.8",
+   "date": "2026-10-18"
+  },
+  "aespa_whiplash": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    9.152,
+    37.713
+   ],
+   "duration": 28.25,
+   "overall": 7.9,
+   "overall_mean": 7.9,
+   "worst": "16_drum_onsets_recreated 5.4, 7_variety 8.4",
+   "date": "2026-10-18"
+  },
+  "michael_jackson_smooth_criminal": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    99.164,
+    131.661
+   ],
+   "duration": 27.55,
+   "overall": 9.5,
+   "overall_mean": 9.6,
+   "worst": "8_length_30_50s 8.5, 16_drum_onsets_recreated 8.6",
+   "date": "2026-10-18"
+  },
+  "kenshi_yonezu_kick_back": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    0.716,
+    31.29
+   ],
+   "duration": 28.233,
+   "overall": 2.5,
+   "overall_mean": 2.5,
+   "worst": "17_no_frozen_frames 0.0, 14_every_shot_a_clear_cause 4.2",
+   "date": "2026-10-18"
+  },
+  "nathan_evans_wellerman": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    2.011,
+    29.514
+   ],
+   "duration": 27.5,
+   "overall": 2.5,
+   "overall_mean": 2.5,
+   "worst": "14_every_shot_a_clear_cause 0.0, 17_no_frozen_frames 0.0",
+   "date": "2026-10-18"
+  },
+  "billie_eilish_bad_guy": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    0.556,
+    30.766
+   ],
+   "duration": 27.9,
+   "overall": 9.5,
+   "overall_mean": 9.5,
+   "worst": "16_drum_onsets_recreated 8.0, 7_variety 8.6",
+   "date": "2026-10-18"
+  },
+  "the_white_stripes_seven_nation_army": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    9.081,
+    40.133
+   ],
+   "duration": 26.883,
+   "overall": 9.6,
+   "overall_mean": 9.6,
+   "worst": "6_vertical_framing_quality 8.0, 5_density_no_dead 8.1",
+   "date": "2026-10-18"
+  },
+  "imagine_dragons_believer": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    7.993,
+    36.782
+   ],
+   "duration": 28.6,
+   "overall": 9.6,
+   "overall_mean": 9.6,
+   "worst": "15_transients_on_onsets 8.1, 5_density_no_dead 8.5",
+   "date": "2026-10-18"
+  },
+  "eminem_lose_yourself": {
+   "pass": false,
+   "run": 39080054144,
+   "section": [
+    269.883,
+    300.687
+   ],
+   "duration": 29.8,
+   "overall": 9.4,
+   "overall_mean": 9.4,
+   "worst": "15_transients_on_onsets 7.3, 5_density_no_dead 7.9",
+   "date": "2026-10-18"
+  },
+  "the_weeknd_blinding_lights": {
+   "pass": true,
+   "run": 39080054144,
+   "section": [
+    13.892,
+    41.951
+   ],
+   "duration": 30.6,
+   "overall": 9.8,
+   "overall_mean": 9.8,
+   "worst": "6_vertical_framing_quality 8.8, 7_variety 8.8",
+   "date": "2026-10-18"
   }
  }
 }
