@@ -1317,6 +1317,84 @@
     "ovStyle": "op-ov-stem-event",
     "descHook": "layers"
    }
+  },
+  {
+   "videoId": "2qzyPb-Mv28",
+   "url": "https://www.youtube.com/watch?v=2qzyPb-Mv28",
+   "postedAt": "2026-10-18T07:52:23.356Z",
+   "publishAt": "2026-10-18T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Believer",
+   "theme": "anime",
+   "emoji": "🔥,🔥",
+   "title": "anime sound design edit goes insane on believer 🔥",
+   "clipIds": [
+    "c_3iKoZbmQKo0_76816",
+    "c_43Tn1OiBGt4_95263",
+    "c_4j1TyN4nLZA_59982",
+    "c_94gGChbw7Lk_4368",
+    "c_BTNEyBRynJQ_84746",
+    "c_Cw9_Kh3KSrA_50500",
+    "c_DQ6WAHp7R-o_154219",
+    "c_Ei37mjbcqGQ_4952",
+    "c_EsUbAFAOXE8_119363",
+    "c_IFYCx3opUn4_17269",
+    "c_Ipr0YNnwlXA_40900",
+    "c_K39jx5VkIPw_790875",
+    "c_KbjmnBu7scU_45969",
+    "c_L1TVoSHBDKc_93140",
+    "c_MnELmsLLEwY_17629",
+    "c_O2JRxaMNK_c_28850",
+    "c_O2JRxaMNK_c_80566",
+    "c_OcbcJ4Urg5k_528463",
+    "c_P8j50ByEd7w_29601",
+    "c_P8j50ByEd7w_37150",
+    "c_VeIXoZwoy4Y_16463",
+    "c_VeIXoZwoy4Y_6228",
+    "c_X0Y72O8mY-w_6900",
+    "c_Z1bq3cyZMVQ_131012",
+    "c_bZdd8k6wKsI_676873",
+    "c_biPUhMQn8Qw_161771",
+    "c_krc6M4vPx28_36300",
+    "c_lDzXBSxAxKw_53147",
+    "c_mBpBTRnhDl0_115884",
+    "c_mBpBTRnhDl0_192447",
+    "c_tx49TtGjyv8_21800",
+    "c_utLWiscq8d4_35350",
+    "c_xT66YPk0Q5w_201106",
+    "c_xT66YPk0Q5w_366354",
+    "c_xoLBt2vayAc_359763",
+    "c_z1In_sZL7xg_155531",
+    "c_zUiJ3TahSqE_28681",
+    "c_zUiJ3TahSqE_37647",
+    "c_zv5lApSubRw_357242"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 28.6,
+    "pool": "sound",
+    "render_s": {
+     "short": 1293.9,
+     "watermark_short": 60.4,
+     "total": 1354.2
+    }
+   },
+   "onVideoTitle": "believer goes crazy",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-llm",
+    "descHook": "kw-line"
+   },
+   "vibe": "impact",
+   "musicPoolId": "imagine_dragons_believer",
+   "songSection": [
+    7.993,
+    36.782
+   ]
   }
  ]
 }

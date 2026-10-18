@@ -1,41 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Zv127E4-uUo",
-      "title": "some loves like this 🫣@Jasmine-like-nature #viral",
-      "country": "China",
-      "postedAt": "2026-09-17T10:06:58.542Z",
-      "videoId": "Zv127E4-uUo",
-      "sourceChannel": "Jasmine-like-nature",
-      "sourceUrl": "https://www.youtube.com/watch?v=KeffVOWQFgQ",
-      "sourceTitle": "some loves like this 🫣@Jasmine-like-nature #viral #trending #chinese #foryou #shorts #ytshorts",
-      "summary": "Two people walk under an umbrella, revealing a backpack with a keychain featuring an East Asian idol's picture.",
-      "category": "cute",
-      "eggs": [
-        "spidey-chase"
-      ],
-      "titleSource": "fallback",
-      "watermark": "default"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=LTZRZ2ue2Ew",
-      "title": "4 Chinese Girls: Pajamas to GLAM! ✨👗",
-      "country": "China",
-      "postedAt": "2026-09-18T06:47:04.983Z",
-      "videoId": "LTZRZ2ue2Ew",
-      "sourceChannel": "Luli_Lush-ENT",
-      "sourceUrl": "https://www.youtube.com/watch?v=-wqCogvlOZY",
-      "sourceTitle": "😌🧣Which transformation #makeup #outfit #douyin #dance #makeuptransition #danceclothes #costume",
-      "summary": "Four Chinese creators perform a popular Douyin transition trend, changing from casual pajamas to glamorous outfits.",
-      "category": "beauty",
-      "eggs": [
-        "spidey-stick",
-        "gwen-peek"
-      ],
-      "titleSource": "dspy",
-      "watermark": "default"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=Vc2RDLJNyyg",
       "title": "Things to Check Before Dating Someone These Days",
       "country": "China",
@@ -313,6 +278,15 @@
       "videoId": "QZvICmvLzfI",
       "category": "meme-anime",
       "titleSource": "idol"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=2qzyPb-Mv28",
+      "title": "anime sound design edit goes insane on believer 🔥",
+      "country": "Global",
+      "postedAt": "2026-10-18T07:52:23.522Z",
+      "videoId": "2qzyPb-Mv28",
+      "category": "edit-sound",
+      "titleSource": "Believer"
     }
   ]
 }
