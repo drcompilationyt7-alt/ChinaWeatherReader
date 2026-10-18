@@ -202,10 +202,14 @@ def judge(mini, hit_t, tag=None, tmp=None):
     return out
 
 
-def calibrate(d):
+def calibrate(d, part=None):
     labels = json.load(open(os.path.join(d, 'labels.json'), encoding='utf-8'))
+    items = sorted(labels.items())
+    if part:
+        k, n = (int(x) for x in part.split('/'))
+        items = items[k::n]
     rows = []
-    for name, lab in sorted(labels.items()):
+    for name, lab in items:
         p = os.path.join(d, name + '.mp4')
         if not os.path.isfile(p):
             continue
@@ -232,8 +236,17 @@ def main():
     ap.add_argument('--tag')
     ap.add_argument('--dir')
     ap.add_argument('--out')
+    ap.add_argument('--part', help='K/N: score every N-th labelled mini from K (parallel CI jobs)')
+    ap.add_argument('--merge', nargs='*', help='calibrate: merge these report.json parts instead of scoring')
     a = ap.parse_args()
-    r = judge(a.mini, a.hit_t, a.tag) if a.cmd == 'judge' else calibrate(a.dir)
+    if a.cmd == 'calibrate' and a.merge:
+        rows = [r for f in a.merge for r in json.load(open(f, encoding='utf-8'))['rows']]
+        tp = sum(r['label'] and r['pred'] for r in rows); fp = sum((not r['label']) and r['pred'] for r in rows)
+        fn = sum(r['label'] and not r['pred'] for r in rows); tn = len(rows) - tp - fp - fn
+        r = {'n': len(rows), 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn, 'precision': round(tp / max(1, tp + fp), 3),
+             'recall': round(tp / max(1, tp + fn), 3), 'models': MODELS, 'min_conf': MIN_CONF, 'rows': rows}
+    else:
+        r = judge(a.mini, a.hit_t, a.tag) if a.cmd == 'judge' else calibrate(a.dir, a.part)
     s = json.dumps(r, indent=1, default=str)
     if a.out:
         with open(a.out, 'w', encoding='utf-8') as f:

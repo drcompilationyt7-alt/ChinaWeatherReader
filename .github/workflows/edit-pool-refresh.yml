@@ -28,65 +28,14 @@ on:
         required: false
         default: '240'
       calibrate:
-        description: 'Also score the vision gate on the labelled by-eye set (release edit-pools-calib)'
-        required: false
-        default: 'false'
-
-concurrency:
-  group: edit-pool-refresh
-  cancel-in-progress: false
-
-env:
-  EDIT_POOL_DIR: output/edit-pools
-  EDIT_CACHE: /home/runner/.cache/clip_finder
-  YT_COOKIES: /tmp/yt_cookies.txt
-  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
-  YT_FORCE_IPV4: '1'
-  YT_COOKIE_COPY: '1'
-  GH_PAT: ${{ secrets.GH_PAT }}
-  GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
-  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
-  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
-  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
-  GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
-  GEMINI_API_KEY_6: ${{ secrets.GEMINI_API_KEY_6 }}
-  GEMINI_API_KEY_7: ${{ secrets.GEMINI_API_KEY_7 }}
-  GEMINI_API_KEY_8: ${{ secrets.GEMINI_API_KEY_8 }}
-  PYTHONIOENCODING: utf-8
-  EDIT_GPU: '0'
-  EDIT_THREADS: '4'
-  OMP_NUM_THREADS: '4'
-
-jobs:
-  plan:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    outputs:
-      go: ${{ steps.gate.outputs.go }}
-      dry: ${{ steps.gate.outputs.dry }}
-    steps:
-      - name: Gate (first Tuesday, repository variable, dry run)
-        id: gate
-        run: |
-          DRY="${{ github.event.inputs.dry_run || 'false' }}"
-          GO=true
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "$(date -u +%d)" -gt 7 ]; then echo "Not the first Tuesday of the month: nothing to do."; GO=false; fi
-            DRY=false
-          fi
-          if [ "$DRY" != "true" ] && [ "${{ vars.EDIT_POOL_REFRESH }}" != "on" ]; then
-            echo "::notice::Edit pool refresh is DISABLED (repository variable EDIT_POOL_REFRESH is not 'on'); only dry runs are allowed."
-            GO=false
-          fi
-          echo "go=$GO" >> $GITHUB_OUTPUT
-          echo "dry=$DRY" >> $GITHUB_OUTPUT
-
-  calibrate:
     needs: plan
     if: github.event.inputs.calibrate == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -96,18 +45,36 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg libgl1 libglib2.0-0
           python -m pip install -q opencv-python-headless numpy
-      - name: Score the vision gate on the by-eye labelled minis
+      - name: Score the vision gate on the by-eye labelled minis (part ${{ matrix.part }} of 6)
         run: |
           mkdir -p calib && gh release download edit-pools-calib --repo "$GITHUB_REPOSITORY" --pattern hit-calib.tar --dir calib
           tar -xf calib/hit-calib.tar -C calib
-          python core/pools/hit_vision.py calibrate --dir calib/hit-calib --out calib/report.json | tee calib/summary.json
-          { echo "### Vision gate calibration"; echo '```'; cat calib/summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          python core/pools/hit_vision.py calibrate --dir calib/hit-calib --part ${{ matrix.part }}/6 --out calib/report-${{ matrix.part }}.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: hit-vision-calibration-${{ matrix.part }}
+          path: calib/report-*.json
+          if-no-files-found: ignore
+
+  calibrate-summary:
+    needs: calibrate
+    if: ${{ always() && github.event.inputs.calibrate == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hit-vision-calibration-*
+          path: calib
+          merge-multiple: true
+      - run: |
+          python core/pools/hit_vision.py calibrate --merge calib/report-*.json --out calib/report.json | tee calib/summary.json
+          { echo "### Vision gate calibration (by-eye labels)"; echo '```'; cat calib/summary.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
           name: hit-vision-calibration
           path: calib/report.json
-          if-no-files-found: ignore
 
   mine:
     needs: plan
