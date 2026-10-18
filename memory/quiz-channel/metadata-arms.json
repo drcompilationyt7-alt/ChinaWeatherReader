@@ -79,6 +79,41 @@
     }
    ],
    "rejected": []
+  },
+  {
+   "week": "2026-W42",
+   "pool": "quiz/quiz",
+   "at": "2026-10-18T06:48:58.101Z",
+   "n": 25,
+   "retired": [
+    {
+     "dim": "descHook",
+     "id": "keyword",
+     "uses": 9,
+     "mean": -0.36,
+     "best": "no-peek",
+     "z": 2.02
+    }
+   ],
+   "added": [
+    {
+     "dim": "descHook",
+     "id": "op-score-challenge",
+     "mu0": 0.43
+    },
+    {
+     "dim": "emojiSet",
+     "id": "op-fire-brain",
+     "mu0": 0.43
+    }
+   ],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "search-ramp",
+     "why": "titleStyle already has 8 active arms"
+    }
+   ]
   }
  ],
  "pools": {
@@ -105,6 +140,20 @@
        ]
       },
       "why": "Specific energetic topic emojis (+0.38 fire, +0.33 topic) significantly outperform no emoji (-0.17). A targeted set focused on visual pop and sound/mind quiz themes (brain, headphones, flash, eyes) pr"
+     },
+     "op-fire-brain": {
+      "status": "active",
+      "source": "opro-2026-W42",
+      "added": "2026-W42",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "pool": [
+        "🔥",
+        "🧠"
+       ]
+      },
+      "why": "The fire emoji set is currently the top performing set (+0.50), while quiz-specific icons show positive lift. Combining fire with the brain emoji highlights both high energy and quiz intelligence with"
      }
     },
     "titleStyle": {
@@ -137,124 +186,153 @@
        "fallback": "challenge"
       },
       "why": "The top description hook 'no-peek' (+0.68) succeeded by setting explicit rules for playing the quiz video. Directing viewers to leave their score drives comment velocity, which is a key secondary sign"
+     },
+     "keyword": {
+      "status": "retired",
+      "retiredAt": "2026-W42",
+      "why": "mean -0.36 after 9 uses vs no-peek (z 2.02)"
+     },
+     "op-score-challenge": {
+      "status": "active",
+      "source": "opro-2026-W42",
+      "added": "2026-W42",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "Combines a strict retention rule against pausing/peeking with an explicit prompt to leave their final score in the comments.",
+       "example": "{hook} Comment your score out of {n}! No pausing, no peeking 👀 {cta}",
+       "fallback": "challenge"
+      },
+      "why": "no-peek is the top performing description hook (+0.62) and comment engagement prompts scored +0.43. Joining the retention warning with a clear score-commenting call-to-action drives both watch time an"
      }
     }
    },
    "posterior": {
-    "week": "2026-W41",
-    "n": 18,
+    "week": "2026-W42",
+    "n": 25,
     "dims": {
      "titleStyle": {
+      "ramp": {
+       "uses": 6,
+       "mean": 0.57,
+       "sd": 0.42
+      },
       "op-exact-search": {
        "uses": 0,
        "mean": 0.47,
        "sd": 1
       },
       "casual": {
-       "uses": 6,
-       "mean": 0.43,
-       "sd": 0.42
+       "uses": 7,
+       "mean": 0.25,
+       "sd": 0.4
       },
-      "ramp": {
+      "keyword": {
        "uses": 3,
-       "mean": 0.32,
-       "sd": 0.53
+       "mean": 0.12,
+       "sd": 0.56
       },
       "speed": {
        "uses": 1,
-       "mean": 0.12,
-       "sd": 0.77
+       "mean": 0.02,
+       "sd": 0.74
       },
       "challenge": {
        "uses": 1,
-       "mean": 0.11,
-       "sd": 0.77
-      },
-      "keyword": {
-       "uses": 2,
-       "mean": -0.14,
-       "sd": 0.64
-      },
-      "llm": {
-       "uses": 3,
-       "mean": -0.63,
-       "sd": 0.54
+       "mean": 0,
+       "sd": 0.74
       },
       "fans": {
-       "uses": 2,
+       "uses": 3,
+       "mean": -0.58,
+       "sd": 0.55
+      },
+      "llm": {
+       "uses": 4,
        "mean": -0.66,
-       "sd": 0.62
+       "sd": 0.51
       }
      },
      "hashtagSet": {
       "title-tag": {
-       "uses": 9,
-       "mean": 0.38,
-       "sd": 0.35
+       "uses": 15,
+       "mean": 0.43,
+       "sd": 0.28
       },
       "two": {
-       "uses": 7,
-       "mean": -0.29,
-       "sd": 0.4
+       "uses": 8,
+       "mean": -0.45,
+       "sd": 0.38
       },
       "format3": {
        "uses": 2,
-       "mean": -0.55,
-       "sd": 0.63
+       "mean": -0.62,
+       "sd": 0.62
       }
      },
      "emojiSet": {
-      "op-quiz-pop": {
+      "fire": {
+       "uses": 11,
+       "mean": 0.5,
+       "sd": 0.33
+      },
+      "op-fire-brain": {
        "uses": 0,
-       "mean": 0.4,
+       "mean": 0.43,
        "sd": 1
       },
-      "fire": {
-       "uses": 6,
-       "mean": 0.38,
-       "sd": 0.41
-      },
       "topic": {
-       "uses": 6,
-       "mean": 0.33,
-       "sd": 0.43
+       "uses": 7,
+       "mean": 0.18,
+       "sd": 0.39
+      },
+      "op-quiz-pop": {
+       "uses": 1,
+       "mean": 0.09,
+       "sd": 0.77
       },
       "none": {
        "uses": 2,
-       "mean": -0.17,
-       "sd": 0.63
+       "mean": -0.25,
+       "sd": 0.62
       },
       "template": {
        "uses": 4,
-       "mean": -0.92,
-       "sd": 0.49
+       "mean": -1.1,
+       "sd": 0.51
       }
      },
      "descHook": {
       "no-peek": {
-       "uses": 5,
-       "mean": 0.68,
-       "sd": 0.45
+       "uses": 11,
+       "mean": 0.62,
+       "sd": 0.32
       },
       "op-comment-score": {
        "uses": 0,
        "mean": 0.43,
        "sd": 1
       },
+      "op-score-challenge": {
+       "uses": 0,
+       "mean": 0.43,
+       "sd": 1
+      },
       "keyword": {
-       "uses": 8,
-       "mean": -0.24,
-       "sd": 0.37
+       "uses": 9,
+       "mean": -0.36,
+       "sd": 0.36
       },
       "challenge": {
        "uses": 5,
-       "mean": -0.36,
-       "sd": 0.45
+       "mean": -0.48,
+       "sd": 0.46
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-11T08:01:51.865Z"
+ "updatedAt": "2026-10-18T06:48:58.101Z"
 }
