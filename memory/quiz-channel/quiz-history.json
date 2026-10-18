@@ -779,6 +779,67 @@
     "titleStyle": "challenge",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "wD5s6VBh9Mk",
+   "url": "https://www.youtube.com/watch?v=wD5s6VBh9Mk",
+   "postedAt": "2026-10-18T07:25:50.900Z",
+   "publishAt": "2026-10-18T12:00:00.000Z",
+   "format": "scene",
+   "theme": "anime",
+   "seed": 206542185,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Time for a pop culture test!",
+     "template": "Time for a pop culture test!",
+     "sec": 1.51
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How well did you do? Drop your score below!",
+     "template": "How well did you do? Drop your score below!",
+     "sec": 2.26
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Toradora!. Did you get it?",
+     "template": null,
+     "sec": 1.27
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Another! Did you get that right?",
+     "template": "{a}! Did you get that right?",
+     "sec": 1.39
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Boom, Log Horizon!",
+     "template": "Boom, {a}!",
+     "sec": 1.8
+    }
+   ],
+   "titleTemplate": "scene-4sec",
+   "title": "Guess the Anime From One Scene 🔥 #anime",
+   "answers": [
+    "scene:4224",
+    "scene:11111",
+    "scene:17265"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
