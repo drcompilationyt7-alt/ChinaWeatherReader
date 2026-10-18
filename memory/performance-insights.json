@@ -1,21 +1,29 @@
 {
-  "updatedAt": "2026-10-17T23:38:22.244Z",
+  "updatedAt": "2026-10-18T00:14:47.224Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 10,
     "totalViews": 8333,
     "totalVideos": 29
   },
-  "sampleSize": 27,
+  "sampleSize": 28,
   "reliable": true,
-  "globalMeanScore": 33.6,
-  "typicalScore": 4,
+  "globalMeanScore": 75.5,
+  "typicalScore": 5.1,
   "topTitles": [
+    {
+      "videoId": "1_n7d7E6wO8",
+      "title": "how you like that acapella but the beat drops 🗿⚡",
+      "views": 1739,
+      "score": 1213.8,
+      "country": "Global",
+      "ageDays": 1.5
+    },
     {
       "videoId": "NyccBq4DC_E",
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
       "views": 1127,
-      "score": 262.8,
+      "score": 260.2,
       "country": "Global",
       "ageDays": 2.5
     },
@@ -23,7 +31,7 @@
       "videoId": "CF1iIdJ02T4",
       "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
       "views": 1097,
-      "score": 164.5,
+      "score": 163.3,
       "country": "Global",
       "ageDays": 3.5
     },
@@ -31,7 +39,7 @@
       "videoId": "3T6t4OoiFK4",
       "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
       "views": 1004,
-      "score": 134.1,
+      "score": 133.5,
       "country": "Global",
       "ageDays": 5.5
     },
@@ -39,7 +47,7 @@
       "videoId": "2ETGsUNONIc",
       "title": "odoriko acapella but the drums kick in 🗿🔥",
       "views": 1073,
-      "score": 128,
+      "score": 127.5,
       "country": "Global",
       "ageDays": 6.5
     },
@@ -47,7 +55,7 @@
       "videoId": "DbIqVhDg5ho",
       "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
       "views": 1086,
-      "score": 120.7,
+      "score": 120,
       "country": "Global",
       "ageDays": 4.5
     },
@@ -55,7 +63,7 @@
       "videoId": "vRoEzBcd3rc",
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
       "views": 1024,
-      "score": 73.7,
+      "score": 73.4,
       "country": "Global",
       "ageDays": 7.5
     },
@@ -73,7 +81,7 @@
       "views": 46,
       "score": 2.6,
       "country": "Global",
-      "ageDays": 14.4
+      "ageDays": 14.5
     },
     {
       "videoId": "20gtifoxMCw",
@@ -82,14 +90,6 @@
       "score": 2,
       "country": "Global",
       "ageDays": 8.5
-    },
-    {
-      "videoId": "450-mzMj98U",
-      "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "views": 29,
-      "score": 1.6,
-      "country": "Global",
-      "ageDays": 10.5
     }
   ],
   "bottomTitles": [
@@ -138,59 +138,63 @@
     {
       "name": "short (<= 40 chars)",
       "n": 13,
-      "lift": 1
+      "lift": 0.69
     }
   ],
   "countries": {
     "Global": {
-      "n": 27,
-      "meanScore": 33.6,
+      "n": 28,
+      "meanScore": 75.5,
       "weight": 1
     }
   },
   "channels": {},
   "categories": {
+    "meme-kpop": {
+      "n": 7,
+      "meanScore": 174.3,
+      "weight": 0.85
+    },
     "meme-anime": {
       "n": 16,
-      "meanScore": 35.1,
-      "weight": 0.92
+      "meanScore": 34.8,
+      "weight": 0.78
     },
     "meme-japanese": {
       "n": 5,
-      "meanScore": 67.7,
+      "meanScore": 67.4,
       "weight": 1.6
-    },
-    "meme-kpop": {
-      "n": 6,
-      "meanScore": 1,
-      "weight": 0.6
     }
   },
   "eggs": {},
   "history": [
     {
+      "title": "how you like that acapella but the beat drops 🗿⚡",
+      "score": 7.102
+    },
+    {
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "score": 5.575
+      "score": 5.565
     },
     {
       "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
-      "score": 5.109
+      "score": 5.102
     },
     {
       "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
-      "score": 4.906
+      "score": 4.901
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥",
-      "score": 4.86
+      "score": 4.856
     },
     {
       "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
-      "score": 4.801
+      "score": 4.796
     },
     {
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
-      "score": 4.313
+      "score": 4.309
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
@@ -202,11 +206,11 @@
     },
     {
       "title": "magnetic acapella ✨⚡",
-      "score": 1.102
+      "score": 1.1
     },
     {
       "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "score": 0.953
+      "score": 0.952
     },
     {
       "title": "unravel acapella 🗿",
@@ -226,11 +230,11 @@
     },
     {
       "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
-      "score": 0.753
+      "score": 0.751
     },
     {
       "title": "god's menu acapella but the stems stack up 🎶🎧",
-      "score": 0.623
+      "score": 0.622
     },
     {
       "title": "dynamite acapella bts ✨🔥",
@@ -250,7 +254,7 @@
     },
     {
       "title": "pokemon theme acapella 🗿",
-      "score": 0.444
+      "score": 0.443
     },
     {
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
@@ -277,6 +281,6 @@
       "score": 0.069
     }
   ],
-  "promptSummary": "Based on 27 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 4/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"idol acapella yoasobi 🎧🔥 #oshinoko\" (1,127 views, Global)\n  - \"seishun complex acapella (bocchi the rock edit) 🎧🔥\" (1,097 views, Global)\n  - \"yoru ni kakeru acapella but the beat drops ⚡🔥\" (1,004 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥\" (1,073 views, Global)\n  - \"idol acapella yoasobi 🗿⚡ #oshinoko\" (1,086 views, Global)\n  - \"yoru ni kakeru acapella yoasobi edit 🔥\" (1,024 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (3 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)",
-  "summaryLine": "Best recent: \"idol acapella yoasobi 🎧🔥 #oshinoko\" (1,127 views, 262.8/day) — typical short 4/day over 27 shorts"
+  "promptSummary": "Based on 28 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 5.1/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"how you like that acapella but the beat drops 🗿⚡\" (1,739 views, Global)\n  - \"idol acapella yoasobi 🎧🔥 #oshinoko\" (1,127 views, Global)\n  - \"seishun complex acapella (bocchi the rock edit) 🎧🔥\" (1,097 views, Global)\n  - \"yoru ni kakeru acapella but the beat drops ⚡🔥\" (1,004 views, Global)\n  - \"odoriko acapella but the drums kick in 🗿🔥\" (1,073 views, Global)\n  - \"idol acapella yoasobi 🗿⚡ #oshinoko\" (1,086 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"super shy acapella 🗿 #newjeans\" (3 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.69)",
+  "summaryLine": "Best recent: \"how you like that acapella but the beat drops 🗿⚡\" (1,739 views, 1213.8/day) — typical short 5.1/day over 28 shorts"
 }
