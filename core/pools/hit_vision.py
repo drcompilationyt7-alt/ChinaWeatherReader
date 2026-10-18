@@ -172,6 +172,18 @@ def accept(v, bar):
 
 
 def judge(mini, hit_t, tag=None, tmp=None):
+    """Never raises: a corrupt / undecodable clip returns {'ok': False, 'broken': True, 'why': ...} (logged with its id)."""
+    try:
+        return _judge(mini, hit_t, tag, tmp)
+    except Exception as e:                       # decode / ffmpeg / cv2 / network: skip this clip, keep going
+        err = (getattr(e, 'stderr', None) or b'')
+        err = err.decode(errors='replace')[-160:] if isinstance(err, bytes) else str(err)[-160:]
+        why = 'broken clip: %s %s' % (type(e).__name__, err or e)
+        log('SKIP %s: %s' % (os.path.basename(str(mini)), why))
+        return {'ok': False, 'broken': True, 'why': why, 'votes': []}
+
+
+def _judge(mini, hit_t, tag=None, tmp=None):
     """{'ok', 'word', 'votes': [{model, answer, ok, why}], 'why'}"""
     tmp = tmp or tempfile.mkdtemp(prefix='hitvis-')
     os.makedirs(tmp, exist_ok=True)
@@ -179,7 +191,7 @@ def judge(mini, hit_t, tag=None, tmp=None):
     try:
         sm = small(mini, os.path.join(tmp, base + '.640.mp4'))
     except subprocess.CalledProcessError as e:
-        return {'ok': False, 'why': 'ffmpeg: ' + (e.stderr or b'')[-120:].decode(errors='replace'), 'votes': []}
+        raise
     st, (a, b) = strip(sm, float(hit_t), os.path.join(tmp, base + '.strip.jpg'))
     if not st:
         return {'ok': False, 'why': 'no frames', 'votes': []}
@@ -218,22 +230,40 @@ def calibrate(d, part=None):
             continue
         hit_t = float(lab['hit_t'])
         r = judge(p, hit_t, tmp=os.path.join(d, '_tmp'))
-        rows.append({'name': name, 'label': bool(lab['ok']), 'pred': r['ok'], 'why': r['why'],
+        rows.append({'name': name, 'label': bool(lab['ok']), 'pred': r['ok'], 'why': r['why'], 'broken': bool(r.get('broken')),
                      'conf': [((v.get('answer') or {}).get('confidence')) for v in r['votes']]})
         log(f"{name}: label {lab['ok']} pred {r['ok']} ({r['why'][:80]})")
+    broken = [r['name'] for r in rows if r.get('broken')]
+    if broken:
+        log('broken clips skipped from the scores: %s' % broken)
+    rows_all, rows = rows, [r for r in rows if not r.get('broken')]
     tp = sum(r['label'] and r['pred'] for r in rows)
     fp = sum((not r['label']) and r['pred'] for r in rows)
     fn = sum(r['label'] and not r['pred'] for r in rows)
     tn = sum((not r['label']) and not r['pred'] for r in rows)
-    rep = {'n': len(rows), 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn,
+    rep = {'n': len(rows), 'broken': broken, 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn,
            'precision': round(tp / max(1, tp + fp), 3), 'recall': round(tp / max(1, tp + fn), 3), 'models': MODELS, 'min_conf': MIN_CONF,
-           'rows': rows}
+           'rows': rows_all}
     return rep
+
+
+def selftest():
+    d = tempfile.mkdtemp(prefix='hitvis-selftest-')
+    bad = os.path.join(d, 'corrupt.mp4')
+    open(bad, 'wb').write(b'not a video' * 50)
+    r = judge(bad, 1.0, tmp=os.path.join(d, 't'))
+    assert r['ok'] is False and r.get('broken') and r['votes'] == [], r
+    os.makedirs(os.path.join(d, 'c'))
+    json.dump({'corrupt': {'hit_t': 1.0, 'ok': True}}, open(os.path.join(d, 'c', 'labels.json'), 'w'))
+    os.replace(bad, os.path.join(d, 'c', 'corrupt.mp4'))
+    rep = calibrate(os.path.join(d, 'c'))
+    assert rep['n'] == 0 and rep['broken'] == ['corrupt'] and rep['rows'][0]['broken'], rep
+    print('selftest ok')
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['judge', 'calibrate'])
+    ap.add_argument('cmd', choices=['judge', 'calibrate', 'selftest'])
     ap.add_argument('--mini')
     ap.add_argument('--hit-t', type=float)
     ap.add_argument('--tag')
@@ -242,8 +272,10 @@ def main():
     ap.add_argument('--part', help='K/N: score every N-th labelled mini from K (parallel CI jobs)')
     ap.add_argument('--merge', nargs='*', help='calibrate: merge these report.json parts instead of scoring')
     a = ap.parse_args()
+    if a.cmd == 'selftest':
+        return selftest()
     if a.cmd == 'calibrate' and a.merge:
-        rows = [r for f in a.merge for r in json.load(open(f, encoding='utf-8'))['rows']]
+        rows = [r for f in a.merge for r in json.load(open(f, encoding='utf-8'))['rows'] if not r.get('broken')]
         tp = sum(r['label'] and r['pred'] for r in rows); fp = sum((not r['label']) and r['pred'] for r in rows)
         fn = sum(r['label'] and not r['pred'] for r in rows); tn = len(rows) - tp - fp - fn
         r = {'n': len(rows), 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn, 'precision': round(tp / max(1, tp + fp), 3),

@@ -104,6 +104,7 @@ jobs:
         run: |
           mkdir -p calib && gh release download edit-pools-calib --repo "$GITHUB_REPOSITORY" --pattern hit-calib.tar --dir calib
           tar -xf calib/hit-calib.tar -C calib
+          python core/pools/hit_vision.py selftest
           python core/pools/hit_vision.py calibrate --dir calib/hit-calib --part ${{ matrix.part }}/6 --out calib/report-${{ matrix.part }}.json
       - uses: actions/upload-artifact@v4
         if: always()
