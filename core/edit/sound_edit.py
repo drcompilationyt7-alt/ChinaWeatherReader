@@ -4517,15 +4517,23 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         def _rank(pl):
             return (float(pl['sound_edit'].get('hold_s_max') or 0.0) <= max_hold, pl['duration'])
         if REMAKE and not long_form and not _ok(plan):
-            for extra in range(1, 1 + int(os.environ.get('SOUND_REPLAN_TRIES', '3'))):
+            # the remake plan is deterministic for a given section / pool, so the re-plans change the packing: one more bar
+            # (capacity margin 1.06, then 1.0: a longer window, its holds are checked by _ok) and another seed last
+            global REMAKE_CAP_MARGIN
+            margin0 = REMAKE_CAP_MARGIN
+            tries = [(seed, 1.06), (seed, 1.0), (seed + 1000, margin0)][:int(os.environ.get('SOUND_REPLAN_TRIES', '3'))]
+            for extra, (sd, mg) in enumerate(tries, 1):
+                REMAKE_CAP_MARGIN = mg
                 try:
                     alt = plan_sound_edit(song, shots, music_start=music_start, duration=target, mode='accent',
                                           deliver=os.environ.get('SOUND_DELIVER', 'rot90'), theme=theme, title=title,
-                                          watermark=None, seed=seed + 1000 * extra, workdir=os.path.join(workdir, f'plan{extra}'),
+                                          watermark=None, seed=sd, workdir=os.path.join(workdir, f'plan{extra}'),
                                           events=[dict(e) for e in events], aspect=aspect, length_range=ranges[0],
                                           rate=RATE_SHORT, loop_end=False, lufs=VIBE_LUFS, hit_db=VIBE_HIT_DB)
                 except TooFewEvents:
                     continue
+                finally:
+                    REMAKE_CAP_MARGIN = margin0
                 log(f'replan {extra}: {alt["duration"]:.2f} s, hold max {alt["sound_edit"].get("hold_s_max")} '
                     f'(was {plan["duration"]:.2f} s, {plan["sound_edit"].get("hold_s_max")})')
                 if _rank(alt) > _rank(plan):
