@@ -840,6 +840,27 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "X2ILgSorUj4",
+   "url": "https://www.youtube.com/watch?v=X2ILgSorUj4",
+   "postedAt": "2026-10-19T07:58:21.050Z",
+   "publishAt": "2026-10-19T12:00:00.000Z",
+   "format": "emoji",
+   "theme": "anime",
+   "seed": 378334177,
+   "length": "quick",
+   "edition": "festival",
+   "titleTemplate": "emoji-anime-ramp",
+   "title": "SUMMER FESTIVAL EDITION 🎆 Anime Emoji Quiz: Easy to IMPOSSIBLE 🎬 #anime",
+   "answers": [],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }

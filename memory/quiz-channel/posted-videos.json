@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=IE80eNcEv04",
-      "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "country": "Global",
-      "postedAt": "2026-09-19T02:48:36.485Z",
-      "videoId": "IE80eNcEv04",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-anime-ramp",
-      "quizFormat": "emoji",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=S1mLvoUzF0s",
       "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
       "country": "Global",
@@ -328,6 +317,17 @@
       "category": "quiz-scene",
       "titleSource": "scene-4sec",
       "quizFormat": "scene",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=X2ILgSorUj4",
+      "title": "SUMMER FESTIVAL EDITION 🎆 Anime Emoji Quiz: Easy to IMPOSSIBLE 🎬 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-19T07:58:21.056Z",
+      "videoId": "X2ILgSorUj4",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-anime-ramp",
+      "quizFormat": "emoji",
       "quizTheme": "anime"
     }
   ]
