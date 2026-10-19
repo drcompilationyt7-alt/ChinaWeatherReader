@@ -292,7 +292,11 @@ def import_shots(preset, vibe, shots_json, root=None, query=None):
         if s.get('has_text') or (s.get('text_band') and any(float(x) > 0.02 for x in s.get('text_band') or [0])):
             no('text')
             continue
-        if preset == 'slowmo' and _talking(s):
+        # slow-mo: only the strong talk signals here (speech in the source, SigLIP talk >= 0.6); the mouth checks are the cine
+        # planner's own hard gates (talking / lipflap: mouth movement AND openness), run on every clip at pool build (cine_vibe.gate).
+        # 2026-10-18: library mouth_flap >= 0.2 alone rejected ~40 % of calm twixtor portraits (hair / head motion over the mouth)
+        if preset == 'slowmo' and (float(s.get('talk') or 0) >= 0.6 or float(s.get('speech_ratio') or 0) >= 0.3
+                                   or float((s.get('rules') or {}).get('talk_mouth') or 0) >= 0.6):
             no('talk')
             continue
         sid = str(s.get('source_id') or '')
@@ -533,20 +537,24 @@ def song_ok(preset, vibe, root=None):
     return ok
 
 
-REUSE_PRESETS = ('sound',)          # owner 2026-10-13: these pools only GROW; used clips come back after a cooldown
+# owner 2026-10-13 (sound) / 2026-10-18 (slow-mo): these pools only GROW; used clips come back after a cooldown of the last N videos
+# (never twice in one video: the planners' one-clip-once rule)
+REUSE_PRESETS = ('sound', 'slowmo')
+COOLDOWN_ENV = {'sound': ('SOUND_COOLDOWN_VIDEOS', '3'), 'slowmo': ('SLOWMO_COOLDOWN_VIDEOS', '1')}
 
 
-def sound_cooldown():
+def sound_cooldown(preset='sound'):
+    env, dflt = COOLDOWN_ENV.get(preset, COOLDOWN_ENV['sound'])
     try:
-        return max(0, int(os.environ.get('SOUND_COOLDOWN_VIDEOS', '3')))
+        return max(0, int(os.environ.get(env, dflt)))
     except ValueError:
-        return 3
+        return int(dflt)
 
 
 def sound_recent_ids(preset, vibe, led=None):
     """Clip ids shown in the last SOUND_COOLDOWN_VIDEOS videos of this preset / vibe (ledger 'recent')."""
     led = led or load_ledger()
-    n = sound_cooldown()
+    n = sound_cooldown(preset)
     hist = (led.get('recent') or {}).get(f'{preset}/{vibe}') or []
     return {c for h in (hist[-n:] if n else []) for c in h.get('clips') or []}
 

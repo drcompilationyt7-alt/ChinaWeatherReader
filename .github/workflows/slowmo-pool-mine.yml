@@ -1,0 +1,162 @@
+name: Slow-mo pool mining (nightly until ~60 clips per vibe, then monthly)
+
+# GROW-ONLY candidate mining for the cinematic SLOW-MO edit (core/pools/slowmo_grow.py; owner 2026-10-18: the PC can stay off).
+#   plan     the live slow-mo manifests (no media) + the miner state come from the staging release `edit-pools-staging`
+#            (uploaded by the owner PC: `python core/pools/slowmo_grow.py push-manifests`); `need` says whether any vibe is
+#            still under 60 clean clips (live reviewed + staged candidates). Nightly while it is; once every vibe is there the
+#            nightly runs stop by themselves and only the first-of-the-month run mines (monthly).
+#   mine     3 shards (different queries), <= ~3.5 h each: twixtor / raw packs -> yt-dlp (secret YOUTUBE_COOKIES_EDIT, private jar,
+#            --js-runtimes node, 22-32 s between downloads) -> library.py --local (every gate incl. the per-shot SAFETY gate) ->
+#            vibe_pool import against the live manifests -> cine_vibe.gate (the planner's hard rejects, talking-mouth fix) ->
+#            sources deleted. Artifact: the candidates, their QA sidecars and contact sheets.
+#   publish  one tar per shard (slowmo-cand-<date>-s<k>-sg<N>-db<M>.tar) + the merged state -> release `edit-pools-staging`.
+# Nothing reaches the live pool or the daily edit here: the owner PC pulls the candidates, reviews them by eye and imports them
+# (`slowmo_grow.py pull-staged` / `import-staged`). Off with the repository variable SLOWMO_POOL_MINE=off.
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      budget_min:
+        description: 'Mining budget per shard in minutes'
+        required: false
+        default: '200'
+      force:
+        description: 'Mine even when every vibe has enough clips'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: slowmo-pool-mine
+  cancel-in-progress: false
+
+env:
+  EDIT_POOL_DIR: output/edit-pools
+  YT_COOKIES: /tmp/yt_cookies.txt
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
+  YT_JS_RUNTIMES: node
+  YT_FORCE_IPV4: '1'
+  GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+  PYTHONIOENCODING: utf-8
+  EDIT_GPU: '0'
+  EDIT_THREADS: '4'
+  OMP_NUM_THREADS: '4'
+  SLOWMO_GROW_MIN_GB: '0'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: vars.SLOWMO_POOL_MINE != 'off'
+    outputs:
+      go: ${{ steps.need.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Live slow-mo manifests from the staging release
+        run: |
+          mkdir -p output/edit-pools /tmp/st
+          if gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-live-manifests.tar --dir /tmp/st; then
+            tar -xf /tmp/st/slowmo-live-manifests.tar -C output/edit-pools
+          else
+            echo "::warning::no slowmo-live-manifests.tar on edit-pools-staging (run slowmo_grow.py push-manifests on the PC)"
+          fi
+      - name: Still needed? (nightly while any vibe < 60, else the first of the month only)
+        id: need
+        run: |
+          NEED=$(python core/pools/slowmo_grow.py need --target 60 | tail -1)
+          GO=true
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$NEED" != "go" ] && [ "$(date -u +%d)" != "01" ]; then GO=false; fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then GO=true; fi
+          echo "need=$NEED go=$GO"
+          echo "go=$GO" >> $GITHUB_OUTPUT
+
+  mine:
+    needs: plan
+    if: needs.plan.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 250
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libgl1 libglib2.0-0 libsndfile1
+          python -m pip install -U pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "yt-dlp[default]" yt-dlp-ejs opencv-python-headless numpy scipy pillow transformers sentencepiece protobuf \
+            "librosa==0.11.0" onnxruntime scikit-learn psutil soundfile
+      - name: Cache models (SigLIP, NudeNet, anime face)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/clip_finder
+          key: slowmo-mine-models-v1
+      - name: Cookies (spare account) + live manifests + state
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; else echo "::warning::no YOUTUBE_COOKIES_EDIT secret"; fi
+          mkdir -p output/edit-pools /tmp/st
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-live-manifests.tar --dir /tmp/st \
+            && tar -xf /tmp/st/slowmo-live-manifests.tar -C output/edit-pools || true
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-grow-state.json --dir /tmp/st || echo '{}' > /tmp/st/slowmo-grow-state.json
+      - name: Mine shard ${{ matrix.shard }} of 3
+        run: |
+          python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/3 \
+            --budget-min "${{ github.event.inputs.budget_min || '200' }}" --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000
+          rm -f /tmp/yt_cookies.txt
+          du -sh work/out || true
+      - name: Upload the shard (candidates, sidecars, contact sheets, state)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slowmo-shard-${{ matrix.shard }}
+          path: work/out
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    needs: [plan, mine]
+    if: ${{ !cancelled() && needs.plan.outputs.go == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: slowmo-shard-*
+          path: shards
+      - name: Stage the candidates on the release edit-pools-staging
+        run: |
+          mkdir -p /tmp/st
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-grow-state.json --dir /tmp/st || echo '{}' > /tmp/st/slowmo-grow-state.json
+          mkdir -p staged
+          python core/pools/slowmo_grow.py publish --artifacts shards --out staged --state /tmp/st/slowmo-grow-state.json | tee staged/summary.json
+          { echo "### Slow-mo candidates staged"; echo '```'; cat staged/summary.json; echo '```';
+            echo "Review on the PC: python core/pools/slowmo_grow.py pull-staged, then import-staged --reject N,N"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Contact sheets (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: slowmo-contact-sheets
+          path: shards/*/sheets
+          if-no-files-found: ignore
+          retention-days: 14

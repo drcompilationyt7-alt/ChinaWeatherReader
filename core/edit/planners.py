@@ -1326,6 +1326,11 @@ def cine_window(A, pulse, n_pulses, opts, rng):
         # that avoids the song's quiet outro)
         cands += [(float(b), 0.0) for b in beats[(beats > 7) & (beats < dur - body - 0.5)][::8]]
         cands = cands or [(min(7.0, dur / 3), 0.0)]
+    # 2026-10-18 (slow-mo music pool, core/edit/slowmo_music.py): the pool's analysed hook start (slowed-song seconds) is a
+    # strong candidate for the hero downbeat; the breath / vocal-gap logic below still picks the exact beat
+    hero_hint = opts.get('cine_hero')
+    if hero_hint is not None and 6.5 <= float(hero_hint) <= dur - body - 0.5:
+        cands.append((float(hero_hint), 1.0))
     LD = np.asarray(A.get('beat_loud_db') or [], float)
     ld_med = float(np.median(LD)) if len(LD) else 0.0
     best = None
@@ -1345,6 +1350,8 @@ def cine_window(A, pulse, n_pulses, opts, rng):
         mb = (beats >= d) & (beats < d + body)
         eb = float(E[mb].mean()) if len(E) == len(beats) and mb.any() else 0.5
         sc = bonus + 1.5 * dip + 0.8 * voc + 0.5 * eb + rng.uniform(0, 0.05)
+        if hero_hint is not None:
+            sc += 1.0 * max(0.0, 1.0 - abs(t - float(hero_hint)) / 4.0)     # a hint: the vocal-gap search below still decides
         if body > 20.0 and len(LD) == len(beats) and mb.any():
             # never a long stretch of the song's breakdown / outro under the picture (a 14 s near-silence reached a test)
             sc -= 6.0 * float(np.mean(LD[mb] < ld_med - 12.0))
@@ -1654,7 +1661,10 @@ def plan_cinematic_slowmo(A, shots, opts):
             rej.append('milky')
         if sat > min(150.0, max(100.0, 1.15 * CINE_SAT[slot])):
             rej.append('oversat')
-        if (float(q.get('mouth_dm') or 0.0) > 1.5 and fh >= 0.2) or float(sig.get('talk', 0.0)) >= 0.6:
+        # 2026-10-18 (slow-mo pool growth, by eye on the rejects): mouth_dm alone fires on hair / head motion in calm twixtor
+        # portraits (mouth openness 0.00-0.03); a talking take also opens the mouth (>= 0.05) or moves it a lot (> 10)
+        md, mo = float(q.get('mouth_dm') or 0.0), float(q.get('mouth') or 0.0)
+        if (md > 1.5 and fh >= 0.2 and (mo >= 0.05 or md > 10.0)) or float(sig.get('talk', 0.0)) >= 0.6:
             rej.append('talking')
         if float(sig.get('female', 0.5)) < 0.3:
             # owner 2026-09-29: cute edits open and close on a girl; round 7: every slot (a talking Gojo two-shot won a

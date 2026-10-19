@@ -137,6 +137,25 @@ def _tp_guard(out, limit=-1.0):
     return dict(lufs=lu, dbtp=tp)
 
 
+def _start_guard(out, d=0.08):
+    """the mastered mix starts at full level on frame 0 (the engine's 30 ms fade-in sits BEFORE its limiter / make-up gain: a
+    first-10-ms peak of 0.9 measured on slowmo_3 m1): re-encode the audio only with an 80 ms fade-in (video copied)"""
+    try:
+        r = subprocess.run(['ffmpeg', '-v', 'error', '-i', out, '-t', '0.02', '-ac', '1', '-ar', '22050', '-f', 'f32le', '-'],
+                           capture_output=True)
+        import numpy as np
+        y = np.frombuffer(r.stdout, np.float32)
+        if not len(y) or float(np.abs(y[:220]).max()) <= 0.1:
+            return
+        tmp = out + '.fi.mp4'
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', out, '-map', '0', '-c:v', 'copy', '-af', f'afade=t=in:st=0:d={d}',
+                        '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', tmp], check=True)
+        os.replace(tmp, out)
+        log(f'start guard: {d * 1000:.0f} ms fade-in on the delivered mix')
+    except Exception as e:  # noqa: BLE001
+        log(f'start guard failed: {e}')
+
+
 def _dedupe(shots):
     """One entry per pool id / moment, paths that exist."""
     seen, out = set(), []
@@ -202,13 +221,17 @@ def gate(shots, song=None, song_speed=0.95, workdir=None):
     shots = _dedupe(list(shots or []))
     if not shots:
         return {}
+    real = list(shots)
+    while len(shots) < 3:
+        # the planner needs >= 3 shots; a pool build that adds 1-2 clips gates them padded with copies (verdicts per path)
+        shots.append(dict(real[len(shots) % len(real)], pool_id=f'_pad{len(shots)}'))
     if song:
         A = _analysis(_slowed(song, float(song_speed or 1.0), os.path.abspath(workdir or tempfile.mkdtemp(prefix='cine-gate-'))))
     else:
         A = PL.synthetic_analysis(dur=200.0, bpm=62.0)
     pr = PL.plan_cinematic_slowmo(A, shots, dict(seed=0, aspect='9:16', fps=FPS, cine_body_s=30.0, cine_intro_s=3.0,
                                                  offline=True, cine_probe=True, type='song'))['_probe']
-    by = {os.path.normcase(os.path.abspath(s['path'])): s for s in shots}
+    by = {os.path.normcase(os.path.abspath(s['path'])): s for s in real}
     out = {}
     for p, r in pr['rejects'].items():
         s = by.get(os.path.normcase(os.path.abspath(p))) or {}
@@ -270,7 +293,7 @@ def _free_models():
 
 
 def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0, workdir=None, song_speed=0.95,
-                title=None, artist=None, song_original=None):
+                title=None, artist=None, song_original=None, section=None):
     t_start = time.time()
     res = dict(ok=False, video=out, duration=0.0, used=[], plan=None, render_s=0.0)
     try:
@@ -300,6 +323,10 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         base_opts = dict(seed=seed, aspect=aspect, fps=FPS, cine_intro_s=intro or 0.05, work_dir=wd, offline=not lyr,
                          song=title if lyr else None, artist=artist or '',
                          type='song', cine_lufs=-6.8, cine_ceiling=-2.3)
+        if section and section.get('hero') is not None:
+            # the music pool's analysed hook start (ORIGINAL song seconds) -> slowed-song seconds: the hero hint
+            base_opts['cine_hero'] = float(section['hero']) / float(song_speed or 1.0)
+            log(f"music pool section hint: hero {section['hero']} s -> {base_opts['cine_hero']:.2f} s slowed")
         # pass 1: the per-clip QA (cached next to each clip) -> how many clips may be shown at all
         pr = PL.plan_cinematic_slowmo(A, shots, dict(base_opts, cine_body_s=30.0, cine_probe=True))['_probe']
         res['clean'] = pr['clean']
@@ -343,7 +370,7 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             # lyrics exist but none are sung in this window: re-plan without the words-on-black intro (no empty black)
             log('no sung words in the chosen window: re-planning with no text')
             return render_vibe(song, shots, out, aspect=aspect, length=length, seed=seed, workdir=workdir,
-                               song_speed=song_speed, title=None, artist=None, song_original=song_original)
+                               song_speed=song_speed, title=None, artist=None, song_original=song_original, section=section)
         if not lyr_items:
             plan['overlays'] = [o for o in plan.get('overlays') or [] if o.get('type') != 'text_on_black']
         if lyr_items and not any(o.get('op') in ('gap_drop', 'breath_riser') for o in sfx_ops) and len(plan['shots']) > 1:
@@ -391,8 +418,52 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         res['render_s'] = round(time.time() - t_start, 1)
 
 
+def _run_watch(cmd, log_path):
+    """run a subprocess, polling the resident memory of its whole process tree -> (returncode, stderr tail, peak GB)"""
+    peak = 0.0
+    with open(log_path, 'a', encoding='utf-8') as lf:
+        p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=lf)
+        try:
+            import psutil
+            pp_ = psutil.Process(p.pid)
+            while p.poll() is None:
+                try:
+                    rss = pp_.memory_info().rss + sum(c.memory_info().rss for c in pp_.children(recursive=True))
+                    peak = max(peak, rss / 2 ** 30)
+                except Exception:  # noqa: BLE001
+                    pass
+                time.sleep(0.5)
+        except ImportError:
+            p.wait()
+    with open(log_path, encoding='utf-8', errors='replace') as f:
+        tail = f.read()[-1500:]
+    return p.returncode, tail, round(peak, 2)
+
+
+def _segments(plan, seg_s):
+    """[(a, b)] render ranges of about seg_s seconds, split at shot starts (hard cuts of the plan)"""
+    D = float(plan['duration'])
+    cuts = sorted({float(sh['t0']) for sh in plan.get('shots') or [] if 0.5 < float(sh.get('t0') or 0) < D - 0.5})
+    out, a = [], 0.0
+    while D - a > seg_s * 1.4:
+        cand = [c for c in cuts if c >= a + 0.6 * seg_s]
+        if not cand:
+            break
+        b = min(cand, key=lambda c: abs(c - (a + seg_s)))
+        if D - b < 0.4 * seg_s:
+            break
+        out.append((a, b))
+        a = b
+    out.append((a, D))
+    return out
+
+
 def run_engine(res, plan, pp, out, wd):
-    """engine.py on a written plan (a subprocess), then the redaction (no lyric text on disk) and the TP guard."""
+    """engine.py on a written plan (a subprocess), then the redaction (no lyric text on disk) and the TP guard.
+    CINE_SEGMENT_S=N (> 0) renders the video in ~N s parts split at the plan's shot starts, one engine process each (the
+    engine's resident memory grows with the takes it has decoded: ~3.4 GB peak for a whole 9:16 short at 1080p work frames),
+    then joins the parts (stream copy) and muxes the whole song mix (the engine's audio.wav) once. The peak resident memory
+    of the engine process tree is measured either way (res['engine_peak_gb'])."""
     t_r = time.time()
     base = os.path.splitext(os.path.basename(out))[0]
     os.makedirs(os.path.dirname(os.path.abspath(out)) or '.', exist_ok=True)
@@ -402,22 +473,55 @@ def run_engine(res, plan, pp, out, wd):
     cpus = os.environ.get('CINE_CPUS') or os.environ.get('EDIT_CPUS')
     if cpus:
         cmd += ['--cpus', str(int(cpus))]
+    seg_s = float(os.environ.get('CINE_SEGMENT_S') or 0)
     _free_models()
+    elog = os.path.join(wd, base + '.engine.log')
+    open(elog, 'w').close()
+    peak, rc, tail = 0.0, 0, ''
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
-        with open(os.path.join(wd, base + '.engine.log'), 'w', encoding='utf-8') as f:
-            f.write(r.stderr[-200000:])
+        segs = _segments(plan, seg_s) if seg_s > 0 else [(0.0, float(plan['duration']))]
+        if len(segs) == 1:
+            rc, tail, peak = _run_watch(cmd, elog)
+        else:
+            parts = []
+            for i, (a, b) in enumerate(segs):
+                po = os.path.join(ew, f'part{i:02d}.mp4')
+                c = [x if x != out else po for x in cmd] + ['--start', f'{a:.4f}', '--end', f'{b:.4f}']
+                rc, tail, pk = _run_watch(c, elog)
+                peak = max(peak, pk)
+                log(f'engine part {i + 1}/{len(segs)} {a:.2f}-{b:.2f} s: rc {rc}, peak {pk} GB')
+                if rc != 0 or not os.path.exists(po):
+                    rc = rc or 1
+                    break
+                parts.append(po)
+            if rc == 0:
+                lst = os.path.join(ew, 'parts.txt')
+                with open(lst, 'w', encoding='utf-8') as f:
+                    f.writelines("file '%s'\n" % os.path.basename(x) for x in parts)
+                vid = os.path.join(ew, 'video_only.mp4')
+                subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', 'parts.txt', '-map', '0:v', '-c', 'copy',
+                                'video_only.mp4'], check=True, cwd=ew)
+                subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', vid, '-i', os.path.join(ew, 'audio.wav'), '-map', '0:v', '-map', '1:a',
+                                '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', out], check=True)
+                for x in parts + [vid]:
+                    try:
+                        os.remove(x)
+                    except OSError:
+                        pass
     finally:
         with open(pp, 'w', encoding='utf-8') as f:
             json.dump(_redact(plan), f, indent=1)            # no lyric text left on disk
-    if r.returncode != 0 or not os.path.exists(out):
-        res['reason'] = 'engine failed: ' + (r.stderr or r.stdout)[-600:]
+    res['engine_peak_gb'] = peak
+    if rc != 0 or not os.path.exists(out):
+        res['reason'] = 'engine failed: ' + tail[-600:]
         res['ok'] = False
         return res
+    _start_guard(out)
     res['true_peak'] = _tp_guard(out)
     d = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', out],
                              capture_output=True, text=True).stdout.strip() or 0.0)
     res.update(ok=True, duration=round(d, 3), engine_s=round(time.time() - t_r, 1))
+    log(f'engine done in {res["engine_s"]} s, peak resident {peak} GB')
     return res
 
 

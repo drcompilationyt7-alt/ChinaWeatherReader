@@ -3385,6 +3385,7 @@ def main():
     target_good = math.ceil(a.count * 1.7)
     all_cands, rejected_scored = [], []
     cap = {'source': 3, 'character': 4, 'mood': 2, 'dance': 3}[a.mode]
+    cap = int(os.environ.get('EDIT_LIBRARY_CAP') or cap)      # pool builds from long clip packs (slow-mo growth): more per source
 
     def enough():
         if a.pool_cache:
