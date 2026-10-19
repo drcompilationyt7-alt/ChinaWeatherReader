@@ -278,12 +278,15 @@ async function trendingSongs(youtube) {
 
 function pickSong(stats, history, trends) {
   const done = scored(stats, history);
-  // remake a hit: a song whose last upload beat the median 3x, at most 5 remakes, once a day at most
+  // remake a hit: a song whose last upload beat the median 3x, at most 5 remakes, spaced a week apart
   if (done.length >= 4 && Math.random() < 0.5) {
     const med = [...done].sort((a, b) => a.stat.lscore - b.stat.lscore)[Math.floor(done.length / 2)].stat.lscore;
     const hit = done.filter(u => Math.expm1(u.stat.lscore) >= 3 * Math.max(0.5, Math.expm1(med)) && u.stat.views >= 500)
       .sort((a, b) => b.stat.lscore - a.stat.lscore)[0];
-    if (hit && history.uploads.filter(u => u.song === hit.song).length < 6) {
+    // a remake still waits its turn: not if the song is in the last 7 uploads, and at most one remake a week
+    const last7 = history.uploads.slice(-7);
+    if (hit && history.uploads.filter(u => u.song === hit.song).length < 6
+      && !last7.some(u => u.song === hit.song) && !last7.some(u => u.followUpOf)) {
       const s = [...SONGS, ...trends].find(x => x.name === hit.song) || { name: hit.song, query: `${hit.song} song`, theme: hit.theme };
       return { ...s, why: `remake of hit "${hit.title}" (${hit.stat.views} views)`, followUpOf: hit.videoId };
     }
