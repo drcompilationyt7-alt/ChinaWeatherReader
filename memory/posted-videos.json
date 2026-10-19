@@ -1,33 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Vc2RDLJNyyg",
-      "title": "Things to Check Before Dating Someone These Days",
-      "country": "China",
-      "postedAt": "2026-09-18T10:11:12.992Z",
-      "videoId": "Vc2RDLJNyyg",
-      "sourceChannel": "BB_BrainBoost",
-      "sourceUrl": "https://www.youtube.com/watch?v=S9zXJnM0J38",
-      "sourceTitle": "Things to Check Before Dating Someone These Days",
-      "summary": "A young Chinese woman shares advice on what to check before dating someone while sitting in her kitchen.",
-      "category": "comedy",
-      "eggs": [
-        "gwen-stick",
-        "gwen-tap"
-      ],
-      "titleSource": "fallback",
-      "watermark": "cover"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=V3R9YEsOkxo",
-      "title": "rise acapella 🥲🥲",
-      "country": "Global",
-      "postedAt": "2026-09-19T03:13:15.177Z",
-      "videoId": "V3R9YEsOkxo",
-      "category": "meme-anime",
-      "titleSource": "rise"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=ULfXOR-LeQc",
       "title": "love dive acapella stem build up (ive edit) 🗿🔥",
       "country": "Global",
@@ -287,6 +260,15 @@
       "videoId": "2qzyPb-Mv28",
       "category": "edit-sound",
       "titleSource": "Believer"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Wg57oflof3I",
+      "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
+      "country": "Global",
+      "postedAt": "2026-10-19T15:12:34.732Z",
+      "videoId": "Wg57oflof3I",
+      "category": "meme-anime",
+      "titleSource": "idol"
     }
   ]
 }
