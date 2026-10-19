@@ -109,11 +109,114 @@ def wait_ram():
         time.sleep(60)
 
 
-def all_queries():
+# ---- query generation: anime x visual terms x source types, per vibe look (rotating, see nightly_queries) ----
+ANIME_DREAMY = ['Your Name', 'Weathering With You', 'Suzume', 'Garden of Words', '5 Centimeters per Second', 'A Silent Voice',
+                'Violet Evergarden', 'Your Lie in April', 'Anohana', 'Clannad', 'Hyouka', 'Tamako Market', 'Kimi ni Todoke',
+                'Fruits Basket', 'The Fragrant Flower Blooms with Dignity', 'Frieren', 'Horimiya', 'Sound Euphonium', 'Liz and the Blue Bird',
+                'Free Kyoto Animation', 'Nichijou', 'K-On', 'Lucky Star', 'Tsurune', 'Love Live', 'Bocchi the Rock',
+                'Wotakoi', 'Ao Haru Ride', 'Maquia', 'Josee the Tiger and the Fish', 'Orange anime', 'Given anime', 'Akebi-chan Sailor Uniform',
+                'Cardcaptor Sakura', 'Sailor Moon', 'Princess Tutu', 'Ouran High School Host Club', 'Snow White with the Red Hair', 'Mushishi']
+ANIME_SUMMER = ['Mai Sakurajima Bunny Girl Senpai', 'My Dress-Up Darling', 'Rent-a-Girlfriend', 'Quintessential Quintuplets', 'Toradora',
+                'Kaguya-sama Love is War', 'Oshi no Ko', 'Spy x Family', 'Darling in the Franxx', 'Komi Cant Communicate', 'Lycoris Recoil',
+                'Tonikawa', 'Shikimori', 'The Dangers in My Heart', 'Alya Roshidere', 'Blue Box', 'Nagatoro', 'Monogatari Series',
+                'Date A Live', 'Love is Like a Cocktail', 'Kobayashi Dragon Maid', 'Hello World', 'Summer Time Rendering', 'Birdie Wing',
+                'Yamada-kun and the Seven Witches', 'Idolmaster', 'Love Live Sunshine', 'Wave Listen to Me', 'Aharen-san',
+                'Weathering With You', 'Your Name', 'Tamako Love Story', 'Hanasaku Iroha', 'Free Iwatobi Swim Club', 'Non Non Biyori',
+                'Yuru Camp', 'Amanchu', 'Aria', 'Gochiusa', 'Kyoto Animation']
+TERMS_DREAMY = ['cherry blossoms', 'soft rain', 'flower field', 'pastel sky', 'looking back', 'hair in the wind', 'smile', 'petals falling',
+                'lanterns night', 'dreamy bokeh', 'spring', 'umbrella rain']
+TERMS_SUMMER = ['sunset', 'golden hour', 'ocean', 'beach', 'festival fireworks', 'hair in the wind', 'smile', 'looking back',
+                'night city', 'summer sky', 'sunlight', 'seaside train']
+SRC_TYPES = ['4k scenery clips', '60fps clips', 'best scenes 4k', 'raw scenepack 4k', 'AMV 4k', 'twixtor 4k', 'scenery 4k raw']
+KEEP_DAYS = 30          # a query is not reused within this many days ...
+NIGHT_MIN = {'dreamy_bloom': 200, 'summer_glow': 100}     # ... unless fewer than this many are left for the vibe (oldest used first)
+DREAMY_SHARE = 0.65
+LEGACY_DATE = '2026-10-18'                                  # queries_done entries without a date: the first night's list
+
+
+def _legacy_queries():
     qs = [f'{c} {SUFFIXES[i % 2]}' for i, c in enumerate(CHARS)] + MOODS
     qs += [f"{sh} {'creditless ending 4k' if i % 2 == 0 else 'creditless opening 4k'}" for i, sh in enumerate(SHOWS_ED)]
     qs += [f'{c} {SUFFIXES[2 + i % 2]}' for i, c in enumerate(CHARS)]
     return qs
+
+
+def query_table():
+    """[(query, vibe)] - every candidate query once; the old fixed list is kept (tagged summer_glow, its pack style is vibe-neutral)"""
+    tab, seen = [], set()
+    for q in _legacy_queries():
+        if q not in seen:
+            seen.add(q)
+            tab.append((q, 'summer_glow'))
+    for vibe, shows, terms in (('dreamy_bloom', ANIME_DREAMY, TERMS_DREAMY), ('summer_glow', ANIME_SUMMER, TERMS_SUMMER)):
+        for sh in shows:
+            for t in terms:
+                for ty in SRC_TYPES:
+                    q = f'{sh} {t} {ty}'
+                    if q not in seen:
+                        seen.add(q)
+                        tab.append((q, vibe))
+    return tab
+
+
+def all_queries():
+    return [q for q, _ in query_table()]
+
+
+def used_dates(st):
+    """{query: last-used date}; legacy undated entries count as used on LEGACY_DATE"""
+    d = {q: LEGACY_DATE for q in st.get('queries_done') or []}
+    d.update(st.get('query_log') or {})
+    return d
+
+
+def nightly_queries(st, today=None, seed=None):
+    """tonight's ordered query list (every shard computes the same list from the same state; shard k takes i % n == k).
+    Per vibe: queries not used in the last KEEP_DAYS days, seeded shuffle by date; if fewer than NIGHT_MIN are left, the oldest
+    used ones are added back. dreamy_bloom gets DREAMY_SHARE of the slots (interleaved evenly so every shard gets the mix)."""
+    today = today or time.strftime('%Y-%m-%d', time.gmtime())
+    rng = random.Random(f'{seed or ""}{today}')
+    used = used_dates(st)
+    cutoff = time.strftime('%Y-%m-%d', time.gmtime(time.mktime(time.strptime(today, '%Y-%m-%d')) - KEEP_DAYS * 86400))
+    tab = query_table()
+    pools = {}
+    for vibe in ('dreamy_bloom', 'summer_glow'):
+        qs = sorted(q for q, v in tab if v == vibe)
+        fresh = [q for q in qs if q not in used or used[q] <= cutoff]
+        if len(fresh) < NIGHT_MIN[vibe]:
+            old = sorted((q for q in qs if q in used and used[q] > cutoff), key=lambda q: (used[q], q))
+            fresh += old[:NIGHT_MIN[vibe] - len(fresh)]
+        rng.shuffle(fresh)
+        pools[vibe] = fresh
+    out, i = [], 0
+    d, s = pools['dreamy_bloom'], pools['summer_glow']
+    while d or s:
+        take_d = int((i + 1) * DREAMY_SHARE) > int(i * DREAMY_SHARE)
+        src = d if (take_d and d) or not s else s
+        out.append(src.pop(0))
+        i += 1
+    return out
+
+
+def selftest(nights=60, per_night=120):
+    """60 simulated nights: the list never runs dry, queries rotate, dreamy_bloom gets >= 50 % of the work"""
+    st, vib = {'queries_done': [], 'query_log': {}}, dict(query_table())
+    cnt = {'dreamy_bloom': 0, 'summer_glow': 0}
+    t0 = time.mktime(time.strptime('2026-10-19', '%Y-%m-%d'))
+    for n in range(nights):
+        day = time.strftime('%Y-%m-%d', time.gmtime(t0 + n * 86400))
+        qs = nightly_queries(st, day)
+        assert qs, f'night {n}: 0 queries left'
+        assert nightly_queries(st, day) == qs, 'not deterministic'
+        shards = [qs[k::3] for k in range(3)]
+        assert sum(len(x) for x in shards) == len(qs) and all(shards), 'shard layout'
+        for q in qs[:per_night]:
+            st['query_log'][q] = day
+            cnt[vib[q]] += 1
+    share = cnt['dreamy_bloom'] / sum(cnt.values())
+    assert share >= 0.5, f'dreamy share {share:.2f}'
+    print(json.dumps({'ok': True, 'nights': nights, 'queries_total': len(vib), 'used_distinct': len(st['query_log']),
+                      'dreamy_share': round(share, 3)}))
 
 
 def ytdlp(args, timeout=240):
@@ -306,7 +409,7 @@ def cmd_mine(a):
     st.setdefault('sources', {})
     k, n = (int(x) for x in a.shard.split('/'))
     seen = set(st['sources']) | {it.get('source_id') for v in VIBES for it in VP.load_manifest('slowmo', v, root=pool)['items']}
-    qs = [q for i, q in enumerate(all_queries()) if i % n == k and q not in st['queries_done']]
+    qs = [q for i, q in enumerate(nightly_queries(st)) if i % n == k]
     log(f'shard {k}/{n}: {len(qs)} queries left')
     end = time.time() + a.budget_min * 60
     counts = {v: 0 for v in VIBES}
@@ -320,6 +423,7 @@ def cmd_mine(a):
             q = qs.pop(0)
             es = pick(search(q), seen)
             st['queries_done'].append(q)
+            st.setdefault('query_log', {})[q] = time.strftime('%Y-%m-%d', time.gmtime())
             time.sleep(4)
             for e in es:
                 if len(srcmap) >= a.batch:
@@ -424,8 +528,10 @@ def cmd_push_manifests(a):
 
 
 def merge_states(states):
-    out = {'queries_done': [], 'sources': {}}
+    out = {'queries_done': [], 'sources': {}, 'query_log': {}}
     for st in states:
+        for q, dt in (st.get('query_log') or {}).items():
+            out['query_log'][q] = max(dt, out['query_log'].get(q, ''))
         for q in st.get('queries_done') or []:
             if q not in out['queries_done']:
                 out['queries_done'].append(q)
@@ -564,6 +670,7 @@ def main():
     m.add_argument('--budget-min', type=float, default=200)
     m.add_argument('--batch', type=int, default=8)
     m.add_argument('--state')
+    sp.add_parser('selftest')
     n = sp.add_parser('need')
     n.add_argument('--target', type=int, default=60)
     p = sp.add_parser('pull-staged')
@@ -579,6 +686,8 @@ def main():
     pb.add_argument('--state')
     pb.add_argument('--dry', action='store_true')
     a = ap.parse_args()
+    if a.cmd == 'selftest':
+        return selftest()
     {'mine': cmd_mine, 'need': cmd_need, 'pull-staged': cmd_pull, 'import-staged': cmd_import,
      'push-manifests': cmd_push_manifests, 'publish': cmd_publish}[a.cmd](a)
 
