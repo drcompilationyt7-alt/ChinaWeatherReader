@@ -121,6 +121,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YOUTUBE_DL_SKIP_DOWNLOAD: "1"
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg

@@ -205,6 +205,9 @@ jobs:
           python3 -m pip install edge-tts yt-dlp yt-dlp-ejs faster-whisper opencv-python-headless ultralytics scenedetect[opencv] transformers sentencepiece sentence-transformers mabwiser river dspy --break-system-packages
 
       - name: Install Node.js dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YOUTUBE_DL_SKIP_DOWNLOAD: "1"
         run: |
           npm ci || npm install
           npm install axios

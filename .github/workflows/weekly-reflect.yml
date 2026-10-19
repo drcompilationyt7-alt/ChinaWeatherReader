@@ -35,7 +35,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci --omit=dev || npm install --omit=dev
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          YOUTUBE_DL_SKIP_DOWNLOAD: "1"
+        run: npm ci --omit=dev || npm install --omit=dev
       - name: Meme channel (Zero Yen Otaku)
         run: MEMORY_DIR=memory node core/reflect/weekly-report.js --channel meme
       - name: Quiz channel (Asian Pop Quiz)
