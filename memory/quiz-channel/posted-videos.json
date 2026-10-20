@@ -329,6 +329,17 @@
       "titleSource": "emoji-anime-ramp",
       "quizFormat": "emoji",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=BN6PL8vkgdk",
+      "title": "Only Real Otakus Get 3/3 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-20T07:51:20.550Z",
+      "videoId": "BN6PL8vkgdk",
+      "category": "quiz-opening",
+      "titleSource": "op-otaku",
+      "quizFormat": "opening",
+      "quizTheme": "anime"
     }
   ]
 }

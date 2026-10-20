@@ -861,6 +861,30 @@
     "titleStyle": "ramp",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "BN6PL8vkgdk",
+   "url": "https://www.youtube.com/watch?v=BN6PL8vkgdk",
+   "postedAt": "2026-10-20T07:51:20.294Z",
+   "publishAt": "2026-10-20T12:00:00.000Z",
+   "format": "opening",
+   "theme": "anime",
+   "seed": 621937793,
+   "length": "quick",
+   "titleTemplate": "op-otaku",
+   "title": "Only Real Otakus Get 3/3 🔥 #anime",
+   "answers": [
+    "opening:20605",
+    "opening:20829",
+    "opening:20661"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "fans",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }
