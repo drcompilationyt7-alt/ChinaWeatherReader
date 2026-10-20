@@ -98,7 +98,7 @@ RULES = {
         refs=['_sX2EUexbW8'], where='intro_black', mode='on_black', prob=1.0,
         lag=0.0, pick='all', max_words=1, max_chars=12, min_gap_beats=0.0, share=1.0, quantise='beat_lead',
         beat_lead=0.09, min_item_s=0.26, abut=True, end_before_drop=0.24, xcheck=True, drop_tail_s=0.7, merge_s=0.30,
-        max_hold=1.1,
+        max_hold=1.1, no_repeat=True, complete_phrase=True,   # owner 2026-10-18: no re-triggered word (TO TO), no missing word
         style='lyric_neon', box=(0.063, 0.068), ref_aspect='9:16', y=0.505, x_jit=0.0, y_jit=0.0, flip=None,
         anim_in='smear_shrink', dur_in=(0.04, 0.04), scale0=(1.0, 1.0), rot0=0.0,
         anim_out='fade', dur_out=0.12, hold=(0.35, 2.0), min_before_cut=0.0,
@@ -354,6 +354,61 @@ def _group(words, rule):
     return out
 
 
+def _complete_phrase(cand, ws, rule):
+    """owner 2026-10-18 (slowmo_3 showed 'TO TO' where the lyric is 'TO SEE'): the words on black follow the fetched lyric text
+    in its true order with no sung word missing between the first and the last shown word, and never the same word twice in a
+    row (a repeated / held word stays on screen longer instead). cand = [(t, words, ws indices)] sorted by time."""
+    mi = float(rule.get('min_item_s', 0.26))
+    mc = int(rule.get('max_chars', 12))
+    cand = sorted(cand, key=lambda c: min(c[2]))
+    used = {i for _, _, idx in cand for i in idx}
+    lo, hi = min(used), max(used)
+    for i in [i for i in range(lo, hi + 1) if i not in used]:
+        w = ws[i]
+        k = max(j for j, c in enumerate(cand) if min(c[2]) < i)          # the item sung before it
+        t_prev = cand[k][0]
+        t_next = cand[k + 1][0] if k + 1 < len(cand) else None
+        t = max(float(w['t_start']), t_prev + mi)
+        if t_next is None or t <= t_next - mi:
+            cand.insert(k + 1, (t, [w], [i]))                           # its own item at its sung time
+        else:
+            tk, gk, ik = cand[k]                                         # no room: it shares the previous item
+            cand[k] = (tk, gk + [w], list(ik) + [i])
+            if len(' '.join(x['text'] for x in cand[k][1])) > mc + 6 and t_next is not None:
+                tn, gn, iN = cand[k + 1]                                 # too long: lead the next item instead
+                cand[k] = (tk, gk, ik)
+                cand[k + 1] = (tn, [w] + gn, [i] + list(iN))
+        cand = sorted(cand, key=lambda c: min(c[2]))
+    out = []
+    for t, g, idx in cand:
+        if out and _norm(' '.join(x['text'] for x in g)) == _norm(' '.join(x['text'] for x in out[-1][1])):
+            pt, pg, pidx = out[-1]
+            out[-1] = (pt, pg, list(pidx) + list(idx))                   # the same word again: held longer, not shown twice
+            continue
+        out.append((t, g, idx))
+    return out
+
+
+def phrase_check(items_text, lyric_words):
+    """(ok, why) for a shown word sequence against the lyric words of the window, both in order: no word twice in a row, no
+    sung word missing inside the shown span, no word that is not in the lyrics (used by judge_slowmo at render time)"""
+    shown = [_norm(x) for it in items_text for x in str(it).split() if _norm(x)]
+    lyr = [_norm(w) for w in lyric_words if _norm(w)]
+    if not shown:
+        return False, 'no words shown'
+    for a_, b_ in zip(shown, shown[1:]):
+        if a_ == b_:
+            return False, f'"{a_}" twice in a row'
+    for start in range(len(lyr)):
+        if lyr[start] != shown[0]:
+            continue
+        seg = lyr[start:start + len(shown)]
+        dedup = [x for j, x in enumerate(seg) if not j or x != seg[j - 1]]
+        if dedup == shown or seg == shown:
+            return True, 'in order, complete'
+    return False, 'shown words are not one contiguous run of the lyric line(s) (a word missing, extra or out of order)'
+
+
 def _score(grp, snares):
     content = [x for x in grp if _norm(x['text']) not in STOP]
     s = sum(min(8, len(_norm(x['text']))) for x in content) + 3.0 * len(content)
@@ -470,8 +525,19 @@ def build(preset, words, plan, rng=None):
     if rule['where'] == 'intro_black' and rule.get('drop_tail_s'):
         # remake round 6 (critic: the line ended on a lone pickup word held 0.4 s, then black): no word that starts
         # within drop_tail_s of the body cut - the intro ends at the phrase end, the last full word fades to the hero
+        tail_popped = []
         while len(cand) > 1 and cand[-1][0] >= drop - float(rule['drop_tail_s']):
-            cand.pop()
+            tail_popped.insert(0, cand.pop())
+        if rule.get('complete_phrase') and tail_popped:
+            # owner 2026-10-18: never drop a sung word of the shown phrase - a late word of the same line joins the last item
+            t_l, g_l, idx_l = cand[-1]
+            for _, g2, idx2 in tail_popped:
+                txt = ' '.join(x['text'] for x in g_l + g2)
+                if len(txt) <= int(rule.get('max_chars', 12)) + 6 and g2[0].get('line_id') == g_l[-1].get('line_id'):
+                    g_l, idx_l = g_l + g2, list(idx_l) + list(idx2)
+                else:
+                    break
+            cand[-1] = (t_l, g_l, idx_l)
     if rule['where'] == 'intro_black' and rule.get('merge_s'):
         # remake round 6 (critic: two words on screen 0.26 s each, _sX2's shortest is 0.35 s): a word the next one
         # replaces within merge_s shares its item with it (the pair reads as one beat)
@@ -485,7 +551,9 @@ def build(preset, words, plan, rng=None):
             out.append((t, g, idx))
             k += 1
         cand = out
-    if rule['where'] == 'intro_black' and rule.get('max_hold') and cand:
+    if rule['where'] == 'intro_black' and rule.get('complete_phrase') and cand:
+        cand = _complete_phrase(cand, ws, rule)
+    if rule['where'] == 'intro_black' and rule.get('max_hold') and not rule.get('no_repeat') and cand:
         # round 10 (critic, BLOCKING: a sung word stayed on screen ~1.9 s, the hook dragged; _sX2 changes word every
         # 0.4-1.1 s): a word held longer than max_hold is re-triggered on the tracked beats (its smear-in + glow punch
         # again), never a blank black gap
@@ -819,6 +887,18 @@ def attach(plan, opts=None, song=None, artist=None, words=None, preset=None, thr
                 o['text'] = ''
                 o['words'] = []
                 o['lyric_text'] = True
+    if rule.get('complete_phrase') and words:
+        # owner 2026-10-18: the shown sequence must be the lyric text in order (no word twice in a row, none missing). Only the
+        # verdict is kept (no words): judge_slowmo reads plan.planner.lyric_text.phrase_check
+        its = [it for o in ovs or [] for it in (o.get('items') or []) if it.get('lyric', True)]
+        if its:
+            t_a = min(float(it.get('sung', it['t0'])) for it in its) - 0.12
+            # 2026-10-19: up to the END of the last item - a tail word of the line joins the last item ('SEE YOU'), its own
+            # sung time lies after that item's start (the start-only window flagged a complete phrase as incomplete)
+            t_b = max(max(float(it.get('sung', it['t0'])) + 0.05, float(it.get('t1', it['t0'])) - 0.05) for it in its)
+            lyr = [w['text'] for w in words if t_a <= float(w['t_start']) <= t_b]
+            ok, why = phrase_check([it['text'] for it in its], lyr)
+            summary['phrase_check'] = {'ok': bool(ok), 'why': why, 'shown_items': len(its), 'lyric_words': len(lyr)}
     plan.setdefault('planner', {})['lyric_text'] = summary
     return summary
 

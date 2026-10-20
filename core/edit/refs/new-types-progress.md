@@ -548,3 +548,365 @@ Sound path runtime on CI adds the visible-source pass: ~0.3 s / event motion + S
 - .github/workflows/edit-pool-refresh.yml rewritten for the sound pool, core/pools/sound_refresh.py: mine (4 shards: fetch with secret YOUTUBE_COOKIES_EDIT = the spare account, --js-runtimes node, --force-ipv4, private cookie jar per call, queries = shows x suffixes not yet searched, state memory/edit-pool-fetch.json) -> hit_scan dense scan + the visible-source gate -> minis -> core/pools/hit_vision.py VISION GATE (Gemini 2.5-flash AND 3.5-flash must both accept: clear, one allowed action word, confidence >= 0.85, cause before the sound, contact for punches, no logo / text / FX-only / face / gesture problems; strip + clip with audio) -> hit_import.safety -> swap: merge GROW-ONLY (dedupe vs pool / ledger / blocklists / picture signature) -> vis stamp -> sharpen (Kaggle when KAGGLE_API_TOKEN + KAGGLE_USERNAME exist - not set, owner's call; else CPU upscale_pool ~8-19 s/frame = ~11 min per clip within 200 min) -> check vs core/edit/assets/sound-pins-baseline.json (the 63 sound_11b pins: sharpness p10 10.3 at 1080 lines, luma p10 36.3) -> contact sheet of the new hits (artifact) -> push + commit the pins (real runs only).
 - Dry run 39075755820: 4 shards fetched 2 queries each (2-3 sources), 5 minis approved by the vision gate (of ~25), CPU-sharpened (56 min), 2 dropped as soft, 3 kept (shatter, stab, hit) -> sheet; nothing pushed. Calibration on the by-eye labelled set (54 approved + 105 rejected minis, release edit-pools-calib): see below.
 - By-eye review cannot run on CI: the owner gets report/new-hits-*.jpg (dense strips) in the artifact sound-pool-refresh-<run>; a bad pin can be moved to core/edit/assets/sound-hit-blocklist.json.
+
+## Slow-mo go-live (slow-mo agent, 2026-10-18) - slowmo_3 DELIVERED, waiting for the owner (nothing committed / pushed, rotation untouched)
+- **slowmo_3** = output/newtypes/m3 -> review-shorts/edits/new-types/slowmo_3_summer-glow_golden-hour_rotated_36s.mp4 (+ slowmo_3-judge/).
+  36.0 s, 18 picture shots (14 sources, max 2 per source, no clip twice), JVKE "Golden Hour" (the _sX2 reference's song) from the new
+  slow-mo music pool at 0.85, 7 sung words in the _sX2 neon smear-in style (fetched + aligned at render time, nothing stored), rot90 layout
+  + upright rotate-phone hint (0-5 s and ~55 %), @zeroyenotaku watermark, no shake (EDIT_NO_SHAKE), -8.5 LUFS / -1.7 dBTP.
+  **judge_slowmo: smooth 8.33, beauty 10, lyrics 9.78, mix 9.92, layout 10, length 10, variety 9.36 -> overall 9.63 PASS.** By eye on every
+  shot sheet: clean (one laughing open-mouth Kaoruko shot at 16.8 s kept - laughter, not talk; Frieren flower crown appears twice, 2 moments).
+  Iterations: m1 7.43 (two juddering stepped clips, a click at frame 0, the intro placeholder counted as a repeat) -> m2 9.87 numerically but
+  the eye check found 5 weak clips (text/UI panel over Nino, garish neon paint frame, face out of frame, face behind hair, soft last shot) ->
+  rejected in the pool -> m3.
+- **judge** core/edit/judge_slowmo.py `CANDIDATE OUT_DIR --plan PLAN [--label]` (reference _sX2EUexbW8, measurements cached in
+  core/edit/refs/slowmo-judge-ref.json so it runs on CI without the file). 7 criteria, PASS = each >= 8 and mean >= 8.5: smooth (duplicate
+  frames, judder vs the local frame-step median, still runs > 0.2 s, full fps, cuts / black / fade excluded), beauty (Laplacian vs the ref
+  shots, saturation / black point: milky / grey / oversat, face + female share + framing from the clips' portrait QA), lyrics (word entries
+  from the ink on black, split on the smear-in frame; legible time vs the Demucs vocal onsets of the edit itself in -0.15..+0.25 s; letter
+  size vs ref, smear length, on-screen time; lyric_text re-triggers of a held word excluded), mix (LUFS vs ref, TP, intro duck, first 10 ms,
+  end fade, dropouts, slowed speed, music only), layout (1080x1920, plan rot90, hint present 0.4-4.5 s and gone after, watermark glyph
+  correlation vs a shifted null, bars, shake = median per-shot high-pass global jitter), length 25-50 s, variety (sources, max 2 per source,
+  repeats, near-duplicate shots, colour spread). Sheets: shots-NN, words, hint, motion-NN. Calibration: _sX2 itself, slowmo_2 (fails only
+  layout: no hint + old wiggle, and variety: a repeated clip), sound_11b (hint 100 % / watermark 93 %).
+- **music pool** core/edit/slowmo_music.py + core/edit/assets/slowmo-music-pool.json (46 songs, all probation; music_pool.py's search /
+  cache / Thompson pick / 30-day cooldown / no-repeat / mark_used / record_performance / retire, own analysis: calm score, hook section with
+  start (intro words) / hero / end in ORIGINAL seconds, speed 0.95 / 0.9 / 0.85 by tempo; gates >= 3M views, lyrics exist on LRCLIB (boolean,
+  never stored), calm >= 0.35, section >= 0.4). Monthly top-up .github/workflows/slowmo-music-topup.yml (first Thursday, off with
+  SLOWMO_MUSIC_TOPUP=off, LLM + seed list, max 8 a month). The hero is a HINT to planners.cine_window (opts cine_hero, +1.0 bonus; the
+  vocal-gap search still decides).
+- **pool growth** core/pools/slowmo_grow.py (owner-PC tool, resumable, state output/edit-pools/_grow_slowmo/state.json): twixtor / raw packs of
+  ~70 female characters (+ creditless OP/ED of ~40 shows, low yield: 3 kept of 16 sources) -> library.py --local (all gates incl. the safety
+  gate, EDIT_LIBRARY_CAP=6 per source) -> vibe_pool import -> cine_vibe.gate (in a child process) -> rejects get status cine_reject (media
+  deleted; edit-pools-store.js skips cine_reject media) -> sources deleted. Spare cookies (private jar per call, --js-runtimes node), 22-32 s
+  between downloads, 4 GB RAM gate. Ran ~2.5 h: ~60 sources -> summer_glow 12 -> 18 clean + eye-reviewed (after 9 eye / judge rejects),
+  dreamy_bloom 8 -> 9. **Far below the 60-per-vibe aim: yield is ~0.15-0.25 clean clips per source** (library talking / static / colour,
+  then the cine hard gates). Gate changes made: cine 'talking' needs mouth openness >= 0.05 (or mouth_dm > 10) besides mouth motion
+  (calm portraits were rejected for hair over the mouth; planners.py); the import talk gate for slow-mo keeps only the strong signals
+  (vibe_pool.py). No AI sharpening needed (judge beauty 10, sharp median 979 vs ref 1050). Next: keep running the grower (overnight-sized:
+  ~6 clean / hour), or Kaggle; existing old-pool rejects with media were re-gated (3 freed).
+- **wiring (prepared, not pushed)**: pipeline/newtype-pipeline.js SLOWMO_ENV (SLOWMO_MUSIC_POOL=1, LYRICS_NO_STORE=1, EDIT_NO_SHAKE=1,
+  EDIT_ROTATE_HINT=1, EDIT_POOL_REVIEWED_ONLY=1, SLOWMO_COOLDOWN_VIDEOS=1, CINE_SEGMENT_S=12, EDIT_PREFETCH=0, EDIT_GPU=0); music feedback /
+  mark_used per type; vibe_edit.py: slow-mo song + section from the pool, clips REUSED across videos (REUSE_PRESETS += slowmo, cooldown
+  SLOWMO_COOLDOWN_VIDEOS, relaxed on pool_low); cine_vibe: section hint, 80 ms start fade guard (the engine's fade sat before its limiter:
+  first-10-ms peak 0.9), segmented engine render CINE_SEGMENT_S (parts split at shot starts, stream-copied, the full mix muxed once) with
+  peak-RSS measurement (res engine_peak_gb); daily-create.yml saves slowmo-music-pool.json.
+- **CI time / memory**: local (IDLE, 4 threads) plan ~3 min + engine 520-640 s + watermark 50 s = ~13 min for 36-39 s; expect ~15-20 min on
+  the 4-vCPU runner (NEWTYPE_TIMEOUT_MIN 60 is enough). Engine peak resident 4.4 GB (process tree incl. x264) per part EVEN at 8 s parts:
+  the peak is per take, not the video length, so segmenting does not cut it below ~4 GB; the 16 GB runner fits, locally render only with
+  >= 4.5 GB free. OPEN: find the per-take peak in footage.py / engine (frames kept 3 s ahead + flow cache) if the owner PC must render.
+- **to go live (owner first)**: 1) approve slowmo_3; 2) pool: summer_glow has 18 clean clips (status ready needs min_fresh_clips 60 in
+  vibes.json) - either grow first or lower min_fresh_clips to ~18 (every slow-mo Short then reuses most clips, SLOWMO_COOLDOWN relaxes);
+  3) upload: `GH_TOKEN=$(gh auth token -u <owner>) node scripts/edit-pools-store.js push --preset slowmo` (cine_reject media skipped);
+  4) commit: core/edit/{judge_slowmo,slowmo_music,cine_vibe,planners,vibe_edit,vibe_pool,library}.py, vibes.json, assets/slowmo-music-pool.json,
+  refs/slowmo-judge-ref.json, pipeline/newtype-pipeline.js, scripts/edit-pools-store.js, .github/workflows/{daily-create,slowmo-music-topup}.yml,
+  core/pools/slowmo_grow.py; 5) dry run: daily-create type=slowmo newtype_args "--vibe summer_glow --seed 3" (check faster-whisper / demucs are
+  installed in the slow-mo path, render time, engine_peak_gb), judge the artifact with judge_slowmo.py; 6) then DAILY_TYPE_WEIGHTS=stem:1,sound:1,slowmo:1.
+
+### 2026-10-18 evening: owner LIKES slowmo_3 -> lyric fix, song versions, GitHub mining, slowmo_3b (slow-mo agent)
+- **Lyrics** (owner: "to to" shown where the lyric is "to see"): cause = lyric_text's max_hold RE-TRIGGER of a held word ('to' sung
+  1.9-3.2 s was punched again at 2.9 s). New rule keys for cinematic_slowmo: `no_repeat` (no re-trigger: a held / repeated word stays
+  on screen longer), `complete_phrase` (_complete_phrase: true lyric order from the LRCLIB words, every sung word between the first and
+  the last shown word is shown - its own item at its sung time, or sharing the neighbour item when there is no room; tail words of the
+  same line join the last item; the same word twice in a row is merged). `lyric_text.phrase_check(items, lyric words)` -> the render
+  writes only the verdict to plan.planner.lyric_text.phrase_check (no words stored); judge_slowmo criterion 3 = 0 when it fails, -2
+  when the detected on-screen word entries differ from the planned items. Judge vocal-onset window now -0.15..+0.25 s of the legible
+  frame, onsets >= 0.12 prominence (soft legato onsets of the regular version were missed at 0.25).
+- **Song versions**: slowmo_music.pick() treats every song as TWO candidates (speed 1.0 and its slowed speed, equal priors ~50 / 50,
+  selftest 200 picks); history / cooldown unit = song + version ('jvke_golden_hour@v0.85' / '@v1', version_last_used per song), the
+  last video's song is never picked again in either version. vibe_edit `--song id@v1` forces a version; judge mix accepts 0.85-1.0.
+- **GitHub mining** (pushed 435e281 as drcompilationyt7-alt: .github/workflows/slowmo-pool-mine.yml, core/pools/slowmo_grow.py, the
+  gate fixes in planners / vibe_pool / library / cine_vibe; nothing else): nightly 01:30 UTC while any vibe < 60 (live reviewed +
+  staged), else only on the 1st (monthly); 3 shards x 200 min; candidates + sidecars + contact sheets -> release `edit-pools-staging`
+  (slowmo-cand-<date>-s<k>-sg<N>-db<M>.tar, slowmo-grow-state.json, slowmo-live-manifests.tar). cine_vibe.gate pads 1-2 clip batches
+  (the planner needs 3; the local smoke test lost its first batches to that). First run started 2026-10-19 00:33 UTC (run 39181338374).
+  PC side: `python core/pools/slowmo_grow.py pull-staged` -> by-eye review of output/edit-pools/_staged/review/*.jpg ->
+  `import-staged --reject N,N --delete-remote` -> `push-manifests` (so the next nights dedupe against the new pool).
+- **slowmo_3b** = output/newtypes/m5 -> review-shorts/edits/new-types/slowmo_3b_summer-glow_golden-hour-regular_lyricsfix_37s.mp4
+  (+ slowmo_3b-judge/): Golden Hour REGULAR version (1.0), words DON'T / NEED NO / LIGHT / TO / SEE / YOU (phrase check: in order,
+  complete), 37.4 s, 17 shots. judge 10 / 10 / 10 / 9.87 / 10 / 10 / 9.68 -> 9.94 PASS. m4 (first try) failed smooth 6.67: clip
+  c_ld1hJRg2vtw_31700 repeats a drawing (2 duplicate frames; also the 1 duplicate in slowmo_3) -> cine_reject. summer_glow 17 clean.
+- Still on hold (owner): pool upload + rotation weight. Uncommitted locally: lyric_text / judge_slowmo / slowmo_music (+ pool json) /
+  vibe_edit / newtype-pipeline / daily-create / slowmo-music-topup.yml / edit-pools-store.js.
+
+### 2026-10-19: staged-clip review + slowmo_3c / 3d (musical-moment cuts, no SFX) (slow-mo agent)
+- **Staged clips** (nightly runs 39181338374 + 39211335633): 31 candidates (26 summer_glow, 5 dreamy_bloom), all reviewed by eye on
+  8-frame strips + a duplicate-frame count. **11 approved** (sg 9: c_56jgd7Nxq1g_111000/18600, c_8oEl3n5xyAM_87300, c__nAObEu6UJc_75500/62100,
+  c_T158RMP422c_58300, c_zkIp0_aWmR0_21900, c_djXtjnXDRl4_16100/22800; db 2: c_zkIp0_aWmR0_47300, c_J9Jnf_CgvXU_189800), **20 rejected**
+  (stutter / repeated drawings: 3 4 8 13 14 17 23 28 30 + 10; cuts / dissolves inside the clip: 11 14 22; hidden / cut-off face: 4 8 9 12;
+  chibi panel 16; garish / blown / milky: 15 18 27 29; open-mouth talk risk 26). Pool now (live, clean, reviewed): **summer_glow 25**
+  (26 after import, then c_HH3ivXcDytQ_95100 rejected by eye in the 3d render: a baked-in dissolve / double face), **dreamy_bloom 11**.
+  - `import-staged --delete-remote` and `push-manifests` FAIL SILENTLY / crash with the default gh account (drcompilationyt1-debug has no
+    write on the repo): run them with `GH_TOKEN=$(gh auth token -u drcompilationyt7-alt)`. Done by hand this time (3 tars deleted, manifests
+    + state uploaded, sources_seen 291).
+  - **The miner is out of queries**: run 39211335633 logged "0 queries left" on all 3 shards (all_queries() is a fixed list: CHARS x 4
+    suffixes + MOODS + SHOWS_ED, all done after one night). Nightly mining now finds nothing until the list grows (new characters / shows /
+    suffixes, or a rotating LLM query list) - needs a code change + push (owner).
+- **2026-10-20 nightly (run 39380483895, first rotating-query night)**: success, 3h03; 789 queries used, 354 unique sources (432
+  downloads: shards re-download the same video), library 231 clips -> 21 auto-clean -> staged **sg 17 / db 2**. By eye (8-frame strips +
+  dup-frame count; cv2 is missing from the PC python, so pull-staged crashed at the contact sheet - index.json rebuilt by hand):
+  **5 approved** (sg c_vkqPXIygBnw_33100/49100, c_VTN7cYLoRKM_5500, c_z-sGoBx0XMY_71100; db c_PyJl49MgZ_4_77100), **14 rejected**
+  (repeated drawings 3 6 9 11 14 15 16 17 - mostly Frieren S2 / Free! / Clannad OP-ED sources; garish / milky 2 4 8 15 16; text + cut 10;
+  hidden face 11 14; talking / open mouth 9 12 13). Imported with --delete-remote, push-manifests done (sources_seen 647).
+  Pool now **summer_glow 29 / dreamy_bloom 12**.
+  - Yield problems: (1) ~100 of 354 sources are not anime (Movieclips, fireworks, city drone, official music videos): GOOD matches bare
+    '4k' / '60fps' / 'clips' and the 'scenery' SRC_TYPES pull live action; (2) 'AMV 4k' queries yield 0.20 sources/query (BAD drops
+    \bamv\b titles) vs twixtor 4k 0.81; (3) dreamy queries (65 % of slots) still land in summer_glow - the vibe comes from the colour gate,
+    db got 50 imports -> 2 clean (colour 37, talk 15); (4) OP / ED / creditless sources are 24 fps with held drawings -> most eye rejects.
+    Suggested fix (not pushed): drop 'AMV 4k' and the two scenery types (keep twixtor / raw scenepack / 60fps), require an anime word or a
+    known show / character in the title, drop creditless / opening / ending from GOOD, dedupe sources across shards (shard by
+    hash(video id) % n), and add the dreamy colour words (pastel, soft, night, rain) to the dreamy queries.
+  - **Fix applied 2026-10-20 (slowmo_grow.py)**: AMV + scenery types dropped, twixtor / scenepack / 4k anime scenes / 60fps weighted, anime-signal title
+    filter + OP/ED/creditless/live-action reject, crc32(video id) % n shard before download, dreamy mood words; selftest covers all.
+- **3b's cut problem, measured** (core/edit/music_moments.py on 3b's own regular audio): the planner analysed the right (regular) audio, but
+  _cine_pick_pulse chose 1.28 s = 4 eighths of a song whose meter is 3 eighths (main beat 0.952 s regular / 1.115 s slowed 0.85): only
+  29 % of 3b's cuts sat on the main beat (most a third of a beat off), 71 % on a musical moment, the first clip 0.6 s after the vocal line
+  had started (the lyric-timing window search put d mid-phrase). The reference _sX2 (same song): 6 / 6 cuts on the main beat, 6 / 6 on a
+  moment (5 sung syllables, 1 bar start), the moment ~66 ms after the switch frame. 3b's "sound / stutter" before the first clip = the
+  planner's gap_drop (song gated -46 dB for 0.45 s) + a reversed riser (measured: residual -0.2 dB at 5.18 s, gate 0.42 s at 5.04 s).
+- **Fixes** (uncommitted): music_moments.py (meter-correct main beat, bars, accents, Demucs vocal onsets / phrase starts, score_at, align);
+  planners._cine_moment_cuts (opts cine_moments; DP over the main beats after the hero, shots 1-3 beats, the hero 3-4, scored by the
+  moment at each switch, 1-beat shots penalised (never 3 in a row), the hero on the measured phrase start within -0.9..+0.6 s of d);
+  cine_vibe: SLOWMO_CLEAN_AUDIO (default on: cine_breath none, no gap_drop / riser; a plain -6 dB intro level rising over 0.6 s into the
+  first clip) + SLOWMO_MOMENT_CUTS (default on); lyric_text phrase_check window now runs to the end of the last item (a tail word joined to
+  it, 'SEE YOU', was flagged as missing). Judge: 8_cuts (vs the ref rule cached as cut_rule in refs/slowmo-judge-ref.json) and 9_no_sfx
+  (mix vs the plan's song version, sample-aligned via onset envelopes, spectral residual / gates / off-median gain jumps); hint detector
+  minus a shifted-mask null (bright line-art false positives). Calibration: 3b -> 8_cuts 3.39, 9_no_sfx 0 (fails as it should).
+- Engine peak resident measured 4.98 GB on the regular render (4.44 GB slowed): wait for >= 5.2 GB free before a local render.
+- **DELIVERED** (review-shorts/edits/new-types/, + -judge/ dirs; slowmo_3 / 3b files and output/newtypes/m3, m5 deleted):
+  - **slowmo_3c** = output/newtypes/m3c, Golden Hour SLOWED 0.85, 39.4 s, 19 shots, main beat 1.115 s, words DON'T / NEED NO / LIGHT /
+    TO / SEE / YOU. judge 10 / 10 / 10 / 9.92 / 10 / 10 / 9.61 / 9.99 / 10 -> **9.95 PASS** (cuts: 100 % on the meter, 95 % on a moment,
+    79 % phrase / syllable, moment +15 ms after the switch; no-SFX residual -27.7 dB, no gate / jump).
+  - **slowmo_3d** = output/newtypes/m3d, Golden Hour REGULAR, 40.0 s, 20 shots, main beat 0.952 s, words DON'T / NEED NO / LIGHT / TO /
+    SEE YOU. judge 10 / 10 / 10 / 9.94 / 10 / 10 / 9.66 / 10 / 10 -> **9.96 PASS** (cuts 100 % meter, 95 % moment, +44 ms; residual -28.2 dB).
+  - By eye (shots / words / hint sheets): clean; notes - a laughing open-mouth shot (c_W1uBeTXPcZA_43100, laugh not talk) in both; 3d
+    closes on two Kurumi shots in a row (different sources). Command: SLOWMO_ENV + `vibe_edit.py --type slowmo --vibe summer_glow
+    --song jvke_golden_hour@v0.85|@v1 --seed 3 --no-mark` via output/edit-pools/lowprio.py.
+  - Go-live still ON HOLD: owner picks 3c / 3d; pool ~60 per vibe (now 25 / 11, and the miner needs new queries).
+
+### 2026-10-19 evening: slow-mo cut timing round 2 - HOLDS (slow-mo agent)
+Owner on 3c / 3d: "don't change clips when they are holding a key or a word ... the clips are all good, it is just the timing
+with the music". Clips approved; only the cut timing changes; never cut inside a held sung note / word / held chord.
+
+**Hold detector** (core/edit/music_moments.py `holds()`, measured on the audio actually heard): sung notes on the Demucs vocal
+stem (lyrics.vocal_stem, cached) = activity runs (RMS gate, breaks < 60 ms bridged) split only at a NEW syllable (a vocal onset
+with a >= 5 dB energy dip, or an onset + pitch step >= 0.8 st, or an unflagged energy valley >= 6 dB; pyin pitch); a same-pitch
+flux peak without a dip = vibrato inside the note, a legato pitch step without an onset = melisma on the same word. A note
+>= 0.30 s is a HOLD; its body (onset + 0.10 .. offset - 0.15) is forbidden (the switch may lead the next sung onset by <= 0.15 s).
+Accompaniment (mix - vocals): attacks (flux >= 2 x median), chord changes (CQT chroma), and held chords / swells (>= 0.8 s with
+no attack) - forbidden only in the vocal gaps. `cut_report()` / `plot()` / `ks_distance()` / `hold_null()`; CLI `--holds --png`.
+
+**Reference rule, measured** (_sX2EUexbW8 "GOLDEN HOUR", 6 cuts; switch = the first frame of the new shot; main beat 0.9985 s):
+
+| cut (s) | inside a hold | switch -> next sung onset | pitch step there | accomp. attack after | beat phase / bar phase | shot length | holds in the shot |
+|---|---|---|---|---|---|---|---|
+| 5.56 (hero) | no | 0.14 s (phrase start after a 0.43 s breath) | +1.7 st | +0.05 s (33.5 = the drop) | 0.006 / 0.00 | 4.0 s (4 beats) | 2 (3.96 s held) |
+| 9.56 | no | 0.10 s (a 0.34 s hold ends there) | -7.0 st | +0.09 s (6.1) | 0.023 / 0.0 | 1.0 s | 1 (0.85 s) |
+| 10.56 | no | 0.10 s (hold ended 0.05 s before) | +2.0 st | +0.08 s (5.1) | 0.021 / 0.5 | 1.0 s | 1 (0.48 s) |
+| 11.56 | no | 0.05 s | +7.8 st | +0.09 s (5.9) | 0.020 / 0.0 | 1.0 s | 1 (0.98 s) |
+| 12.56 | no | 0.03 s (hold ends there) | -1.9 st | +0.09 s (6.9) | 0.018 / 0.5 | 1.0 s | 1 (1.08 s) |
+| 13.56 | no | 0.11 s (hold ends there) | -1.1 st | +0.10 s (3.8) | 0.017 / 0.0 | 2.0 s (last) | 1 (0.91 s) |
+
+Rule: (1) **0 / 6 cuts inside a hold** while 65 % of the body time (33 % of the main beats) is hold body - not chance;
+(2) every switch sits **0.03-0.14 s (median 0.10) before a NEW sung note** (5 / 6 right where a held note ends; 4 / 6 with a
+pitch step >= 1.5 st) and 0.05-0.10 s (median 0.09) before an accompaniment attack; (3) on the main beat (phase <= 0.023),
+bar start or mid-bar; no chord change detected in the window; (4) **one body shot = one held note** (each 1-beat shot holds
+exactly one held note of 0.48-1.08 s that completes inside it); the hero = the opening phrase (2 holds, 4 beats).
+No lyrics used or stored.
+
+**3c / 3d measured** (same detector, judge criterion 10 on the delivered files): **3c 5 / 19 cuts inside a hold**
+(8.87, 15.67, 16.80, 25.77, 26.90 - e.g. 8.87 cuts the 5.8-9.8 s long held note in the middle), **3d 3 / 20** (15.23, 20.97,
+22.87; the planner's song-window analysis also has 37.17 inside a 2.7 s held chord). A random switch hits a hold 29-40 % of
+the time: the old moment-cut planner was hold-blind (26 % / 15 %).
+
+**Matcher** (planners `_cine_hold_cuts`, cine_vibe: SLOWMO_HOLD_CUTS default on, falls back to the moment cuts if the analysis
+fails): candidate switches = 0.09 s before every sung note onset, 0.09 s before every accompaniment attack (>= 2 x median),
+every main beat - LEAD; those inside a hold body dropped; score = phrase start 3 / note after a hold 2.4 / syllable 1.5 (+0.4
+pitch step >= 1 st) + attack (<= 1.2) + main beat 1.0 (off-beat -0.3) - mid-word 1.5, a switch on nothing -1.5; DP over the
+candidates. Free layout: hero 2.9-4.6 main beats, body 0.8-2.7. **Pinned layout** (CINE_PIN_PLAN=old plan.json -> opts cine_pin:
+same clips / order / entry points / song window / words-on-black intro): N shots fixed, cost per shot vs its approved length:
+its source path is time-scaled (`_retime_curve`) down to 1.3 x real-time source speed (0.95 for a shot already faster), below
+that trimmed at the end (`_pin_bounds`: >= 0.5, closing shot >= 0.6, hero never shorter, near-stills 0.5-1.8, others <= 1.5),
+cost 15 ln(r)^2 (4 for near-stills) + 8 x trimmed share; shots >= 0.75 s; the closing shot may keep its length and push the end
+<= 1.2 s later (cost 1 + 0.8 / s). HC_DEBUG=1 logs the forbidden spans and candidates.
+
+**Judge** (judge_slowmo.py criterion **10_holds**): cuts inside a hold (each -4, any one fails) + KS distance of the
+cut -> next-moment offsets (next sung onset <= 0.35 s, else the next attack) vs the reference's (cached as hold_rule in
+refs/slowmo-judge-ref.json; JUDGE_REF_REFRESH=1 re-measures), 10 at KS <= 0.4, 0 at 0.8; evidence sheet cuts-holds.png
+(waveform + vocal pitch, holds shaded red, held chords orange, cuts green / red). Calibration: _sX2 0 holds; old 3c 10_holds
+0.0 (5 in holds, KS 0.51), old 3d 0.0 (3, KS 0.37) -> both now NOT PASS (overall 8.95 / 8.96).
+
+**STATE AT STOP (2026-10-19 ~22:30, coordinator: owner leaving; nothing committed / pushed; no process of this agent running)**
+- Reference rule (table above): 0 / 6 cuts inside a hold; switch 0.03-0.14 s (median 0.10) before a new sung note and
+  0.05-0.10 s before an accompaniment attack, on the main beat; one body shot = one held note.
+- Hold cuts (judge criterion 10 on the delivered files): **old 3c 5 / 19, old 3d 3 / 20 (both now NOT PASS, 8.95 / 8.96)**;
+  **new 3e 0 / 19**.
+- **slowmo_3e DONE, PASS** = output/newtypes/m3e/slowmo-summer_glow-short.mp4 (Golden Hour SLOWED 0.85, 39.4 s, the SAME 19
+  clips / order / entry points as 3c, new cuts only): judge 10 / 10 / 10 / 9.92 / 10 / 10 / 9.61 / 9.11 / 10 / 8.64 ->
+  **9.73 PASS** (10_holds: 0 in holds, KS 0.51 vs ref; 8_cuts: on the meter 84 %, on a moment 100 %). Judge dir + cuts-holds.png:
+  %TEMP%/claude/c--Users-Home-Desktop-ChinaWeatherReader/c0dd8c36-cb0d-48fb-93cb-4f90a6450d45/scratchpad/sm2/jm3e/ (looked at:
+  every cut at the end of a held note / in a gap; shot sheets clean). NOT yet copied to review-shorts.
+  (3e was planned before the last two planner tweaks below; its plan is what passed.)
+- **slowmo_3f NOT FINISHED** (stopped mid-render, partial output deleted). First 3f try (before the tweaks): 9.56 NOT PASS,
+  one cut (14.267) 3 ms inside a hold edge in the judge's analysis of the rendered audio vs the planner's song-window analysis.
+  Fixes since: planner hold analysis `strict=True` (also forbids the holds of a more merging segmentation: same-pitch lines
+  flip syllable boundaries between analyses - 3e's first try had 16.77 flagged the same way) and a +-60 ms margin around
+  every hold edge for candidates. Dry run of the pinned DP for 3d with these: 0 in holds, cut at 14.29 instead, ends 40.94 s
+  (closing shot keeps its length).
+- **Resume 3f** (wait for >= 5.2 GB free; IDLE, 2 threads via lowprio): `bash <scratchpad>/sm2/render.sh m3d m3f "jvke_golden_hour@v1"`
+  = SLOWMO_ENV (SLOWMO_MUSIC_POOL=1 YT_JS_RUNTIMES=node LYRICS_NO_STORE=1 CINE_LYRICS=1 EDIT_NO_SHAKE=1 EDIT_ROTATE_HINT=1
+  EDIT_POOL_REVIEWED_ONLY=1 SLOWMO_COOLDOWN_VIDEOS=1 CINE_SEGMENT_S=12 EDIT_PREFETCH=0 EDIT_GPU=0)
+  + `CINE_PIN_PLAN=output/newtypes/m3d/work-slowmo-summer_glow/short/short_raw.plan.json`
+  `python output/edit-pools/lowprio.py python core/edit/vibe_edit.py --type slowmo --vibe summer_glow --song jvke_golden_hour@v1 --seed 3 --no-mark --out output/newtypes/m3f`
+  then `python core/edit/judge_slowmo.py output/newtypes/m3f/slowmo-summer_glow-short.mp4 <judge dir> --plan output/newtypes/m3f/work-slowmo-summer_glow/short/short_raw.plan.json --label slowmo_3f`
+  (python = %TEMP%/acapvenv/Scripts/python.exe). KEEP output/newtypes/m3c + m3d (their plans are the pins).
+- Then: copy 3e / 3f + judge dirs to review-shorts/edits/new-types/ (slowmo_3e_..._SLOWED_hold-cuts_39s.mp4 /
+  slowmo_3f_..._REGULAR_hold-cuts_41s.mp4), delete the 3c / 3d review files (+ m3c / m3d only after 3f passes).
+- Code (uncommitted): music_moments.py (holds / vocal_notes / inst_events / cut_report / hold_null / ks_distance / plot),
+  planners.py (_cine_hold_cuts, _pin_bounds, _retime_curve, cine_pin path in plan_cinematic_slowmo), cine_vibe.py
+  (SLOWMO_HOLD_CUTS default on, CINE_PIN_PLAN), judge_slowmo.py (criterion 10_holds, cuts-holds.png, hold_rule in
+  refs/slowmo-judge-ref.json). Open: the free (unpinned) DP layout is untested on a new song.
+
+### 2026-10-20: slow-mo cut timing round 3 - MOMENTUM WAVES (slow-mo agent)
+Owner on 3e: ~16 s a quick 1 s clip just before the held "hour" ends (BAD; the change on the beat after it is GOOD); ~21 s
+the sung word "turn" has no transition; "many more". Rule (owner): the song is momentum waves (a line / word builds, carries
+or holds, then flattens); ONE clip carries ONE wave, the switch sits at the START of the next wave (its first attack, usually
+on the main beat); every new wave gets a switch; the shot count follows the waves (more / fewer clips from the approved pool).
+Root causes of 3e: (a) holds() split the held "hour" (14.6-17.3 s, slowed) into syllables at 6 dB tremolo dips, so 16.47 was
+"between two notes"; (b) the judge used the same analysis; (c) 19 fixed cuts for 19 clips.
+
+**Wave segmenter** core/edit/music_moments.py `waves()` (+ `wave_of`, `plot_waves`): Demucs vocal stem; pyin pitch, level
+(dB re p95, 50 ms), vocal onset strength. Wave starts = a voice entering after >= 0.1 s silence, a level valley >= 7 dB (unless
+the same pitch +-0.7 st on both sides, no onset and < 10 dB: a tremolo / breath inside a held vowel), a >= 4.5 dB valley with
+a >= 1.5 st pitch change, a legato step >= 1 st between two steady pitches with an onset >= 2 x median, a RELEASE (a hold
+>= 1.2 s whose level drops >= 7 dB and goes on quieter: "hour" -> "(oh)" at 17.3 s = the owner's good change). Candidates
+within 0.25 s are one start, timed on the strongest vocal onset (phrase: within 0.45 s of the breath); a scoop (step /
+legato) <= 0.4 s after a real attack is that attack; waves < 0.6 s join the next (not across a phrase gap); waves peaking
+under -15 dB (a fading tail) count half. Output waves (a start, p peak, s sustain end, b end, strength, why).
+Checked by eye (timeline PNGs): 3e's "hour" 14.70-17.36 is ONE wave; "slow" (the owner's "turn") starts a wave at 21.13 s.
+**Reference** (_sX2, 6 cuts): wave starts 5.72 / 9.68 / 10.56 / 11.64 / 12.66 / 13.50 vs cuts 5.56 / 9.56 / 10.56 / 11.56 /
+12.56 / 13.56 -> **6 / 6 cuts on a wave start** (attack 0.08-0.16 s after the switch, one -0.06), no cut mid-wave, and no
+wave start in the body without a cut (0 missed).
+
+**Planner** planners `_cine_wave_cuts` (cine_vibe SLOWMO_WAVE_CUTS default on, before the hold cuts; falls back to them):
+waves on the song window heard; switch = the main beat whose switch frame (beat - LEAD) leads the attack by 0.03-0.16 s,
+else 0.10 s before it; DP: shots 0.75-5.2 s (hero 2.4-6.2), +strength (+0.4 on a beat), a skipped wave start costs 8 when
+strength >= 2 (else 1.5 x strength), < 0.95 s shots cost 0.6; stretches > 5.2 s without a wave split at the strongest accent
+(instrumental). Pinned (CINE_PIN_PLAN): the approved clips in order, the closing clip stays last, extra body shots get fresh
+reviewed clips, fewer shots drop approved body clips from the end; each pinned clip enters at its approved frame, its speed
+curve fitted to the new length (cine_speed_curve, not the old path time-scaled).
+
+**Independent judge** judge_slowmo.py criterion **11_waves** (does NOT import music_moments for it): vocal-band mel level
+(250-4000 Hz, 20 ms), YIN pitch, MFCC timbre change, faster-whisper MEDIUM word starts (table labels / confirm attacks).
+A wave start = an interval [the previous note starts to fall, the new one reaches half its climb] from a dip (>= 6 dB down and
+up within 0.5 / 0.6 s; same pitch +-0.8 st, < 11 dB and timbre < 1.3 x median = the same held note), a voice after >= 0.2 s
+silence, or a legato jump >= 0.8 st between two steady pitches; releases (>= 1.2 s held, -7 dB, goes on). Per cut: ON a wave
+start (from 0.15 s before the fall to 0.10 s after the climb), a release, a vocal gap, else mid-hold / mid-phrase = BAD.
+MISSED = a strong start (>= 9 dB, after silence, or >= 7 dB at a whisper word) in the body, peak >= -15 dB, no switch in
+[fall - 0.3, climb + 0.12], >= 0.7 s after the previous switch, not a breath <= 0.45 s before an attack that has a switch.
+Score 10 - 4 x bad - 3 x missed; any bad / missed = NOT PASS. Evidence: waves.png, waves.md (per-cut table), cutframes-NN.jpg
+(20 frames around each cut).
+Calibration: _sX2 6 / 6 ok, 0 missed. **3e: 16.47 mid-hold (the owner's quick clip), MISSED 21.30 ("slow" = the owner's
+"turn")**, + mid-hold 19.03 / 27.00, missed 12.40 ("gol-"), 18.34, 32.34. 3c: 6 mid-hold (8.87 15.67 16.80 19.03 25.77
+26.90) + 6 missed; 3d: 4 bad (14.27 19.97 20.97 22.87) + 6 missed.
+Fixes found by the own check of the first 3g render (9.53, 8_cuts failed on the old meter share; timeline: 4 quick cuts on
+faint tail waves, 29.87 s cut 0.35 s before "gol"): the DP gain is strength - WV_CUT_MIN (1.3) and a skipped wave costs
+8 (>= 2.0) / max(0, s - 1.3) (faint lines earn no switch); a valley cluster is timed on the onset after its DEEPEST point
+(0.03 s before .. 0.20 s after); a short RELEASE joins the hold before it; a short wave whose end dip is >= 3 dB deeper than
+its start dip joins the wave BEFORE it (a falling tail, not a pick-up). After 3g: the same-note filter also needs the pitch to
+stay within 1.5 st through the dip (3h's 17.64 s fall-and-re-attack on the same pitch); the 3g plan is reproduced exactly
+with it (same 18 cuts, same clips, checked by a plan-only run). Judge: 8_cuts counts a cut on a sung wave start as
+on-meter (the owner called 3e's 17.27 s "on the beat", the tracker says phase 0.43; the rubato line wins over the grid);
+11_waves' missed list needs the wave to carry (>= 0.25 s within 10 dB of its peak; 3h's 27.98 s blip); 10_holds keeps only
+the inside-a-hold count, its KS part (the planner's own analysis) is info only once 11_waves is measured.
+
+**DELIVERED** (review-shorts/edits/new-types/ + -judge dirs with timeline.png = planner waves shaded on the rendered audio
++ judge flags, waves.png / waves.md = the independent judge's timeline and per-cut table, cutframes-NN.jpg = 20 frames
+around every cut; 3c / 3d / 3e review files deleted; output/newtypes/m3c + m3d kept: their plans are the pins):
+- **slowmo_3g** = output/newtypes/m3g, Golden Hour SLOWED 0.85, 39.4 s, **18 shots** (the approved clips in order, 2 body
+  clips dropped), judge 10 / 10 / 10 / 9.92 / 10 / 10 / 9.62 / 9.88 / 10 / 10 / 10 -> **9.95 PASS**, 11_waves 0 mid-wave,
+  0 missed. Cuts 5.43 10.07 11.20 12.30 13.43 14.57 17.27 18.27 20.17 21.03 22.47 23.67 28.17 30.13 31.37 32.57 34.87 36.23
+  (the held "hour" 14.57-17.27 is one shot; "slow" (the "turn") gets 21.03; "time" 23.67-28.17 one shot).
+  **OWNER: "3g is good" - the momentum / wave timing is APPROVED.**
+- **slowmo_3h** = output/newtypes/m3h, Golden Hour REGULAR, 40.0 s, **19 shots**, same method, judge 10 / 10 / 10 / 9.94 /
+  10 / 10 / 9.61 / 9.76 / 10 / 10 / 10 -> **9.94 PASS**, 0 mid-wave, 0 missed. Note: the instrumental outro has a 0.86 s
+  shot (37.17-38.03, a faint backing phrase).
+- Render: `bash <scratchpad>/sm2/render.sh m3c m3g "jvke_golden_hour@v0.85"` / `... m3d m3h "jvke_golden_hour@v1"`;
+  judge as before (+ criterion 11 automatically). Own check: <scratchpad>/sm3/owncheck.py REPORT.json OUT.png.
+
+**APPROVED SLOW-MO TIMING BASELINE (owner 2026-10-20, from 3g)** - CI must use exactly these settings:
+- cine_vibe: SLOWMO_WAVE_CUTS=1 (default on) -> planners._cine_wave_cuts with WV_PRE 0.10, WV_SNAP (0.03, 0.16), WV_SHOT
+  (0.75, 5.2) (hero 2.4-6.2), WV_MUST 2.0, WV_CUT_MIN 1.3, WV_SPLIT 5.2; falls back to the hold cuts (SLOWMO_HOLD_CUTS) only
+  when the wave analysis fails.
+- music_moments.waves(): WV_ACT_DB -30, WV_GAP 0.10, WV_DEEP 7.0, WV_DIP 4.5, WV_STEP 1.5, WV_STEP_DIP 2.0, WV_LEGATO 1.0,
+  WV_SAME 0.7 (+ steady pitch within 1.5 st through the dip), WV_CLUSTER 0.25, WV_RELEASE 7.0 / 1.2 s, WV_MIN 0.60, faint
+  (< -15 dB) waves at half strength.
+- judge_slowmo.py: criterion 11_waves (independent: JW_ACT -28, JW_RISE 6, JW_STRONG 9, JW_SAME 0.8, JW_HELD_DIP 11,
+  JW_TIMBRE 1.3, JW_JUMP 0.8, JW_HIT (-0.10, 0.15), JW_MISS (-0.30, 0.12), JW_JOIN 0.45, JW_CARRY 0.25, JW_MIN_SHOT 0.70,
+  JW_RELEASE 7, faster-whisper medium for words), any mid-wave / missed = NOT PASS; 8_cuts meter-or-wave-start; 10_holds
+  inside-a-hold count only. CI needs faster-whisper 'medium' available for the judge (words are labels only; on failure
+  the judge runs without them).
+- Unpinned (no CINE_PIN_PLAN) the same DP picks the shot count from the waves; still untested on a new song.
+- Code (uncommitted): music_moments.py (waves / wave_of / plot_waves), planners.py (_cine_wave_cuts, wave-mode pin mapping),
+  cine_vibe.py (SLOWMO_WAVE_CUTS), judge_slowmo.py (criterion 11, 8 / 10 changes, waves.png / waves.md / cutframes).
+
+### 2026-10-20: slow-mo go-live prep + clip rotation for every edit type (go-live agent)
+Coordinator HOLD (owner: 3h REGULAR cut timing is off after ~15 s; 3g SLOWED stays approved): music_moments.py / planners.py /
+cine_vibe.py / judge_slowmo.py are NOT committed, no CI dry run, rotation stays slowmo:0 until the 3h fix lands.
+
+**Song pool = WOMEN BEAUTY edit** (core/edit/assets/slowmo-music-pool.json): 46 -> **26 kept**: blue, Golden Hour, Ditto, Shinunoga
+E-Wa, Sparkle, Until I Found You, Die For You, Sweater Weather, Apocalypse, Sunsetz, Night Changes, Perfect, Photograph, BIRDS OF A
+FEATHER, Here With Me, Yellow, Those Eyes, Kataomoi, First Love, Nandemonaiya, Love wins all, Cupid, Double Take, Sailor Song,
+Dandelions, Somewhere Only We Know. **20 dropped** (moved to pool['rejected'] with the reason, so a top-up never re-adds them): Another
+Love, Daylight, Heather, Line Without a Hook, Glimpse of Us, Slow Dancing in the Dark, Let Me Down Slowly, lovely, Romantic Homicide,
+The Night We Met, Arcade, Lovers Rock (ironic), Lemon, Pretender, Spring Day, Mr. Loverman, Older, Little Dark Age, Wildflower, Ghost.
+Every song stays two candidates (regular 1.0 + slowed), 30-day cooldown unchanged; nothing but "lyrics": "render-time only" stored.
+slowmo_music.py: SEEDS = the kept 26 + 13 beauty-edit staples (Make You Mine, I Wanna Be Yours, Lover, Enchanted, Moonlight, Kiss Me,
+Bloom, Pink + White, Super Shy, Love Lee, Marigold, Koi, Suzume; the gates still decide); the monthly LLM search asks for songs
+trending in beauty / "pretty girl" edits; `beauty_fit()`: LLM proposals pass a title filter (dark / death / cry / sad / goodbye ...)
+and an LLM fit verdict (romantic / dreamy / pretty; never sad / breakup / grief / dark / ironic), LLM down = seeds only.
+
+**Clip rotation** core/edit/clip_rotation.py (committed f5884c5, NOT pushed): used by vibe_pool.fresh_clips for sound + slow-mo
+(CLIP_ROTATION=0 = the old last-N cooldown). Per-clip cap 3 videos / 30 days (relaxed +1 step by step only while < MIN_NEED clips
+are left), LRU order (never used first), recent clips (last 5 videos of the type) <= ceil(25 % x TARGET) candidate slots, raised
+only when the pool is too small (info.reuse_raised), the planner gets only TARGET + 2 candidates then (no favourites); pool_low
+retries raise CLIP_ROTATION_LEVEL (1 = x1.5 candidates, 2 = every allowed clip). Config: slowmo target 20 / want 28 / min 22;
+sound target 39 / want 50 / min 45 (pinned hits only). result.json clip_rotation = {shots, reused, reuse_share, from_last_video,
+choice}. mark_used skips a video recorded twice (render + upload).
+Policy chosen by simulation (scratchpad sim2): reserving recent slots forced 25 % reuse on big pools; a plain LRU list let the
+planner's favourites repeat (92 % of the previous video's clips at 29 clips); fresh-first + capped recent + a tight list wins or ties
+at every pool size.
+
+**Variety simulation** (30 videos per type, the real pools + the current ledger, planner = its favourites / random; reuse = share of
+shots shown in the last 5 videos of the type):
+| type | pool | old rule: reuse / from prev video / most-used clip (of 30) | rotation: reuse / from prev / most-used | max uses per 30 d |
+|---|---|---|---|---|
+| slow-mo summer_glow | 29 | 0.97 / 0.97 / 30 (fav) | 0.95 / 0.61 / 24 (fav), 0.53 / 22 (random) | 8-9 (cap relaxes) |
+| sound (pins) | 63 | 0.98 / 0.98 / 30 (fav) | 0.98 / 0.54 / 23 (fav), 0.47 / 21 (random) | 8 (cap relaxes) |
+| slow-mo at 100 / sound at 163 | | | 0.75 / 0.00 / 7 ; 0.87 / 0.00 / 8 | 2 ; 3 |
+| stem (real history, last 30) | YouTube per song | 0 % source reuse, 231 distinct sources, max 1 use each (30-upload source ban in edit-pipeline) | | |
+Pool needed for <= 25 % reuse over 5 videos (scan): **slow-mo ~115 clips, sound ~230 pins**; the 3 / 30 d cap holds from ~80 / ~160.
+With today's pools reuse is unavoidable; the rotation halves the overlap with the previous video and spreads uses evenly.
+Stem: clips are fetched fresh from YouTube per video (core/meme/clip_finder.py); edit-pipeline passes the last 30 uploads' source ids
+as used.json (hard ban), so it already varies fully - no growth job needed (repeats there are songs, e.g. "idol" 5 of 30).
+
+**Sound pool growth** (edit-pool-refresh.yml + sound_refresh.py, in f5884c5): nightly 05:45 UTC (after the slow-mo miner, same spare
+cookie account) while allowlist pins < SOUND_POOL_TARGET (repo var, default 230) and < 4 staged tars wait, else first Tuesday only;
+off with EDIT_POOL_REFRESH=off (no longer needs =on: it only stages). Nightly = mine (4 shards x 150 min) -> merge / stamp / sharpen /
+baseline check on a CI copy -> `stage` -> release edit-pools-staging `sound-cand-<date>-n<N>.tar` (clips + rows + pins + contact
+sheet); only memory/edit-pool-fetch.json is committed. Session start: `python core/pools/sound_refresh.py pull-staged` -> look at
+output/edit-pools/_staged_sound/*/sheets/*.jpg -> dispatch the workflow with import_tars="sound-cand-... .tar" reject="id,id" (CI pulls
+the FULL live pool, apply-staged, push, commits the pins, deletes the tars; never import locally: the PC pool has pruned media and a
+push from it would upload a pool without them). Queries: +6 suffixes (900 total), then a by-day re-search rotation.
+
+**Pool upload**: `push --preset slowmo` (summer_glow 29 reviewed clean + dreamy_bloom 12; cine_reject media skipped) -> edit-pools.
+
+**Go-live commit list (waiting for the 3h fix)**: core/edit/{music_moments,judge_slowmo,slowmo_music}.py (new), core/edit/{planners,
+cine_vibe,lyric_text}.py, core/edit/assets/slowmo-music-pool.json, core/edit/refs/slowmo-judge-ref.json (new), core/edit/vibes.json
+(slow-mo readiness: min_fresh_clips must drop to ~25 for summer_glow, per vibe so dreamy_bloom stays off), pipeline/newtype-pipeline.js
+(SLOWMO_ENV + per-type music feedback), scripts/edit-pools-store.js (cine_reject skip), .github/workflows/{daily-create,
+slowmo-music-topup}.yml. NOT needed (static import closure from vibe_edit / judge_slowmo / slowmo_music / vibe_pool / sound_refresh):
+core/meme/edit_fx.py (+1185 lines, additions only, none of the new functions used on these paths), every untracked fx_* / lab / refs
+study file, refs/camera_bank.json (optional, already handled when missing). Still to build at go-live: the slow-mo pre-upload guard
+(judge_slowmo PASS + non-empty: length 25-50 s, >= 12 shots, sampled frames not blank / static via core/quiz/qa_guard.py) in
+newtype-pipeline.runNewType -> throw = stem fallback; CI needs faster-whisper (judge words) + demucs in the slow-mo install step.

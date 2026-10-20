@@ -74,8 +74,21 @@ const SOUND_ENV = {
   EDIT_NO_SHAKE: '1', EDIT_ROTATE_HINT: '1', EDIT_POOL_REVIEWED_ONLY: '1', SOUND_COOLDOWN_VIDEOS: '3', SOUND_COOLDOWN_RELAX: '1',
   EDIT_GPU: '0',
 };
+/**
+ * The SLOW-MO edit (cinematic_slowmo; core/edit/cine_vibe.py + core/edit/judge_slowmo.py; new-types-progress.md "Slow-mo go-live"):
+ * the references' rotated 9:16 layout (the full 16:9 master turned 90 deg, the planner's 'rot90' frame) + the upright rotate-phone
+ * corner hint (watermark.py), no shake, the song's sung lyrics (fetched + aligned at render time, never stored), the song SLOWED
+ * from the slow-mo music pool (core/edit/slowmo_music.py: emotional / chill famous songs, hook section, 30-day cooldown), eye-reviewed
+ * clips only, clips reused across videos after SLOWMO_COOLDOWN_VIDEOS. CINE_SEGMENT_S renders the engine in ~12 s parts (one process
+ * each: the whole-short engine peaks ~3.4 GB resident; parts stay ~2 GB) - the GitHub runner (16 GB) fits either way.
+ */
+const SLOWMO_ENV = {
+  SLOWMO_MUSIC_POOL: '1', YT_JS_RUNTIMES: 'node', LYRICS_NO_STORE: '1', CINE_LYRICS: '1',
+  EDIT_NO_SHAKE: '1', EDIT_ROTATE_HINT: '1', EDIT_POOL_REVIEWED_ONLY: '1', SLOWMO_COOLDOWN_VIDEOS: '1',
+  CINE_SEGMENT_S: '12', EDIT_PREFETCH: '0', EDIT_GPU: '0',
+};
 const typeEnv = type => {
-  const base = type === 'sound' ? SOUND_ENV : { EDIT_NO_SHAKE: '1', EDIT_GPU: '0' };
+  const base = type === 'sound' ? SOUND_ENV : (type === 'slowmo' ? SLOWMO_ENV : { EDIT_NO_SHAKE: '1', EDIT_GPU: '0' });
   const out = {};
   for (const [k, v] of Object.entries(base)) out[k] = process.env[k] !== undefined && process.env[k] !== '' ? process.env[k] : v;
   return out;
@@ -91,9 +104,52 @@ function runCli(args, timeoutMin, extraEnv = {}) {
   });
 }
 
+/**
+ * Pre-upload guard (owner 2026-10-20 after the empty quiz short: never post an empty / broken video). Returns the problems
+ * (empty = ok). Every new type: the file, its length, the shot count of the plan, sampled frames not blank / static
+ * (core/quiz/qa_guard.py). Slow-mo also needs a judge_slowmo PASS (cut timing incl. the wave / no-SFX / hold checks, beauty,
+ * lyrics, mix, layout) - NEWTYPE_JUDGE=off skips the judge (tests only). runNewType throws on a problem -> the runner posts stem.
+ */
+const GUARD = { sound: { len: [15, 75], shots: 15 }, slowmo: { len: [25, 50], shots: 12 } };
+function guardRender(type, rep, videoPath, work) {
+  const g = GUARD[type] || { len: [10, 90], shots: 5 };
+  const bad = [];
+  let size = 0;
+  try { size = fs.statSync(videoPath).size; } catch {}
+  if (size < 200 * 1024) bad.push(`video file ${size} bytes`);
+  const plan = rep.plan_short ? readJson(path.isAbsolute(rep.plan_short) ? rep.plan_short : path.resolve(work, rep.plan_short), null) : null;
+  const nShots = plan && Array.isArray(plan.shots) ? plan.shots.length - (type === 'slowmo' ? 1 : 0) : 0;   // slow-mo: minus the words-on-black intro
+  if (nShots < g.shots) bad.push(`${nShots} shots (< ${g.shots})`);
+  if ((rep.clips_short || []).length < Math.ceil(g.shots / 2)) bad.push(`${(rep.clips_short || []).length} distinct clips`);
+  try {
+    const out = execFileSync(python(), [path.join(ROOT, 'core', 'quiz', 'qa_guard.py'), '--video', videoPath, '--samples', '16'],
+      { timeout: 300000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+    const v = JSON.parse(out.trim().split('\n').pop()).video || {};
+    if (!(v.duration >= g.len[0] && v.duration <= g.len[1])) bad.push(`length ${v.duration} s (expected ${g.len[0]}-${g.len[1]})`);
+    if ((v.sampled || 0) < 12) bad.push(`only ${v.sampled || 0} frames decoded`);
+    if ((v.blankShare || 0) > 0.2) bad.push(`blank frames ${v.blankShare}`);
+    if ((v.staticShare || 0) > 0.4) bad.push(`static frames ${v.staticShare}`);
+  } catch (e) { bad.push(`video check failed: ${(e.message || '').slice(0, 120)}`); }
+  if (type === 'slowmo' && process.env.NEWTYPE_JUDGE !== 'off') {
+    const jd = path.join(work, 'judge');
+    try {
+      const args = [CORE('judge_slowmo.py'), videoPath, jd, '--label', path.basename(videoPath), ...(plan ? ['--plan', path.resolve(work, rep.plan_short)] : [])];
+      execFileSync(python(), args, { timeout: 40 * 60000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' }, maxBuffer: 64 * 1024 * 1024 });
+    } catch (e) { logger.warn(`judge_slowmo: ${(e.message || '').slice(0, 200)}`); }
+    const jr = readJson(path.join(jd, 'report.json'), null);
+    if (!jr) bad.push('judge_slowmo wrote no report');
+    else {
+      logger.info(`judge_slowmo: overall ${jr.overall} ${jr.pass ? 'PASS' : 'NOT PASS'} ${JSON.stringify(jr.scores || {})}`);
+      if (!jr.pass) bad.push(`judge_slowmo NOT PASS (overall ${jr.overall})`);
+    }
+  }
+  return bad;
+}
+
 async function runNewType({ type, outputDir, wantLong = false } = {}) {
   if (!CT[type]) throw new Error(`unknown new type "${type}"`);
   if (type === 'sound') musicPoolFeedback();
+  if (type === 'slowmo') musicPoolFeedback('slowmo');
   const work = path.join(outputDir, `work-${type}-${Date.now()}`);
   fs.mkdirSync(work, { recursive: true });
   const cli = CORE('vibe_edit.py');
@@ -112,6 +168,9 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   const abs = f => (f ? (path.isAbsolute(f) ? f : path.resolve(work, f)) : null);
   const videoPath = abs(rep.short);
   if (!videoPath || !fs.existsSync(videoPath)) throw new Error('the render CLI wrote no short');
+  const problems = guardRender(type, rep, videoPath, work);
+  if (problems.length) throw new Error(`${type} pre-upload guard: ${problems.join('; ')}`);
+  logger.success(`${type}: pre-upload guard ok`);
   let longPath = abs(rep.long);
   if (longPath && !fs.existsSync(longPath)) longPath = null;
   logger.success(`${type}: rendered ${path.basename(videoPath)}${longPath ? ' + long' : ''} in ${Math.round((Date.now() - t0) / 1000)} s (vibe ${rep.vibe})`);
@@ -133,10 +192,12 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   };
 }
 
-/** a small python call into core/edit/music_pool.py (never throws; the pool file is committed by the workflow) */
-function musicPy(code, what) {
+/** a small python call into core/edit/music_pool.py (sound) or core/edit/slowmo_music.py (slow-mo), as MP (never throws; the pool
+ * file is committed by the workflow) */
+function musicPy(code, what, type = 'sound') {
+  const mod = type === 'slowmo' ? 'slowmo_music' : 'music_pool';
   try {
-    execFileSync(python(), ['-c', `import sys; sys.path.insert(0, ${JSON.stringify(path.join(ROOT, 'core', 'edit'))}); import music_pool as MP; ${code}`],
+    execFileSync(python(), ['-c', `import sys; sys.path.insert(0, ${JSON.stringify(path.join(ROOT, 'core', 'edit'))}); import ${mod} as MP; ${code}`],
       { timeout: 60000, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
     return true;
   } catch (e) { logger.warn(`${what}: ${(e.message || '').slice(0, 160)}`); return false; }
@@ -146,17 +207,17 @@ function musicPy(code, what) {
  * Music-pool learning: every sound upload whose stats are >= 7 days old feeds its lscore to music_pool.record_performance once
  * (2 scores end a song's probation); then retire_underperformers(pool, channel mean) retires auto-added songs that stay below.
  */
-function musicPoolFeedback() {
+function musicPoolFeedback(type = 'sound') {
   try {
     const h = readJson(HISTORY_FILE(), { uploads: [] });
     const stats = readJson(path.join(MEM(), 'performance-stats.json'), { videos: [] });
     const byId = new Map((stats.videos || []).map(v => [v.videoId, v]));
     const scored = (h.uploads || []).map(u => ({ u, s: byId.get(u.videoId) })).filter(x => x.s && typeof x.s.lscore === 'number' && (x.s.ageDays || 0) >= 7);
-    const todo = scored.filter(x => x.u.musicPoolId && x.u.musicPerf === undefined);
+    const todo = scored.filter(x => x.u.musicPoolId && x.u.musicPerf === undefined && x.u.contentType === CT[type]);
     if (!todo.length) return;
     const mean = scored.reduce((a, x) => a + x.s.lscore, 0) / scored.length;
     const calls = todo.map(x => `MP.record_performance(${JSON.stringify(x.u.musicPoolId)}, ${Number(x.s.lscore)})`).join('; ');
-    if (musicPy(`${calls}; p = MP.load_pool(); n = MP.retire_underperformers(p, ${mean}); MP.save_pool(p); print(n)`, 'music pool feedback')) {
+    if (musicPy(`${calls}; p = MP.load_pool(); n = MP.retire_underperformers(p, ${mean}); MP.save_pool(p); print(n)`, 'music pool feedback', type)) {
       for (const x of todo) x.u.musicPerf = x.s.lscore;
       fs.writeFileSync(HISTORY_FILE(), JSON.stringify(h, null, 1));
       logger.info(`music pool: ${todo.length} upload score(s) recorded`);
@@ -187,11 +248,11 @@ function recordUpload(result, upload) {
   fs.mkdirSync(MEM(), { recursive: true });
   fs.writeFileSync(HISTORY_FILE(), JSON.stringify(h, null, 1));
   markUsed(result);
-  if (m.musicPoolId) musicPy(`MP.mark_used(${JSON.stringify(m.musicPoolId)})`, 'music pool mark_used');
+  if (m.musicPoolId) musicPy(`MP.mark_used(${JSON.stringify(m.musicPoolId)})`, 'music pool mark_used', m.contentType === CT.slowmo ? 'slowmo' : 'sound');
   appendDecision({ vid: upload.videoId, ch: 'meme', title: result.title,
     arm: { contentType: m.contentType, song: m.song, source: null, theme: m.theme, vibe: m.vibe || null, ...(m.settings || {}), ...(m.meta || {}) },
     mode: m.why });
   if (m.metaChoice) recordMetadataChoice(m.metaChoice, { videoId: upload.videoId });
 }
 
-module.exports = { runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, CT };
+module.exports = { guardRender, runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, SLOWMO_ENV, CT };

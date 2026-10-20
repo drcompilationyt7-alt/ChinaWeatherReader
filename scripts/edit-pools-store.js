@@ -141,6 +141,7 @@ function vibeFiles(preset, vibe) {
         f = h ? `sounds/${h}` : null;
       }
       if (!f || path.isAbsolute(f) || /^[A-Za-z]:/.test(f)) continue;
+      if (it.status === 'cine_reject') continue;   // slow-mo: the planner's hard gates reject it (never shown): manifest row only
       if (fs.existsSync(path.join(vd, f))) out.add(rel(f)); else if (it.status !== 'rejected') missing.push(f);
     }
   }

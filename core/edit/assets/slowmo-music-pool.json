@@ -1,0 +1,1732 @@
+{
+ "version": 1,
+ "note": "Music pool for the cinematic SLOW-MO edit (a WOMEN BEAUTY edit: romantic / dreamy / pretty songs only) (core/edit/slowmo_music.py). No lyrics, ever (fetched and aligned at render time only). Audio fetched at render time. section = original-song seconds: start (words-on-black intro), hero (the picture starts), end; played slowed by speed.",
+ "songs": [
+  {
+   "id": "yung_kai_blue",
+   "song": "blue",
+   "artist": "yung kai",
+   "video_id": "98zHKN-xSHk",
+   "url": "https://www.youtube.com/watch?v=98zHKN-xSHk",
+   "query": "yung kai blue official audio",
+   "views": 316630081,
+   "slowed_uploads": 14,
+   "source": "seed",
+   "tempo": 99.4,
+   "bar_s": 2.414,
+   "speed": 0.9,
+   "duration": 214.4,
+   "section": {
+    "start": 43.14,
+    "hero": 48.09,
+    "end": 84.09,
+    "score": 0.994,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.98,
+     "jump_db": 4.7,
+     "intro_db": -2.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      132.56,
+      137.51,
+      173.51,
+      0.974
+     ],
+     [
+      29.0,
+      33.95,
+      69.95,
+      0.911
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.793,
+    "perc_share": 0.099,
+    "onset_rate": 3.0,
+    "sustain": 0.936,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.994
+   },
+   "total": 0.905,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:00:03Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "jvke_golden_hour",
+   "song": "Golden Hour",
+   "artist": "JVKE",
+   "video_id": "xEBtv1QkIeM",
+   "url": "https://www.youtube.com/watch?v=xEBtv1QkIeM",
+   "query": "JVKE Golden Hour official audio",
+   "views": 330821967,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 123.0,
+   "bar_s": 1.951,
+   "speed": 0.85,
+   "duration": 210.1,
+   "section": {
+    "start": 117.74,
+    "hero": 122.42,
+    "end": 156.42,
+    "score": 0.897,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 1.9,
+     "intro_db": -1.5,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      106.8,
+      111.48,
+      145.48,
+      0.881
+     ],
+     [
+      37.54,
+      42.21,
+      76.21,
+      0.878
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.738,
+    "perc_share": 0.074,
+    "onset_rate": 2.4,
+    "sustain": 0.939,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.897
+   },
+   "total": 0.856,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:00:50Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "newjeans_ditto",
+   "song": "Ditto",
+   "artist": "NewJeans",
+   "video_id": "6Q2UITMeKpM",
+   "url": "https://www.youtube.com/watch?v=6Q2UITMeKpM",
+   "query": "NewJeans Ditto official audio",
+   "views": 226390405,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 68.0,
+   "bar_s": 3.529,
+   "speed": 0.95,
+   "duration": 185.6,
+   "section": {
+    "start": 52.5,
+    "hero": 57.72,
+    "end": 95.72,
+    "score": 0.942,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.95,
+     "jump_db": 3.3,
+     "intro_db": -4.5,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      25.63,
+      30.86,
+      68.86,
+      0.898
+     ],
+     [
+      136.23,
+      141.46,
+      179.46,
+      0.87
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.666,
+    "perc_share": 0.233,
+    "onset_rate": 4.99,
+    "sustain": 0.912,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.942
+   },
+   "total": 0.835,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:01:28Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "fujii_kaze_shinunoga_e_wa",
+   "song": "Shinunoga E-Wa",
+   "artist": "Fujii Kaze",
+   "video_id": "RvPOG3CbtEM",
+   "url": "https://www.youtube.com/watch?v=RvPOG3CbtEM",
+   "query": "Fujii Kaze Shinunoga E-Wa official audio",
+   "views": 156109991,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 107.7,
+   "bar_s": 2.228,
+   "speed": 0.9,
+   "duration": 188.2,
+   "section": {
+    "start": 22.73,
+    "hero": 27.68,
+    "end": 63.68,
+    "score": 0.907,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.92,
+     "jump_db": 4.2,
+     "intro_db": -8.6,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      82.15,
+      87.1,
+      123.1,
+      0.884
+     ],
+     [
+      33.43,
+      38.38,
+      74.38,
+      0.875
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.59,
+    "perc_share": 0.246,
+    "onset_rate": 3.23,
+    "sustain": 0.881,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.907
+   },
+   "total": 0.792,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:02:16Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "radwimps_sparkle",
+   "song": "Sparkle",
+   "artist": "RADWIMPS",
+   "video_id": "MgNItWdfEIU",
+   "url": "https://www.youtube.com/watch?v=MgNItWdfEIU",
+   "query": "RADWIMPS Sparkle official audio",
+   "views": 26257472,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 123.0,
+   "bar_s": 1.951,
+   "speed": 0.85,
+   "duration": 410.2,
+   "section": {
+    "start": 92.5,
+    "hero": 97.18,
+    "end": 131.18,
+    "score": 0.979,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.98,
+     "jump_db": 3.7,
+     "intro_db": -3.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      198.45,
+      203.13,
+      237.13,
+      0.96
+     ],
+     [
+      190.21,
+      194.89,
+      228.89,
+      0.942
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.71,
+    "perc_share": 0.097,
+    "onset_rate": 2.67,
+    "sustain": 0.916,
+    "popularity": 0.768,
+    "slowed": 1.0,
+    "section": 0.979
+   },
+   "total": 0.818,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:03:12Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "stephen_sanchez_until_i_found_you",
+   "song": "Until I Found You",
+   "artist": "Stephen Sanchez",
+   "video_id": "SZyOADPgi_I",
+   "url": "https://www.youtube.com/watch?v=SZyOADPgi_I",
+   "query": "Stephen Sanchez Until I Found You official audio",
+   "views": 648858863,
+   "slowed_uploads": 14,
+   "source": "seed",
+   "tempo": 103.4,
+   "bar_s": 2.321,
+   "speed": 0.9,
+   "duration": 178.1,
+   "section": {
+    "start": 24.17,
+    "hero": 29.12,
+    "end": 65.12,
+    "score": 0.923,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.88,
+     "jump_db": 4.4,
+     "intro_db": -6.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      65.13,
+      70.08,
+      106.08,
+      0.914
+     ],
+     [
+      73.44,
+      78.39,
+      114.39,
+      0.908
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.804,
+    "perc_share": 0.102,
+    "onset_rate": 2.52,
+    "sustain": 0.934,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.923
+   },
+   "total": 0.893,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:03:52Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_weeknd_die_for_you",
+   "song": "Die For You",
+   "artist": "The Weeknd",
+   "video_id": "RpyN9pFXUCg",
+   "url": "https://www.youtube.com/watch?v=RpyN9pFXUCg",
+   "query": "The Weeknd Die For You official audio",
+   "views": 255256226,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 68.0,
+   "bar_s": 3.529,
+   "speed": 0.95,
+   "duration": 260.3,
+   "section": {
+    "start": 80.83,
+    "hero": 86.05,
+    "end": 124.05,
+    "score": 0.972,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.91,
+     "jump_db": 4.1,
+     "intro_db": -2.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      144.4,
+      149.63,
+      187.63,
+      0.904
+     ],
+     [
+      152.46,
+      157.69,
+      195.69,
+      0.896
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.864,
+    "perc_share": 0.213,
+    "onset_rate": 1.82,
+    "sustain": 0.906,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.972
+   },
+   "total": 0.932,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:04:39Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_neighbourhood_sweater_weather",
+   "song": "Sweater Weather",
+   "artist": "The Neighbourhood",
+   "video_id": "08WiUcJmnZc",
+   "url": "https://www.youtube.com/watch?v=08WiUcJmnZc",
+   "query": "The Neighbourhood Sweater Weather official audio",
+   "views": 1025712531,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 123.0,
+   "bar_s": 1.951,
+   "speed": 0.85,
+   "duration": 236.6,
+   "section": {
+    "start": 30.87,
+    "hero": 35.55,
+    "end": 69.55,
+    "score": 0.97,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.9,
+     "jump_db": 4.2,
+     "intro_db": -3.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      84.58,
+      89.26,
+      123.26,
+      0.962
+     ],
+     [
+      171.22,
+      175.89,
+      209.89,
+      0.928
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.632,
+    "perc_share": 0.233,
+    "onset_rate": 2.0,
+    "sustain": 0.911,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.97
+   },
+   "total": 0.827,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:05:25Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "cigarettes_after_sex_apocalypse",
+   "song": "Apocalypse",
+   "artist": "Cigarettes After Sex",
+   "video_id": "1M_9OmOhcq4",
+   "url": "https://www.youtube.com/watch?v=1M_9OmOhcq4",
+   "query": "Cigarettes After Sex Apocalypse official audio",
+   "views": 343628036,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 283.3,
+   "section": {
+    "start": 43.18,
+    "hero": 48.13,
+    "end": 84.13,
+    "score": 0.93,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.9,
+     "jump_db": 3.2,
+     "intro_db": -1.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      215.69,
+      220.64,
+      256.64,
+      0.925
+     ],
+     [
+      127.66,
+      132.61,
+      168.61,
+      0.915
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.846,
+    "perc_share": 0.061,
+    "onset_rate": 2.47,
+    "sustain": 0.981,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.93
+   },
+   "total": 0.913,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:09:33Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "cigarettes_after_sex_sunsetz",
+   "song": "Sunsetz",
+   "artist": "Cigarettes After Sex",
+   "video_id": "yn0_sozHPMk",
+   "url": "https://www.youtube.com/watch?v=yn0_sozHPMk",
+   "query": "Cigarettes After Sex Sunsetz official audio",
+   "views": 74252510,
+   "slowed_uploads": 14,
+   "source": "seed",
+   "tempo": 76.0,
+   "bar_s": 3.158,
+   "speed": 0.95,
+   "duration": 211.2,
+   "section": {
+    "start": 9.24,
+    "hero": 14.47,
+    "end": 52.47,
+    "score": 0.904,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.87,
+     "jump_db": 4.4,
+     "intro_db": -7.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      148.89,
+      154.11,
+      192.11,
+      0.85
+     ],
+     [
+      98.34,
+      103.56,
+      141.56,
+      0.844
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.948,
+    "perc_share": 0.058,
+    "onset_rate": 2.0,
+    "sustain": 0.98,
+    "popularity": 0.948,
+    "slowed": 1.0,
+    "section": 0.904
+   },
+   "total": 0.942,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:10:19Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "one_direction_night_changes",
+   "song": "Night Changes",
+   "artist": "One Direction",
+   "video_id": "bOXA6bvxVrE",
+   "url": "https://www.youtube.com/watch?v=bOXA6bvxVrE",
+   "query": "One Direction Night Changes official audio",
+   "views": 1242700107,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 226.1,
+   "section": {
+    "start": 171.68,
+    "hero": 176.63,
+    "end": 212.63,
+    "score": 0.941,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 6.7,
+     "intro_db": -7.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      109.69,
+      114.64,
+      150.64,
+      0.905
+     ],
+     [
+      37.68,
+      42.63,
+      78.63,
+      0.846
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.626,
+    "perc_share": 0.201,
+    "onset_rate": 2.94,
+    "sustain": 0.901,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.941
+   },
+   "total": 0.817,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:13:07Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ed_sheeran_perfect",
+   "song": "Perfect",
+   "artist": "Ed Sheeran",
+   "video_id": "817P8W8-mGE",
+   "url": "https://www.youtube.com/watch?v=817P8W8-mGE",
+   "query": "Ed Sheeran Perfect official audio",
+   "views": 4245190796,
+   "slowed_uploads": 14,
+   "source": "seed",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 259.1,
+   "section": {
+    "start": 14.44,
+    "hero": 19.39,
+    "end": 55.39,
+    "score": 0.964,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.91,
+     "jump_db": 5.5,
+     "intro_db": -4.5,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      59.95,
+      64.9,
+      100.9,
+      0.933
+     ],
+     [
+      5.62,
+      10.57,
+      46.57,
+      0.927
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.811,
+    "perc_share": 0.112,
+    "onset_rate": 2.75,
+    "sustain": 0.917,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.964
+   },
+   "total": 0.906,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:13:56Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ed_sheeran_photograph",
+   "song": "Photograph",
+   "artist": "Ed Sheeran",
+   "video_id": "g00vhQMPUz8",
+   "url": "https://www.youtube.com/watch?v=g00vhQMPUz8",
+   "query": "Ed Sheeran Photograph official audio",
+   "views": 1532597903,
+   "slowed_uploads": 10,
+   "source": "seed",
+   "tempo": 107.7,
+   "bar_s": 2.228,
+   "speed": 0.9,
+   "duration": 259.1,
+   "section": {
+    "start": 143.1,
+    "hero": 148.05,
+    "end": 184.05,
+    "score": 0.983,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.97,
+     "jump_db": 3.8,
+     "intro_db": -3.0,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      89.23,
+      94.18,
+      130.18,
+      0.927
+     ],
+     [
+      189.22,
+      194.17,
+      230.17,
+      0.858
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.631,
+    "perc_share": 0.269,
+    "onset_rate": 2.61,
+    "sustain": 0.929,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.983
+   },
+   "total": 0.83,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:14:42Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "billie_eilish_birds_of_a_feather",
+   "song": "BIRDS OF A FEATHER",
+   "artist": "Billie Eilish",
+   "video_id": "ekzdQi41f6Y",
+   "url": "https://www.youtube.com/watch?v=ekzdQi41f6Y",
+   "query": "Billie Eilish BIRDS OF A FEATHER official audio",
+   "views": 981053126,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 103.4,
+   "bar_s": 2.321,
+   "speed": 0.9,
+   "duration": 211.2,
+   "section": {
+    "start": 145.63,
+    "hero": 150.58,
+    "end": 186.58,
+    "score": 0.97,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.99,
+     "jump_db": 3.8,
+     "intro_db": -5.0,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      55.91,
+      60.86,
+      96.86,
+      0.955
+     ],
+     [
+      71.88,
+      76.83,
+      112.83,
+      0.847
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.412,
+    "perc_share": 0.373,
+    "onset_rate": 4.62,
+    "sustain": 0.9,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.97
+   },
+   "total": 0.728,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:16:18Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "d4vd_here_with_me",
+   "song": "Here With Me",
+   "artist": "d4vd",
+   "video_id": "bY4kEuki5hM",
+   "url": "https://www.youtube.com/watch?v=bY4kEuki5hM",
+   "query": "d4vd Here With Me official audio",
+   "views": 344329534,
+   "slowed_uploads": 10,
+   "source": "seed",
+   "tempo": 129.2,
+   "bar_s": 1.858,
+   "speed": 0.85,
+   "duration": 241.4,
+   "section": {
+    "start": 148.65,
+    "hero": 153.32,
+    "end": 187.32,
+    "score": 0.951,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.95,
+     "jump_db": 3.3,
+     "intro_db": -2.0,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      57.74,
+      62.42,
+      96.42,
+      0.911
+     ],
+     [
+      120.02,
+      124.69,
+      158.69,
+      0.906
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.68,
+    "perc_share": 0.201,
+    "onset_rate": 1.42,
+    "sustain": 0.93,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.951
+   },
+   "total": 0.844,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:17:13Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "coldplay_yellow",
+   "song": "Yellow",
+   "artist": "Coldplay",
+   "video_id": "O70-xOKIxMs",
+   "url": "https://www.youtube.com/watch?v=O70-xOKIxMs",
+   "query": "Coldplay Yellow official audio",
+   "views": 1381218819,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 86.1,
+   "bar_s": 2.787,
+   "speed": 0.95,
+   "duration": 266.1,
+   "section": {
+    "start": 186.46,
+    "hero": 191.68,
+    "end": 229.68,
+    "score": 0.978,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.93,
+     "jump_db": 4.5,
+     "intro_db": -3.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      103.56,
+      108.79,
+      146.79,
+      0.958
+     ],
+     [
+      7.43,
+      12.65,
+      50.65,
+      0.892
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.899,
+    "perc_share": 0.145,
+    "onset_rate": 1.75,
+    "sustain": 0.957,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.978
+   },
+   "total": 0.949,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:19:58Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "new_west_those_eyes",
+   "song": "Those Eyes",
+   "artist": "New West",
+   "video_id": "t1dvrcqlQgI",
+   "url": "https://www.youtube.com/watch?v=t1dvrcqlQgI",
+   "query": "New West Those Eyes official audio",
+   "views": 171315416,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 220.1,
+   "section": {
+    "start": 102.58,
+    "hero": 107.53,
+    "end": 143.53,
+    "score": 0.982,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 3.6,
+     "intro_db": -2.3,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      93.55,
+      98.5,
+      134.5,
+      0.943
+     ],
+     [
+      81.08,
+      86.03,
+      122.03,
+      0.864
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.759,
+    "perc_share": 0.118,
+    "onset_rate": 2.36,
+    "sustain": 0.934,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.982
+   },
+   "total": 0.887,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:22:19Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "aimer_kataomoi",
+   "song": "Kataomoi",
+   "artist": "Aimer",
+   "video_id": "kxs9Su_mbpU",
+   "url": "https://www.youtube.com/watch?v=kxs9Su_mbpU",
+   "query": "Aimer Kataomoi official audio",
+   "views": 88142406,
+   "slowed_uploads": 10,
+   "source": "seed",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 221.1,
+   "section": {
+    "start": 165.93,
+    "hero": 170.88,
+    "end": 206.88,
+    "score": 0.909,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.94,
+     "jump_db": 2.5,
+     "intro_db": -3.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      73.93,
+      78.88,
+      114.88,
+      0.889
+     ],
+     [
+      105.79,
+      110.74,
+      146.74,
+      0.884
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.751,
+    "perc_share": 0.138,
+    "onset_rate": 3.24,
+    "sustain": 0.893,
+    "popularity": 0.978,
+    "slowed": 1.0,
+    "section": 0.909
+   },
+   "total": 0.861,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:23:11Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "hikaru_utada_first_love",
+   "song": "First Love",
+   "artist": "Hikaru Utada",
+   "video_id": "o1sUaVJUeB0",
+   "url": "https://www.youtube.com/watch?v=o1sUaVJUeB0",
+   "query": "Hikaru Utada First Love official audio",
+   "views": 130971356,
+   "slowed_uploads": 9,
+   "source": "seed",
+   "tempo": 89.1,
+   "bar_s": 2.694,
+   "speed": 0.95,
+   "duration": 257.6,
+   "section": {
+    "start": 149.79,
+    "hero": 155.02,
+    "end": 193.02,
+    "score": 0.951,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.99,
+     "jump_db": 3.1,
+     "intro_db": -1.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      166.46,
+      171.69,
+      209.69,
+      0.903
+     ],
+     [
+      180.46,
+      185.69,
+      223.69,
+      0.892
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.862,
+    "perc_share": 0.148,
+    "onset_rate": 2.03,
+    "sustain": 0.939,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.951
+   },
+   "total": 0.926,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:24:57Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "radwimps_nandemonaiya",
+   "song": "Nandemonaiya",
+   "artist": "RADWIMPS",
+   "video_id": "te-wLNYJ3Ww",
+   "url": "https://www.youtube.com/watch?v=te-wLNYJ3Ww",
+   "query": "RADWIMPS Nandemonaiya official audio",
+   "views": 83346208,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 99.4,
+   "bar_s": 2.414,
+   "speed": 0.9,
+   "duration": 230.8,
+   "section": {
+    "start": 188.47,
+    "hero": 193.42,
+    "end": 229.31,
+    "score": 0.974,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.98,
+     "jump_db": 3.6,
+     "intro_db": -2.7,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      72.67,
+      77.62,
+      113.62,
+      0.945
+     ],
+     [
+      15.65,
+      20.6,
+      56.6,
+      0.852
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.803,
+    "perc_share": 0.119,
+    "onset_rate": 2.95,
+    "sustain": 0.949,
+    "popularity": 0.968,
+    "slowed": 1.0,
+    "section": 0.974
+   },
+   "total": 0.899,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:26:40Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "iu_love_wins_all",
+   "song": "Love wins all",
+   "artist": "IU",
+   "video_id": "M2MXbUwq5Fs",
+   "url": "https://www.youtube.com/watch?v=M2MXbUwq5Fs",
+   "query": "IU Love wins all official audio",
+   "views": 115518854,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 76.0,
+   "bar_s": 3.158,
+   "speed": 0.95,
+   "duration": 271.1,
+   "section": {
+    "start": 204.22,
+    "hero": 209.44,
+    "end": 247.44,
+    "score": 0.991,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.1,
+     "intro_db": -4.6,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      130.36,
+      135.58,
+      173.58,
+      0.908
+     ],
+     [
+      145.8,
+      151.02,
+      189.02,
+      0.88
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.931,
+    "perc_share": 0.16,
+    "onset_rate": 1.37,
+    "sustain": 0.94,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.991
+   },
+   "total": 0.967,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:27:30Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "fifty_fifty_cupid",
+   "song": "Cupid",
+   "artist": "FIFTY FIFTY",
+   "video_id": "Qc7_zRjH808",
+   "url": "https://www.youtube.com/watch?v=Qc7_zRjH808",
+   "query": "FIFTY FIFTY Cupid official audio",
+   "views": 252430103,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 202.7,
+   "section": {
+    "start": 62.23,
+    "hero": 67.18,
+    "end": 103.18,
+    "score": 0.913,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.91,
+     "jump_db": 3.0,
+     "intro_db": -4.7,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      87.72,
+      92.67,
+      128.67,
+      0.91
+     ],
+     [
+      39.73,
+      44.68,
+      80.68,
+      0.893
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.534,
+    "perc_share": 0.331,
+    "onset_rate": 2.13,
+    "sustain": 0.886,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.913
+   },
+   "total": 0.769,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:33:36Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "dhruv_double_take",
+   "song": "Double Take",
+   "artist": "dhruv",
+   "video_id": "T0_EC9Y_KT0",
+   "url": "https://www.youtube.com/watch?v=T0_EC9Y_KT0",
+   "query": "dhruv Double Take official audio",
+   "views": 189988377,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 107.7,
+   "bar_s": 2.228,
+   "speed": 0.9,
+   "duration": 170.1,
+   "section": {
+    "start": 29.88,
+    "hero": 34.83,
+    "end": 70.83,
+    "score": 0.902,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 2.1,
+     "intro_db": -3.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      125.66,
+      130.61,
+      166.61,
+      0.86
+     ],
+     [
+      94.83,
+      99.78,
+      135.78,
+      0.855
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.576,
+    "perc_share": 0.305,
+    "onset_rate": 2.67,
+    "sustain": 0.903,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.902
+   },
+   "total": 0.785,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:34:19Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "gigi_perez_sailor_song",
+   "song": "Sailor Song",
+   "artist": "Gigi Perez",
+   "video_id": "m0NZ-aH0G1g",
+   "url": "https://www.youtube.com/watch?v=m0NZ-aH0G1g",
+   "query": "Gigi Perez Sailor Song official audio",
+   "views": 279274472,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 211.0,
+   "section": {
+    "start": 102.54,
+    "hero": 107.49,
+    "end": 143.49,
+    "score": 0.947,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.99,
+     "jump_db": 3.7,
+     "intro_db": -6.3,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      141.68,
+      146.63,
+      182.63,
+      0.889
+     ],
+     [
+      113.87,
+      118.82,
+      154.82,
+      0.862
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.739,
+    "perc_share": 0.131,
+    "onset_rate": 3.8,
+    "sustain": 0.914,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.947
+   },
+   "total": 0.869,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:35:09Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ruth_b_dandelions",
+   "song": "Dandelions",
+   "artist": "Ruth B.",
+   "video_id": "W8a4sUabCUo",
+   "url": "https://www.youtube.com/watch?v=W8a4sUabCUo",
+   "query": "Ruth B. Dandelions official audio",
+   "views": 324178344,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 235.4,
+   "section": {
+    "start": 167.76,
+    "hero": 172.71,
+    "end": 208.71,
+    "score": 0.98,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.0,
+     "intro_db": -5.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      39.28,
+      44.23,
+      80.23,
+      0.976
+     ],
+     [
+      21.33,
+      26.28,
+      62.28,
+      0.926
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.739,
+    "perc_share": 0.165,
+    "onset_rate": 1.77,
+    "sustain": 0.918,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.98
+   },
+   "total": 0.878,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:35:55Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "keane_somewhere_only_we_know",
+   "song": "Somewhere Only We Know",
+   "artist": "Keane",
+   "video_id": "-HwPKDlb3e8",
+   "url": "https://www.youtube.com/watch?v=-HwPKDlb3e8",
+   "query": "Keane Somewhere Only We Know official audio",
+   "views": 1063663492,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 86.1,
+   "bar_s": 2.787,
+   "speed": 0.95,
+   "duration": 233.6,
+   "section": {
+    "start": 140.76,
+    "hero": 145.98,
+    "end": 183.98,
+    "score": 0.952,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 3.8,
+     "intro_db": -6.6,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      61.58,
+      66.8,
+      104.8,
+      0.913
+     ],
+     [
+      157.85,
+      163.07,
+      201.07,
+      0.823
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.909,
+    "perc_share": 0.144,
+    "onset_rate": 1.34,
+    "sustain": 0.94,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.952
+   },
+   "total": 0.947,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-10-18T21:36:44Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  }
+ ],
+ "rejected": [
+  {
+   "song": "Iris",
+   "artist": "The Goo Goo Dolls",
+   "at": "2026-10-18T21:19:09Z",
+   "why": "views 468724"
+  },
+  {
+   "song": "Gao Bai Qi Qiu",
+   "artist": "Jay Chou",
+   "at": "2026-10-18T21:28:31Z",
+   "why": "views 990705"
+  },
+  {
+   "song": "Masquerade",
+   "artist": "Lo-fi",
+   "at": "2026-10-18T21:31:21Z",
+   "why": "views 519"
+  },
+  {
+   "song": "Another Love",
+   "artist": "Tom Odell",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: heartbreak (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Daylight",
+   "artist": "David Kushner",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: dark / guilt (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Heather",
+   "artist": "Conan Gray",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / jealous (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Line Without a Hook",
+   "artist": "Ricky Montgomery",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / breakup (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Glimpse of Us",
+   "artist": "Joji",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / longing for an ex (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Slow Dancing in the Dark",
+   "artist": "Joji",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / breakup (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Let Me Down Slowly",
+   "artist": "Alec Benjamin",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: breakup (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "lovely",
+   "artist": "Billie Eilish",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: dark / depression (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Romantic Homicide",
+   "artist": "d4vd",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: dark / violent (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "The Night We Met",
+   "artist": "Lord Huron",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / loss (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Arcade",
+   "artist": "Duncan Laurence",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: heartbreak (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Lovers Rock",
+   "artist": "TV Girl",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: ironic (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Lemon",
+   "artist": "Kenshi Yonezu",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: grief (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Pretender",
+   "artist": "Official HIGE DANdism",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / breakup (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Spring Day",
+   "artist": "BTS",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: grief / missing (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Mr. Loverman",
+   "artist": "Ricky Montgomery",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / breakup (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Older",
+   "artist": "Sasha Alex Sloan",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Little Dark Age",
+   "artist": "MGMT",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: dark / ironic (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Wildflower",
+   "artist": "Billie Eilish",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: sad / guilt (owner 2026-10-20: slow-mo is a women beauty edit)"
+  },
+  {
+   "song": "Ghost",
+   "artist": "Justin Bieber",
+   "at": "2026-10-20T20:00:00Z",
+   "why": "beauty-edit fit: grief (owner 2026-10-20: slow-mo is a women beauty edit)"
+  }
+ ]
+}
