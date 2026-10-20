@@ -104,6 +104,10 @@ async function main() {
   lines.push(`Subscribers ${ch.subscribers ?? '?'}, total views ${ch.totalViews ?? '?'}. Scored uploads: ${rows.length} `
     + `(${lastWeek.length} posted in the last 7 days). Score: ${useReward ? 'reward (z-score vs the last 60 days: views at 7 days, % viewed, subs per 1k views)' : 'lscore (log views/day), until every upload has a reward'}; `
     + 'older results weigh less (10% per week).', '');
+  if (channel === 'meme') {
+    // why uploads did well (artist / vibe / anime / title pattern effects) and how picks split explore / insight / spaced repeat
+    try { const I = require('./edit-insights'); lines.push(I.summaryLine(I.computeInsights()), ''); } catch {}
+  }
 
   const bySc = [...rows].sort((a, b) => b.learn - a.learn);
   const line = u => `| ${(u.title || u.song || u.format || '').replace(/\|/g, '/').slice(0, 60)} | ${u.stat.views} | ${fmt(u.learn)} | ${u.stat.v7 ?? '–'} |`;

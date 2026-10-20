@@ -1,0 +1,1064 @@
+{
+ "at": "2026-10-20T19:43:20.167Z",
+ "n": 30,
+ "model": "residual = lscore - median lscore of uploads within +-4 days; effect = sum(residual) / (n + 4)",
+ "top": [
+  {
+   "feature": "artist",
+   "value": "yoasobi",
+   "effect": 0.28,
+   "n": 6
+  },
+  {
+   "feature": "song",
+   "value": "yoru ni kakeru",
+   "effect": 0.24,
+   "n": 2
+  },
+  {
+   "feature": "genre",
+   "value": "jpop",
+   "effect": 0.22,
+   "n": 5
+  },
+  {
+   "feature": "emoji",
+   "value": "fire",
+   "effect": 0.21,
+   "n": 11
+  },
+  {
+   "feature": "vibe",
+   "value": "hype",
+   "effect": 0.19,
+   "n": 14
+  },
+  {
+   "feature": "titleArtist",
+   "value": "yes",
+   "effect": 0.19,
+   "n": 9
+  },
+  {
+   "feature": "titlePattern",
+   "value": "{song} acapella but the beat drops {e}",
+   "effect": 0.18,
+   "n": 2
+  },
+  {
+   "feature": "hook",
+   "value": "but the beat drops",
+   "effect": 0.18,
+   "n": 2
+  },
+  {
+   "feature": "song",
+   "value": "odoriko",
+   "effect": 0.17,
+   "n": 2
+  },
+  {
+   "feature": "song",
+   "value": "idol",
+   "effect": 0.17,
+   "n": 4
+  }
+ ],
+ "bottom": [
+  {
+   "feature": "emoji",
+   "value": "other",
+   "effect": -0.3,
+   "n": 3
+  },
+  {
+   "feature": "titlePattern",
+   "value": "{song} acapella {e}",
+   "effect": -0.17,
+   "n": 6
+  },
+  {
+   "feature": "genre",
+   "value": "kpop",
+   "effect": -0.06,
+   "n": 7
+  },
+  {
+   "feature": "titlePattern",
+   "value": "{song} acapella {e} #{tag}",
+   "effect": -0.05,
+   "n": 2
+  },
+  {
+   "feature": "vibe",
+   "value": "bright",
+   "effect": -0.02,
+   "n": 7
+  },
+  {
+   "feature": "vibe",
+   "value": "dark",
+   "effect": -0.02,
+   "n": 4
+  },
+  {
+   "feature": "titlePattern",
+   "value": "{song} acapella ({source} edit) {e}",
+   "effect": -0.02,
+   "n": 2
+  },
+  {
+   "feature": "genre",
+   "value": "anime",
+   "effect": -0.01,
+   "n": 17
+  }
+ ],
+ "why": [
+  "\"yoru ni kakeru acapella yoasobi edit 🔥\" (1024 views, +1.38 vs its week): artist yoasobi (+0.28), titlePattern {song} acapella {artist} edit {e} (+0.28), genre jpop (+0.22)",
+  "\"anime sound design edit goes insane on believer 🔥\" (1036 views, +1.25 vs its week): titlePattern anime sound design edit goes insane on {song} {e} (+0.25), hook goes insane on (+0.25), emoji fire (+0.21)",
+  "\"how you like that acapella but the beat drops 🗿⚡\" (1813 views, +1.01 vs its week): artist blackpink (+0.2), vibe hype (+0.19), titlePattern {song} acapella but the beat drops {e} (+0.18)"
+ ],
+ "titlePatterns": {
+  "stem-edit": [
+   {
+    "pattern": "{song} acapella {artist} edit {e}",
+    "effect": 0.28,
+    "n": 1,
+    "example": "yoru ni kakeru acapella yoasobi edit 🔥"
+   },
+   {
+    "pattern": "{song} acapella {artist} {source} edit {e} #{tag}",
+    "effect": 0.18,
+    "n": 1,
+    "example": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko"
+   },
+   {
+    "pattern": "{song} acapella but the beat drops {e}",
+    "effect": 0.18,
+    "n": 2,
+    "example": "how you like that acapella but the beat drops 🗿⚡"
+   },
+   {
+    "pattern": "{song} acapella but the drums kick in {e} #{tag}",
+    "effect": 0.13,
+    "n": 1,
+    "example": "odoriko acapella but the drums kick in 🗿🔥 #vaundy"
+   },
+   {
+    "pattern": "{song} acapella {artist} {e}",
+    "effect": 0.07,
+    "n": 1,
+    "example": "dynamite acapella bts ✨🔥"
+   },
+   {
+    "pattern": "{song} acapella {artist} {e} #{tag}",
+    "effect": 0.07,
+    "n": 3,
+    "example": "idol acapella yoasobi 🎧🔥 #oshinoko"
+   },
+   {
+    "pattern": "{song} acapella but each stem makes the edit harder {e}",
+    "effect": 0.02,
+    "n": 1,
+    "example": "clattanoia acapella but each stem makes the edit harder 🔥"
+   },
+   {
+    "pattern": "{song} acapella but the drums kick in {e}",
+    "effect": 0.02,
+    "n": 2,
+    "example": "odoriko acapella but the drums kick in 🗿🔥"
+   },
+   {
+    "pattern": "{song} acapella stem build up ({artist} edit) {e}",
+    "effect": 0.01,
+    "n": 1,
+    "example": "love dive acapella stem build up (ive edit) 🗿🔥"
+   },
+   {
+    "pattern": "{song} acapella but the stems stack up {e}",
+    "effect": 0.01,
+    "n": 1,
+    "example": "god's menu acapella but the stems stack up 🎶🎧"
+   },
+   {
+    "pattern": "{song} acapella ({source} edit) {e}",
+    "effect": -0.02,
+    "n": 2,
+    "example": "chaos ga kiwamaru acapella (blue lock edit) 🔥"
+   },
+   {
+    "pattern": "{song} acapella stem build up {artist} edit {e}",
+    "effect": -0.04,
+    "n": 1,
+    "example": "supernova acapella stem build up aespa edit 🗿🔥"
+   },
+   {
+    "pattern": "{song} acapella {source} edit {e}",
+    "effect": -0.04,
+    "n": 1,
+    "example": "hana ni natte acapella the apothecary diaries edit ✨🔥"
+   },
+   {
+    "pattern": "{song} acapella {e} #{tag}",
+    "effect": -0.05,
+    "n": 2,
+    "example": "otonoke acapella 🎧🎶 #dandadan"
+   },
+   {
+    "pattern": "{song} acapella amv build up {e} #{tag}",
+    "effect": -0.07,
+    "n": 1,
+    "example": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx"
+   },
+   {
+    "pattern": "{song} acapella stem build {artist} edit {e}",
+    "effect": -0.1,
+    "n": 1,
+    "example": "shinunoga e-wa acapella stem build fujii kaze edit ✨🔥"
+   },
+   {
+    "pattern": "{song} acapella ({source} edit) {e} #{tag}",
+    "effect": -0.14,
+    "n": 1,
+    "example": "iro kousui acapella (horimiya edit) 🔥 #horimiya"
+   },
+   {
+    "pattern": "{song} acapella {e}",
+    "effect": -0.17,
+    "n": 6,
+    "example": "kick back acapella ⚡🔥"
+   }
+  ],
+  "sound-edit": [
+   {
+    "pattern": "anime sound design edit goes insane on {song} {e}",
+    "effect": 0.25,
+    "n": 1,
+    "example": "anime sound design edit goes insane on believer 🔥"
+   }
+  ]
+ },
+ "effects": {
+  "type": {
+   "stem-edit": {
+    "n": 29,
+    "effect": 0.03,
+    "mean": 0.04
+   },
+   "sound-edit": {
+    "n": 1,
+    "effect": 0.25,
+    "mean": 1.25
+   }
+  },
+  "song": {
+   "rise": {
+    "n": 1,
+    "effect": -0.05,
+    "mean": -0.25
+   },
+   "love dive": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.07
+   },
+   "clattanoia": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "redo": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "odoriko": {
+    "n": 2,
+    "effect": 0.17,
+    "mean": 0.5
+   },
+   "unravel": {
+    "n": 1,
+    "effect": 0.06,
+    "mean": 0.3
+   },
+   "supernova": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.19
+   },
+   "otonoke": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "crossing field": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.36
+   },
+   "shinunoga e-wa": {
+    "n": 1,
+    "effect": -0.1,
+    "mean": -0.48
+   },
+   "dynamite": {
+    "n": 1,
+    "effect": 0.07,
+    "mean": 0.37
+   },
+   "kiss of death": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.33
+   },
+   "kick back": {
+    "n": 1,
+    "effect": 0.1,
+    "mean": 0.5
+   },
+   "super shy": {
+    "n": 1,
+    "effect": -0.08,
+    "mean": -0.4
+   },
+   "idol": {
+    "n": 4,
+    "effect": 0.17,
+    "mean": 0.34
+   },
+   "god's menu": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.06
+   },
+   "pokemon theme": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.37
+   },
+   "iro kousui": {
+    "n": 1,
+    "effect": -0.14,
+    "mean": -0.68
+   },
+   "chaos ga kiwamaru": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.05
+   },
+   "hana ni natte": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "magnetic": {
+    "n": 1,
+    "effect": -0.3,
+    "mean": -1.51
+   },
+   "yoru ni kakeru": {
+    "n": 2,
+    "effect": 0.24,
+    "mean": 0.73
+   },
+   "seishun complex": {
+    "n": 1,
+    "effect": -0.03,
+    "mean": -0.16
+   },
+   "how you like that": {
+    "n": 1,
+    "effect": 0.2,
+    "mean": 1.01
+   },
+   "believer": {
+    "n": 1,
+    "effect": 0.25,
+    "mean": 1.25
+   }
+  },
+  "artist": {
+   "madkid": {
+    "n": 1,
+    "effect": -0.05,
+    "mean": -0.25
+   },
+   "ive": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.07
+   },
+   "oxt": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "konomi suzuki": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "vaundy": {
+    "n": 2,
+    "effect": 0.17,
+    "mean": 0.5
+   },
+   "tk from ling tosite sigure": {
+    "n": 1,
+    "effect": 0.06,
+    "mean": 0.3
+   },
+   "aespa": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.19
+   },
+   "creepy nuts": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "lisa": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.36
+   },
+   "fujii kaze": {
+    "n": 1,
+    "effect": -0.1,
+    "mean": -0.48
+   },
+   "bts": {
+    "n": 1,
+    "effect": 0.07,
+    "mean": 0.37
+   },
+   "mika nakashima": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.33
+   },
+   "kenshi yonezu": {
+    "n": 1,
+    "effect": 0.1,
+    "mean": 0.5
+   },
+   "newjeans": {
+    "n": 1,
+    "effect": -0.08,
+    "mean": -0.4
+   },
+   "yoasobi": {
+    "n": 6,
+    "effect": 0.28,
+    "mean": 0.47
+   },
+   "stray kids": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.06
+   },
+   "jason paige": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.37
+   },
+   "yoh kamiyama": {
+    "n": 1,
+    "effect": -0.14,
+    "mean": -0.68
+   },
+   "unison square garden": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.05
+   },
+   "ryokuoushoku shakai": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "illit": {
+    "n": 1,
+    "effect": -0.3,
+    "mean": -1.51
+   },
+   "kessoku band": {
+    "n": 1,
+    "effect": -0.03,
+    "mean": -0.16
+   },
+   "blackpink": {
+    "n": 1,
+    "effect": 0.2,
+    "mean": 1.01
+   }
+  },
+  "source": {
+   "shield hero": {
+    "n": 1,
+    "effect": -0.05,
+    "mean": -0.25
+   },
+   "overlord": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "re:zero": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "tokyo ghoul": {
+    "n": 1,
+    "effect": 0.06,
+    "mean": 0.3
+   },
+   "dandadan": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "sword art online": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.36
+   },
+   "darling in the franxx": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.33
+   },
+   "chainsaw man": {
+    "n": 1,
+    "effect": 0.1,
+    "mean": 0.5
+   },
+   "oshi no ko": {
+    "n": 4,
+    "effect": 0.17,
+    "mean": 0.34
+   },
+   "pokemon": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.37
+   },
+   "horimiya": {
+    "n": 1,
+    "effect": -0.14,
+    "mean": -0.68
+   },
+   "blue lock": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.05
+   },
+   "the apothecary diaries": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "bocchi the rock": {
+    "n": 1,
+    "effect": -0.03,
+    "mean": -0.16
+   }
+  },
+  "genre": {
+   "anime": {
+    "n": 17,
+    "effect": -0.01,
+    "mean": -0.01
+   },
+   "kpop": {
+    "n": 7,
+    "effect": -0.06,
+    "mean": -0.09
+   },
+   "jpop": {
+    "n": 5,
+    "effect": 0.22,
+    "mean": 0.39
+   }
+  },
+  "vibe": {
+   "hype": {
+    "n": 14,
+    "effect": 0.19,
+    "mean": 0.24
+   },
+   "bright": {
+    "n": 7,
+    "effect": -0.02,
+    "mean": -0.03
+   },
+   "dark": {
+    "n": 4,
+    "effect": -0.02,
+    "mean": -0.04
+   },
+   "chill": {
+    "n": 4,
+    "effect": 0.01,
+    "mean": 0.03
+   },
+   "emotional": {
+    "n": 1,
+    "effect": -0.14,
+    "mean": -0.68
+   }
+  },
+  "titlePattern": {
+   "{song} acapella {e}": {
+    "n": 6,
+    "effect": -0.17,
+    "mean": -0.28
+   },
+   "{song} acapella stem build up ({artist} edit) {e}": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.07
+   },
+   "{song} acapella but each stem makes the edit harder {e}": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "{song} acapella but the drums kick in {e}": {
+    "n": 2,
+    "effect": 0.02,
+    "mean": 0.06
+   },
+   "{song} acapella but the drums kick in {e} #{tag}": {
+    "n": 1,
+    "effect": 0.13,
+    "mean": 0.66
+   },
+   "{song} acapella stem build up {artist} edit {e}": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.19
+   },
+   "{song} acapella {e} #{tag}": {
+    "n": 2,
+    "effect": -0.05,
+    "mean": -0.16
+   },
+   "{song} acapella stem build {artist} edit {e}": {
+    "n": 1,
+    "effect": -0.1,
+    "mean": -0.48
+   },
+   "{song} acapella {artist} {e}": {
+    "n": 1,
+    "effect": 0.07,
+    "mean": 0.37
+   },
+   "{song} acapella amv build up {e} #{tag}": {
+    "n": 1,
+    "effect": -0.07,
+    "mean": -0.33
+   },
+   "{song} acapella {artist} {source} edit {e} #{tag}": {
+    "n": 1,
+    "effect": 0.18,
+    "mean": 0.9
+   },
+   "{song} acapella but the stems stack up {e}": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.06
+   },
+   "{song} acapella ({source} edit) {e} #{tag}": {
+    "n": 1,
+    "effect": -0.14,
+    "mean": -0.68
+   },
+   "{song} acapella ({source} edit) {e}": {
+    "n": 2,
+    "effect": -0.02,
+    "mean": -0.06
+   },
+   "{song} acapella {source} edit {e}": {
+    "n": 1,
+    "effect": -0.04,
+    "mean": -0.22
+   },
+   "{song} acapella {artist} edit {e}": {
+    "n": 1,
+    "effect": 0.28,
+    "mean": 1.38
+   },
+   "{song} acapella but the beat drops {e}": {
+    "n": 2,
+    "effect": 0.18,
+    "mean": 0.54
+   },
+   "{song} acapella {artist} {e} #{tag}": {
+    "n": 3,
+    "effect": 0.07,
+    "mean": 0.16
+   },
+   "anime sound design edit goes insane on {song} {e}": {
+    "n": 1,
+    "effect": 0.25,
+    "mean": 1.25
+   }
+  },
+  "titleTag": {
+   "no": {
+    "n": 21,
+    "effect": 0.07,
+    "mean": 0.08
+   },
+   "yes": {
+    "n": 9,
+    "effect": 0.05,
+    "mean": 0.08
+   }
+  },
+  "titleArtist": {
+   "no": {
+    "n": 21,
+    "effect": 0,
+    "mean": -0.01
+   },
+   "yes": {
+    "n": 9,
+    "effect": 0.19,
+    "mean": 0.28
+   }
+  },
+  "emoji": {
+   "other": {
+    "n": 3,
+    "effect": -0.3,
+    "mean": -0.7
+   },
+   "moai": {
+    "n": 11,
+    "effect": 0.08,
+    "mean": 0.1
+   },
+   "fire": {
+    "n": 11,
+    "effect": 0.21,
+    "mean": 0.29
+   },
+   "headphones": {
+    "n": 5,
+    "effect": 0.02,
+    "mean": 0.03
+   }
+  },
+  "titleLen": {
+   "short": {
+    "n": 9,
+    "effect": -0.13,
+    "mean": -0.18
+   },
+   "mid": {
+    "n": 13,
+    "effect": 0.14,
+    "mean": 0.18
+   },
+   "long": {
+    "n": 8,
+    "effect": 0.14,
+    "mean": 0.21
+   }
+  },
+  "remake": {
+   "no": {
+    "n": 27,
+    "effect": 0.05,
+    "mean": 0.06
+   },
+   "yes": {
+    "n": 3,
+    "effect": 0.11,
+    "mean": 0.25
+   }
+  },
+  "weekday": {
+   "sat": {
+    "n": 5,
+    "effect": 0.27,
+    "mean": 0.48
+   },
+   "sun": {
+    "n": 5,
+    "effect": 0.15,
+    "mean": 0.27
+   },
+   "mon": {
+    "n": 4,
+    "effect": -0.09,
+    "mean": -0.17
+   },
+   "tue": {
+    "n": 4,
+    "effect": -0.09,
+    "mean": -0.18
+   },
+   "wed": {
+    "n": 4,
+    "effect": 0.03,
+    "mean": 0.05
+   },
+   "thu": {
+    "n": 4,
+    "effect": 0.12,
+    "mean": 0.24
+   },
+   "fri": {
+    "n": 4,
+    "effect": -0.14,
+    "mean": -0.28
+   }
+  },
+  "hook": {
+   "but each stem makes the edit harder": {
+    "n": 1,
+    "effect": 0.02,
+    "mean": 0.08
+   },
+   "but the drums kick in": {
+    "n": 3,
+    "effect": 0.11,
+    "mean": 0.26
+   },
+   "but the stems stack up": {
+    "n": 1,
+    "effect": 0.01,
+    "mean": 0.06
+   },
+   "but the beat drops": {
+    "n": 2,
+    "effect": 0.18,
+    "mean": 0.54
+   },
+   "goes insane on": {
+    "n": 1,
+    "effect": 0.25,
+    "mean": 1.25
+   }
+  }
+ },
+ "rows": [
+  {
+   "videoId": "V3R9YEsOkxo",
+   "song": "rise",
+   "views": 21,
+   "resid": -0.25,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "ULfXOR-LeQc",
+   "song": "love dive",
+   "views": 21,
+   "resid": 0.07,
+   "pattern": "{song} acapella stem build up ({artist} edit) {e}"
+  },
+  {
+   "videoId": "-3pKrM_MiHE",
+   "song": "clattanoia",
+   "views": 27,
+   "resid": 0.08,
+   "pattern": "{song} acapella but each stem makes the edit harder {e}"
+  },
+  {
+   "videoId": "i6wFQ4hxE48",
+   "song": "redo",
+   "views": 8,
+   "resid": -0.22,
+   "pattern": "{song} acapella but the drums kick in {e}"
+  },
+  {
+   "videoId": "kY-fbtjVQ7c",
+   "song": "odoriko",
+   "views": 74,
+   "resid": 0.66,
+   "pattern": "{song} acapella but the drums kick in {e} #{tag}"
+  },
+  {
+   "videoId": "wFuMHySFyWw",
+   "song": "unravel",
+   "views": 39,
+   "resid": 0.3,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "RaxOD5kvDwk",
+   "song": "supernova",
+   "views": 20,
+   "resid": -0.19,
+   "pattern": "{song} acapella stem build up {artist} edit {e}"
+  },
+  {
+   "videoId": "c6l6daliqog",
+   "song": "otonoke",
+   "views": 24,
+   "resid": 0.08,
+   "pattern": "{song} acapella {e} #{tag}"
+  },
+  {
+   "videoId": "TU8oZz2apfk",
+   "song": "crossing field",
+   "views": 6,
+   "resid": -0.36,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "0EL5CX1KLHc",
+   "song": "shinunoga e-wa",
+   "views": 1,
+   "resid": -0.48,
+   "pattern": "{song} acapella stem build {artist} edit {e}"
+  },
+  {
+   "videoId": "AQ7-2LyD16w",
+   "song": "dynamite",
+   "views": 35,
+   "resid": 0.37,
+   "pattern": "{song} acapella {artist} {e}"
+  },
+  {
+   "videoId": "h469omNRzVE",
+   "song": "kiss of death",
+   "views": 3,
+   "resid": -0.33,
+   "pattern": "{song} acapella amv build up {e} #{tag}"
+  },
+  {
+   "videoId": "g3-PyhfIecA",
+   "song": "kick back",
+   "views": 37,
+   "resid": 0.5,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "dXj0c9t-rqY",
+   "song": "super shy",
+   "views": 3,
+   "resid": -0.4,
+   "pattern": "{song} acapella {e} #{tag}"
+  },
+  {
+   "videoId": "sCoxfXm2XPA",
+   "song": "idol",
+   "views": 47,
+   "resid": 0.9,
+   "pattern": "{song} acapella {artist} {source} edit {e} #{tag}"
+  },
+  {
+   "videoId": "V4jth3Elrmk",
+   "song": "god's menu",
+   "views": 18,
+   "resid": 0.06,
+   "pattern": "{song} acapella but the stems stack up {e}"
+  },
+  {
+   "videoId": "zoIsrTuwqzw",
+   "song": "pokemon theme",
+   "views": 22,
+   "resid": -0.37,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "aJ9WPdgjEoU",
+   "song": "iro kousui",
+   "views": 5,
+   "resid": -0.68,
+   "pattern": "{song} acapella ({source} edit) {e} #{tag}"
+  },
+  {
+   "videoId": "450-mzMj98U",
+   "song": "chaos ga kiwamaru",
+   "views": 31,
+   "resid": 0.05,
+   "pattern": "{song} acapella ({source} edit) {e}"
+  },
+  {
+   "videoId": "I3Sn-81uwrE",
+   "song": "hana ni natte",
+   "views": 15,
+   "resid": -0.22,
+   "pattern": "{song} acapella {source} edit {e}"
+  },
+  {
+   "videoId": "20gtifoxMCw",
+   "song": "magnetic",
+   "views": 41,
+   "resid": -1.51,
+   "pattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "vRoEzBcd3rc",
+   "song": "yoru ni kakeru",
+   "views": 1024,
+   "resid": 1.38,
+   "pattern": "{song} acapella {artist} edit {e}"
+  },
+  {
+   "videoId": "2ETGsUNONIc",
+   "song": "odoriko",
+   "views": 1075,
+   "resid": 0.33,
+   "pattern": "{song} acapella but the drums kick in {e}"
+  },
+  {
+   "videoId": "3T6t4OoiFK4",
+   "song": "yoru ni kakeru",
+   "views": 1004,
+   "resid": 0.08,
+   "pattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "DbIqVhDg5ho",
+   "song": "idol",
+   "views": 1096,
+   "resid": -0.19,
+   "pattern": "{song} acapella {artist} {e} #{tag}"
+  },
+  {
+   "videoId": "CF1iIdJ02T4",
+   "song": "seishun complex",
+   "views": 1099,
+   "resid": -0.16,
+   "pattern": "{song} acapella ({source} edit) {e}"
+  },
+  {
+   "videoId": "NyccBq4DC_E",
+   "song": "idol",
+   "views": 1167,
+   "resid": 0.38,
+   "pattern": "{song} acapella {artist} {e} #{tag}"
+  },
+  {
+   "videoId": "1_n7d7E6wO8",
+   "song": "how you like that",
+   "views": 1813,
+   "resid": 1.01,
+   "pattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "QZvICmvLzfI",
+   "song": "idol",
+   "views": 1017,
+   "resid": 0.29,
+   "pattern": "{song} acapella {artist} {e} #{tag}"
+  },
+  {
+   "videoId": "2qzyPb-Mv28",
+   "song": "Believer",
+   "views": 1036,
+   "resid": 1.25,
+   "pattern": "anime sound design edit goes insane on {song} {e}"
+  }
+ ]
+}

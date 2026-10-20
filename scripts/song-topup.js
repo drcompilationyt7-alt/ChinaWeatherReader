@@ -36,9 +36,24 @@ async function ask(system, user) {
   return null;
 }
 
+/** strong features (artist / anime) of our hits whose unused songs are running out -> "similar to hit X" asks (core/reflect/edit-insights.js) */
+function similarToHits() {
+  try {
+    const I = require('../core/reflect/edit-insights');
+    const fs = require('fs');
+    const path = require('path');
+    const mem = path.resolve(__dirname, '..', process.env.MEMORY_DIR || 'memory');
+    const history = JSON.parse(fs.readFileSync(path.join(mem, 'meme-history.json'), 'utf8'));
+    const out = I.similarSeeds(I.computeInsights({ write: false }), require('../pipeline/meme-pipeline').SONGS, history);
+    for (const x of out) console.log(`  [similar] ${x.feature} ${x.value} (effect +${x.effect}, n=${x.n}, ${x.have} unused song(s) left; hit "${x.hit}")`);
+    return out;
+  } catch (e) { console.log(`  [similar] skipped: ${String(e.message || e).slice(0, 80)}`); return []; }
+}
+
 async function propose(n, have) {
   const rows = await src.gatherCandidates({ ask, search: top.ytSearch, now: () => new Date(), shows: top.knownSets() }, have,
-    { batch: 8, rounds: num('TOPUP_LLM_ROUNDS', 3), pauseMs: num('TOPUP_LLM_PAUSE_S', 90) * 1000, log: m => console.log(`  [candidates] ${m}`) });
+    { batch: 8, rounds: num('TOPUP_LLM_ROUNDS', 3), pauseMs: num('TOPUP_LLM_PAUSE_S', 90) * 1000, log: m => console.log(`  [candidates] ${m}`),
+      similar: similarToHits() });
   return rows.slice(0, num('TOPUP_MAX_CANDIDATES', 40));
 }
 

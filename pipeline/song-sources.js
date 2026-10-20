@@ -48,21 +48,33 @@ const SHAPE = 'Return JSON {"songs":[{"name":"short lowercase title","query":"Ar
  * Ask for SMALL batches (batch songs per call, one call per focus), tolerant parse, one "valid JSON only" retry per call, and
  * several rounds with a pause while a provider is overloaded. ask(system, user) -> text | object | null (may throw).
  */
-async function askBatches(ask, have, { batch = 8, rounds = 3, pauseMs = 60000, log = () => {}, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
+/** "similar to hit X" foci from core/reflect/edit-insights.js similarSeeds(): [{feature, value, hit}] -> [{text, tag}] */
+function similarFoci(similar = []) {
+  return similar.map(x => ({
+    tag: `similar to hit "${x.hit || x.value}" (${x.feature} ${x.value})`,
+    text: x.feature === 'artist'
+      ? `other songs by ${x.value} (our "${x.hit}" edit was a hit), or songs by artists with a very similar sound and fanbase`
+      : `other songs from ${x.value} (openings, endings, inserts; our "${x.hit}" edit was a hit), or anime songs with the same vibe`,
+  }));
+}
+
+async function askBatches(ask, have, { batch = 8, rounds = 3, pauseMs = 60000, log = () => {}, sleep = ms => new Promise(r => setTimeout(r, ms)), similar = [] } = {}) {
   const got = new Map();
   const done = new Set();
-  for (let round = 0; round < rounds && done.size < FOCI.length; round++) {
-    if (round > 0) { log(`LLM round ${round + 1}: ${FOCI.length - done.size} call(s) still empty, waiting ${pauseMs / 1000}s`); await sleep(pauseMs); }
-    for (let i = 0; i < FOCI.length; i++) {
+  // "similar to a hit" foci first (same niche rule, same gates), then the standing ones
+  const foci = [...similarFoci(similar), ...FOCI.map(text => ({ text, tag: null }))];
+  for (let round = 0; round < rounds && done.size < foci.length; round++) {
+    if (round > 0) { log(`LLM round ${round + 1}: ${foci.length - done.size} call(s) still empty, waiting ${pauseMs / 1000}s`); await sleep(pauseMs); }
+    for (let i = 0; i < foci.length; i++) {
       if (done.has(i)) continue;
       const known = [...have, ...got.keys()].slice(0, 120).join(', ');
-      const user = `Name ${batch} songs: ${FOCI[i]} (this month and last). Not these (already used): ${known}.\n${SHAPE}`;
+      const user = `Name ${batch} songs: ${foci[i].text} (this month and last). Not these (already used): ${known}.\n${SHAPE}`;
       let rows = [];
       for (const extra of ['', '\n\nYour last answer was not valid JSON. Return valid JSON only, no commentary, no markdown.']) {
         try { rows = parseSongs(await ask(SYSTEM, user + extra)).filter(validSong); } catch (e) { log(`LLM call failed: ${String(e.message || e).slice(0, 80)}`); rows = []; }
         if (rows.length) break;
       }
-      if (rows.length) { done.add(i); for (const r of rows) if (!got.has(norm(r.name))) got.set(norm(r.name), r); }
+      if (rows.length) { done.add(i); for (const r of rows) if (!got.has(norm(r.name))) got.set(norm(r.name), foci[i].tag ? { ...r, similarTo: foci[i].tag } : r); }
     }
   }
   return [...got.values()];
@@ -146,4 +158,4 @@ async function gatherCandidates({ ask, search, now, shows }, have, o = {}) {
   return out;
 }
 
-module.exports = { parseSongs, validSong, askBatches, SEEDS, parseUploadTitle, trendingCandidates, gatherCandidates };
+module.exports = { parseSongs, validSong, askBatches, similarFoci, SEEDS, parseUploadTitle, trendingCandidates, gatherCandidates };

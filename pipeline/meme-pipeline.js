@@ -26,6 +26,7 @@ const { Logger } = require('../core/logger');
 const { loadStats } = require('../core/performance-tracker');
 const { decay, appendDecision } = require('../core/experiment-log');
 const { optimizeMetadata, recordMetadataChoice, buildDescription } = require('../core/metadata');
+const insights = require('../core/reflect/edit-insights');
 
 const logger = new Logger('MemeAcapella');
 const ROOT = path.join(__dirname, '..');
@@ -200,13 +201,15 @@ function recordUpload(result, upload) {
     clipIds: result.meme.clipIds, clipChannels: result.meme.clipChannels, followUpOf: result.meme.followUpOf || undefined,
     clipSource: result.meme.clipSource || undefined, settings: result.meme.settings || undefined,
     onVideoTitle: result.meme.onVideoTitle || undefined, meta: result.meme.meta || undefined,
+    why: result.meme.why || undefined, whyMode: result.meme.whyMode || undefined, bpm: result.meme.bpm || undefined,
+    titlePattern: result.meme.titlePattern || undefined,
   });
   saveHistory(h);
   // the metadata arms (titleStyle, hashtagSet, emojiSet, descHook, ovStyle) go in the decision log for the learner
   appendDecision({ vid: upload.videoId, ch: 'meme', title: result.title,
     arm: { song: result.meme.song, source: result.meme.clipSource || null, theme: result.meme.theme, ...(result.meme.settings || {}),
       ...(result.meme.meta || {}) },
-    mode: result.meme.followUpOf ? 'followup' : (result.meme.why || 'pick') });
+    mode: result.meme.whyMode || (result.meme.followUpOf ? 'followup' : (result.meme.why || 'pick')) });
   if (result.meme.metaChoice) recordMetadataChoice(result.meme.metaChoice, { videoId: upload.videoId });
 }
 
@@ -276,24 +279,50 @@ async function trendingSongs(youtube) {
   }
 }
 
-function pickSong(stats, history, trends) {
-  const done = scored(stats, history);
-  // remake a hit: a song whose last upload beat the median 3x, at most 5 remakes, spaced a week apart
-  if (done.length >= 4 && Math.random() < 0.5) {
+// learn WHY uploads did well (core/reflect/edit-insights.js), then lean on it a bit, never all the time:
+//   explore (>= 30%):  pure Thompson within the rules, the insights ignored
+//   insight (the rest): sometimes a spaced repeat of a hit song, else Thompson + a bonus for songs that share a winning
+//                       artist / band / singer, vibe, anime / group or genre
+const EXPLORE_SHARE = Number(process.env.MEME_EXPLORE_SHARE || 0.33);
+const REMAKE_SHARE = Number(process.env.MEME_REMAKE_SHARE || 0.3);   // of the insight picks (spacing rules decide the rest)
+const INSIGHT_WEIGHT = Number(process.env.MEME_INSIGHT_WEIGHT || 3);
+
+/**
+ * opts: {rng, insights (computeInsights() output; loaded when omitted), exploit: false = the old policy without insights}
+ * Returns the song with why (text) and whyMode: 'explore' | 'insight-driven' | 'hit-spaced-repeat' | 'trending'.
+ */
+function pickSong(stats, history, trends, opts = {}) {
+  const rng = opts.rng || Math.random;
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rng(); while (!v) v = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const isStem = u => !u.contentType || u.contentType === 'stem-edit';   // sound / slow-mo songs are not stem songs
+  const done = scored(stats, history).filter(isStem);
+  const stems = history.uploads.filter(isStem);
+  const ins = opts.exploit === false ? null : (opts.insights !== undefined ? opts.insights : insights.loadInsights());
+  const mode = !ins || rng() < EXPLORE_SHARE ? 'explore' : 'insight';
+  const resid = new Map(((ins && ins.rows) || []).map(r => [r.videoId, r.resid]));
+  // a spaced repeat of a hit: a stem upload that beat its week (or the median 3x), >= 500 views; picked at random among the hits,
+  // the better ones more often. Spacing: not in the last 7 uploads, at most one repeat a week, at most 3 of the last 30 uploads.
+  if (mode === 'insight' && done.length >= 4 && rng() < REMAKE_SHARE) {
     const med = [...done].sort((a, b) => a.stat.lscore - b.stat.lscore)[Math.floor(done.length / 2)].stat.lscore;
-    const hit = done.filter(u => Math.expm1(u.stat.lscore) >= 3 * Math.max(0.5, Math.expm1(med)) && u.stat.views >= 500)
-      .sort((a, b) => b.stat.lscore - a.stat.lscore)[0];
-    // a remake still waits its turn: not if the song is in the last 7 uploads, and at most one remake a week
     const last7 = history.uploads.slice(-7);
-    if (hit && history.uploads.filter(u => u.song === hit.song).length < 6
-      && !last7.some(u => u.song === hit.song) && !last7.some(u => u.followUpOf)) {
-      const s = [...SONGS, ...trends].find(x => x.name === hit.song) || { name: hit.song, query: `${hit.song} song`, theme: hit.theme };
-      return { ...s, why: `remake of hit "${hit.title}" (${hit.stat.views} views)`, followUpOf: hit.videoId };
+    const last30 = history.uploads.slice(-30);
+    const hits = done.filter(u => u.stat.views >= 500 && ((resid.get(u.videoId) || 0) >= 0.3 || Math.expm1(u.stat.lscore) >= 3 * Math.max(0.5, Math.expm1(med))))
+      .filter(u => SONGS.some(x => x.name === u.song) && !last7.some(x => x.song === u.song) && last30.filter(x => x.song === u.song).length < 3);
+    const bySong = new Map();
+    for (const u of hits) if (!bySong.has(u.song) || (resid.get(u.videoId) || 0) > (resid.get(bySong.get(u.song).videoId) || 0)) bySong.set(u.song, u);
+    const pool = [...bySong.values()];
+    if (pool.length && !last7.some(u => u.followUpOf)) {
+      const w = pool.map(u => Math.exp(Math.max(-1, Math.min(2, resid.get(u.videoId) || 0))));
+      let x = rng() * w.reduce((a, b) => a + b, 0);
+      let hit = pool[pool.length - 1];
+      for (let i = 0; i < pool.length; i++) { x -= w[i]; if (x <= 0) { hit = pool[i]; break; } }
+      const s = SONGS.find(x => x.name === hit.song);
+      return { ...s, why: `spaced repeat of hit "${hit.title}" (${hit.stat.views} views)`, whyMode: 'hit-spaced-repeat', followUpOf: hit.videoId };
     }
   }
-  const recent = new Set(history.uploads.slice(-4).map(u => u.song));
+  const recent = new Set(history.uploads.slice(-7).map(u => u.song));
   const bySong = new Map(SONGS.map(x => [x.name, x.source]));
-  const recentSources = new Set(history.uploads.slice(-7).map(u => u.clipSource || bySong.get(u.song)).filter(Boolean));
+  const recentSources = new Set(stems.slice(-7).map(u => u.clipSource || bySong.get(u.song)).filter(Boolean));
   const channelPrior = done.length ? done.reduce((a, u) => a + u.learn, 0) / done.length : 0;
   const wmean = obs => { const n = obs.reduce((a, u) => a + u.w, 0); return n ? obs.reduce((a, u) => a + u.w * u.learn, 0) / n : null; };
   let best = null;
@@ -309,10 +338,15 @@ function pickSong(stats, history, trends) {
     // probation (auto-added songs): a small handicap until two scored uploads, so a new song is tried but does not crowd out proven ones
     const mean = (mine.reduce((a, u) => a + u.w * u.learn, 0) + prior) / (n + 1) + (!mine.length && s.trendCount ? 0.4 : 0)
       - (s.probation && mine.length < 2 ? 0.15 : 0);
-    const draw = mean + gaussian() * 0.7 / Math.sqrt(n + 1);
-    if (!best || draw > best.draw) best = { ...s, draw };
+    const bonus = mode === 'insight' ? INSIGHT_WEIGHT * insights.songBonus(ins, s) : 0;
+    const draw = mean + gauss() * 0.7 / Math.sqrt(n + 1) + bonus;
+    if (!best || draw > best.draw) best = { ...s, draw, bonus };
   }
-  return { ...best, why: best.trendCount ? `trending (${best.trendCount} recent acapella shorts)` : 'thompson' };
+  const whyMode = best.trendCount ? 'trending' : mode === 'explore' ? 'explore' : 'insight-driven';
+  const info = insights.songInfo(best);
+  return { ...best, artist: best.artist || (info.artist || undefined), whyMode,
+    why: best.trendCount ? `trending (${best.trendCount} recent acapella shorts)`
+      : mode === 'explore' ? 'thompson (explore)' : `thompson + insights (bonus ${best.bonus >= 0 ? '+' : ''}${Math.round(best.bonus * 100) / 100})` };
 }
 
 function run(cmd, args, timeoutMin) {
@@ -407,7 +441,13 @@ async function runMemePipeline(opts = {}) {
   if (trends.length) logger.info(`Trending acapellas: ${trends.map(t => `${t.name} (${t.trendCount})`).join(', ')}`);
   const forced = process.env.MEME_SONG && (SONGS.find(x => x.name === process.env.MEME_SONG.toLowerCase())
     || { name: process.env.MEME_SONG, query: `${process.env.MEME_SONG} song`, theme: 'mixed' });
-  const song = forced ? { ...forced, why: 'forced' } : pickSong(stats, history, trends);
+  // why did past uploads do well (memory/edit-insights.json): drives the song bonus and the title mimicry
+  let ins = null;
+  try {
+    ins = insights.computeInsights({ stats, history });
+    logger.info(insights.summaryLine(ins));
+  } catch (e) { logger.warn(`Insights failed (pure Thompson today): ${(e.message || '').slice(0, 120)}`); }
+  const song = forced ? { ...forced, why: 'forced', whyMode: 'forced' } : pickSong(stats, history, trends, { insights: ins });
   logger.info(`Song: ${song.name} (${song.why})`);
 
   const settings = pickSettings();
@@ -476,7 +516,8 @@ async function runMemePipeline(opts = {}) {
   const hitUpload = song.followUpOf ? history.uploads.find(u => u.videoId === song.followUpOf) : null;
   const meta = await optimizeMetadata({
     channel: 'meme', contentType: 'stem-edit',
-    facts: { song: song.name, source: clips.source ? song.source : null, kind: song.kind, theme: song.theme, query: song.query,
+    facts: { song: song.name, artist: song.artist || insights.songInfo(song).artist || null, source: clips.source ? song.source : null,
+      kind: song.kind, theme: song.theme, query: song.query,
       aliases: song.aliases, extraTags: tagsByTheme[theme] || [], recentTitles: history.uploads.slice(-30).map(u => u.title) },
     style: (hitUpload && hitUpload.meta) || {},
   });
@@ -512,7 +553,8 @@ async function runMemePipeline(opts = {}) {
     category: `meme-${theme}`,
     editType: 'meme',
     meme: { song: song.name, theme, emoji, clipIds: res.clipsUsed, clipChannels: res.channelsUsed, followUpOf: song.followUpOf || null,
-      source: src.source, clipSource: clips.source ? song.source : null, settings, why: song.why,
+      source: src.source, clipSource: clips.source ? song.source : null, settings, why: song.why, whyMode: song.whyMode || null,
+      bpm: acap.bpm || null, titlePattern: meta.arms.titlePattern || null,
       onVideoTitle: caption, meta: meta.arms, metaChoice: meta.choice },
     workDir: work,
   };

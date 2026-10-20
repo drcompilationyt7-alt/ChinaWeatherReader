@@ -28,6 +28,7 @@ const catalog = require('./catalog');
 const rules = require('./rules');
 const llm = require('./llm');
 const { suggestMany, bestSuggestTitle } = require('./suggest');
+const editInsights = require('../reflect/edit-insights');
 
 const { DIMS, armsFor, observations, choose, appendChoice } = learner;
 const { poolKey, specFor, varsFor } = catalog;
@@ -59,6 +60,8 @@ const EXPERT_SYSTEM = [
 // ─── helpers ─────────────────────────────────────────────────────
 
 const pickOne = (list, rng) => list[Math.floor(rng() * list.length)];
+const MIMIC_EXPLORE = Math.max(0.3, Number(process.env.META_MIMIC_EXPLORE || 0.3));   // >= 30% of titles try new patterns
+const normTitle = t => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
 const uniq = xs => [...new Set(xs)];
 const tagStr = tags => tags.map(t => `#${t}`).join(' ');
 const maxTitle = spec => spec.maxTitle || 70;
@@ -397,7 +400,49 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
   let templateId = null;
   let candidates = [];
   const ts = chosen.titleStyle;
-  if (ts && ts.llm && gen && gen.titles.length) {
+
+  // mimic the winning title structure (core/reflect/edit-insights.js: format, emoji placement, hook phrase, hashtag) for most
+  // edit-channel titles; MIMIC_EXPLORE (30%) of them explore through the learned arms instead. Never an exact earlier title.
+  let titleMode = null;
+  let mimicked = null;
+  if (pool.startsWith('meme/') && process.env.META_MIMIC !== 'off') {
+    let ins = f.insights;
+    if (ins === undefined) { try { ins = editInsights.computeInsights({ write: false }); } catch { ins = null; } }   // fresh from the history + stats
+    const tpls = editInsights.mimicTemplates(ins, pool);
+    if (tpls.length) {
+      titleMode = 'explore';
+      if (rng() >= MIMIC_EXPLORE) {
+        const seen = new Set([...(f.recentTitles || []), ...(f.allTitles || []), ...obs.map(o => o.title)].filter(Boolean).map(normTitle));
+        // weighted order without replacement: better and better-proven patterns first, the rest still possible
+        const left = tpls.map(p => ({ p, w: Math.exp(3 * p.effect) * Math.sqrt(p.n) }));
+        const variants = uniq([em.list.join(','), ...catalog.EDIT_EMOJI.flatMap(a => a.pool || [])]).filter(Boolean);
+        while (left.length && !title) {
+          let x = rng() * left.reduce((a, b) => a + b.w, 0);
+          let i = left.findIndex(o => (x -= o.w) <= 0);
+          if (i < 0) i = left.length - 1;
+          const { p } = left.splice(i, 1)[0];
+          for (const v of variants) {
+            const text = fill(p.template, { ...ctx.vars, e: v.split(',').join('') });
+            if (!text || !validateTitle(text, ctx.rules).ok) break;
+            if (seen.has(normTitle(text))) continue;
+            title = text; mimicked = p;
+            em.list = v.split(',');
+            break;
+          }
+        }
+        if (title) {
+          titleMode = 'mimic';
+          titleSource = 'mimic';
+          used.titleStyle = 'mimic';
+          templateId = `mimic:${mimicked.pattern}`;
+          // the hashtag now lives in the title (or nowhere): keep the description's set without duplicates
+          const inTitle = (title.match(/#([\p{L}\p{N}_]+)/gu) || []).map(t => t.slice(1).toLowerCase());
+          tags = { title: inTitle, desc: uniq([...tags.title, ...tags.desc]).filter(t => !inTitle.includes(t)).slice(0, 3 - inTitle.length) };
+        }
+      }
+    }
+  }
+  if (!title && ts && ts.llm && gen && gen.titles.length) {
     for (const withTags of [true, false]) {
       if (!withTags && !tags.title.length) break;
       candidates = gen.titles.map(c => {
@@ -493,6 +538,11 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
   comment = unsad(comment);
 
   const armsUsed = { contentType: pool.split('/')[1], ...used };
+  if (pool.startsWith('meme/')) {
+    // the title's structure and how it was chosen, so the insights can credit patterns (closes the loop)
+    armsUsed.titlePattern = editInsights.titlePattern(title, f);
+    if (titleMode) armsUsed.titleMode = titleMode;
+  }
   const choice = { pool, arms: armsUsed, modes, title, onVideoTitle, titleSource, templateId, facts: compactFacts(f) };
   return {
     title, onVideoTitle,

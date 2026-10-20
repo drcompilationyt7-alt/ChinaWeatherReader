@@ -342,7 +342,7 @@ async function evaluate(candidates, deps, ctx) {
     const off = row.gates.popular.official;
     approved.push({ name: String(c.name).toLowerCase(), query: c.query, artist: c.artist || undefined, theme: c.theme, source: c.source,
       kind: c.kind === 'drama' ? 'group' : c.kind, aliases: (c.aliases || []).map(a => String(a).toLowerCase()).slice(0, 10), officialId: off.id,
-      probation: true, approvedAt: deps.now().toISOString().slice(0, 10) });
+      probation: true, approvedAt: deps.now().toISOString().slice(0, 10), similarTo: c.similarTo || undefined });
   });
   return { approved, report };
 }
