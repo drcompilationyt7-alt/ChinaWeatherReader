@@ -719,7 +719,7 @@ def cmd_import(a):
             _gh(['release', 'delete-asset', RELEASE, os.path.basename(base) + '.tar', '-y'], check=False)
     VP.write_index()
     print(json.dumps({'ok': True, 'imported': added, 'rejected': rejected,
-                      'clean_now': {v: len(VP.fresh_clips('slowmo', v)) for v in VIBES}}))
+                      'clean_now': {v: len(VP.fresh_clips('slowmo', v, rotation=False)) for v in VIBES}}))
 
 
 def main():

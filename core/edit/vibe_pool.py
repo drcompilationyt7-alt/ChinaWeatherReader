@@ -23,6 +23,7 @@ import glob
 import hashlib
 import json
 import os
+import random
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import clip_rotation as CR  # noqa: E402
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 VIBES_FILE = os.path.join(HERE, 'vibes.json')
 VERSION = 1
@@ -478,7 +481,7 @@ def register_songs(presets, root=None):
 
 # ------------------------------------------------------------------ selection (vibe_edit.py) and the ledger
 
-def fresh_clips(preset, vibe, root=None):
+def fresh_clips(preset, vibe, root=None, rotation=True):
     root = root or pool_root()
     man = load_manifest(preset, vibe, root=root)
     led = load_ledger()
@@ -487,11 +490,13 @@ def fresh_clips(preset, vibe, root=None):
     reviewed_only = os.environ.get('EDIT_POOL_REVIEWED_ONLY', '1') != '0'
     bl = load_blocklist()
     reuse = preset in REUSE_PRESETS
-    recent = sound_recent_ids(preset, vibe, led) if reuse else set()
+    rot = reuse and CR.enabled() and rotation
+    recent = sound_recent_ids(preset, vibe, led) if reuse and not rot else set()
     for it in man['items']:
         if reuse:
             # owner 2026-10-13 (sound): clips are reused across videos, never retired; only the last
-            # SOUND_COOLDOWN_VIDEOS videos' clips are skipped (never twice in one video: the planner's moment keys)
+            # SOUND_COOLDOWN_VIDEOS videos' clips are skipped (never twice in one video: the planner's moment keys).
+            # 2026-10-20: core/edit/clip_rotation.py replaces that cooldown (LRU + reuse cap + per-clip cap, below)
             if it.get('status') not in ('fresh', 'used') or it['id'] in recent:
                 continue
         elif it.get('status') != 'fresh' or key(preset, vibe, 'clip', it['id']) in led['items']:
@@ -511,6 +516,44 @@ def fresh_clips(preset, vibe, root=None):
         s['path'] = p
         s['pool_id'] = it['id']
         out.append(s)
+    if rot:
+        out = rotate(preset, vibe, out, led)
+    return out
+
+
+LAST_ROTATION = {}
+
+
+def _sound_pins():
+    # sound with SOUND_ALLOW_ONLY=1 shows only clips with a by-eye approved hit: only those count for the rotation
+    if preset_allow_only():
+        try:
+            return set(read_json(os.path.join(HERE, 'assets', 'sound-hit-allowlist.json'), {}).get('clips') or {})
+        except Exception:  # noqa: BLE001
+            return None
+    return None
+
+
+def preset_allow_only():
+    return os.environ.get('SOUND_ALLOW_ONLY', '0') == '1'
+
+
+def rotate(preset, vibe, clips, led=None):
+    """owner 2026-10-20 (all edit types): variety, reuse only here and there -> core/edit/clip_rotation.py. The level
+    (CLIP_ROTATION_LEVEL, raised by vibe_edit.py on a pool_low retry) hands the planner more candidates."""
+    led = led or load_ledger()
+    hist = CR.history(led, preset)
+    pins = _sound_pins() if preset == 'sound' else None
+    counts = (lambda s: s['pool_id'] in pins) if pins is not None else (lambda s: True)
+    seed = os.environ.get('CLIP_ROTATION_SEED')
+    rng = random.Random(int(seed)) if seed else random.Random()
+    try:
+        level = int(os.environ.get('CLIP_ROTATION_LEVEL') or 0)
+    except ValueError:
+        level = 0
+    out, info = CR.choose(clips, hist, CR.config(preset), rng, level, key=lambda s: s['pool_id'], counts=counts)
+    LAST_ROTATION[f'{preset}/{vibe}'] = info
+    log(f'clip rotation {preset}/{vibe}: {json.dumps(info)}')
     return out
 
 
@@ -565,6 +608,9 @@ def mark_used(preset, vibe, clip_ids, clips_by_id=None, sound_id=None, video='',
     if preset in REUSE_PRESETS:
         # no retirement: a history entry per video (the cooldown reads the last N); status stays 'fresh'
         hist = led.setdefault('recent', {}).setdefault(f'{preset}/{vibe}', [])
+        if hist and sorted(hist[-1].get('clips') or []) == sorted(clip_ids) and hist[-1].get('role') == role:
+            log('mark_used: this video is already recorded (render + upload both mark it)')
+            return
         hist.append({'at': t, 'video': os.path.basename(video), 'role': role, 'clips': list(clip_ids)})
         del hist[:-50]
         man = load_manifest(preset, vibe, root=root)
@@ -598,7 +644,7 @@ def status(root=None):
     for p, pd in D['presets'].items():
         for vn in pd['vibes']:
             man = load_manifest(p, vn, root=root)
-            fr = fresh_clips(p, vn, root)
+            fr = fresh_clips(p, vn, root, rotation=False)     # readiness = every eligible clip (the rotation picks per video)
             ev = sum(max(1, len(it.get('sfx') or [])) for it in fr) if p == 'sound' else None
             songs = song_ok(p, vn, root)
             need = pd.get('min_fresh_clips', 70)

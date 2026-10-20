@@ -44,7 +44,7 @@ def main():
         for vn in D[p]['vibes']:
             if a.vibe and vn != a.vibe:
                 continue
-            sh = V.fresh_clips(p, vn)
+            sh = V.fresh_clips(p, vn, rotation=False)
             if a.unreviewed:
                 sh = [x for x in sh if not x.get('reviewed')]
             for si in range(0, len(sh), 24):

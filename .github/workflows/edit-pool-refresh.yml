@@ -1,22 +1,27 @@
-name: Edit pool refresh (monthly, sound pool, grow-only)
+name: Sound pool growth (nightly until the target, staged, grow-only)
 
-# Monthly GROW-ONLY refresh of the SOUND pool (core/pools/sound_refresh.py; owner 2026-10-17). The daily sound edit
-# (sound_11b) uses only pinned, approved hits (core/edit/assets/sound-hit-allowlist.json), so the refresh adds new pinned hits:
+# GROW-ONLY growth of the SOUND pool (core/pools/sound_refresh.py; owner 2026-10-17, nightly + staged since 2026-10-20: "growing
+# pool, we can reuse the clips but just variety"). The daily sound edit (sound_11b) uses only pinned, approved hits
+# (core/edit/assets/sound-hit-allowlist.json), so growth = new pinned hits:
 #   mine   (4 shards) source discovery with the spare-account cookies (secret YOUTUBE_COOKIES_EDIT, --js-runtimes node, paced,
 #          every searched query / seen video remembered in memory/edit-pool-fetch.json) -> hit_scan (dense) -> the
 #          VISIBLE-SOURCE gate (core/edit/sound_visible.py) -> <= 3 s minis -> the VISION gate (core/pools/hit_vision.py: two
 #          Gemini models must name one obvious action, strict) -> hit_import safety (NudeNet / SigLIP / burned-in text)
-#   swap   pull the live pool -> merge (dedupe vs pool / ledger / blocklists / picture signature; GROW-ONLY: nothing is retired)
-#          -> visible-source stamp -> AI sharpening (Kaggle GPU Mon-Thu when KAGGLE_API_TOKEN + KAGGLE_USERNAME exist, else CPU
-#          within a budget) -> QUALITY BASELINE (core/edit/assets/sound-pins-baseline.json = the sound_11b pins) -> contact sheet of
-#          the new hits for the owner (artifact) -> push to the `edit-pools` release + commit the pins (real runs only)
-# Schedule: GitHub cron ORs day-of-month and day-of-week, so it fires every Tuesday 05:00 UTC and `plan` exits unless the day
-# is <= 7 (= the first Tuesday). Real (scheduled / non-dry) runs need the repository variable EDIT_POOL_REFRESH=on.
-# A manual run with dry_run=true (default) mines a small batch through every gate and promotes / pushes / commits NOTHING.
+#   swap   pull the live pool (a CI copy) -> merge (dedupe vs pool / ledger / blocklists / picture signature) -> visible-source
+#          stamp -> AI sharpening -> QUALITY BASELINE check -> contact sheet -> STAGE: the new clips + their rows / pins as
+#          sound-cand-<date>-n<N>.tar on the release `edit-pools-staging`. NOTHING reaches the live pool here; only the fetch
+#          state is committed.
+#   import (workflow_dispatch with import_tars) after the by-eye review of the staged contact sheets (Claude at session start:
+#          `python core/pools/sound_refresh.py pull-staged`): pull the FULL live pool -> apply-staged minus `reject` ->
+#          push the pool (edit-pools) + commit the pins -> delete the imported tars from staging.
+# Schedule: nightly 05:45 UTC (after the slow-mo miner, which uses the same spare account) while the live pins are under
+# SOUND_POOL_TARGET (repository variable, default 230 = ~25 % reuse over 5 videos in the 30-video simulation) and fewer than 4
+# staged tars wait for review; at / above the target only the first Tuesday of the month mines. Off: EDIT_POOL_REFRESH=off.
+# A manual run with dry_run=true (default) mines a small batch through every gate and stages / commits NOTHING.
 
 on:
   schedule:
-    - cron: '0 5 * * 2'
+    - cron: '45 5 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -31,6 +36,14 @@ on:
         description: 'Also score the vision gate on the labelled by-eye set (release edit-pools-calib)'
         required: false
         default: 'false'
+      import_tars:
+        description: 'IMPORT mode: reviewed staged tars (sound-cand-....tar, space separated) to add to the live pool; no mining'
+        required: false
+        default: ''
+      reject:
+        description: 'IMPORT mode: clip ids rejected in the review (comma separated)'
+        required: false
+        default: ''
 
 concurrency:
   group: edit-pool-refresh
@@ -66,18 +79,28 @@ jobs:
       go: ${{ steps.gate.outputs.go }}
       dry: ${{ steps.gate.outputs.dry }}
     steps:
-      - name: Gate (first Tuesday, repository variable, dry run)
+      - uses: actions/checkout@v4
+      - name: Gate (pins vs target, review backlog, first Tuesday once at the target, off switch, import mode, dry run)
         id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          TARGET: ${{ vars.SOUND_POOL_TARGET || '230' }}
         run: |
           DRY="${{ github.event.inputs.dry_run || 'false' }}"
           GO=true
+          if [ -n "${{ github.event.inputs.import_tars }}" ]; then echo "Import mode: no mining."; GO=false; fi
+          PINS=$(python3 -c "import json; print(len(json.load(open('core/edit/assets/sound-hit-allowlist.json')).get('clips') or {}))")
+          STAGED=$(gh release view edit-pools-staging --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null | grep -c '^sound-cand-' || true)
+          echo "live pins $PINS (target $TARGET), staged tars waiting for review: $STAGED"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "$(date -u +%d)" -gt 7 ]; then echo "Not the first Tuesday of the month: nothing to do."; GO=false; fi
             DRY=false
+            if [ "$PINS" -ge "$TARGET" ] && { [ "$(date -u +%d)" -gt 7 ] || [ "$(date -u +%u)" != "2" ]; }; then
+              echo "At the target: only the first Tuesday of the month mines."; GO=false
+            fi
+            if [ "$STAGED" -ge 4 ]; then echo "::notice::$STAGED staged sound tars wait for review: no mining tonight."; GO=false; fi
           fi
-          if [ "$DRY" != "true" ] && [ "${{ vars.EDIT_POOL_REFRESH }}" != "on" ]; then
-            echo "::notice::Edit pool refresh is DISABLED (repository variable EDIT_POOL_REFRESH is not 'on'); only dry runs are allowed."
-            GO=false
+          if [ "${{ vars.EDIT_POOL_REFRESH }}" = "off" ]; then
+            echo "::notice::Sound pool growth is OFF (repository variable EDIT_POOL_REFRESH=off)."; GO=false
           fi
           echo "go=$GO" >> $GITHUB_OUTPUT
           echo "dry=$DRY" >> $GITHUB_OUTPUT
@@ -178,7 +201,7 @@ jobs:
 
       - name: Mine shard ${{ matrix.shard }} of 4 (fetch -> hit_scan -> visible-source gate -> vision gate -> safety)
         env:
-          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || github.event.inputs.budget_min || '240' }}
+          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || github.event.inputs.budget_min || '150' }}
           NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '6' }}
           NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '12' }}
         run: |
@@ -283,18 +306,56 @@ jobs:
             report/*.jpg
           retention-days: 30
 
-      - name: Push the grown pool + commit the new pins (real runs only)
-        if: steps.swap.outcome == 'success' && env.DRY_RUN != 'true' && steps.swap.outputs.kept != '0'
+      - name: Stage the new clips for review (edit-pools-staging; nothing reaches the live pool) + save the fetch state
+        if: steps.swap.outcome == 'success' && env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
         run: |
-          node scripts/edit-pools-store.js push --preset sound
+          if [ "${{ steps.swap.outputs.kept }}" != "0" ]; then
+            python core/pools/sound_refresh.py stage --pool "$EDIT_POOL_DIR" --new report/new.json --out stage --sheets 'report/new-hits*.jpg' | tail -c 2000
+            gh release view edit-pools-staging --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+              gh release create edit-pools-staging --repo "$GITHUB_REPOSITORY" --title "edit pools staging" --notes "candidates for review" --prerelease
+            for t in stage/sound-cand-*.tar; do [ -e "$t" ] && gh release upload edit-pools-staging "$t" --clobber --repo "$GITHUB_REPOSITORY"; done
+            echo "staged: $(ls stage/*.tar 2>/dev/null)" >> "$GITHUB_STEP_SUMMARY"
+          fi
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add core/edit/assets/sound-hit-allowlist.json memory/edit-pool-fetch.json
-          git commit -m "Sound pool refresh $(date +%F): ${{ steps.swap.outputs.kept }} new pinned hits" || exit 0
+          git checkout -- core/edit/assets/sound-hit-allowlist.json 2>/dev/null || true   # pins land only with the reviewed import
+          git add memory/edit-pool-fetch.json && git commit -m "Sound pool growth $(date +%F): fetch state (${{ steps.swap.outputs.kept }} staged)" || exit 0
           for i in 1 2 3; do git -c rebase.autoStash=true pull --rebase origin main && git push && break; sleep 5; done
 
-      - name: Save the fetch state (real runs with no new hits)
-        if: steps.swap.outcome == 'success' && env.DRY_RUN != 'true' && steps.swap.outputs.kept == '0'
+  import:
+    needs: plan
+    if: github.event.inputs.import_tars != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pull the FULL live sound pool
+        run: node scripts/edit-pools-store.js pull --preset sound
+      - name: Apply the reviewed staged tars (minus the rejects), push the pool, commit the pins, delete the tars
         run: |
+          set -e
+          mkdir -p imp
+          for t in ${{ github.event.inputs.import_tars }}; do
+            gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern "$t" --dir imp
+          done
+          python core/pools/sound_refresh.py apply-staged --pool "$EDIT_POOL_DIR" --tars imp/*.tar --reject "${{ github.event.inputs.reject }}" | tee imp/apply.json
+          node scripts/edit-pools-store.js push --preset sound
           git config user.name "Bot" && git config user.email "bot@bot.com"
-          git add memory/edit-pool-fetch.json && git commit -m "Sound pool refresh $(date +%F): fetch state" || exit 0
+          git add core/edit/assets/sound-hit-allowlist.json
+          git commit -m "Sound pool growth: import of reviewed staged clips (${{ github.event.inputs.import_tars }})" || true
           for i in 1 2 3; do git -c rebase.autoStash=true pull --rebase origin main && git push && break; sleep 5; done
+          for t in ${{ github.event.inputs.import_tars }}; do gh release delete-asset edit-pools-staging "$t" --repo "$GITHUB_REPOSITORY" -y || true; done
+          { echo "### Sound pool import"; echo '```'; tail -c 2000 imp/apply.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

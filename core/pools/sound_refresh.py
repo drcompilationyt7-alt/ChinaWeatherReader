@@ -1,5 +1,7 @@
 """
-MONTHLY GROW-ONLY refresh of the SOUND pool on GitHub (owner 2026-10-17; .github/workflows/edit-pool-refresh.yml).
+GROW-ONLY refresh of the SOUND pool on GitHub (owner 2026-10-17; .github/workflows/edit-pool-refresh.yml). 2026-10-20: NIGHTLY
+until the pinned pool reaches its target (SOUND_POOL_TARGET), STAGED (stage -> edit-pools-staging; reviewed at session start;
+import = apply-staged on CI), then monthly.
 
 The daily sound edit (sound_11b) only uses EYE-APPROVED pinned hits (core/edit/assets/sound-hit-allowlist.json, SOUND_ALLOW_ONLY=1),
 so a refresh is worth something only when it adds new pinned hits. This is the local pool-growth loop of 2026-10-13..17 with the
@@ -26,6 +28,9 @@ by-eye step replaced by a vision model and stricter automatic bars:
     python core/pools/sound_refresh.py merge --pool P --from SHARD_DIR ... --new NEW.json
     python core/pools/sound_refresh.py sharpen|check|sheet --pool P --new NEW.json [--budget-min M] [--out F]
     python core/pools/sound_refresh.py baseline --pool P [--out F]
+    python core/pools/sound_refresh.py stage --pool P --new NEW.json --out DIR [--sheets 'report/new-hits*.jpg']
+    python core/pools/sound_refresh.py apply-staged --pool P --tars T.tar ... [--reject id,id]
+    python core/pools/sound_refresh.py pull-staged [--out DIR]
 """
 import argparse
 import datetime as _dt
@@ -61,6 +66,9 @@ SHOWS = ['Megalobox', 'Kengan Ashura', 'Baki', 'Wind Breaker', 'Blue Eye Samurai
          'Great Pretender', 'Banana Fish', 'Bungo Stray Dogs', 'Undead Unluck', 'Tower of God', 'The God of High School', 'Baki Hanma',
          'Record of Ragnarok', 'Kakegurui', 'Detective Conan', 'Lupin III', 'Golgo 13', 'Darker than Black', 'Noir', 'Canaan']
 SUFFIXES = ['fight scene', 'best fight scenes', 'gunfight scene', 'sword fight scene', 'fight scene 4K', 'all fights']
+# 2026-10-20 nightly growth: more suffixes once the first ones are used up; then the old queries again (new uploads; every
+# seen video is remembered, so a re-search only fetches new ones)
+SUFFIXES_MORE = ['final fight scene', 'punch scene', 'sword clash scene', 'action scene 4K', 'fight 60fps', 'boss fight scene']
 
 
 def log(*a):
@@ -89,12 +97,17 @@ def today():
 # ------------------------------------------------------------------ queries / fetch state
 
 def all_queries():
-    return [f'{s} {x}' for x in SUFFIXES for s in SHOWS]
+    return [f'{s} {x}' for x in SUFFIXES + SUFFIXES_MORE for s in SHOWS]
 
 
 def pick_queries(shard, n_shards, n, state):
     done = set(state.get('queries') or {})
     todo = [q for q in all_queries() if q not in done]
+    if len(todo) < n * n_shards:
+        # every query searched once: rotate through all of them again by day (never an empty night)
+        aq = all_queries()
+        off = (_dt.datetime.now(_dt.timezone.utc).toordinal() * n * n_shards) % len(aq)
+        todo += [q for q in aq[off:] + aq[:off] if q not in todo]
     return todo[shard::n_shards][:n]
 
 
@@ -409,9 +422,116 @@ def sheet(pool, new_p, out):
     return len(rows)
 
 
+# ------------------------------------------------------------------ staging (2026-10-20: nightly growth, reviewed before import)
+# The nightly job no longer pushes to the live pool: the new clips (merged + sharpened + baseline-checked on a CI copy of the pool)
+# go to the release `edit-pools-staging` as sound-cand-<date>-n<N>.tar. Claude reviews the contact sheets at session start
+# (`pull-staged`), then the workflow's import mode (`apply-staged`, on CI where the full pool is) adds them minus the rejects.
+
+STAGE_TAG = os.environ.get('EDIT_POOLS_STAGING_TAG', 'edit-pools-staging')
+
+
+def stage(pool, new_p, out_dir, sheets=()):
+    import tarfile
+    allow = read_json(ALLOW_P, {'clips': {}})['clips']
+    news = _new(new_p)
+    rows, al = {}, {}
+    for v in ('impact', 'crisp'):
+        man = read_json(os.path.join(pool, 'sound', v, 'clips.json'), {'items': []})
+        ids = {n['id'] for n in news if n['vibe'] == v}
+        for it in man['items']:
+            if it['id'] in ids and os.path.isfile(_clip_path(pool, {'id': it['id'], 'vibe': v})):
+                rows[it['id']] = {'vibe': v, 'row': it}
+                al[it['id']] = allow.get(it['id']) or []
+    if not rows:
+        log('stage: nothing new to stage')
+        return None
+    os.makedirs(out_dir, exist_ok=True)
+    name = f"sound-cand-{today().replace('-', '')}-n{len(rows)}.tar"
+    tp = os.path.join(out_dir, name)
+    meta = os.path.join(out_dir, '_stage')
+    os.makedirs(meta, exist_ok=True)
+    write_json(os.path.join(meta, 'rows.json'), rows)
+    write_json(os.path.join(meta, 'allow.json'), al)
+    with tarfile.open(tp, 'w') as t:
+        t.add(os.path.join(meta, 'rows.json'), 'rows.json')
+        t.add(os.path.join(meta, 'allow.json'), 'allow.json')
+        for cid, r in rows.items():
+            t.add(_clip_path(pool, {'id': cid, 'vibe': r['vibe']}), f"clips/{r['vibe']}/{cid}.mp4")
+        for f in sheets:
+            for g in sorted(glob.glob(f)):
+                t.add(g, 'sheets/' + os.path.basename(g))
+    log(f'staged {len(rows)} new hit clips -> {tp}')
+    return {'tar': tp, 'clips': len(rows), 'ids': sorted(rows)}
+
+
+def apply_staged(pool, tars, reject=()):
+    """(CI, on the pulled FULL live pool) add the staged clips minus the rejects: media + manifest rows + allowlist pins."""
+    import tarfile
+    os.environ['EDIT_POOL_DIR'] = os.path.abspath(pool)
+    import vibe_pool as VP
+    reject = {x.strip() for x in reject if x and x.strip()}
+    allow = read_json(ALLOW_P, {'version': 1, 'clips': {}})
+    mans = {v: VP.load_manifest('sound', v, root=pool) for v in ('impact', 'crisp')}
+    have = {it['id'] for m in mans.values() for it in m['items']}
+    added, skipped = [], []
+    for tp in tars:
+        tmp = tp + '.x'
+        with tarfile.open(tp) as t:
+            t.extractall(tmp)
+        rows = read_json(os.path.join(tmp, 'rows.json'), {})
+        al = read_json(os.path.join(tmp, 'allow.json'), {})
+        for cid, r in rows.items():
+            if cid in reject or cid in have:
+                skipped.append(cid)
+                continue
+            src = os.path.join(tmp, 'clips', r['vibe'], cid + '.mp4')
+            if not os.path.isfile(src):
+                skipped.append(cid)
+                continue
+            vd = VP.vibe_dir('sound', r['vibe'], pool)
+            os.makedirs(os.path.join(vd, 'clips'), exist_ok=True)
+            shutil.copy2(src, os.path.join(vd, 'clips', cid + '.mp4'))
+            row = dict(r['row'], reviewed={'by': 'auto gates + Claude review of the staged contact sheet', 'at': today()})
+            mans[r['vibe']]['items'].append(row)
+            if al.get(cid):
+                allow.setdefault('clips', {})[cid] = al[cid]
+            have.add(cid)
+            added.append(cid)
+        shutil.rmtree(tmp, ignore_errors=True)
+    for v, man in mans.items():
+        VP.save_manifest('sound', v, man, root=pool)
+    VP.write_index(pool)
+    write_json(ALLOW_P, allow)
+    log(f'apply-staged: {len(added)} added, {len(skipped)} skipped (rejected / already in / missing)')
+    return {'added': len(added), 'skipped': skipped, 'pins': len(allow.get('clips') or {})}
+
+
+def pull_staged(dest):
+    """(PC / session start) download the staged sound tars and extract their contact sheets + rows for the review"""
+    import tarfile
+    os.makedirs(dest, exist_ok=True)
+    out = subprocess.run(['gh', 'release', 'view', STAGE_TAG, '--json', 'assets', '-q', '.assets[].name'],
+                         capture_output=True, text=True, timeout=120)
+    names = [n for n in out.stdout.split() if n.startswith('sound-cand-')]
+    got = []
+    for n in names:
+        tp = os.path.join(dest, n)
+        if not os.path.isfile(tp):
+            subprocess.run(['gh', 'release', 'download', STAGE_TAG, '--pattern', n, '--dir', dest], check=True, timeout=1800)
+        x = os.path.join(dest, n[:-4])
+        with tarfile.open(tp) as t:
+            t.extractall(x, members=[m for m in t.getmembers() if m.name.startswith('sheets/') or m.name.endswith('.json')])
+        got.append({'tar': n, 'dir': x, 'clips': len(read_json(os.path.join(x, 'rows.json'), {}))})
+    return got
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['mine', 'merge', 'sharpen', 'check', 'sheet', 'baseline', 'queries'])
+    ap.add_argument('cmd', choices=['mine', 'merge', 'sharpen', 'check', 'sheet', 'baseline', 'queries', 'stage', 'apply-staged',
+                                    'pull-staged'])
+    ap.add_argument('--tars', nargs='*')
+    ap.add_argument('--reject', default='')
+    ap.add_argument('--sheets', nargs='*', default=[])
     ap.add_argument('--work')
     ap.add_argument('--shard', default='0/1')
     ap.add_argument('--budget-min', type=float, default=240.0)
@@ -436,6 +556,12 @@ def main():
         r = check(a.pool, a.new, a.out)
     elif a.cmd == 'sheet':
         r = {'clips': sheet(a.pool, a.new, a.out)}
+    elif a.cmd == 'stage':
+        r = stage(a.pool, a.new, a.out, a.sheets)
+    elif a.cmd == 'apply-staged':
+        r = apply_staged(a.pool, a.tars or [], a.reject.replace(' ', ',').split(','))
+    elif a.cmd == 'pull-staged':
+        r = pull_staged(a.out or os.path.join(ROOT, 'output', 'edit-pools', '_staged_sound'))
     else:
         r = baseline(a.pool, a.out)
     print(json.dumps(r, indent=1, default=str)[:20000])

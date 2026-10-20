@@ -60,8 +60,8 @@ def pick_vibe(kind, forced, rng):
 VERIFIED_P = os.path.join(HERE, 'assets', 'sound-song-verified.json')
 
 
-def sound_history():
-    """[{id, at}] of the sound edits posted (memory/meme-history.json, oldest first): the music pool's cooldown input."""
+def sound_history(content_type='sound-edit'):
+    """[{id, at}] of the sound (or slow-mo) edits posted (memory/meme-history.json, oldest first): the music pool's cooldown input."""
     mem = os.environ.get('MEMORY_DIR') or os.path.join(os.path.dirname(os.path.dirname(HERE)), 'memory')
     try:
         with open(os.path.join(mem, 'meme-history.json'), encoding='utf-8') as f:
@@ -69,7 +69,7 @@ def sound_history():
     except (OSError, ValueError):
         return []
     return [{'id': u.get('musicPoolId') or u.get('song'), 'at': u.get('postedAt')} for u in ups
-            if u.get('contentType') == 'sound-edit' and not u.get('long')]
+            if u.get('contentType') == content_type and not u.get('long')]
 
 
 def music_pool_song(forced, rng):
@@ -111,6 +111,33 @@ def music_pool_song(forced, rng):
             'section': [s.get('section_start'), s.get('section_end')], 'tempo': s.get('tempo')}
 
 
+def slowmo_pool_song(forced, rng):
+    """the slow-mo song from core/edit/slowmo_music.py (emotional / chill famous songs, slowed; section = the analysed hook):
+    never the last song, 30-day cooldown, Thompson sampling; audio fetched now (yt-dlp, cached)"""
+    import music_pool as MP
+    import slowmo_music as SM
+    if forced:
+        # --song <pool id> (its slowed version) or <pool id>@v<speed> (e.g. jvke_golden_hour@v1 = the regular version)
+        base, sp = SM.split_id(forced)
+        rec = next((x for x in SM.load_pool()['songs'] if x['id'] == base), None)
+        if not rec:
+            return None
+        sp = sp if sp is not None else SM.versions(rec)[-1]
+        s = {'id': rec['id'], 'version_id': SM.version_id(rec['id'], sp), 'song': rec['song'], 'artist': rec['artist'],
+             'audio_path': MP.fetch_audio(rec), 'section_start': rec['section']['start'], 'section_end': rec['section']['end'],
+             'section_hero': rec['section'].get('hero'), 'speed': sp}
+    else:
+        s = SM.pick(sound_history('slowmo-edit'), fetch=True, rng=rng)
+    if not s or not s.get('audio_path') or not os.path.exists(s['audio_path']):
+        log('slow-mo music pool: no audio for', (s or {}).get('id'))
+        return None
+    log(f"slow-mo music pool: {s.get('version_id') or s['id']} x{s['speed']} section {s.get('section_start')}-{s.get('section_end')} hero {s.get('section_hero')}")
+    # id = song + version ('id@v0.85' / 'id@v1'): the history / cooldown unit (owner 2026-10-18: regular AND slowed versions)
+    return {'id': s.get('version_id') or s['id'], 'title': s['song'], 'artist': s['artist'], 'file': s['audio_path'], 'music_pool': True,
+            'section': [s.get('section_start'), s.get('section_end')], 'hero': s.get('section_hero'),
+            'treatment': {'speed': s['speed']}}
+
+
 def pick_song(kind, vibe, forced, rng):
     # MUSIC POOL (2026-10-17, core/edit/music_pool.py + core/edit/assets/sound-music-pool.json): with SOUND_MUSIC_POOL=1 the
     # sound edit's song AND its section come from the pool (Thompson sampling, never the last song, 30-day cooldown); the audio
@@ -123,6 +150,13 @@ def pick_song(kind, vibe, forced, rng):
                 return s
         except Exception as e:  # noqa: BLE001
             log('music pool failed, using the vibe songs:', repr(e)[:200])
+    if kind == 'slowmo' and os.environ.get('SLOWMO_MUSIC_POOL') == '1' and not (forced and str(forced).startswith('s_')):
+        try:
+            s = slowmo_pool_song(forced, rng)
+            if s:
+                return s
+        except Exception as e:  # noqa: BLE001
+            log('slow-mo music pool failed, using the vibe songs:', repr(e)[:200])
     songs = VP.song_ok(kind, vibe)
     if forced:
         songs = [s for s in songs if s['id'] == forced] or [s for s in VP.load_manifest(kind, vibe, 'sounds')['items']
@@ -192,8 +226,12 @@ def render(kind, song, shots, out, aspect, length, seed, workdir, vibe_def):
         r.update(video=out, master=master, reframe_s=round(time.time() - t0, 1))
         return r
     import cine_vibe as M
+    sec = None
+    if song.get('music_pool') and song.get('hero') is not None:
+        sec = {'start': (song.get('section') or [None])[0], 'hero': song['hero'], 'end': (song.get('section') or [None, None])[1]}
     return M.render_vibe_isolated(song['file'], shots, out, aspect=aspect, length=length, seed=seed, workdir=workdir,
-                         song_speed=float((song.get('treatment') or {}).get('speed') or 0.95), title=song.get('title'), artist=song.get('artist'))
+                         song_speed=float((song.get('treatment') or {}).get('speed') or 0.95), title=song.get('title'), artist=song.get('artist'),
+                         section=sec)
 
 
 def main():
@@ -211,6 +249,7 @@ def main():
     kind = a.type
     seed = a.seed if a.seed is not None else int(time.time()) % 100000
     rng = random.Random(seed)
+    os.environ.setdefault('CLIP_ROTATION_SEED', str(seed))     # the same candidates on every get_shots() of this run
     os.makedirs(a.out, exist_ok=True)
     res = {'ok': False, 'type': kind, 'preset': VP.load_vibes()['presets'][kind]['preset_id'], 'seed': seed,
            'short': None, 'long': None, 'render_s': {}}
@@ -244,9 +283,9 @@ def main():
     # eye-approved hit pool (SOUND_ALLOW_ONLY=1, ~60 pins, ~40 per short) a hard cooldown would starve every second
     # short, so the cooldown is relaxed step by step (3 -> 2 -> 1 -> 0) until enough pinned clips are free
     # (SOUND_RELAX_MIN_PINS, default 45) and again when the render reports pool_low. SOUND_COOLDOWN_RELAX=0 = hard cooldown.
-    cooldowns = [VP.sound_cooldown()]
-    if kind == 'sound' and os.environ.get('SOUND_COOLDOWN_RELAX', '1') != '0':
-        cooldowns += list(range(cooldowns[0] - 1, -1, -1))
+    cooldowns = [VP.sound_cooldown(kind)]
+    if (kind == 'sound' and os.environ.get('SOUND_COOLDOWN_RELAX', '1') != '0') or kind == 'slowmo':
+        cooldowns += list(range(cooldowns[0] - 1, -1, -1))     # slow-mo: pool_low -> the last video's clips come back
 
     def pins(sh):
         try:
@@ -269,7 +308,7 @@ def main():
             cooldowns.pop(0)
         os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
     shots = get_shots()
-    res['cooldown_videos'] = cooldowns[0] if kind == 'sound' else None
+    res['cooldown_videos'] = cooldowns[0]
     log(f'{kind}/{vibe}: {len(shots)} fresh clips, song {song["id"]} ({song["file"]}), seed {seed}')
     work = os.path.join(a.out, f'work-{kind}-{vibe}')
     os.makedirs(work, exist_ok=True)
@@ -280,9 +319,11 @@ def main():
             raw = os.path.join(work, 'short_raw.mp4')
             t0 = time.time()
             r = render(kind, song, shots, raw, '9:16', SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
-            while not r.get('ok') and r.get('reason') == 'pool_low' and len(cooldowns) > 1:
+            while not r.get('ok') and (r.get('reason') == 'pool_low' or (kind == 'slowmo' and str(r.get('reason') or '').startswith('pool_low'))) and len(cooldowns) > 1:
                 cooldowns.pop(0)
-                os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
+                os.environ[VP.COOLDOWN_ENV[kind][0]] = str(cooldowns[0])
+                # clip rotation (core/edit/clip_rotation.py): a pool_low retry hands the planner more candidates
+                os.environ['CLIP_ROTATION_LEVEL'] = str(int(os.environ.get('CLIP_ROTATION_LEVEL') or 0) + 1)
                 shots = get_shots()
                 res['cooldown_videos'] = cooldowns[0]
                 log(f'pool_low: retry with clip cooldown {cooldowns[0]} ({len(shots)} clips)')
@@ -290,7 +331,7 @@ def main():
             res['render_s']['short'] = round(time.time() - t0, 1)
             if not r.get('ok'):
                 res.update(reason=r.get('reason') or 'short_failed', short_report=r)
-                done(2 if r.get('reason') == 'pool_low' else 1)
+                done(2 if str(r.get('reason') or '').startswith('pool_low') else 1)
             final = os.path.join(a.out, f'{kind}-{vibe}-short.mp4')
             t0 = time.time()
             WM.burn(r['video'], final, threads=a.threads, rot90=is_rot90(r.get('plan')),
@@ -298,6 +339,13 @@ def main():
             res['render_s']['watermark_short'] = round(time.time() - t0, 1)
             used_short = list(r.get('used') or [])
             res.update(short=final, duration_short=r.get('duration'), clips_short=used_short, plan_short=r.get('plan'))
+            if kind in VP.REUSE_PRESETS:
+                # owner 2026-10-20: reuse only here and there -> the reuse share of every video is logged (result.json)
+                import clip_rotation as CR
+                rep = CR.report(used_short, CR.history(VP.load_ledger(), kind), int(CR.config(kind)['window']))
+                res['clip_rotation'] = dict(rep, choice={k: v for k, v in VP.LAST_ROTATION.items()})
+                log(f"clip rotation: {rep['reused']} of {rep['shots']} shots reused from the last {rep['window']} {kind} videos "
+                    f"({rep['reuse_share']:.0%}; from the previous video {rep['from_last_video']:.0%})")
         if a.landscape_long or a.long_only:
             raw = os.path.join(work, 'long_raw.mp4')
             t0 = time.time()
