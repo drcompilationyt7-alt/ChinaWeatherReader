@@ -35,6 +35,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import zlib
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 EDIT = os.path.join(ROOT, 'core', 'edit')
@@ -58,7 +59,7 @@ CHARS = ['Marin Kitagawa', 'Mai Sakurajima', 'Zero Two', 'Kaoruko Waguri', 'Frie
          'Kaori Miyazono violin', 'Nanami Aoyama', 'Mahiru Shiina', 'Ui Shigure', 'Kitagawa Marin cosplay']
 SUFFIXES = ['twixtor clips for edits 4k', '4k twixtor', 'scenepack 4k raw', 'twixtor 60fps clips']
 MOODS = ['anime girl cherry blossom twixtor 4k', 'anime girl summer beach twixtor 4k', 'anime girl snow twixtor 4k',
-         'anime girl hair wind twixtor clips', 'anime scenery girl 4k raw clips', 'makoto shinkai scenes 4k twixtor',
+         'anime girl hair wind twixtor clips', 'makoto shinkai scenes 4k twixtor',
          'anime girl smile twixtor clips 4k', 'anime girl night lights twixtor 4k', 'anime girl rain twixtor 4k']
 SHOWS_ED = ['Kaguya-sama Love is War', 'Bunny Girl Senpai', 'My Dress-Up Darling', 'Frieren', 'Violet Evergarden', 'Your Lie in April',
             'Horimiya', 'Toradora', 'Oshi no Ko', 'Rent-a-Girlfriend', 'The Quintessential Quintuplets', 'The Fragrant Flower Blooms with Dignity',
@@ -69,7 +70,45 @@ SHOWS_ED = ['Kaguya-sama Love is War', 'Bunny Girl Senpai', 'My Dress-Up Darling
 BAD = re.compile(r'\bamv\b|\bmmv\b|reaction|lyric|\bsubs?\b|#shorts|nightcore|hentai|ecchi|nsfw|18\+|\btiktok\b|'
                  r'speed ?paint|cosplay|\bmmd\b|\breal life\b|ai art|\bai\b', re.I)
 EDIT_RE = re.compile(r'\bedit\b', re.I)
-GOOD = re.compile(r'twixtor|twixter|scene ?pack|raw|clips|4k|60 ?fps|creditless|ncop|nced|clean|textless|no ?credits', re.I)
+GOOD = re.compile(r'twixtor|twixter|scene ?pack|raw|clips|4k|60 ?fps|clean|textless', re.I)
+# 2026-10-20 yield fix: OP / ED sources hold drawings, live action / music videos are not anime
+REJECT = re.compile(r'creditless|\bopening\b|\bending\b|\bop ?\d*\b|\bed ?\d*\b|\bncop|\bnced|movie ?trailer|live[- ]?action|'
+                    r'\bdrone\b|fireworks|music video|\bmv\b', re.I)
+ANIME_WORD = re.compile(r'anime|アニメ|\bepisodes?\b|\bep\.? ?\d+|\bseason\b|\bs\d\b|scene ?pack|twixtor|twixter', re.I)
+_GENERIC = {'zero', 're', 'one', 'piece', 'anime', 'girl', 'bunny', 'violin', 'cosplay', 'with', 'you', 'your', 'name', 'the', 'and',
+            'love', 'free', 'orange', 'given', 'aria', 'wave', 'clips', 'sailor', 'moon', 'power', 'saber', 'fate', 'holo', 'kyoto'}
+
+
+_NAMES = []
+
+
+def known_names():
+    """lower-case show / character names (full names + single name words >= 5 letters) from the query generator's lists"""
+    if not _NAMES:
+        full = set()
+        for lst in (CHARS, SHOWS_ED, ANIME_DREAMY, ANIME_SUMMER):
+            for x in lst:
+                x = x.lower()
+                full.add(x)
+                full.update(w for w in re.split(r'[^a-z0-9]+', x) if len(w) >= 5 and w not in _GENERIC)
+        _NAMES.extend(sorted(full))
+    return _NAMES
+
+
+def anime_title(t):
+    """title filter: an anime signal (word, or a known show / character) and none of the REJECT words"""
+    t = str(t or '')
+    if REJECT.search(t):
+        return False
+    if ANIME_WORD.search(t):
+        return True
+    tl = t.lower()
+    return any(n in tl for n in known_names())
+
+
+def vid_shard(vid, n):
+    """deterministic (crc32, not the salted hash()) shard of a video id: no two shards download the same video"""
+    return zlib.crc32(str(vid).encode()) % max(1, n)
 
 
 def log(*a):
@@ -124,10 +163,12 @@ ANIME_SUMMER = ['Mai Sakurajima Bunny Girl Senpai', 'My Dress-Up Darling', 'Rent
                 'Weathering With You', 'Your Name', 'Tamako Love Story', 'Hanasaku Iroha', 'Free Iwatobi Swim Club', 'Non Non Biyori',
                 'Yuru Camp', 'Amanchu', 'Aria', 'Gochiusa', 'Kyoto Animation']
 TERMS_DREAMY = ['cherry blossoms', 'soft rain', 'flower field', 'pastel sky', 'looking back', 'hair in the wind', 'smile', 'petals falling',
-                'lanterns night', 'dreamy bokeh', 'spring', 'umbrella rain']
+                'lanterns night', 'dreamy bokeh', 'spring', 'umbrella rain', 'pastel soft light', 'night rain', 'moonlight', 'flowers',
+                'sakura petals', 'dreamy', 'ethereal glow', 'soft pastel night', 'moonlight flowers', 'rain window night']
 TERMS_SUMMER = ['sunset', 'golden hour', 'ocean', 'beach', 'festival fireworks', 'hair in the wind', 'smile', 'looking back',
                 'night city', 'summer sky', 'sunlight', 'seaside train']
-SRC_TYPES = ['4k scenery clips', '60fps clips', 'best scenes 4k', 'raw scenepack 4k', 'AMV 4k', 'twixtor 4k', 'scenery 4k raw']
+# weighted by the 2026-10-20 yield (twixtor 4k 0.81 sources / query); no AMV, no scenery (live action) types
+SRC_TYPES = ['twixtor 4k', 'twixtor 4k clips', 'twixtor 60fps', 'scenepack 4k', 'raw scenepack 4k', '4k anime scenes', '60fps clips']
 KEEP_DAYS = 30          # a query is not reused within this many days ...
 NIGHT_MIN = {'dreamy_bloom': 200, 'summer_glow': 100}     # ... unless fewer than this many are left for the vibe (oldest used first)
 DREAMY_SHARE = 0.65
@@ -136,7 +177,6 @@ LEGACY_DATE = '2026-10-18'                                  # queries_done entri
 
 def _legacy_queries():
     qs = [f'{c} {SUFFIXES[i % 2]}' for i, c in enumerate(CHARS)] + MOODS
-    qs += [f"{sh} {'creditless ending 4k' if i % 2 == 0 else 'creditless opening 4k'}" for i, sh in enumerate(SHOWS_ED)]
     qs += [f'{c} {SUFFIXES[2 + i % 2]}' for i, c in enumerate(CHARS)]
     return qs
 
@@ -198,6 +238,20 @@ def nightly_queries(st, today=None, seed=None):
     return out
 
 
+def title_selftest():
+    ok = ['Frieren Beyond Journey End twixtor 4k', 'Mai Sakurajima scenepack 4k', 'Anime girl summer 60fps clips', 'Kaguya-sama Episode 5 4K raw',
+          'アニメ 4K scenes', 'Zero Two Darling in the Franxx 4k clips', 'Your Name Mitsuha scenes 4k', 'Marin Kitagawa edit clips 4k']
+    bad = ['Frieren Opening Creditless 4K', 'Clannad ED NCED 60fps', 'Toradora OP 1 NCOP anime', 'Avengers movie trailer 4k clips',
+           'Tokyo city drone 4k clips', 'New Year fireworks 4k anime', 'Official Music Video 4k 60fps', 'Taylor Swift MV 4k',
+           'Live action Spy x Family 4k clips', 'Ocean sunset 4k raw clips', 'Movieclips beach scenes 4k']
+    for t in ok:
+        assert anime_title(t), f'should pass: {t}'
+    for t in bad:
+        assert not anime_title(t), f'should reject: {t}'
+    assert sum(1 for i in range(2000) if vid_shard(f'v{i}', 3) == 0) in range(550, 780)
+    assert all(vid_shard('dQw4w9WgXcQ', 3) == vid_shard('dQw4w9WgXcQ', 3) for _ in range(3))
+
+
 def selftest(nights=60, per_night=120):
     """60 simulated nights: the list never runs dry, queries rotate, dreamy_bloom gets >= 50 % of the work"""
     st, vib = {'queries_done': [], 'query_log': {}}, dict(query_table())
@@ -213,6 +267,11 @@ def selftest(nights=60, per_night=120):
         for q in qs[:per_night]:
             st['query_log'][q] = day
             cnt[vib[q]] += 1
+    title_selftest()
+    ids = [f'vid{j:06d}x' for j in range(600)]       # video-id shards: disjoint, complete, roughly even
+    parts = [{i for i in ids if vid_shard(i, 3) == k} for k in range(3)]
+    assert not (parts[0] & parts[1] or parts[0] & parts[2] or parts[1] & parts[2]) and set().union(*parts) == set(ids)
+    assert all(len(x) > 140 for x in parts), 'uneven id shards'
     share = cnt['dreamy_bloom'] / sum(cnt.values())
     assert share >= 0.5, f'dreamy share {share:.2f}'
     print(json.dumps({'ok': True, 'nights': nights, 'queries_total': len(vib), 'used_distinct': len(st['query_log']),
@@ -248,12 +307,14 @@ def search(q):
         return []
 
 
-def pick(entries, seen):
+def pick(entries, seen, k=0, n=1):
     out = []
     for e in entries:
         vid, t = e.get('id'), str(e.get('title') or '')
         d = e.get('duration') or 0
-        if not vid or vid in seen:
+        if not vid or vid in seen or vid_shard(vid, n) != k:
+            continue
+        if not anime_title(t):
             continue
         if not (60 <= d <= 1200) or BAD.search(t) or (EDIT_RE.search(t) and not re.search(r'for edit', t, re.I)):
             continue
@@ -421,7 +482,7 @@ def cmd_mine(a):
         srcmap = {}
         while qs and len(srcmap) < a.batch and time.time() < end - 25 * 60:
             q = qs.pop(0)
-            es = pick(search(q), seen)
+            es = pick(search(q), seen, k, n)
             st['queries_done'].append(q)
             st.setdefault('query_log', {})[q] = time.strftime('%Y-%m-%d', time.gmtime())
             time.sleep(4)
