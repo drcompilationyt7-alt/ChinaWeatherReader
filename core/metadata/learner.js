@@ -96,7 +96,7 @@ function armsFor(pool, state = loadState()) {
 function readChoices() {
   try {
     return fs.readFileSync(choicesFile(), 'utf8').split('\n').filter(Boolean)
-      .map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+      .map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(d => d && !d.excluded);   // excluded: broken upload
   } catch { return []; }
 }
 

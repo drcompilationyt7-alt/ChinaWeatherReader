@@ -28,7 +28,8 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
-const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, llmJSON } = require('./pop-quiz-content');
+const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, topUpEdition, llmJSON } = require('./pop-quiz-content');
+const guard = require('./quiz-guard');
 const { aiNarratorLines, recordAiLines } = require('./pop-narrator-ai');
 const { decay, appendDecision } = require('../core/experiment-log');
 const pop = require('./pop-quiz-meta');
@@ -207,6 +208,7 @@ function recentIso(history, format, days) {
 function scoredQuizUploads(stats, history) {
   const byId = new Map(((stats && stats.videos) || []).map(v => [v.videoId, v]));
   const out = history.uploads
+    .filter(u => !u.excluded)   // a broken upload (2026-10-19: empty short, privated) must not steer format / edition learning
     .map(u => ({ ...u, stat: byId.get(u.videoId) }))
     .filter(u => u.stat && typeof u.stat.lscore === 'number' && (u.stat.ageDays || 0) >= 1.5);
   // learn from the fixed-checkpoint reward (core/experiment-log.js) once every upload has one;
@@ -513,17 +515,22 @@ async function runWorldQuizPipeline(opts = {}) {
   // never repeat an answer of the same format within 30 days, or any answer within 4 days
   const avoid = [...new Set([...recentIso(history, format, 30), ...recentIso(history, null, 4)])];
   const seed = Math.floor(Math.random() * 1e9);
-  const outPath = path.join(outputDir, `quiz-${format}-${Date.now()}.mp4`);
   const t0 = Date.now();
-  let planFile = null;
   let popKeys = null;
+  let res = null;
+  const failures = [];
+  // candidates in order: the picked (format, edition), the plain edition, then other pop formats with fresh items.
+  // Each one must pass the plan guard (rounds, answers, edition membership, pictures) and, after rendering, the
+  // video guard (length, blank / static frames). Nothing passes: throw, the short is never uploaded.
+  const candidates = [];
   if (isPop(format)) {
     // themed edition (POP_NEW_FORMATS=1 + POP_THEMES): seasonal first, else ~1 in 4, never the same theme twice in a row
     const lastEdition = (history.uploads[history.uploads.length - 1] || {}).edition || null;
     let edition = hit ? null : (opts.edition || process.env.POP_EDITION || pickEdition(format, lastEdition));
     // a pool that ran out of fresh items: switch theme / format first, reuse (LRU) only when nothing else has fresh items
-    const need = LENGTHS[length] || 5;
-    if (edition && freshCount(format, edition) < need) {
+    const need = guard.requiredRounds(format, length, LENGTHS);
+    // themed emoji / trivia / wyr: the edition's items are written on demand; only keep the edition if they exist
+    if (edition && (await topUpEdition(format, edition, need)) < need) {
       logger.warn(`Edition ${edition} has < ${need} fresh ${format} items: plain edition instead`);
       edition = null;
     }
@@ -534,25 +541,75 @@ async function runWorldQuizPipeline(opts = {}) {
         format = alt[Math.floor(Math.random() * alt.length)];
       }
     }
-    if (edition) logger.info(`Edition: ${edition}`);
-    const built = await buildPopPlan(format, { topic: hit ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null, edition });
-    theme = built.plan.topic;
-    popKeys = built.keys;
-    // AI-written narrator lines (POP_AI_LINES=1): validated here, timed after the TTS in the renderer, fixed pools as fallback
-    try {
-      const ai = await aiNarratorLines(built.plan, built.plan.edition || null, llmJSON);
-      if (ai) {
-        built.plan.ai_lines = ai;
-        logger.info(`AI narrator lines: intro ${ai.intro ? 'ok' : 'pool'}, outro ${ai.outro ? 'ok' : 'pool'}, reveals ${ai.reveal.filter(Boolean).length}/${ai.reveal.length}`
-          + (ai.rejected.length ? `; rejected: ${ai.rejected.slice(0, 4).join('; ')}` : ''));
-      }
-    } catch (e) { logger.warn(`AI narrator lines failed (${(e.message || '').slice(0, 80)}): fixed pools`); }
-    planFile = path.join(outputDir, `plan-${Date.now()}.json`);
-    fs.writeFileSync(planFile, JSON.stringify({ ...built.plan, seed }, null, 1));
-    logger.info(`Topic: ${theme}, ${built.plan.rounds.length} rounds`);
+    candidates.push({ format, edition });
+    if (edition) candidates.push({ format, edition: null });
+    if (!forcedFormat) {
+      const blocked = blockedFormats(history);
+      const others = FORMATS.filter(f => isPop(f) && f !== format && !blocked.has(f) && freshCount(f) >= guard.requiredRounds(f, length, LENGTHS))
+        .sort(() => Math.random() - 0.5).slice(0, 3);
+      for (const f of others) candidates.push({ format: f, edition: null });
+    }
+  } else {
+    candidates.push({ format, edition: null });
   }
-  const res = await renderQuiz({ format, theme, seed, avoid, outPath, rounds: LENGTHS[length], planFile });
-  if (planFile) { try { fs.unlinkSync(planFile); } catch {} }
+  let renders = 0;
+  for (const cand of candidates) {
+    if (renders >= 3) break;   // at most 3 renders per run
+    const need = guard.requiredRounds(cand.format, length, LENGTHS);
+    const cTheme = cand.format === format ? theme : 'anime';
+    const cPath = path.join(outputDir, `quiz-${cand.format}-${Date.now()}.mp4`);
+    let cKeys = null;
+    let cPlanFile = null;
+    let cTopic = cTheme;
+    if (isPop(cand.format)) {
+      if (cand.edition) logger.info(`Edition: ${cand.edition}`);
+      const built = await buildPopPlan(cand.format, { topic: hit && cand.format === format ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null, edition: cand.edition });
+      cTopic = built.plan.topic;
+      cKeys = built.keys;
+      const bad = await guard.checkPlan(built.plan, need);
+      if (bad.length) {
+        failures.push(`${cand.format}${cand.edition ? `/${cand.edition}` : ''} plan: ${bad.slice(0, 4).join('; ')}`);
+        logger.warn(`Plan guard failed (${cand.format}${cand.edition ? `, ${cand.edition} edition` : ''}): ${bad.slice(0, 4).join('; ')}`);
+        continue;
+      }
+      // AI-written narrator lines (POP_AI_LINES=1): validated here, timed after the TTS in the renderer, fixed pools as fallback
+      try {
+        const ai = await aiNarratorLines(built.plan, built.plan.edition || null, llmJSON);
+        if (ai) {
+          built.plan.ai_lines = ai;
+          logger.info(`AI narrator lines: intro ${ai.intro ? 'ok' : 'pool'}, outro ${ai.outro ? 'ok' : 'pool'}, reveals ${ai.reveal.filter(Boolean).length}/${ai.reveal.length}`
+            + (ai.rejected.length ? `; rejected: ${ai.rejected.slice(0, 4).join('; ')}` : ''));
+        }
+      } catch (e) { logger.warn(`AI narrator lines failed (${(e.message || '').slice(0, 80)}): fixed pools`); }
+      cPlanFile = path.join(outputDir, `plan-${Date.now()}.json`);
+      fs.writeFileSync(cPlanFile, JSON.stringify({ ...built.plan, seed }, null, 1));
+      logger.info(`Topic: ${cTopic}, ${built.plan.rounds.length} rounds`);
+    }
+    renders++;
+    let r = null;
+    try {
+      r = await renderQuiz({ format: cand.format, theme: cTopic, seed, avoid, outPath: cPath, rounds: LENGTHS[length], planFile: cPlanFile });
+    } catch (e) {
+      failures.push(`${cand.format} render: ${(e.message || '').slice(0, 120)}`);
+      logger.warn(`Render failed (${cand.format}): ${(e.message || '').slice(0, 200)}`);
+    }
+    if (cPlanFile) { try { fs.unlinkSync(cPlanFile); } catch {} }
+    if (!r) continue;
+    const bad = await guard.checkRender(r, need);
+    if (bad.length) {
+      failures.push(`${cand.format} video: ${bad.slice(0, 4).join('; ')}`);
+      logger.warn(`Video guard failed (${cand.format}): ${bad.slice(0, 4).join('; ')}`);
+      try { fs.unlinkSync(r.path); } catch {}
+      continue;
+    }
+    if (cand.format !== format) logger.warn(`Fell back to ${cand.format}${cand.edition ? ` (${cand.edition})` : ''}`);
+    format = cand.format;
+    theme = cTopic;
+    popKeys = cKeys;
+    res = r;
+    break;
+  }
+  if (!res) throw new Error(`Quiz guard: no publishable short (${failures.join(' | ').slice(0, 600) || 'no candidates'}). Upload aborted.`);
   const plan = { ...res.plan, theme };
   // the renderer may drop candidates (openings that fail to download): only mark what was shown
   if (isPop(format)) popKeys = plan.rounds.map(r => popKey(format, r));

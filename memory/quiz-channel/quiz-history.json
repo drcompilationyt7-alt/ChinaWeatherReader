@@ -860,7 +860,8 @@
     "hashtagSet": "title-tag",
     "titleStyle": "ramp",
     "descHook": "op-score-challenge"
-   }
+   },
+   "excluded": "empty upload, privated"
   },
   {
    "videoId": "BN6PL8vkgdk",

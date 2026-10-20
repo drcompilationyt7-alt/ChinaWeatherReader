@@ -37,7 +37,7 @@ function appendDecision(rec) {
 function loadDecisions() {
   try {
     return fs.readFileSync(EXPERIMENTS(), 'utf8').split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } })
-      .filter(Boolean);
+      .filter(d => d && !d.excluded);   // excluded: a broken upload (e.g. an empty short, privated) the learners must ignore
   } catch { return []; }
 }
 

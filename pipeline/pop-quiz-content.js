@@ -312,11 +312,25 @@ function freshCount(fmt, edition = null) {
   const bank = loadBank();
   if (edition) {
     if (fmt === 'duel') return Math.max(themePool(edition, 'character').length, loadThemes().themes[edition].duel_base_art ? 99 : 0);   // pairs: plenty of combinations
-    if (!ART_FORMATS.includes(fmt)) return Infinity;                      // generated on demand
+    // emoji / trivia / wyr: only the edition's items already in the bank count. 2026-10-19 this returned Infinity
+    // ("generated on demand"); the LLM was down, no festival emoji existed, and a 0-round video was published.
+    // The pipeline calls topUpEdition() first, so a working generator still gets its chance.
+    if (LLM_FORMATS.includes(fmt)) return (bank[fmt] || []).filter(i => i.edition === edition && i.topic === 'anime' && isFresh(bank, fmt, i)).length;
+    if (!ART_FORMATS.includes(fmt)) return 0;                             // no themed material for this format
     return themePool(edition, fmt).filter(i => isFresh(bank, fmt, i)).length;
   }
   if (!bank[fmt] || ['emoji', 'trivia', 'wyr', 'duel'].includes(fmt)) return Infinity;   // generated on demand / pairs
   return bank[fmt].filter(i => isFresh(bank, fmt, i)).length;
+}
+
+/** Themed emoji / trivia / wyr: generate the edition's items when fewer than `need` are fresh. Returns the fresh count after. */
+async function topUpEdition(fmt, edition, need) {
+  if (!LLM_FORMATS.includes(fmt)) return freshCount(fmt, edition);
+  if (freshCount(fmt, edition) >= need) return freshCount(fmt, edition);
+  const th = loadThemes().themes[edition];
+  if (!th) return 0;
+  try { await generate(loadBank(), fmt, 'anime', 12, { ...th, id: edition }); } catch (e) { logger.warn(`Edition generation failed: ${(e.message || '').slice(0, 100)}`); }
+  return freshCount(fmt, edition);
 }
 
 function isFresh(bank, fmt, it) {
@@ -550,4 +564,4 @@ function markUsed(keys) {
   saveBank(bank);
 }
 
-module.exports = { llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
+module.exports = { llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };

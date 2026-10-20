@@ -285,6 +285,14 @@ class DailyRunner {
         }
       }
       if (!result) { errors.push('quiz render failed'); continue; }
+      // last line of defence (2026-10-19: a 0-round short was published): never upload without real rounds and a video
+      const answers = (result.quiz && result.quiz.answers) || [];
+      if (answers.length < 3 || answers.some(a => !String(a || '').trim()) || !result.videoPath || !fs.existsSync(result.videoPath)
+        || !fs.statSync(result.videoPath).size) {
+        logger.error(`Quiz guard: ${answers.length} rounds / video ${result.videoPath || 'missing'}; upload aborted`);
+        errors.push('quiz guard: empty or broken short, not uploaded');
+        continue;
+      }
 
       const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
       if (process.env.DRY_RUN === 'true') {
