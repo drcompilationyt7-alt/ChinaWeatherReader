@@ -1049,8 +1049,8 @@
    "total": 0.671,
    "status": "probation",
    "added": "2026-10-17T21:26:34Z",
-   "last_used": null,
-   "uses": 0,
+   "last_used": "2026-10-20T08:32:57Z",
+   "uses": 1,
    "perf": {
     "n": 0,
     "sum": 0.0
