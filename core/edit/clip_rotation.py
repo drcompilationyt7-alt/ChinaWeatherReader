@@ -25,8 +25,8 @@ import random
 # per preset: TARGET shots per video, WANT candidates handed to the planner, MIN_NEED the planner's floor,
 # WINDOW recent videos, CAP reuse share, PER_CLIP uses per DAYS
 CONFIG = {
-    # slow-mo: ~18-20 shots (wave cuts), the planner needs >= ~12 clean clips; a few spare for its hard gates
-    'slowmo': dict(target=20, want=28, min_need=22, window=5, cap=0.25, per_clip=3, days=30),
+    # slow-mo: 18-27 shots (the wave cuts follow the song), each clip once (the wave DP caps the shots at the clean clips, 2026-10-21)
+    'slowmo': dict(target=22, want=30, min_need=24, window=5, cap=0.25, per_clip=3, days=30),
     # sound: ~39 pinned hit clips per video, the beat remake needs ~45 pinned candidates (SOUND_RELAX_MIN_PINS)
     'sound': dict(target=39, want=50, min_need=45, window=5, cap=0.25, per_clip=3, days=30),
 }
@@ -142,7 +142,7 @@ def selftest():
     items = [{'id': f'c{i}'} for i in range(120)]     # 25 % reuse over 5 videos x 20 shots needs >= ~100 clips
     hist = []
     now = _dt.datetime(2026, 10, 20, tzinfo=_dt.timezone.utc)
-    cfg = dict(CONFIG['slowmo'])
+    cfg = dict(target=20, want=28, min_need=22, window=5, cap=0.25, per_clip=3, days=30)   # fixed: independent of CONFIG
     for v in range(10):
         t = now + _dt.timedelta(days=3 * v)
         c, info = choose(items, hist, cfg, rng, now=t)

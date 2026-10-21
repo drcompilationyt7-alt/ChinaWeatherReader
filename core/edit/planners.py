@@ -2966,34 +2966,60 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
         if L < lo or L > hi:
             return None
         return 0.6 if L < 0.95 * tsc else 0.0
-    for j in range(1, n):
-        for i in range(j):
-            if V[i] <= NEG / 2:
+    def solve(lam):
+        # lam = a cost per switch: 0 normally; raised only when the layout needs more shots than there are clean clips
+        V = np.full(n, NEG)
+        P = np.full(n, -1, int)
+        V[0] = 0.0
+        for j in range(1, n):
+            for i in range(j):
+                if V[i] <= NEG / 2:
+                    continue
+                lc = len_cost(C[j]['sw'] - C[i]['sw'], first=(i == 0), i=i)
+                if lc is None:
+                    continue
+                v = V[i] + gain(C[j]) - lam - lc - skip_cost(i, j)
+                if v > V[j]:
+                    V[j], P[j] = v, i
+        fin = []
+        for j in range(n):
+            if V[j] <= NEG / 2:
                 continue
-            lc = len_cost(C[j]['sw'] - C[i]['sw'], first=(i == 0), i=i)
-            if lc is None:
-                continue
-            v = V[i] + gain(C[j]) - lc - skip_cost(i, j)
-            if v > V[j]:
-                V[j], P[j] = v, i
-    fin = []
-    for j in range(n):
-        if V[j] <= NEG / 2:
-            continue
-        L = D - C[j]['sw']
-        if out_a is not None and C[j]['why'] != 'outro':
-            continue                              # the outro holds the last clip to the end
-        if 1.2 <= L <= max(WV_SHOT[1] + 1.5, tail_max(j), (D - C[j]['sw'] + 0.01) if C[j]['why'] == 'outro' else 0.0):
-            fin.append((V[j] - skip_cost(j, n), j))
-    if not fin:
+            L = D - C[j]['sw']
+            if out_a is not None and C[j]['why'] != 'outro':
+                continue                              # the outro holds the last clip to the end
+            if 1.2 <= L <= max(WV_SHOT[1] + 1.5, tail_max(j), (D - C[j]['sw'] + 0.01) if C[j]['why'] == 'outro' else 0.0):
+                fin.append((V[j] - skip_cost(j, n), j))
+        if not fin:
+            return None
+        v, j = max(fin)
+        idx = []
+        while j >= 0:
+            idx.append(j)
+            j = int(P[j]) if j > 0 else -1
+        idx.reverse()
+        return v, idx
+
+    # 2026-10-21 (first unpinned CI dry run, "blue": 27 shots for 22 clean clips -> one clip shown 5 times): never more shots
+    # than clean clips (cine_max_shots, each clip once); the per-switch cost rises until the layout fits (weak waves first)
+    max_sh = int(opts.get('cine_max_shots') or 999)
+    res_ = None
+    for lam in (0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 20.0):
+        r_ = solve(lam)
+        if r_ is None:
+            break
+        res_ = r_
+        if len(r_[1]) <= max_sh:
+            if lam:
+                log(f'cinematic: wave cuts limited to {max_sh} clean clips (switch cost {lam}): {len(r_[1])} shots')
+            break
+    if res_ is None:
         log('cinematic: wave cuts: no layout fits')
         return None
-    v, j = max(fin)
-    idx = []
-    while j >= 0:
-        idx.append(j)
-        j = int(P[j]) if j > 0 else -1
-    idx.reverse()
+    v, idx = res_
+    if len(idx) > max_sh:
+        log(f'cinematic: wave cuts need {len(idx)} shots for {max_sh} clean clips: no layout')
+        return None
     sw = [C[i]['sw'] for i in idx]
     skipped = [dict(a=C[k]['a'], strength=C[k]['strength'], why=C[k]['why']) for k in range(1, n) if k not in idx]
     cuts = [round(t + lead, 4) for t in sw]
