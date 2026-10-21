@@ -1,53 +1,45 @@
 {
-  "updatedAt": "2026-10-20T07:44:06.757Z",
+  "updatedAt": "2026-10-21T07:48:12.466Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 14,
-    "totalViews": 19189,
+    "totalViews": 19218,
     "totalVideos": 31
   },
   "sampleSize": 30,
   "reliable": true,
-  "globalMeanScore": 86.5,
-  "typicalScore": 39.1,
+  "globalMeanScore": 69,
+  "typicalScore": 36.4,
   "topTitles": [
     {
       "videoId": "wD5s6VBh9Mk",
       "title": "Guess the Anime From One Scene 🔥 #anime",
-      "views": 1165,
-      "score": 657,
-      "country": "Global",
-      "ageDays": 1.8
-    },
-    {
-      "videoId": "KHEouuyMYHQ",
-      "title": "Can You Name These Anime Characters From Their Costume? 🎧 #anime",
-      "views": 1098,
-      "score": 320,
+      "views": 1173,
+      "score": 353.1,
       "country": "Global",
       "ageDays": 2.8
     },
     {
+      "videoId": "KHEouuyMYHQ",
+      "title": "Can You Name These Anime Characters From Their Costume? 🎧 #anime",
+      "views": 1108,
+      "score": 240.3,
+      "country": "Global",
+      "ageDays": 3.8
+    },
+    {
       "videoId": "LKgGgjz7D88",
       "title": "guess the country by its shape asia quiz 👀 #geography",
-      "views": 1287,
-      "score": 271.5,
+      "views": 1288,
+      "score": 227.6,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.8
     },
     {
       "videoId": "fRR7P_ng4nA",
       "title": "Guess the Chinese City From the Map 🔥 #china",
       "views": 1021,
-      "score": 180.1,
-      "country": "Global",
-      "ageDays": 5.8
-    },
-    {
-      "videoId": "hsfj1lXqqFI",
-      "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "views": 1069,
-      "score": 149.9,
+      "score": 154.3,
       "country": "Global",
       "ageDays": 6.8
     },
@@ -55,25 +47,33 @@
       "videoId": "RDyjt6LO7es",
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
       "views": 1271,
-      "score": 148.4,
+      "score": 133.2,
       "country": "Global",
-      "ageDays": 8.8
+      "ageDays": 9.8
+    },
+    {
+      "videoId": "hsfj1lXqqFI",
+      "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
+      "views": 1069,
+      "score": 130.5,
+      "country": "Global",
+      "ageDays": 7.8
     },
     {
       "videoId": "1ppVYRgxwNA",
       "title": "guess the kpop idol 🔥 #kpop",
       "views": 1312,
-      "score": 107.6,
+      "score": 99.8,
       "country": "Global",
-      "ageDays": 12.8
+      "ageDays": 13.8
     },
     {
       "videoId": "aGsvXn7x8AM",
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
       "views": 1021,
-      "score": 97.9,
+      "score": 89.6,
       "country": "Global",
-      "ageDays": 10.8
+      "ageDays": 11.8
     },
     {
       "videoId": "QaF4Ova1vq4",
@@ -81,15 +81,15 @@
       "views": 961,
       "score": 70.6,
       "country": "Global",
-      "ageDays": 15.8
+      "ageDays": 16.8
     },
     {
       "videoId": "Tyg2ooEtzho",
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
       "views": 1259,
-      "score": 67.9,
+      "score": 68,
       "country": "Global",
-      "ageDays": 19.8
+      "ageDays": 20.8
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 10,
       "score": 0.7,
       "country": "Global",
-      "ageDays": 22.8
+      "ageDays": 23.8
     },
     {
       "videoId": "6UEpONYClmg",
@@ -107,7 +107,7 @@
       "views": 67,
       "score": 3.8,
       "country": "Global",
-      "ageDays": 28.8
+      "ageDays": 29.8
     },
     {
       "videoId": "_NXBxpZnYS8",
@@ -115,7 +115,7 @@
       "views": 94,
       "score": 6.2,
       "country": "Global",
-      "ageDays": 25.8
+      "ageDays": 26.8
     },
     {
       "videoId": "mHpF6_z6UoA",
@@ -123,7 +123,7 @@
       "views": 121,
       "score": 7.2,
       "country": "Global",
-      "ageDays": 21.8
+      "ageDays": 22.8
     },
     {
       "videoId": "S1mLvoUzF0s",
@@ -131,14 +131,14 @@
       "views": 218,
       "score": 9.6,
       "country": "Global",
-      "ageDays": 29.8
+      "ageDays": 30.8
     }
   ],
   "titlePatterns": [
     {
       "name": "ALL CAPS word",
       "n": 8,
-      "lift": 1.93
+      "lift": 1.94
     },
     {
       "name": "question",
@@ -148,7 +148,7 @@
     {
       "name": "short (<= 40 chars)",
       "n": 15,
-      "lift": 0.43
+      "lift": 0.44
     },
     {
       "name": "has number",
@@ -159,7 +159,7 @@
   "countries": {
     "Global": {
       "n": 29,
-      "meanScore": 87.8,
+      "meanScore": 69.7,
       "weight": 0.99
     }
   },
@@ -167,37 +167,37 @@
   "categories": {
     "quiz-scene": {
       "n": 1,
-      "meanScore": 657,
+      "meanScore": 353.1,
       "weight": 1
     },
     "quiz-outfit": {
       "n": 1,
-      "meanScore": 320,
+      "meanScore": 240.3,
       "weight": 1
     },
     "quiz-shape": {
       "n": 5,
-      "meanScore": 147.7,
+      "meanScore": 130.3,
       "weight": 1.6
     },
     "quiz-city": {
       "n": 1,
-      "meanScore": 180.1,
+      "meanScore": 154.3,
       "weight": 1
     },
     "quiz-idol": {
       "n": 2,
-      "meanScore": 66.1,
+      "meanScore": 60.9,
       "weight": 1
     },
     "quiz-character": {
       "n": 2,
-      "meanScore": 41.1,
+      "meanScore": 41.2,
       "weight": 1
     },
     "quiz-eyes": {
       "n": 1,
-      "meanScore": 62.8,
+      "meanScore": 51.3,
       "weight": 1
     },
     "quiz-trivia": {
@@ -210,24 +210,24 @@
       "meanScore": 41.8,
       "weight": 1
     },
-    "quiz-song": {
-      "n": 2,
-      "meanScore": 21,
-      "weight": 1
-    },
     "quiz-emoji": {
       "n": 4,
-      "meanScore": 27.5,
-      "weight": 0.75
+      "meanScore": 27.4,
+      "weight": 0.78
+    },
+    "quiz-song": {
+      "n": 2,
+      "meanScore": 18.8,
+      "weight": 1
     },
     "quiz-opening": {
       "n": 2,
-      "meanScore": 28.6,
+      "meanScore": 27.5,
       "weight": 1
     },
     "quiz-voice": {
       "n": 1,
-      "meanScore": 24.8,
+      "meanScore": 25.3,
       "weight": 1
     },
     "quiz-cityphoto": {
@@ -250,35 +250,35 @@
   "history": [
     {
       "title": "Guess the Anime From One Scene 🔥 #anime",
-      "score": 6.489
+      "score": 5.869
     },
     {
       "title": "Can You Name These Anime Characters From Their Costume? 🎧 #anime",
-      "score": 5.771
+      "score": 5.486
     },
     {
       "title": "guess the country by its shape asia quiz 👀 #geography",
-      "score": 5.608
+      "score": 5.432
     },
     {
       "title": "Guess the Chinese City From the Map 🔥 #china",
-      "score": 5.199
+      "score": 5.045
     },
     {
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "score": 5.016
+      "score": 4.899
     },
     {
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "score": 5.006
+      "score": 4.879
     },
     {
       "title": "guess the kpop idol 🔥 #kpop",
-      "score": 4.688
+      "score": 4.613
     },
     {
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "score": 4.594
+      "score": 4.506
     },
     {
       "title": "Guess the Country by Its Shape 🗺️ #geography",
@@ -286,11 +286,11 @@
     },
     {
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "score": 4.232
+      "score": 4.233
     },
     {
       "title": "GLASSES EDITION 👓 Anime Eyes Quiz: Easy to IMPOSSIBLE 🎧",
-      "score": 4.156
+      "score": 3.957
     },
     {
       "title": "How Well Do You Know Chinese Movies?",
@@ -305,36 +305,36 @@
       "score": 3.756
     },
     {
-      "title": "Guess the Anime Song: Can You Name All 3? 👀",
-      "score": 3.745
-    },
-    {
       "title": "guess the anime from emojis 🎬 #anime",
       "score": 3.735
     },
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 3.66
+      "score": 3.656
+    },
+    {
+      "title": "Guess the Anime Song: Can You Name All 3? 👀",
+      "score": 3.636
     },
     {
       "title": "Guess the Anime Opening in 3 Seconds 🎶",
-      "score": 3.508
+      "score": 3.5
     },
     {
       "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
-      "score": 3.25
-    },
-    {
-      "title": "Only Real Otakus Get 3/3 🎶 #anime",
-      "score": 3.248
-    },
-    {
-      "title": "guess the kpop idol 🔥 #kpop",
-      "score": 3.237
+      "score": 3.269
     },
     {
       "title": "guess the anime from emojis 🔥 #anime",
       "score": 3.215
+    },
+    {
+      "title": "Only Real Otakus Get 3/3 🎶 #anime",
+      "score": 3.173
+    },
+    {
+      "title": "guess the kpop idol 🔥 #kpop",
+      "score": 3.131
     },
     {
       "title": "Only Travel Nerds Get 3/3 ✈️",
@@ -342,7 +342,7 @@
     },
     {
       "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "score": 2.724
+      "score": 2.727
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
@@ -366,9 +366,9 @@
     },
     {
       "title": "Only Real Otakus Get 3/3 🎶",
-      "score": 0.515
+      "score": 0.526
     }
   ],
-  "promptSummary": "Based on 30 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 39.1/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Guess the Anime From One Scene 🔥 #anime\" (1,165 views, Global)\n  - \"Can You Name These Anime Characters From Their Costume? 🎧 #anime\" (1,098 views, Global)\n  - \"guess the country by its shape asia quiz 👀 #geography\" (1,287 views, Global)\n  - \"Guess the Chinese City From the Map 🔥 #china\" (1,021 views, Global)\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (1,069 views, Global)\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (1,271 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (10 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (67 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (94 views)\nPatterns that WORK for this channel: ALL CAPS word (x1.93)\nPatterns that UNDER-perform: question (x0.77), short (<= 40 chars) (x0.43), has number (x0.33)",
-  "summaryLine": "Best recent: \"Guess the Anime From One Scene 🔥 #anime\" (1,165 views, 657/day) — typical short 39.1/day over 30 shorts"
+  "promptSummary": "Based on 30 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 36.4/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"Guess the Anime From One Scene 🔥 #anime\" (1,173 views, Global)\n  - \"Can You Name These Anime Characters From Their Costume? 🎧 #anime\" (1,108 views, Global)\n  - \"guess the country by its shape asia quiz 👀 #geography\" (1,288 views, Global)\n  - \"Guess the Chinese City From the Map 🔥 #china\" (1,021 views, Global)\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (1,271 views, Global)\n  - \"Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography\" (1,069 views, Global)\nTitles that performed WORST for us:\n  - \"Only Real Otakus Get 3/3 🎶\" (10 views)\n  - \"Who Would You Pick? Anime Edition ⚔️\" (67 views)\n  - \"who would you pick anime: teacher roommate fight ⚔️\" (94 views)\nPatterns that WORK for this channel: ALL CAPS word (x1.94)\nPatterns that UNDER-perform: question (x0.77), short (<= 40 chars) (x0.44), has number (x0.33)",
+  "summaryLine": "Best recent: \"Guess the Anime From One Scene 🔥 #anime\" (1,173 views, 353.1/day) — typical short 36.4/day over 30 shorts"
 }

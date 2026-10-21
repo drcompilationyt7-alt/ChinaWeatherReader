@@ -886,6 +886,55 @@
     "titleStyle": "fans",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "IqdVixQTNWg",
+   "url": "https://www.youtube.com/watch?v=IqdVixQTNWg",
+   "postedAt": "2026-10-21T07:53:50.203Z",
+   "publishAt": "2026-10-21T12:00:00.000Z",
+   "format": "trivia",
+   "theme": "cities",
+   "seed": 215438763,
+   "length": "quick",
+   "titleTemplate": "trivia-llm",
+   "title": "asia city quiz: ice festival capital bund 🧠 #asia",
+   "answers": [
+    "trivia:which city hosts a huge ice festival?",
+    "trivia:which japanese city was the capital for 1,000+ years?",
+    "trivia:which city has the famous bund waterfront?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "challenge"
+   }
+  },
+  {
+   "videoId": "N88FFnncCUA",
+   "url": "https://www.youtube.com/watch?v=N88FFnncCUA",
+   "postedAt": "2026-10-21T07:58:57.513Z",
+   "publishAt": "2026-10-21T21:00:00.000Z",
+   "format": "character",
+   "theme": "anime",
+   "seed": 340059912,
+   "length": "quick",
+   "edition": "halloween",
+   "titleTemplate": "character-llm",
+   "title": "guess the anime character halloween edition 3 rounds anime 🔥 #anime",
+   "answers": [
+    "character:c.c.",
+    "character:rukia kuchiki",
+    "character:marcille donato"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "challenge"
+   }
   }
  ]
 }

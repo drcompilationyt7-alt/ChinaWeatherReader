@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=S1mLvoUzF0s",
-      "title": "Asia City Quiz: Can You Get 3/3? 🔥 #asia",
-      "country": "Global",
-      "postedAt": "2026-09-20T12:33:56.841Z",
-      "videoId": "S1mLvoUzF0s",
-      "category": "quiz-trivia",
-      "titleSource": "trivia-llm",
-      "quizFormat": "trivia",
-      "quizTheme": "cities"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=6UEpONYClmg",
       "title": "Who Would You Pick? Anime Edition ⚔️",
       "country": "Global",
@@ -339,6 +328,28 @@
       "category": "quiz-opening",
       "titleSource": "op-otaku",
       "quizFormat": "opening",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=IqdVixQTNWg",
+      "title": "asia city quiz: ice festival capital bund 🧠 #asia",
+      "country": "Global",
+      "postedAt": "2026-10-21T07:53:50.382Z",
+      "videoId": "IqdVixQTNWg",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-llm",
+      "quizFormat": "trivia",
+      "quizTheme": "cities"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=N88FFnncCUA",
+      "title": "guess the anime character halloween edition 3 rounds anime 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-21T07:58:57.726Z",
+      "videoId": "N88FFnncCUA",
+      "category": "quiz-character",
+      "titleSource": "character-llm",
+      "quizFormat": "character",
       "quizTheme": "anime"
     }
   ]
