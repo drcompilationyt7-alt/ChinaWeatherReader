@@ -658,6 +658,13 @@ Sound path runtime on CI adds the visible-source pass: ~0.3 s / event motion + S
     hash(video id) % n), and add the dreamy colour words (pastel, soft, night, rain) to the dreamy queries.
   - **Fix applied 2026-10-20 (slowmo_grow.py)**: AMV + scenery types dropped, twixtor / scenepack / 4k anime scenes / 60fps weighted, anime-signal title
     filter + OP/ED/creditless/live-action reject, crc32(video id) % n shard before download, dreamy mood words; selftest covers all.
+- **2026-10-21 nightly (run 39555543327, first night with the yield fix)**: 334 library sources (now unique per shard) -> staged
+  **12** (sg 9 / db 3; was 19). By eye (ffmpeg 8-frame strips + per-frame YDIF repeat count): **3 approved** (sg c_x1_t1_5fTwk_116000,
+  c_LQUqqOIKJIU_18700; db c_q45QznrGo2w_30800), **9 rejected** (stutter: Spirited Away every-other-frame repeats + warp smears 2,
+  periodic repeat every 30 frames 5, held drawings 10; garish: MMD 3D 0, cyan/red 6; talking 4 7; cut 4; face cut off / hidden 9 11).
+  Pool now **summer_glow 31 / dreamy_bloom 13**; sources_seen 982. Yield 25 % (5/19 = 26 % last night): the fix removed live action /
+  AMV, but the clean gate still loses most batches (colour / talk) and twixtor packs bring 30 fps doubled or repeated frames.
+  pull-staged no longer crashes without cv2 (17c9749: index.json first, sheets skipped) - build the strips with ffmpeg.
 - **3b's cut problem, measured** (core/edit/music_moments.py on 3b's own regular audio): the planner analysed the right (regular) audio, but
   _cine_pick_pulse chose 1.28 s = 4 eighths of a song whose meter is 3 eighths (main beat 0.952 s regular / 1.115 s slowed 0.85): only
   29 % of 3b's cuts sat on the main beat (most a third of a beat off), 71 % on a musical moment, the first clip 0.6 s after the vocal line
@@ -898,6 +905,12 @@ sheet); only memory/edit-pool-fetch.json is committed. Session start: `python co
 output/edit-pools/_staged_sound/*/sheets/*.jpg -> dispatch the workflow with import_tars="sound-cand-... .tar" reject="id,id" (CI pulls
 the FULL live pool, apply-staged, push, commits the pins, deletes the tars; never import locally: the PC pool has pruned media and a
 push from it would upload a pool without them). Queries: +6 suffixes (900 total), then a by-day re-search rotation.
+- **2026-10-21 first staged batch (run 39585814839)**: sound-cand-20261021-n10.tar, 10 clips from only 4 sources (Sword of the Stranger 5,
+  Samurai Champloo 4, Lazarus 1). Reviewed on zoomed strips (hit-0.7..+0.25 s; the pull extracts only sheets, clips taken from the tar
+  to scratch). **2 approved** (c_RTDeuS24k2s_771 sword draw close-up, c_qMg3Jqoxksg_186135 wind-up + slash), **8 rejected** (pin after
+  the kick contact 885052; flying object / unclear cause 46285; tiny off-centre clash behind a silhouette 25129; small sheathe 471126;
+  wide chaotic shots / cuts before the hit 170200 150585 200044 122560). Import run 39679235739 success: 2 added, **pins 65**.
+  Yield problem: 10 candidates per night from 4 sources is far too slow for ~230 pins; the vision gate accepts wide battle shots.
 
 **Pool upload**: `push --preset slowmo` (summer_glow 29 reviewed clean + dreamy_bloom 12; cine_reject media skipped) -> edit-pools.
 
@@ -998,3 +1011,23 @@ the 3j method: tempo-normalised waves, hold tails + outro, judge 11 / 12_sync / 
   (restores v2), the artifact keeps the slow-mo plan (*.plan.json) and the guard's judge dir (report / sheets / waves / cutframes).
 - LRCLIB: an outage while JUDGING = 12c line starts "n/a" (not a failure); an outage while RENDERING = a slow-mo without lyrics ->
   3_lyrics 0 -> the pre-upload guard blocks it -> that day posts stem (no lyric-less slow-mo).
+
+### 2026-10-21: first unpinned slow-mo CI dry run ("blue" @v0.9) failed the guard -> 4 fixes (fork of the go-live coordinator)
+Run 39528210460 (b960700): judge **7.29 NOT PASS** -> stem fallback. Causes and fixes:
+- **9_no_sfx 0 (12 gain jumps) = a real over-limited master**, not a judge error: "blue" is a dynamic master (window -12.5 LUFS /
+  -1.0 dBTP); the -6.8 LUFS target needed ~7 dB of peak limiting, the engine limiter flattened the mix (quiet bars +17 dB vs the
+  song, the intro duck gone; the judge's lag search also locked 3.2 ms off -> corr 0.20). Fix: planners._cine_master_lufs caps the
+  target at song LUFS + (ceiling - song TP) + 3 dB (blue -> -10.7 LUFS; Golden Hour needs 2.9 dB -> unchanged). Simulated: corr
+  0.99, residual -41 dB, 0 jumps.
+- **max-shots lambda cliff** (d8125a6): a per-switch cost above the strong-skip cost (8) collapsed the layout to 9 shots. Now an
+  exact DP with the shot count as a dimension (best layout with <= cine_max_shots shots).
+- **planner vs judge thresholds**: hero floor 2.4 s skipped the line start "I'll imagine" 1.7 s after the drop -> a strong wave may
+  end the hero shot from 1.4 s x tempo; body floor WV_SHOT 0.75 -> 0.70 (= JW_MIN_SHOT).
+- **borderline syllables** ("with me?" = one held note for the judge, two waves for music_moments; "still"/"the" 0.61 s apart):
+  _cine_judge_repair runs the judge's own wave_events on the song window and drops cuts the judge reads mid-hold / in a held tail
+  (shot <= 7 s), moves a switch later inside its start's hit window or adds one for a missed strong start (unpinned plans only;
+  SLOWMO_JUDGE_REPAIR=0 disables).
+- judge: '♫♫♫' LRC lines are not lyric line starts; 12b uses criterion 11's excuses (pick-up into a switched start, an attack
+  < JW_MIN_SHOT after a switch that is on another strong start).
+Plan-only check (scratchpad harness, judge E on the capped master): 28 shots, 0 mid-wave / 0 missed / 0 sync off / 0 line off /
+0 tail cuts (36.09 "with me?" holds to 41.77).

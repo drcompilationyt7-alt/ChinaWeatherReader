@@ -1227,6 +1227,8 @@ def line_sync(E, cuts, dur, lrc_id, m_start, speed, body_from, end_guard=1.0):
     for L in rec['lines']:
         if L.get('t') is None or not str(L.get('text') or '').strip():
             continue
+        if not any(ch.isalnum() for ch in str(L['text'])):
+            continue                       # an instrumental marker line ('♫♫♫', blue 39.64 s): nothing is sung there
         t = float(L['t']) / float(speed or 1.0) - float(m_start)
         if t < body_from + 0.3 or t > dur - end_guard:
             continue
@@ -1355,9 +1357,16 @@ def sync_check(E, cuts, dur, body_from, end_guard=1.0):
 
         def _e(c_):
             return 0.0 if lo <= c_ <= hi else (c_ - hi if c_ > hi else c_ - lo)
-        if any(abs(a[0] - t) <= JW_JOIN * tsc and any(a[4] - JW_HIT[1] <= c_ <= a[0] - JW_HIT[0] for c_ in cuts)
+        if any((abs(a[0] - t) <= JW_JOIN * tsc or t < a[4] <= t + JW_JOIN * tsc)
+               and any(a[4] - JW_HIT[1] <= c_ <= a[0] - JW_HIT[0] for c_ in cuts)
                for a in E['attacks'] if a[0] != t):
-            continue                       # (a breath / consonant of a start whose switch is on: one wave start)
+            continue                       # (a breath / consonant / pick-up of a start whose switch is on: one wave start)
+        # 2026-10-21 (CI dry run "blue" @v0.9): the same excuses as criterion 11 - an attack closer than JW_MIN_SHOT after
+        # a switch that sits ON another strong start belongs to that shot (12.96 "is" 0.55 s after "sky", switched)
+        prev_on = [c_ for c_ in cuts if 0.0 <= t - c_ < JW_MIN_SHOT * tsc
+                   and any(a[2] and a[0] != t and a[4] - JW_HIT[1] <= c_ <= a[0] - JW_HIT[0] for a in E['attacks'])]
+        if prev_on:
+            continue
         near = [c for c in cuts if abs(c - t) <= SYNC_NEAR]
         if not near:
             continue                       # (no switch meant for it: criterion 11 'missed' when it carries)
