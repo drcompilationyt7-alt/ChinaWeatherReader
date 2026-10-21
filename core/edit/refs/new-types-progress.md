@@ -1065,3 +1065,7 @@ CI round 2 (run 39681299239, f9d4bbd): 9.43 NOT PASS - 9_no_sfx 10, 13 10, 12c l
 CI had only 25 clean clips, the repair could not add a switch. Fix: at the clip cap the repair swaps out the switch whose removal
 the judge does not notice (here 21.59 "your" = a pick-up into the switched "I'll" line). 4_mix 8.34 (-10.8 LUFS vs ref -6.9: the
 price of the <= 3 dB limiting cap). Clip rotation: 12 / 24 shots reused (50 %, the 3j clips).
+CI round 3 (run 39685056799, 19cdae6): timing clean - 11 = 10, 12_sync = 10 (lines 7/7), 13 = 10, 9_no_sfx = 10 (corr 0.98) - but
+3_lyrics 0: a Whisper word outside the LRC (lyrics._foreign, lyric=False, "BE") went on screen in the intro (this run aligned only
+"THAT I", run 2 had "THAT / I'LL WE / FELL / IN / LOVE": the foreign-region check is not stable on this intro). Fix: lyric_text.build
+drops lyric=False words for cinematic_slowmo (lyrics only on screen).

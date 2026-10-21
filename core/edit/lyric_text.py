@@ -463,6 +463,10 @@ def build(preset, words, plan, rng=None):
         elif rec:
             summ['text_recipe'] = rec
         return ovs, summ
+    if preset == 'cinematic_slowmo':
+        # 2026-10-21 (CI dry run 3, "blue"): a Whisper word outside the LRC (lyrics._foreign, lyric=False) went on screen and
+        # the judge failed it (3_lyrics 0, NON-LYRIC). The slow-mo edit shows the song's lyrics only (owner 2026-10-18).
+        words = [w for w in words or [] if w.get('lyric', True)]
     rule = dict(rule)
     var = 'base'
     for vn, v in (rule.get('variants') or {}).items():
