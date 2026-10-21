@@ -34,7 +34,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-        with: { sparse-checkout: scripts/comments.py, sparse-checkout-cone-mode: false }
+        with:
+          sparse-checkout: scripts/comments.py
+          sparse-checkout-cone-mode: false
       - name: Run
         env:
           MODE: ${{ inputs.mode }}
@@ -53,4 +55,7 @@ jobs:
           done
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: comments-${{ inputs.mode }}, path: out/, retention-days: 3 }
+        with:
+          name: comments-${{ inputs.mode }}
+          path: out/
+          retention-days: 3
