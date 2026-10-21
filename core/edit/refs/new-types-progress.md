@@ -1069,3 +1069,9 @@ CI round 3 (run 39685056799, 19cdae6): timing clean - 11 = 10, 12_sync = 10 (lin
 3_lyrics 0: a Whisper word outside the LRC (lyrics._foreign, lyric=False, "BE") went on screen in the intro (this run aligned only
 "THAT I", run 2 had "THAT / I'LL WE / FELL / IN / LOVE": the foreign-region check is not stable on this intro). Fix: lyric_text.build
 drops lyric=False words for cinematic_slowmo (lyrics only on screen).
+CI round 4 (run 39690162623, f44eb28): 9.43 NOT PASS - 3_lyrics 8.67 (fixed), 9 / 12 / 13 = 10, but 11 = 7: "me?" 36.47 missed. The
+planner's own waves are NOT deterministic run to run (Demucs): round 3 planned 35.95 "with" + 37.06, round 4 only 37.07 (no "with"),
+which the repair dropped -> the 34.93 shot ran 6.8 s over "with me?". Fix: a cut the judge reads mid-hold / in a tail first MOVES
+back to the start of the strong wave it fell into (37.07 -> 36.00 "with"; checked on the round-4 cut list: 0 bad / 0 missed);
+only when that does not fit is it dropped. Round 5 dispatched; the judge's own Demucs analysis also varies (round 3 heard "me?"
+inside the tail, round 4 as a strong start), so borderline syllables can still flip a run - the guard then posts stem.

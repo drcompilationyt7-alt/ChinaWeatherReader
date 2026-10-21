@@ -3103,6 +3103,17 @@ def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=4):
                 if k == 0 or abs(sw[k] - c) > 0.02:
                     continue
                 nxt = sw[k + 1] if k + 1 < len(sw) else float(D)
+                # first choice: the switch moves back to the start of the wave / held note it fell into (CI dry run 4: 37.07
+                # inside "with me?" held from 36.06, and no switch on "with" -> dropping it left "me?" 'missed' in the render)
+                st_a = [a for a in E['attacks'] if a[2] and a[0] < sw[k] and sw[k] - a[0] < 2.5]
+                if st_a:
+                    a = max(st_a, key=lambda a: a[0])
+                    tb = fr(max(a[4] - JS.JW_HIT[1], a[0] - 0.10))
+                    if tb <= a[0] - JS.JW_HIT[0] and tb - sw[k - 1] >= lo and nxt - tb >= lo and                             not any(abs(x - tb) < lo for j_, x in enumerate(sw) if j_ != k):
+                        rep['moved'].append([round(sw[k], 3), round(tb, 3)])
+                        sw[k] = tb
+                        changed = True
+                        continue
                 if nxt - sw[k - 1] <= 7.0:
                     rep['dropped'].append(round(sw[k], 3))
                     del sw[k], st_[k]
