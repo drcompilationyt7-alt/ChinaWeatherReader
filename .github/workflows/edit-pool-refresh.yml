@@ -3,10 +3,12 @@ name: Sound pool growth (nightly until the target, staged, grow-only)
 # GROW-ONLY growth of the SOUND pool (core/pools/sound_refresh.py; owner 2026-10-17, nightly + staged since 2026-10-20: "growing
 # pool, we can reuse the clips but just variety"). The daily sound edit (sound_11b) uses only pinned, approved hits
 # (core/edit/assets/sound-hit-allowlist.json), so growth = new pinned hits:
-#   mine   (4 shards) source discovery with the spare-account cookies (secret YOUTUBE_COOKIES_EDIT, --js-runtimes node, paced,
+#   mine   (6 shards since 2026-10-21, was 4: all shards search the same night's queries, each downloads only its own
+#          videos = crc32(video id) % 6) source discovery with the spare-account cookies (secret YOUTUBE_COOKIES_EDIT, --js-runtimes node, paced,
 #          every searched query / seen video remembered in memory/edit-pool-fetch.json) -> hit_scan (dense) -> the
 #          VISIBLE-SOURCE gate (core/edit/sound_visible.py) -> <= 3 s minis -> the VISION gate (core/pools/hit_vision.py: two
-#          Gemini models must name one obvious action, strict) -> hit_import safety (NudeNet / SigLIP / burned-in text)
+#          Gemini models must name one obvious action, strict; a cheap CPU pre-filter core/pools/clip_prefilter.py drops
+#          off-hit / tiny / off-centre / wide chaotic minis before the paid call) -> hit_import safety (NudeNet / SigLIP / text)
 #   swap   pull the live pool (a CI copy) -> merge (dedupe vs pool / ledger / blocklists / picture signature) -> visible-source
 #          stamp -> AI sharpening -> QUALITY BASELINE check -> contact sheet -> STAGE: the new clips + their rows / pins as
 #          sound-cand-<date>-n<N>.tar on the release `edit-pools-staging`. NOTHING reaches the live pool here; only the fetch
@@ -164,7 +166,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -199,13 +201,17 @@ jobs:
       - name: Pull the live sound manifests (dedupe against the pool)
         run: node scripts/edit-pools-store.js pull --manifests-only --preset sound
 
-      - name: Mine shard ${{ matrix.shard }} of 4 (fetch -> hit_scan -> visible-source gate -> vision gate -> safety)
+      - name: Mine shard ${{ matrix.shard }} of 6 (fetch -> hit_scan -> visible-source gate -> pre-filter -> vision gate -> safety)
         env:
           BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || github.event.inputs.budget_min || '150' }}
-          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '6' }}
-          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '12' }}
+          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '10' }}
+          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '20' }}
+          SOUND_VID_SHARD: '1'
         run: |
-          python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/4 --budget-min "$BUDGET" \
+          python core/pools/clip_prefilter.py selftest > /dev/null
+          python core/pools/sound_refresh.py selftest > /dev/null
+          sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
+          python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/6 --budget-min "$BUDGET" \
             --queries "$NQ" --max-sources "$NSRC" | tail -c 4000
           du -sh work/out || true
           rm -f /tmp/yt_cookies.txt

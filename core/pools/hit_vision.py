@@ -124,14 +124,21 @@ def _call(model, key, parts, timeout=120):
     return json.loads(m.group(0)) if m else None
 
 
+_COOL = {}          # (model, key) -> time until which a 429 (quota) key is skipped
+
+
 def ask(model, parts):
-    """One answer from `model`, rotating the keys on quota / server errors. None = unavailable."""
+    """One answer from `model`, rotating the keys on quota / server errors. None = unavailable.
+    2026-10-21: a 429 puts that key on a cooldown (daily quota: the rest of the run, per-minute: 65 s) and a model whose keys are
+    all cooling answers None at once - the 10-21 night lost ~5 min per mini retrying an exhausted model on every key."""
     ks = keys()
     if not ks:
         raise RuntimeError('no GEMINI_API_KEY* in the environment')
     for attempt in range(len(ks) * 2):
         k = ks[(attempt + hash(model)) % len(ks)]
-        if (model, k) in _DEAD:
+        if (model, k) in _DEAD or _COOL.get((model, k), 0) > time.time():
+            if all((model, x) in _DEAD or _COOL.get((model, x), 0) > time.time() for x in ks):
+                return None
             continue
         try:
             return _call(model, k, parts)
@@ -140,6 +147,14 @@ def ask(model, parts):
                 return None                      # model not served
             if e.code in (400, 401, 403):
                 _DEAD.add((model, k))
+            if e.code == 429:
+                try:
+                    body = e.read().decode(errors='replace')
+                except Exception:  # noqa: BLE001
+                    body = ''
+                daily = bool(re.search(r'per ?day|PerDay|daily', body, re.I))
+                _COOL[(model, k)] = time.time() + (6 * 3600 if daily else 65)
+                continue
             time.sleep(min(30, 3 * (attempt + 1)))
         except (urllib.error.URLError, TimeoutError, ValueError, OSError):
             time.sleep(3)

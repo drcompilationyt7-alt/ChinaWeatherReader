@@ -1,14 +1,15 @@
-name: Slow-mo pool mining (nightly until ~60 clips per vibe, then monthly)
+name: Slow-mo pool mining (nightly until ~115 clips per vibe, then monthly)
 
 # GROW-ONLY candidate mining for the cinematic SLOW-MO edit (core/pools/slowmo_grow.py; owner 2026-10-18: the PC can stay off).
 #   plan     the live slow-mo manifests (no media) + the miner state come from the staging release `edit-pools-staging`
 #            (uploaded by the owner PC: `python core/pools/slowmo_grow.py push-manifests`); `need` says whether any vibe is
-#            still under 60 clean clips (live reviewed + staged candidates). Nightly while it is; once every vibe is there the
+#            still under SLOWMO_POOL_TARGET (repo variable, default 115) clean clips (live reviewed + staged candidates). Nightly while it is; once every vibe is there the
 #            nightly runs stop by themselves and only the first-of-the-month run mines (monthly).
-#   mine     3 shards (different queries), <= ~3.5 h each: twixtor / raw packs -> yt-dlp (secret YOUTUBE_COOKIES_EDIT, private jar,
+#   mine     6 shards (2026-10-21, was 3; different queries + video-id shards), <= ~3.5 h each: twixtor / raw packs -> yt-dlp (secret YOUTUBE_COOKIES_EDIT, private jar,
 #            --js-runtimes node, 22-32 s between downloads) -> library.py --local (every gate incl. the per-shot SAFETY gate) ->
 #            vibe_pool import against the live manifests -> cine_vibe.gate (the planner's hard rejects, talking-mouth fix) ->
-#            sources deleted. Artifact: the candidates, their QA sidecars and contact sheets.
+#            core/pools/clip_prefilter.py (stutter / talking / hidden face / garish; calibrated on the by-eye labels) ->
+#            sources deleted. Each job keeps its own 22-32 s download pacing (separate runner IPs). Artifact: the candidates, their QA sidecars and contact sheets.
 #   publish  one tar per shard (slowmo-cand-<date>-s<k>-sg<N>-db<M>.tar) + the merged state -> release `edit-pools-staging`.
 # Nothing reaches the live pool or the daily edit here: the owner PC pulls the candidates, reviews them by eye and imports them
 # (`slowmo_grow.py pull-staged` / `import-staged`). Off with the repository variable SLOWMO_POOL_MINE=off.
@@ -64,10 +65,10 @@ jobs:
           else
             echo "::warning::no slowmo-live-manifests.tar on edit-pools-staging (run slowmo_grow.py push-manifests on the PC)"
           fi
-      - name: Still needed? (nightly while any vibe < 60, else the first of the month only)
+      - name: Still needed? (nightly while any vibe < the target, else the first of the month only)
         id: need
         run: |
-          NEED=$(python core/pools/slowmo_grow.py need --target 60 | tail -1)
+          NEED=$(python core/pools/slowmo_grow.py need --target "${{ vars.SLOWMO_POOL_TARGET || '115' }}" | tail -1)
           GO=true
           if [ "${{ github.event_name }}" = "schedule" ] && [ "$NEED" != "go" ] && [ "$(date -u +%d)" != "01" ]; then GO=false; fi
           if [ "${{ github.event.inputs.force }}" = "true" ]; then GO=true; fi
@@ -82,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2]
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -113,9 +114,11 @@ jobs:
           gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-live-manifests.tar --dir /tmp/st \
             && tar -xf /tmp/st/slowmo-live-manifests.tar -C output/edit-pools || true
           gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-grow-state.json --dir /tmp/st || echo '{}' > /tmp/st/slowmo-grow-state.json
-      - name: Mine shard ${{ matrix.shard }} of 3
+      - name: Mine shard ${{ matrix.shard }} of 6
         run: |
-          python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/3 \
+          python core/pools/clip_prefilter.py selftest > /dev/null
+          sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
+          python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/6 \
             --budget-min "${{ github.event.inputs.budget_min || '200' }}" --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000
           rm -f /tmp/yt_cookies.txt
           du -sh work/out || true

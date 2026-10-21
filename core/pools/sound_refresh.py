@@ -52,6 +52,7 @@ ALLOW_P = os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-hit-allowlist.json
 HIT_BLOCK_P = os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-hit-blocklist.json')
 BASELINE_P = os.environ.get('SOUND_PINS_BASELINE') or os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-pins-baseline.json')
 CRISP_TAGS = {'clap', 'object', 'chain'}
+PREFILTER = os.environ.get('SOUND_PREFILTER', '1') != '0'
 # dense mining (2026-10-17: short build-up + hit + quick cut doubled the yield per source)
 DENSE = {'HIT_SCAN_SPACING': '1.5', 'HIT_SCAN_PRE_MIN': '0.3', 'HIT_SCAN_POST_MIN': '0.2', 'HIT_SCAN_PER_MIN': '16', 'HIT_SCAN_CAP': '20'}
 # query generator: shows that gave eye-approved hits first, then more action shows; the suffixes that worked (fetch14-24)
@@ -69,6 +70,17 @@ SUFFIXES = ['fight scene', 'best fight scenes', 'gunfight scene', 'sword fight s
 # 2026-10-20 nightly growth: more suffixes once the first ones are used up; then the old queries again (new uploads; every
 # seen video is remembered, so a re-search only fetches new ones)
 SUFFIXES_MORE = ['final fight scene', 'punch scene', 'sword clash scene', 'action scene 4K', 'fight 60fps', 'boss fight scene']
+# 2026-10-21 yield push: more popular action shows + the fight-compilation / sakuga suffixes (searched after the lists above)
+SHOWS_MORE = ['Jujutsu Kaisen Shibuya Incident', 'Jujutsu Kaisen 0', 'Demon Slayer Infinity Castle', 'Demon Slayer Swordsmith Village',
+              'Demon Slayer Entertainment District', 'Chainsaw Man Reze Arc', 'One Punch Man Season 3', 'Mob Psycho 100 III',
+              'Bleach TYBW', 'Solo Leveling Season 2', 'Kaiju No 8', 'Sakamoto Days', 'Dandadan Season 2', 'Frieren Beyond Journeys End',
+              'Vinland Saga Season 2', 'Attack on Titan Final Season', 'My Hero Academia', 'Naruto Shippuden', 'Boruto', 'Dragon Ball Super',
+              'One Piece Wano', 'One Piece Egghead', 'Black Clover', 'Blue Exorcist', 'Fire Force Season 3', 'Gachiakuta', 'Wistoria',
+              'Shangri-La Frontier', 'Ninja Kamui', 'Hells Paradise', 'Mashle Magic and Muscles', 'Spy x Family Code White',
+              'Lord of Mysteries', 'Tougen Anki', 'Kagurabachi', 'Gintama', 'JoJos Bizarre Adventure', 'Berserk 1997', 'Trigun Stampede',
+              'Pluto', 'Ghost of Tsushima anime', 'Sword Art Online Alicization', 'Overlord', 'That Time I Got Reincarnated as a Slime',
+              'The Eminence in Shadow', 'Classroom of the Elite', 'Haikyuu', 'Kengan Ashura Season 2', 'Baki Hanma Season 2', 'Kill Bill anime']
+SUFFIXES_SAKUGA = ['best fight', 'sakuga', 'fight scene 4k 60fps', 'sakuga fight scene', 'best fight scene 4K', 'fight scene HD']
 
 
 def log(*a):
@@ -96,11 +108,25 @@ def today():
 
 # ------------------------------------------------------------------ queries / fetch state
 
+POPULAR = ['Jujutsu Kaisen', 'Demon Slayer', 'Chainsaw Man', 'One Punch Man', 'Mob Psycho 100', 'Bleach Thousand-Year Blood War',
+           'Solo Leveling', 'Kaiju No. 8', 'Sakamoto Days', 'Dandadan', 'Frieren', 'Vinland Saga', 'Attack on Titan']
+
+
 def all_queries():
-    return [f'{s} {x}' for x in SUFFIXES + SUFFIXES_MORE for s in SHOWS]
+    # 2026-10-21: the popular action shows x the fight-compilation / sakuga suffixes first, then the original list, then the rest
+    qs = [f'{s} {x}' for x in ['best fight', 'sakuga', 'fight scene 4K', 'best fight scenes'] for s in POPULAR + SHOWS_MORE[:16]]
+    qs += [f'{s} {x}' for x in SUFFIXES + SUFFIXES_MORE for s in SHOWS]
+    qs += [f'{s} {x}' for x in SUFFIXES[:2] + SUFFIXES_SAKUGA[:2] for s in SHOWS_MORE]
+    qs += [f'{s} {x}' for x in SUFFIXES_SAKUGA for s in SHOWS]
+    qs += [f'{s} {x}' for x in SUFFIXES[2:] + SUFFIXES_MORE + SUFFIXES_SAKUGA[2:] for s in SHOWS_MORE]
+    seen = set()
+    return [q for q in qs if not (q in seen or seen.add(q))]
 
 
 def pick_queries(shard, n_shards, n, state):
+    """n queries per shard. With SOUND_VID_SHARD=1 (the nightly CI, 2026-10-21) every shard gets the SAME n * n_shards queries and
+    takes only its own videos (crc32(video id) % n_shards, hit_scan HIT_SCAN_VID_SHARD): all results of every query are covered,
+    no video is downloaded twice."""
     done = set(state.get('queries') or {})
     todo = [q for q in all_queries() if q not in done]
     if len(todo) < n * n_shards:
@@ -108,6 +134,8 @@ def pick_queries(shard, n_shards, n, state):
         aq = all_queries()
         off = (_dt.datetime.now(_dt.timezone.utc).toordinal() * n * n_shards) % len(aq)
         todo += [q for q in aq[off:] + aq[:off] if q not in todo]
+    if os.environ.get('SOUND_VID_SHARD') == '1':
+        return todo[:n * n_shards]
     return todo[shard::n_shards][:n]
 
 
@@ -123,6 +151,8 @@ def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=
     st['queries'].update(state.get('queries') or {})
     write_json(os.path.join(work, 'fetch.json'), st)
     qs = pick_queries(shard, n_shards, n_queries, state)
+    if os.environ.get('SOUND_VID_SHARD') == '1':
+        os.environ['HIT_SCAN_VID_SHARD'] = f'{shard}/{n_shards}'
     log(f'shard {shard}/{n_shards}: {len(qs)} queries: {qs}')
     rep = {'shard': shard, 'queries': qs, 'started': today()}
     st2 = HS.fetch(work, qs, per_query=int(os.environ.get('REFRESH_PER_QUERY', '2')), max_sources=max_sources,
@@ -132,7 +162,8 @@ def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=
     rep['sources'] = len(srcs)
     os.environ.update({k: os.environ.get(k) or v for k, v in DENSE.items()})
     left = budget_min - (time.time() - t0) / 60
-    HS.scan(work, [os.path.join(work, 'src', '*__all.mkv')], max_per_source=10, budget_min=max(5.0, left * 0.6))
+    HS.scan(work, [os.path.join(work, 'src', '*__all.mkv')], max_per_source=int(os.environ.get('REFRESH_PER_SOURCE', '14')),
+            budget_min=max(5.0, left * 0.6))
     rep['minis'] = HS.cut(work)
     HS.prune_sources(work)
     side = read_json(os.path.join(work, 'mini.json'), {})
@@ -144,6 +175,7 @@ def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=
     if judge:
         import hit_vision as HV
         import hit_import as HI
+        import clip_prefilter as CP
         for name, m in side.items():
             if name in verdicts:
                 continue
@@ -153,6 +185,18 @@ def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=
             p = os.path.join(work, 'mini', name + '.mp4')
             if not os.path.isfile(p):
                 continue
+            if PREFILTER:
+                # 2026-10-21 cheap CPU pre-filter (impact at the hit, action size / centre / spread) BEFORE the paid vision call
+                try:
+                    pok, pwhy, pf = CP.sound_check(p, float(m['hit_t']))
+                except Exception as e:  # noqa: BLE001
+                    pok, pwhy, pf = True, [], {'error': str(e)[:120]}
+                if not pok:
+                    verdicts[name] = {'prefilter': {'why': pwhy, 'feats': pf}}
+                    rep['prefilter_rejects'] = rep.get('prefilter_rejects', 0) + 1
+                    write_json(os.path.join(out, 'verdicts.json'), verdicts)
+                    log(f"{name}: rejected (prefilter: {'; '.join(pwhy)[:90]})")
+                    continue
             try:
                 v = HV.judge(p, float(m['hit_t']), m.get('tag'), tmp=os.path.join(work, 'vtmp'))
             except Exception as e:  # noqa: BLE001
@@ -525,10 +569,35 @@ def pull_staged(dest):
     return got
 
 
+def selftest():
+    """query list + video-id shard layout (2026-10-21 yield push); the pre-filter has its own selftest (clip_prefilter.py)"""
+    import zlib
+    qs = all_queries()
+    assert len(qs) == len(set(qs)) and len(qs) > 2000, len(qs)
+    assert qs[0].startswith(POPULAR[0]) and any('sakuga' in q for q in qs[:60])
+    st = {'seen': {}, 'queries': {q: 1 for q in qs[:100]}}
+    old = os.environ.get('SOUND_VID_SHARD')
+    os.environ['SOUND_VID_SHARD'] = '1'
+    try:
+        lists = [pick_queries(k, 6, 10, st) for k in range(6)]
+    finally:
+        if old is None:
+            os.environ.pop('SOUND_VID_SHARD', None)
+        else:
+            os.environ['SOUND_VID_SHARD'] = old
+    assert all(x == lists[0] for x in lists) and len(lists[0]) == 60 and not set(lists[0]) & set(qs[:100])
+    ids = [f'v{i:07d}xx' for i in range(1200)]
+    parts = [{i for i in ids if zlib.crc32(i.encode()) % 6 == k} for k in range(6)]
+    assert sum(map(len, parts)) == len(ids) and all(len(p) > 140 for p in parts)
+    sep = [pick_queries(k, 6, 10, st) for k in range(6)]
+    assert all(len(x) == 10 for x in sep) and len({q for x in sep for q in x}) == 60
+    return {'ok': True, 'queries': len(qs)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['mine', 'merge', 'sharpen', 'check', 'sheet', 'baseline', 'queries', 'stage', 'apply-staged',
-                                    'pull-staged'])
+                                    'pull-staged', 'selftest'])
     ap.add_argument('--tars', nargs='*')
     ap.add_argument('--reject', default='')
     ap.add_argument('--sheets', nargs='*', default=[])
@@ -544,7 +613,9 @@ def main():
     ap.add_argument('--out')
     a = ap.parse_args()
     k, n = (int(x) for x in a.shard.split('/'))
-    if a.cmd == 'mine':
+    if a.cmd == 'selftest':
+        r = selftest()
+    elif a.cmd == 'mine':
         r = mine(a.work, k, n, a.budget_min, a.max_sources, a.queries, not a.no_judge)
     elif a.cmd == 'queries':
         r = pick_queries(k, n, a.queries, read_json(FETCH_STATE, {'seen': {}, 'queries': {}}))

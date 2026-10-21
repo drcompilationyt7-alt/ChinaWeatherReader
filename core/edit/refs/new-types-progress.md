@@ -665,6 +665,18 @@ Sound path runtime on CI adds the visible-source pass: ~0.3 s / event motion + S
   Pool now **summer_glow 31 / dreamy_bloom 13**; sources_seen 982. Yield 25 % (5/19 = 26 % last night): the fix removed live action /
   AMV, but the clean gate still loses most batches (colour / talk) and twixtor packs bring 30 fps doubled or repeated frames.
   pull-staged no longer crashes without cv2 (17c9749: index.json first, sheets skipped) - build the strips with ffmpeg.
+- **2026-10-21 YIELD PUSH (slow-mo; goal >= 10 approved / night)**: (1) volume: 6 shards (was 3; staggered 40 s starts, each job
+  keeps the 22-32 s download pacing on its own runner IP), ytsearch24 (was 12: with 6 video-id shards only ~1/6 of the results are a
+  shard's), SLOWMO_LIBRARY_CAP 9 clips per source (was 6), nightly until SLOWMO_POOL_TARGET (repo var, default 115; was 60).
+  (2) PRE-FILTERS after cine_vibe.gate, before staging (`core/pools/clip_prefilter.py slowmo_check`; rejects -> status cine_reject
+  'prefilter: ...', never staged, never re-mined; SLOWMO_PREFILTER=0 disables): stutter = repeated-frame share (change < 0.3 x the
+  local median while the neighbourhood moves) + jump-frame share (> 3 x) > 0.22; talking = rules.talk_mouth > 0.5 or mouth_flap > 0.1
+  or SigLIP talk > 0.55; face hidden = face_frac < 0.75; garish = strongly-red pixel share > 0.18 or blown share > 0.13.
+  **Calibration** (by-eye labels 10-19..21: 44 approved = every reviewed live clip with media, 43 eye-rejected staged clips):
+  **approved 44 / 44 pass**, rejects **21 / 43 caught (49 %)**: stutter 11, face hidden 7, garish 6, talking 2. Not separable with
+  the stats we have (left to the eye): cuts / dissolves inside a clip, milky (black point / sat: rejects sit inside the approved
+  range), chibi panels, MMD 3D. Expected: ~2x sources x ~1.3 clips per source -> ~30-40 staged / night, half the old rejects
+  removed -> review pass ~45-55 % -> **~10-15 approved / night** (was 3-5).
 - **3b's cut problem, measured** (core/edit/music_moments.py on 3b's own regular audio): the planner analysed the right (regular) audio, but
   _cine_pick_pulse chose 1.28 s = 4 eighths of a song whose meter is 3 eighths (main beat 0.952 s regular / 1.115 s slowed 0.85): only
   29 % of 3b's cuts sat on the main beat (most a third of a beat off), 71 % on a musical moment, the first clip 0.6 s after the vocal line
@@ -911,6 +923,24 @@ push from it would upload a pool without them). Queries: +6 suffixes (900 total)
   the kick contact 885052; flying object / unclear cause 46285; tiny off-centre clash behind a silhouette 25129; small sheathe 471126;
   wide chaotic shots / cuts before the hit 170200 150585 200044 122560). Import run 39679235739 success: 2 added, **pins 65**.
   Yield problem: 10 candidates per night from 4 sources is far too slow for ~230 pins; the vision gate accepts wide battle shots.
+- **2026-10-21 YIELD PUSH (sound)**. Diagnosis from the run log: fetch + scan took ~10-15 min per shard; the VISION gate ate the
+  rest - ~5 min per mini (gemini-3.5-flash quota-exhausted, every mini retried it 16 x on all 8 keys with sleeps), 'budget used up
+  before every mini was judged' on 3 of 4 shards (30 of 35 minis judged). Fixes: (1) hit_vision.ask: a 429 cools that key (daily
+  quota: 6 h, per-minute: 65 s) and a model with every key cooling answers None at once (single-model bar 0.92 unchanged);
+  (2) volume: 6 shards (staggered), all shards search the SAME night's 60 queries and each downloads only its own videos
+  (SOUND_VID_SHARD=1 -> hit_scan HIT_SCAN_VID_SHARD = crc32(id) % 6: every result covered, no double download), 20 sources per shard
+  (was 12), 14 minis per source (was 10); queries: popular action shows (JJK, Demon Slayer, CSM, OPM, Mob, Bleach TYBW, Solo Leveling,
+  Kaiju No. 8, Sakamoto Days, Dandadan, Frieren, Vinland Saga, AOT + 16 new arcs / shows) x best fight / sakuga / fight scene 4K /
+  best fight scenes FIRST, then the old list, then 50 more shows x 6 more suffixes (2232 queries). (3) PRE-FILTER before the paid
+  vision call (`clip_prefilter.sound_check`, SOUND_PREFILTER=0 disables): motion peak within +-2 frames of the transient >= 0.20 of
+  the local max, moving area at the hit >= 0.10, motion spread <= 0.42 (wide chaotic), centroid <= 0.30 from the centre.
+  **Calibration** (hit-calib 53 ok / 104 rej + the 10-21 batch 2 / 8 + 1 local pin): **approved 56 / 56 pass**, rejects
+  **18 / 112 caught (16 %)**: too small 13, off-centre 7, impact not at the hit 3, wide chaos 2 (10-21 batch: only the
+  cut-before-hit 150585 caught). A scene cut in the 0.5 s before the hit is measured but NOT gated: 7 / 55 approved minis have one
+  (quick cut into the action, impact flashes), so the gate would cost 13 % of good hits (PF_SN_CUT_GATE=1 turns it on).
+  The pre-filter mainly saves vision calls; wide battle shots stay the vision gate's / the review's job. Expected: ~3x sources
+  (120 vs 40) and every mini judged -> ~25-35 staged / night at the old 20-25 % review pass -> **~6-9 approved / night**; >= 10
+  needs a stricter vision prompt for wide shots (next step) or more Gemini quota.
 
 **Pool upload**: `push --preset slowmo` (summer_glow 29 reviewed clean + dreamy_bloom 12; cine_reject media skipped) -> edit-pools.
 

@@ -27,6 +27,7 @@ import re
 import subprocess
 import sys
 import time
+import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -213,6 +214,9 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
     st_p = os.path.join(work, 'fetch.json')
     st = read_json(st_p, {'seen': {}, 'queries': {}})
     pacer = L.GlobalPacer({'page': 3.0, 'probe': 6.0, 'download': 20.0}, edit_cache(), name='hit_scan')
+    _vs = os.environ.get('HIT_SCAN_VID_SHARD', '')
+    _vshard = tuple(int(x) for x in _vs.split('/')) if re.fullmatch(r'\d+/\d+', _vs) else None
+    n_search = int(os.environ.get('HIT_SCAN_SEARCH_N', '14'))
     t0 = time.time()
     got = 0
     for q in queries or DEFAULT_SOURCE_QUERIES:
@@ -223,7 +227,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
         if gate and not wait_resources():
             break
         pacer.wait('page')
-        r = _yt(['--flat-playlist', '--dump-single-json', f'ytsearch14:{q}'], timeout=180)
+        r = _yt(['--flat-playlist', '--dump-single-json', f'ytsearch{n_search}:{q}'], timeout=180)
         if r.returncode != 0 and BOTBLOCK_RE.search(r.stderr or ''):
             pacer.penalise(r.stderr[-150:])
             log('bot-block on search: stop fetching')
@@ -239,6 +243,8 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
                 break
             vid, title = e.get('id'), e.get('title') or ''
             dur, views = e.get('duration') or 0, e.get('view_count') or 0
+            if vid and _vshard and zlib.crc32(vid.encode()) % _vshard[1] != _vshard[0]:
+                continue                                  # another shard's video (HIT_SCAN_VID_SHARD=k/n: no double downloads)
             if not vid or vid in st['seen'] or not (90 <= dur <= 1500) or views < 3000 or BAD_TITLE.search(title) or not title_ok({'title': title, 'tags': []})[0]:
                 continue
             if glob.glob(os.path.join(edit_cache(), 'src', vid + '__*')) or glob.glob(os.path.join(dest, vid + '__*')):

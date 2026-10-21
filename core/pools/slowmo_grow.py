@@ -5,9 +5,10 @@
         sources: twixtor / raw clip packs of ~70 female characters + mood packs, then creditless OP / ED (low yield), searched with
         yt-dlp (cookies = YT_COOKIES, copied to a private jar per call, --js-runtimes node, 22-32 s between downloads, 1080p video
         only) -> core/edit/library.py --local (every library gate incl. the per-shot SAFETY gate: NudeNet + SigLIP, minors strict,
-        burned-in text; cap EDIT_LIBRARY_CAP=6 per source) -> vibe_pool.import_shots into a STAGING copy of the live manifests
+        burned-in text; cap SLOWMO_LIBRARY_CAP=9 per source) -> vibe_pool.import_shots into a STAGING copy of the live manifests
         (dedupe vs the pool, the ledger, the blocklists; slow-mo talk gate = strong signals only) -> cine_vibe.gate (the planner's
-        hard rejects incl. the 2026-10-18 talking-mouth fix: mouth motion AND openness) -> rejects dropped, sources deleted.
+        hard rejects incl. the 2026-10-18 talking-mouth fix: mouth motion AND openness) -> core/pools/clip_prefilter.py (2026-10-21:
+        stutter / talking / hidden face / garish, calibrated on the by-eye labels) -> rejects dropped, sources deleted.
         Output W/out/: <vibe>/clips/<id>.mp4 (+ the QA sidecars), candidates.json {vibe: [manifest items]}, sheets/*.jpg,
         state.json (queries done / sources seen, merged by the workflow and kept on the staging release).
     python core/pools/slowmo_grow.py need [--target 60]        prints go / stop: is any slow-mo vibe under target (live reviewed clean
@@ -36,6 +37,11 @@ import tarfile
 import tempfile
 import time
 import zlib
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import clip_prefilter  # noqa: E402
+
+PREFILTER = os.environ.get('SLOWMO_PREFILTER', '1') != '0'
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 EDIT = os.path.join(ROOT, 'core', 'edit')
@@ -262,8 +268,9 @@ def selftest(nights=60, per_night=120):
         qs = nightly_queries(st, day)
         assert qs, f'night {n}: 0 queries left'
         assert nightly_queries(st, day) == qs, 'not deterministic'
-        shards = [qs[k::3] for k in range(3)]
-        assert sum(len(x) for x in shards) == len(qs) and all(shards), 'shard layout'
+        for ns in (3, 6):                                        # 2026-10-21: 6 shards
+            shards = [qs[k::ns] for k in range(ns)]
+            assert sum(len(x) for x in shards) == len(qs) and all(len(x) >= 20 for x in shards), 'shard layout'
         for q in qs[:per_night]:
             st['query_log'][q] = day
             cnt[vib[q]] += 1
@@ -272,6 +279,9 @@ def selftest(nights=60, per_night=120):
     parts = [{i for i in ids if vid_shard(i, 3) == k} for k in range(3)]
     assert not (parts[0] & parts[1] or parts[0] & parts[2] or parts[1] & parts[2]) and set().union(*parts) == set(ids)
     assert all(len(x) > 140 for x in parts), 'uneven id shards'
+    parts6 = [{i for i in ids if vid_shard(i, 6) == k} for k in range(6)]
+    assert sum(len(x) for x in parts6) == len(ids) and all(len(x) > 70 for x in parts6), 'uneven 6-way id shards'
+    assert clip_prefilter.SM['stutter'] > 0 and clip_prefilter.SN['area_min'] > 0
     share = cnt['dreamy_bloom'] / sum(cnt.values())
     assert share >= 0.5, f'dreamy share {share:.2f}'
     print(json.dumps({'ok': True, 'nights': nights, 'queries_total': len(vib), 'used_distinct': len(st['query_log']),
@@ -299,8 +309,9 @@ def ytdlp(args, timeout=240):
                 pass
 
 
-def search(q):
-    r = ytdlp(['--flat-playlist', '-J', f'ytsearch12:{q}'], timeout=120)
+def search(q, n=24):
+    # 24 results (was 12): with 6 shards only ~1/6 of them belong to this shard (vid_shard), one search call either way
+    r = ytdlp(['--flat-playlist', '-J', f'ytsearch{int(os.environ.get("SLOWMO_SEARCH_N", n))}:{q}'], timeout=120)
     try:
         return (json.loads(r.stdout) or {}).get('entries') or []
     except ValueError:
@@ -345,7 +356,7 @@ def download(vid, dst):
 def run_library(src_dir, out_dir, n_src, cache):
     wait_ram()
     env = dict(os.environ, OMP_NUM_THREADS='4', MKL_NUM_THREADS='4', OPENBLAS_NUM_THREADS='4', TORCH_NUM_THREADS='4',
-               EDIT_THREADS='4', EDIT_LIBRARY_CAP='6', PYTHONIOENCODING='utf-8')
+               EDIT_THREADS='4', EDIT_LIBRARY_CAP=os.environ.get('SLOWMO_LIBRARY_CAP', '9'), PYTHONIOENCODING='utf-8')
     cmd = [PY, os.path.join(EDIT, 'library.py'), '--mode', 'mood', '--query', 'beautiful anime girl', '--kind', 'anime',
            '--count', str(12 * n_src), '--min-dur', '2', '--max-dur', '6', '--preset', 'cinematic_slowmo', '--out-dir', out_dir,
            '--budget', '9000', '--local', os.path.join(src_dir, '*.mp4') + ',' + os.path.join(src_dir, '*.webm'), '--local-only',
@@ -411,11 +422,21 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
         new = [it for it in man['items'] if it['id'] not in before]
         vd = VP.vibe_dir('slowmo', v, pool)
         g = gate_child([dict(it, path=os.path.join(vd, it['file']), pool_id=it['id']) for it in new], work) if new else {}
-        ok = 0
+        ok = pf = 0
         if g is None:
             log(f'{v}: gate failed - {len(new)} new clips dropped from staging (media kept out, rows marked)')
         for it in new:
             rs = (g or {}).get(it['id']) or ([] if g is not None else ['gate_failed'])
+            if not rs and PREFILTER:
+                # 2026-10-21 cheap pre-filters (stutter / talking / hidden face / garish), calibrated on the by-eye labels
+                try:
+                    pok, why, feats = clip_prefilter.slowmo_check(os.path.join(vd, it['file']), it)
+                    it['prefilter'] = {k: feats.get(k) for k in ('rep', 'jump', 'stutter', 'red', 'blown', 'face_frac', 'talk_sig')}
+                    if not pok:
+                        rs = ['prefilter: ' + w for w in why]
+                        pf += 1
+                except Exception as e:  # noqa: BLE001
+                    log(f"prefilter error on {it['id']}: {type(e).__name__} {str(e)[:120]} (kept)")
             if rs:
                 it['status'] = 'cine_reject'
                 it['cine_reject'] = rs
@@ -426,8 +447,8 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
                 ok += 1
         VP.save_manifest('slowmo', v, man, root=pool)
         counts[v] = counts.get(v, 0) + ok
-        res[v] = dict(added=added, clean=ok, skip=skip)
-        log(f'{v}: +{added} imported, {ok} clean, skip {skip}')
+        res[v] = dict(added=added, clean=ok, prefilter_rejects=pf, skip=skip)
+        log(f'{v}: +{added} imported, {ok} clean ({pf} dropped by the pre-filters), skip {skip}')
     return res
 
 
