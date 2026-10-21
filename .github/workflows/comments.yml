@@ -1,0 +1,56 @@
+name: Comments (fetch / post replies)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: fetch = list unreplied comments (artifact only); post = post approved replies
+        type: choice
+        options: [fetch, post]
+        default: fetch
+      channel:
+        type: choice
+        options: [all, zero, quiz, china]
+        default: all
+      replies_tag:
+        description: "post mode: release tag holding comment-replies.json (asset)"
+        required: false
+permissions:
+  contents: read
+concurrency: comments
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      YT_ZERO_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YT_ZERO_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YT_ZERO_REFRESH: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YT_QUIZ_ID: ${{ secrets.QUIZ_YOUTUBE_CLIENT_ID }}
+      YT_QUIZ_SECRET: ${{ secrets.QUIZ_YOUTUBE_CLIENT_SECRET }}
+      YT_QUIZ_REFRESH: ${{ secrets.QUIZ_YOUTUBE_REFRESH_TOKEN }}
+      YT_CHINA_ID: ${{ secrets.CHINA_YOUTUBE_CLIENT_ID }}
+      YT_CHINA_SECRET: ${{ secrets.CHINA_YOUTUBE_CLIENT_SECRET }}
+      YT_CHINA_REFRESH: ${{ secrets.CHINA_YOUTUBE_REFRESH_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: scripts/comments.py, sparse-checkout-cone-mode: false }
+      - name: Run
+        env:
+          MODE: ${{ inputs.mode }}
+          CHAN: ${{ inputs.channel }}
+          TAG: ${{ inputs.replies_tag }}
+        run: |
+          mkdir -p out
+          [ "$CHAN" = all ] && L="zero quiz china" || L="$CHAN"
+          if [ "$MODE" = post ]; then
+            [ -n "$TAG" ] || { echo "replies_tag required"; exit 1; }
+            gh release download "$TAG" -p comment-replies.json -D . --repo "$GITHUB_REPOSITORY" --clobber
+          fi
+          for c in $L; do
+            if [ "$MODE" = fetch ]; then python3 scripts/comments.py fetch $c out
+            else python3 scripts/comments.py post $c comment-replies.json out; fi
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: comments-${{ inputs.mode }}, path: out/, retention-days: 3 }
