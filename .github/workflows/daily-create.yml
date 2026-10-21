@@ -115,6 +115,14 @@ jobs:
             echo "Today's meme short is already uploaded; nothing to do."
             echo "CONTENT_MODE=pause" >> $GITHUB_ENV
           fi
+          # 2026-10-21: a prebuilt video (memory/prebuilt-queue.json, upload-prebuilt.yml) owns its date, done or not, so a late
+          # prebuilt cron never races this run; only the last daily run (07:47, UTC hour >= 7) posts the normal short as the
+          # fallback when today's prebuilt is still not done. FAKE_TODAY / FAKE_HOUR = tests.
+          PB=$(node -e "const fs=require('fs');let q={items:[]};try{q=JSON.parse(fs.readFileSync('memory/prebuilt-queue.json','utf8'))}catch(e){};const d=process.env.FAKE_TODAY||new Date().toISOString().slice(0,10);const h=Number(process.env.FAKE_HOUR||new Date().getUTCHours());const e=(q.items||[]).find(x=>x.date===d);console.log(!e?'none':e.done?'done':h>=7?'fallback':'wait')" 2>/dev/null || echo none)
+          case "$PB" in
+            done|wait) echo "Today belongs to a prebuilt video ($PB): the daily run skips."; echo "CONTENT_MODE=pause" >> $GITHUB_ENV ;;
+            fallback) echo "::warning::Today's prebuilt video is still not posted at the last daily run: posting the normal daily short." ;;
+          esac
 
       - name: Setup Node
         uses: actions/setup-node@v4
