@@ -1523,6 +1523,45 @@
     167.345,
     199.182
    ]
+  },
+  {
+   "videoId": "J91EYGAeUTI",
+   "url": "https://www.youtube.com/watch?v=J91EYGAeUTI",
+   "postedAt": "2026-10-21T06:03:51.324Z",
+   "publishAt": "2026-10-21T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Golden Hour",
+   "theme": "anime",
+   "emoji": "✨",
+   "title": "golden hour but it's anime girls ✨ #anime",
+   "clipIds": [
+    "c_RVDy_c27AtY_26400",
+    "c_KyVN14u4pvo_33700",
+    "c_W1uBeTXPcZA_43100",
+    "c__nAObEu6UJc_75500",
+    "c_RVDy_c27AtY_31100",
+    "c_IvK62Isjc5s_17800",
+    "c_ez6kAVRkI50_24600",
+    "c_ld1hJRg2vtw_100",
+    "c_gh8moSuawPc_86400",
+    "c_j7YiygBQHY0_36400",
+    "c_T158RMP422c_58300",
+    "c_56jgd7Nxq1g_18600",
+    "c_ISOIATL26Fo_259600",
+    "c_djXtjnXDRl4_22800",
+    "c_W1uBeTXPcZA_38100",
+    "c_z-sGoBx0XMY_71100",
+    "c_8oEl3n5xyAM_87300"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 39.967,
+    "pool": "slowmo",
+    "prebuilt": true
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "jvke_golden_hour@v1"
   }
  ]
 }

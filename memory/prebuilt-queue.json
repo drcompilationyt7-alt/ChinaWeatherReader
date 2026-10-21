@@ -9,12 +9,41 @@
    "musicPoolId": "jvke_golden_hour@v1",
    "title": "golden hour but it's anime girls ✨ #anime",
    "description": "golden hour but make it anime girls ✨\n\nsong: JVKE - Golden Hour\n\nclips are anime footage, edited as a transformative fan edit. all rights belong to their owners.\n\n#anime #animeedit #goldenhour",
-   "tags": ["anime edit", "anime girls", "golden hour", "jvke", "slow motion edit", "anime", "shorts"],
+   "tags": [
+    "anime edit",
+    "anime girls",
+    "golden hour",
+    "jvke",
+    "slow motion edit",
+    "anime",
+    "shorts"
+   ],
    "category": "edit-slowmo",
-   "clipIds": ["c_RVDy_c27AtY_26400","c_KyVN14u4pvo_33700","c_W1uBeTXPcZA_43100","c__nAObEu6UJc_75500","c_RVDy_c27AtY_31100","c_IvK62Isjc5s_17800","c_ez6kAVRkI50_24600","c_ld1hJRg2vtw_100","c_gh8moSuawPc_86400","c_j7YiygBQHY0_36400","c_T158RMP422c_58300","c_56jgd7Nxq1g_18600","c_ISOIATL26Fo_259600","c_djXtjnXDRl4_22800","c_W1uBeTXPcZA_38100","c_z-sGoBx0XMY_71100","c_8oEl3n5xyAM_87300"],
+   "clipIds": [
+    "c_RVDy_c27AtY_26400",
+    "c_KyVN14u4pvo_33700",
+    "c_W1uBeTXPcZA_43100",
+    "c__nAObEu6UJc_75500",
+    "c_RVDy_c27AtY_31100",
+    "c_IvK62Isjc5s_17800",
+    "c_ez6kAVRkI50_24600",
+    "c_ld1hJRg2vtw_100",
+    "c_gh8moSuawPc_86400",
+    "c_j7YiygBQHY0_36400",
+    "c_T158RMP422c_58300",
+    "c_56jgd7Nxq1g_18600",
+    "c_ISOIATL26Fo_259600",
+    "c_djXtjnXDRl4_22800",
+    "c_W1uBeTXPcZA_38100",
+    "c_z-sGoBx0XMY_71100",
+    "c_8oEl3n5xyAM_87300"
+   ],
    "duration": 39.967,
    "why": "owner-picked",
-   "done": false
+   "done": true,
+   "videoId": "J91EYGAeUTI",
+   "url": "https://www.youtube.com/watch?v=J91EYGAeUTI",
+   "publishAt": "2026-10-21T12:00:00.000Z"
   }
  ]
 }
