@@ -1061,3 +1061,7 @@ Run 39528210460 (b960700): judge **7.29 NOT PASS** -> stem fallback. Causes and 
   < JW_MIN_SHOT after a switch that is on another strong start).
 Plan-only check (scratchpad harness, judge E on the capped master): 28 shots, 0 mid-wave / 0 missed / 0 sync off / 0 line off /
 0 tail cuts (36.09 "with me?" holds to 41.77).
+CI round 2 (run 39681299239, f9d4bbd): 9.43 NOT PASS - 9_no_sfx 10, 13 10, 12c lines 7/7 on, but 11 = 7: "leave" 23.36 missed;
+CI had only 25 clean clips, the repair could not add a switch. Fix: at the clip cap the repair swaps out the switch whose removal
+the judge does not notice (here 21.59 "your" = a pick-up into the switched "I'll" line). 4_mix 8.34 (-10.8 LUFS vs ref -6.9: the
+price of the <= 3 dB limiting cap). Clip rotation: 12 / 24 shots reused (50 %, the 3j clips).

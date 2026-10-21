@@ -3070,7 +3070,7 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
     return cuts, lens, kinds, lifts, main, info
 
 
-def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=3):
+def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=4):
     """2026-10-21 (CI dry run "blue" @v0.9, judge NOT PASS): the planner's waves (music_moments) and the pre-upload judge's
     independent wave analysis (judge_slowmo.wave_events) disagree on borderline syllables: "with me?" = one held note for the
     judge (a voiced 'm', same pitch, < 11 dB dip) but two waves here (switch 37.07 inside the judge's held tail); "still" ->
@@ -3126,8 +3126,32 @@ def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=3):
                 # (2) a switch of its own: 0.10 s before the attack, inside its hit window, the spacing kept
                 c_new = fr(max(a_[4] - JS.JW_HIT[1], min(t - 0.10, t - JS.JW_HIT[0])))
                 nxt = min([x for x in sw if x > c_new] or [float(D)])
-                if len(sw) < max_sh and c_new - sw[kp] >= lo and nxt - c_new >= lo:
-                    rep['added'].append(round(c_new, 3))
+                if c_new - sw[kp] >= lo and nxt - c_new >= lo:
+                    if len(sw) >= max_sh:
+                        # at the clip cap (CI dry run 2: 25 clean clips, "leave" 23.36 missed): give up the switch whose
+                        # removal the judge does not notice (a planner wave the judge hears as no strong start)
+                        n0 = len(WJ['missed']) + len(WJ['bad'])
+                        best = None
+                        for k in range(1, len(sw)):
+                            nxt_k = sw[k + 1] if k + 1 < len(sw) else float(D)
+                            if nxt_k - sw[k - 1] > WV_SHOT[1] + 1.0:
+                                continue
+                            tr = sorted(sw[:k] + sw[k + 1:] + [c_new])
+                            if any(b_ - a__ < lo - 1e-6 for a__, b_ in zip(tr, tr[1:])):
+                                continue
+                            W2 = JS.wave_judge(tmp, tr, float(D), E=E, speed=speed)
+                            n2 = len(W2['missed']) + len(W2['bad']) + len((W2.get('tail_outro') or {}).get('bad') or [])
+                            if n2 < n0 and (best is None or n2 < best[0]):
+                                best = (n2, k)
+                                if n2 == 0:
+                                    break
+                        if best is None:
+                            continue
+                        rep.setdefault('swapped', []).append([round(sw[best[1]], 3), round(c_new, 3)])
+                        del sw[best[1]], st_[best[1]]
+                        kp = max([k for k in range(len(sw)) if sw[k] <= t] or [0])
+                    else:
+                        rep['added'].append(round(c_new, 3))
                     sw.insert(kp + 1, c_new)
                     st_.insert(kp + 1, 2.5)
                     changed = True
@@ -3137,7 +3161,7 @@ def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=3):
         WJ = JS.wave_judge(tmp, sw, float(D), E=E, speed=speed)
         rep['after'] = dict(bad=WJ['bad'], missed=[m['t'] for m in WJ['missed']],
                             tail_bad=[c for c, _w in ((WJ.get('tail_outro') or {}).get('bad') or [])], sync_off=WJ['sync']['off'])
-        if rep['dropped'] or rep['moved'] or rep['added']:
+        if rep['dropped'] or rep['moved'] or rep['added'] or rep.get('swapped'):
             log('cinematic: judge repair %s' % json.dumps(rep, default=float))
         return sw, st_, rep
     except Exception as e:  # noqa: BLE001
