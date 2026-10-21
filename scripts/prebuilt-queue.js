@@ -25,6 +25,23 @@ const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8'))
   if ((posted.videos || []).some(v => v.title === e.title && String(v.postedAt || '').startsWith(today))) {
     console.log('prebuilt-queue: already posted (posted-videos); marking done'); if (!dry) { e.done = true; fs.writeFileSync(QFILE, JSON.stringify(q, null, 1)); } return;
   }
+  // Cron delay guard (2026-10-21: the 01:15 cron started at 06:03). The daily run posts the normal short as the fallback from
+  // 07:00 UTC when today's item is not done, so this job never starts an upload at/after CUTOFF (06:30, a margin for the upload
+  // itself) and never uploads when a short is already recorded for today (meme-history). Either way the item is not lost: it
+  // moves to the next date with no queue item and the daily run posts as normal today.
+  const hourNow = process.env.FAKE_HOUR != null ? Number(process.env.FAKE_HOUR) : new Date().getUTCHours() + new Date().getUTCMinutes() / 60;
+  const CUTOFF = Number(process.env.PREBUILT_CUTOFF_HOUR || 6.5);
+  const dailyPosted = (hist.uploads || []).some(u => String(u.postedAt || '').startsWith(today) && u.title !== e.title);
+  const why = dailyPosted ? 'daily posted' : hourNow >= CUTOFF ? `past ${CUTOFF} UTC cutoff (cron late)` : null;
+  if (why) {
+    const taken = new Set((q.items || []).map(x => x.date));
+    const d = new Date(today + 'T00:00:00Z');
+    do { d.setUTCDate(d.getUTCDate() + 1); } while (taken.has(d.toISOString().slice(0, 10)));
+    const next = d.toISOString().slice(0, 10);
+    console.log(`prebuilt-queue: ${dry ? '[dry run] would defer' : 'deferring'} "${e.title}": skipped (${why}) on ${today} -> ${next}`);
+    if (!dry) { (e.skipped = e.skipped || []).push(`${today}: ${why}`); e.date = next; fs.writeFileSync(QFILE, JSON.stringify(q, null, 1)); }
+    return;
+  }
   const hour = String(process.env.PUBLISH_HOUR_UTC || '12').padStart(2, '0');
   const publishAt = `${today}T${hour}:00:00.000Z`;
   console.log(`prebuilt-queue: ${dry ? '[dry run] would upload' : 'uploading'} "${e.title}" (${e.asset}) publishAt ${publishAt}; ${e.clipIds.length} clips; song ${e.song}`);

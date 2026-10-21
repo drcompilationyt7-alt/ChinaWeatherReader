@@ -6,11 +6,14 @@ name: Upload prebuilt video (queue)
 #    "title": "...", "description": "...", "tags": [...], "category": "edit-slowmo", "clipIds": [...], "duration": 40, "why": "owner-picked", "done": false}
 # to "items". On that UTC date this job (01:15 UTC, before the 02:47 daily run) uploads it private + scheduled for 12:00 UTC and records
 # it in meme-history.json with today's date, so the daily job sees today's upload and skips. If this job fails, the daily job posts as normal.
+# Cron delay: no upload starts at/after 06:30 UTC (the daily fallback owns the day from 07:00) or when a short is already recorded for
+# today; the item then moves to the next free date (entry.skipped keeps why). FAKE_HOUR=7 tests the cutoff.
 # Test: FAKE_TODAY=2026-10-21 node scripts/prebuilt-queue.js --dry-run
 
 on:
   schedule:
     - cron: '15 1 * * *'
+    - cron: '40 4 * * *'   # backup: the 01:15 run can start hours late; a done item is a no-op
   workflow_dispatch:
 
 env:
@@ -40,6 +43,10 @@ jobs:
         run: |
           node scripts/prebuilt-queue.js --dry-run | tee /tmp/dry.txt
           if grep -q "would upload" /tmp/dry.txt; then echo "due=1" >> "$GITHUB_OUTPUT"; fi
+          if grep -q "would defer" /tmp/dry.txt; then echo "defer=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Defer (cron late or the daily short already posted)
+        if: steps.due.outputs.defer == '1'
+        run: node scripts/prebuilt-queue.js
       - name: Install Node.js dependencies
         if: steps.due.outputs.due == '1'
         env:
@@ -53,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/prebuilt-queue.js
       - name: Commit memory
-        if: always() && steps.due.outputs.due == '1'
+        if: always() && (steps.due.outputs.due == '1' || steps.due.outputs.defer == '1')
         run: |
           git config user.name "Bot" && git config user.email "bot@bot.com"
           for f in memory/prebuilt-queue.json memory/meme-history.json memory/posted-videos.json memory/edit-pool-used.json \
