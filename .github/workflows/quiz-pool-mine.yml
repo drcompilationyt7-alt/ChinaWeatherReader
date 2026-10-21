@@ -117,7 +117,8 @@ jobs:
         if: startsWith(matrix.shard, 'art')
         run: |
           mkdir -p "$POP_MODELS"
-          if [ ! -s "$POP_MODELS/extras-cache.json" ]; then
+          # a runner cache that is still tiny (an early run without the PC cache) is replaced by the PC's (several MB)
+          if [ ! -s "$POP_MODELS/extras-cache.json" ] || [ "$(stat -c %s "$POP_MODELS/extras-cache.json")" -lt 2000000 ]; then
             gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern pop-extras-cache.json.gz --dir /tmp               && gunzip -c /tmp/pop-extras-cache.json.gz > "$POP_MODELS/extras-cache.json"               || echo "::warning::no pop-extras-cache.json.gz on edit-pools-staging: theme art will find little (run push-manifests on the PC)"
           fi
           ls -la "$POP_MODELS" | head
@@ -130,7 +131,7 @@ jobs:
         run: |
           python core/quiz/quiz_pool_grow.py selftest
           python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \
-            --budget-min "${{ github.event.inputs.budget_min || (github.event.inputs.mode == 'backfill' && '120') || '40' }}" | tail -c 3000
+            --budget-min "${{ github.event.inputs.mode == 'backfill' && '110' || github.event.inputs.budget_min || '40' }}" | tail -c 3000
           du -sh work/out || true
       - name: Upload the shard
         if: always()
