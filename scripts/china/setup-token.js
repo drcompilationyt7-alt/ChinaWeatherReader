@@ -25,6 +25,7 @@ const REDIRECT = `http://localhost:${PORT}/oauth2callback`;
 const SCOPES = [
   'https://www.googleapis.com/auth/youtube.upload',
   'https://www.googleapis.com/auth/youtube',
+  'https://www.googleapis.com/auth/youtube.force-ssl', // comments: list + reply
   'https://www.googleapis.com/auth/yt-analytics.readonly',
 ];
 const OTHER_CHANNELS = { UC2_aNJgemODOCsOLsYwaelg: 'Zero Yen Otaku' };
