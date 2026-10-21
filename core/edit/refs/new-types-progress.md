@@ -992,8 +992,8 @@ the 3j method: tempo-normalised waves, hold tails + outro, judge 11 / 12_sync / 
   **dreamy_bloom 40 -> off (12)**; the preset default stays 60.
 - **Golden Hour on cooldown**: slowmo-music-pool.json jvke_golden_hour last_used 2026-10-24 (v0.85 = 3g 10-24, v1 = 3j 10-21) ->
   30-day cooldown, no generated slow-mo uses it before ~11-21 / 11-23 (checked: 0 of 300 picks on 10-26, 25 distinct songs).
-- **3j + 3g clips in the rotation ledger** (memory/edit-pool-used.json recent slowmo/summer_glow, 'slowmo_3j / 3g (hand-picked)',
-  17 / 18 clips): the first generated videos prefer the other clips (with 29 clips the reuse share is raised and logged).
+- **3j + 3g clips**: recorded in the rotation ledger by scripts/prebuilt-queue.js (recordUpload -> vibe_pool mark-used) when each
+  posts (the hand-added entries were removed: they would count twice); the first generated videos then prefer the other clips.
 - CI (daily-create.yml): faster-whisper + matplotlib in the sound / slow-mo extras step (demucs was there), model cache key v3
   (restores v2), the artifact keeps the slow-mo plan (*.plan.json) and the guard's judge dir (report / sheets / waves / cutframes).
 - LRCLIB: an outage while JUDGING = 12c line starts "n/a" (not a failure); an outage while RENDERING = a slow-mo without lyrics ->
