@@ -1,0 +1,68 @@
+name: Upload prebuilt video (queue)
+
+# Posts a pre-rendered video in place of the daily short. Queue: memory/prebuilt-queue.json.
+# To add one: upload the mp4 to the edit-pools-staging release (gh release upload edit-pools-staging file.mp4), then add
+#   {"date": "YYYY-MM-DD", "asset": "<file name>", "type": "slowmo", "vibe": "summer_glow", "song": "...", "musicPoolId": "<pool id@v>",
+#    "title": "...", "description": "...", "tags": [...], "category": "edit-slowmo", "clipIds": [...], "duration": 40, "why": "owner-picked", "done": false}
+# to "items". On that UTC date this job (01:15 UTC, before the 02:47 daily run) uploads it private + scheduled for 12:00 UTC and records
+# it in meme-history.json with today's date, so the daily job sees today's upload and skips. If this job fails, the daily job posts as normal.
+# Test: FAKE_TODAY=2026-10-21 node scripts/prebuilt-queue.js --dry-run
+
+on:
+  schedule:
+    - cron: '15 1 * * *'
+  workflow_dispatch:
+
+env:
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+  PRIVATE: "true"
+  PUBLISH_HOUR_UTC: "12"
+  EDIT_POOL_DIR: output/edit-pools
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Anything due today?
+        id: due
+        run: |
+          node scripts/prebuilt-queue.js --dry-run | tee /tmp/dry.txt
+          if grep -q "would upload" /tmp/dry.txt; then echo "due=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Install Node.js dependencies
+        if: steps.due.outputs.due == '1'
+        env:
+          YOUTUBE_DL_SKIP_DOWNLOAD: "1"
+        run: |
+          npm ci || npm install
+          npm install axios
+      - name: Upload and record
+        if: steps.due.outputs.due == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/prebuilt-queue.js
+      - name: Commit memory
+        if: always() && steps.due.outputs.due == '1'
+        run: |
+          git config user.name "Bot" && git config user.email "bot@bot.com"
+          for f in memory/prebuilt-queue.json memory/meme-history.json memory/posted-videos.json memory/edit-pool-used.json \
+                   memory/metadata-choices.jsonl memory/experiments.jsonl core/edit/assets/slowmo-music-pool.json; do
+            if [ -e "$f" ]; then git add "$f"; fi
+          done
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Prebuilt upload $(date +%F)"
+          for i in 1 2 3; do
+            git -c rebase.autoStash=true pull --rebase -X theirs origin main && git push && break
+            sleep 5
+          done
