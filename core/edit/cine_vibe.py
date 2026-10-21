@@ -323,6 +323,30 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         base_opts = dict(seed=seed, aspect=aspect, fps=FPS, cine_intro_s=intro or 0.05, work_dir=wd, offline=not lyr,
                          song=title if lyr else None, artist=artist or '',
                          type='song', cine_lufs=-6.8, cine_ceiling=-2.3)
+        clean_audio = os.environ.get('SLOWMO_CLEAN_AUDIO', '1') != '0'
+        if clean_audio:
+            # owner 2026-10-18/19: slow-mo is clean and smooth - NO built gap / gate / riser / glitch anywhere (3b's 0.45 s gate
+            # + reversed riser before the first clip read as a stutter); effects belong to the other edit types
+            base_opts['cine_breath'] = 'none'
+        if os.environ.get('SLOWMO_MOMENT_CUTS', '1') != '0':
+            base_opts['cine_moments'] = True     # cuts on the song's musical moments (planners._cine_moment_cuts)
+        if os.environ.get('SLOWMO_HOLD_CUTS', '1') != '0':
+            # 2026-10-19 round 2 (owner: never cut while the singer holds a note / word): hold-aware cuts
+            # (planners._cine_hold_cuts; falls back to the moment cuts when the analysis fails)
+            base_opts['cine_hold_cuts'] = True
+        if os.environ.get('SLOWMO_WAVE_CUTS', '1') != '0':
+            # 2026-10-19 round 3 (owner, "momentum"): one clip per wave of the sung line, the switch at the next wave's
+            # start, the shot count follows the waves (planners._cine_wave_cuts; falls back to the hold cuts)
+            base_opts['cine_wave_cuts'] = True
+            base_opts['cine_song_speed'] = float(song_speed or 1.0)   # waves at the calibration tempo (music_moments.tempo_scale)
+        if os.environ.get('CINE_PIN_PLAN'):
+            # re-time an approved edit: its clips / order / entry points, its song window and intro, new cuts only
+            with open(os.environ['CINE_PIN_PLAN'], encoding='utf-8') as f:
+                pj = json.load(f)
+            base_opts['cine_pin'] = dict(music_start=pj['music_start'], duration=pj['duration'],
+                                         shots=[dict(path=x['path'], t0=x['t0'], t1=x['t1'], src_in=x['src_in'],
+                                                     speed_curve=x['speed_curve'], role=x.get('role')) for x in pj['shots']])
+            log(f"pinned clips from {os.environ['CINE_PIN_PLAN']}: {len(pj['shots']) - 1} shots, new cut timing only")
         if section and section.get('hero') is not None:
             # the music pool's analysed hook start (ORIGINAL song seconds) -> slowed-song seconds: the hero hint
             base_opts['cine_hero'] = float(section['hero']) / float(song_speed or 1.0)
@@ -373,7 +397,13 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                                song_speed=song_speed, title=None, artist=None, song_original=song_original, section=section)
         if not lyr_items:
             plan['overlays'] = [o for o in plan.get('overlays') or [] if o.get('type') != 'text_on_black']
-        if lyr_items and not any(o.get('op') in ('gap_drop', 'breath_riser') for o in sfx_ops) and len(plan['shots']) > 1:
+        if lyr_items and clean_audio and len(plan['shots']) > 1:
+            # the words-on-black intro sits a gentle 6 dB under the body and rises smoothly over the last 0.6 s into the
+            # first clip: a level change of the song itself, no gate / riser / effect (the judge's no-SFX residual check)
+            t_hero = float(plan['shots'][1]['t0'])
+            sfx_ops.insert(0, dict(op='fade', t0=0.0, t1=round(max(0.05, t_hero - 0.6), 4), db0=-6.0, db1=-6.0))
+            sfx_ops.insert(1, dict(op='fade', t0=round(max(0.05, t_hero - 0.6), 4), t1=round(t_hero + 0.04, 4), db0=-6.0, db1=0.0))
+        elif lyr_items and not any(o.get('op') in ('gap_drop', 'breath_riser') for o in sfx_ops) and len(plan['shots']) > 1:
             # _sX2 holds the song ~13 dB down under the words on black and the hero lands on the hit several dB louder.
             # With no lyric timing we never gate the song (a sung word could sit there): the intro plays 7 dB under, a
             # shallow 4 dB breath for 0.12 s, then +3 dB on the hit settling over 0.9 s (song_fx.op_gap_drop)

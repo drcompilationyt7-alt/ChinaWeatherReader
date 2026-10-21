@@ -456,9 +456,11 @@
     "need_sfx": false,
     "count": 16
    },
-   "min_fresh_clips": 70,
+   "min_fresh_clips": 60,
    "vibes": {
     "summer_glow": {
+     "min_fresh_clips": 25,
+     "min_fresh_note": "go-live 2026-10-20: 29 reviewed clips, the clip rotation spreads the reuse",
      "label": "bright summer: water, beach, pool, sunlight, hair in the wind (female first)",
      "queries": [
       [
@@ -519,6 +521,8 @@
      ]
     },
     "dreamy_bloom": {
+     "min_fresh_clips": 40,
+     "min_fresh_note": "owner 2026-10-20: add dreamy_bloom at >= 40 clips",
      "label": "dreamy: sakura petals, snow, night lights, soft close-ups, a turn, a smile (female first)",
      "queries": [
       [

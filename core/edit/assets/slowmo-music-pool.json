@@ -117,12 +117,17 @@
    "lyrics": "render-time only",
    "status": "probation",
    "added": "2026-10-18T21:00:50Z",
-   "last_used": null,
+   "last_used": "2026-10-24T12:00:00Z",
    "uses": 0,
    "perf": {
     "n": 0,
     "sum": 0.0
-   }
+   },
+   "version_last_used": {
+    "0.85": "2026-10-24T12:00:00Z",
+    "1": "2026-10-21T12:00:00Z"
+   },
+   "cooldown_note": "hand-picked slowmo_3j (regular, posted ~2026-10-21) + slowmo_3g (slowed, ~2026-10-24): 30-day cooldown before generated slow-mos use it"
   },
   {
    "id": "newjeans_ditto",

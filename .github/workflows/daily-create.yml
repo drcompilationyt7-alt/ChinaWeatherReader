@@ -179,7 +179,10 @@ jobs:
           python3 -m pip install torchaudio --index-url https://download.pytorch.org/whl/cpu --break-system-packages
           # librosa pinned to the version the approved sound_11b was rendered with (0.11.0); psutil = IDLE priority / RAM checks
           python3 -m pip install "librosa==0.11.0" scipy onnxruntime psutil soundfile --break-system-packages
-          python3 -c "import librosa, scipy, cv2, torch, torchaudio, transformers, onnxruntime, psutil, soundfile; print('sound deps ok', librosa.__version__, torch.__version__)"
+          # slow-mo (2026-10-20 go-live): lyric alignment + judge_slowmo words (faster-whisper base / medium), its evidence plots
+          # (matplotlib); demucs (vocal stem for the wave cuts + the judge) is installed above
+          python3 -m pip install faster-whisper matplotlib --break-system-packages
+          python3 -c "import librosa, scipy, cv2, torch, torchaudio, transformers, onnxruntime, psutil, soundfile, demucs, faster_whisper, matplotlib; print('sound / slow-mo deps ok', librosa.__version__, torch.__version__)"
 
       - name: Cache meme models (Demucs, SigLIP, anime face / nudity filters)
         if: env.CONTENT_MODE == 'meme'
@@ -189,8 +192,11 @@ jobs:
             ~/.cache/huggingface
             ~/.cache/torch
             ~/.cache/clip_finder
-          # v2 = also the SigLIP weights and the anime-face onnx of the sound edit; the stem-only setup keeps its v1 cache
-          key: meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v2' }}
+          # v2 = also the SigLIP weights and the anime-face onnx of the sound edit; v3 = + the slow-mo models (faster-whisper
+          # base / medium, wav2vec2, htdemucs); the stem-only setup keeps its v1 cache
+          key: meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v3' }}
+          restore-keys: |
+            meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v2' }}
 
       - name: Install Python dependencies (quiz)
         if: env.CONTENT_MODE == 'quiz' || env.CONTENT_MODE == 'pause'
@@ -298,6 +304,11 @@ jobs:
             output/meme/work-*/*.mp4
             output/meme/work-*/result.json
             output/meme/work-*/work-*/short/plan.json
+            output/meme/work-*/work-*/short/*.plan.json
+            output/meme/work-*/judge/*.json
+            output/meme/work-*/judge/*.md
+            output/meme/work-*/judge/*.jpg
+            output/meme/work-*/judge/*.png
           retention-days: 7
 
       - name: Save memory

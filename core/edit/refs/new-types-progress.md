@@ -910,3 +910,91 @@ core/meme/edit_fx.py (+1185 lines, additions only, none of the new functions use
 study file, refs/camera_bank.json (optional, already handled when missing). Still to build at go-live: the slow-mo pre-upload guard
 (judge_slowmo PASS + non-empty: length 25-50 s, >= 12 shots, sampled frames not blank / static via core/quiz/qa_guard.py) in
 newtype-pipeline.runNewType -> throw = stem fallback; CI needs faster-whisper (judge words) + demucs in the slow-mo install step.
+
+### 2026-10-20: slow-mo REGULAR-speed timing fix, 3h -> 3i (slow-mo agent)
+Owner on 3h: "after 15 s the timing is 1-2 s off: at 'you' the switch is ~1 s late, at 'time' a bit early"; later "at 27/28 s,
+when 'hour' starts, it should change clip". Owner liked the violin clip on the violin part.
+**Diagnosis (measured on the final 3h mp4):** NOT an A/V offset. The detected cut frames equal the plan's cuts (19 / 19, 0.000 s);
+the rendered audio vs the song version (2 s windows, every 4 s) has a constant +0.4 ms lag, so no drift at the 12 s segment
+joins, no speed-mapping or intro offset. The 0.85 SLOWED version mapped to regular time (t_h = (start_g + t_g) x 0.85 - start_h,
+checked: the features line up) gives the approved 3g cuts: identical to 3h up to 15.5 s, then 3g has 17.15 "You", 17.89 "slow",
+19.11 "down", 20.13 "time", 27.69 "hour"; 3h had 17.63 / 18.53 / 19.60 / none (LRC line "You slow down time" = 17.07 s).
+**Root cause:** every duration constant of music_moments.waves() (WV_MIN 0.60, the cluster / merge windows) and of the planner
+DP (shortest shot 0.75 s) was calibrated on the slowed audio. At speed 1.0 the syllables are 15 % shorter (0.44-0.57 s), fell
+under WV_MIN, and the chained "a short wave joins the next, keeping its start" merge moved each wave start one syllable EARLY
+(16.85 for "You" 17.21; 17.74 for "slow" 18.18; 19.69 for "time" 20.24); "You" was then a weak step the DP skipped (-> the
+"late" switch), and "hour" (27.80, a 0.54 s piece) was merged into "den" as a falling tail (-> no switch). The judge passed 3h
+because its own constants (JW_MIN_SHOT 0.70, JW_JOIN 0.45, windows) had the same tempo blind spot: every 3h cut sat on "a"
+syllable start and the missed words were excused as too close to a switch.
+**Fix:** (1) music_moments: WV_REF_SPEED 0.85, tempo_scale(speed); waves(..., speed=) analyses a faster version on the Demucs stem
+of its MIX resampled to the reference tempo (_ref_tempo_stem, pitch follows like make_version) and maps the times back
+(slowed 0.85 versions: unchanged code path). Two robustness rules found on the way: the same-held-note test also needs the voice
+VOICED through the dip (a consonant gap is a new word: "down" -> "time"); a short piece singing the PREVIOUS wave's note while
+the next wave moves to another note joins the previous wave ("dow-own"); a near-tie (10 %) between the consonant onset at a
+valley's bottom and the vowel climbing out of it on the SAME note takes the vowel ("den" 26.69 -> 26.74). The 3g plan is
+reproduced exactly with all of it (18 cuts, checked plan-only). (2) planners._cine_wave_cuts passes opts cine_song_speed and
+scales the shortest shot (0.75 / 0.95 s) by the tempo scale; a pinned slot with path null takes a fresh reviewed clip.
+(3) cine_vibe sets cine_song_speed = song_speed.
+**Judge** (judge_slowmo.py): wave_events / wave_judge take the version speed (plan music '@vX') and judge a faster version at
+the reference tempo (JW_REF_SPEED 0.85, JW_MIN_SHOT / JW_JOIN scaled, F['hop']); YIN octave slips no longer block a legato
+'pitch' attack ("You" 17.13); new criterion **12_sync** = (a) render vs plan: audio lag per window vs the song version and the
+detected cuts vs the plan's cuts (> 0.15 s = FAIL), (b) every strong wave start with a switch within 0.8 s: the switch's error
+outside its hit window (median / mean > 0.15 s or 2 off in a row = FAIL), (c) every synced LYRIC LINE start in the body (LRCLIB
+by the plan's lyrics id, render-time only, refined to the first sung attack within -0.25 / +0.40 s) needs a switch within 0.15 s
+of its hit window. 10_holds is info only on a faster version (holds() is not tempo-normalised; 11 judges holds there).
+**Results:** 3h re-judged -> **NOT PASS 8.28**: 11_waves 0 (mid-wave 17.63 / 24.77, missed "hour" 27.30 / 27.51 / 27.74 and
+31.21), 12_sync 0 ("You slow down time" 17.07: attack 17.20, switch 17.63, +0.33 s late); render lag 0.0 s, cut drift 0.0 s.
+3g re-judged -> **PASS 9.95** (11 = 10, 12 = 10, line starts 3 / 3 on). **3i** = output/newtypes/m3i (pin:
+scratchpad sm4/pin3i.json = the 3h clips in their order + the 3g Elaina clip on "down", Kaori/violin kept on the violin part
+35.30-37.17, Makima no longer in the pool -> fresh, 2 more fresh for the tail), 22 shots, cuts 4.60 8.57 9.53 10.47 11.43
+12.37 14.67 15.53 | **17.13 "You"** 17.87 "slow" 19.03 "down" **19.97 "time"** 23.93 "In" 25.60 "gol" 26.67 "den" **27.60
+"hour"** 29.33 30.77 33.30 35.30 (violin) 37.17 38.03 -> judge **PASS 9.84** (11_waves 10: 0 mid-wave, 0 missed; 12_sync 8.5:
+one off start 31.36 in the faint tail; line starts 3 / 3 on; render lag 0, cut drift 0). Own check: timeline.png from the
+final file (waves at the reference tempo), cutframes-00..05 (20 frames per cut). 3h deleted from review.
+**Rule (owner, 3h): match clip content to distinctive instrumentation** - when a part is carried by a recognisable instrument
+(violin, piano, guitar...), prefer a clip showing it (3h/3i: Kaori Miyazono with her violin on the violin phrase 35.3 s).
+Not automated yet (needs instrument tags on the music side + 'performance' clip tags).
+Changed (uncommitted): core/edit/music_moments.py, planners.py, cine_vibe.py, judge_slowmo.py. CI: same settings as the 3g
+baseline + the version speed reaches the planner via song_speed; the judge needs network for LRCLIB (on failure 12c is n/a).
+
+### 2026-10-20: held-note decay tail + outro rule, 3i -> 3j (slow-mo agent)
+Owner on 3i: "30 s it transitions but it shouldn't, it should hold, it is on the hoouuurrr hold; the violin part: just end with
+that one clip till the end". **Cause:** after "hour" (27.77 s) the Demucs vocal stem fades below -20 dB by 28.7 s (the held,
+reverbed vowel goes into the 'other' stem), so the wave segmenter saw a string of faint "waves" (28.69 / 29.08 / 29.44 / 30.24,
+-26..-17 dB) and a short loud "oh" echo at 30.88 s (-10.9 dB, sustained 0.56 s, strength 3.0 'phrase'); the DP cut on 29.44 and
+30.88 and the WV_SPLIT rule added 33.30 in the instrumental stretch. The mix's harmony never moved: harmonic chroma = the same E
+chord (E / D#) from 27.6 s to 34.4 s; the band (bass) drops out at 35.1 s = the violin outro. Neither planner nor judge had any
+notion of a decay tail or an outro (the judge's 31.21 / 31.36 "off-sync / missed" starts were that echo).
+**Rule + code:** music_moments.hold_tails(): a loud wave (>= -15 dB, strength >= 2) whose LINE ends (no loud wave within 1.0 s
+after its sustain) holds while the mix harmonic chroma stays within cosine 0.80 of the held part (broken only after 0.4 s away)
+and until a new sung LINE (a loud wave sustained >= 0.7 s or followed by another loud wave within 1.2 s); outro_start(): the
+40-160 Hz band falls >= 12 dB in the last 12 s and stays down to the end. planners._cine_wave_cuts: no candidate (wave or
+instrumental split) inside a tail or after the outro; a shot starting on a held note may last the whole tail; the outro is a
+must-switch and the final shot runs from it to the end (env SLOWMO_HOLD_TAILS=0 disables). Judge criterion **13_hold_outro**
+(own code on the rendered file: its strong attacks, the rendered mix chroma + low band): a cut inside a held note's tail or
+> 0.5 s into the outro = BAD -> NOT PASS; starts inside a tail / the outro are not 'missed' in 11.
+**Results:** 3i re-judged -> NOT PASS 9.08 (13: 29.33 / 30.77 / 33.30 inside the "hour" tail 27.74-35.11, 37.17 / 38.03 in the
+outro from 35.11). **3j** = output/newtypes/m3j (pin sm4/pin3j.json: 3i's clips up to "den", the hold on the Blue Box clip
+z-sGoBx0XMY_71100 (4.3 s source; the 3.1 s UZUo clip froze 1.2 s at 0.34x in a first render, judge 1_smooth 3.33), Kaori/violin
+as the closing clip): cuts from 25 s: 25.60 "gol", 26.67 "den", **27.60 "hour" -> held 7.7 s**, **35.30 violin outro -> to the
+end (39.97)**. Judge **PASS 9.96** (11 = 10, 12 = 10, 13 = 10, 1_smooth 10). 3i deleted from review.
+**3g impact (NOT re-rendered, owner-approved):** the planner with the new rule drops 3g's last two cuts **34.87 and 36.23 s**
+(both inside the "hour" tail 32.66 s -> end; 3g has no outro in its window), so its "hour" shot would run 32.57 -> 39.40 (6.8 s).
+The new judge still PASSES 3g as rendered (9.96, 13 = 10): its "hour" attack peaks at -15.4 dB, just under the -15 dB loud
+threshold, so the judge starts no tail there. Decision for the owner: keep 3g as approved, or re-render it without those cuts.
+
+### 2026-10-20 (late): slow-mo GO-LIVE code on main, rotation GATED on the 3g post (go-live agent)
+Owner plan: the hand-picked **3j posts ~2026-10-21** (another agent, upload-prebuilt.yml), **3g ~2026-10-24**, and only THEN the
+generated slow-mo edits start -> **DAILY_TYPE_WEIGHTS stays stem:1,sound:1,slowmo:0**; the coordinator sets slowmo:1 after 3g is up.
+Everything else is ready: held files committed (music_moments / planners / cine_vibe / judge_slowmo + refs/slowmo-judge-ref.json,
+the 3j method: tempo-normalised waves, hold tails + outro, judge 11 / 12_sync / 13_hold_outro).
+- Readiness per vibe (vibe_pool.status reads the vibe's own min_fresh_clips first): **summer_glow 25 -> ready (29 clips)**,
+  **dreamy_bloom 40 -> off (12)**; the preset default stays 60.
+- **Golden Hour on cooldown**: slowmo-music-pool.json jvke_golden_hour last_used 2026-10-24 (v0.85 = 3g 10-24, v1 = 3j 10-21) ->
+  30-day cooldown, no generated slow-mo uses it before ~11-21 / 11-23 (checked: 0 of 300 picks on 10-26, 25 distinct songs).
+- **3j + 3g clips in the rotation ledger** (memory/edit-pool-used.json recent slowmo/summer_glow, 'slowmo_3j / 3g (hand-picked)',
+  17 / 18 clips): the first generated videos prefer the other clips (with 29 clips the reuse share is raised and logged).
+- CI (daily-create.yml): faster-whisper + matplotlib in the sound / slow-mo extras step (demucs was there), model cache key v3
+  (restores v2), the artifact keeps the slow-mo plan (*.plan.json) and the guard's judge dir (report / sheets / waves / cutframes).
+- LRCLIB: an outage while JUDGING = 12c line starts "n/a" (not a failure); an outage while RENDERING = a slow-mo without lyrics ->
+  3_lyrics 0 -> the pre-upload guard blocks it -> that day posts stem (no lyric-less slow-mo).

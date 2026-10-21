@@ -1538,13 +1538,21 @@ def plan_cinematic_slowmo(A, shots, opts):
     body_s = float(opts.get('cine_body_s') or 9.96)     # 2026-10-12 (vibe edits): the body length is a parameter (30-180 s videos)
     n_pulses = max(8, int(round(body_s / pulse)))
     start, d, end = cine_window(A, pulse, n_pulses, opts, rng)
+    pin = opts.get('cine_pin')
+    if pin:
+        # 2026-10-19 round 2 (owner: "the clips are all good, only the timing with the music needs work"): an approved
+        # edit's clips are kept (same clips, order, entry points) and only the cuts are re-timed: the same song window,
+        # the same words-on-black intro (hero switch), the same length
+        start = float(pin['music_start'])
+        end = start + float(pin['duration'])
+        d = start + float(pin['shots'][1]['t0']) + 0.06
     near = bt[(bt >= d - 8.0) & (bt <= d + 12.0)]
     if len(near) > 4:                                # the local beat, where the edit actually is
         P = float(np.median(np.diff(near)))
         k = min(range(1, 7), key=lambda kk: abs(kk * P - 1.0))
         pulse = k * P
         n_pulses = max(8, int(round(body_s / pulse)))
-        end = d + n_pulses * pulse
+        end = d + n_pulses * pulse if not pin else start + float(pin['duration'])
     # remake round 6: the pulse and every switch frame from the song's own accents (onset strength), logged
     cine_log = {}
     env = (_cine_onsets(A['path'], start, start + max(22.0, (d - start) + body_s + 6.0))
@@ -1556,6 +1564,9 @@ def plan_cinematic_slowmo(A, shots, opts):
             if opts.get('cine_body_s'):
                 n_pulses = max(8, int(round(body_s / pulse)))
             end = d + n_pulses * pulse
+    if pin:
+        end = start + float(pin['duration'])
+        n_pulses = max(13, n_pulses)
     long_body = n_pulses > 12
     if long_body:
         # 2026-10-12 (vibe edits 30-180 s): phrases of [hero hold] + single pulses, the hero holds and the lift on the
@@ -1604,6 +1615,59 @@ def plan_cinematic_slowmo(A, shots, opts):
         log('cinematic: pulse %.3f s, cuts %s' % (pulse, json.dumps(cine_log['cuts'])))
         if any(r['weak'] for r in cine_log['cuts'][1:]):
             log('cinematic: WARNING a body cut has no song accent >= 2.0 within 250 ms')
+    hold_done = False
+    wave_done = False
+    if (long_body and opts.get('cine_wave_cuts') and not opts.get('cine_probe') and A.get('path')
+            and A.get('tracker') != 'synthetic'):
+        # 2026-10-19 round 3 (owner, "momentum"): one clip per wave of the sung line, the switch at the next wave's start;
+        # the shot count follows the waves (pinned clips: their order is kept, more / fewer clips as the waves need)
+        wc_ = _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin)
+        if wc_:
+            cuts, lens, kinds, lifts, pulse, cine_log['waves'] = wc_
+            if pin:
+                npb = len(pin['shots']) - 3
+                for i_ in range(1, len(kinds) - 1):
+                    if i_ <= npb and pin['shots'][i_ + 1].get('role') in ('move', 'still'):
+                        kinds[i_] = pin['shots'][i_ + 1]['role']
+            drop = round(float(cuts[0]), 4)
+            d = start + drop
+            hold_done = wave_done = True
+            log('cinematic: wave cuts main %.3f s, %d shots' % (pulse, len(cuts)))
+        elif pin:
+            raise RuntimeError('cine_pin: no wave cut layout')
+    if (not wave_done and long_body and (opts.get('cine_hold_cuts') or pin) and not opts.get('cine_probe') and A.get('path')
+            and A.get('tracker') != 'synthetic'):
+        # 2026-10-19 round 2 (owner: never cut while the singer holds a note / word): cuts where the music turns, holds
+        # forbidden, a DP over the allowed switch times (music_moments.holds; the rule measured on _sX2)
+        hc_ = _cine_hold_cuts(A, start, d, end, lead, opts, rng, pin)
+        if hc_:
+            cuts, lens, kinds, lifts, pulse, cine_log['holds'] = hc_
+            drop = round(float(cuts[0]), 4)
+            d = start + drop
+            hold_done = True
+            if abs(float(cine_log['holds'].get('D') or D) - D) > 1e-3:
+                # the pinned closing shot keeps its length past the old end (the song goes on): a later fade-out
+                end = start + float(cine_log['holds']['D'])
+                D = round(end - start, 4)
+                view = MU.window_view(A, start, end, 0.9, 1.1)
+                B = Builder(view, pool, rng, fps, group, template, aspect)
+                log(f'cinematic: the edit ends at {D:.2f} s (the closing shot keeps its approved length)')
+            log('cinematic: hold-aware cuts main %.3f s, %d shots, %d inside a hold' % (
+                pulse, len(cuts), cine_log['holds']['in_hold']))
+        elif pin:
+            raise RuntimeError('cine_pin: no hold-aware cut layout for the pinned clips')
+    if (not hold_done and long_body and opts.get('cine_moments') and not opts.get('cine_probe') and A.get('path')
+            and A.get('tracker') != 'synthetic'):
+        # 2026-10-19 (owner: the cuts must follow the song like the reference - musical moments, not a fixed pulse; 3b's
+        # pulse picker took 4 eighths of a 3-eighth song, so 70 % of its cuts sat a third of a beat off the meter): the cuts
+        # are chosen on the main beats of the song's real meter that carry a phrase start / sung syllable / accent,
+        # measured on the audio actually used (core/edit/music_moments.py)
+        mc = _cine_moment_cuts(A, start, d, end, lead, opts, rng)
+        if mc:
+            cuts, lens, kinds, lifts, pulse, cine_log['moments'] = mc
+            drop = round(float(cuts[0]), 4)
+            d = start + drop
+            log('cinematic: moment cuts main %.3f s, %d shots, lens %s' % (pulse, len(cuts), lens))
     # the canvas: the 16:9 master rotated into 9:16 (_sX2) -> motion of x % of a clip's width reads as x * gain % of
     # the output width
     cw, ch, ow = 1920.0, 1080.0, (1080.0 if aspect == '9:16' else 1920.0)
@@ -1885,6 +1949,7 @@ def plan_cinematic_slowmo(A, shots, opts):
                 sc -= 0.3 * (0.0 if 0.008 <= d0 <= 0.06 else 1.0)   # a micro-drift, not a frozen frame
         return sc + rng.uniform(0, 0.04)
 
+    pin_names = ({os.path.normcase(os.path.basename(str(x['path']))) for x in pin['shots'][1:]} if pin else set())
     show_uses = {}
     used_ids, show_uses_order = set(), []
     ids_order = []
@@ -1931,7 +1996,36 @@ def plan_cinematic_slowmo(A, shots, opts):
                 cand_shots = pool.shots
         if len(clean) < 3:
             log(f'cinematic: only {len(clean)} reject-free shots for slot {slot_now} ({kind}): soft penalties decide')
-        s = max(cand_shots, key=lambda x: fit(x, kind, prev))
+        pin_sh = None
+        if pin and wave_done:
+            # the approved clips in their order; the shot count follows the waves: extra body shots get fresh reviewed
+            # clips (the approved closing clip stays last), fewer shots drop approved body clips from the end
+            npb = len(pin['shots']) - 3                  # approved body clips between the hero and the closing shot ([intro, hero, body.., last])
+            if i == 0 or (0 < i < len(cuts) - 1 and i <= npb):
+                pin_sh = pin['shots'][i + 1]
+            elif i == len(cuts) - 1:
+                pin_sh = pin['shots'][-1]
+            if pin_sh is not None and not pin_sh.get('path'):
+                pin_sh = None                            # a pinned slot left open (path null): a fresh reviewed clip
+            if pin_sh is not None:
+                want = os.path.normcase(os.path.basename(str(pin_sh['path'])))
+                hit = [x for x in pool.shots if os.path.normcase(os.path.basename(str(x.get('path')))) == want]
+                if not hit:
+                    raise RuntimeError(f'cine_pin: clip {want} is not in the pool')
+                s = hit[0]
+            else:
+                fresh = [x for x in cand_shots if os.path.normcase(os.path.basename(str(x.get('path')))) not in pin_names]
+                s = max(fresh or cand_shots, key=lambda x: fit(x, kind, prev))
+                log(f'cinematic: wave shot {i} has no approved clip: fresh {os.path.basename(str(s.get("path")))}')
+        elif pin:
+            pin_sh = pin['shots'][i + 1]
+            want = os.path.normcase(os.path.basename(str(pin_sh['path'])))
+            hit = [x for x in pool.shots if os.path.normcase(os.path.basename(str(x.get('path')))) == want]
+            if not hit:
+                raise RuntimeError(f'cine_pin: clip {want} is not in the pool')
+            s = hit[0]
+        if not pin:
+            s = max(cand_shots, key=lambda x: fit(x, kind, prev))
         if os.environ.get('CINE_WHY'):
             for x in pool.shots:
                 if any(w and w in str(x['path']).replace(chr(92), '/') for w in os.environ['CINE_WHY'].split(',')):
@@ -1985,6 +2079,20 @@ def plan_cinematic_slowmo(A, shots, opts):
         # 30-180 s edits enter at <= 2.2x source speed
         pts, sc = cine_speed_curve(ct, ce, src_in, t1 - t0, (hi, lo, tau), room, gain, fps,
                                    entry_vmax=(2.2 if long_body else None))
+        if pin_sh is not None and wave_done:
+            # wave layout: the approved clip from its approved entry frame, its speed curve fitted to the new shot length
+            # (a shot of a different length can't reuse the old source path without leaving slow motion)
+            src_in = float(pin_sh['src_in'])
+            room = max(0.2, s['duration'] - 0.05 - src_in)
+            if jt is not None and jt > src_in + 0.3:
+                room = min(room, jt - 0.08 - src_in)
+            pts, sc = cine_speed_curve(ct, ce, src_in, t1 - t0, (hi, lo, tau), room, gain, fps,
+                                       entry_vmax=(2.2 if long_body else None))
+        elif pin_sh is not None:
+            # the approved shot's own source path (same entry and exit frame), time-scaled to the new shot length
+            src_in = float(pin_sh['src_in'])
+            pts = _retime_curve(pin_sh['speed_curve'], t1 - t0, fps, _pin_bounds(pin_sh['speed_curve'], hero=(i == 0),
+                                                                                  last=(i == len(cuts) - 1))[1])
         tr = 'first_shot_entry' if i == 0 else 'exposure_bump_hard'
         # remake round 2 (critics: 'a pop, not a reveal' / 'soft on the beat'): the remake's measured entry (defocus
         # decaying over ~0.9 s with a 1.15 -> 1.0 ease-out push) and a one-frame incoming defocus on body cuts
@@ -2411,6 +2519,498 @@ def _cine_pick_pulse(env, P, drop, lead):
         return None
     best = max(cands, key=lambda c: c[0])
     return best[1], best[2], [dict(pulse=round(c[1], 4), score=round(c[0], 2), hits=c[3], autocorr=c[4]) for c in cands]
+
+
+def _cine_moment_cuts(A, start, d, end, lead, opts, rng):
+    """Slow-mo cuts on musical moments (2026-10-19), the rule measured on _sX2 (music_moments.align: 6 / 6 cuts on the
+    main beat of the song's meter, 6 / 6 on a moment - 5 sung syllables + 1 bar start -, the moment ~66 ms after the switch
+    frame, the hero hold 4 main beats): a DP over the main beats after the hero picks the shots (1-3 beats each, the hero
+    3-4) maximising the moment strength at every switch (phrase start 3, sung syllable <= 3, accent 1.2, bar 1, plain beat
+    -0.8), mildly against runs of 1-beat shots (not every beat). -> (cuts, lens, kinds, lifts, main, log) or None"""
+    try:
+        import music_moments as MM
+        M = MM.moments(A['path'], float(start), float(end - start) + 0.8, vocals=True, threads=2)
+    except Exception as e:  # noqa: BLE001
+        log(f'cinematic: no musical moments ({type(e).__name__}: {e}): the pulse grid stays')
+        return None
+    off = float(start)
+    main = float(M['main'])
+    beats = [float(b) + off for b in M['beats']]
+    if len(beats) < 6 or not 0.5 <= main <= 1.6:
+        log(f'cinematic: moment grid unusable (main {main}, {len(beats)} beats): the pulse grid stays')
+        return None
+    mom = ([float(p[0]) + off for p in M['phrase_starts']] + [float(v[0]) + off for v in M['vocal_onsets'] if v[1] >= MM.VOC_PROM]
+           + [float(a[0]) + off for a in M['accents'] if a[1] >= 3.0])
+
+    def sc_of(c):
+        sc, kind, _ = MM.score_at(M, c - off - lead)
+        return (sc if kind in ('phrase', 'vocal', 'accent', 'bar') else sc - 1.2), kind
+
+    def best_at(b, win=0.1):
+        cs = [b] + [m for m in mom if abs(m - b) <= win]
+        return max(((c,) + sc_of(c) for c in cs), key=lambda z: z[1])
+    # the hero (first clip) lands on the vocal phrase start measured in THIS audio (_sX2: the hero switch 0.06 s before the
+    # line's first syllable). The lyric-timing window search can sit mid-phrase (3b: 0.6 s after the line had started under
+    # the black intro): every main beat / phrase start within -0.9..+0.6 s of d competes, the intro stays >= 4.2 s
+    hc = [best_at(b) for b in beats if d - 0.9 <= b <= d + 0.6]
+    hc += [(p_,) + sc_of(p_) for p_ in [float(x[0]) + off for x in M['phrase_starts']] if d - 0.9 <= p_ <= d + 0.6]
+    hc = [h for h in hc if h[0] - off >= 4.2] or [(d,) + sc_of(d)]
+    hero = max(hc, key=lambda h: h[1] + (1.5 if h[2] == 'phrase' else 0.0) - 0.5 * abs(h[0] - d))
+    cand = [hero] + [best_at(b) for b in beats if b > hero[0] + 0.6 * main and b <= end - 1.5]
+    if len(cand) < 6:
+        return None
+    body = end - hero[0]
+    max_shots = int(opts.get('cine_max_shots') or 99)
+    n_lo = max(6, int(math.ceil(body / 2.9)))
+    n_hi = min(max_shots, int(body / 1.7))
+    if n_hi < n_lo:
+        n_lo = min(n_lo, n_hi)
+    # beat index of every candidate (the main-beat grid may drift: index by position in the list)
+    NEG = -1e9
+    best = {}                       # (i, n, lastgap) -> (value, prev key)
+    best[(0, 1, 0)] = (0.0, None)
+    for i in range(len(cand)):
+        for key in [k for k in list(best) if k[0] == i]:
+            v0, _ = best[key]
+            _, n, lg = key
+            gaps = (3, 4) if i == 0 else (1, 2, 3)
+            for g in gaps:
+                j = i + g
+                if j >= len(cand):
+                    continue
+                # owner: not every beat - a 1-beat shot only on a strong moment, never three in a row
+                pen = (-0.7 - (1.2 if lg == 1 else 0.0)) if g == 1 else (-0.1 if g == 3 else 0.0)
+                v = v0 + cand[j][1] + pen
+                nk = (j, n + 1, g)
+                if nk not in best or best[nk][0] < v:
+                    best[nk] = (v, key)
+    fin = []
+    for key, (v, _) in best.items():
+        j, n, _ = key
+        tail = end - cand[j][0]
+        if 1.5 <= tail <= 3.6 and n_lo <= n + 0 <= n_hi:        # n counts the shots incl. the last one (it starts at j)
+            fin.append((v + 0.0, key))
+    if not fin:
+        log(f'cinematic: no moment-cut layout fits {n_lo}-{n_hi} shots: the pulse grid stays')
+        return None
+    v, key = max(fin)
+    path = []
+    while key is not None:
+        path.append(key)
+        key = best[key][1]
+    path.reverse()
+    idx = [k[0] for k in path]
+    cuts = [round(cand[i][0], 4) for i in idx]
+    lens = [idx[a + 1] - idx[a] for a in range(len(idx) - 1)] + [max(1, int(round((end - cuts[-1]) / main)))]
+    pat = ['move', 'still', 'move', 'move', 'still']
+    kinds, k = [], 0
+    for a, i in enumerate(idx):
+        if a == 0:
+            kinds.append('hero')
+        elif a == len(idx) - 1:
+            kinds.append('last')
+        elif cand[i][2] == 'phrase' and lens[a] >= 2:
+            kinds.append('hero')
+        else:
+            kinds.append(pat[k % len(pat)])
+            k += 1
+    # the emotional lift: the strongest accent among the second-half cuts gets the brighter bump
+    acc = {round(float(a[0]) + off, 3): float(a[1]) for a in M['accents']}
+    half = [a for a in range(1, len(cuts) - 1) if cuts[a] >= hero[0] + body / 2]
+    lifts = []
+    if half:
+        def acc_near(c):
+            return max([s_ for t_, s_ in acc.items() if -0.03 <= t_ - c <= 0.14] or [0.0])
+        la = max(half, key=lambda a: acc_near(cuts[a]))
+        lifts = [sum(lens[:la])]
+    rows, st = MM.align([c - off - lead for c in cuts], M)
+    info = dict(main=round(main, 4), k=M['k'], meter_ac=M['meter_ac'], value=round(v, 2), n_range=[n_lo, n_hi], stats=st,
+                cuts=[dict(t=c, kind=cand[i][2], score=round(cand[i][1], 2)) for c, i in zip(cuts, idx)])
+    # the plan's cut times are edit seconds (song seconds - start), as the pulse grid's
+    return [round(c - off, 4) for c in cuts], lens, kinds, lifts, main, info
+
+
+def _pin_bounds(curve, hero=False, last=False):
+    """(r_min, r_speed, r_max) of an approved shot's new length / old length: below r_speed its source path is not sped
+    up any further (past 1.3 x real-time source speed, or 0.95 for a shot already faster: it would leave slow motion) but
+    TRIMMED at the end (down to r_min = 0.5, 0.6 for the closing shot); a near-still portrait (source < 0.6 x real time) takes 0.5-1.8, the others
+    up to HC_RATIO[1]; the hero never gets shorter (_sX2: 4 main beats)"""
+    rt = (float(curve[-1][1]) - float(curve[0][1])) / max(0.1, float(curve[-1][0]))
+    if rt < 0.6:
+        lo, hi = 0.5, 1.8
+    else:
+        lo, hi = max(HC_RATIO[0], min(0.95, rt / 1.3)), HC_RATIO[1]
+    if hero:
+        return 1.0, max(1.0, lo), hi
+    return (0.6 if last else 0.5), lo, hi          # the closing shot fades out over its last 1.2 s: keep >= 0.6
+
+
+def _retime_curve(curve, dur, fps, r_speed=None):
+    """a shot's speed curve [[t, src], ...] stretched in time to `dur` (same source in / out), on the frame grid; with
+    r_speed (> dur / old length) it is stretched by r_speed only and its end trimmed (same entry, same speed)"""
+    ct = np.asarray([float(p[0]) for p in curve])
+    cs = np.asarray([float(p[1]) for p in curve])
+    od = max(1e-6, float(ct[-1]))
+    k = dur / od
+    if r_speed is not None and r_speed > k:
+        k = float(r_speed)
+    n = max(1, int(round(dur * fps)))
+    tt = np.arange(n + 1) / float(fps)
+    tt[-1] = dur
+    return [[round(float(t), 5), round(float(np.interp(t / k, ct, cs)), 5)] for t in tt]
+
+
+# the measured cut rule of the slow-mo reference (_sX2EUexbW8, 2026-10-19 round 2; refs/new-types-progress.md "Slow-mo
+# cut timing round 2"): every switch frame 0.03-0.14 s (median 0.10) BEFORE a new sung note, 0.05-0.10 s before an
+# accompaniment attack, on the main beat, never inside a held note; one held note per body shot
+HC_PRE = 0.09            # switch -> the sung onset / attack it announces
+HC_WIN = (0.0, 0.17)     # a turn counts for a switch when it follows it by this much
+HC_RATIO = (0.68, 1.5)   # a pinned shot's new length / its approved length (its source path is time-scaled)
+HC_EXTEND = 1.2          # a pinned edit may end up to this much later (its closing shot keeps its length)
+
+
+def _cine_hold_cuts(A, start, d, end, lead, opts, rng, pin=None):
+    """Hold-aware slow-mo cuts (owner 2026-10-19 round 2: never cut while the singer holds a note / word; cut where the
+    music turns). Measured on the audio actually heard (music_moments.holds: sung notes from the Demucs vocal stem with a
+    pitch / energy tracker, instrumental sustains / swells in the vocal gaps). Candidate switch times: HC_PRE before every
+    sung note onset and every accompaniment attack, and every main beat, minus the ones inside a hold body; a DP over the
+    candidates scores each switch (the turn it lands on: phrase start 3, a note after a hold 2.4, a syllable 1.5, + the
+    attack, + the main beat, - a mid-word switch) and each shot length (pinned clips: close to the approved length, the
+    source path time-scaled within HC_RATIO; else the reference's lengths: hero 3-4.5 main beats, body 0.8-2.7).
+    -> (cuts (edit s, switch + lead), lens (main beats), kinds, lifts, main, log) or None"""
+    try:
+        import music_moments as MM
+        # (+ 2 s: a pinned closing shot may run up to HC_EXTEND past the old end)
+        span = float(end - start) + (0.8 + HC_EXTEND if pin else 0.8)
+        M = MM.moments(A['path'], float(start), span, vocals=True, threads=2)
+        H = MM.holds(A['path'], float(start), span, threads=2, M=M, strict=True)
+    except Exception as e:  # noqa: BLE001
+        log(f'cinematic: no hold analysis ({type(e).__name__}: {e})')
+        return None
+    main = float(M['main'])
+    D = float(end - start)
+    hero = round(float(d - start) - lead, 4)            # the hero switch (edit s): kept (the words-on-black intro ends here)
+    notes = H['notes']
+    att = [(float(a), float(s_)) for a, s_ in H['inst']['attacks'] if s_ >= 2.5]
+
+    def turn_score(sw):
+        sc, why = 0.0, []
+        nn = [k for k, x in enumerate(notes) if HC_WIN[0] <= x['a'] - sw <= HC_WIN[1]]
+        if nn:
+            k = nn[0]
+            x = notes[k]
+            pv = notes[k - 1] if k > 0 else None
+            gap = x['a'] - pv['b'] if pv else 9.0
+            if gap >= 0.25:
+                sc += 3.0
+                why.append('phrase')
+            elif pv is not None and pv['hold']:
+                sc += 2.4
+                why.append('after_hold')
+            else:
+                sc += 1.5
+                why.append('syllable')
+            if pv is not None and x['midi'] is not None and pv['midi'] is not None and abs(x['midi'] - pv['midi']) >= 1.0:
+                sc += 0.4
+        aa = [s_ for a, s_ in att if HC_WIN[0] <= a - sw <= HC_WIN[1]]
+        if aa:
+            sc += min(1.2, 0.2 * max(aa))
+            why.append('attack')
+        ph = MM.meter_phase(M, sw)
+        if ph is not None:
+            sc += 1.0 if ph <= 0.08 else (0.5 if ph <= 0.15 else -0.3)
+        if [x for x in notes if x['a'] + 0.1 < sw and x['b'] - 0.16 > sw]:
+            sc -= 1.5                                       # mid-word (a short note): no turn there
+            why.append('mid_word')
+        return sc, '+'.join(why) or 'beat'
+    raw = ([x['a'] - HC_PRE for x in notes] + [float(a) - HC_PRE for a, s_ in H['inst']['attacks'] if s_ >= 2.0]
+           + [float(b) - MM.LEAD for b in M['beats']])
+    D0 = D
+    raw = sorted(t for t in raw if hero + 0.5 < t < D - 0.8)
+    cands, last = [], -9.0
+    for t in raw:
+        if any(MM.in_hold(H, t + e) is not None for e in (-0.06, 0.0, 0.06)):
+            continue                    # (+-60 ms margin: a hold edge moves a little between two analyses of the same song)
+        sc, why = turn_score(t)
+        if cands and t - last < 0.04:
+            if sc > cands[-1][1]:
+                cands[-1] = (t, sc, why)
+                last = t
+            continue
+        cands.append((t, sc, why))
+        last = t
+    # a switch that lands on nothing (no sung onset, no attack, off the beat) reads as random: costs extra
+    cands = [(t, sc - (1.5 if sc < 1.0 else 0.0), why) for t, sc, why in cands]
+    cands = [(hero, 0.0, 'hero')] + cands
+    if os.environ.get('HC_DEBUG'):
+        log('hold cuts: forbid %s' % json.dumps(H['forbid']))
+        log('hold cuts: candidates %s' % json.dumps([(round(c[0], 3), round(c[1], 2), c[2]) for c in cands]))
+    if pin:
+        old = [float(x['t0']) for x in pin['shots'][1:]] + [float(pin['duration'])]
+        targ = [old[k + 1] - old[k] for k in range(len(old) - 1)]
+        roles = [x.get('role') for x in pin['shots'][1:]]
+        bnd = [_pin_bounds(x['speed_curve'], hero=(k == 0), last=(k == len(pin['shots']) - 2))
+               for k, x in enumerate(pin['shots'][1:])]
+        # a speed change shows on a moving take, hardly on a near-still portrait
+        w_sp = [4.0 if (float(x['speed_curve'][-1][1]) - float(x['speed_curve'][0][1])) / max(0.1, float(x['speed_curve'][-1][0])) < 0.6
+                else 15.0 for x in pin['shots'][1:]]
+        r_lo, r_sp, r_hi = [b[0] for b in bnd], [b[1] for b in bnd], [b[2] for b in bnd]
+    else:
+        n_lo = max(6, int(math.ceil((D - hero) / (2.4 * main))))
+        n_hi = min(int(opts.get('cine_max_shots') or 99), int((D - hero) / (1.2 * main)))
+        targ, roles = None, None
+    NEG = -1e18
+
+    def fit(k, dur):
+        if targ is not None:
+            r = dur / targ[k]
+            if not r_lo[k] <= r <= r_hi[k] or dur < 0.75:
+                return NEG                     # (_sX2's shortest shot is one main beat, 1.0 s)
+            re = max(r, r_sp[k])
+            # the speed change of the approved source path, + the share of it trimmed off the end
+            return -w_sp[k] * math.log(re) ** 2 - 8.0 * (1.0 - r / re)
+        b = dur / main
+        if k == 0:
+            return NEG if not 2.9 <= b <= 4.6 else -0.3 * abs(b - 4.0)
+        if not 0.8 <= b <= 2.7:
+            return NEG
+        return -0.25 * abs(b - 1.6) - (0.5 if b < 1.15 else 0.0)
+    C = len(cands)
+    tt = np.asarray([c[0] for c in cands])
+    if targ is not None:
+        N = len(targ)
+        V = np.full((N, C), NEG)
+        P = np.full((N, C), -1, int)
+        V[0, 0] = 0.0
+        for k in range(1, N):
+            lo_d, hi_d = targ[k - 1] * r_lo[k - 1], targ[k - 1] * r_hi[k - 1]
+            for j in range(1, C):
+                best, bi = NEG, -1
+                for i in np.where((tt[j] - tt >= lo_d) & (tt[j] - tt <= hi_d) & (V[k - 1] > NEG / 2))[0]:
+                    v = V[k - 1, i] + fit(k - 1, tt[j] - tt[i]) + cands[j][1]
+                    if v > best:
+                        best, bi = v, int(i)
+                V[k, j], P[k, j] = best, bi
+        fin = [(V[N - 1, j] + fit(N - 1, D - tt[j]), j, D) for j in range(C) if V[N - 1, j] > NEG / 2]
+        for j in range(C):
+            # or the closing shot keeps (>= 0.9 of) its approved length and the edit ends later (<= HC_EXTEND): a mild cost
+            if V[N - 1, j] > NEG / 2 and D < tt[j] + 0.9 * targ[N - 1] <= D + HC_EXTEND:
+                De = round(max(D, tt[j] + targ[N - 1]) if tt[j] + targ[N - 1] <= D + HC_EXTEND else D + HC_EXTEND, 3)
+                fin.append((V[N - 1, j] + fit(N - 1, De - tt[j]) - 1.0 - 0.8 * (De - D), j, De))
+        fin = [f for f in fin if f[0] > NEG / 2]
+        if not fin:
+            kk = max([k for k in range(N) if (V[k] > NEG / 2).any()] or [0])
+            log('cinematic: hold-aware cuts: no layout keeps every pinned shot within its length range (reached shot %d of %d, '
+                'last cut <= %.2f s, %d candidates)' % (kk, N, max(tt[V[kk] > NEG / 2]), C))
+            return None
+        v, j, D = max(fin)
+        idx = [j]
+        for k in range(N - 1, 0, -1):
+            j = int(P[k, j])
+            idx.append(j)
+        idx.reverse()
+    else:
+        best = {(0, 1): (0.0, None)}
+        for j in range(1, C):
+            for i in range(j):
+                f = fit(0 if i == 0 else 1, tt[j] - tt[i])
+                if f <= NEG / 2:
+                    continue
+                for n in range(1, n_hi):
+                    if (i, n) not in best:
+                        continue
+                    v = best[(i, n)][0] + f + cands[j][1]
+                    if (j, n + 1) not in best or best[(j, n + 1)][0] < v:
+                        best[(j, n + 1)] = (v, (i, n))
+        fin = [(v + fit(1, D - tt[j]), (j, n)) for (j, n), (v, _) in best.items()
+               if n_lo <= n <= n_hi and 1.5 <= D - tt[j] <= 3.6]
+        fin = [f for f in fin if f[0] > NEG / 2]
+        if not fin:
+            log('cinematic: hold-aware cuts: no free layout fits')
+            return None
+        v, key = max(fin)
+        idx = []
+        while key is not None:
+            idx.append(key[0])
+            key = best[key][1]
+        idx.reverse()
+    sw = [cands[i][0] for i in idx]
+    rows = MM.cut_report(sw, H, end=D)
+    nin = sum(r['in_hold'] is not None for r in rows)
+    cuts = [round(t + lead, 4) for t in sw]
+    lens = [max(1, int(round((b - a) / main))) for a, b in zip(sw, sw[1:] + [D])]
+    if roles:
+        kinds = list(roles)
+    else:
+        pat = ['move', 'still', 'move', 'move', 'still']
+        kinds = ['hero'] + [pat[k % len(pat)] for k in range(len(sw) - 2)] + ['last']
+    half = [a for a in range(1, len(sw) - 1) if sw[a] >= hero + (D - hero) / 2]
+    lifts = []
+    if half:
+        la = max(half, key=lambda a: max([s_ for t_, s_ in att if 0.0 <= t_ - sw[a] <= 0.17] or [0.0]))
+        lifts = [sum(lens[:la])]
+    offs = [r['to_next_onset'] if r['to_next_onset'] is not None and r['to_next_onset'] <= 0.35 else
+            (r['acc_attack'][0] if r['acc_attack'] else None) for r in rows[1:]]
+    info = dict(main=round(main, 4), value=round(float(v), 2), in_hold=nin, n=len(sw), pinned=bool(pin), D=round(float(D), 4),
+                D_old=round(D0, 4),
+                hold_null=MM.hold_null(H, hero, D),
+                cuts=[dict(sw=round(t, 3), score=round(cands[i][1], 2), why=cands[i][2]) for t, i in zip(sw, idx)],
+                ratio=([round((b - a) / targ[k], 3) for k, (a, b) in enumerate(zip(sw, sw[1:] + [D]))] if targ else None),
+                offsets=offs)
+    return cuts, lens, kinds, lifts, main, info
+
+
+# owner 2026-10-19 round 3 ("momentum"): ONE clip carries ONE wave of the sung line, the switch sits at the start of the
+# next wave (the reference: 0.03-0.16 s before the attack, on the main beat); the number of shots follows the waves
+WV_PRE = 0.10            # switch -> the wave's attack (music_moments.waves times the attack itself; _sX2 median 0.10)
+WV_SNAP = (0.03, 0.16)   # a main beat whose switch (beat - LEAD) leads the attack by this much takes the switch
+WV_SHOT = (0.75, 5.2)    # shot length limits (s): _sX2's shortest body shot is 1.0 s, its held "shine" 4.0 s (slowed 4.7)
+WV_MUST = 2.0            # a wave this strong must get a switch (a phrase / a new word after a dip / a release)
+WV_CUT_MIN = 1.3         # a wave weaker than this earns no switch (the tail's faint lines: 3g cut 4 of them)
+WV_SPLIT = 5.2           # a longer stretch with no wave start (an instrumental tail) splits at a strong attack / bar
+
+
+def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
+    """Momentum cuts: music_moments.waves() on the song window actually heard (the Demucs vocal stem: loudness valleys,
+    pyin pitch continuity, vocal onsets; one sustained note across small dips = one wave), one switch at the start of
+    every wave (the hero stays: the words-on-black intro ends there), a DP keeps the shots within WV_SHOT and never
+    drops a strong wave start unless two are closer than the shortest shot. -> (cuts, lens, kinds, lifts, main, log)"""
+    try:
+        import music_moments as MM
+        span = float(end - start) + 0.8
+        M = MM.moments(A['path'], float(start), span, vocals=True, threads=2)
+        # the version's speed (x the original): a faster version than the 0.85 calibration is analysed at that tempo
+        # (owner 2026-10-20 on 3h, the regular version: wave starts one syllable early, 0.4-0.6 s off after 15 s)
+        Wv = MM.waves(A['path'], float(start), span, threads=2, speed=opts.get('cine_song_speed'))
+    except Exception as e:  # noqa: BLE001
+        log(f'cinematic: no wave analysis ({type(e).__name__}: {e})')
+        return None
+    main = float(M['main'])
+    D = float(end - start)
+    hero = round(float(d - start) - lead, 4)
+    beats = np.asarray(M.get('beats') or [], float)
+    acc = [(float(a), float(s_)) for a, s_ in M.get('accents') or []]
+
+    def switch_for(a):
+        """the switch frame for a wave attack at a: on a main beat when one leads it by WV_SNAP, else WV_PRE before"""
+        if len(beats):
+            sw_b = beats - MM.LEAD
+            ok = [x for x in sw_b if WV_SNAP[0] <= a - x <= WV_SNAP[1]]
+            if ok:
+                return float(min(ok, key=lambda x: abs(a - x - WV_PRE))), True
+        return a - WV_PRE, False
+    # 2026-10-20 (owner on 3i): a held sung note is ONE wave including its decay tail (the harmony rings on it), and the
+    # final section (the band drops out: 3i's violin outro) holds ONE clip to the end
+    tails, outro = [], None
+    if os.environ.get('SLOWMO_HOLD_TAILS', '1') != '0':
+        try:
+            tails = MM.hold_tails(A['path'], float(start), D, Wv, from_t=hero + 0.6)
+            outro = MM.outro_start(A['path'], float(start), D)
+        except Exception as e:  # noqa: BLE001
+            log(f'cinematic: hold tails / outro failed ({type(e).__name__}: {e})')
+    tails = [z for k_, z in enumerate(tails) if not any(y['a'] < z['a'] < y['end'] for y in tails[:k_])]
+
+    def in_tail(t):
+        return any(z['a'] + 0.05 < t < z['end'] for z in tails)
+    out_a = None
+    if outro is not None:
+        near_o = [x['a'] for x in Wv['waves'] if outro - 0.2 <= x['a'] <= outro + 0.5]
+        out_a = float(min(near_o)) if near_o else outro + 0.1
+    cands = []
+    for x in Wv['waves']:
+        if x['a'] - WV_PRE <= hero + 0.6 or x['a'] - WV_PRE >= D - 0.9:
+            continue
+        if in_tail(x['a']) or (out_a is not None and x['a'] >= out_a - 0.05):
+            continue
+        sw, on_b = switch_for(float(x['a']))
+        cands.append(dict(sw=round(sw, 4), a=x['a'], b=x['b'], strength=float(x['strength']), why=x['why'], beat=on_b))
+    if out_a is not None:
+        sw, on_b = switch_for(out_a)
+        cands.append(dict(sw=round(sw, 4), a=round(out_a, 3), b=None, strength=3.0, why='outro', beat=on_b))
+    # long stretches without a wave start (an instrumental tail): the strongest accompaniment accent / bar inside (never
+    # inside a held note's tail, never in the outro)
+    pts = sorted([hero] + [c['sw'] for c in cands] + [D])
+    for p0, p1 in zip(pts[:-1], pts[1:]):
+        if p1 - p0 > WV_SPLIT:
+            inn = [(a - MM.LEAD, s_) for a, s_ in acc if p0 + 1.5 <= a - MM.LEAD <= p1 - 1.5 and s_ >= 3.0
+                   and not in_tail(a) and (out_a is None or a < out_a - 0.3)]
+            if inn:
+                t_, s_ = max(inn, key=lambda z: z[1])
+                cands.append(dict(sw=round(t_, 4), a=round(t_ + MM.LEAD, 3), b=None, strength=1.0, why='inst_attack', beat=True))
+    cands.sort(key=lambda c: c['sw'])
+    C = [dict(sw=hero, strength=0.0, why='hero', beat=True, a=hero + WV_PRE)] + cands
+    n = len(C)
+    NEG = -1e18
+    V = np.full(n, NEG)
+    P = np.full(n, -1, int)
+    V[0] = 0.0
+
+    def gain(c):
+        # a weak wave (a faint / fading line, strength < WV_CUT_MIN) is not worth a switch of its own: the clip carries on
+        return c['strength'] - WV_CUT_MIN + (0.4 if c['beat'] else 0.0)
+
+    def skip_cost(i, j):
+        # the wave starts left inside a shot: a strong one costs heavily, a middling one a little, a faint one nothing
+        return sum((8.0 if C[k]['strength'] >= WV_MUST else max(0.0, C[k]['strength'] - WV_CUT_MIN)) for k in range(i + 1, j))
+
+    tsc = float(Wv.get('tscale') or 1.0)     # the shortest body shot scales with the tempo like the waves do
+
+    def tail_max(i):
+        # a shot that starts on a held note may carry its whole decay tail
+        z = [y['end'] for y in tails if abs(y['a'] - C[i]['a']) < 0.06]
+        return (max(z) - C[i]['sw'] + 0.4) if z else 0.0
+
+    def len_cost(L, first=False, i=None):
+        lo = 2.4 if first else WV_SHOT[0] * tsc
+        hi = max(WV_SHOT[1] + (1.0 if first else 0.0), tail_max(i) if i is not None else 0.0)
+        if L < lo or L > hi:
+            return None
+        return 0.6 if L < 0.95 * tsc else 0.0
+    for j in range(1, n):
+        for i in range(j):
+            if V[i] <= NEG / 2:
+                continue
+            lc = len_cost(C[j]['sw'] - C[i]['sw'], first=(i == 0), i=i)
+            if lc is None:
+                continue
+            v = V[i] + gain(C[j]) - lc - skip_cost(i, j)
+            if v > V[j]:
+                V[j], P[j] = v, i
+    fin = []
+    for j in range(n):
+        if V[j] <= NEG / 2:
+            continue
+        L = D - C[j]['sw']
+        if out_a is not None and C[j]['why'] != 'outro':
+            continue                              # the outro holds the last clip to the end
+        if 1.2 <= L <= max(WV_SHOT[1] + 1.5, tail_max(j), (D - C[j]['sw'] + 0.01) if C[j]['why'] == 'outro' else 0.0):
+            fin.append((V[j] - skip_cost(j, n), j))
+    if not fin:
+        log('cinematic: wave cuts: no layout fits')
+        return None
+    v, j = max(fin)
+    idx = []
+    while j >= 0:
+        idx.append(j)
+        j = int(P[j]) if j > 0 else -1
+    idx.reverse()
+    sw = [C[i]['sw'] for i in idx]
+    skipped = [dict(a=C[k]['a'], strength=C[k]['strength'], why=C[k]['why']) for k in range(1, n) if k not in idx]
+    cuts = [round(t + lead, 4) for t in sw]
+    lens = [max(1, int(round((b - a) / main))) for a, b in zip(sw, sw[1:] + [D])]
+    pat = ['move', 'still', 'move', 'move', 'still']
+    kinds = ['hero'] + [pat[k % len(pat)] for k in range(len(sw) - 2)] + ['last']
+    half = [k for k in range(1, len(sw) - 1) if sw[k] >= hero + (D - hero) / 2]
+    lifts = []
+    if half:
+        la = max(half, key=lambda k: C[idx[k]]['strength'])
+        lifts = [sum(lens[:la])]
+    info = dict(main=round(main, 4), value=round(float(v), 2), n=len(sw), D=round(D, 4), pinned=bool(pin), tscale=tsc, tails=tails, outro=outro,
+                waves=[dict(a=x['a'], b=x['b'], s=x['strength'], why=x['why']) for x in Wv['waves']],
+                cuts=[dict(sw=round(C[i]['sw'], 3), attack=C[i]['a'], why=C[i]['why'], s=C[i]['strength'], beat=C[i]['beat'])
+                      for i in idx], skipped=skipped)
+    log('cinematic: wave cuts: %d shots, skipped wave starts %s' % (len(sw), json.dumps(skipped)))
+    return cuts, lens, kinds, lifts, main, info
 
 
 def _cine_lock_cuts(env, cuts, lead, pulse, min_hit=2.0, body_snap=None):

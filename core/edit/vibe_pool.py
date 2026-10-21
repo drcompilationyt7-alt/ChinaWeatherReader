@@ -647,7 +647,8 @@ def status(root=None):
             fr = fresh_clips(p, vn, root, rotation=False)     # readiness = every eligible clip (the rotation picks per video)
             ev = sum(max(1, len(it.get('sfx') or [])) for it in fr) if p == 'sound' else None
             songs = song_ok(p, vn, root)
-            need = pd.get('min_fresh_clips', 70)
+            # per vibe first (2026-10-20 slow-mo go-live: summer_glow 25 on, dreamy_bloom 40), else the preset's
+            need = (pd['vibes'].get(vn) or {}).get('min_fresh_clips', pd.get('min_fresh_clips', 70))
             per_run = 70 if p == 'sound' else 45
             st = {'fresh': len(fr), 'total': len(man['items']),
                   'used': sum(1 for it in man['items'] if it.get('status') == 'used'),
