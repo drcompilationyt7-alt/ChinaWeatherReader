@@ -867,7 +867,7 @@ class PopRenderer(QuizRenderer):
         return faded(self._cards[key], a)
 
     def _prep_silhouette(self, r):
-        base = os.path.join(POP2, r.get('dir') or 'sil', str(r['id']))
+        base = os.path.join(POP2, r.get('dir') or 'sil', str(r.get('file_id') or r['id']))
         col, mk = Image.open(base + '.jpg').convert('RGB'), Image.open(base + '.png').convert('L')
         cw, ch = CARD_W, CARD_H   # same card as the character format: clear of the progress bar and the timer
         card, mask = self._card(cw, ch)
@@ -998,7 +998,7 @@ class PopRenderer(QuizRenderer):
     EYE_PORT = (410, 590)
 
     def _prep_eyes(self, r):
-        base = os.path.join(POP2, r.get('dir') or 'eyes', str(r['id']))
+        base = os.path.join(POP2, r.get('dir') or 'eyes', str(r.get('file_id') or r['id']))
         eye, port = Image.open(base + '.jpg').convert('RGB'), Image.open(base + '_p.jpg').convert('RGB')
         ew, eh = self.EYE_CARD
         if eye.size != (ew, eh):
@@ -1057,7 +1057,7 @@ class PopRenderer(QuizRenderer):
             put(frame, L['sub'], W / 2, 1440, a=clamp((rt - 0.55) / 0.2))
 
     def _prep_outfit(self, r):
-        full = Image.open(os.path.join(POP2, r.get('dir') or 'outfit', f"{r['id']}.jpg")).convert('RGB')
+        full = Image.open(os.path.join(POP2, r.get('dir') or 'outfit', f"{r.get('file_id') or r['id']}.jpg")).convert('RGB')
         return self._prep_zoom(r, full, r['crop'], (CARD_W, CARD_H), (520, 660))
 
     def _draw_outfit(self, frame, i, tl, q, pop, L):
@@ -2260,16 +2260,18 @@ def extra_check(fmt, r):
             return 'strict gate (minor / unknown age / young-looking)'
         if fmt == 'silhouette':
             d = r.get('dir') or 'sil'
-            files = [os.path.join(POP2, d, f"{r['id']}.jpg"), os.path.join(POP2, d, f"{r['id']}.png")]
+            fid = r.get('file_id') or r['id']   # theme variants: several pictures of one character (file_id = <id>_v2 ...)
+            files = [os.path.join(POP2, d, f"{fid}.jpg"), os.path.join(POP2, d, f"{fid}.png")]
         elif fmt == 'eyes':
             d = r.get('dir') or 'eyes'
-            files = [os.path.join(POP2, d, f"{r['id']}.jpg"), os.path.join(POP2, d, f"{r['id']}_p.jpg")]
+            fid = r.get('file_id') or r['id']
+            files = [os.path.join(POP2, d, f"{fid}.jpg"), os.path.join(POP2, d, f"{fid}_p.jpg")]
             if r.get('kind') != 'eye1':
                 return 'old two-eye band (rebuild with --phase eyes)'
         else:  # outfit: confirmed adult women only
             if r['age_class'] != 'adult' or r.get('gender') != 'Female' or g.get('class') not in ('adult', 'adult-modest'):
                 return 'outfit needs a confirmed adult woman with the adult rule'
-            files = [os.path.join(POP2, r.get('dir') or 'outfit', f"{r['id']}.jpg")]
+            files = [os.path.join(POP2, r.get('dir') or 'outfit', f"{r.get('file_id') or r['id']}.jpg")]
             if not r.get('crop'):
                 return 'no crop'
             if r['crop'][1] < 0.3:   # the crop starts at the waist or lower, never higher up
@@ -2423,7 +2425,7 @@ def theme_pool(tid, fmt):
     ex = json.load(open(EXTRAS_FILE, encoding='utf-8'))
     items = ((ex.get('themes') or {}).get(tid) or {}).get(fmt) or []
     if fmt == 'character':
-        items = [{**it, 'image_file': os.path.join(POP2, it['dir'], f"{it['id']}.jpg")} if it.get('dir') else it for it in items]
+        items = [{**it, 'image_file': os.path.join(POP2, it['dir'], f"{it.get('file_id') or it['id']}.jpg")} if it.get('dir') else it for it in items]
     return items
 
 

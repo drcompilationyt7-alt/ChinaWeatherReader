@@ -1,6 +1,6 @@
 name: Quiz pool mining (nightly, staging only)
 
-# Nightly candidate mining for the Asian Pop Quiz pools (core/quiz/quiz_pool_grow.py; owner 2026-10-20). STAGING ONLY:
+# Nightly (and one-off BACKFILL) candidate mining for the Asian Pop Quiz pools (core/quiz/quiz_pool_grow.py; owner 2026-10-20). STAGING ONLY:
 #   mine     two shards: "light" (Commons city / night-city / dish photos, Wikidata K-pop idols, VTuber wiki portraits, and the
 #            LLM-written + fact-checked emoji / trivia / would-you-rather food + travel pairs / K-pop songs; every picture is
 #            fetched and checked) and "art" (anime theme art through scripts/build-pop-media.py --phase theme: the same
@@ -25,6 +25,10 @@ on:
         description: 'Shards to run (light, art or both)'
         required: false
         default: 'both'
+      mode:
+        description: 'nightly, or backfill (4x quotas, 6 jobs: photos / people / llm + 3 theme-art jobs on different themes)'
+        required: false
+        default: 'nightly'
 
 concurrency:
   group: quiz-pool-mine
@@ -57,6 +61,9 @@ jobs:
     steps:
       - id: s
         run: |
+          if [ "${{ github.event.inputs.mode }}" = "backfill" ]; then
+            echo 'shards=["photos","people","llm","art0","art1","art2"]' >> $GITHUB_OUTPUT; exit 0
+          fi
           case "${{ github.event.inputs.shards || 'both' }}" in
             light) echo 'shards=["light"]' >> $GITHUB_OUTPUT ;;
             art) echo 'shards=["art"]' >> $GITHUB_OUTPUT ;;
@@ -66,7 +73,9 @@ jobs:
   mine:
     needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 200
+    env:
+      QUIZ_MINE_SCALE: ${{ github.event.inputs.mode == 'backfill' && '4' || '1' }}
     strategy:
       fail-fast: false
       matrix:
@@ -84,21 +93,29 @@ jobs:
           npm ci || npm install
           python -m pip install -U pip
           python -m pip install numpy pillow
-          if [ "${{ matrix.shard }}" = "art" ]; then
+          if [ "${{ startsWith(matrix.shard, 'art') }}" = "true" ]; then
             python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
             python -m pip install onnxruntime opencv-python-headless transformers sentencepiece
           fi
-      - name: Cache models + build state (art shard)
-        if: matrix.shard == 'art'
+      - name: Cache models + build state (art shards)
+        if: startsWith(matrix.shard, 'art')
         uses: actions/cache@v4
         with:
           path: |
             /home/runner/.cache/pop_quiz_models
             /home/runner/.cache/huggingface
-          key: quiz-mine-art-${{ github.run_id }}
+          key: quiz-mine-${{ matrix.shard }}-${{ github.run_id }}
           restore-keys: |
-            quiz-mine-art-
+            quiz-mine-art
             pop-pool-state-
+      - name: Theme-art builder cache (art shards; from the PC via push-manifests when this runner has none yet)
+        if: startsWith(matrix.shard, 'art')
+        run: |
+          mkdir -p "$POP_MODELS"
+          if [ ! -s "$POP_MODELS/extras-cache.json" ]; then
+            gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern pop-extras-cache.json.gz --dir /tmp               && gunzip -c /tmp/pop-extras-cache.json.gz > "$POP_MODELS/extras-cache.json"               || echo "::warning::no pop-extras-cache.json.gz on edit-pools-staging: theme art will find little (run push-manifests on the PC)"
+          fi
+          ls -la "$POP_MODELS" | head
       - name: State from the staging release
         run: |
           mkdir -p /tmp/st
@@ -108,7 +125,7 @@ jobs:
         run: |
           python core/quiz/quiz_pool_grow.py selftest
           python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \
-            --budget-min "${{ github.event.inputs.budget_min || '40' }}" | tail -c 3000
+            --budget-min "${{ github.event.inputs.budget_min || (github.event.inputs.mode == 'backfill' && '120') || '40' }}" | tail -c 3000
           du -sh work/out || true
       - name: Upload the shard
         if: always()

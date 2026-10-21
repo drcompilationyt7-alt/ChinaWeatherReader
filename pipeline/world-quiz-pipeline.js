@@ -578,8 +578,9 @@ async function runWorldQuizPipeline(opts = {}) {
   }
   logger.info(`Format: ${format} (${why}), theme: ${theme}, length: ${length}`);
 
-  // never repeat an answer of the same format within 30 days, or any answer within 4 days
-  const avoid = [...new Set([...recentIso(history, format, 30), ...recentIso(history, null, 4)])];
+  // owner 2026-10-21: anything may come back, but not within the last QUIZ_REUSE_GAP uploads (was: 30 days per format / 4 days)
+  const REUSE_GAP = Number(process.env.QUIZ_REUSE_GAP || 8);
+  const avoid = [...new Set(history.uploads.filter(u => !u.excluded).slice(-REUSE_GAP).flatMap(u => u.answers || []))];
   const seed = Math.floor(Math.random() * 1e9);
   const t0 = Date.now();
   let popKeys = null;

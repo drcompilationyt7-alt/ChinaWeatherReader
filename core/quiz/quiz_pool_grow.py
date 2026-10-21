@@ -65,9 +65,19 @@ STATE_ASSET = 'quiz-grow-state.json'
 REJECTS_FILE = os.path.join(ASSETS, 'quiz-pool-rejects.json')
 KEEP_DAYS = 30            # an item tried without success comes back after this many nights
 CATS = ('theme_art', 'geo', 'nightcity', 'cuisine', 'kpop_song', 'kpop_idol', 'vtuber', 'emoji', 'trivia', 'wyr_food', 'wyr_travel')
-SHARDS = {'light': [c for c in CATS if c != 'theme_art'], 'art': ['theme_art']}
-QUOTA = {'theme_art': 12, 'geo': 6, 'nightcity': 8, 'cuisine': 8, 'kpop_song': 6, 'kpop_idol': 6, 'vtuber': 4,
-         'emoji': 12, 'trivia': 14, 'wyr_food': 4, 'wyr_travel': 4}
+# nightly: light + art; BACKFILL (workflow input mode=backfill, QUIZ_MINE_SCALE=4): the light categories split over 3 jobs and
+# 3 art jobs on different themes, so the first review gets a big batch
+SHARDS = {'light': [c for c in CATS if c != 'theme_art'], 'art': ['theme_art'],
+          'photos': ['geo', 'nightcity', 'cuisine'], 'people': ['kpop_idol', 'vtuber'],
+          'llm': ['emoji', 'trivia', 'wyr_food', 'wyr_travel', 'kpop_song'],
+          'art0': ['theme_art'], 'art1': ['theme_art'], 'art2': ['theme_art']}
+# owner 2026-10-21 "we have to up pool": per-night candidates, weighted to the thinnest pools (K-pop, VTuber, IRL geo / night /
+# food, theme costumes); ~40+ should survive review. x QUIZ_MINE_SCALE (backfill: 4).
+SCALE = max(1.0, float(os.environ.get('QUIZ_MINE_SCALE') or 1))
+QUOTA = {k: int(round(v * SCALE)) for k, v in {
+    'theme_art': 20, 'geo': 10, 'nightcity': 12, 'cuisine': 12, 'kpop_song': 8, 'kpop_idol': 10, 'vtuber': 8,
+    'emoji': 12, 'trivia': 16, 'wyr_food': 6, 'wyr_travel': 6}.items()}
+NEAR_DUP_BITS = 10        # dHash distance: at or below = the same picture
 ART_THEMES = ['beach', 'halloween', 'festival', 'glasses', 'villains', 'maid', 'winter', 'valentine', 'gym']
 
 # ── item tables (rotated nightly) ──
@@ -83,8 +93,10 @@ CITIES = [
     ('Fukuoka', 'JP', 2), ('Kobe', 'JP', 2), ('Hiroshima', 'JP', 2), ('Sendai', 'JP', 3), ('Nara', 'JP', 2), ('Kanazawa', 'JP', 3),
     ('Nagasaki', 'JP', 3), ('Naha', 'JP', 3), ('Hakodate', 'JP', 3),
 ]
-GEO_TERMS = ['skyline', 'cityscape', 'panorama']
-NIGHT_TERMS = ['skyline at night', 'night view', 'night skyline']
+# several photos per city / dish (owner 2026-10-21: the reuse gap is per PICTURE, so the same city may come back with another photo)
+GEO_TERMS = ['skyline', 'skyline panorama', 'cityscape', 'cityscape panorama', 'skyline view', 'skyline from river', 'skyline daytime']
+NIGHT_TERMS = ['skyline at night', 'night view', 'night skyline', 'at night', 'night panorama', 'city lights night']
+DISH_TERMS = ['{d}', '{d} dish', '{d} food', '{d} plate', '{d} served']
 # (dish, iso2 of its home country, country name, difficulty)
 DISHES = [
     ('Peking duck', 'CN', 'China', 1), ('Xiaolongbao', 'CN', 'China', 2), ('Mapo tofu', 'CN', 'China', 2), ('Kung Pao chicken', 'CN', 'China', 2),
@@ -170,11 +182,11 @@ def live_keys():
     """Every key already in a live pool (or ever rejected): candidates with one of these are skipped."""
     keys = set(rj(REJECTS_FILE, {'rejected': []}).get('rejected', []))
     for c in rj(os.path.join(ASSETS, 'city-photos.json'), {}).get('cities', []):
-        keys.add(f"geo:{c['iso2']}:{fold(c['name'])}")
+        keys.add(cand_key('geo', c))
     for c in rj(os.path.join(ASSETS, 'night-city-photos.json'), {}).get('cities', []):
-        keys.add(f"nightcity:{c['iso2']}:{fold(c['name'])}")
+        keys.add(cand_key('nightcity', c))
     for d in rj(os.path.join(ASSETS, 'cuisine.json'), {}).get('dishes', []):
-        keys.add(f"cuisine:{fold(d['name'])}")
+        keys.add(cand_key('cuisine', d))
     for s in rj(os.path.join(ASSETS, 'songs.json'), {}).get('songs', []):
         keys.add(f"kpop_song:{fold(s['title'])}|{fold(s['artist'])}")
     for i in rj(os.path.join(ASSETS, 'kpop-idols.json'), {}).get('idols', []):
@@ -194,15 +206,20 @@ def live_keys():
     for tid, fmts in (ex.get('themes') or {}).items():
         for fmt, items in fmts.items():
             for it in items:
-                keys.add(f"theme_art:{tid}:{fmt}:{it.get('id')}")
+                keys.add(f"theme_art:{tid}:{fmt}:{it.get('file_id') or it.get('id')}")
     return keys
+
+
+def photo_id(it):
+    """The picture of a city / dish item: its Commons file name (else the image URL)."""
+    return fold(it.get('file') or urllib.parse.unquote(str(it.get('page') or it.get('image') or '').rsplit('/', 1)[-1]))[:80]
 
 
 def cand_key(cat, it):
     if cat in ('geo', 'nightcity'):
-        return f"{cat}:{it['iso2']}:{fold(it['name'])}"
+        return f"{cat}:{it['iso2']}:{fold(it['name'])}:{photo_id(it)}"
     if cat == 'cuisine':
-        return f"cuisine:{fold(it['name'])}"
+        return f"cuisine:{fold(it['name'])}:{photo_id(it)}"
     if cat == 'kpop_song':
         return f"kpop_song:{fold(it['title'])}|{fold(it['artist'])}"
     if cat == 'kpop_idol':
@@ -215,7 +232,7 @@ def cand_key(cat, it):
         return f"trivia:{fold(it['question'])}"
     if cat in ('wyr_food', 'wyr_travel'):
         return f"wyr:{fold(it['a'])}|{fold(it['b'])}"
-    return f"theme_art:{it['theme']}:{it['fmt']}:{it['id']}"
+    return f"theme_art:{it['theme']}:{it['fmt']}:{it.get('file_id') or it['id']}"
 
 
 # ── nightly rotation ──
@@ -289,6 +306,38 @@ def sheet(rows, out, cols=4, cw=360, ch=330):
     return out
 
 
+def dhash(img, size=8):
+    import numpy as np
+    from PIL import Image
+    g = np.asarray(img.convert('L').resize((size + 1, size), Image.LANCZOS), dtype=np.int16)
+    return int(''.join('1' if b else '0' for b in (g[:, 1:] > g[:, :-1]).flatten()), 2)
+
+
+def near_dup(h, hashes):
+    return any(bin(h ^ x).count('1') <= NEAR_DUP_BITS for x in hashes)
+
+
+def prefilter(img, file=''):
+    """Cheap runner-side checks before anything is staged: big enough, not blank / flat, not text-heavy (a lot of thin
+    high-contrast strokes: posters, signs, screenshots, watermark banners), file name not a logo / map / poster."""
+    import numpy as np
+    from render_pop import picture_ok
+    if img is None or min(img.size) < 480 or not picture_ok(img):
+        return 'blank / low-res'
+    if re.search(r'\b(logo|map|poster|sign|signage|banner|screenshot|watermark|text|menu|ticket|diagram|infographic|collage|montage)\b', fold(file)):
+        return 'file name: text / logo / map'
+    g = np.asarray(img.convert('L').resize((256, 256)), dtype=np.float32)
+    hsv = np.asarray(img.convert('RGB').convert('HSV').resize((128, 128)), dtype=np.float32)
+    if hsv[:, :, 1].mean() < 30:
+        return 'black-and-white / sepia'
+    if g.std() < 32:
+        return 'washed out / foggy'
+    edges = (np.abs(np.diff(g, axis=1)) > 90).mean() + (np.abs(np.diff(g, axis=0)) > 90).mean()
+    if edges > 0.16:
+        return f'text-heavy ({edges:.2f})'
+    return None
+
+
 def safe_photo_name(file):
     """Commons file names that suggest people as the subject, protests, ads etc. (media.PHOTO_BAD covers the rest)."""
     return not re.search(r'\b(portrait|selfie|man|woman|girl|boy|people|crowd|family|couple|child|kid|model|cosplay|ad|advert)\b',
@@ -297,49 +346,76 @@ def safe_photo_name(file):
 
 # ── categories ──
 
-def mine_commons(cat, st, quota, seen, out_dir, deadline):
-    """geo / nightcity / cuisine: one Commons photo per new city / dish."""
+def live_hashes(cat):
+    """dHashes of the live pool pictures of a photo category (downloads are cached by media.fetch_image)."""
     import media
-    found = []
+    files = {'geo': ('city-photos.json', 'cities'), 'nightcity': ('night-city-photos.json', 'cities'), 'cuisine': ('cuisine.json', 'dishes'),
+             'kpop_idol': ('kpop-idols.json', 'idols')}.get(cat)
+    out = []
+    for it in rj(os.path.join(ASSETS, files[0]), {}).get(files[1], []) if files else []:
+        try:
+            out.append(dhash(media.fetch_image(it['image'])))
+        except Exception:  # noqa: BLE001
+            pass
+    return out
+
+
+def mine_commons(cat, st, quota, seen, out_dir, deadline, hashes):
+    """geo / nightcity / cuisine: Commons photos for (city or dish) x search term queries; several pictures per city / dish
+    over the nights, never a near-duplicate of a live, staged or tonight's picture."""
+    import media
     if cat == 'cuisine':
-        table = {d[0]: d for d in DISHES}
-        order = rotation(cat, list(table), st)
+        table = {f'{d[0]}|{t}': (d, t.replace('{d}', d[0])) for d in DISHES for t in DISH_TERMS}
     else:
-        table = {f'{c[0]}|{c[1]}': c for c in CITIES}
-        order = rotation(cat, list(table), st)
-    for name in order:
+        table = {f'{c[0]}|{c[1]}|{t}': (c, f'{c[0]} {t}') for c in CITIES for t in (NIGHT_TERMS if cat == 'nightcity' else GEO_TERMS)}
+    found, per_item = [], {}
+    why = {}
+    for qk in rotation(cat, list(table), st):
         if len(found) >= quota or time.time() > deadline:
             break
+        row, q = table[qk]
+        if per_item.get(row[0], 0) >= 2:      # at most 2 new pictures of one city / dish a night (variety)
+            continue
+        mark_tried(st, cat, qk)
         if cat == 'cuisine':
-            dish, iso, country, diff = table[name]
-            it = {'name': dish, 'iso2': iso, 'country': country, 'difficulty': diff}
-            terms = [dish, f'{dish} dish']
+            it = {'name': row[0], 'iso2': row[1], 'country': row[2], 'difficulty': row[3]}
         else:
-            city, iso, diff = table[name]
-            it = {'name': city, 'iso2': iso, 'difficulty': diff}
-            terms = [f'{city} {t}' for t in (NIGHT_TERMS if cat == 'nightcity' else GEO_TERMS)]
+            it = {'name': row[0], 'iso2': row[1], 'difficulty': row[2]}
+        img, info = media.commons_photo(q, min_w=900)
+        if img is None:
+            continue
+        file = info.get('file', '')
+        if not safe_photo_name(file):
+            why['people / unsafe name'] = why.get('people / unsafe name', 0) + 1
+            continue
+        if cat == 'geo' and (not re.search(r'skyline|cityscape|panorama|view', file, re.I) or re.search(r'night|dusk|evening', file, re.I)):
+            why['not a skyline / view'] = why.get('not a skyline / view', 0) + 1
+            continue
+        if cat == 'nightcity' and not re.search(r'night|nacht|evening|dusk|lights|夜', file, re.I):
+            why['not a night view'] = why.get('not a night view', 0) + 1
+            continue
+        bad = prefilter(img, file)
+        if bad:
+            why[bad.split(' (')[0]] = why.get(bad.split(' (')[0], 0) + 1
+            continue
+        h = dhash(img)
+        if near_dup(h, hashes):
+            why['near-duplicate'] = why.get('near-duplicate', 0) + 1
+            continue
+        url = _commons_url(info)
+        if not url:
+            continue
+        it.update({'image': url, 'credit': info['credit'], 'page': info['page'], 'file': file, 'query': q, 'dhash': format(h, '016x'),
+                   'mined': today(), **({'night': True} if cat == 'nightcity' else {})})
         k = cand_key(cat, it)
         if k in seen:
             continue
-        mark_tried(st, cat, name)
-        for q in terms:
-            img, info = media.commons_photo(q, min_w=900)
-            if img is None or not safe_photo_name(info.get('file', '')):
-                continue
-            if cat == 'nightcity' and not re.search(r'night|nacht|夜|evening|dusk|lights', fold(info.get('file', '')) + ' ' + info.get('file', ''), re.I):
-                continue   # the file must say it is a night view
-            from render_pop import picture_ok
-            if not picture_ok(img):
-                continue
-            url = _commons_url(info)
-            if not url:
-                continue
-            it.update({'image': url, 'credit': info['credit'], 'page': info['page'], 'file': info.get('file'), 'query': q,
-                       'mined': today(), **({'night': True} if cat == 'nightcity' else {})})
-            it['_thumb'] = thumb(img, os.path.join(out_dir, 'thumbs', cat, re.sub(r'[^A-Za-z0-9]+', '_', name) + '.jpg'))
-            found.append(it)
-            seen.add(k)
-            break
+        it['_thumb'] = thumb(img, os.path.join(out_dir, 'thumbs', cat, f'{len(found)}.jpg'))
+        found.append(it)
+        seen.add(k)
+        hashes.append(h)
+        per_item[row[0]] = per_item.get(row[0], 0) + 1
+    log(f'{cat}: {len(found)} staged; prefilter drops {why}')
     return found
 
 
@@ -368,7 +444,7 @@ SELECT ?p ?pLabel ?gLabel ?img ?dob ?links WHERE {
 """
 
 
-def mine_idols(st, quota, seen, out_dir, deadline):
+def mine_idols(st, quota, seen, out_dir, deadline, hashes):
     """K-pop idols: Wikidata members of K-pop groups with a Commons photo; adults only (born 18+ years ago)."""
     import media
     bpm = _bpm()
@@ -412,6 +488,9 @@ def mine_idols(st, quota, seen, out_dir, deadline):
             img = media.fetch_image(info['url'])
         except Exception:  # noqa: BLE001
             continue
+        if img is None or min(img.size) < 300 or near_dup(dhash(img), hashes):
+            continue
+        hashes.append(dhash(img))
         it.update({'image': info['url'], 'credit': f"{info['author'] or 'Wikimedia Commons'}, {info['license']}", 'page': info['page'],
                    'difficulty': 1 if p['links'] >= 60 else 2 if p['links'] >= 30 else 3, 'sitelinks': p['links'], 'mined': today()})
         it['_thumb'] = thumb(img, os.path.join(out_dir, 'thumbs', 'kpop_idol', qid + '.jpg'))
@@ -454,6 +533,10 @@ def mine_vtubers(st, quota, seen, out_dir, deadline):
             img = media.fetch_image(url)
         except Exception as e:  # noqa: BLE001
             log(f'vtuber {name}: {str(e)[:80]}')
+            if '403' in str(e):
+                log('vtuber: the Virtual YouTuber Wiki blocks this machine (GitHub runners get 403): stopping; mine this category on '
+                    'the PC: python core/quiz/quiz_pool_grow.py mine --shard people --cats vtuber')
+                break
             continue
         r = re.search(r'\|\s*retirement_date\s*=[ \t]*([^\n|]*)', text)
         it = {'name': name, 'agency': table[name][1], 'graduated': bool(r and r.group(1).strip() and 'streaming' not in r.group(1)),
@@ -501,7 +584,8 @@ def mine_llm(cats, st, seen, out_dir, deadline, dry=False):
         return {c: [] for c in cats}, spec
     r = subprocess.run(['node', os.path.join(ROOT, 'pipeline', 'quiz-pool-llm.js'), sp, op], capture_output=True, text=True,
                        timeout=max(60, int(deadline - time.time())), cwd=ROOT, env=dict(os.environ, QUIZ_LLM='on'))
-    log((r.stdout or '')[-600:], (r.stderr or '')[-400:])
+    log('llm stdout:', (r.stdout or '')[-3000:])
+    log('llm stderr:', (r.stderr or '')[-1500:])
     got = rj(op, {}).get('items', {})
     out = {c: [] for c in cats}
 
@@ -566,16 +650,18 @@ def mine_llm(cats, st, seen, out_dir, deadline, dry=False):
     return out, spec
 
 
-def mine_theme_art(st, quota, seen, out_dir, budget_min):
-    """Anime theme art through the snapshot builder (every gate of the live theme pools), on a staging copy of the pool."""
-    tid = rotation('theme_art', ART_THEMES, st)[0]
+def mine_theme_art(st, quota, seen, out_dir, budget_min, slot=0):
+    """Anime theme art through the snapshot builder (every gate of the live theme pools), on a staging copy of the pool.
+    Popular characters collect up to 4 different pictures per theme (POP_THEME_VARIANTS; dHash-distinct)."""
+    tid = rotation('theme_art', ART_THEMES, st)[slot % len(ART_THEMES)]
     mark_tried(st, 'theme_art', tid)
     stage = os.path.join(out_dir, 'art_stage')
     pop2 = os.path.join(stage, 'pop2')
     shutil.copytree(os.path.join(ASSETS, 'pop2'), pop2, dirs_exist_ok=True)
     extras = os.path.join(stage, 'character-extras.json')
     shutil.copy2(os.path.join(ASSETS, 'character-extras.json'), extras)
-    env = dict(os.environ, POP2_DIR=pop2, POP_EXTRAS_FILE=extras, POP_MIN_FREE_GB='0', PYTHONIOENCODING='utf-8')
+    env = dict(os.environ, POP2_DIR=pop2, POP_EXTRAS_FILE=extras, POP_MIN_FREE_GB='0', PYTHONIOENCODING='utf-8',
+               POP_THEME_VARIANTS=os.environ.get('POP_THEME_VARIANTS', '4'), POP_THEME_VARIANT_TOP=os.environ.get('POP_THEME_VARIANT_TOP', '150'))
     r = subprocess.run([sys.executable, '-u', os.path.join(ROOT, 'scripts', 'build-pop-media.py'), '--newformats2', '--phase', 'theme',
                         '--theme', tid, '--minutes', str(budget_min)], env=env, cwd=ROOT, capture_output=True, text=True,
                        timeout=int(budget_min * 60 + 1800))
@@ -584,7 +670,7 @@ def mine_theme_art(st, quota, seen, out_dir, budget_min):
     found = []
     for fmt, items in new.items():
         for it in items:
-            c = {'theme': tid, 'fmt': fmt, 'id': it.get('id'), 'item': it}
+            c = {'theme': tid, 'fmt': fmt, 'id': it.get('id'), 'file_id': it.get('file_id') or it.get('id'), 'item': it}
             k = cand_key('theme_art', c)
             if k in seen:
                 continue
@@ -592,7 +678,9 @@ def mine_theme_art(st, quota, seen, out_dir, budget_min):
             if it.get('nsfw') or (g.get('rating') or {}).get('explicit', 0) > 0.15:
                 continue
             d = it.get('dir') or f'theme/{tid}/{fmt}'
-            files = [f for f in glob.glob(os.path.join(pop2, d, f"{it.get('id')}*")) if os.path.isfile(f)]
+            fid = it.get('file_id') or it.get('id')
+            files = [f for f in (os.path.join(pop2, d, f'{fid}.jpg'), os.path.join(pop2, d, f'{fid}.png'), os.path.join(pop2, d, f'{fid}_p.jpg'))
+                     if os.path.isfile(f)]
             if not files and fmt != 'character':
                 continue
             c['files'] = [os.path.relpath(f, pop2).replace(os.sep, '/') for f in files]
@@ -604,7 +692,7 @@ def mine_theme_art(st, quota, seen, out_dir, budget_min):
             jpg = next((f for f in files if f.endswith('.jpg')), None)
             if jpg:
                 from PIL import Image
-                c['_thumb'] = thumb(Image.open(jpg), os.path.join(out_dir, 'thumbs', 'theme_art', f'{tid}_{fmt}_{it.get("id")}.jpg'))
+                c['_thumb'] = thumb(Image.open(jpg), os.path.join(out_dir, 'thumbs', 'theme_art', f'{tid}_{fmt}_{fid}.jpg'))
             found.append(c)
             seen.add(k)
             if len(found) >= quota:
@@ -650,15 +738,16 @@ def cmd_mine(a):
     deadline = time.time() + a.budget_min * 60
     res = {}
     t0 = time.time()
+    staged_h = [int(x, 16) for x in (st.get('dhash') or [])]
     for c in [c for c in cats if c in ('geo', 'nightcity', 'cuisine')]:
         try:
-            res[c] = mine_commons(c, st, QUOTA[c], seen, out_dir, deadline)
+            res[c] = mine_commons(c, st, QUOTA[c], seen, out_dir, deadline, live_hashes(c) + staged_h)
         except Exception as e:  # noqa: BLE001
             log(f'{c} failed: {e}')
             res[c] = []
     if 'kpop_idol' in cats:
         try:
-            res['kpop_idol'] = mine_idols(st, QUOTA['kpop_idol'], seen, out_dir, deadline)
+            res['kpop_idol'] = mine_idols(st, QUOTA['kpop_idol'], seen, out_dir, deadline, live_hashes('kpop_idol') + staged_h)
         except Exception as e:  # noqa: BLE001
             log(f'kpop_idol failed: {e}')
     if 'vtuber' in cats:
@@ -675,7 +764,8 @@ def cmd_mine(a):
             log(f'llm categories failed: {e}')
     if 'theme_art' in cats:
         try:
-            res['theme_art'] = mine_theme_art(st, QUOTA['theme_art'], seen, out_dir, a.budget_min)
+            slot = int(a.shard[3:]) if a.shard.startswith('art') and a.shard[3:].isdigit() else 0
+            res['theme_art'] = mine_theme_art(st, QUOTA['theme_art'], seen, out_dir, a.budget_min, slot)
         except Exception as e:  # noqa: BLE001
             log(f'theme_art failed: {e}')
     # sheets per category
@@ -688,6 +778,7 @@ def cmd_mine(a):
             if it.get('_thumb'):
                 it['_thumb'] = os.path.relpath(it['_thumb'], out_dir).replace(os.sep, '/')
     st['staged'] = sorted(set(st.get('staged') or []) | {cand_key(c, it) for c, items in res.items() for it in items})
+    st['dhash'] = sorted(set(st.get('dhash') or []) | {it['dhash'] for items in res.values() for it in items if it.get('dhash')})
     wj(os.path.join(out_dir, 'candidates.json'), {'shard': a.shard, 'date': today(), 'items': res})
     wj(os.path.join(out_dir, 'state.json'), st)
     print(json.dumps({'ok': True, 'shard': a.shard, 'counts': {c: len(v) for c, v in res.items()}, 'sec': round(time.time() - t0)}))
@@ -705,13 +796,14 @@ def staged_assets():
 
 
 def merge_states(states):
-    out = {'query_log': {}, 'staged': set(), 'rejected': set()}
+    out = {'query_log': {}, 'staged': set(), 'rejected': set(), 'dhash': set()}
     for s in states:
+        out['dhash'] |= set(s.get('dhash') or [])
         for k, v in (s.get('query_log') or {}).items():
             out['query_log'][k] = max(v, out['query_log'].get(k, ''))
         out['staged'] |= set(s.get('staged') or [])
         out['rejected'] |= set(s.get('rejected') or [])
-    return {'query_log': out['query_log'], 'staged': sorted(out['staged']), 'rejected': sorted(out['rejected'])}
+    return {'query_log': out['query_log'], 'staged': sorted(out['staged']), 'rejected': sorted(out['rejected']), 'dhash': sorted(out['dhash'])}
 
 
 def cmd_publish(a):
@@ -907,8 +999,18 @@ def cmd_push_manifests(a):
     st = merge_states([rj(remote, {}), {'rejected': rj(REJECTS_FILE, {}).get('rejected', [])}])
     st['staged'] = [k for k in st['staged'] if k not in set(live_keys())]   # imported ones are live now
     wj(remote, st)
-    _gh(['release', 'upload', RELEASE, remote, '--clobber'])
-    print(json.dumps({'ok': True, 'rejected': len(st['rejected']), 'staged_pending': len(st['staged'])}))
+    assets = [remote]
+    # the theme-art builder's network cache from this PC (wiki pages / pictures, Danbooru answers, descriptions, age classes; public
+    # data, no credentials): the GitHub art shards start from it instead of an empty cache (an empty one finds 0 themed pictures)
+    import gzip
+    cache = os.path.join(os.environ.get('POP_MODELS') or os.path.join(os.path.expanduser('~'), '.cache', 'pop_quiz_models'), 'extras-cache.json')
+    if os.path.exists(cache):
+        gz = os.path.join(dd, 'pop-extras-cache.json.gz')
+        with open(cache, 'rb') as f, gzip.open(gz, 'wb') as g:
+            shutil.copyfileobj(f, g)
+        assets.append(gz)
+    _gh(['release', 'upload', RELEASE] + assets + ['--clobber'])
+    print(json.dumps({'ok': True, 'rejected': len(st['rejected']), 'staged_pending': len(st['staged']), 'uploaded': [os.path.basename(x) for x in assets]}))
 
 
 # ── selftest ──
@@ -918,8 +1020,10 @@ def selftest(nights=60):
     t0 = datetime.date(2026, 10, 22)
     for n in range(nights):
         day = (t0 + datetime.timedelta(days=n)).isoformat()
-        for cat, table in (('geo', [f'{c[0]}|{c[1]}' for c in CITIES]), ('nightcity', [f'{c[0]}|{c[1]}' for c in CITIES]),
-                           ('cuisine', [x[0] for x in DISHES]), ('vtuber', [v[0] for v in VTUBER_NAMES]), ('theme_art', ART_THEMES)):
+        for cat, table in (('geo', [f'{c[0]}|{c[1]}|{t}' for c in CITIES for t in GEO_TERMS]),
+                           ('nightcity', [f'{c[0]}|{c[1]}|{t}' for c in CITIES for t in NIGHT_TERMS]),
+                           ('cuisine', [f'{x[0]}|{t}' for x in DISHES for t in DISH_TERMS]), ('vtuber', [v[0] for v in VTUBER_NAMES]),
+                           ('theme_art', ART_THEMES)):
             order = rotation(cat, table, st, day)
             assert len(order) == len(table) and set(order) == set(table), f'{cat}: rotation lost items'
             assert rotation(cat, table, st, day) == order, f'{cat}: not deterministic'
@@ -930,11 +1034,12 @@ def selftest(nights=60):
         assert all(any(k.startswith(f'{cat}|{x[0]}') for k in st['query_log']) for x in table), f'{cat}: an item never came up'
     tried = [k for k in st['query_log'] if k.startswith('theme_art|')]
     assert set(t.split('|')[1] for t in tried) == set(ART_THEMES)
-    # shards are disjoint and complete
-    sh = [set(v) for v in SHARDS.values()]
-    assert not (sh[0] & sh[1]) and set().union(*sh) == set(CATS)
+    # nightly shards are disjoint and complete; the backfill split covers the light categories exactly once
+    assert not (set(SHARDS['light']) & set(SHARDS['art'])) and set(SHARDS['light']) | set(SHARDS['art']) == set(CATS)
     # keys: stable, category-scoped
-    assert cand_key('geo', {'iso2': 'CN', 'name': "Xi'an"}) == 'geo:CN:xi an'
+    assert cand_key('geo', {'iso2': 'CN', 'name': "Xi'an", 'file': 'A.jpg'}) == 'geo:CN:xi an:a jpg'
+    assert all(len(set(v)) == len(v) for v in SHARDS.values())
+    assert set(SHARDS['photos'] + SHARDS['people'] + SHARDS['llm']) == set(SHARDS['light'])
     assert cand_key('trivia', {'question': 'What?'}) == 'trivia:what'
     assert fold('Rosé') == 'rose'
     # editions ahead of their window

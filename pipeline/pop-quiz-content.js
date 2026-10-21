@@ -23,8 +23,13 @@ const logger = new Logger('PopQuiz');
 const ROOT = path.join(__dirname, '..');
 const SEED_FILE = path.join(ROOT, 'core', 'quiz', 'assets', 'pop-bank.json');
 const BANK_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'pop-bank.json');
-const REUSE_AFTER_DAYS = 60;
-const MIN_REUSE_DAYS = 14;   // worst case (a pool ran out): reuse the least recently used, never one shown in the last 14 days
+// owner 2026-10-21: "reuse everything we can reuse, but only after a few videos". An item (the exact image / clip / question)
+// may come back once it has not been in the last REUSE_GAP quiz uploads (~4 days at 2 a day); the least recently used go first.
+// The same CHARACTER may come back sooner with a different image, never twice in one video.
+const REUSE_GAP = Number(process.env.QUIZ_REUSE_GAP || 8);
+const MIN_REUSE_DAYS = 0;   // (kept for callers; the gap is counted in uploads now)
+// formats whose items are pictures: the reuse key is the exact image, so another picture of the same character / city / dish may run
+const IMAGE_KEYED = ['character', 'idol', 'vtuber', 'silhouette', 'eyes', 'outfit', 'cityphoto', 'nightcity', 'cuisine'];
 // snapshots from scripts/build-pop-media.py (AniList, Wikidata/Commons, Virtual YouTuber Wiki)
 const MEDIA = {
   character: ['anime-characters.json', 'characters'],
@@ -100,7 +105,22 @@ const TOPIC_DESC_BASE = {
   food: 'Asian food (Japanese, Korean, Chinese, Thai, Vietnamese)',
 };
 
+/** Short stable id of the picture an item shows (theme variants: file_id; snapshots: the image URL / file). */
+function imageId(it) {
+  const src = String(it.file_id ? `${it.dir || ''}/${it.file_id}` : it.dir ? `${it.dir}/${it.id}` : it.image_file || it.image || it.file || '');
+  let h = 2166136261;
+  for (let i = 0; i < src.length; i++) { h ^= src.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return src ? (h >>> 0).toString(36) : '';
+}
+
+/** The reuse key: the exact picture for IMAGE_KEYED formats ('character:c.c.#k3x9'), the item otherwise. */
 function key(fmt, it) {
+  const base = baseKey(fmt, it);
+  const img = IMAGE_KEYED.includes(fmt) ? imageId(it) : '';
+  return img ? `${base}#${img}` : base;
+}
+
+function baseKey(fmt, it) {
   if (fmt === 'emoji') return `emoji:${String(it.answer).toLowerCase()}`;
   if (fmt === 'trivia') return `trivia:${String(it.question).toLowerCase()}`;
   if (fmt === 'wyr') return `wyr:${String(it.a).toLowerCase()}|${String(it.b).toLowerCase()}`;
@@ -242,7 +262,7 @@ function themePool(tid, fmt) {
   let ex = {};
   try { ex = JSON.parse(fs.readFileSync(EXTRAS_FILE, 'utf8')); } catch {}
   const items = (((ex.themes || {})[tid] || {})[fmt]) || [];
-  const withFile = items.map(it => (fmt === 'character' && it.dir ? { ...it, image_file: path.join(POP2, it.dir, `${it.id}.jpg`) } : it));
+  const withFile = items.map(it => (fmt === 'character' && it.dir ? { ...it, image_file: path.join(POP2, it.dir, `${it.file_id || it.id}.jpg`) } : it));
   return mediaPool(fmt, withFile);
 }
 
@@ -308,15 +328,7 @@ function saveBank(bank) {
   fs.writeFileSync(BANK_FILE, JSON.stringify({ used: bank.used, items: bank.generated }, null, 1));
 }
 
-/** Exhausted pool: least recently used first (never-used first), nothing shown in the last MIN_REUSE_DAYS. Logs a warning. */
-function lruReuse(bank, fmt, items, what) {
-  const age = it => { const u = bank.used[key(fmt, it)]; return u ? (Date.now() - new Date(u).getTime()) / 86400000 : Infinity; };
-  const ok = items.filter(it => age(it) >= MIN_REUSE_DAYS).sort((a, b) => age(b) - age(a));
-  logger.warn(`${what}: fresh items ran out (all used within ${REUSE_AFTER_DAYS} days); reusing the least recently used (${ok.length} not shown in ${MIN_REUSE_DAYS} days)`);
-  return ok;
-}
-
-/** How many items of a format (or a theme's format) are fresh (not used within REUSE_AFTER_DAYS). */
+/** How many items of a format (or a theme's format) are available under the reuse rule (not in the last REUSE_GAP uploads). */
 function freshCount(fmt, edition = null) {
   const bank = loadBank();
   if (edition) {
@@ -364,9 +376,47 @@ function triviaFresh(bank, topic, edition = null) {
   return (bank.trivia || []).filter(i => i.topic === topic && (!edition || i.edition === edition) && hasRevealImage(i) && isFresh(bank, 'trivia', i)).length;
 }
 
+/** The time of the REUSE_GAP-th most recent upload in the used log (every upload marks its items with one timestamp). */
+function gapCutoff(bank) {
+  if (bank._cut !== undefined) return bank._cut;
+  const times = [...new Set(Object.values(bank.used || {}))].sort().reverse();
+  bank._cut = times.length >= REUSE_GAP ? times[REUSE_GAP - 1] : (times[times.length - 1] || null);
+  bank._recent2 = times.length >= 2 ? times[1] : (times[0] || null);
+  return bank._cut;
+}
+
+/** When a key was last shown (ISO), or '' when never. */
+const lastUsed = (bank, k) => (bank.used && bank.used[k]) || '';
+
+/** Available under the reuse rule: neither the picture nor (legacy log entries) the item was in the last REUSE_GAP uploads. */
 function isFresh(bank, fmt, it) {
-  const at = bank.used[key(fmt, it)];
-  return !at || (Date.now() - new Date(at).getTime()) > REUSE_AFTER_DAYS * 86400000;
+  const cut = gapCutoff(bank);
+  if (!cut) return true;
+  const k = key(fmt, it), b = baseKey(fmt, it);
+  return !(lastUsed(bank, k) >= cut) && !(k !== b && lastUsed(bank, b) >= cut);
+}
+const freshKeyOf = bank => k => { const cut = gapCutoff(bank); return !cut || !(lastUsed(bank, k) >= cut); };
+
+/** Names shown in the last 2 uploads (a mild preference against the same character in back-to-back videos). */
+function recentNames(bank) {
+  gapCutoff(bank);
+  const t = bank._recent2;
+  if (!t) return new Set();
+  return new Set(Object.entries(bank.used || {}).filter(([, v]) => v >= t).map(([k]) => k.split('#')[0].split(':').slice(1).join(':')));
+}
+
+/**
+ * Least recently used first: never-shown items if there are any, else the oldest third; inside that tier, names not
+ * shown in the last 2 uploads when possible; then random.
+ */
+function pickLRU(bank, fmt, src, recent) {
+  const age = it => { const k = key(fmt, it), b = baseKey(fmt, it); const a = lastUsed(bank, k), c = lastUsed(bank, b); return a > c ? a : c; };
+  const sorted = [...src].sort((x, y) => (age(x) < age(y) ? -1 : age(x) > age(y) ? 1 : 0));
+  const never = sorted.filter(it => !age(it));
+  let tier = never.length ? never : sorted.slice(0, Math.max(1, Math.ceil(sorted.length / 3)));
+  const notRecent = tier.filter(it => !recent.has(String(it.name || it.title || '').toLowerCase()));
+  if (notRecent.length) tier = notRecent;
+  return tier[Math.floor(Math.random() * tier.length)];
 }
 
 function pickWeighted(weights) {
@@ -535,7 +585,9 @@ async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null }
   }
   topic = topic || pickWeighted(TOPIC_WEIGHTS[fmt]);
   const th = edition ? { ...loadThemes().themes[edition], id: edition } : null;
-  const freshKey = k => !bank.used[k] || (Date.now() - new Date(bank.used[k]).getTime()) > REUSE_AFTER_DAYS * 86400000;
+  const freshKey = freshKeyOf(bank);
+  const recent = recentNames(bank);
+  const sameName = (a, b) => a.name && b.name && String(a.name).toLowerCase() === String(b.name).toLowerCase();   // never one character twice in a video
   if (th && fmt === 'duel') {
     let chars = themePool(edition, 'character').sort((a, b) => b.favourites - a.favourites);
     if (chars.length < 10 && th.duel_base_art) chars = bank.duel;   // thin themed art pool: normal cards, themed deco + questions
@@ -545,18 +597,17 @@ async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null }
   }
   if (th && ART_FORMATS.includes(fmt)) {
     const all = themePool(edition, fmt);
-    let pool = all.filter(i => freshKey(key(fmt, i)));
-    if (pool.length < n) pool = lruReuse(bank, fmt, all, `${th.name} ${fmt}`);
+    const pool = all.filter(i => isFresh(bank, fmt, i));
     const chosen = [];
     for (const d of [...(RAMPS[n] || RAMPS[5]), ...(SPARES[fmt] || [])]) {
-      const any = pool.filter(i => !chosen.includes(i) && !chosen.some(c => sameSeries(i.anime, c.anime)));
+      const any = pool.filter(i => !chosen.includes(i) && !chosen.some(c => sameSeries(i.anime, c.anime) || sameName(i, c)));
       const c = any.filter(i => (i.difficulty || 2) === d);
       let src = c.length ? c : any;
       if (!src.length) break;
       // owner 2026-10-11: themed rounds are ~75 % women / 25 % men (when both are available at this difficulty)
       const fem = src.filter(i => i.gender === 'Female'), men = src.filter(i => i.gender !== 'Female');
       if (fem.length && men.length) src = Math.random() < 0.75 ? fem : men;
-      chosen.push(src[Math.floor(Math.random() * src.length)]);
+      chosen.push(pickLRU(bank, fmt, src, recent));
     }
     const spare = (SPARES[fmt] || []).length;
     return { plan: { format: fmt, topic: 'anime', want: spare ? n : undefined, rounds: chosen.map(i => ({ ...i, answer: i.name })), edition: th },
@@ -564,7 +615,7 @@ async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null }
   }
   if (th && LLM_FORMATS.includes(fmt)) topic = 'anime';   // themed questions are about anime; items carry the edition
   if (fmt === 'duel') {
-    let picked = duelRounds(bank.duel, n, k => !bank.used[k] || (Date.now() - new Date(bank.used[k]).getTime()) > REUSE_AFTER_DAYS * 86400000);
+    let picked = duelRounds(bank.duel, n, freshKey);
     if (picked.length < Math.min(3, n)) picked = duelRounds(bank.duel, n, () => true);  // every pair used lately: allow repeats
     return { plan: { format: 'duel', topic: 'anime', rounds: picked }, keys: picked.map(r => key('duel', r)) };
   }
@@ -577,28 +628,32 @@ async function buildPopPlan(fmt, { topic = null, rounds = null, edition = null }
   if (ONDEMAND.includes(fmt) && !['city', ...Object.keys(MEDIA)].includes(fmt) && usable().length < n + 4) {
     try { await generate(bank, fmt, topic, 12, th); } catch (e) { logger.warn(`Generation failed: ${(e.message || '').slice(0, 100)}`); }
   }
-  let pool = fresh();
-  if (pool.length < n) {  // bank exhausted: reuse the least recently used items (never within MIN_REUSE_DAYS)
-    pool = lruReuse(bank, fmt, bank[fmt].filter(inTopic), `${fmt}/${topic}`);
-  }
+  const pool = fresh();   // everything not shown in the last REUSE_GAP uploads; pools rotate instead of running out
   const chosen = [];
   // clips can fail to download: plan spare candidates, the renderer keeps n of them (a spare replaces a
   // failed round of the same difficulty, so the easy-to-hard ramp holds)
   const spareLevels = SPARES[fmt] || [];
   if (fmt === 'wyr') {
     // rounds with the narrator's pick first (the reveal with a photo); older items only to fill up
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).sort((a, b) => Number(!!b.pick) - Number(!!a.pick));
-    chosen.push(...shuffled.slice(0, n));
+    const withPick = pool.filter(i => i.pick), rest = pool.filter(i => !i.pick);
+    for (const src of [withPick, rest]) {
+      const left = [...src];
+      while (chosen.length < n && left.length) {
+        const it = pickLRU(bank, fmt, left, new Set());
+        chosen.push(it);
+        left.splice(left.indexOf(it), 1);
+      }
+    }
   } else {
     const ramp = [...(RAMPS[n] || RAMPS[5]), ...spareLevels];
     for (const d of ramp) {
       // scene: never two seasons of one show in a quiz
       const any = pool.filter(i => !chosen.includes(i) && (fmt !== 'scene' || !chosen.some(c => sameSeries(i.title, c.title)))
-        && (!NEW_FORMATS.includes(fmt) || !chosen.some(c => sameSeries(i.anime, c.anime))));
+        && (!NEW_FORMATS.includes(fmt) || !chosen.some(c => sameSeries(i.anime, c.anime))) && !chosen.some(c => sameName(i, c)));
       const c = any.filter(i => (i.difficulty || 2) === d);
       const src = c.length ? c : any;
       if (!src.length) break;
-      chosen.push(src[Math.floor(Math.random() * src.length)]);
+      chosen.push(pickLRU(bank, fmt, src, recent));
     }
   }
   const byName = ['city', 'character', 'idol', 'cityphoto', 'nightcity', 'cuisine', 'vtuber', 'voice', ...NEW_FORMATS];
@@ -620,4 +675,4 @@ function markUsed(keys) {
   saveBank(bank);
 }
 
-module.exports = { propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
+module.exports = { REUSE_GAP, isFresh, imageId, baseKey, propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };

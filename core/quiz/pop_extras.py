@@ -1175,6 +1175,81 @@ def theme_order(pool, top_n=500, women_share=0.75, seed=20261011):
     return out
 
 
+# owner 2026-10-21: a character may come back in later videos with a DIFFERENT picture (never twice in one video), so popular
+# characters collect several themed pictures. POP_THEME_VARIANTS=4: up to 4 pictures per character and format for the
+# POP_THEME_VARIANT_TOP most popular ones (the nightly quiz mining sets it; default 1 = the old single picture).
+THEME_VARIANTS = int(os.environ.get('POP_THEME_VARIANTS') or 1)
+THEME_VARIANT_TOP = int(os.environ.get('POP_THEME_VARIANT_TOP') or 150)
+NEAR_DUP_BITS = 10   # dHash distance at or below this = the same picture (crops, re-encodes, small edits)
+
+
+def dhash(im, size=8):
+    """64-bit difference hash: near-duplicate pictures (re-uploads, crops, colour edits) land within a few bits."""
+    g = np.asarray(im.convert('L').resize((size + 1, size), Image.LANCZOS), dtype=np.int16)
+    bits = (g[:, 1:] > g[:, :-1]).flatten()
+    return int(''.join('1' if b else '0' for b in bits), 2)
+
+
+def hamming(a, b):
+    return bin(int(a) ^ int(b)).count('1')
+
+
+def theme_variants(tid, th, c, cls, fmts, wiki_c, cache, anime, have):
+    """More themed pictures of one character (same sources and gates as the first one), each one not a near-duplicate of
+    the pictures it already has. have: {fmt: [dhash, ...]}. Returns {fmt: [result dicts with file_id]}; files saved."""
+    fn_of = {'silhouette': do_silhouette, 'outfit': do_outfit, 'character': do_character_art}
+    w = cache.get(f"wikichar:{c['id']}") or {}
+    out = {}
+    for fmt in fmts:
+        if fmt == 'outfit' and not (cls in pv.ADULT_CLASSES and c.get('gender') == 'Female'):
+            continue
+        hashes = list(have.get(fmt) or [])
+        if not hashes:
+            continue          # no first picture: nothing to vary
+        try:
+            fan_c = pf.theme_candidates(c, fmt, show_titles(c, anime), cache, th, cls)
+        except Exception:  # noqa: BLE001
+            fan_c = []
+        got = []
+        for url, src, _ in wiki_c + fan_c:
+            if len(hashes) >= THEME_VARIANTS:
+                break
+            try:
+                pic = load_img(url)
+                h = dhash(pic)
+                if any(hamming(h, x) <= NEAR_DUP_BITS for x in hashes):
+                    continue
+                ok_t, hit = theme_confirm(pv.tag(flatten(pic)), th)
+                if not ok_t:
+                    continue
+                if src.get('kind') == 'danbooru':
+                    ok_m, sim, _ = om.check(pic, official_ref(c, w, cache))
+                    if not ok_m:
+                        continue
+                    src = {**src, 'onmodel': sim}
+                r, _ = fn_of[fmt](c, pic, cls)
+            except Exception:  # noqa: BLE001
+                continue
+            if not r:
+                continue
+            fid = f"{c['id']}_v{len(hashes) + 1}"
+            d = os.path.join(POP2, 'theme', tid, fmt)
+            os.makedirs(d, exist_ok=True)
+            if fmt == 'silhouette':
+                save_jpg(r['col'], os.path.join(d, f'{fid}.jpg'), 76)
+                r['mask'].save(os.path.join(d, f'{fid}.png'), optimize=True)
+                r['col'] = r['mask'] = None
+            else:
+                save_jpg(r['full'], os.path.join(d, f'{fid}.jpg'), 80)
+                r['full'] = None
+            r['source'], r['theme_hit'], r['file_id'], r['dhash'] = src, hit, fid, format(h, '016x')
+            hashes.append(h)
+            got.append(r)
+        if got:
+            out[fmt] = got
+    return out
+
+
 def build_theme(tid, minutes=40, batch_wait=60):
     """Theme pool for one themes.json entry: art themes get themed art per character (wiki pictures named for the theme,
     then themed fan art; same quality / on-model / WD14 gates + the theme check); selector themes (villains, glasses)
@@ -1222,9 +1297,27 @@ def build_theme(tid, minutes=40, batch_wait=60):
     order = theme_order(pool)
     done = 0
     fun = cache.get(f'funnel:{tid}') or {'chars': 0, 'with_tag': 0, 'with_candidates': {}, 'passed': {}, 'images': {}, 'posts': {}}
+    pop_rank = {x['id']: k for k, x in enumerate(sorted(pool, key=lambda x: -x['favourites']))}
     for c in order:
         key = f'theme:{tid}:{c["id"]}'
+        vkey = f'themevar:{tid}:{c["id"]}'
+        want_var = THEME_VARIANTS > 1 and pop_rank.get(c['id'], 9999) < THEME_VARIANT_TOP
         if cache.get(key) is not None:
+            prev = cache.get(key)
+            if not want_var or cache.get(vkey) is not None or 'skip' in prev or time.time() > t_end:
+                continue
+            # variant pass for a character that already has its first picture
+            w = cache.get(f"wikichar:{c['id']}") or {}
+            wiki_c = [(im['url'], {'kind': 'fandom', 'wiki': w.get('wiki'), 'page': w.get('page'), 'file': im['url'], 'name': im['file'],
+                                   'licence': 'Fandom text CC-BY-SA 3.0; artwork (c) its rights holders, shown only to identify the character'}, True)
+                      for im in (cache.get(f"wikiimgs:{c['id']}") or []) if wiki_rx.search(im['file'])]
+            have = {}
+            for fmt in fmts:
+                fpath = os.path.join(POP2, 'theme', tid, fmt, f"{c['id']}.jpg")
+                if isinstance(prev.get(fmt), dict) and 'dropped' not in prev[fmt] and os.path.exists(fpath):
+                    have[fmt] = [dhash(Image.open(fpath))]
+            cache.put(vkey, json.loads(json.dumps(theme_variants(tid, th, c, prev.get('class'), fmts, wiki_c, cache, anime, have),
+                                                  default=lambda o: None)))
             continue
         cls = theme_class(c, th, cache, anime)
         if cls is None:
@@ -1297,6 +1390,13 @@ def build_theme(tid, minutes=40, batch_wait=60):
                 res[fmt] = {'dropped': reason}
         if res and all('dropped' in r and r['dropped'].startswith('error') for r in res.values()):
             continue
+        if want_var:   # more pictures of a popular character (each one a different picture, gates as above)
+            have = {}
+            for fmt, r in res.items():
+                fpath = os.path.join(POP2, 'theme', tid, fmt, f"{c['id']}.jpg")
+                if 'dropped' not in r and os.path.exists(fpath):
+                    have[fmt] = [dhash(Image.open(fpath))]
+            cache.put(vkey, json.loads(json.dumps(theme_variants(tid, th, c, cls, fmts, wiki_c, cache, anime, have), default=lambda o: None)))
         cache.put(key, json.loads(json.dumps({'class': cls, **res}, default=lambda o: None)))
         cache.put(f'funnel:{tid}', fun)
         done += 1
@@ -1466,6 +1566,10 @@ def finish_theme(tid, cache=None):
                 if not os.path.exists(os.path.join(POP2, d, f'{cid}.jpg')):
                     continue
                 out[f].append({**base(c), **r, 'dir': d, 'gate_class': v.get('class')})
+                # the character's other pictures (theme_variants): same character, different picture -> its own pool item
+                for vr in ((cache.get(f'themevar:{tid}:{cid}') or {}).get(f) or []):
+                    if isinstance(vr, dict) and vr.get('file_id') and os.path.exists(os.path.join(POP2, d, f"{vr['file_id']}.jpg")):
+                        out[f].append({**base(c), **vr, 'dir': d, 'gate_class': v.get('class')})
     if not th.get('select'):
         merge_ai_theme(tid, out, chars, base)
     for f in out:

@@ -44,27 +44,46 @@ const live = wq.poolAvailability();
 const { topicFresh, loadBank } = require('../pipeline/pop-quiz-content');
 const bank = loadBank();
 const ROUNDS = 4;   // quick (3) and standard (5) cuts are both used: ~4 items a quiz
-const used = [];    // {at, format, topic}
+const GAP = Number(process.env.QUIZ_REUSE_GAP || 8);   // owner 2026-10-21: an item may come back after GAP uploads (LRU first)
 const t0 = Date.now();
 const grown = (f, t, now) => (flags.has('--grow') ? (GROW[`${f}|${t}`] || 0) * Math.floor((now - t0) / 86400000) : 0);
-const available = now => (f, t) => {
-  if (f === 'wyr' && flags.has('--llm')) return true;
-  const start = topicFresh(f, t, bank) + grown(f, t, now);
-  if (!live(f, t) && start < 99 && !grown(f, t, now)) return false;
-  if (!Number.isFinite(start)) return true;
-  const spent = used.filter(u => u.format === f && u.topic === t && now - u.at < 60 * 86400000).length * ROUNDS;
-  const need = (f === 'wyr' || f === 'duel' ? 4 : 5) + (f === 'trivia' ? 1 : 0);
-  return start - spent >= need;
+// item-level model of every (format, topic) pool: size = stored items (+ nightly growth); each upload takes ROUNDS items,
+// least recently used first, never one shown in the last GAP uploads
+const pools = new Map();   // key -> {last: Map(itemId -> upload index)}
+const uses = [];           // {item, gap} for every pick of an item shown before
+const sizeOf = (f, t, now) => {
+  if (f === 'wyr' && flags.has('--llm')) return 400;
+  const n = topicFresh(f, t, bank);
+  return (Number.isFinite(n) ? n : 2000) + grown(f, t, now);
 };
+const blockedItems = (pk, idx) => { const p = pools.get(pk); return p ? [...p.last.values()].filter(v => idx - v <= GAP).length : 0; };
+const available = (now, idx) => (f, t) => {
+  if (!live(f, t) && !(f === 'wyr' && flags.has('--llm')) && !grown(f, t, now)) return false;
+  const need = (f === 'wyr' || f === 'duel' ? 4 : 5) + (f === 'trivia' ? 1 : 0);
+  return sizeOf(f, t, now) - blockedItems(`${f}|${t}`, idx) >= need;
+};
+function take(f, t, now, idx) {
+  const pk = `${f}|${t}`;
+  if (!pools.has(pk)) pools.set(pk, { last: new Map() });
+  const p = pools.get(pk);
+  const size = sizeOf(f, t, now);
+  const free = [];
+  for (let i = 0; i < size && free.length < 4000; i++) { const l = p.last.get(i); if (l === undefined || idx - l > GAP) free.push([i, l === undefined ? -1 : l]); }
+  free.sort((x, y) => x[1] - y[1]);   // never used first, then the oldest
+  for (const [i, l] of free.slice(0, ROUNDS)) {
+    if (l >= 0) uses.push({ item: `${pk}#${i}`, gap: idx - l });
+    p.last.set(i, idx);
+  }
+}
 
 let now = Date.now();
 const sim = [];
 for (let k = 0; k < days * 2; k++) {
   now += (k % 2 === 0 ? 15 : 9) * 3600000;   // 12:00 and 21:00 UTC
-  const p = wq.pickFormat(stats, history, null, { available: available(now), rng, now });
+  const p = wq.pickFormat(stats, history, null, { available: available(now, k), rng, now });
   const u = { format: p.format, theme: p.topic || 'asia', postedAt: new Date(now).toISOString(), publishAt: new Date(now).toISOString(), sim: true };
   history.uploads.push(u);
-  used.push({ at: now, format: p.format, topic: p.topic });
+  take(p.format, p.topic, now, k);
   sim.push({ ...u, bucket: balancer.bucketOf(p.format, p.topic), family: balancer.familyOf(p.format) });
 }
 
@@ -101,4 +120,10 @@ console.log(`format repeats within 3 days: ${repeats}; geography within 7 upload
 const kpop = sim.filter(u => u.bucket === 'kpop').length;
 console.log(`idol: ${sim.filter(u => u.format === 'idol').length} uploads, every ${avg(gaps('idol'))} days on average; K-pop topic: ${kpop} uploads (one every ${(days / Math.max(1, kpop)).toFixed(1)} days)`);
 console.log(`vtuber topic: ${sim.filter(u => u.bucket === 'vtuber').length}; first 14 picks: ${sim.slice(0, 14).map(u => `${u.format}/${u.theme}`).join(' ')}`);
+const gapsAll = uses.map(u => u.gap).sort((x, y) => x - y);
+const byPool = {};
+for (const u of uses) { const k = u.item.split('#')[0]; byPool[k] = (byPool[k] || 0) + 1; }
+console.log(`item repeats (reuse gap ${GAP} uploads): ${uses.length} of ${sim.length * ROUNDS} item showings were repeats; `
+  + `median gap ${gapsAll.length ? gapsAll[Math.floor(gapsAll.length / 2)] : '-'} uploads, shortest ${gapsAll[0] ?? '-'}; `
+  + `by pool: ${Object.entries(byPool).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`);
 fs.rmSync(tmp, { recursive: true, force: true });
