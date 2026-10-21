@@ -580,6 +580,8 @@ def selftest():
     os.environ['SOUND_VID_SHARD'] = '1'
     try:
         lists = [pick_queries(k, 6, 10, st) for k in range(6)]
+        os.environ['SOUND_VID_SHARD'] = '0'
+        sep = [pick_queries(k, 6, 10, st) for k in range(6)]
     finally:
         if old is None:
             os.environ.pop('SOUND_VID_SHARD', None)
@@ -589,7 +591,6 @@ def selftest():
     ids = [f'v{i:07d}xx' for i in range(1200)]
     parts = [{i for i in ids if zlib.crc32(i.encode()) % 6 == k} for k in range(6)]
     assert sum(map(len, parts)) == len(ids) and all(len(p) > 140 for p in parts)
-    sep = [pick_queries(k, 6, 10, st) for k in range(6)]
     assert all(len(x) == 10 for x in sep) and len({q for x in sep for q in x}) == 60
     return {'ok': True, 'queries': len(qs)}
 
