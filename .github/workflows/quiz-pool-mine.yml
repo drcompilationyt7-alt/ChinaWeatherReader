@@ -22,7 +22,7 @@ on:
         required: false
         default: '40'
       shards:
-        description: 'Shards to run (light, art or both)'
+        description: 'Shards: light, art or both (backfill: one of photos / people / llm / art0-2, or both = all six)'
         required: false
         default: 'both'
       mode:
@@ -61,8 +61,13 @@ jobs:
     steps:
       - id: s
         run: |
+          SH="${{ github.event.inputs.shards || 'both' }}"
           if [ "${{ github.event.inputs.mode }}" = "backfill" ]; then
-            echo 'shards=["photos","people","llm","art0","art1","art2"]' >> $GITHUB_OUTPUT; exit 0
+            case "$SH" in
+              photos|people|llm|art0|art1|art2) echo "shards=[\"$SH\"]" >> $GITHUB_OUTPUT ;;
+              *) echo 'shards=["photos","people","llm","art0","art1","art2"]' >> $GITHUB_OUTPUT ;;
+            esac
+            exit 0
           fi
           case "${{ github.event.inputs.shards || 'both' }}" in
             light) echo 'shards=["light"]' >> $GITHUB_OUTPUT ;;

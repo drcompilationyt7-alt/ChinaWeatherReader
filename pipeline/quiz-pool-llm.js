@@ -12,7 +12,8 @@
  * field longer than a title).
  */
 const fs = require('fs');
-const { propose, loadBank, loadThemes, llmJSON } = require('./pop-quiz-content');
+const { propose, loadBank, loadThemes, llmJSON, resetLLM } = require('./pop-quiz-content');
+const BATCH = 6;   // items per LLM call (long lists came back cut off mid-JSON)
 
 const SONG_SYS = 'You help a YouTube Shorts music quiz channel pick K-pop songs. Only real, officially released songs with an '
   + 'official music video on YouTube. Never write or quote lyrics. English only.';
@@ -48,19 +49,28 @@ async function main() {
   const out = { items: { emoji: [], trivia: [], wyr: [], song: [] }, log: [] };
   for (const j of spec.jobs || []) {
     const ed = j.edition && themes[j.edition] ? { ...themes[j.edition], id: j.edition } : null;
-    try {
-      const got = await propose(bank, j.fmt, j.topic, j.n || 8, ed, (spec.avoid || {})[j.fmt] || []);
-      out.items[j.fmt].push(...got.map(it => ({ ...it, mined: new Date().toISOString().slice(0, 10) })));
-      out.log.push(`${j.fmt}/${j.topic}${ed ? `/${ed.id}` : ''}: ${got.length}`);
-    } catch (e) { out.log.push(`${j.fmt}/${j.topic}: failed ${String(e.message || e).slice(0, 80)}`); }
+    let total = 0;
+    for (let left = j.n || 8; left > 0; left -= BATCH) {
+      resetLLM();
+      try {
+        const avoid = [...((spec.avoid || {})[j.fmt] || []), ...out.items[j.fmt].map(it => (j.fmt === 'emoji' ? it.answer : j.fmt === 'trivia' ? it.question : `${it.a} / ${it.b}`))];
+        const got = await propose(bank, j.fmt, j.topic, Math.min(BATCH, left), ed, avoid);
+        out.items[j.fmt].push(...got.map(it => ({ ...it, mined: new Date().toISOString().slice(0, 10) })));
+        total += got.length;
+      } catch (e) { out.log.push(`${j.fmt}/${j.topic}: failed ${String(e.message || e).slice(0, 80)}`); }
+    }
+    out.log.push(`${j.fmt}/${j.topic}${ed ? `/${ed.id}` : ''}: ${total}`);
   }
   if (spec.songs && spec.songs.n) {
     const have = (bank.song || []).map(s => `${s.title}|${s.artist}`);
-    try {
-      const got = await proposeSongs(spec.songs.n, [...have, ...((spec.avoid || {}).song || [])]);
-      out.items.song.push(...got);
-      out.log.push(`song/kpop: ${got.length}`);
-    } catch (e) { out.log.push(`song/kpop: failed ${String(e.message || e).slice(0, 80)}`); }
+    for (let left = spec.songs.n; left > 0; left -= 10) {
+      resetLLM();
+      try {
+        const got = await proposeSongs(Math.min(10, left), [...have, ...((spec.avoid || {}).song || []), ...out.items.song.map(s => `${s.title}|${s.artist}`)]);
+        out.items.song.push(...got);
+      } catch (e) { out.log.push(`song/kpop: failed ${String(e.message || e).slice(0, 80)}`); }
+    }
+    out.log.push(`song/kpop: ${out.items.song.length}`);
   }
   fs.writeFileSync(outFile, JSON.stringify(out, null, 1));
   console.log(JSON.stringify({ ok: true, log: out.log }));

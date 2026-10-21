@@ -441,7 +441,7 @@ async function llmJSON(system, user) {
     const { getGeminiService } = require('../core/gemini-service');
     const g = getGeminiService();
     if (g && g.getStats().keysLoaded > 0) {
-      const r = await withTimeout(g.chatJSON(system, user), 90000);
+      const r = await withTimeout(g.chatJSON(system, user, { maxTokens: 8192 }), 90000);   // 2048 cut long item lists mid-JSON
       if (r) return r;
     }
   } catch {}
@@ -675,4 +675,7 @@ function markUsed(keys) {
   saveBank(bank);
 }
 
-module.exports = { REUSE_GAP, isFresh, imageId, baseKey, propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
+/** The nightly mining runs many LLM jobs: one failed call must not switch the LLM off for the rest of the run. */
+function resetLLM() { llmDown = false; }
+
+module.exports = { resetLLM, REUSE_GAP, isFresh, imageId, baseKey, propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
