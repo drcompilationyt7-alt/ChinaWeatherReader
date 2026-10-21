@@ -505,6 +505,22 @@
     "word": "punch",
     "note": "by-eye dense strip 2026-10-17 (Kengan ashura - fight ep 1-3 eng dub)"
    }
+  ],
+  "c_RTDeuS24k2s_771": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "unsheathe",
+    "note": "auto (vision model) 2026-10-21 (Samurai Champloo EP25-Mugen&Jin VS Kagetoki/''Hand)"
+   }
+  ],
+  "c_qMg3Jqoxksg_186135": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "slash",
+    "note": "auto (vision model) 2026-10-21 (Sword of A Stranger Intro Fight)"
+   }
   ]
  }
 }
