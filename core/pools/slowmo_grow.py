@@ -672,9 +672,12 @@ def cmd_pull(a):
     rv = os.path.join(d, 'review')
     shutil.rmtree(rv, ignore_errors=True)
     os.makedirs(rv)
-    for i in range(0, len(rows), 24):
-        sheet([(r['path'], f"{r['n']}  {r['vibe']}  {r['id']}") for r in rows[i:i + 24]], os.path.join(rv, f'review_{i // 24:02d}.jpg'))
-    wj(os.path.join(rv, 'index.json'), rows)
+    wj(os.path.join(rv, 'index.json'), rows)          # first: import-staged needs it even if the sheets fail
+    try:
+        for i in range(0, len(rows), 24):
+            sheet([(r['path'], f"{r['n']}  {r['vibe']}  {r['id']}") for r in rows[i:i + 24]], os.path.join(rv, f'review_{i // 24:02d}.jpg'))
+    except ImportError as e:                          # no cv2 on the PC python: review with ffmpeg strips instead
+        log(f'contact sheets skipped ({e}); index.json written')
     print(json.dumps({'ok': True, 'pulled': todo, 'to_review': len(rows), 'sheets': rv}))
 
 
