@@ -490,8 +490,9 @@ def fresh_clips(preset, vibe, root=None, rotation=True):
     reviewed_only = os.environ.get('EDIT_POOL_REVIEWED_ONLY', '1') != '0'
     bl = load_blocklist()
     reuse = preset in REUSE_PRESETS
-    rot = reuse and CR.enabled() and rotation
-    recent = sound_recent_ids(preset, vibe, led) if reuse and not rot else set()
+    rot_on = reuse and CR.enabled()
+    rot = rot_on and rotation          # rotation=False (status / review counts): the whole eligible pool, no cooldown either
+    recent = sound_recent_ids(preset, vibe, led) if reuse and not rot_on else set()
     for it in man['items']:
         if reuse:
             # owner 2026-10-13 (sound): clips are reused across videos, never retired; only the last
