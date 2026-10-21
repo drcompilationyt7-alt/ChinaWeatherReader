@@ -70,6 +70,12 @@ function titleRules(spec, f) {
   return { maxLen: maxTitle(spec), must: spec.must(f), allowImpossible: !!f.hard, forbidden: f.forbidden || [] };
 }
 
+/** LLM-written titles of a naturalTitles channel (the quiz) also go through the keyword-dump check. */
+function llmTitleRules(ctx, keyword) {
+  if (!ctx.spec.naturalTitles) return ctx.rules;
+  return { ...ctx.rules, natural: true, keyword, roundWords: rules.roundWordsOf(ctx.f.roundsText || '') };
+}
+
 /** Clean an LLM-written text: no quotes, emoji, hashtags or < >. */
 function cleanLLM(s) {
   return stripEmoji(clean(String(s || '').replace(/#[\p{L}\p{N}_]+/gu, ' '))).replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
@@ -231,6 +237,9 @@ async function generate(ctx, chosen, { keyword, suggestions, obs, eTitle, tagsTi
     examplesText(obs),
     (f.forbidden || []).length ? `Never reveal these answers: ${f.forbidden.slice(0, 12).join(', ')}` : '',
     f.format && !f.hard ? 'Do not say "impossible" (no round in this quiz is very hard).' : '',
+    spec.naturalTitles ? 'Every title must read as natural English a person would say: a short question, challenge or phrase '
+      + '(e.g. "how many asian cities can you name?", "only real kpop fans get 3/3"). Never a list of keywords, never words taken '
+      + 'from the questions or answers, never "N rounds".' : '',
     '',
     'Write this JSON:',
   ];
@@ -448,7 +457,7 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
       candidates = gen.titles.map(c => {
         const text = cleanLLM(c.text);
         const full = [text, eTitle, withTags ? tagStr(tags.title) : ''].filter(Boolean).join(' ');
-        const v = validateTitle(full, ctx.rules);
+        const v = validateTitle(full, llmTitleRules(ctx, keyword));
         return { text: full, pull: c.pull, ok: v.ok, why: v.reasons, score: v.ok ? scoreTitle(full, { keyword, suggestions, recent, pull: c.pull }) : null };
       });
       const ok = candidates.filter(c => c.ok).sort((a, b) => b.score - a.score);

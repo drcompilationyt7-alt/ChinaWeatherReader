@@ -637,7 +637,7 @@ def _check_voice(args, info):
 
 # the Asian pop culture formats (render_pop.py); kept here so the CLI does not import it for geography runs
 POP = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song',
-       'silhouette', 'eyes', 'outfit')
+       'silhouette', 'eyes', 'outfit', 'nightcity', 'cuisine')
 
 
 def main():
@@ -696,6 +696,8 @@ def main():
                 r._load_emoji_media()
             elif r.fmt == 'wyr':
                 r._load_wyr_photos()
+            elif r.fmt == 'trivia':
+                r._load_trivia_visuals()
             n = len(r.plan['rounds'])
             r.build_pop_timeline([0.0] * n, [1.0] * n, intro_d=1.5 if r.fmt in ('opening', 'scene', 'voice', 'song') else 0.0)
             r.prepare_pop()

@@ -14,6 +14,8 @@ engine as render_quiz.py:
   idol       guess the K-pop idol from a photo (same reveal)
   opening    guess the anime from 3.5 s of its opening (vinyl + visualizer)
   cityphoto  guess the Asian city from a photo (same blur-to-sharp reveal, photo never cropped)
+  nightcity  the same from a NIGHT skyline photo (night-city-photos.json, reviewed nightly-mining finds)
+  cuisine    guess the dish from a photo (cuisine.json: Commons photos, dish + country; same reveal)
   vtuber     guess the VTuber from their official portrait (same reveal, head-and-shoulders crop)
   duel       two AniList characters side by side, a question, then who fans actually
              picked (AniList favourites, both counts shown)            (4 rounds)
@@ -53,8 +55,8 @@ BANK = os.path.join(HERE, 'assets', 'pop-bank.json')
 # silhouette / eyes / outfit: precomputed masks, crops and gate results (character-extras.json + assets/pop2/); behind POP_NEW_FORMATS=1 in the pipeline
 EXTRA_FORMATS = ('silhouette', 'eyes', 'outfit')
 POP_FORMATS = ('emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice',
-               'song') + EXTRA_FORMATS
-MEDIA_FORMATS = ('character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song') + EXTRA_FORMATS
+               'song', 'nightcity', 'cuisine') + EXTRA_FORMATS
+MEDIA_FORMATS = ('character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song', 'nightcity', 'cuisine') + EXTRA_FORMATS
 CLIP_FORMATS = ('opening', 'scene', 'voice', 'song')  # fetched from YouTube at render time, with spare candidates
 GOLD = (255, 214, 0)
 GREEN = (46, 204, 113)
@@ -69,6 +71,8 @@ PALETTE = {  # (top, bottom, accent)
     'idol': ((44, 6, 52), (170, 40, 120), (255, 170, 220)),
     'opening': ((6, 10, 40), (30, 44, 130), (0, 229, 255)),
     'cityphoto': ((6, 34, 52), (18, 100, 130), GOLD),
+    'nightcity': ((4, 6, 26), (28, 22, 84), (255, 200, 90)),
+    'cuisine': ((60, 16, 8), (170, 60, 24), (255, 226, 120)),
     'vtuber': ((26, 12, 66), (70, 50, 180), (130, 225, 255)),
     'duel': ((48, 6, 24), (120, 20, 60), GOLD),
     'scene': ((10, 6, 26), (58, 18, 84), (255, 110, 180)),
@@ -93,7 +97,7 @@ TOPIC_TITLE = {
               'kdrama': ('GUESS THE K-DRAMA', 'FROM THE EMOJIS'), 'anime character': ('GUESS THE CHARACTER', 'FROM THE EMOJIS')},
     'trivia': {'kpop': ('K-POP QUIZ', 'ONLY REAL FANS GET 5/5'), 'anime': ('ANIME QUIZ', 'EASY TO IMPOSSIBLE'),
                'vtubers': ('VTUBER QUIZ', 'HOW MANY CAN YOU GET?'), 'cdrama': ('C-DRAMA & MOVIE QUIZ', 'EASY TO IMPOSSIBLE'),
-               'cities': ('ASIA CITY QUIZ', 'EASY TO IMPOSSIBLE'), 'mixed': ('ASIAN POP QUIZ', 'EASY TO IMPOSSIBLE')},
+               'cities': ('ASIAN CITIES QUIZ', 'EASY TO IMPOSSIBLE'), 'food': ('ASIAN FOOD QUIZ', 'EASY TO IMPOSSIBLE'), 'mixed': ('ASIAN POP QUIZ', 'EASY TO IMPOSSIBLE')},
     'character': {'anime': ('GUESS THE CHARACTER', 'ANIME EDITION')},
     'silhouette': {'anime': ('GUESS THE CHARACTER', 'BY THEIR SILHOUETTE')},
     'eyes': {'anime': ('GUESS THE CHARACTER', 'BY THEIR EYES')},
@@ -101,6 +105,8 @@ TOPIC_TITLE = {
     'idol': {'kpop': ('GUESS THE K-POP IDOL', 'EASY TO IMPOSSIBLE')},
     'opening': {'anime': ('GUESS THE ANIME', 'FROM ITS OPENING')},
     'cityphoto': {'asia': ('GUESS THE CITY', 'FROM ONE PHOTO')},
+    'nightcity': {'asia': ('GUESS THE CITY', 'BY NIGHT')},
+    'cuisine': {'food': ('GUESS THE DISH', 'ASIAN FOOD EDITION')},
     'vtuber': {'vtubers': ('GUESS THE VTUBER', 'EASY TO IMPOSSIBLE')},
     'duel': {'anime': ('WHO WOULD YOU PICK?', 'THEN SEE WHO FANS PICKED')},
     'scene': {'anime': ('GUESS THE ANIME', 'FROM A 4 SECOND SCENE')},
@@ -115,7 +121,8 @@ INTRO = {'emoji': {'anime': 'Guess the anime from the emojis!', 'kpop song': 'Gu
                    'kdrama': 'Guess the K-drama from the emojis!', 'anime character': 'Guess the character from the emojis!'},
          'trivia': 'How many can you get right?', 'wyr': None, 'city': 'Guess the city from the map!',
          'character': 'Guess the anime character!', 'idol': 'Guess the K-pop idol!', 'opening': 'Guess the anime from its opening!',
-         'cityphoto': 'Guess the city from the photo!', 'vtuber': 'Guess the VTuber!', 'duel': 'Pick one, then see who the fans picked.',
+         'cityphoto': 'Guess the city from the photo!', 'nightcity': 'Guess the city by night!', 'cuisine': 'Guess the dish!',
+         'vtuber': 'Guess the VTuber!', 'duel': 'Pick one, then see who the fans picked.',
          'scene': 'Guess the anime from one scene!', 'voice': 'Guess the character by their voice!', 'song': 'Guess the song!',
          'silhouette': 'Guess the character by their silhouette!', 'eyes': 'Guess the character by their eyes!',
          'outfit': 'Guess the character by their outfit!'}
@@ -136,6 +143,8 @@ INTRO_POOL = {
     'opening': ['Guess the anime from its opening!', 'Headphones on. Name the anime!', 'Name the anime from its opening!'],
     'emoji': None, 'trivia': ['How many can you get right?', "Let's see if you're a real fan.", 'Five questions. No cheating.'],
     'city': ['Guess the city from the map!', 'Where is this dot? Name the city.', 'Map nerds, this one is for you.'],
+    'nightcity': ['Guess the city by night!', 'City lights only. Which city is this?', 'Night skyline. Name the city!'],
+    'cuisine': ['Guess the dish!', 'Hungry yet? Name the dish!', 'Food nerds, name the dish before it unblurs!'],
     'cityphoto': ['Guess the city from the photo!', 'Which Asian city is this?', 'Travel nerds, name the city before it unblurs!',
                   'One photo. Name the city.'],
     'vtuber': ['Guess the VTuber!', 'Chat, who is this?', 'Real VTuber fans get these instantly.', 'Name the VTuber before it unblurs!'],
@@ -180,10 +189,10 @@ OUTRO_POOL = ['How many did you get? Comment your score!', 'Be honest. How many 
 DUEL_OUTRO = ['How many times did you agree with the fans? Comment below!', 'Did the fans get it right? Tell me below!']
 
 Q_MIN = {'emoji': 4.0, 'trivia': 4.5, 'wyr': 4.2, 'city': 3.0, 'character': 4.0, 'idol': 4.0, 'opening': 4.3,
-         'cityphoto': 4.2, 'vtuber': 4.0, 'duel': 4.8, 'scene': 4.7, 'voice': 4.4, 'song': 4.0,
+         'cityphoto': 4.2, 'nightcity': 4.2, 'cuisine': 4.2, 'vtuber': 4.0, 'duel': 4.8, 'scene': 4.7, 'voice': 4.4, 'song': 4.0,
          'silhouette': 4.0, 'eyes': 4.2, 'outfit': 4.2}
 R_MIN = {'emoji': 1.9, 'trivia': 1.6, 'wyr': 2.0, 'city': 1.8, 'character': 1.9, 'idol': 1.9, 'opening': 2.1,
-         'cityphoto': 2.3, 'vtuber': 1.9, 'duel': 2.8, 'scene': 2.1, 'voice': 2.1, 'song': 3.2,
+         'cityphoto': 2.3, 'nightcity': 2.3, 'cuisine': 2.3, 'vtuber': 1.9, 'duel': 2.8, 'scene': 2.1, 'voice': 2.1, 'song': 3.2,
          'silhouette': 2.2, 'eyes': 2.5, 'outfit': 2.5}
 CLIP_AT = 0.35      # rounds without a narrator line: the card pops in, then the clip (and the countdown) starts
 CLIP_GAP = 0.25     # after a narrator line, this much silence before the clip
@@ -195,6 +204,10 @@ DUCK = 10 ** (-15 / 20)  # music under the narrator's reveal line: -15 dB
 EMOJI_MEDIA_BUDGET = 150.0  # seconds for all emoji-reveal fetches (then: plain reveals)
 CLIP_BUDGET = 300.0  # seconds for all clip fetches of a clip quiz
 CARD_W, CARD_H = 580, 640
+TRIVIA_SPARES = [2, 1, 3, 2]   # trivia: spare questions in case a reveal picture cannot be fetched
+TRIVIA_PIC_AT = 0.55   # trivia reveal: seconds of the green answer before the picture of it pops in
+TRIVIA_PIC_Y = 905     # centre of the reveal picture (max 900 x 600, so it spans ~605..1205)
+TRIVIA_ANS_Y = 1330    # where the green answer settles under the picture (the other formats' answer line)
 
 
 def wrap_lines(text, size, max_w, max_lines=3, min_size=40):
@@ -525,6 +538,8 @@ class PopRenderer(QuizRenderer):
                 rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 0.7)
             if self.fmt == 'song' or (self.fmt == 'emoji' and r.get('_media')):
                 rev = max(rev, REVEAL_MEDIA, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.8)  # then the song at full volume
+            if self.fmt == 'trivia' and r.get('_photo') is not None:   # green answer, then the picture of it
+                rev = max(rev, TRIVIA_PIC_AT + 2.3, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.4)
             if self.fmt == 'wyr' and wyr_side(r):
                 rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 0.6, 2.6)
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
@@ -551,6 +566,7 @@ class PopRenderer(QuizRenderer):
         if self.edition:
             sub = self.edition['label']
         self.title = text_layer(title, 112, stroke=10, max_w=980)
+        sub = sub.replace('5/5', f'{len(rounds)}/{len(rounds)}')   # a 3-round quick cut said 'GET 5/5'
         self.subtitle = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
         self.levels = []
         for i, r in enumerate(rounds):
@@ -639,15 +655,32 @@ class PopRenderer(QuizRenderer):
             put(frame, L['pic'], cx, cy, s=s, a=a)
 
     def _prep_trivia(self, r):
-        icon = emoji_img(r.get('emoji') or '❓', 150)
-        q = text_block(r['question'], 76, max_w=960, max_lines=3)
-        opts = []
-        for k, o in enumerate(r['options']):
-            label = f"{'ABCD'[k]}   {o}"
-            wide = max(pill(label, 58, WHITE, max_w=880, pad_y=18).size[0], 760)
-            opts.append({'base': pill(label, 58, WHITE, fg=NAVY, max_w=880, pad_y=18, radius=26, min_w=wide),
-                         'good': pill(label, 58, GREEN, fg=WHITE, max_w=880, pad_y=18, radius=26, min_w=wide)})
-        return {'icon': icon, 'q': q, 'opts': opts}
+        """Layout (owner 2026-10-21: the old one put the timer bar across the question's second line and left the
+        bottom third empty): icon, question, then the timer bar and the options each in their own band, sized from
+        the question's real height."""
+        icon = emoji_img(r.get('emoji') or '❓', 130)
+        q = text_block(r['question'], 74, max_w=960, max_lines=3)
+        labels = [f"{'ABCD'[k]}   {o}" for k, o in enumerate(r['options'])]
+        wide = max([760] + [pill(lb, 60, WHITE, max_w=900, pad_y=20).size[0] for lb in labels])
+        opts = [{'base': pill(lb, 60, WHITE, fg=NAVY, max_w=900, pad_y=20, radius=28, min_w=wide),
+                 'good': with_shadow(pill(lb, 60, GREEN, fg=WHITE, max_w=900, pad_y=20, radius=28, min_w=wide), blur=10, offset=(0, 6))}
+                for lb in labels]
+        q_top = 690
+        bar_y = q_top + q.size[1] + 30
+        L = {'icon': icon, 'q': q, 'opts': opts, 'icon_y': q_top - 85, 'q_cy': q_top + q.size[1] / 2, 'bar_y': bar_y,
+             'opt_y0': bar_y + 100, 'opt_dy': 128}
+        if r.get('_photo') is not None:   # the reveal picture: the whole picture (never cropped) on a card
+            pic = fit_contain(on_backdrop(r['_photo']), 900, 600).convert('RGBA')
+            card, mask = self._card(*pic.size)
+            pic.putalpha(mask)
+            L.update({'pic': pic, 'pcard': card})
+            if r.get('_photo_credit'):
+                author, _, lic = str(r['_photo_credit']).rpartition(', ')
+                author = author if len(author) <= 34 else author[:32].rstrip(' ,(') + '…'
+                txt = f'PHOTO: {author}, {lic}' if author else f'IMAGE: {lic}'
+                L['credit'] = text_layer(txt, 22, fill=(255, 255, 255, 225), stroke=3, stroke_fill=(0, 0, 0, 170),
+                                         max_w=pic.size[0] - 40, min_size=14)
+        return L
 
     def _prep_wyr(self, r):
         L = {
@@ -1065,6 +1098,32 @@ class PopRenderer(QuizRenderer):
             ph = small.resize((w, h), Image.BILINEAR)
         return ph
 
+    _prep_nightcity = _prep_cityphoto   # night skyline photos: the cityphoto card, its own palette / titles
+
+    def _prep_cuisine(self, r):
+        """Guess the dish: the cityphoto card; the reveal shows the dish's country (flag + name) and the dish name."""
+        photo = fit_contain(on_backdrop(media.fetch_image(r['image'])), 940, 600)
+        card, mask = self._card(*photo.size)
+        ans, _ = self._answer_pill(r['name'])
+        iso = str(r.get('iso2') or '').upper()
+        label = text_layer(str(r.get('country') or '').upper(), 50, fill=WHITE, stroke=6)
+        try:
+            flag = flag_card(iso, 84, 58, border=4, radius=8)
+        except Exception:  # noqa: BLE001  (no flag file: the country name alone)
+            flag = None
+        if flag is not None:
+            country = Image.new('RGBA', (flag.size[0] + label.size[0] - 30, max(flag.size[1], label.size[1])), (0, 0, 0, 0))
+            country.alpha_composite(flag, (0, (country.size[1] - flag.size[1]) // 2))
+            country.alpha_composite(label, (flag.size[0] - 30, (country.size[1] - label.size[1]) // 2))
+        else:
+            country = label
+        fact = text_layer(r['fact'].upper(), 44, fill=self.accent, stroke=6, max_w=980) if r.get('fact') else None
+        author, _, lic = str(r.get('credit') or '').rpartition(', ')
+        author = author if len(author) <= 34 else author[:32].rstrip(' ,(') + '…'
+        credit = text_layer(f'PHOTO: {author}, {lic}' if author else f'PHOTO: {lic}', 22, fill=(255, 255, 255, 215), stroke=3,
+                            stroke_fill=(0, 0, 0, 160), max_w=photo.size[0] - 40, min_size=14) if r.get('credit') else None
+        return {'photo': photo, 'card': card, 'mask': mask, 'answer': ans, 'country': country, 'fact': fact, 'credit': credit}
+
     def _draw_cityphoto(self, frame, i, tl, q, pop, L):
         cx, cy = W / 2, 868
         s = 0.92 + 0.08 * pop
@@ -1083,6 +1142,12 @@ class PopRenderer(QuizRenderer):
             put(frame, L['answer'], W / 2, 1345, s=max(0.01, ease_out_back((rt - 0.05) / 0.3)))
             if L['fact'] is not None:
                 put(frame, L['fact'], W / 2, 1448, a=clamp((rt - 0.2) / 0.25))
+
+    def _draw_nightcity(self, frame, i, tl, q, pop, L):
+        self._draw_cityphoto(frame, i, tl, q, pop, L)
+
+    def _draw_cuisine(self, frame, i, tl, q, pop, L):
+        self._draw_cityphoto(frame, i, tl, q, pop, L)
 
     @staticmethod
     def _spectrum(a):
@@ -1438,27 +1503,39 @@ class PopRenderer(QuizRenderer):
 
     def _draw_trivia(self, frame, i, tl, q, pop, L):
         r = self.plan['rounds'][i]
-        put(frame, L['icon'], W / 2, 640, s=0.8 + 0.2 * pop)
-        put(frame, L['q'], W / 2, 800 + L['q'].size[1] / 2 - 40)
-        y0 = 1010
+        rt = tl - q
+        pic = 'pic' in L
+        # the reveal: the right option turns green (the others dim), then at TRIVIA_PIC_AT the question and the wrong
+        # options make room, the picture of the answer pops in and the green answer slides under it
+        g = ease_out_cubic((rt - TRIVIA_PIC_AT) / 0.3) if (pic and rt >= TRIVIA_PIC_AT) else 0.0
+        if g < 1:
+            put(frame, L['icon'], W / 2, L['icon_y'], s=0.8 + 0.2 * pop, a=1 - g)
+            put(frame, L['q'], W / 2, L['q_cy'], a=1 - g)
         for k, o in enumerate(L['opts']):
-            t_k = tl + self.pop_offset - 0.2 - 0.1 * k
-            s = ease_out_back(t_k / 0.3)
-            y = y0 + k * 118
-            if tl >= q:
-                rt = tl - q
+            y = L['opt_y0'] + k * L['opt_dy']
+            if rt >= 0:
                 if k == r['answer']:
-                    put(frame, o['good'], W / 2, y, s=1 + 0.05 * math.sin(clamp(rt / 0.3) * math.pi))
-                else:
-                    put(frame, o['base'], W / 2, y, a=1 - 0.6 * clamp(rt / 0.25))
+                    put(frame, o['good'], W / 2, y + (TRIVIA_ANS_Y - y) * g, s=1 + 0.05 * math.sin(clamp(rt / 0.3) * math.pi))
+                elif g < 1:
+                    put(frame, o['base'], W / 2, y, a=(1 - 0.6 * clamp(rt / 0.25)) * (1 - g))
             else:
-                put(frame, o['base'], W / 2, y, s=max(0.01, s))
+                t_k = tl + self.pop_offset - 0.2 - 0.1 * k
+                put(frame, o['base'], W / 2, y, s=max(0.01, ease_out_back(t_k / 0.3)))
+        if pic and rt >= TRIVIA_PIC_AT:
+            pt = rt - TRIVIA_PIC_AT
+            s = 0.85 + 0.15 * ease_out_back(pt / 0.35)
+            a = clamp(pt / 0.15)
+            put(frame, L['pcard'], W / 2, TRIVIA_PIC_Y, s=s, a=a)
+            put(frame, L['pic'], W / 2, TRIVIA_PIC_Y, s=s, a=a)
+            if 'credit' in L:
+                put(frame, L['credit'], W / 2, TRIVIA_PIC_Y + L['pic'].size[1] / 2 + 34, a=clamp((pt - 0.3) / 0.3))
         if tl < q:
             frac = clamp((q - tl) / q)
             d = ImageDraw.Draw(frame)
-            bar(d, 140, 935, 940, 953, (255, 255, 255, 60))
+            y = int(L['bar_y'])
+            bar(d, 140, y - 9, 940, y + 9, (255, 255, 255, 60))
             col = (255, 72, 96) if (q - tl) <= 1.0 else self.accent
-            bar(d, 140, 935, 140 + int(800 * frac), 953, col + (255,))
+            bar(d, 140, y - 9, 140 + int(800 * frac), y + 9, col + (255,))
 
     def _draw_wyr(self, frame, i, tl, q, pop, L):
         rt = tl - q
@@ -1577,6 +1654,41 @@ class PopRenderer(QuizRenderer):
             else:
                 print(f"emoji media skipped: {r.get('answer')}: {str(err)[:160]}", file=sys.stderr)
         self.fetch_log.update({'media': f'{ok}/{len(rounds)}', 'clips': sum(bool(r.get('_clip')) for r in rounds)})
+
+    def _load_trivia_visuals(self):
+        """
+        Owner 2026-10-21: every trivia reveal shows the actual thing (city, landmark, dish, idol, character, show).
+        Each round's `image` query is fetched (photo_for); a round without a usable picture is DROPPED and the
+        closest spare (same difficulty) takes its place. Fewer than 3 rounds with pictures: the render fails
+        (the pipeline then falls back to another format), so a text-only trivia never goes out.
+        """
+        import sys
+        rounds = self.plan['rounds']
+        want = int(self.plan.get('want') or len(rounds))
+        res = media.run_parallel(lambda r: photo_for(r.get('image') or '') if r.get('image') else (None, 'no image query'),
+                                 rounds, workers=4, budget=90.0)
+        got, pages = {}, set()
+        for k, r in enumerate(rounds):
+            out, err = res.get(k, (None, 'time budget used up'))
+            img, info = out if out else (None, err)
+            if img is None or not picture_ok(img):
+                print(f"trivia skipped (no reveal picture): {r.get('question')}: {str(info if img is None else 'blank / tiny picture')[:160]}",
+                      file=sys.stderr)
+                continue
+            page = (info or {}).get('page') or r.get('image')
+            if page in pages:   # the same picture twice in one quiz: keep the first
+                print(f"trivia skipped (same picture as another round): {r.get('question')}", file=sys.stderr)
+                continue
+            pages.add(page)
+            r['_photo'], r['_photo_credit'] = img, (info or {}).get('credit')
+            r['photoCredit'] = {'option': r['options'][r['answer']], 'credit': (info or {}).get('credit'), 'page': (info or {}).get('page')}
+            got[k] = r
+        kept = keep_ramp(rounds, got, want)
+        self.fetch_log.update({'photos': f'{len(got)}/{len(rounds)}', 'kept': len(kept)})
+        if len(kept) < min(3, want):
+            raise RuntimeError(f'trivia: only {len(kept)} rounds have a reveal picture (needs {min(3, want)})')
+        self.plan['rounds'] = kept
+        self._order_rounds()
 
     def _load_wyr_photos(self):
         """A real photo of each round's picked option (snapshot photo, AniList cover or Wikimedia Commons)."""
@@ -1717,6 +1829,8 @@ class PopRenderer(QuizRenderer):
             self._load_emoji_media()
         elif self.fmt == 'wyr':
             self._load_wyr_photos()
+        elif self.fmt == 'trivia':
+            self._load_trivia_visuals()
         elif self.fmt in EXTRA_FORMATS:
             self._load_extras()
         self.fetch_log['fetchSec'] = round(time.time() - t0, 1)
@@ -1890,6 +2004,22 @@ def _clip_rounds(rounds, want, fmt='opening', budget=CLIP_BUDGET, log=None):
     return out
 
 
+def keep_ramp(rounds, got, want):
+    """The first `want` rounds are the planned ramp, the rest spares: a failed round (not in `got`) is replaced by the
+    spare closest to its difficulty."""
+    spares = [k for k in sorted(got) if k >= want]
+    out = []
+    for j in range(min(want, len(rounds))):
+        if j in got:
+            out.append(got[j])
+        elif spares:
+            d = int(rounds[j].get('difficulty', 2))
+            k = min(spares, key=lambda s: (abs(int(rounds[s].get('difficulty', 2)) - d), s))
+            spares.remove(k)
+            out.append(got[k])
+    return out
+
+
 def _opening_rounds(rounds, want):
     return _clip_rounds(rounds, want, 'opening')
 
@@ -2042,19 +2172,26 @@ def wyr_label(r, side):
 
 
 def wyr_photo(r, side):
+    """(PIL image, {'credit', 'page'}) of a would-you-rather option (see photo_for); without a query, a city named in the option."""
+    return photo_for(str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip(), str(r[side]))
+
+
+def photo_for(q, text=''):
     """
-    (PIL image, {'credit', 'page'}) of the option: imageQueryA / imageQueryB is 'city:<name>' (city
-    snapshot), 'anime:<title>' (AniList cover), 'character:<name>', 'idol:<name or group>',
-    'file:<Commons file>' or a Wikimedia Commons search; without one, a city named in the option.
+    (PIL image, {'credit', 'page'}) or (None, reason) for an image query: 'city:<name>' (city snapshot),
+    'anime:<title>' (AniList cover), 'character:<name>' (AniList), 'idol:<name>' (idol snapshot),
+    'group:<K-pop group>' (a member's snapshot photo; pin real group photos as file:),
+    'vtuber:<name>' (official portrait from the VTuber snapshot), 'file:<Commons file>' or a Wikimedia
+    Commons search. An empty query looks for a city named in `text`.
     """
-    q = str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip()
+    q = str(q or '').strip()
     kind, _, val = q.partition(':')
-    if kind not in ('city', 'anime', 'character', 'idol', 'file', 'commons'):
+    if kind not in ('city', 'anime', 'character', 'idol', 'group', 'vtuber', 'file', 'commons'):
         kind, val = ('commons', q) if q else ('', '')
     val = val.strip()
     f = media._fold
     if kind in ('city', ''):
-        name = val or next((c['name'] for c in _asset('city-photos.json', 'cities') if f(c['name']).strip() in f(r[side])), None)
+        name = val or next((c['name'] for c in _asset('city-photos.json', 'cities') if f(c['name']).strip() in f(text)), None)
         c = next((c for c in _asset('city-photos.json', 'cities') if name and f(c['name']) == f(name)), None)
         if c:
             return media.fetch_image(c['image']), {'credit': c.get('credit'), 'page': c.get('page')}
@@ -2069,9 +2206,20 @@ def wyr_photo(r, side):
         return media.fetch_image(a['cover']), {'credit': 'AniList', 'page': f"https://anilist.co/anime/{a['id']}"}
     if kind == 'character':
         c = next((c for c in _asset('anime-characters.json', 'characters') if f(c['name']) == f(val)), None)
-        if not c or c.get('nsfw'):
+        if not c or c.get('nsfw') or any(same_series(c.get('anime'), s) for s in SCENE_SKIP):
             return None, f'no character {val}'
         return media.fetch_image(c['image']), {'credit': 'AniList', 'page': f"https://anilist.co/character/{c['id']}"}
+    if kind == 'vtuber':
+        c = next((c for c in _asset('vtubers.json', 'vtubers') if f(c['name']) == f(val)), None)
+        if not c or not c.get('image'):
+            return None, f'no VTuber {val}'
+        return media.fetch_image(c['image']), {'credit': 'Virtual YouTuber Wiki (official art)', 'page': c.get('page')}
+    if kind == 'group':   # a member's reviewed snapshot photo (a Commons search for 'BTS' found a radio mast): pin group photos with file:
+        members = [c for c in _asset('kpop-idols.json', 'idols') if f(c.get('group') or '') == f(val) and c.get('image')]
+        if not members:
+            return None, f'no photo of {val}'
+        c = members[0]
+        return media.fetch_image(c['image']), {'credit': c.get('credit'), 'page': c.get('page')}
     if kind == 'idol':
         idols = _asset('kpop-idols.json', 'idols')
         c = next((c for c in idols if f(c['name']) == f(val)), None)
@@ -2079,6 +2227,13 @@ def wyr_photo(r, side):
             return media.fetch_image(c['image']), {'credit': c.get('credit'), 'page': c.get('page')}
         kind, val = 'commons', val
     return media.commons_photo(('file:' + val) if kind == 'file' else val)
+
+
+def picture_ok(img):
+    """A reveal picture worth showing: big enough and not a flat / blank image."""
+    if img is None or min(img.size) < 160:
+        return False
+    return float(np.asarray(img.convert('L').resize((64, 64))).std()) > 12.0
 
 
 POP2 = os.environ.get('POP2_DIR') or os.path.join(HERE, 'assets', 'pop2')
@@ -2145,8 +2300,9 @@ MEDIA_FILES = {'character': ('anime-characters.json', 'characters'), 'idol': ('k
                'voice': ('voice-lines.json', 'voices'), 'cityphoto': ('city-photos.json', 'cities'),
                'vtuber': ('vtubers.json', 'vtubers'), 'song': ('songs.json', 'songs'),
                'silhouette': ('character-extras.json', 'silhouette'), 'eyes': ('character-extras.json', 'eyes'),
-               'outfit': ('character-extras.json', 'outfit')}
-MEDIA_TOPIC = {'idol': 'kpop', 'cityphoto': 'asia', 'vtuber': 'vtubers'}
+               'outfit': ('character-extras.json', 'outfit'),
+               'nightcity': ('night-city-photos.json', 'cities'), 'cuisine': ('cuisine.json', 'dishes')}
+MEDIA_TOPIC = {'idol': 'kpop', 'cityphoto': 'asia', 'vtuber': 'vtubers', 'nightcity': 'asia', 'cuisine': 'food'}
 SONG_TOPICS = {'kpop': ('kpop',), 'anime': ('anime',), 'mixed': ('kpop', 'anime', 'jpop', 'cpop')}
 # clips can fail to download: spare candidates per level (hard shows fail most often: fewer uploads)
 SPARES = {'opening': [2, 3, 2, 3, 1], 'scene': [3, 3, 2, 3, 1], 'voice': [3, 2, 3, 1, 2, 1], 'song': [2, 3, 1, 2, 3],
@@ -2339,6 +2495,8 @@ def plan_from_bank(fmt, topic=None, seed=None, n=None, country=None, edition=Non
             rounds.append({**c, 'answer': c['name']})
         return {'format': 'city', 'topic': country, 'seed': seed, 'rounds': rounds}
     items = bank[fmt]
+    if fmt == 'trivia':   # only questions with a reveal picture (owner 2026-10-21)
+        items = [i for i in items if i.get('image')]
     topics = sorted({i['topic'] for i in items})
     topic = topic or rng.choice(topics)
     pool = [i for i in items if i['topic'] == topic]
@@ -2346,11 +2504,13 @@ def plan_from_bank(fmt, topic=None, seed=None, n=None, country=None, edition=Non
     if fmt == 'wyr':
         rounds = rng.sample(pool, min(n, len(pool)))
     else:
-        ramp = [1, 1, 2, 2, 3][:n]
+        ramp = [1, 1, 2, 2, 3][:n] + (TRIVIA_SPARES if fmt == 'trivia' else [])
         rounds, used = [], set()
         for d in ramp:
+            if len(used) >= len(pool):
+                break
             cand = [i for i in pool if i.get('difficulty', 2) == d and id(i) not in used] or [i for i in pool if id(i) not in used]
             it = rng.choice(cand)
             used.add(id(it))
             rounds.append(it)
-    return {'format': fmt, 'topic': topic, 'seed': seed, 'rounds': rounds}
+    return {'format': fmt, 'topic': topic, 'seed': seed, 'rounds': rounds, **({'want': n} if fmt == 'trivia' else {})}

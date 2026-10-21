@@ -134,7 +134,55 @@ function validateTitle(title, rules = {}) {
   for (const a of rules.forbidden || []) {
     if (a && squash(a).length > 3 && contains(t, a)) { reasons.push('reveals an answer'); break; }
   }
+  if (rules.natural) reasons.push(...dumpReasons(t, rules));
   return { ok: !reasons.length, reasons };
+}
+
+// words that make a phrase read as language rather than a keyword list ("how many can you get", "guess the city from one photo")
+const GLUE_WORDS = new Set(('a an the you your yours i me my we our can cant could how many much who whom what which where when why is are am was '
+  + 'were be do does did get gets got only real true fans fan these this that those it its in on of to from for by with and or but if '
+  + 'than then before after at all every each guess name know find spot pass beat try make tell see hear say just even still really '
+  + 'quiz edition challenge test vs versus easy hard harder hardest impossible level round one two three four five no not ever most '
+  + 'nobody anyone everyone people should would rather pick picks choose who whose here there out up so too very').split(' '));
+
+/**
+ * Owner 2026-10-21: "asia city quiz: ice festival capital bund" reads like a keyword dump. A title fails when, outside its
+ * search keyword, it has 3+ words in a row without one glue word, repeats a content word, says "N rounds", or uses a word
+ * from the questions / answers (roundWords) that is not part of the keyword.
+ */
+function dumpReasons(title, rules = {}) {
+  const out = [];
+  let body = norm(stripEmoji(String(title || '')).replace(/#[\p{L}\p{N}_]+/gu, ' '));
+  const kw = norm(rules.keyword || '');
+  if (kw && body.includes(kw)) body = body.replace(kw, ' | ');
+  for (const part of body.split('|')) {
+    const words = part.trim().split(/\s+/).filter(w => w && !/^\d+$/.test(w));
+    let run = 0;
+    for (const w of words) {
+      run = GLUE_WORDS.has(w) ? 0 : run + 1;
+      if (run >= 3) { out.push('reads like a keyword list'); break; }
+    }
+    if (out.length) break;
+  }
+  const content = body.replace('|', ' ').split(/\s+/).filter(w => w.length >= 4 && !GLUE_WORDS.has(w));
+  if (new Set(content).size < content.length) out.push('repeats a word');
+  if (/\b\d+\s+(rounds?|questions?|levels?)\b/.test(body)) out.push('"N rounds" filler');
+  const kwWords = new Set(kw.split(' '));
+  const leak = (rules.roundWords || []).find(w => !kwWords.has(w) && new RegExp(`\\b${w}\\b`).test(body));
+  if (leak) out.push(`uses a word from the questions ("${leak}")`);
+  return out;
+}
+
+/** Names in the rounds (capitalised words that do not start a question: "Bund", "Kyoto", "Gojo") a title should not list. */
+function roundWordsOf(text) {
+  const out = new Set();
+  for (const seg of String(text || '').split(/[;?!.]\s*/)) {
+    seg.split(/\s+/).slice(1).forEach(tok => {
+      const w = norm(tok);
+      if (/^\p{Lu}/u.test(tok) && w.length >= 4 && !GLUE_WORDS.has(w) && !/\s/.test(w)) out.add(w);
+    });
+  }
+  return [...out];
 }
 
 /** On-video title: short, instantly readable, Latin letters only, no emoji (they render as squares). */
@@ -194,6 +242,7 @@ function validEmoji(e) {
 }
 
 module.exports = {
+  dumpReasons, roundWordsOf, GLUE_WORDS,
   SAD_EMOJI, ENERGETIC_EMOJI, GENERIC_TAGS,
   len, clean, stripEmoji, emojiList, hashtagsIn, norm, squash, contains, slugTag, hasSad, unsad,
   fill, placeholders, validateTitle, validateOnVideo, validateLine, validTag, validEmoji,

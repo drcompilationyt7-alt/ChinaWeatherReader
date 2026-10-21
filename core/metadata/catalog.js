@@ -204,6 +204,7 @@ const LONG_EDIT = editSpec({
 const QUIZ = {
   channel: 'quiz',
   channelName: 'Asian Pop Quiz (anime, K-pop and Asia quiz Shorts)',
+  naturalTitles: true,   // owner 2026-10-21: LLM titles must read as natural English, never a keyword list (rules.dumpReasons)
   describe: f => `A ${f.n}-round ${f.format} quiz (${f.topicLabel || f.topic || f.theme}): ${f.roundsText || 'guess before the answer is revealed'}.`,
   keyword: f => lower(f.keyword),
   must: f => [[].concat(f.any && f.any.length ? f.any : [lower(f.keyword)])],

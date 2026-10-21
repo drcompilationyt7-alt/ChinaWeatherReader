@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const learn = require('../core/learning-models');
-const { themePool, loadThemes } = require('./pop-quiz-content');
+const { themePool, loadThemes, hasRevealImage } = require('./pop-quiz-content');
 
 const ROOT = path.join(__dirname, '..');
 const QA = path.join(ROOT, 'core', 'quiz', 'qa_guard.py');
@@ -90,6 +90,8 @@ async function checkPlan(plan, need) {
   if (rounds.length < need) out.push(`plan has ${rounds.length} rounds, needs ${need}`);
   rounds.forEach((r, i) => { if (!real(roundLabel(r))) out.push(`round ${i + 1} has no answer`); });
   out.push(...editionProblems(plan || {}));
+  // owner 2026-10-21: a trivia answer reveal always shows a picture of the answer
+  if (plan && plan.format === 'trivia') rounds.forEach((r, i) => { if (!hasRevealImage(r)) out.push(`trivia round ${i + 1} has no reveal picture query`); });
   const files = rounds.flatMap(localFiles);
   if (files.length) {
     const qa = await runQA(['--images', files.join(',')]);
@@ -108,6 +110,9 @@ async function checkRender(res, need) {
   const floor = Math.min(need, MIN_ROUNDS);
   if (rounds.length < floor) out.push(`video has ${rounds.length} rounds, needs at least ${floor}`);
   rounds.forEach((r, i) => { if (!real(roundLabel(r))) out.push(`rendered round ${i + 1} has no answer`); });
+  if (res && res.plan && res.plan.format === 'trivia') {
+    rounds.forEach((r, i) => { if (!r.photoCredit) out.push(`trivia round ${i + 1} was rendered without its reveal picture`); });
+  }
   if (!res || !res.path || !fs.existsSync(res.path) || !fs.statSync(res.path).size) {
     out.push('video file missing or empty');
     return out;

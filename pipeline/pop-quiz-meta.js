@@ -10,7 +10,7 @@
  */
 const TOPIC_LABEL = {
   anime: 'Anime', 'kpop song': 'K-Pop Song', kpop: 'K-Pop', vtubers: 'VTuber', cdrama: 'C-Drama & Movie',
-  cities: 'Asia City', food: 'Asian Food', CN: 'China', JP: 'Japan', KR: 'Korea', mixed: 'Asian Pop',
+  cities: 'Asian Cities', food: 'Asian Food', CN: 'China', JP: 'Japan', KR: 'Korea', mixed: 'Asian Pop',
 };
 const clean = s => String(s == null ? '' : s).replace(/[<>]/g, '');
 const shortShow = t => String(t || '').split(/:| -/)[0].replace(/\s*\((tv|\d{4})\)$/i, '').trim();
@@ -31,9 +31,9 @@ const POP_TITLE_TEMPLATES = {
   ],
   trivia: [
     { id: 'trivia-fans', style: 'fans', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Only Real Fans Get ${n(p)}/${n(p)} 🔥`, when: is('kpop', 'anime', 'vtubers') },
-    { id: 'trivia-howwell', style: 'challenge', text: p => `How Well Do You Know ${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : p.topic === 'vtubers' ? 'VTubers' : p.topic === 'cdrama' ? 'Chinese Movies' : 'Asia'}? 🤔` },
+    { id: 'trivia-howwell', style: 'challenge', text: p => `How Well Do You Know ${p.topic === 'kpop' ? 'K-Pop' : p.topic === 'anime' ? 'Anime' : p.topic === 'vtubers' ? 'VTubers' : p.topic === 'cdrama' ? 'Chinese Movies' : p.topic === 'food' ? 'Asian Food' : 'Asian Cities'}? 🤔` },
     { id: 'trivia-ramp', style: 'ramp', text: p => `${TOPIC_LABEL[p.topic]} Quiz: Easy to IMPOSSIBLE 🔥` },
-    { id: 'trivia-casual', style: 'casual', text: p => `${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic === 'vtubers' ? 'vtuber' : 'asia'} quiz but it gets hard fast 🔥` },
+    { id: 'trivia-casual', style: 'casual', text: p => `${p.topic === 'kpop' ? 'kpop' : p.topic === 'anime' ? 'anime' : p.topic === 'vtubers' ? 'vtuber' : p.topic === 'food' ? 'asian food' : 'asian cities'} quiz but it gets hard fast 🔥` },
     { id: 'trivia-holo', style: 'fans', text: () => 'Only True Hololive Fans Get This 🦈', when: p => p.topic === 'vtubers' && p.rounds.some(r => /hololive|gura|pekora|marine/i.test(JSON.stringify(r))) },
   ],
   wyr: [
@@ -91,6 +91,18 @@ const POP_TITLE_TEMPLATES = {
     { id: 'cphoto-ramp', style: 'ramp', text: () => 'Asia City Quiz: Easy to IMPOSSIBLE 🔥' },
     { id: 'cphoto-travel', style: 'fans', text: p => `Only Travel Nerds Get ${n(p)}/${n(p)} ✈️` },
   ],
+  nightcity: [
+    { id: 'ncity-guess', style: 'keyword', text: () => 'Guess the City From Its Night Skyline 🌃' },
+    { id: 'ncity-name', style: 'challenge', text: p => `Can You Name These ${n(p)} Cities at Night? 🌃` },
+    { id: 'ncity-casual', style: 'casual', text: () => 'guess the city by night 🌃✌️' },
+    { id: 'ncity-travel', style: 'fans', text: p => `Only Travel Nerds Get ${n(p)}/${n(p)} 🌃` },
+  ],
+  cuisine: [
+    { id: 'dish-guess', style: 'keyword', text: () => 'Guess the Asian Dish From One Photo 🍜' },
+    { id: 'dish-name', style: 'challenge', text: p => `Can You Name These ${n(p)} Asian Dishes? 🍜` },
+    { id: 'dish-casual', style: 'casual', text: () => 'guess the dish 🍜✌️' },
+    { id: 'dish-foodie', style: 'fans', text: p => `Only Real Foodies Get ${n(p)}/${n(p)} 🥟` },
+  ],
   vtuber: [
     { id: 'vt-guess', style: 'keyword', text: () => 'Guess the VTuber 🤔' },
     { id: 'vt-fans', style: 'fans', text: p => `Only Real VTuber Fans Get ${n(p)}/${n(p)} 🔥` },
@@ -138,7 +150,7 @@ const POP_TITLE_TEMPLATES = {
 
 const FORMAT_HASHTAG = {
   character: '#anime #animequiz #quiz', idol: '#kpop #kpopquiz #quiz', opening: '#anime #animeopening #quiz',
-  cityphoto: '#asia #travel #quiz', vtuber: '#vtuber #hololive #quiz', duel: '#anime #wouldyourather #quiz',
+  cityphoto: '#asia #travel #quiz', nightcity: '#asia #travel #quiz', cuisine: '#asianfood #foodquiz #quiz', vtuber: '#vtuber #hololive #quiz', duel: '#anime #wouldyourather #quiz',
   scene: '#anime #animequiz #quiz', voice: '#anime #animequiz #quiz',
   silhouette: '#anime #animequiz #quiz', eyes: '#anime #animequiz #quiz', outfit: '#anime #animequiz #quiz',
 };
@@ -172,6 +184,8 @@ const BASE_TAGS = ['asian pop quiz', 'quiz', 'trivia', 'shorts quiz', 'asian pop
 function popPlaylist(p) {
   if (p.format === 'song') return p.topic === 'kpop' ? 'Guess the K-Pop Song' : p.topic === 'anime' ? 'Guess the Anime Song' : 'Guess the Song: K-Pop, Anime & J-Pop';
   if (p.format === 'cityphoto') return 'Guess the Asian City From a Photo';
+  if (p.format === 'nightcity') return 'Guess the City at Night';
+  if (p.format === 'cuisine') return 'Guess the Asian Dish';
   if (p.format === 'vtuber') return 'Guess the VTuber';
   if (p.format === 'duel') return 'Anime Duels: Who Would You Pick?';
   if (p.format === 'scene') return 'Guess the Anime From a Scene';
@@ -191,6 +205,8 @@ function popPlaylist(p) {
 function popHook(p) {
   if (p.format === 'song') return `Can you name all ${n(p)} songs from 3 seconds of each?`;
   if (p.format === 'cityphoto') return `Can you name all ${n(p)} Asian cities from a single photo?`;
+  if (p.format === 'nightcity') return `Can you name all ${n(p)} Asian cities from their lights at night?`;
+  if (p.format === 'cuisine') return `Can you name all ${n(p)} Asian dishes from one photo?`;
   if (p.format === 'vtuber') return `Can you name all ${n(p)} VTubers before the picture gets sharp?`;
   if (p.format === 'duel') return 'Pick one each round, then see who anime fans actually picked on AniList.';
   if (p.format === 'scene') return `Can you name all ${n(p)} anime from 4 seconds of their opening?`;
@@ -220,7 +236,8 @@ function popAnswers(p) {
     if (['character', 'silhouette', 'eyes', 'outfit'].includes(p.format)) return `${i + 1}. ${r.name} (${r.anime})`;
     if (p.format === 'idol') return `${i + 1}. ${r.name}${r.group ? ` (${r.group})` : ''}`;
     if (p.format === 'opening' || p.format === 'scene') return `${i + 1}. ${r.title}`;
-    if (p.format === 'cityphoto') return `${i + 1}. ${r.name}, ${COUNTRY[r.iso2] || r.iso2}${r.fact ? ` (${r.fact})` : ''}`;
+    if (p.format === 'cityphoto' || p.format === 'nightcity') return `${i + 1}. ${r.name}, ${COUNTRY[r.iso2] || r.iso2}${r.fact ? ` (${r.fact})` : ''}`;
+    if (p.format === 'cuisine') return `${i + 1}. ${r.name} (${r.country || COUNTRY[r.iso2] || ''})`;
     if (p.format === 'vtuber') return `${i + 1}. ${r.name} (${r.agency}${r.graduated ? ', graduated' : ''})`;
     if (p.format === 'voice') return `${i + 1}. ${r.name} (${r.anime})`;
     if (p.format === 'duel') {
@@ -247,7 +264,14 @@ function popCredits(p) {
         + (ph.length ? `Photos: ${ph.map(r => `${r.photoCredit.option}: ${r.photoCredit.credit}${r.photoCredit.page ? ` ${r.photoCredit.page}` : ''}`).join('; ')}. ` : '')
         + 'Emoji art: Noto Emoji (Apache-2.0).\n';
     }
+    case 'trivia': {   // the reveal pictures (owner 2026-10-21): Commons photos with author + licence, AniList / VTuber wiki art
+      const ph = p.rounds.filter(r => r.photoCredit && r.photoCredit.credit);
+      return (ph.length ? `Pictures on the reveals: ${ph.map(r => `${r.photoCredit.option}: ${r.photoCredit.credit}${r.photoCredit.page ? ` ${r.photoCredit.page}` : ''}`).join('; ')}. ` : '')
+        + 'Emoji art: Noto Emoji (Apache-2.0).\n';
+    }
     case 'idol': return `Photos (Wikimedia Commons): ${p.rounds.map(r => `${r.name}: ${r.credit}`).join('; ')}\n`;
+    case 'nightcity':
+    case 'cuisine':
     case 'cityphoto': return `Photos (Wikimedia Commons, licences as listed): ${p.rounds.map(r => `${r.name}: ${r.credit}${r.page ? ` ${r.page}` : ''}`).join('; ')}\n`;
     case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
       + 'All characters belong to their agencies and creators.\n';
@@ -309,6 +333,8 @@ function popKeyword(p) {
     case 'idol': return k('guess the kpop idol', 'Guess the K-Pop Idol', ['kpop', 'k-pop', 'idol'], '💜');
     case 'opening': return k('guess the anime opening', 'Guess the Anime Opening', ['opening', 'anime', 'otaku'], '🎶');
     case 'cityphoto': return k('guess the city', 'Guess the Asian City', ['city', 'cities'], '📸');
+    case 'nightcity': return k('guess the city', 'Guess the City at Night', ['city', 'cities'], '🌃');
+    case 'cuisine': return k('guess the dish', 'Guess the Dish', ['dish', 'food'], '🍜');
     case 'vtuber': return k('guess the vtuber', 'Guess the VTuber', ['vtuber', 'hololive'], '🦊');
     case 'duel': return k('who would you pick anime', 'Who Would You Pick', ['anime', 'pick'], '⚔️');
     case 'scene': return k('guess the anime', 'Guess the Anime From One Scene', ['anime', 'otaku'], '🎬');
