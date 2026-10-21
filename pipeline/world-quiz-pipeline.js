@@ -28,7 +28,8 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
-const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, topUpEdition, llmJSON } = require('./pop-quiz-content');
+const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, topUpEdition, llmJSON, topicFresh, loadBank } = require('./pop-quiz-content');
+const balancer = require('./quiz-balancer');
 const guard = require('./quiz-guard');
 const { aiNarratorLines, recordAiLines } = require('./pop-narrator-ai');
 const { decay, appendDecision } = require('../core/experiment-log');
@@ -43,6 +44,7 @@ const HISTORY_FILE = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'qui
 
 const GEO_FORMATS = ['flag', 'shape', 'capital', 'bigger', 'crowd'];
 const POP_FORMATS = ['emoji', 'trivia', 'wyr', 'city', 'character', 'idol', 'opening', 'cityphoto', 'vtuber', 'duel', 'scene', 'voice', 'song',
+  'nightcity', 'cuisine',   // nightly-mined pools; off by themselves until the reviewed pool has NEW_POOL_MIN fresh items
   // silhouette / eyes / outfit stay out of the rotation until the owner has reviewed the samples: POP_NEW_FORMATS=1 turns them on
   ...(process.env.POP_NEW_FORMATS === '1' ? ['silhouette', 'eyes', 'outfit'] : [])];
 // QUIZ_FORMATS picks the channel's formats (the quiz channel runs the pop set + Asia geography)
@@ -52,8 +54,8 @@ const isPop = f => POP_FORMATS.includes(f);
 // exploration weights; on the pop channel the geography formats are only a side dish. The new formats
 // (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
-  ? { emoji: 0.3, trivia: 0.15, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.2, opening: 0.3, flag: 0.05, shape: 0.04,
-    cityphoto: 0.15, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.25, eyes: 0.25, outfit: 0.2 }   // new formats: owner 2026-10-12 asked for higher odds
+  ? { emoji: 0.3, trivia: 0.2, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.35, opening: 0.3, flag: 0.05, shape: 0.04,
+    cityphoto: 0.15, nightcity: 0.2, cuisine: 0.25, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.25, eyes: 0.25, outfit: 0.2 }   // new formats: owner 2026-10-12 asked for higher odds
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 // owner 2026-10-15: no format repeats within NO_REPEAT_DAYS uploads, geography at most 1 in GEO_EVERY uploads,
@@ -64,6 +66,8 @@ const EXPLORE_SHARE = Number(process.env.QUIZ_EXPLORE_SHARE || 0.5);
 const GEO_SET = new Set([...GEO_FORMATS, 'city']);
 function blockedFormats(history) {
   const ups = history.uploads || [];
+  // the pop channel: the balancer's rules (no format within NO_REPEAT_DAYS days, nor in the last 3 uploads; the geography cap)
+  if (FORMATS.some(isPop)) return balancer.blockedFormats(ups.filter(u => !u.excluded), { noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
   const out = new Set(ups.slice(-NO_REPEAT_DAYS).map(u => u.format));
   if (FORMATS.some(isPop) && ups.slice(-(GEO_EVERY - 1)).some(u => GEO_SET.has(u.format))) for (const f of GEO_SET) out.add(f);
   return out;
@@ -238,13 +242,46 @@ function pickWeighted(pairs) {
 }
 
 /**
+ * The balancer's never-post-empty gate (pipeline/quiz-balancer.js): a (format, topic) is a candidate only when its stored
+ * pool has a full quiz of fresh real items (plus a spare for trivia, whose rounds can be dropped for a missing picture).
+ * Open-data geography formats are always available; would-you-rather may still be written on demand while an LLM is up.
+ */
+const NEW_POOL_FORMATS = ['nightcity', 'cuisine'];
+const NEW_POOL_MIN = Number(process.env.QUIZ_NEW_POOL_MIN || 15);   // a new format starts once its reviewed pool has 15 fresh items
+function poolAvailability() {
+  let bank = null;
+  try { bank = loadBank(); } catch {}
+  const memo = new Map();
+  const llmUp = process.env.QUIZ_LLM !== 'off' && Object.keys(process.env).some(k => /^(GEMINI|OPENROUTER)_API_KEY(_\d+)?$/.test(k) && process.env[k]);
+  return (f, topic) => {
+    const k = `${f}|${topic}`;
+    if (memo.has(k)) return memo.get(k);
+    let ok;
+    if (GEO_FORMATS.includes(f) || f === 'city') ok = true;
+    else if (!bank) ok = false;
+    else {
+      const need = Math.max(guard.requiredRounds(f, 'standard', LENGTHS) + (f === 'trivia' ? 1 : 0), NEW_POOL_FORMATS.includes(f) ? NEW_POOL_MIN : 0);
+      const n = topicFresh(f, topic, bank);
+      ok = n >= need || (f === 'wyr' && llmUp);
+    }
+    memo.set(k, ok);
+    return ok;
+  };
+}
+
+/**
  * Gaussian Thompson sampling over formats on percentile rewards (how each quiz
  * ranked among our quizzes). 15% of picks explore. Consecutive days rotate: the
  * last upload's format is never picked again right away, and the formats of the
  * last ROTATE_RECENT uploads are drawn less (exploration weight x0.3, Thompson -0.15).
  */
-function pickFormat(stats, history, forced) {
+function pickFormat(stats, history, forced, opts = {}) {
   if (forced && FORMATS.includes(forced)) return { format: forced, why: 'forced' };
+  // the pop channel: type family -> topic -> format (owner 2026-10-20), see pipeline/quiz-balancer.js
+  if (FORMATS.some(isPop) && process.env.QUIZ_BALANCER !== 'off') {
+    const b = pickBalanced(stats, history, opts);
+    if (b) return b;
+  }
   const blocked = blockedFormats(history);
   let allowed = FORMATS.filter(f => !blocked.has(f));
   if (!allowed.length) allowed = FORMATS;
@@ -262,6 +299,35 @@ function pickFormat(stats, history, forced) {
     if (!best || draw > best.draw) best = { f, draw };
   }
   return { format: best.f, why: `thompson ${draws.join(' ')}` };
+}
+
+/** Balanced pick: the balancer chooses family + topic; inside it views steer at most half of the picks (Thompson), the rest
+ * explore with FALLBACK_WEIGHTS x a staleness boost (a format with a strong past reward that has not aired lately). */
+function pickBalanced(stats, history, { available = poolAvailability(), rng = Math.random, now = Date.now() } = {}) {
+  const uploads = (history.uploads || []).filter(u => !u.excluded);
+  const b = balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
+  if (!b.candidates.length) return null;
+  const scored = percentileRewards(scoredQuizUploads(stats, history));
+  const meanReward = f => { const r = scored.filter(u => u.format === f); return r.length ? r.reduce((a, u) => a + u.reward, 0) / r.length : 0.5; };
+  const lastAt = f => { const u = [...uploads].reverse().find(x => x.format === f); return u ? new Date(u.publishAt || u.postedAt).getTime() : 0; };
+  const stale = f => 1 + Math.min(1, (now - lastAt(f)) / (10 * 86400000)) * (meanReward(f) >= 0.6 ? 1.5 : 0.5);
+  const cands = b.candidates;
+  let pick, mode;
+  if (cands.length === 1 || scored.length < 6 || rng() < EXPLORE_SHARE) {
+    const pairs = cands.map(c => [c, (FALLBACK_WEIGHTS[c.format] || 0.1) * stale(c.format)]);
+    let x = rng() * pairs.reduce((a, [, w]) => a + w, 0);
+    pick = pairs.find(([, w]) => (x -= w) <= 0)?.[0] || pairs[pairs.length - 1][0];
+    mode = 'explore';
+  } else {
+    let best = null;
+    for (const c of cands) {
+      const { draw } = weightedDraw(scored.filter(u => u.format === c.format).map(u => ({ x: u.reward, w: u.w })), 0.5, 0.25);
+      if (!best || draw > best.draw) best = { c, draw };
+    }
+    pick = best.c;
+    mode = 'thompson';
+  }
+  return { format: pick.format, topic: pick.topic, bucket: b.bucket, family: b.family, why: `${b.why}; ${mode}` };
 }
 
 function pickTheme(format, forced) {
@@ -500,13 +566,13 @@ async function runWorldQuizPipeline(opts = {}) {
   const lastFormat = (history.uploads[history.uploads.length - 1] || {}).format;
   let hit = !forcedFormat && Math.random() < 0.2 ? findHit(stats, history) : null;
   if (hit && (hit.format === lastFormat || blockedFormats(history).has(hit.format)) && FORMATS.length > 1) hit = null;  // follow-ups obey the no-repeat / geography caps
-  let format, why, theme, length;
+  let format, why, theme, length, balancedTopic = null;
   if (hit && FORMATS.includes(hit.format)) {
     ({ format, theme } = hit);
     length = hit.length || 'standard';
     why = `follow-up to hit "${hit.title}" (${hit.stat.views} views)`;
   } else {
-    ({ format, why } = pickFormat(stats, history, forcedFormat));
+    ({ format, why, topic: balancedTopic = null } = pickFormat(stats, history, forcedFormat));
     theme = pickTheme(format, opts.theme || process.env.QUIZ_THEME);
     length = opts.length || process.env.QUIZ_LENGTH || pickLength(stats, history);
   }
@@ -563,7 +629,8 @@ async function runWorldQuizPipeline(opts = {}) {
     let cTopic = cTheme;
     if (isPop(cand.format)) {
       if (cand.edition) logger.info(`Edition: ${cand.edition}`);
-      const built = await buildPopPlan(cand.format, { topic: hit && cand.format === format ? hit.theme : (opts.topic || null), rounds: LENGTHS[length] || null, edition: cand.edition });
+      const topicFor = hit && cand.format === format ? hit.theme : (opts.topic || (cand.format === format && !cand.edition ? balancedTopic : null));
+      const built = await buildPopPlan(cand.format, { topic: topicFor, rounds: LENGTHS[length] || null, edition: cand.edition });
       cTopic = built.plan.topic;
       cKeys = built.keys;
       const bad = await guard.checkPlan(built.plan, need);
@@ -704,5 +771,5 @@ async function runWorldQuizPipeline(opts = {}) {
   };
 }
 
-module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickLength, findHit, pickTitleTemplate, titleOptions, quizFacts,
+module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickBalanced, poolAvailability, FORMATS, FALLBACK_WEIGHTS, pickLength, findHit, pickTitleTemplate, titleOptions, quizFacts,
   quizMetadata, buildDescription, buildTags, TITLE_TEMPLATES, PLAYLISTS };
