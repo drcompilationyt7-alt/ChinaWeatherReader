@@ -1,0 +1,152 @@
+name: Quiz pool mining (nightly, staging only)
+
+# Nightly candidate mining for the Asian Pop Quiz pools (core/quiz/quiz_pool_grow.py; owner 2026-10-20). STAGING ONLY:
+#   mine     two shards: "light" (Commons city / night-city / dish photos, Wikidata K-pop idols, VTuber wiki portraits, and the
+#            LLM-written + fact-checked emoji / trivia / would-you-rather food + travel pairs / K-pop songs; every picture is
+#            fetched and checked) and "art" (anime theme art through scripts/build-pop-media.py --phase theme: the same
+#            WD14 / on-model / age gates as the live theme pools). Deduped against the live pools in this checkout, the
+#            staged candidates and every rejected key.
+#   publish  one tar per shard (quiz-cand-<date>-<shard>-n<N>.tar) + the merged state -> release `edit-pools-staging`.
+# Nothing reaches the live quiz here: Claude pulls the candidates at the start of a session, reviews the contact sheets and
+# imports (quiz_pool_grow.py pull-staged / import-staged --reject N,N / push-manifests). New formats (nightcity, cuisine) stay
+# off by themselves until their reviewed pools are big enough. Off with the repository variable QUIZ_POOL_MINE=off.
+# 03:30 UTC: after the quiz renders (02:17), clear of the slow-mo mining publish and the 07:17 quiz backup run.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      budget_min:
+        description: 'Mining budget per shard in minutes'
+        required: false
+        default: '40'
+      shards:
+        description: 'Shards to run (light, art or both)'
+        required: false
+        default: 'both'
+
+concurrency:
+  group: quiz-pool-mine
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+  PYTHONIOENCODING: utf-8
+  MEMORY_DIR: memory/quiz-channel   # the channel's used-item log: the LLM avoids what aired
+  OMP_NUM_THREADS: '4'
+  POP_THREADS: '4'
+  POP_MIN_FREE_GB: '0'
+  QUIZ_MEDIA_CACHE: /home/runner/.cache/quiz-media
+  POP_MODELS: /home/runner/.cache/pop_quiz_models
+  CLIP_FINDER_CACHE: /home/runner/.cache/pop_quiz_models
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+  GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+  GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: vars.QUIZ_POOL_MINE != 'off'
+    outputs:
+      shards: ${{ steps.s.outputs.shards }}
+    steps:
+      - id: s
+        run: |
+          case "${{ github.event.inputs.shards || 'both' }}" in
+            light) echo 'shards=["light"]' >> $GITHUB_OUTPUT ;;
+            art) echo 'shards=["art"]' >> $GITHUB_OUTPUT ;;
+            *) echo 'shards=["light","art"]' >> $GITHUB_OUTPUT ;;
+          esac
+
+  mine:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          npm ci || npm install
+          python -m pip install -U pip
+          python -m pip install numpy pillow
+          if [ "${{ matrix.shard }}" = "art" ]; then
+            python -m pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+            python -m pip install onnxruntime opencv-python-headless transformers sentencepiece
+          fi
+      - name: Cache models + build state (art shard)
+        if: matrix.shard == 'art'
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.cache/pop_quiz_models
+            /home/runner/.cache/huggingface
+          key: quiz-mine-art-${{ github.run_id }}
+          restore-keys: |
+            quiz-mine-art-
+            pop-pool-state-
+      - name: State from the staging release
+        run: |
+          mkdir -p /tmp/st
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern quiz-grow-state.json --dir /tmp/st \
+            || echo '{}' > /tmp/st/quiz-grow-state.json
+      - name: Mine (${{ matrix.shard }})
+        run: |
+          python core/quiz/quiz_pool_grow.py selftest
+          python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \
+            --budget-min "${{ github.event.inputs.budget_min || '40' }}" | tail -c 3000
+          du -sh work/out || true
+      - name: Upload the shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-shard-${{ matrix.shard }}
+          path: work/out
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish:
+    needs: [plan, mine]
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: quiz-shard-*
+          path: shards
+      - name: Stage the candidates on the release edit-pools-staging
+        run: |
+          mkdir -p /tmp/st staged
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern quiz-grow-state.json --dir /tmp/st \
+            || echo '{}' > /tmp/st/quiz-grow-state.json
+          python core/quiz/quiz_pool_grow.py publish --artifacts shards --out staged --state /tmp/st/quiz-grow-state.json | tee staged/summary.json
+          { echo "### Quiz pool candidates staged"; echo '```'; cat staged/summary.json; echo '```';
+            echo "Review: python core/quiz/quiz_pool_grow.py pull-staged, then import-staged --reject N,N"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Contact sheets (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-contact-sheets
+          path: shards/*/sheets
+          if-no-files-found: ignore
+          retention-days: 14
