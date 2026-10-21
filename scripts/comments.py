@@ -56,6 +56,8 @@ def owner_replied(tok, thread, me):
 
 def fetch(chan, out):
     tok = token(chan); me, name = own_channel(tok)
+    try: print(chan, "scopes:", http("https://oauth2.googleapis.com/tokeninfo?access_token=" + tok).get("scope"))
+    except SystemExit: pass
     rows, pt, total, titles = [], None, 0, {}
     while True:
         q = dict(part="snippet,replies", allThreadsRelatedToChannelId=me, maxResults=100, textFormat="plainText")
