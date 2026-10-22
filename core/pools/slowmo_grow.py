@@ -39,7 +39,6 @@ import time
 import zlib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import clip_prefilter  # noqa: E402
 
 PREFILTER = os.environ.get('SLOWMO_PREFILTER', '1') != '0'
 
@@ -281,6 +280,7 @@ def selftest(nights=60, per_night=120):
     assert all(len(x) > 140 for x in parts), 'uneven id shards'
     parts6 = [{i for i in ids if vid_shard(i, 6) == k} for k in range(6)]
     assert sum(len(x) for x in parts6) == len(ids) and all(len(x) > 70 for x in parts6), 'uneven 6-way id shards'
+    import clip_prefilter
     assert clip_prefilter.SM['stutter'] > 0 and clip_prefilter.SN['area_min'] > 0
     share = cnt['dreamy_bloom'] / sum(cnt.values())
     assert share >= 0.5, f'dreamy share {share:.2f}'
@@ -430,6 +430,7 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
             if not rs and PREFILTER:
                 # 2026-10-21 cheap pre-filters (stutter / talking / hidden face / garish), calibrated on the by-eye labels
                 try:
+                    import clip_prefilter        # lazy: the publish / plan jobs have no numpy
                     pok, why, feats = clip_prefilter.slowmo_check(os.path.join(vd, it['file']), it)
                     it['prefilter'] = {k: feats.get(k) for k in ('rep', 'jump', 'stutter', 'red', 'blown', 'face_frac', 'talk_sig')}
                     if not pok:
