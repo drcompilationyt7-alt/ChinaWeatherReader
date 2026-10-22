@@ -951,7 +951,9 @@ push from it would upload a pool without them). Queries: +6 suffixes (900 total)
     character, Kanna (child-looking: minors rule) clip with a swipe transition -> likely rejects.
   - **Sound test 39684801171** (6 shards, budget 75): mine done - 70 sources (was 40 at 150 min), 201 minis vision-judged (was 92),
     22 dropped by the pre-filter (too small 10, off-centre 4, impact not at hit 4, wide 4), 14 vision-approved, 0 bot blocks;
-    the swap (sharpen -> stage) was STILL RUNNING at the stop -> expect sound-cand-20261022-n~14.tar on edit-pools-staging.
+    the swap (sharpen -> stage) was CANCELLED at 01:49 UTC (not by the yield agent; after 2 h 40 of sharpening) -> NOTHING staged.
+    The 6 mined shard artifacts (sound-shard-0..5, 14 vision-approved minis) stay on the run for 7 days (to 10-28): re-staging them
+    needs a swap re-run (`gh run rerun 39684801171 --job <swap job id>` reuses the old commit - fine, the swap code did not change).
   - **BACKFILL mode** (8b9e910, workflow_dispatch input backfill=true; staging only): slow-mo 8 shards x 230 min, 14 clips per source,
     a shard stops downloading after 2 bot checks (SLOWMO_BOT_MAX); sound 8 shards, 12 queries / 30 sources / 20 minis per source.
     **Untested except: slow-mo backfill round 1 = run 39704741626, in progress at the stop (its own test).** No further rounds were
@@ -1120,3 +1122,29 @@ inside the tail, round 4 as a strong start), so borderline syllables can still f
   10-21 check: daily runs 08:00 and 13:13 both skipped ("already uploaded" + "prebuilt (done)").
 - 3g queued for 2026-10-24: prebuilt-slowmo-3g.mp4 (md5 = output/newtypes/m3g, 39.4 s, 1080x1920 h264/aac), jvke_golden_hour@v0.85,
   18 clips, "golden hour (slowed) but every frame is an anime girl ✨ #anime".
+
+### 2026-10-22: Kaggle clip scoring (zyo-clipscore) - PAUSED (owner left; nothing run on Kaggle, nothing committed / pushed)
+Owner OK 2026-10-22: Kaggle GPU scores the clips GitHub already staged (no YouTube / cookies on Kaggle), Mon-Thu only (UTC and US
+Eastern), never touch cwr-* / apq-*, kernel `john123abc/zyo-clipscore`, cap 20 GPU h / week (>= 10 h left for other uses).
+- **Written (uncommitted, untested):** `scripts/kaggle/clipscore_kernel.py` (GPU FEATURES only: WD14 swinv2 v3 tags / rating / subject,
+  deepghs anime faces v1.4 s + mouth-region motion, repeat / jump frames + unique drawings/s, hard cuts + dissolve blend fit, colour,
+  cafe_aesthetic, SigLIP so400m prompts; sound: spectral-flux transient vs RAFT motion / acceleration peak, area / centre / spread,
+  cut before the hit, build-up; CONFIG injected by the driver, inputs = public release URLs) and `scripts/clipscore-kaggle.py`
+  (check / run / calib / rescore; day guard, weekly ledger as `clipscore-ledger.json` on edit-pools-staging + memory/clipscore-kaggle.json,
+  per-tar output `clipscore-<tar stem>.json` on edit-pools-staging).
+- **Uploaded:** edit-pools-calib release now has `slowmo-calib.tar` (43 eye-rejected + 8 recently approved slow-mo clips not yet in
+  the pool tars) and `sound-calib-st1021.tar` (the 10-21 staged batch). Labels (44 ok / 43 rej slow-mo; 55 ok / 112 rej sound) are in
+  the scratchpad `zyo/calib/labels.json` (rebuild: approved = live reviewed slowmo rows with media, rejects = manifest status
+  'rejected' in output/edit-pools/_staged; sound = scratchpad hit-calib/labels.json + st10 allow.json, good = 771, 186135).
+- **Kaggle CLI:** use Python 3.11's kaggle.exe (2.2.4; reads ~/.kaggle/access_token). GitHub secret KAGGLE_API_TOKEN and variable
+  KAGGLE_USERNAME (john123abc) are NOT set yet.
+- **Resume steps:** (1) write `core/pools/clipscore.py` (the driver imports it: SCORE_PREFIX='clipscore-', score_name(tar),
+  write_scores(feats, out, gpu_min), summary, rescore_file, verdict from `core/pools/clipscore-thresholds.json`, `calibrate`
+  (gates at the approved extreme + margin, AUC-weighted rank score, female-first bonus for slow-mo, explicit-rating NSFW gate; report
+  precision / recall with 5-fold CV), `review --kind slowmo|sound` (reorder review/index.json, hard fails apart, ffmpeg sheets with
+  scores)); (2) sets.json = [pool-slowmo-summer_glow.tar, pool-slowmo-dreamy_bloom.tar (edit-pools), slowmo-calib.tar -> kind slowmo;
+  hit-calib.tar, sound-calib-st1021.tar -> kind sound]; on Mon-Thu run `clipscore-kaggle.py calib --labels .. --sets ..`, then
+  calibrate; (3) `run` on the staged tars (test); (4) workflow `.github/workflows/clip-score.yml` (workflow_run after "Slow-mo pool
+  mining ..." and "Sound pool growth ...", concurrency group, day / budget gate, pip install kaggle on python 3.11); add the secret
+  via gh from ~/.kaggle/access_token without printing; (5) wire one call to `clipscore review` at the end of slowmo_grow.cmd_pull /
+  sound_refresh.pull_staged (coordinate with the mining agent); then tell the miners they can stage more.
