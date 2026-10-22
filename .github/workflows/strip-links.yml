@@ -1,0 +1,55 @@
+name: Strip description links
+# 2026-10-22: YouTube warned the quiz channel over a description link to a site that also hosts adult content.
+# report = list videos whose description has links (artifact); apply = remove them (description only, backup kept).
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [report, apply]
+        default: report
+      channel:
+        type: choice
+        options: [all, quiz, zero, china]
+        default: all
+permissions:
+  contents: read
+concurrency: strip-links
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      YT_ZERO_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YT_ZERO_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YT_ZERO_REFRESH: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YT_QUIZ_ID: ${{ secrets.QUIZ_YOUTUBE_CLIENT_ID }}
+      YT_QUIZ_SECRET: ${{ secrets.QUIZ_YOUTUBE_CLIENT_SECRET }}
+      YT_QUIZ_REFRESH: ${{ secrets.QUIZ_YOUTUBE_REFRESH_TOKEN }}
+      YT_CHINA_ID: ${{ secrets.CHINA_YOUTUBE_CLIENT_ID }}
+      YT_CHINA_SECRET: ${{ secrets.CHINA_YOUTUBE_CLIENT_SECRET }}
+      YT_CHINA_REFRESH: ${{ secrets.CHINA_YOUTUBE_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/comments.py
+            scripts/strip_links.py
+          sparse-checkout-cone-mode: false
+      - name: Run
+        env:
+          MODE: ${{ inputs.mode }}
+          CHAN: ${{ inputs.channel }}
+          PYTHONIOENCODING: utf8
+        run: |
+          mkdir -p out
+          [ "$CHAN" = all ] && L="quiz zero china" || L="$CHAN"
+          rc=0
+          for c in $L; do python3 scripts/strip_links.py "$MODE" "$c" out || rc=1; done
+          exit $rc
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: strip-links-${{ inputs.mode }}-${{ github.run_id }}
+          path: out/
+          retention-days: 30
