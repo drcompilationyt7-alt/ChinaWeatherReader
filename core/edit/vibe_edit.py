@@ -309,6 +309,19 @@ def main():
         os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
     shots = get_shots()
     res['cooldown_videos'] = cooldowns[0]
+    if kind in VP.REUSE_PRESETS:
+        import clip_rotation as CR
+        rc = CR.config(kind)
+        rot = {k: v for k, v in VP.LAST_ROTATION.items() if k.startswith(kind + '/')}
+        res['clip_rotation'] = {'choice': rot}
+        if rc.get('hard') and rot and all(v.get('mode') == 'hard_cap' for v in rot.values()):
+            # owner 2026-10-22 (sound): variety AND good matches; too few fresh clips for <= cap reuse -> no sound video today
+            fresh = sum(int(v.get('fresh') or 0) for v in rot.values())
+            if fresh < int(rc.get('min_fresh') or 0):
+                res.update(reason=f'pool_too_small: {fresh} fresh clips (< {int(rc["min_fresh"])}) for <= {float(rc["cap"]):.0%} reuse '
+                                  f'of the last {int(rc["window"])} {kind} videos')
+                log(res['reason'])
+                done(2)
     log(f'{kind}/{vibe}: {len(shots)} fresh clips, song {song["id"]} ({song["file"]}), seed {seed}')
     work = os.path.join(a.out, f'work-{kind}-{vibe}')
     os.makedirs(work, exist_ok=True)
@@ -331,7 +344,7 @@ def main():
             res['render_s']['short'] = round(time.time() - t0, 1)
             if not r.get('ok'):
                 res.update(reason=r.get('reason') or 'short_failed', short_report=r)
-                done(2 if str(r.get('reason') or '').startswith('pool_low') else 1)
+                done(2 if str(r.get('reason') or '').startswith(('pool_low', 'pool_too_small')) else 1)
             final = os.path.join(a.out, f'{kind}-{vibe}-short.mp4')
             t0 = time.time()
             WM.burn(r['video'], final, threads=a.threads, rot90=is_rot90(r.get('plan')),

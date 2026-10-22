@@ -121,6 +121,11 @@ function guardRender(type, rep, videoPath, work) {
   const nShots = plan && Array.isArray(plan.shots) ? plan.shots.length - (type === 'slowmo' ? 1 : 0) : 0;   // slow-mo: minus the words-on-black intro
   if (nShots < g.shots) bad.push(`${nShots} shots (< ${g.shots})`);
   if ((rep.clips_short || []).length < Math.ceil(g.shots / 2)) bad.push(`${(rep.clips_short || []).length} distinct clips`);
+  if (type === 'sound' && rep.clip_rotation && rep.clip_rotation.reuse_share != null) {
+    // owner 2026-10-22 "no variety and good match need both": <= SOUND_REUSE_CAP (30 %) of the shots from the last 5 sound videos
+    const cap = Number(process.env.SOUND_REUSE_CAP || 0.30);
+    if (rep.clip_rotation.reuse_share > cap + 1e-6) bad.push(`pool too small: reuse ${Math.round(rep.clip_rotation.reuse_share * 100)} % > ${Math.round(cap * 100)} %`);
+  }
   try {
     const out = execFileSync(python(), [path.join(ROOT, 'core', 'quiz', 'qa_guard.py'), '--video', videoPath, '--samples', '16'],
       { timeout: 300000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
@@ -162,6 +167,11 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   logger.info(`${type} render env: ${Object.entries(tenv).map(([k, v]) => `${k}=${v}`).join(' ')}`);
   const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 90 : 45)), tenv);
   const rep = readJson(path.join(work, 'result.json'), null);
+  if (rep && rep.ok === false && /^pool_too_small/.test(String(rep.reason || ''))) {
+    // the pool cannot give variety (reuse cap) AND good matches today: no sound video, the runner posts stem
+    logger.warn(`${type}: pool too small -> stem fallback (${String(rep.reason).slice(0, 200)})`);
+    throw new Error(`${type} pool too small: ${String(rep.reason).slice(0, 300)}`);
+  }
   if (!rep || rep.ok === false || err) {
     throw new Error(`${type} render failed: ${rep && rep.reason ? rep.reason : ((err && err.message) || 'no result').slice(0, 200)}`);
   }
