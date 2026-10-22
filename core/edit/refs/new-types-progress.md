@@ -1075,3 +1075,23 @@ which the repair dropped -> the 34.93 shot ran 6.8 s over "with me?". Fix: a cut
 back to the start of the strong wave it fell into (37.07 -> 36.00 "with"; checked on the round-4 cut list: 0 bad / 0 missed);
 only when that does not fit is it dropped. Round 5 dispatched; the judge's own Demucs analysis also varies (round 3 heard "me?"
 inside the tail, round 4 as a strong start), so borderline syllables can still flip a run - the guard then posts stem.
+
+### 2026-10-22: blue dry-run rounds 5-6, lyric version bug, prebuilt queue vs late cron, 3g queued (go-live agent)
+- Round 5 (run 39695583283) PASSED 9.77 (11 / 12_sync / 13 = 10, 9_no_sfx 10, 4_mix 8.34) but BY EYE the intro lyrics were the
+  NEXT line ("I'LL WE / FELL / IN / LOVE" over the sung "all that I want this life", ~5 s early). Cause: LRCLIB's blue record is 237 s,
+  within 3 s of the 0.9 version file (238 s), so lyrics.words() took the version file for the song (song_t0 = t0). Fix f9d7e56: a
+  file named <id>@vX (X != 1) skips that shortcut and locate() runs at rate X (rate 1 found no map -> anchor mode). @v1 unchanged.
+  The judge's 3_lyrics only checks onsets / sequence counts, not WHICH words -> it passed the wrong text.
+- Round 6 (run 39699280488, f9d7e56): words correct ("THAT / I / THIS") but NOT PASS 9.38: 3_lyrics 5.87 - "I" is shown at 2.33 s,
+  sung at 0.94 s (whisper: that 0.43, I 0.94, want 1.89, this 3.0, life 3.57; the LRC line starts before the window and the aligner
+  puts "I" on "with"); the one-letter "I" smear also splits into 2 detected entries (judge artifact, 2.23 + 2.33). 1_smooth 8.33
+  (1 duplicate frame 25.27). Guard -> stem fallback, as designed. OPEN: align a partial first line (line start before the window).
+  Review copy: review-shorts/edits/new-types/slowmo_dryrun_blue_9.38.mp4.
+- Sound dry run 39525920973: guard ok; judge_sound locally (FB15, JUDGE_PRE_HI_MS 800) auto 9.1 but strict FAIL on 6_framing 7.2
+  (sharpness x0.45), 8_length 7.2 (25.3 s), 16_drum_onsets 7.0; clip rotation reuse 96 % (26 / 27 from the previous video: only 22
+  fresh pins of 58, the beat-remake planner prefers the recent ones although 22 fresh were offered).
+- Prebuilt queue (773db19): no upload starts at/after 06:30 UTC (the daily fallback owns the day from 07:00) or when meme-history
+  already has a short for today; the item then moves to the next free date (entry.skipped keeps why); backup cron 04:40 UTC.
+  10-21 check: daily runs 08:00 and 13:13 both skipped ("already uploaded" + "prebuilt (done)").
+- 3g queued for 2026-10-24: prebuilt-slowmo-3g.mp4 (md5 = output/newtypes/m3g, 39.4 s, 1080x1920 h264/aac), jvke_golden_hour@v0.85,
+  18 clips, "golden hour (slowed) but every frame is an anime girl ✨ #anime".
