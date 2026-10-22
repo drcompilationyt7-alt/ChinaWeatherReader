@@ -941,6 +941,31 @@ push from it would upload a pool without them). Queries: +6 suffixes (900 total)
   The pre-filter mainly saves vision calls; wide battle shots stay the vision gate's / the review's job. Expected: ~3x sources
   (120 vs 40) and every mini judged -> ~25-35 staged / night at the old 20-25 % review pass -> **~6-9 approved / night**; >= 10
   needs a stricter vision prompt for wide shots (next step) or more Gemini quota.
+- **STATE AT STOP (2026-10-22 ~01:30 UTC, owner leaving; yield agent)**. Commits on main (as drcompilationyt7-alt): 3e54985 (6 shards,
+  queries, pre-filters, Gemini 429 cooldown), b465cf3 (sound selftest env fix; the first sound test 39681486698 failed on it, nothing
+  mined / staged), 3f6a3a6 (slowmo_grow imports clip_prefilter lazily: the publish job has no numpy), 8b9e910 (BACKFILL mode, see below).
+  - **Slow-mo test 39687878623** (6 shards, budget 110 min): 214 sources (~400 expected at the nightly 200 min), 125 imported -> 10 clean
+    (cine gate colour / talk still drops most; pre-filter dropped 3), 0 bot checks. Its publish job crashed (numpy, fixed in 3f6a3a6), so
+    the 6 tars were published BY HAND from the run artifacts: **slowmo-cand-20261022-s0..s5 = sg 9 / db 1** on edit-pools-staging,
+    NOT reviewed yet. Sheet glance: Waguri x2 look good; Marin open-mouth laugh (talk risk), Shikimori face hidden behind a second
+    character, Kanna (child-looking: minors rule) clip with a swipe transition -> likely rejects.
+  - **Sound test 39684801171** (6 shards, budget 75): mine done - 70 sources (was 40 at 150 min), 201 minis vision-judged (was 92),
+    22 dropped by the pre-filter (too small 10, off-centre 4, impact not at hit 4, wide 4), 14 vision-approved, 0 bot blocks;
+    the swap (sharpen -> stage) was STILL RUNNING at the stop -> expect sound-cand-20261022-n~14.tar on edit-pools-staging.
+  - **BACKFILL mode** (8b9e910, workflow_dispatch input backfill=true; staging only): slow-mo 8 shards x 230 min, 14 clips per source,
+    a shard stops downloading after 2 bot checks (SLOWMO_BOT_MAX); sound 8 shards, 12 queries / 30 sources / 20 minis per source.
+    **Untested except: slow-mo backfill round 1 = run 39704741626, in progress at the stop (its own test).** No further rounds were
+    dispatched (driver script stopped: scratchpad backfill_driver.sh, not committed). Sound backfill never ran.
+  - Cookie account: one spare account (YOUTUBE_COOKIES_EDIT) serves both miners; 0 bot checks so far at 6 + 6 jobs. Running slow-mo and
+    sound backfill concurrently (16 jobs) is the first real load test; a second spare account to rotate would de-risk it (owner).
+  - Sound >= 10 / night likely needs a stricter vision prompt for wide battle shots and / or more Gemini quota (8 shards x ~60 minis x
+    2 models per round).
+  - **Resume**: (1) review: `python core/pools/slowmo_grow.py pull-staged` -> by-eye -> `GH_TOKEN=$(gh auth token -u drcompilationyt7-alt)
+    python core/pools/slowmo_grow.py import-staged --reject N,N --delete-remote` -> `push-manifests`; sound: `python
+    core/pools/sound_refresh.py pull-staged` -> dispatch edit-pool-refresh.yml with import_tars / reject. (2) check 39704741626
+    (bot checks: grep BOT-CHECK in the mine logs; publish ok?). (3) backfill rounds: `gh workflow run slowmo-pool-mine.yml -f
+    backfill=true -f force=true` and `gh workflow run edit-pool-refresh.yml -f backfill=true -f dry_run=false -f budget_min=200`
+    (as drcompilationyt7-alt), one round at a time per workflow; stop if a round logs >= 3 bot checks.
 
 **Pool upload**: `push --preset slowmo` (summer_glow 29 reviewed clean + dreamy_bloom 12; cine_reject media skipped) -> edit-pools.
 
