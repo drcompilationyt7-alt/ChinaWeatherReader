@@ -513,7 +513,7 @@ function buildDescription(plan, hook, opts = {}) {
   return `${opts.head || `${hook} Comment your score 👇`}\n\n`
     + '🌍 A new world quiz every day: flags, country shapes, capitals and the real size of countries.\n\n'
     + `Answers (no peeking!):\n${answersBlock(plan)}\n\n`
-    + 'Data: Wikidata (CC0), Natural Earth, flagcdn.com\n'
+    + 'Data: Wikidata (CC0), Natural Earth, Flagpedia\n'
     + `${opts.hashtags || HASHTAGS[plan.format]}`;
 }
 

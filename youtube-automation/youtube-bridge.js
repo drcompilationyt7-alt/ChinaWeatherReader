@@ -18,6 +18,7 @@ const path = require('path');
 const fs = require('fs');
 const { Logger } = require('../core/logger');
 const config = require('../core/config');
+const { stripLinks, stripLocalizations } = require('../core/link-guard');  // no external links (policy warning 2026-10-22)
 
 class YouTubeBridge {
   constructor() {
@@ -162,7 +163,9 @@ class YouTubeBridge {
       throw new Error('YouTube not authenticated. Run: node youtube-automation/setup-youtube');
     }
 
-    const { videoPath, title, description, tags, thumbnailPath, captionsPath, categoryId, localizations } = params;
+    const { videoPath, title, tags, thumbnailPath, captionsPath, categoryId } = params;
+    const description = stripLinks(params.description);
+    const localizations = stripLocalizations(params.localizations);
 
     this.logger.info(`Uploading: "${title?.substring(0, 60) || 'Untitled'}"`);
 
@@ -357,6 +360,7 @@ class YouTubeBridge {
    * @returns {Promise<Object|null>} - { commentId, text } or null on failure
    */
   async postComment(videoId, text) {
+    text = stripLinks(text);
     if (!this.authenticated) {
       this.logger.warn('YouTube not authenticated — cannot post comment');
       return null;

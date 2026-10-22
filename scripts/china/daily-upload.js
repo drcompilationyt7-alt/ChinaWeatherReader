@@ -25,6 +25,7 @@ const path = require('path');
 const { pipeline } = require('stream/promises');
 const { Readable } = require('stream');
 const { google } = require('googleapis');
+const { stripLinks } = require('../../core/link-guard');  // no external links (policy warning 2026-10-22)
 
 const REPO = process.env.GITHUB_REPOSITORY;
 const GH_TOKEN = process.env.GH_TOKEN;
@@ -139,7 +140,7 @@ async function main() {
     const body = {
       snippet: {
         title: item.title,
-        description: item.description || '',
+        description: stripLinks(item.description || ''),
         tags: item.tags || [],
         categoryId: item.categoryId || DEFAULT_CATEGORY[item.type] || '22',
         defaultLanguage: 'en',

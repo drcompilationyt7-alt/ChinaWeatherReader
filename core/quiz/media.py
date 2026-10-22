@@ -592,6 +592,7 @@ def _commons_meta(page):
     ii = (page.get('imageinfo') or [{}])[0]
     meta = ii.get('extmetadata') or {}
     artist = re.sub(r'\s+', ' ', re.sub('<[^>]+>', '', (meta.get('Artist') or {}).get('value', ''))).strip()
+    artist = re.sub(r'\s+', ' ', re.sub(r'(?:https?://|www\.)\S+', '', artist)).strip(' ,;()')   # no URLs on screen / in credits
     return {'url': ii.get('thumburl') or ii.get('url'), 'page': ii.get('descriptionurl'), 'file': page.get('title', '')[5:],
             'width': ii.get('width') or 0, 'height': ii.get('height') or 0, 'mime': ii.get('mime', ''),
             'license': (meta.get('LicenseShortName') or {}).get('value', ''), 'author': artist[:80] or 'Wikimedia Commons',
