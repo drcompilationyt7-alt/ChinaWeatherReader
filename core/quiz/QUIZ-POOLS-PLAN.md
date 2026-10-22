@@ -5,6 +5,10 @@
 - Nightly mining: core/quiz/quiz_pool_grow.py + pipeline/quiz-pool-llm.js + .github/workflows/quiz-pool-mine.yml (03:30 UTC, QUIZ_POOL_MINE=off stops it).
 - New formats nightcity / cuisine are wired (renderer, pipeline, meta) and stay off until 15 reviewed items each.
 - Not done: would-you-rather showing photos on BOTH sides in the renderer (the mined food / travel pairs already carry both checked photos).
+- Reuse rule (be8cfdf): items return after QUIZ_REUSE_GAP=8 uploads, LRU first, per exact picture; never one name twice in a video.
+- First review 2026-10-22 (9f991e2): +13 city photos, +21 night skylines, +29 dishes, +18 idols -> nightcity + cuisine live.
+- Known limits: the VTuber wiki answers 403 to GitHub runners (mine VTubers on the PC: `mine --shard people --cats vtuber`);
+  Gemini free quota can be used up by late UTC (the 03:30 LLM categories then get little).
 - Session routine: `python core/quiz/quiz_pool_grow.py pull-staged` -> look at output/quiz-pool-review/review/*.jpg + index.txt ->
   `import-staged --reject N,N --delete-remote` -> commit the changed core/quiz/assets files (+ pop2/ for theme art) -> `push-manifests`.
 
