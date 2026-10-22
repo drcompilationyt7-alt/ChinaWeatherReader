@@ -18,7 +18,7 @@ from comments import API, http, token, get  # noqa: E402
 CREDIT = "All images, clips and songs belong to their original creators and are shown for quiz and identification purposes."
 TLDS = ("com|net|org|us|jp|kr|cn|tw|hk|io|co|me|tv|gg|moe|be|ly|app|info|xyz|ai|uk|de|fm|link|site|to|cc|ru|fr|ca|au|"
         "in|dev|page|art|club|top|edu|gov")
-URL_RE = re.compile(r"(?:https?://|www\.)[^\s<>()\"]+", re.I)
+URL_RE = re.compile(r"(?:https?://|www\.)(?:[^\s<>()\"]|\([^\s<>()\"]*\))+(?<![.,;:!?'])", re.I)
 DOM_RE = re.compile(r"(?<![@\w.-])(?:[a-z0-9-]+\.)+(?:" + TLDS + r")\b(?:/[^\s<>()\"]*)?", re.I)
 SITE_RE = re.compile(r"\b(danbooru|donmai|gelbooru|safebooru|rule34|yande\.re|konachan|sankaku|pixiv|nhentai)\b", re.I)
 # the old quiz credit block (pipeline/pop-quiz-meta.js popCredits before 23be9e7)
@@ -61,7 +61,7 @@ def strip_line(line, own):
     s = re.sub(r"[ \t]{2,}", " ", s)
     s = re.sub(r"\s+([,.;:!?])", r"\1", s)
     s = re.sub(r"([:;,])(?:\s*[:;,])+", r"\1", s)
-    s = re.sub(r"\s*(?:\||-|·|•|→|->)\s*$", "", s).rstrip()
+    s = re.sub(r"\s*(?:\||-|·|•|→|->|,|;)\s*$", "", s).rstrip()
     return s
 
 
