@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=6UEpONYClmg",
-      "title": "Who Would You Pick? Anime Edition ⚔️",
-      "country": "Global",
-      "postedAt": "2026-09-21T08:09:59.583Z",
-      "videoId": "6UEpONYClmg",
-      "category": "quiz-duel",
-      "titleSource": "duel-pick",
-      "quizFormat": "duel",
-      "quizTheme": "anime"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=X0RTX6oQ1IE",
-      "title": "would you rather (cities edition) 🔥✌️",
-      "country": "Global",
-      "postedAt": "2026-09-22T07:56:34.677Z",
-      "videoId": "X0RTX6oQ1IE",
-      "category": "quiz-wyr",
-      "titleSource": "wyr-casual",
-      "quizFormat": "wyr",
-      "quizTheme": "cities"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=T1hGqwqU0rU",
       "title": "Only Travel Nerds Get 3/3 ✈️",
       "country": "Global",
@@ -351,6 +329,28 @@
       "titleSource": "character-llm",
       "quizFormat": "character",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=ntd3-aern5I",
+      "title": "would you rather (kpop edition) 👀 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-22T07:56:14.927Z",
+      "videoId": "ntd3-aern5I",
+      "category": "quiz-wyr",
+      "titleSource": "wyr-casual",
+      "quizFormat": "wyr",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=C6Y5XdCEjs4",
+      "title": "guess the kpop idol quiz #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-22T07:59:44.868Z",
+      "videoId": "C6Y5XdCEjs4",
+      "category": "quiz-idol",
+      "titleSource": "idol-llm",
+      "quizFormat": "idol",
+      "quizTheme": "kpop"
     }
   ]
 }

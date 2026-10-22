@@ -935,6 +935,54 @@
     "titleStyle": "op-exact-search",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "ntd3-aern5I",
+   "url": "https://www.youtube.com/watch?v=ntd3-aern5I",
+   "postedAt": "2026-10-22T07:56:14.666Z",
+   "publishAt": "2026-10-22T12:00:00.000Z",
+   "format": "wyr",
+   "theme": "kpop",
+   "seed": 263949584,
+   "length": "quick",
+   "titleTemplate": "wyr-casual",
+   "title": "would you rather (kpop edition) 👀 #kpop",
+   "answers": [
+    "wyr:be your group's main dancer|be your group's main vocalist",
+    "wyr:go to a bts concert|go to a blackpink concert",
+    "wyr:be a k-pop trainee for 5 years|debut tomorrow with no training"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "challenge"
+   }
+  },
+  {
+   "videoId": "C6Y5XdCEjs4",
+   "url": "https://www.youtube.com/watch?v=C6Y5XdCEjs4",
+   "postedAt": "2026-10-22T07:59:44.629Z",
+   "publishAt": "2026-10-22T21:00:00.000Z",
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 303117129,
+   "length": "quick",
+   "titleTemplate": "idol-llm",
+   "title": "guess the kpop idol quiz #kpop",
+   "answers": [
+    "idol:rosé#1ba43f3",
+    "idol:yoona#umzncy",
+    "idol:seulgi#1ctzejx"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
