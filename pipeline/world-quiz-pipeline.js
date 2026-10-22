@@ -722,7 +722,7 @@ async function runWorldQuizPipeline(opts = {}) {
   const hook = isPop(format) ? pop.popHook(plan) : hookLine(plan);
   const hashtags = (meta && meta.hashtagLine) || (isPop(format) ? pop.popHashtags(plan) : HASHTAGS[format]);
   const head = meta ? meta.descriptionHead : null;
-  const description = pop.clean(isPop(format) ? pop.popDescription(plan, { head, hashtags }) : buildDescription(plan, hook, { head, hashtags }));
+  const description = pop.stripLinks(pop.clean(isPop(format) ? pop.popDescription(plan, { head, hashtags }) : buildDescription(plan, hook, { head, hashtags })));
   if (res.audioCheck) {
     logger.info(`Audio: narrator over clip ${res.audioCheck.overlapSec}s, all at ${res.audioCheck.clipGainUnderVoiceDb ?? '-'} dB; `
       + `unducked overlap ${res.audioCheck.overlapUnduckedSec}s; fetch ${JSON.stringify(res.fetch || {})}`);

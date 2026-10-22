@@ -251,56 +251,18 @@ function popAnswers(p) {
 
 const yt = id => `https://youtu.be/${id}`;
 
+// 2026-10-22: no links in descriptions. YouTube removed a quiz because a fan-art credit linked to danbooru (a site that
+// also hosts adult content). One plain credit line, no URLs, no site names.
+// eslint-disable-next-line no-unused-vars
 function popCredits(p) {
-  const clips = p.rounds.filter(r => r.source && r.source.video);
-  switch (p.format) {
-    case 'song': return `Song clips from: ${clips.map(r => `${r.title} ${yt(r.source.video)}`).join('; ')}. All songs belong to their artists and labels.\n`;
-    case 'emoji': return (clips.length ? `Songs on the reveals: ${clips.map(r => `${r.song || (p.topic === 'anime' ? `${r.answer} opening`
-      : String(r.answer).split(' (')[0])} ${yt(r.source.video)}`).join('; ')}. `
-      + 'Covers via AniList. ' : '') + 'Emoji art: Noto Emoji (Apache-2.0).\n';
-    case 'wyr': {
-      const ph = p.rounds.filter(r => r.photoCredit && r.photoCredit.credit);
-      return 'The picks are my own opinion, not a poll. '
-        + (ph.length ? `Photos: ${ph.map(r => `${r.photoCredit.option}: ${r.photoCredit.credit}${r.photoCredit.page ? ` ${r.photoCredit.page}` : ''}`).join('; ')}. ` : '')
-        + 'Emoji art: Noto Emoji (Apache-2.0).\n';
-    }
-    case 'trivia': {   // the reveal pictures (owner 2026-10-21): Commons photos with author + licence, AniList / VTuber wiki art
-      const ph = p.rounds.filter(r => r.photoCredit && r.photoCredit.credit);
-      return (ph.length ? `Pictures on the reveals: ${ph.map(r => `${r.photoCredit.option}: ${r.photoCredit.credit}${r.photoCredit.page ? ` ${r.photoCredit.page}` : ''}`).join('; ')}. ` : '')
-        + 'Emoji art: Noto Emoji (Apache-2.0).\n';
-    }
-    case 'idol': return `Photos (Wikimedia Commons): ${p.rounds.map(r => `${r.name}: ${r.credit}`).join('; ')}\n`;
-    case 'nightcity':
-    case 'cuisine':
-    case 'cityphoto': return `Photos (Wikimedia Commons, licences as listed): ${p.rounds.map(r => `${r.name}: ${r.credit}${r.page ? ` ${r.page}` : ''}`).join('; ')}\n`;
-    case 'vtuber': return 'Official VTuber portraits via the Virtual YouTuber Wiki (virtualyoutuber.fandom.com). '
-      + 'All characters belong to their agencies and creators.\n';
-    case 'duel': {
-      const fan = p.rounds.flatMap((r, i) => [r.a, r.b].filter(c => c && c.source && ['danbooru', 'ai'].includes(c.source.kind) && c.source.artist)
-        .map(c => `${i + 1}. ${c.name}: Art: ${String(c.source.artist).split(' ').join(', ')}${c.source.post ? ` ${c.source.post}` : ''}`));
-      return 'Character art and favorite counts via AniList (anilist.co)' + (fan.length ? ', fan art credited below' : '') + '.\n'
-        + (fan.length ? `${fan.join('\n')}\n` : '');
-    }
-    case 'scene': return `Clips from the creditless openings: ${p.rounds.map(r => (r.source && r.source.video ? `${r.title} ${yt(r.source.video)}` : r.title)).join('; ')}. Covers via AniList.\n`;
-    case 'voice': return `Voice clips from: ${p.rounds.map(r => (r.source && r.source.video ? `${r.name} ${yt(r.source.video)}` : r.name)).join('; ')}. Character art via AniList.\n`;
-    case 'silhouette': case 'eyes': case 'outfit': {
-      // fan art (Danbooru): one "Art: <artist>" credit line per round that uses it, with the post link
-      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && ['danbooru', 'ai'].includes(r.source.kind) && r.source.artist);
-      const fanLines = fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}`);
-      return 'Character art via AniList and the characters Fandom wikis (text CC-BY-SA)'
-        + (fan.length ? ', and fan art credited below' : '') + '. '
-        + 'All characters and artwork belong to their creators and studios and are shown only to identify them.\n'
-        + (fanLines.length ? `${fanLines.join('\n')}\n` : '');
-    }
-    case 'character': case 'opening': {
-      const fan = p.rounds.map((r, i) => ({ r, i })).filter(({ r }) => r.source && ['danbooru', 'ai'].includes(r.source.kind) && r.source.artist);
-      return 'Character art and covers via AniList' + (fan.length ? ' and the fan art credited below' : '') + '.\n'
-        + fan.map(({ r, i }) => `${i + 1}. Art: ${String(r.source.artist).split(' ').join(', ')}${r.source.post ? ` ${r.source.post}` : ''}\n`).join('');
-    }
-    case 'city': return 'Map data: Natural Earth. Emoji art: Noto Emoji (Apache-2.0).\n';
-    default: return 'Emoji art: Noto Emoji (Apache-2.0).\n';
-  }
+  return 'All images, clips and songs belong to their original creators and are shown for quiz and identification purposes.\n';
 }
+
+/** Strip every URL / bare domain from description text (no external links on this channel). */
+const stripLinks = t => String(t || '')
+  .replace(/https?:\/\/\S+/gi, '')
+  .replace(/\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|us|jp|kr|cn|io|co|me|tv|gg|moe|be)\b(?:\/\S*)?/gi, '')
+  .replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ');
 
 /** The comment prompt after the description's hook line. */
 const popCta = p => (p.format === 'wyr' ? 'Comment A or B for each 👇' : p.format === 'duel' ? 'Comment your picks 👇' : 'Comment your score 👇');
@@ -309,9 +271,9 @@ const popCta = p => (p.format === 'wyr' ? 'Comment A or B for each 👇' : p.for
 function popDescription(p, opts = {}) {
   const head = (p.edition ? `${p.edition.emoji || ''} ${p.edition.label}\n` : '') + (opts.head || `${popHook(p)} ${popCta(p)}`);
   const label = p.format === 'wyr' ? 'The choices' : p.format === 'duel' ? 'The fans picked' : 'Answers (no peeking!)';
-  return clean(`${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
+  return stripLinks(clean(`${head}\n\n🍡 Asian Pop Quiz: anime, K-pop and Asia quizzes, a new one every day.\n\n`
     + `${label}:\n${popAnswers(p)}\n\n${popCredits(p)}`
-    + (opts.hashtags || popHashtags(p)) + (p.edition && p.edition.hashtags ? ` ${p.edition.hashtags.join(' ')}` : ''));
+    + (opts.hashtags || popHashtags(p)) + (p.edition && p.edition.hashtags ? ` ${p.edition.hashtags.join(' ')}` : '')));
 }
 
 /**
@@ -374,4 +336,4 @@ function popComment(p) {
 const popHashtags = p => (p.format === 'song' ? SONG_HASHTAG[p.topic] || SONG_HASHTAG.mixed : FORMAT_HASHTAG[p.format] || HASHTAG[p.topic] || '#quiz');
 
 module.exports = { POP_TITLE_TEMPLATES, popPlaylist, popHook, popAnswers, popDescription, popTags, popComment, popHashtags, popKeyword,
-  popCta, HASHTAG, TOPIC_LABEL, clean };
+  popCta, HASHTAG, TOPIC_LABEL, clean, stripLinks };
