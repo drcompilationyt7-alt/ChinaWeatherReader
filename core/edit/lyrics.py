@@ -1190,7 +1190,11 @@ def words(song, artist, audio_path, t0=0.0, t1=None, duration=None, song_t0=None
         t1 = t_file or (t0 + 20.0)
     rec = record or fetch(song, artist, duration or (t_file if t_file and t_file > 60 else None), offline=offline)
     ws = tokens(rec.get('lines') or [])
-    if song_t0 is None and rec.get('synced') and rec.get('duration') and t_file and abs(rate - 1) < 1e-3 \
+    # the file IS the song only when no separate original is given: a speed version (blue @0.9 = 238 s) can match an
+    # LRCLIB record's length by chance (237 s) and would then show the lyrics ~5 s early (2026-10-21 dry run)
+    _vm = re.search(r'@v([0-9.]+)\.[A-Za-z0-9]+$', os.path.basename(str(audio_path)))
+    is_version = bool(_vm) and abs(float(_vm.group(1).rstrip('.') or 1) - 1) > 1e-3     # <id>@v0.9.m4a = a speed version
+    if song_t0 is None and not is_version and rec.get('synced') and rec.get('duration') and t_file and abs(rate - 1) < 1e-3 \
             and abs(float(rec['duration']) - t_file) <= 3.0:
         song_t0 = float(t0)
     a, b = t0 - pad, t1 + pad
@@ -1199,12 +1203,14 @@ def words(song, artist, audio_path, t0=0.0, t1=None, duration=None, song_t0=None
         song_map = [(a, b, float(song_t0) - pad * rate, rate)]
     if song_map is None and song_audio and rec.get('synced') and mode != 'anchor':
         lk = os.path.join(LYR, 'maps', hashlib.sha1(f'{_file_key(audio_path)}|{_file_key(song_audio)}|{a:.3f}|'
-                                                    f'{b:.3f}|{rate}'.encode()).hexdigest()[:20] + '.json')
+                                                    f'{b:.3f}|{rate}{"|ver" if is_version else ""}'.encode()).hexdigest()[:20] + '.json')
         if os.path.exists(lk):
             with open(lk, encoding='utf-8') as f:
                 song_map = [tuple(x) for x in json.load(f)]
         else:
-            song_map = locate(audio_path, song_audio, max(0.0, a), b, rate) or None
+            # a speed version (<id>@v0.9) runs at its own speed vs the original: locate at that rate (rate 1 finds nothing)
+            loc_rate = float(_vm.group(1).rstrip('.')) if is_version and abs(rate - 1) < 1e-3 else rate
+            song_map = locate(audio_path, song_audio, max(0.0, a), b, loc_rate) or None
             os.makedirs(os.path.dirname(lk), exist_ok=True)
             with open(lk, 'w', encoding='utf-8') as f:
                 json.dump(song_map or [], f)
