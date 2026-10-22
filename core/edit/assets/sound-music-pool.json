@@ -553,8 +553,8 @@
    "total": 0.633,
    "status": "probation",
    "added": "2026-10-17T21:19:17Z",
-   "last_used": null,
-   "uses": 0,
+   "last_used": "2026-10-22T08:42:41Z",
+   "uses": 1,
    "perf": {
     "n": 0,
     "sum": 0.0

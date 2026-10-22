@@ -1562,6 +1562,73 @@
    },
    "vibe": "summer_glow",
    "musicPoolId": "jvke_golden_hour@v1"
+  },
+  {
+   "videoId": "hrdvNehinLY",
+   "url": "https://www.youtube.com/watch?v=hrdvNehinLY",
+   "postedAt": "2026-10-22T08:42:41.808Z",
+   "publishAt": "2026-10-22T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "ANTIFRAGILE",
+   "theme": "anime",
+   "emoji": "🎶,🔥",
+   "title": "anime sound design edit goes insane on antifragile 🎶🔥",
+   "clipIds": [
+    "c_4j1TyN4nLZA_59982",
+    "c_DQ6WAHp7R-o_154219",
+    "c_Ei37mjbcqGQ_4952",
+    "c_EsUbAFAOXE8_119363",
+    "c_Ipr0YNnwlXA_40900",
+    "c_K39jx5VkIPw_790875",
+    "c_KbjmnBu7scU_45969",
+    "c_L1TVoSHBDKc_93140",
+    "c_O2JRxaMNK_c_28850",
+    "c_OcbcJ4Urg5k_528463",
+    "c_P8j50ByEd7w_29601",
+    "c_P8j50ByEd7w_37150",
+    "c_RTDeuS24k2s_771",
+    "c_X0Y72O8mY-w_6900",
+    "c_Z1bq3cyZMVQ_131012",
+    "c_biPUhMQn8Qw_161771",
+    "c_krc6M4vPx28_36300",
+    "c_mBpBTRnhDl0_115884",
+    "c_qMg3Jqoxksg_186135",
+    "c_tx49TtGjyv8_21800",
+    "c_utLWiscq8d4_35350",
+    "c_xT66YPk0Q5w_201106",
+    "c_xT66YPk0Q5w_366354",
+    "c_xoLBt2vayAc_359763",
+    "c_zUiJ3TahSqE_37647",
+    "c_zv5lApSubRw_357242"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 23.1,
+    "pool": "sound",
+    "render_s": {
+     "short": 1882.7,
+     "watermark_short": 86.6,
+     "total": 1969.2
+    }
+   },
+   "onVideoTitle": "anime sound design edit",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "mimic",
+    "ovStyle": "ov-kw",
+    "descHook": "llm-line",
+    "titlePattern": "anime sound design edit goes insane on {song} {e}",
+    "titleMode": "mimic"
+   },
+   "vibe": "impact",
+   "musicPoolId": "le_sserafim_antifragile",
+   "songSection": [
+    9.155,
+    36.571
+   ]
   }
  ]
 }

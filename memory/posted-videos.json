@@ -1,24 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=-3pKrM_MiHE",
-      "title": "clattanoia acapella but each stem makes the edit harder 🔥",
-      "country": "Global",
-      "postedAt": "2026-09-21T08:25:16.588Z",
-      "videoId": "-3pKrM_MiHE",
-      "category": "meme-anime",
-      "titleSource": "clattanoia"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=i6wFQ4hxE48",
-      "title": "redo acapella but the drums kick in 🎶🎧",
-      "country": "Global",
-      "postedAt": "2026-09-22T08:12:16.144Z",
-      "videoId": "i6wFQ4hxE48",
-      "category": "meme-anime",
-      "titleSource": "redo"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=kY-fbtjVQ7c",
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
       "country": "Global",
@@ -278,6 +260,15 @@
       "videoId": "J91EYGAeUTI",
       "category": "edit-slowmo",
       "titleSource": "Golden Hour"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=hrdvNehinLY",
+      "title": "anime sound design edit goes insane on antifragile 🎶🔥",
+      "country": "Global",
+      "postedAt": "2026-10-22T08:42:42.008Z",
+      "videoId": "hrdvNehinLY",
+      "category": "edit-sound",
+      "titleSource": "ANTIFRAGILE"
     }
   ]
 }
