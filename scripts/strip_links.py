@@ -13,7 +13,23 @@ links to the channel's own videos / own channel are kept. Creds from env (see co
 """
 import json, os, re, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from comments import API, http, token, get  # noqa: E402
+import urllib.error  # noqa: E402
+import comments as _c  # noqa: E402
+from comments import API  # noqa: E402
+
+
+def _retry(fn):
+    def w(*a, **k):
+        for i in range(5):
+            try: return fn(*a, **k)
+            except (urllib.error.URLError, ConnectionError, TimeoutError) as e:   # resets on the runner; HTTP errors exit in http()
+                if isinstance(e, urllib.error.HTTPError) or i == 4: raise
+                print(f"  network error ({type(e).__name__}), retry {i + 1}"); time.sleep(3 * (i + 1))
+    return w
+
+
+http = _c.http = _retry(_c.http)   # get() / token() in comments.py go through it too
+get, token = _c.get, _c.token
 
 CREDIT = "All images, clips and songs belong to their original creators and are shown for quiz and identification purposes."
 TLDS = ("com|net|org|us|jp|kr|cn|tw|hk|io|co|me|tv|gg|moe|be|ly|app|info|xyz|ai|uk|de|fm|link|site|to|cc|ru|fr|ca|au|"
@@ -164,6 +180,7 @@ def main(mode, chan, out):
         except SystemExit as e:
             rec["status"] = f"error: {e}"
         changes.append(rec)
+        json.dump(changes, open(f"{out}/{chan}-changes.json", "w", encoding="utf8"), indent=1, ensure_ascii=False)
         print(f"  {rec['status']}: {v['id']} {sn['title'][:60]!r}")
         if "quota" in rec["status"].lower(): print("quota exhausted - stopping; re-run later"); break
         time.sleep(1.5)
