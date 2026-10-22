@@ -20,11 +20,15 @@ on:
   workflow_dispatch:
     inputs:
       budget_min:
-        description: 'Mining budget per shard in minutes'
+        description: 'Mining budget per shard in minutes (empty: 200, backfill 230)'
         required: false
-        default: '200'
+        default: ''
       force:
         description: 'Mine even when every vibe has enough clips'
+        required: false
+        default: 'false'
+      backfill:
+        description: 'BACKFILL round (owner 2026-10-22): 8 shards, 230 min each, 14 clips per source, staging only'
         required: false
         default: 'false'
 
@@ -79,11 +83,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.go == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 250
+    timeout-minutes: 290
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5]
+        shard: ${{ fromJSON(github.event.inputs.backfill == 'true' && '[0, 1, 2, 3, 4, 5, 6, 7]' || '[0, 1, 2, 3, 4, 5]') }}
+    env:
+      NSH: ${{ github.event.inputs.backfill == 'true' && '8' || '6' }}
+      SLOWMO_LIBRARY_CAP: ${{ github.event.inputs.backfill == 'true' && '14' || '9' }}
+      MINE_BUDGET: ${{ github.event.inputs.budget_min || (github.event.inputs.backfill == 'true' && '230' || '200') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -114,12 +122,12 @@ jobs:
           gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-live-manifests.tar --dir /tmp/st \
             && tar -xf /tmp/st/slowmo-live-manifests.tar -C output/edit-pools || true
           gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern slowmo-grow-state.json --dir /tmp/st || echo '{}' > /tmp/st/slowmo-grow-state.json
-      - name: Mine shard ${{ matrix.shard }} of 6
+      - name: Mine shard ${{ matrix.shard }}
         run: |
           python core/pools/clip_prefilter.py selftest > /dev/null
           sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
-          python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/6 \
-            --budget-min "${{ github.event.inputs.budget_min || '200' }}" --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000
+          python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/$NSH \
+            --budget-min "$MINE_BUDGET" --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000
           rm -f /tmp/yt_cookies.txt
           du -sh work/out || true
       - name: Upload the shard (candidates, sidecars, contact sheets, state)

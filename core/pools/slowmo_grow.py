@@ -336,6 +336,11 @@ def pick(entries, seen, k=0, n=1):
 
 
 _last_dl = [0.0]
+# 2026-10-22 backfill: a bot check / rate limit on the spare account stops this shard's downloads (SLOWMO_BOT_MAX, default 2)
+BOTBLOCK_RE = re.compile(r"confirm(?:\s+that)?\s+you(?:'re| are)?\s+not\s+a\s+bot|sign in to confirm|http error 429|too many requests|"
+                         r"temporarily blocked|not a bot", re.I)
+BOT = {'n': 0}
+BOT_MAX = int(os.environ.get('SLOWMO_BOT_MAX', '2'))
 
 
 def download(vid, dst):
@@ -350,6 +355,9 @@ def download(vid, dst):
     if not fs:
         err = (r.stderr or '').strip().splitlines()[-1:] if r.stderr else []
         log(f'download {vid} failed: {err[0][:160] if err else r.returncode}')
+        if BOTBLOCK_RE.search(r.stderr or ''):
+            BOT['n'] += 1
+            log(f"BOT-CHECK {BOT['n']} on download {vid}")
     return fs[0] if fs else None
 
 
@@ -502,7 +510,7 @@ def cmd_mine(a):
         src = os.path.join(work, f'src{bi:02d}')
         os.makedirs(src, exist_ok=True)
         srcmap = {}
-        while qs and len(srcmap) < a.batch and time.time() < end - 25 * 60:
+        while qs and len(srcmap) < a.batch and time.time() < end - 25 * 60 and BOT['n'] < BOT_MAX:
             q = qs.pop(0)
             es = pick(search(q), seen, k, n)
             st['queries_done'].append(q)
@@ -545,10 +553,12 @@ def cmd_mine(a):
     rejected = {v: [it['id'] for it in VP.load_manifest('slowmo', v, root=pool)['items'] if it['id'] not in live_ids[v]
                     and it.get('status') == 'cine_reject'] for v in VIBES}
     wj(os.path.join(out, 'candidates.json'), {'shard': a.shard, 'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-                                              'candidates': cands, 'cine_rejected_ids': rejected, 'batches': batches})
+                                              'candidates': cands, 'cine_rejected_ids': rejected, 'batches': batches, 'bot_checks': BOT['n']})
     wj(os.path.join(out, 'state.json'), st)
     log(f'staged: ' + ', '.join(f'{v} {len(c)}' for v, c in cands.items()))
-    print(json.dumps({'ok': True, 'staged': {v: len(c) for v, c in cands.items()}, 'batches': len(batches)}))
+    if BOT['n'] >= BOT_MAX:
+        log(f"stopped downloading after {BOT['n']} bot checks")
+    print(json.dumps({'ok': True, 'staged': {v: len(c) for v, c in cands.items()}, 'batches': len(batches), 'bot_checks': BOT['n']}))
 
 
 def _gh(args, check=True):

@@ -38,6 +38,10 @@ on:
         description: 'Also score the vision gate on the labelled by-eye set (release edit-pools-calib)'
         required: false
         default: 'false'
+      backfill:
+        description: 'BACKFILL round (owner 2026-10-22): 8 shards, 12 queries / 30 sources / 20 minis per source each, staging only'
+        required: false
+        default: 'false'
       import_tars:
         description: 'IMPORT mode: reviewed staged tars (sound-cand-....tar, space separated) to add to the live pool; no mining'
         required: false
@@ -166,7 +170,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5]
+        shard: ${{ fromJSON(github.event.inputs.backfill == 'true' && '[0, 1, 2, 3, 4, 5, 6, 7]' || '[0, 1, 2, 3, 4, 5]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -201,17 +205,19 @@ jobs:
       - name: Pull the live sound manifests (dedupe against the pool)
         run: node scripts/edit-pools-store.js pull --manifests-only --preset sound
 
-      - name: Mine shard ${{ matrix.shard }} of 6 (fetch -> hit_scan -> visible-source gate -> pre-filter -> vision gate -> safety)
+      - name: Mine shard ${{ matrix.shard }} (fetch -> hit_scan -> visible-source gate -> pre-filter -> vision gate -> safety)
         env:
           BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || github.event.inputs.budget_min || '150' }}
-          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '10' }}
-          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '20' }}
+          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || (github.event.inputs.backfill == 'true' && '12' || '10') }}
+          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || (github.event.inputs.backfill == 'true' && '30' || '20') }}
+          NSH: ${{ github.event.inputs.backfill == 'true' && '8' || '6' }}
+          REFRESH_PER_SOURCE: ${{ github.event.inputs.backfill == 'true' && '20' || '14' }}
           SOUND_VID_SHARD: '1'
         run: |
           python core/pools/clip_prefilter.py selftest > /dev/null
           python core/pools/sound_refresh.py selftest > /dev/null
           sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
-          python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/6 --budget-min "$BUDGET" \
+          python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/$NSH --budget-min "$BUDGET" \
             --queries "$NQ" --max-sources "$NSRC" | tail -c 4000
           du -sh work/out || true
           rm -f /tmp/yt_cookies.txt
