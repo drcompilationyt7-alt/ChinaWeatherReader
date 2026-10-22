@@ -15,25 +15,35 @@ name: Slow-mo pool mining (nightly until ~115 clips per vibe, then monthly)
 # (`slowmo_grow.py pull-staged` / `import-staged`). Off with the repository variable SLOWMO_POOL_MINE=off.
 
 on:
-  schedule:
-    - cron: '30 1 * * *'
+  # 2026-10-21: NO own schedule. Mining is one light nightly rotation (pool-mine-nightly.yml calls this with called=true, ONE shard, <= 5 h). Manual dispatch stays (one shard, same concurrency group).
+  workflow_call:
+    inputs:
+      called:
+        type: string
+        default: 'false'
+      budget_min:
+        type: string
+        default: ''
+      force:
+        type: string
+        default: 'false'
   workflow_dispatch:
     inputs:
+      called:
+        description: 'leave false'
+        required: false
+        default: 'false'
       budget_min:
-        description: 'Mining budget per shard in minutes (empty: 200, backfill 230)'
+        description: 'Mining budget in minutes (empty: 240)'
         required: false
         default: ''
       force:
         description: 'Mine even when every vibe has enough clips'
         required: false
         default: 'false'
-      backfill:
-        description: 'BACKFILL round (owner 2026-10-22): 8 shards, 230 min each, 14 clips per source, staging only'
-        required: false
-        default: 'false'
 
 concurrency:
-  group: slowmo-pool-mine
+  group: ${{ inputs.called == 'true' && format('pool-mine-called-{0}', github.run_id) || 'pool-mine' }}
   cancel-in-progress: false
 
 env:
@@ -53,7 +63,6 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: vars.SLOWMO_POOL_MINE != 'off'
     outputs:
       go: ${{ steps.need.outputs.go }}
     steps:
@@ -74,8 +83,8 @@ jobs:
         run: |
           NEED=$(python core/pools/slowmo_grow.py need --target "${{ vars.SLOWMO_POOL_TARGET || '115' }}" | tail -1)
           GO=true
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$NEED" != "go" ] && [ "$(date -u +%d)" != "01" ]; then GO=false; fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then GO=true; fi
+          if [ "${{ inputs.called }}" = "true" ] && [ "$NEED" != "go" ] && [ "$(date -u +%d)" != "01" ]; then GO=false; fi
+          if [ "${{ inputs.force }}" = "true" ]; then GO=true; fi
           echo "need=$NEED go=$GO"
           echo "go=$GO" >> $GITHUB_OUTPUT
 
@@ -83,15 +92,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.go == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 290
+    timeout-minutes: 270     # hard cap (plan 15 + mine 270 + publish 20 < 5 h with margin; budget 240 + install)
     strategy:
-      fail-fast: false
+      max-parallel: 1
       matrix:
-        shard: ${{ fromJSON(github.event.inputs.backfill == 'true' && '[0, 1, 2, 3, 4, 5, 6, 7]' || '[0, 1, 2, 3, 4, 5]') }}
+        shard: [0]               # ONE shard (k=0, n=1): crc32(id) % 1 == 0 keeps every video exactly once
     env:
-      NSH: ${{ github.event.inputs.backfill == 'true' && '8' || '6' }}
-      SLOWMO_LIBRARY_CAP: ${{ github.event.inputs.backfill == 'true' && '14' || '9' }}
-      MINE_BUDGET: ${{ github.event.inputs.budget_min || (github.event.inputs.backfill == 'true' && '230' || '200') }}
+      NSH: '1'
+      SLOWMO_LIBRARY_CAP: '9'
+      MINE_BUDGET: ${{ inputs.budget_min || '240' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -125,7 +134,6 @@ jobs:
       - name: Mine shard ${{ matrix.shard }}
         run: |
           python core/pools/clip_prefilter.py selftest > /dev/null
-          sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
           python core/pools/slowmo_grow.py mine --work work --shard ${{ matrix.shard }}/$NSH \
             --budget-min "$MINE_BUDGET" --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000
           rm -f /tmp/yt_cookies.txt

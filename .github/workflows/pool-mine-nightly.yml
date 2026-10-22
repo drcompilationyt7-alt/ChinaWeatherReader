@@ -1,0 +1,77 @@
+name: Pool mining (nightly, ONE pool per night, alternating, light)
+
+# Owner 2026-10-21: "mine on GitHub Actions, but 1 action per pool, and each night a different job instead of all at once".
+# ONE scheduled run per night, ONE pool, ONE shard (no matrix, nothing in parallel), staging only, <= 5 h:
+#   rotation  slowmo -> sound -> quiz -> repeat, by UTC date (scripts/pool-mine-rotation.py: ordinal % 3). Repository variable
+#             MINE_ROTATION="slowmo,sound,quiz" sets the order / weights (repeat a name to weight it).
+#   off       repository variable POOL_MINE=off (all mining). The old per-pool variables no longer matter.
+#   mine      calls the pool's own workflow (slowmo-pool-mine / edit-pool-refresh / quiz-pool-mine) with called=true: the same
+#             mining, gates and STAGING as before, but one shard (k=0, n=1) with a hard time cap. The review / import flows
+#             (workflow_dispatch of those workflows, e.g. the sound import_tars mode) are unchanged.
+# 19:30 UTC start, <= 5 h => done by ~00:30 UTC: clear of the prebuilt queue (01:15 / 04:40), quiz 02:17 / 07:17, daily-create 02:47 / 07:47.
+# Concurrency group "pool-mine": mining jobs (also manual dispatches of the three workflows) never overlap.
+
+on:
+  schedule:
+    - cron: '30 19 * * *'
+  workflow_dispatch:
+    inputs:
+      pool:
+        description: 'Force a pool (slowmo / sound / quiz); empty = tonight''s rotation'
+        required: false
+        default: ''
+
+concurrency:
+  group: pool-mine
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: vars.POOL_MINE != 'off'
+    outputs:
+      pool: ${{ steps.p.outputs.pool }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        env:
+          MINE_ROTATION: ${{ vars.MINE_ROTATION }}
+          FORCE: ${{ inputs.pool }}
+        run: |
+          POOL=$(python3 scripts/pool-mine-rotation.py)
+          case "$FORCE" in slowmo|sound|quiz) POOL="$FORCE" ;; esac
+          echo "tonight: $POOL"
+          echo "pool=$POOL" >> "$GITHUB_OUTPUT"
+          echo "### Tonight's pool: $POOL" >> "$GITHUB_STEP_SUMMARY"
+
+  slowmo:
+    needs: pick
+    if: needs.pick.outputs.pool == 'slowmo'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/slowmo-pool-mine.yml
+    with:
+      called: 'true'
+    secrets: inherit
+
+  sound:
+    needs: pick
+    if: needs.pick.outputs.pool == 'sound'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/edit-pool-refresh.yml
+    with:
+      called: 'true'
+      dry_run: 'false'
+    secrets: inherit
+
+  quiz:
+    needs: pick
+    if: needs.pick.outputs.pool == 'quiz'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/quiz-pool-mine.yml
+    with:
+      called: 'true'
+    secrets: inherit

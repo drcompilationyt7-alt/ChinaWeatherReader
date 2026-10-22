@@ -22,24 +22,34 @@ name: Sound pool growth (nightly until the target, staged, grow-only)
 # A manual run with dry_run=true (default) mines a small batch through every gate and stages / commits NOTHING.
 
 on:
-  schedule:
-    - cron: '45 5 * * *'
+  # 2026-10-21: NO own schedule. Mining is one light nightly rotation (pool-mine-nightly.yml, called=true, ONE shard). Manual dispatch stays: dry run, calibrate, and the IMPORT mode.
+  workflow_call:
+    inputs:
+      called:
+        type: string
+        default: 'false'
+      dry_run:
+        type: string
+        default: 'false'
+      budget_min:
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
+      called:
+        description: 'leave false'
+        required: false
+        default: 'false'
       dry_run:
         description: 'true = small batch, every gate, nothing pushed or committed'
         required: false
         default: 'true'
       budget_min:
-        description: 'Mining budget per shard in minutes (real run; the dry run uses 60)'
+        description: 'Mining budget in minutes (real run; the dry run uses 60; empty: 150)'
         required: false
-        default: '240'
+        default: ''
       calibrate:
         description: 'Also score the vision gate on the labelled by-eye set (release edit-pools-calib)'
-        required: false
-        default: 'false'
-      backfill:
-        description: 'BACKFILL round (owner 2026-10-22): 8 shards, 12 queries / 30 sources / 20 minis per source each, staging only'
         required: false
         default: 'false'
       import_tars:
@@ -52,7 +62,7 @@ on:
         default: ''
 
 concurrency:
-  group: edit-pool-refresh
+  group: ${{ inputs.called == 'true' && format('pool-mine-called-{0}', github.run_id) || 'pool-mine' }}
   cancel-in-progress: false
 
 env:
@@ -92,32 +102,30 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
           TARGET: ${{ vars.SOUND_POOL_TARGET || '230' }}
         run: |
-          DRY="${{ github.event.inputs.dry_run || 'false' }}"
+          DRY="${{ inputs.dry_run || 'false' }}"
           GO=true
-          if [ -n "${{ github.event.inputs.import_tars }}" ]; then echo "Import mode: no mining."; GO=false; fi
+          if [ -n "${{ inputs.import_tars }}" ]; then echo "Import mode: no mining."; GO=false; fi
           PINS=$(python3 -c "import json; print(len(json.load(open('core/edit/assets/sound-hit-allowlist.json')).get('clips') or {}))")
           STAGED=$(gh release view edit-pools-staging --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' 2>/dev/null | grep -c '^sound-cand-' || true)
           echo "live pins $PINS (target $TARGET), staged tars waiting for review: $STAGED"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.called }}" = "true" ]; then
             DRY=false
             if [ "$PINS" -ge "$TARGET" ] && { [ "$(date -u +%d)" -gt 7 ] || [ "$(date -u +%u)" != "2" ]; }; then
               echo "At the target: only the first Tuesday of the month mines."; GO=false
             fi
             if [ "$STAGED" -ge 4 ]; then echo "::notice::$STAGED staged sound tars wait for review: no mining tonight."; GO=false; fi
           fi
-          if [ "${{ vars.EDIT_POOL_REFRESH }}" = "off" ]; then
-            echo "::notice::Sound pool growth is OFF (repository variable EDIT_POOL_REFRESH=off)."; GO=false
-          fi
           echo "go=$GO" >> $GITHUB_OUTPUT
           echo "dry=$DRY" >> $GITHUB_OUTPUT
 
   calibrate:
     needs: plan
-    if: github.event.inputs.calibrate == 'true'
+    if: inputs.calibrate == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         part: [0, 1, 2, 3, 4, 5]
     steps:
@@ -144,7 +152,7 @@ jobs:
 
   calibrate-summary:
     needs: calibrate
-    if: ${{ always() && github.event.inputs.calibrate == 'true' }}
+    if: ${{ always() && inputs.calibrate == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -166,11 +174,11 @@ jobs:
     needs: plan
     if: needs.plan.outputs.go == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 185     # hard cap (mine 185 + swap 100 + plan = inside 5 h)
     strategy:
-      fail-fast: false
+      max-parallel: 1
       matrix:
-        shard: ${{ fromJSON(github.event.inputs.backfill == 'true' && '[0, 1, 2, 3, 4, 5, 6, 7]' || '[0, 1, 2, 3, 4, 5]') }}
+        shard: [0]               # ONE shard (k=0, n=1): crc32(id) % 1 == 0 keeps every video exactly once
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -207,16 +215,15 @@ jobs:
 
       - name: Mine shard ${{ matrix.shard }} (fetch -> hit_scan -> visible-source gate -> pre-filter -> vision gate -> safety)
         env:
-          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || github.event.inputs.budget_min || '150' }}
-          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || (github.event.inputs.backfill == 'true' && '12' || '10') }}
-          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || (github.event.inputs.backfill == 'true' && '30' || '20') }}
-          NSH: ${{ github.event.inputs.backfill == 'true' && '8' || '6' }}
-          REFRESH_PER_SOURCE: ${{ github.event.inputs.backfill == 'true' && '20' || '14' }}
+          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || inputs.budget_min || '150' }}
+          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '8' }}
+          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '16' }}
+          NSH: '1'
+          REFRESH_PER_SOURCE: '14'
           SOUND_VID_SHARD: '1'
         run: |
           python core/pools/clip_prefilter.py selftest > /dev/null
           python core/pools/sound_refresh.py selftest > /dev/null
-          sleep $(( ${{ matrix.shard }} * 40 ))     # staggered starts: the 6 jobs never search / download in the same second
           python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/$NSH --budget-min "$BUDGET" \
             --queries "$NQ" --max-sources "$NSRC" | tail -c 4000
           du -sh work/out || true
@@ -236,7 +243,7 @@ jobs:
     needs: [plan, mine]
     if: ${{ !cancelled() && needs.plan.outputs.go == 'true' && (needs.mine.result == 'success' || needs.mine.result == 'failure') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 100     # hard cap; sharpening is bounded to 40 min so staging always finishes
     permissions:
       contents: write
     env:
@@ -284,7 +291,7 @@ jobs:
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
-          SHARPEN_MIN: ${{ needs.plan.outputs.dry == 'true' && '60' || '200' }}
+          SHARPEN_MIN: ${{ needs.plan.outputs.dry == 'true' && '40' || '40' }}
         run: |
           set -e
           mkdir -p report
@@ -337,7 +344,7 @@ jobs:
 
   import:
     needs: plan
-    if: github.event.inputs.import_tars != ''
+    if: inputs.import_tars != ''
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
@@ -360,14 +367,14 @@ jobs:
         run: |
           set -e
           mkdir -p imp
-          for t in ${{ github.event.inputs.import_tars }}; do
+          for t in ${{ inputs.import_tars }}; do
             gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern "$t" --dir imp
           done
-          python core/pools/sound_refresh.py apply-staged --pool "$EDIT_POOL_DIR" --tars imp/*.tar --reject "${{ github.event.inputs.reject }}" | tee imp/apply.json
+          python core/pools/sound_refresh.py apply-staged --pool "$EDIT_POOL_DIR" --tars imp/*.tar --reject "${{ inputs.reject }}" | tee imp/apply.json
           node scripts/edit-pools-store.js push --preset sound
           git config user.name "Bot" && git config user.email "bot@bot.com"
           git add core/edit/assets/sound-hit-allowlist.json
-          git commit -m "Sound pool growth: import of reviewed staged clips (${{ github.event.inputs.import_tars }})" || true
+          git commit -m "Sound pool growth: import of reviewed staged clips (${{ inputs.import_tars }})" || true
           for i in 1 2 3; do git -c rebase.autoStash=true pull --rebase origin main && git push && break; sleep 5; done
-          for t in ${{ github.event.inputs.import_tars }}; do gh release delete-asset edit-pools-staging "$t" --repo "$GITHUB_REPOSITORY" -y || true; done
+          for t in ${{ inputs.import_tars }}; do gh release delete-asset edit-pools-staging "$t" --repo "$GITHUB_REPOSITORY" -y || true; done
           { echo "### Sound pool import"; echo '```'; tail -c 2000 imp/apply.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

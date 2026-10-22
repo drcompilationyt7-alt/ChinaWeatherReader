@@ -13,25 +13,35 @@ name: Quiz pool mining (nightly, staging only)
 # 03:30 UTC: after the quiz renders (02:17), clear of the slow-mo mining publish and the 07:17 quiz backup run.
 
 on:
-  schedule:
-    - cron: '30 3 * * *'
+  # 2026-10-21: NO own schedule. Mining is one light nightly rotation (pool-mine-nightly.yml, called=true). The two shards (light, art) run ONE AFTER THE OTHER (max-parallel 1). Backfill mode removed.
+  workflow_call:
+    inputs:
+      called:
+        type: string
+        default: 'false'
+      budget_min:
+        type: string
+        default: ''
+      shards:
+        type: string
+        default: 'both'
   workflow_dispatch:
     inputs:
-      budget_min:
-        description: 'Mining budget per shard in minutes'
+      called:
+        description: 'leave false'
         required: false
-        default: '40'
+        default: 'false'
+      budget_min:
+        description: 'Mining budget per shard in minutes (empty: 100)'
+        required: false
+        default: ''
       shards:
-        description: 'Shards: light, art or both (backfill: one of photos / people / llm / art0-2, or both = all six)'
+        description: 'Shards: light, art or both (one after the other)'
         required: false
         default: 'both'
-      mode:
-        description: 'nightly, or backfill (4x quotas, 6 jobs: photos / people / llm + 3 theme-art jobs on different themes)'
-        required: false
-        default: 'nightly'
 
 concurrency:
-  group: quiz-pool-mine
+  group: ${{ inputs.called == 'true' && format('pool-mine-called-{0}', github.run_id) || 'pool-mine' }}
   cancel-in-progress: false
 
 env:
@@ -55,21 +65,12 @@ jobs:
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: vars.QUIZ_POOL_MINE != 'off'
     outputs:
       shards: ${{ steps.s.outputs.shards }}
     steps:
       - id: s
         run: |
-          SH="${{ github.event.inputs.shards || 'both' }}"
-          if [ "${{ github.event.inputs.mode }}" = "backfill" ]; then
-            case "$SH" in
-              photos|people|llm|art0|art1|art2) echo "shards=[\"$SH\"]" >> $GITHUB_OUTPUT ;;
-              *) echo 'shards=["photos","people","llm","art0","art1","art2"]' >> $GITHUB_OUTPUT ;;
-            esac
-            exit 0
-          fi
-          case "${{ github.event.inputs.shards || 'both' }}" in
+          case "${{ inputs.shards || 'both' }}" in
             light) echo 'shards=["light"]' >> $GITHUB_OUTPUT ;;
             art) echo 'shards=["art"]' >> $GITHUB_OUTPUT ;;
             *) echo 'shards=["light","art"]' >> $GITHUB_OUTPUT ;;
@@ -78,11 +79,12 @@ jobs:
   mine:
     needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: 200
+    timeout-minutes: 130     # per shard; the two run one after the other (2 x 130 = inside 5 h)
     env:
-      QUIZ_MINE_SCALE: ${{ github.event.inputs.mode == 'backfill' && '4' || '1' }}
+      QUIZ_MINE_SCALE: '2'
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
@@ -131,7 +133,7 @@ jobs:
         run: |
           python core/quiz/quiz_pool_grow.py selftest
           python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \
-            --budget-min "${{ github.event.inputs.mode == 'backfill' && '110' || github.event.inputs.budget_min || '40' }}" | tail -c 3000
+            --budget-min "${{ inputs.budget_min || '100' }}" | tail -c 3000
           du -sh work/out || true
       - name: Upload the shard
         if: always()
