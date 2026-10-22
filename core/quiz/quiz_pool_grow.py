@@ -385,6 +385,10 @@ def mine_commons(cat, st, quota, seen, out_dir, deadline, hashes):
         if img is None:
             continue
         file = info.get('file', '')
+        name_words = [w for w in fold(row[0]).split() if len(w) >= 3]
+        if not all(w in fold(file) for w in name_words) or (not name_words and fold(row[0]).replace(' ', '') not in fold(file).replace(' ', '')):   # 'Naha skyline' found a Dallas skyline: the name must be in the file
+            why['wrong place / dish'] = why.get('wrong place / dish', 0) + 1
+            continue
         if not safe_photo_name(file):
             why['people / unsafe name'] = why.get('people / unsafe name', 0) + 1
             continue
@@ -690,9 +694,14 @@ def mine_theme_art(st, quota, seen, out_dir, budget_min, slot=0):
                 os.makedirs(os.path.dirname(os.path.join(dst, rel)), exist_ok=True)
                 shutil.copy2(f, os.path.join(dst, rel))
             jpg = next((f for f in files if f.endswith('.jpg')), None)
-            if jpg:
+            try:   # selector themes (glasses, villains) reuse the character's AniList picture: thumbnail that for the review
                 from PIL import Image
-                c['_thumb'] = thumb(Image.open(jpg), os.path.join(out_dir, 'thumbs', 'theme_art', f'{tid}_{fmt}_{fid}.jpg'))
+                import media
+                pic = Image.open(jpg) if jpg else (media.fetch_image(it['image']) if it.get('image') else None)
+                if pic is not None:
+                    c['_thumb'] = thumb(pic, os.path.join(out_dir, 'thumbs', 'theme_art', f'{tid}_{fmt}_{fid}.jpg'))
+            except Exception:  # noqa: BLE001
+                pass
             found.append(c)
             seen.add(k)
             if len(found) >= quota:
@@ -864,8 +873,11 @@ def cmd_pull(a):
         base = os.path.dirname(cj)
         if os.path.exists(os.path.join(base, 'IMPORTED')):
             continue
+        handled = set(rj(os.path.join(base, 'handled.json'), []))
         for cat, items in (rj(cj, {}).get('items') or {}).items():
             for k, it in enumerate(items):
+                if cand_key(cat, it) in handled:
+                    continue
                 rows.append({'n': len(rows), 'cat': cat, 'key': cand_key(cat, it), 'dir': base, 'idx': k,
                              'thumb': os.path.join(base, it['_thumb']) if it.get('_thumb') else None, 'label': label_lines(cat, it)})
     rv = os.path.join(d, 'review')
@@ -921,6 +933,9 @@ def cmd_import(a):
     d = os.path.abspath(a.dir)
     rows = rj(os.path.join(d, 'review', 'index.json'), [])
     rej = {x.strip() for x in (a.reject or '').split(',') if x.strip()}
+    only = {x.strip() for x in (a.only or '').split(',') if x.strip()}
+    if only:   # review one category at a time: the other rows stay pending for a later import
+        rows = [r for r in rows if r['cat'] in only]
     rej_rows = [r for r in rows if str(r['n']) in rej]
     stamp = today()
     keep = {c: [] for c in CATS}
@@ -983,6 +998,11 @@ def cmd_import(a):
     rj_file['rejected'] = sorted(set(rj_file['rejected']) | {r['key'] for r in rej_rows})
     wj(REJECTS_FILE, rj_file)
     for base in sorted({r['dir'] for r in rows}):
+        handled = set(rj(os.path.join(base, 'handled.json'), [])) | {r['key'] for r in rows if r['dir'] == base}
+        wj(os.path.join(base, 'handled.json'), sorted(handled))
+        total = sum(len(v) for v in (rj(os.path.join(base, 'candidates.json'), {}).get('items') or {}).values())
+        if len(handled) < total:
+            continue                   # rows of other categories still wait for review
         open(os.path.join(base, 'IMPORTED'), 'w').close()
         if a.delete_remote:
             _gh(['release', 'delete-asset', RELEASE, os.path.basename(base) + '.tar', '-y'], check=False)
@@ -1070,6 +1090,7 @@ def main():
     i.add_argument('--dir', default=os.path.join(ROOT, 'output', 'quiz-pool-review'))
     i.add_argument('--reject', default='')
     i.add_argument('--delete-remote', action='store_true')
+    i.add_argument('--only', default='', help='import only these categories (comma list); the rest stays pending')
     sp.add_parser('push-manifests')
     pb = sp.add_parser('publish')
     pb.add_argument('--artifacts', required=True)

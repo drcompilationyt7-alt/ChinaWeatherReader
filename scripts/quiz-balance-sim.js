@@ -31,7 +31,7 @@ for (const f of ['quiz-history.json', 'pop-bank.json', 'performance-stats.json']
 Object.assign(process.env, {
   MEMORY_DIR: tmp, POP_NEW_FORMATS: '1', QUIZ_LLM: flags.has('--llm') ? 'on' : 'off', QUIZ_THEME: 'asia',
   ...(flags.has('--llm') ? { GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'sim' } : {}),
-  QUIZ_FORMATS: 'song,voice,character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape,silhouette,eyes,outfit',
+  QUIZ_FORMATS: 'song,voice,character,idol,opening,scene,duel,cityphoto,vtuber,emoji,trivia,wyr,city,flag,shape,silhouette,eyes,outfit,nightcity,cuisine',
 });
 const wq = require('../pipeline/world-quiz-pipeline');
 const { loadStats } = require('../core/performance-tracker');
