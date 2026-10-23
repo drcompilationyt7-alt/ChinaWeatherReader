@@ -282,6 +282,9 @@ def thumb(img, path, w=360):
     return path
 
 
+_LAT1 = str.maketrans({'‘': "'", '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '…': '...'})   # the default bitmap font is latin-1 only
+
+
 def sheet(rows, out, cols=4, cw=360, ch=330):
     """rows: [(thumb path or None, label lines)] -> one jpg; text-only rows get a dark card with their lines."""
     from PIL import Image, ImageDraw
@@ -300,7 +303,7 @@ def sheet(rows, out, cols=4, cw=360, ch=330):
         else:
             ty = y + 10
         for j, line in enumerate(lines[:6 if not p else 4]):
-            d.text((x + 6, ty + j * 16), str(line)[:58], fill=(255, 255, 255) if j == 0 else (210, 210, 120))
+            d.text((x + 6, ty + j * 16), str(line)[:58].translate(_LAT1).encode('latin-1', 'replace').decode('latin-1'), fill=(255, 255, 255) if j == 0 else (210, 210, 120))
     os.makedirs(os.path.dirname(out), exist_ok=True)
     img.save(out, quality=82)
     return out
