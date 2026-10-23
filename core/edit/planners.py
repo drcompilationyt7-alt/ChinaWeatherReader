@@ -2920,8 +2920,25 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
     beats = np.asarray(M.get('beats') or [], float)
     acc = [(float(a), float(s_)) for a, s_ in M.get('accents') or []]
 
+    # groove songs (a steady drum / bass pulse, music_moments.groove): the switch sits ON the beat or tight on the sung attack
+    # (2026-10-22, owner on "blue" + the blue reference edits; Golden Hour has no such pulse and keeps the approved rule)
+    gm = os.environ.get('SLOWMO_GROOVE', 'auto')
+    G = None
+    if gm != '0':
+        try:
+            G = MM.groove(A['path'], float(start), span)
+            if gm == '1':
+                G['groove'] = True
+        except Exception as e:  # noqa: BLE001
+            log(f'cinematic: groove analysis failed ({type(e).__name__}: {e})')
+    grv = bool(G and G.get('groove'))
+
     def switch_for(a):
-        """the switch frame for a wave attack at a: on a main beat when one leads it by WV_SNAP, else WV_PRE before"""
+        """the switch frame for a wave attack at a: on a main beat when one leads it by WV_SNAP, else WV_PRE before.
+        groove v2 (2026-10-23, the real "blue" edits): GROOVE_PRE before the sung attack, no beat snap (the refs cut 0..0.06 s
+        before the attack; the 0.10 s lead / beat - LEAD snap of the ballad rule put our r6 0.08-0.11 s early on 10 / 23 cuts)"""
+        if grv:
+            return a - MM.GROOVE_PRE, False
         if len(beats):
             sw_b = beats - MM.LEAD
             ok = [x for x in sw_b if WV_SNAP[0] <= a - x <= WV_SNAP[1]]
@@ -2952,7 +2969,12 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
         if in_tail(x['a']) or (out_a is not None and x['a'] >= out_a - 0.05):
             continue
         sw, on_b = switch_for(float(x['a']))
-        cands.append(dict(sw=round(sw, 4), a=x['a'], b=x['b'], strength=float(x['strength']), why=x['why'], beat=on_b))
+        st0 = float(x['strength'])
+        if grv and not str(x['why']).startswith('phrase') and any(k in str(x['why']) for k in ('legato', 'step')):
+            # groove v2: a word that glides on from the previous one (legato / stepwise) continues the phrase's momentum -
+            # the real blue edits cut 1 in 5 of these vs about 1 in 2 of the other word starts: optional, never a must-switch
+            st0 = min(st0, WV_MUST - 0.1) * 0.6
+        cands.append(dict(sw=round(sw, 4), a=x['a'], b=x['b'], strength=st0, why=x['why'], beat=on_b))
     if out_a is not None:
         sw, on_b = switch_for(out_a)
         cands.append(dict(sw=round(sw, 4), a=round(out_a, 3), b=None, strength=3.0, why='outro', beat=on_b))
@@ -3063,6 +3085,7 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
         la = max(half, key=lambda k: st_[k])
         lifts = [sum(lens[:la])]
     info = dict(main=round(main, 4), value=round(float(v), 2), n=len(sw), D=round(D, 4), pinned=bool(pin), tscale=tsc, tails=tails, outro=outro,
+                groove=G,
                 waves=[dict(a=x['a'], b=x['b'], s=x['strength'], why=x['why']) for x in Wv['waves']],
                 cuts=[dict(sw=round(C[i]['sw'], 3), attack=C[i]['a'], why=C[i]['why'], s=C[i]['strength'], beat=C[i]['beat'])
                       for i in idx], skipped=skipped, judge_repair=repair)
@@ -3169,10 +3192,65 @@ def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=4):
                     break
             if not changed:
                 break
+        # groove songs (judge 14, 2026-10-23): a LOOSE switch (neither on a main beat nor tight on its sung attack) moves onto
+        # the beat its attack lags or tight before the attack, when the judge's 11 / 13 counts do not get worse
+        WJ = JS.wave_judge(tmp, sw, float(D), E=E, speed=speed)
+        GC = WJ.get('groove') or {}
+        if GC.get('groove') and os.environ.get('SLOWMO_GROOVE_REPAIR', '1') != '0':
+            bt = np.asarray((E.get('groove') or {}).get('beats') or [], float)
+            per = float((E.get('groove') or {}).get('period') or 0.6)
+
+            def _n(W_):
+                return len(W_['bad']) + len(W_['missed']) + len((W_.get('tail_outro') or {}).get('bad') or [])
+            n0 = _n(WJ)
+            for c in list(GC.get('loose') or []):
+                k = min(range(len(sw)), key=lambda k_: abs(sw[k_] - c))
+                if k == 0 or abs(sw[k] - c) > 0.02:
+                    continue
+                cands = []
+                for a in [a_[0] for a_ in E['attacks'] if -0.2 <= a_[0] - c <= 0.6]:
+                    cands.append(fr(a - 0.03))                 # tight on the sung attack
+                    pb = bt[(bt <= a) & (bt >= a - 0.25)]
+                    if len(pb):
+                        cands.append(fr(pb[-1] - 0.02))        # on the beat just before it
+                for x in sorted(set(cands), key=lambda x_: abs(x_ - c)):
+                    if abs(x - c) > 0.12:
+                        break                                   # a fine-tune only (CI 10-23: an 0.19 s move pushed a line-start switch off)
+                    prv = sw[k - 1]
+                    nxt = sw[k + 1] if k + 1 < len(sw) else float(D)
+                    if x - prv < lo or nxt - x < lo:
+                        continue
+                    tr = sw[:k] + [x] + sw[k + 1:]
+                    W2 = JS.wave_judge(tmp, tr, float(D), E=E, speed=speed)
+                    if _n(W2) <= n0 and not any(abs(y - x) < 0.01 for y in ((W2.get('groove') or {}).get('loose') or [])):
+                        rep.setdefault('groove', []).append([round(sw[k], 3), round(x, 3)])
+                        sw[k], n0 = x, _n(W2)
+                        break
+            # a switch on a pick-up word right before a phrase that has its own switch (CI 10-23: 26.73 on a short word
+            # 0.7 s before the phrase switch at 27.47; the rendered audio's judge read it as mid-hold): the pick-up joins the
+            # shot before it (the refs' phrase-level momentum), when the judge's counts stay the same
+            WJ = JS.wave_judge(tmp, sw, float(D), E=E, speed=speed)
+            others = [r_['cut'] for r_ in ((WJ.get('groove') or {}).get('rows') or [])
+                      if r_['kind'] in ('other', 'beat') and r_.get('attack_after') is None]   # no sung attack within 0.5 s
+            for c in others:
+                k = min(range(len(sw)), key=lambda k_: abs(sw[k_] - c))
+                if k == 0 or abs(sw[k] - c) > 0.02 or k + 1 >= len(sw) or sw[k + 1] - c > 0.9:
+                    continue
+                row = next((r_ for r_ in WJ['rows'] if abs(r_['cut'] - c) < 0.02), {})
+                if str(row.get('what', '')).startswith(('vocal gap', 'release')):
+                    continue
+                tr = sw[:k] + sw[k + 1:]
+                if tr[k] - tr[k - 1] > WV_SHOT[1] + 1.0:
+                    continue
+                W2 = JS.wave_judge(tmp, tr, float(D), E=E, speed=speed)
+                if _n(W2) <= _n(WJ):
+                    rep.setdefault('groove_pickup', []).append(round(sw[k], 3))
+                    del sw[k], st_[k]
+                    WJ = W2
         WJ = JS.wave_judge(tmp, sw, float(D), E=E, speed=speed)
         rep['after'] = dict(bad=WJ['bad'], missed=[m['t'] for m in WJ['missed']],
                             tail_bad=[c for c, _w in ((WJ.get('tail_outro') or {}).get('bad') or [])], sync_off=WJ['sync']['off'])
-        if rep['dropped'] or rep['moved'] or rep['added'] or rep.get('swapped'):
+        if rep['dropped'] or rep['moved'] or rep['added'] or rep.get('swapped') or rep.get('groove') or rep.get('groove_pickup'):
             log('cinematic: judge repair %s' % json.dumps(rep, default=float))
         return sw, st_, rep
     except Exception as e:  # noqa: BLE001

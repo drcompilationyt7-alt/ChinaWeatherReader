@@ -26,9 +26,19 @@ import random
 # WINDOW recent videos, CAP reuse share, PER_CLIP uses per DAYS
 CONFIG = {
     # slow-mo: 18-27 shots (the wave cuts follow the song), each clip once (the wave DP caps the shots at the clean clips, 2026-10-21)
-    'slowmo': dict(target=22, want=30, min_need=24, window=5, cap=0.25, per_clip=3, days=30),
+    # 2026-10-22 owner (blue dry run: "the clips are the exact same"): slow-mo shows NO clip of the last 3 slow-mo videos, the
+    # queued prebuilt ones (3j / 3g) included (cap 0 = hard exclusion); fewer than min_fresh clips left -> no slow-mo that day
+    'slowmo': dict(target=22, want=30, min_need=24, window=3, cap=0.0, per_clip=3, days=30, hard=1, min_fresh=22,
+                   recent_days=0),
     # sound: ~39 pinned hit clips per video, the beat remake needs ~45 pinned candidates (SOUND_RELAX_MIN_PINS)
-    'sound': dict(target=39, want=50, min_need=45, window=5, cap=0.25, per_clip=3, days=30),
+    # 2026-10-22 owner "no variety and good match need both": HARD reuse cap. The planner gets every allowed clip, each stamped
+    # rot_recent / rot_age (choose(..., hard=True)); core/edit/sound_edit.py keeps the recent clips <= CAP of the shots and picks the
+    # best matches inside that cap; a pool that cannot give both fails as 'pool_too_small' (-> the daily run posts stem).
+    # min_fresh: usable fresh clips a passing short needs at least (~37 usable hits x 0.7); below it the render is not even tried.
+    # recent_days: a video older than this no longer counts as recent (a stem-only fortnight would otherwise freeze the window
+    # on the same 5 videos until the pool grows); 0 = no age limit
+    'sound': dict(target=39, want=50, min_need=45, window=5, cap=0.30, per_clip=3, days=30, hard=1, min_fresh=20,
+                  recent_days=14),
 }
 
 
@@ -61,14 +71,16 @@ def history(ledger, preset):
     return sorted(rows, key=lambda h: str(h.get('at') or ''))
 
 
-def usage(hist, now=None, days=30, window=5):
-    """clip id -> {last (datetime), n_days (videos in the last `days`), recent (in the last `window` videos)}"""
+def usage(hist, now=None, days=30, window=5, recent_days=0):
+    """clip id -> {last (datetime), n_days (videos in the last `days`), recent (in the last `window` videos, and posted within
+    `recent_days` when > 0; a queued video dated in the future is recent)}"""
     now = now or _dt.datetime.now(_dt.timezone.utc)
     cut = now - _dt.timedelta(days=days)
+    rcut = now - _dt.timedelta(days=recent_days) if recent_days else None
     out = {}
     for i, h in enumerate(hist):
         t = _ts(h.get('at'))
-        rec = len(hist) - i <= window
+        rec = len(hist) - i <= window and (rcut is None or t is None or t >= rcut)
         for c in set(h.get('clips') or []):
             u = out.setdefault(c, {'last': None, 'n_days': 0, 'recent': False})
             if t and (u['last'] is None or t > u['last']):
@@ -79,9 +91,20 @@ def usage(hist, now=None, days=30, window=5):
     return out
 
 
+def videos_since(hist):
+    """clip id -> number of the preset's videos since its last use (0 = shown in the latest video)"""
+    out = {}
+    for i, h in enumerate(hist):
+        for c in set(h.get('clips') or []):
+            out[c] = len(hist) - 1 - i
+    return out
+
+
 def choose(items, hist, cfg, rng=None, level=0, key=lambda it: it['id'], counts=lambda it: True, now=None):
     rng = rng or random.Random()
-    U = usage(hist, now, int(cfg['days']), int(cfg['window']))
+    U = usage(hist, now, int(cfg['days']), int(cfg['window']), int(cfg.get('recent_days') or 0))
+    if cfg.get('hard'):
+        return choose_hard(items, hist, cfg, U, rng, key, counts)
     pas = [it for it in items if not counts(it)]          # not rotated (e.g. sound clips without a pinned hit: never shown)
     pool = [it for it in items if counts(it)]
     info = {'pool': len(pool), 'level': level}
@@ -126,6 +149,44 @@ def choose(items, hist, cfg, rng=None, level=0, key=lambda it: it['id'], counts=
     return out + pas, info
 
 
+def choose_hard(items, hist, cfg, U, rng, key, counts):
+    """HARD reuse cap (sound, owner 2026-10-22): every allowed clip goes to the planner, LRU order (never used first), each stamped
+    'rot_recent' (shown in the last WINDOW videos) and 'rot_age' (videos since its last use, None = never). The planner enforces
+    recent <= CAP of the shots and chooses the best matches inside it; info['pool_too_small'] when the fresh clips cannot carry a
+    short at all (fresh < min_fresh)."""
+    pas = [it for it in items if not counts(it)]
+    pool = [it for it in items if counts(it)]
+    cap_n = int(cfg['per_clip'])
+    allowed = [it for it in pool if U.get(key(it), {}).get('n_days', 0) < cap_n]
+    since = videos_since(hist)
+    epoch = _dt.datetime(1970, 1, 1, tzinfo=_dt.timezone.utc)
+    tie = {id(it): rng.random() for it in allowed}
+    lru = sorted(allowed, key=lambda it: ((U.get(key(it)) or {}).get('last') or epoch, tie[id(it)]))
+    for it in lru:
+        it['rot_recent'] = bool((U.get(key(it)) or {}).get('recent'))
+        it['rot_age'] = since.get(key(it))
+    for it in pas:
+        it['rot_recent'], it['rot_age'] = False, None      # never shown (sound: no pinned hit): not part of the reuse share
+    fresh = sum(1 for it in lru if not it['rot_recent'])
+    excluded = 0
+    override = float(cfg['cap']) <= 0 and os.environ.get('CLIP_ROTATION_FRESH_OVERRIDE') == '1'
+    if float(cfg['cap']) <= 0 and not override:            # slow-mo: the recent videos' clips are not offered at all
+        excluded = len(lru) - fresh
+        lru = [it for it in lru if not it['rot_recent']]
+    elif override:
+        # TIMING TEST ONLY (vibe_edit --fresh-override): the recent clips come back after the fresh ones; the result is
+        # labelled fresh_override and the pre-upload guard never lets it post
+        lru = [it for it in lru if not it['rot_recent']] + [it for it in lru if it['rot_recent']]
+    info = {'pool': len(pool), 'mode': 'hard_cap', 'cap': float(cfg['cap']), 'per_clip_cap': cap_n, 'fresh': fresh,
+            'recent': len(lru) - fresh + excluded, 'excluded_recent': excluded, 'given': len(lru),
+            'skipped_per_clip': len(pool) - len(allowed)}
+    if override:
+        info['fresh_override'] = True
+    elif fresh < int(cfg.get('min_fresh') or 0):
+        info['pool_too_small'] = f'{fresh} fresh clips (< {int(cfg["min_fresh"])}) for <= {float(cfg["cap"]):.0%} reuse'
+    return lru + pas, info
+
+
 def report(used, hist, window=5):
     """the reuse share of one rendered video vs the preset's last `window` videos (and vs the previous one)"""
     used = list(dict.fromkeys(used or []))
@@ -155,6 +216,18 @@ def selftest():
     small = items[:20]
     c, info = choose(small, hist, cfg, rng, now=now + _dt.timedelta(days=30))
     assert len(c) >= 20 and info.get('reuse_raised'), info
+    # hard mode: everything allowed is handed over, stamped; too few fresh -> pool_too_small
+    hc = dict(cfg, hard=1, cap=0.3, min_fresh=15)
+    items2 = [{'id': f'c{i}'} for i in range(40)]
+    h2 = [{'at': now.isoformat(), 'clips': [f'c{i}' for i in range(30)]}]
+    c, info = choose(items2, h2, hc, rng, now=now)
+    assert len(c) == 40 and info['fresh'] == 10 and info.get('pool_too_small'), info
+    assert c[0]['rot_recent'] is False and c[0]['rot_age'] is None and c[-1]['rot_recent'] and c[-1]['rot_age'] == 0, c[:2]
+    # slow-mo: cap 0 = the recent clips are not offered; a 20-day-old video is not recent with recent_days 14
+    c, info = choose(items2, h2, dict(hc, cap=0.0, min_fresh=5), rng, now=now)
+    assert len(c) == 10 and info['excluded_recent'] == 30 and not info.get('pool_too_small'), info
+    c, info = choose(items2, h2, dict(hc, recent_days=14), rng, now=now + _dt.timedelta(days=20))
+    assert info['fresh'] == 40, info
     print('clip_rotation selftest ok')
 
 

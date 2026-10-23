@@ -316,6 +316,11 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         title = _re.sub(r'\s*[\(\[][^)\]]*(slowed|reverb|sped|remix|ver)[^)\]]*[\)\]]', '', str(title or ''), flags=_re.I).strip() or None
         lyr = _lyrics_available(title, artist)
         log('lyrics: ' + ('found (render-time, not stored)' if lyr else 'none -> no text'))
+        if not lyr and section is not None and os.environ.get('CINE_REQUIRE_LYRICS', '1') != '0':
+            # 2026-10-23: a music-pool slow-mo needs its lyrics (owner rule; the guard blocks a lyric-less one anyway). The
+            # no-text intro (0.05 s) also has no wave layout (hero >= 2.4 s) -> the hold-cut fallback wrote a < 1-frame shot 0
+            res['reason'] = 'no_lyrics: LRCLIB gave no lyrics for this song (no lyric-less slow-mo)'
+            return res
         toks = []
         intro = 5.5 if lyr else 0.0
         # loudness: _sX2 (the 'blue' reference) masters at -6.9 LUFS integrated; -7.5 with a -1.8 dB ceiling keeps the
@@ -388,8 +393,13 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                                preset='cinematic_slowmo', song_audio=song_original or song, seed=seed)
                 lyr_items = len(sm.get('words') or [])
             except Exception as e:  # noqa: BLE001
-                log(f'lyric track failed ({type(e).__name__}): no text')
+                import traceback
+                traceback.print_exc()
+                log(f'lyric track failed ({type(e).__name__}: {str(e)[:200]}): no text')
             log(f'lyric words on screen: {lyr_items}')
+        if lyr and not lyr_items and section is not None and os.environ.get('CINE_REQUIRE_LYRICS', '1') != '0':
+            res['reason'] = 'no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)'
+            return res
         if lyr and not lyr_items:
             # lyrics exist but none are sung in this window: re-plan without the words-on-black intro (no empty black)
             log('no sung words in the chosen window: re-planning with no text')

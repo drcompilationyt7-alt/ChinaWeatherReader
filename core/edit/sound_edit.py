@@ -1304,8 +1304,53 @@ def assign(hits, events, end_t, mode='accent', theme=None, rng=None, cap_scale=1
             if e['cls'] == 'whoosh' and gap_before < 0.4:
                 c += 0.4
             C[i, j] = c
+    # clip rotation (owner 2026-10-22 "no variety and good match need both"): among about equally good matches the
+    # long-unused clip wins (LRU tie-break), and clips shown in the last 5 sound videos fill <= REUSE_CAP of the shots
+    # (a Lagrangian price on them, raised until the best assignment respects the cap; the match costs stay untouched)
+    rec = np.array([1.0 if e.get('rot_recent') else 0.0 for e in events])
+    if any('rot_recent' in e for e in events):
+        C -= REUSE_LRU_W * np.array([1.0 if e.get('rot_age') is None else float(np.clip(e['rot_age'] / 10.0, 0, 1))
+                                     for e in events])[None, :]
+    r_max = int(math.floor(REUSE_CAP * n + 1e-9)) if rec.any() else n
+    C0 = C.copy()
+    lam, lo_l = 0.0, None
+    for lam in REUSE_LAMBDAS:
+        seq_l = _assign_rounds(C + lam * rec[None, :], events, n, m, cap_scale)
+        if sum(rec[j] for j in seq_l) <= r_max:
+            break
+        lo_l = lam
+    if lo_l is not None and sum(rec[j] for j in seq_l) <= r_max:
+        hi_l = lam                     # the lowest price that keeps the cap: the best matches inside it (bisection)
+        for _ in range(6):
+            mid = 0.5 * (lo_l + hi_l)
+            sq = _assign_rounds(C + mid * rec[None, :], events, n, m, cap_scale)
+            if sum(rec[j] for j in sq) <= r_max:
+                hi_l, seq_l = mid, sq
+            else:
+                lo_l = mid
+        lam = round(hi_l, 3)
+    C = C + lam * rec[None, :]
+    seq = seq_l
+    if rec.any():
+        free = _assign_rounds(C0, events, n, m, cap_scale)
+        _REUSE_INFO.update(assign_recent=int(sum(rec[j] for j in seq)), assign_recent_max=r_max, assign_lambda=lam,
+                           match_cost=round(float(np.mean([C0[i, j] for i, j in enumerate(seq)])), 3),
+                           match_cost_free=round(float(np.mean([C0[i, j] for i, j in enumerate(free)])), 3),
+                           recent_free=int(sum(rec[j] for j in free)))
+        log(f'clip rotation: {_REUSE_INFO["assign_recent"]}/{n} hits on recent clips (cap {r_max}, price {lam}), match cost '
+            f'{_REUSE_INFO["match_cost"]} (without the cap {_REUSE_INFO["match_cost_free"]}, {_REUSE_INFO["recent_free"]} recent)')
+    return repair(seq, hits, events, C, end_t, cap_scale=cap_scale)
+
+
+REUSE_LAMBDAS = (0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 64.0)
+
+
+def _assign_rounds(C, events, n, m, cap_scale):
+    """assign()'s penalised Hungarian rounds (source / scene caps, no source twice in a row, <= 1 voice) on cost C."""
+    from scipy.optimize import linear_sum_assignment
     pen = np.zeros_like(C)
     src_of = [e['source_id'] for e in events]
+    seq = []
     for _ in range(12):
         r, c = linear_sum_assignment(C + pen)
         order = np.argsort(r)
@@ -1342,7 +1387,7 @@ def assign(hits, events, end_t, mode='accent', theme=None, rng=None, cap_scale=1
                 pen[i, [j for j in range(m) if events[j]['cls'] == 'voice']] += 1.5
         if not bad:
             break
-    return repair(seq, hits, events, C, end_t, cap_scale=cap_scale)
+    return seq
 
 
 def _need_post(i, hits, end_t):
@@ -2047,6 +2092,57 @@ class TooFewEvents(RuntimeError):
     def __init__(self, msg, have=0):
         super().__init__(msg)
         self.have = have
+
+
+class PoolTooSmall(TooFewEvents):
+    """The pool cannot give a short that both matches (length, holds, the planner's gates) and stays under the reuse cap
+    (owner 2026-10-22: then no sound video that day; the daily run posts stem)."""
+
+
+def _reuse_cap():
+    v = os.environ.get('SOUND_REUSE_CAP')
+    if v not in (None, ''):
+        return float(v)
+    try:
+        import clip_rotation as _CR
+        return float(_CR.config('sound')['cap'])
+    except Exception:  # noqa: BLE001
+        return 0.30
+
+
+REUSE_CAP = _reuse_cap()                                              # share of the shots from clips in the last 5 sound videos
+REUSE_LRU_W = float(os.environ.get('SOUND_REUSE_LRU_W', '0.08'))      # LRU tie-break (cost units; a match term is ~0.3-1)
+_REUSE_INFO = {}
+
+
+def _clip_key(e):
+    return os.path.splitext(os.path.basename(str(e.get('path') or '')))[0]
+
+
+def reuse_active(events):
+    return any('rot_recent' in e for e in events) and REUSE_CAP < 1.0
+
+
+def reuse_limit(events, cap_scale=1.0):
+    """Hard reuse cap, before the hit count is set (the beat remake plays every usable scene: hit count = pool): keep the
+    recent clips' events only for the best K recent clips, K = CAP / (1 - CAP) x the fresh clips' usable slots, so the pool
+    the planner sizes the edit on already respects the cap. Best = the clip's best event score, then the longest unused."""
+    if not reuse_active(events):
+        return events
+    fresh = [e for e in events if not e.get('rot_recent')]
+    f_slots = avail_slots([e for e in fresh if not e.get('silent_only')], cap_scale)
+    k = int(math.floor(REUSE_CAP / (1.0 - REUSE_CAP) * f_slots + 1e-9))
+    best = {}
+    for e in events:
+        if e.get('rot_recent'):
+            c = _clip_key(e)
+            sc = (float(e.get('score') or 0.0), -(e.get('rot_age') if e.get('rot_age') is not None else 99))
+            best[c] = max(best.get(c, sc), sc)
+    keep = set(sorted(best, key=lambda c: best[c], reverse=True)[:k])
+    out = [e for e in events if not e.get('rot_recent') or _clip_key(e) in keep]
+    _REUSE_INFO.update(cap=REUSE_CAP, fresh_slots=f_slots, recent_clips=len(best), recent_kept=len(keep))
+    log(f'clip rotation: {f_slots} usable fresh slots -> <= {k} of {len(best)} recent clips kept (reuse cap {REUSE_CAP:.0%})')
+    return out
 
 
 # ---------------------------------------------------------------- long sections (render_vibe)
@@ -2898,6 +2994,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
     theme, loop_end, song_title."""
     global _REMAKE_ON
     _s0_on = None
+    _REUSE_INFO.clear()
     t_start = time.time()
     o = opts or {}
     mode = o.get('sound_mode') or (o.get('mode') if o.get('mode') in ('accent', 'build') else None) or mode
@@ -3007,6 +3104,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
                                                                       and e['post_room0'] - scene_margin(e) >= REMAKE_POST_MIN
                                                                       and not _remake_too_tight(e)))
                       and os.path.splitext(os.path.basename(e['path']))[0] not in ex]
+            events = reuse_limit(events)
             aud_ev = [e for e in events if not e.get('silent_only')]
             # owner 2026-10-16 hard rule (no frozen frames): the edit can only be as long as the clips' clean picture (build-up +
             # after-hit, x1.1 stretch) fills; drop whole bars down to SOUND_REMAKE_MIN_BARS (11 = 27.5 s at 96 bpm: judge length >= 8)
@@ -3055,6 +3153,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
                   and os.path.splitext(os.path.basename(e['path']))[0] not in ex]
         if len(events) < n0:
             log(f'beat remake: {n0 - len(events)} events dropped (no room for a build-up before the hit)')
+    events = reuse_limit(events)
     fit = None
     if length_range:
         cap_scale = max(1.0, L / CAP_SCALE_S)
@@ -3316,7 +3415,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
         'engine_onset_err_ms_before': eng_errs0, 'engine_onset_err_ms': eng_errs,
         'plan_s': round(time.time() - t_start, 1),
         'length_range': list(length_range) if length_range else None, 'lufs_target': round(lufs, 2),
-        'pool_fit': fit, 'cap_scale': round(cap_scale, 2),
+        'pool_fit': fit, 'cap_scale': round(cap_scale, 2), 'reuse': dict(_REUSE_INFO) or None,
     }
     plan = {
         'aspect': '9:16' if deliver != 'none' else '16:9', 'fps': fps,
@@ -4484,6 +4583,11 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             return fail('pool_low', detail='no clips')
         # voiced cap: VOICED_SHARE of the hits (rate x target length)
         events = vibe_events(shots, voiced_budget=max(2, int(round(VOICED_SHARE * (hi if long_form else SHORT_TARGET_S) * (RATE_LONG if long_form else RATE_SHORT)))))
+        for e in events:            # clip rotation stamps (core/edit/clip_rotation.py hard cap): recent / videos since last use
+            sh = shots[e['shot']] if isinstance(e.get('shot'), int) and 0 <= e['shot'] < len(shots) else {}
+            if 'rot_recent' in sh:
+                e['rot_recent'], e['rot_age'] = bool(sh['rot_recent']), sh.get('rot_age')
+        capped = reuse_active(events)
         log(f'render_vibe {aspect} {lo:.0f}-{hi:.0f} s: {len(shots)} clips, {len(events)} usable events, '
             f'{avail_slots(events, max(1.0, hi / 10.5))} scene slots')
         # the long uses as much of the pool as it can (target = the top of its range, the pool fit shortens it);
@@ -4505,6 +4609,9 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             except TooFewEvents as ex:
                 last = ex
         if plan is None:
+            if capped:
+                # with the reuse cap a pool_low retry (more candidates) cannot help: the recent clips are capped, not short
+                return fail(f'pool_too_small: {last} (reuse cap {REUSE_CAP:.0%})', detail=str(last), slots=getattr(last, 'have', None))
             return fail('pool_low', detail=str(last), slots=getattr(last, 'have', None))
         # beat remake: the edit may end early at the last shot's clean end (no freeze allowed); a Short under SOUND_MIN_SHORT_S
         # (26.8 s = judge criterion 8 >= 8) is re-planned with other seeds (another clip order / last shot; ~2.5 min each on CI)
@@ -4540,6 +4647,31 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                     plan = alt
                 if _ok(plan):
                     break
+        if capped and not long_form:
+            # owner 2026-10-22 "no variety and good match need both": a short under the length / hold bar, or over the reuse
+            # cap, is not made (vibe_edit exits 2 -> the daily run posts stem). Measured on the plan's shots (distinct clips).
+            by_path0 = {os.path.abspath(s_['path']): s_ for s_ in shots}
+            ids, rec_ids = [], set()
+            for s_ in plan['shots']:
+                sh = by_path0.get(os.path.abspath(s_['path'])) or {}
+                pid = sh.get('pool_id') or os.path.basename(s_['path'])
+                if pid not in ids:
+                    ids.append(pid)
+                if sh.get('rot_recent'):
+                    rec_ids.add(pid)
+            share = len(rec_ids) / max(1, len(ids))
+            plan['sound_edit']['reuse'] = dict(plan['sound_edit'].get('reuse') or {}, clips=len(ids), recent=len(rec_ids),
+                                               share=round(share, 3))
+            log(f'clip rotation: plan {len(rec_ids)}/{len(ids)} clips recent ({share:.0%}, cap {REUSE_CAP:.0%}), '
+                f'{plan["duration"]:.2f} s, hold max {plan["sound_edit"].get("hold_s_max")}')
+            why = []
+            if share > REUSE_CAP + 1e-6:
+                why.append(f'reuse {share:.0%} > {REUSE_CAP:.0%}')
+            if REMAKE and not _ok(plan):
+                why.append(f'{plan["duration"]:.1f} s (< {min_s} s) / hold {plan["sound_edit"].get("hold_s_max")} s (> {max_hold} s)')
+            if why and os.environ.get('SOUND_REUSE_SOFT') != '1':
+                return fail('pool_too_small: ' + '; '.join(why) + f' with {len(ids) - len(rec_ids)} fresh clips',
+                            reuse=plan['sound_edit']['reuse'])
         if plan['duration'] < lo - 0.5:
             res['reason'] = (f'pool_low_shortened: {plan["duration"]:.1f} s instead of >= {lo:.0f} s '
                              f'({(plan["sound_edit"].get("pool_fit") or {}).get("slots_audible")} crisp-hit scenes)')
