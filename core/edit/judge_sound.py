@@ -390,10 +390,48 @@ def analyse_audio(path, song_path, song_off, bpm_hint, aligned=False):
     out['drum_onsets'] = [round(float(v), 3) for v in d_on]
     out['drum_onsets_recreated_share'] = round(float(np.mean(rec)), 3) if rec else 0.0
     out['drum_onsets_per_s'] = round(len(d_on) / max(0.1, n / SR), 2)
+    out.update(song_balance(y, res, songl, seg, aud))
     out['_series'] = dict(t=t_env, clip_db=r20d, music_db=s600d, vt=vt, voiced=voiced_active)
     out['_res'] = res
     out['loudness'] = loudness(path)
     return out
+
+
+def song_balance(y, res, songl, seg, aud):
+    """Owner 2026-10-23 (ANTIFRAGILE hrdvNehinLY: "the actual song is hard to hear too quiet", "no dips, the song is same
+    throughout"): the song's level in the mix, measured on the split (song layer = fitted song, clip layer = the rest).
+    song_vs_mix_db       median over 0.5 s windows of the song layer re the whole mix
+    hit_over_song_db     median over the audible hits of the clip layer's 20 ms peak re the song's 20 ms level at that instant
+    song_dip_db_p90      the song's gain in the mix (song layer re the clean song, 0.1 s) vs its own median: p90 of the dips;
+                         the song's natural dynamics cancel in the ratio, so a dip is ducking / limiter pumping
+    None when the song is not separable (no song file, or < 1 dB of the mix explained by it: a remade beat)."""
+    o = dict(song_vs_mix_db=None, hit_over_song_db=None, song_dip_db_p90=None, song_dip_db_max=None)
+    if seg is None:
+        return o
+    n = min(len(y), len(res), len(songl), len(seg))
+    y, res, songl, seg = y[:n], res[:n], songl[:n], seg[:n]
+    expl = float(10 * np.log10(np.sum(y.astype(np.float64) ** 2) / (np.sum(res.astype(np.float64) ** 2) + 1e-9)))
+    o['song_explained_db'] = round(expl, 2)
+    if expl < 1.0:
+        return o
+
+    def E(x, w):
+        f = int(w * SR)
+        k = len(x) // f
+        return 10 * np.log10(np.mean(x[:k * f].astype(np.float64).reshape(k, f) ** 2, axis=1) + 1e-12)
+    sh = E(songl, 0.5) - E(y, 0.5)
+    o['song_vs_mix_db'] = round(float(np.median(sh)), 2)
+    o['song_vs_mix_db_p10'] = round(float(np.percentile(sh, 10)), 2)
+    pk = [h['peak_db_vs_song_inst'] for h in aud]
+    o['hit_over_song_db'] = round(float(np.median(pk)), 2) if pk else None
+    gl, cl = E(songl, 0.1), E(seg, 0.1)
+    live = cl > np.max(cl) - 30
+    if live.sum() > 5:
+        g = gl[live] - cl[live]
+        dip = np.median(g) - g
+        o['song_dip_db_p90'] = round(float(np.percentile(dip, 90)), 2)
+        o['song_dip_db_max'] = round(float(np.max(dip)), 2)
+    return o
 
 
 # -------------------------------------------------------------------------------------- picture
@@ -791,6 +829,28 @@ def scorecard(C, R, plan_len=None):
         sc['17_no_frozen_frames'] = 10.0 if not fz else max(0.0, 5.0 - 1.0 * (len(fz) - 1))
         ev['17_no_frozen_frames'] = (f"{len(fz)} still runs > {FREEZE_MAX:.2f} s (diff < {FREEZE_THR} grey): {fz[:10]}; longest still {st.get('still_max_s')} s, "
                                      f"{st.get('still_runs_over_0_1s')} runs > 0.1 s (anime 2-4 frame holds; ref {(rv.get('still') or {}).get('still_runs_over_0_1s')})")
+    # (18) / (19) / (20) owner 2026-10-23 (ANTIFRAGILE hrdvNehinLY: "the actual song is hard to hear too quiet ... the anime clips sound
+    # noticeable, a bit louder, but the original song and the lyrics ... heard as well"; "no dips, the song is same throughout").
+    # Calibration (judge split, 2026-10-23): hit over song posted ANTIFRAGILE +7.4 dB, sound_11b +6.0, FB15 +3.2 (jKSxAkOS3JY: its song is
+    # not separable = n/a); song dips p90 posted 1.5 (master limiter under the hits), FB15 see notes. The song stem is measured in the mix vs
+    # its own source, so its natural dynamics cancel.
+    if 'hit_over_song_db' in ca:
+        hs, sv = ca.get('hit_over_song_db'), ca.get('song_vs_mix_db')
+        if hs is None:
+            sc['18_song_audible'] = sc['19_clip_hits_noticeable'] = 10.0
+            ev['18_song_audible'] = ev['19_clip_hits_noticeable'] = (f"n/a: the song is not separable from the mix "
+                                                                     f"(explained {ca.get('song_explained_db')} dB)")
+        else:
+            sc['18_song_audible'] = min(lin(hs, 14.5, 4.5), lin(sv if sv is not None else -99, -8.0, -3.0))
+            ev['18_song_audible'] = (f"clip hits {hs:+.1f} dB over the song at the hit instant (median; 10 at <= +4.5, 8 at +6.5; ref "
+                                     f"{ra.get('hit_over_song_db')}), song layer {sv} dB re the whole mix (median 0.5 s; p10 {ca.get('song_vs_mix_db_p10')})")
+            sc['19_clip_hits_noticeable'] = lin(hs, -2.5, 2.5)
+            ev['19_clip_hits_noticeable'] = f"clip hits {hs:+.1f} dB over the song at the hit instant (10 at >= +2.5, 8 at +1.5)"
+        dp = ca.get('song_dip_db_p90')
+        sc['20_song_level_constant'] = 10.0 if dp is None else lin(dp, 4.0, 1.5)
+        ev['20_song_level_constant'] = ('n/a: song not separable' if dp is None else
+                                        f"song gain in the mix vs its source (0.1 s): dips p90 {dp} dB, max {ca.get('song_dip_db_max')} dB "
+                                        f"(10 at <= 1.5, 8 at 2.0; ducking / limiter pumping; ref {ra.get('song_dip_db_p90')})")
     core = [sc[k] for k in sc]
     s9 = min(float(np.mean(core)), min(core) + 2.5)
     sc['9_overall_vs_ref'] = s9

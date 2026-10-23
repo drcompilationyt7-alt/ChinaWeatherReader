@@ -1196,6 +1196,13 @@ SRC_AFFINITY = {   # visible source type -> affinity with the song band (low / m
 }
 MATCH_BAND = {'low': 'low', 'kick': 'low', 'mid': 'mid', 'snare': 'mid', 'high': 'high', 'hat': 'high'}
 SONG_PEAK_MARGIN = float(os.environ.get('SOUND_SONG_PEAK_MARGIN', '2.5'))
+# owner 2026-10-23 (ANTIFRAGILE hrdvNehinLY: "the actual song is hard to hear too quiet" ... "no dips, the song is same throughout"
+# ... "just increase the final mix of the song"): the song plays at ONE constant gain, SONG_GAIN_DB over the level the hits were
+# levelled against (the master then normalises the sum), so the clip hits sit ~+3.5 dB over the song at the hit instant instead of
+# +7.4 (posted ANTIFRAGILE; +3.5 dB song: the judge's 'clear' share drops under criterion 2's bar). The hits' floor over the song's
+# own 20 ms peak is kept AFTER that gain (HIT_FLOOR_DB). 0 = the old balance.
+SONG_GAIN_DB = float(os.environ.get('SOUND_SONG_GAIN_DB', '2.5'))
+HIT_FLOOR_DB = float(os.environ.get('SOUND_HIT_FLOOR_DB', '2.0'))
 SHARP_W = float(os.environ.get('SOUND_SHARP_W', '1.0'))
 HIRES_W = float(os.environ.get('SOUND_HIRES_W', '1.2'))
 MATCH_W = float(os.environ.get('SOUND_MATCH_W', '0.9'))
@@ -1863,8 +1870,9 @@ def mix(music_win, shots_ev, L, target_db=HIT_OVER_MUSIC_DB, level_ref=None, rng
                 return float(np.max(lv_)) if len(lv_) else -90.0
             song_pk = pk20(ref[int(max(0, H - 0.02) * MSR):int((H + 0.045) * MSR)])
             hit_pk = pk20(_band(seg)[int(0.015 * MSR):int(0.1 * MSR)]) + g
-            if hit_pk < song_pk + SONG_PEAK_MARGIN:
-                g = float(min(g + (song_pk + SONG_PEAK_MARGIN - hit_pk), 26.0))
+            marg = max(SONG_PEAK_MARGIN, SONG_GAIN_DB + HIT_FLOOR_DB) if SONG_GAIN_DB > 0 else SONG_PEAK_MARGIN
+            if hit_pk < song_pk + marg:
+                g = float(min(g + (song_pk + marg - hit_pk), 26.0))
         except Exception:  # noqa: BLE001
             pass
         seg = seg * 10 ** (g / 20)
@@ -3354,7 +3362,11 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
     if lufs is None and length_range:
         lufs = reference_lufs(music_win)
     lufs = -14.0 if lufs is None else float(lufs)
-    raw = headroom_for_hits(raw, music_win[:, :raw.shape[1]], lufs=lufs)
+    if SONG_GAIN_DB:
+        # the song up by one constant gain (no ducking, no envelope): the clip layer is unchanged, the master normalises the sum
+        raw = raw + (10 ** (SONG_GAIN_DB / 20) - 1.0) * music_win[:, :raw.shape[1]]
+        log(f'song gain +{SONG_GAIN_DB:.1f} dB (constant) over the level the hits were set against')
+    raw = headroom_for_hits(raw, music_win[:, :raw.shape[1]] * 10 ** (SONG_GAIN_DB / 20), lufs=lufs)
     mastered, g_master, tp_aac = master_for_aac(raw, mix_path, lufs=lufs)
     # ---- plan
     beats = song.beats(s0 - 0.01, s0 + L, P, ph) - s0
@@ -3414,7 +3426,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
         'clip_layer': layer_stats, 'onset_err_ms_before': errs, 'onset_err_ms_after': errs2, 'flux_rel_before': flux0, 'flux_rel_after': flux1,
         'engine_onset_err_ms_before': eng_errs0, 'engine_onset_err_ms': eng_errs,
         'plan_s': round(time.time() - t_start, 1),
-        'length_range': list(length_range) if length_range else None, 'lufs_target': round(lufs, 2),
+        'length_range': list(length_range) if length_range else None, 'lufs_target': round(lufs, 2), 'song_gain_db': SONG_GAIN_DB,
         'pool_fit': fit, 'cap_scale': round(cap_scale, 2), 'reuse': dict(_REUSE_INFO) or None,
     }
     plan = {
