@@ -43,6 +43,7 @@ from PIL import Image, ImageDraw
 
 import quiz_emoji as emj
 import geo
+import line_check
 import media
 import sound
 from PIL import ImageFilter
@@ -141,7 +142,7 @@ INTRO_POOL = {
     'idol': ['Guess the K-pop idol!', 'Real K-pop fans get these instantly.', 'Name the idol before the photo clears up!'],
     # clip formats: one short line (the first clip waits for it)
     'opening': ['Guess the anime from its opening!', 'Headphones on. Name the anime!', 'Name the anime from its opening!'],
-    'emoji': None, 'trivia': ['How many can you get right?', "Let's see if you're a real fan.", 'Five questions. No cheating.'],
+    'emoji': None, 'trivia': ['How many can you get right?', "Let's see if you're a real fan.", '{N} questions. No cheating.'],
     'city': ['Guess the city from the map!', 'Where is this dot? Name the city.', 'Map nerds, this one is for you.'],
     'nightcity': ['Guess the city by night!', 'City lights only. Which city is this?', 'Night skyline. Name the city!'],
     'cuisine': ['Guess the dish!', 'Hungry yet? Name the dish!', 'Food nerds, name the dish before it unblurs!'],
@@ -154,6 +155,10 @@ INTRO_POOL = {
     'voice': ['Guess the character by their voice!', 'Who is talking? Name them!', 'Close your eyes. Who is this?'],
     'song': ['Guess the song!', 'Headphones on. Name the song!', 'Name the song in three seconds!'],
 }
+# themed editions: the theme's own intro / outro lines are about characters ("Guess who's in costume!"); every other format
+# gets "<Edition> edition!" + its own intro (2026-10-23 audit: an emoji / trivia / wyr / duel edition said "Guess who's ...")
+EDITION_LINE_FORMATS = ('character', 'silhouette', 'eyes', 'outfit')
+NUM_WORD = {1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight'}
 REVEAL_POOL = ['{a}!', "It's {a}!", 'That was {a}.', '{a}. Did you get it?', 'Easy. {a}!']
 
 
@@ -421,6 +426,8 @@ class PopRenderer(QuizRenderer):
             intro = intro.get(self.topic, 'Guess it from the emojis!')
         elif INTRO_POOL.get(self.fmt):
             intro = self.rng.choice(INTRO_POOL[self.fmt])
+        if intro and '{N}' in intro:   # 'Five questions' said on a 3-round quick cut
+            intro = intro.replace('{N}', NUM_WORD.get(len(rounds), str(len(rounds))).capitalize())
         ask, ans = [], []
         for r in rounds:
             if self.fmt == 'trivia':
@@ -460,10 +467,13 @@ class PopRenderer(QuizRenderer):
                 ans.append(self.rng.choice(reveal_pool(r)).format(a=speakable(name)))
         outro = ('Which would you pick? Comment below!' if self.fmt == 'wyr' else self.rng.choice(DUEL_OUTRO) if self.fmt == 'duel'
                  else self.rng.choice(OUTRO_POOL))
-        if self.edition:   # themed intro / outro lines
-            intro = self.rng.choice(self.edition['intro'])
-            if self.fmt not in ('wyr', 'duel'):
+        ans = [line_check.tidy(a) for a in ans]   # 'Toradora!. Did you get it?'
+        if self.edition:   # themed intro / outro lines (the theme's own lines are about characters: art formats only)
+            if self.fmt in EDITION_LINE_FORMATS:
+                intro = self.rng.choice(self.edition['intro'])
                 outro = self.rng.choice(self.edition['outro'])
+            else:
+                intro = self.safe_line('intro', base=intro)
         # AI-written lines (pipeline/pop-narrator-ai.js): per slot [AI main, AI short, fixed-pool line]; the fixed line is
         # always the last resort. Reveals only where the fixed line is a REVEAL_POOL template (the name goes in as {a}).
         self.ai_slots, self.ai_tmpl = {}, {}
@@ -481,16 +491,103 @@ class PopRenderer(QuizRenderer):
                     t = (ai.get('reveal') or [None] * n)[i] if i < len(ai.get('reveal') or []) else None
                     if t and ans[i]:
                         name = speakable(r['title']) if self.fmt in ('opening', 'scene') else speakable((r.get('answer') or r.get('name')).split(' (')[0])
-                        self.ai_slots[1 + n + i] = [x.replace('{a}', name) for x in t if x] + [ans[i]]
+                        self.ai_slots[1 + n + i] = [line_check.tidy(x.replace('{a}', name)) for x in t if x] + [ans[i]]
                         self.ai_tmpl[1 + n + i] = [x for x in t if x] + [None]
-            for k, c in self.ai_slots.items():
+        # topic / format consistency (core/quiz/line_check.py, owner 2026-10-23): every candidate of every slot, AI and pool, is
+        # checked; a failing candidate is dropped, a slot left without one gets the format's safe template (else it stays silent).
+        # A mismatched line is never spoken.
+        n = len(rounds)
+        self.line_swaps = []
+        meta = self.line_meta()
+        for k in list(self.ai_slots):
+            orig, m = self.ai_slots[k], meta[k]
+            keep = [j for j, c in enumerate(orig) if not self._line_problems(c, m, f'{m["slot"]} ({"pool" if j == len(orig) - 1 else "ai"})')]
+            cands, tmpls = [orig[j] for j in keep], [self.ai_tmpl[k][j] for j in keep]
+            if len(orig) - 1 not in keep:   # the pool line failed too
+                safe = self.safe_line(m['slot'], m.get('i'))
+                if safe and not self._line_problems(safe, m, None):
+                    cands, tmpls = cands + [safe], tmpls + [None]
+            if cands:
+                self.ai_slots[k], self.ai_tmpl[k] = cands, tmpls
+            else:
+                del self.ai_slots[k], self.ai_tmpl[k]
                 if k == 0:
-                    intro = c[0]
+                    intro = None
                 elif k == 1 + 2 * n:
-                    outro = c[0]
+                    outro = None
                 else:
-                    ans[k - 1 - n] = c[0]
-        return intro, ask, ans, outro
+                    ans[k - 1 - n] = None
+        for k, c in self.ai_slots.items():
+            if k == 0:
+                intro = c[0]
+            elif k == 1 + 2 * n:
+                outro = c[0]
+            else:
+                ans[k - 1 - n] = c[0]
+        lines = [intro] + ask + ans + [outro]
+        for k, m in enumerate(meta):
+            if k in self.ai_slots or not lines[k] or not self._line_problems(lines[k], m, m['slot']):
+                continue
+            safe = self.safe_line(m['slot'], m.get('i'))
+            lines[k] = safe if safe and not self._line_problems(safe, m, None) else None
+        self.spoken_meta = meta
+        return lines[0], lines[1:1 + n], lines[1 + n:1 + 2 * n], lines[1 + 2 * n]
+
+    def line_meta(self):
+        """Per voice slot ([intro] + asks + reveals + [outro]): its kind, and for a reveal its answer + the other rounds' answers."""
+        rounds = self.plan['rounds']
+        n = len(rounds)
+        names = [self.reveal_name(r) for r in rounds]
+        content = self.fmt in ('trivia', 'wyr', 'duel')
+        meta = [{'slot': 'intro', 'kind': 'narration'}]
+        meta += [{'slot': f'ask {i + 1}', 'kind': 'content', 'i': i} for i in range(n)]
+        for i in range(n):
+            m = {'slot': f'reveal {i + 1}', 'kind': 'content' if content else 'narration', 'i': i}
+            if names[i]:
+                m['name'] = names[i]
+                m['others'] = [x for j, x in enumerate(names) if j != i and x and len(x) >= 4]
+            meta.append(m)
+        meta.append({'slot': 'outro', 'kind': 'narration'})
+        return meta
+
+    def reveal_name(self, r):
+        """The answer as the narrator says it in the reveal (None where the reveal is not a name: wyr / duel)."""
+        if self.fmt == 'trivia':
+            return str(r['options'][r['answer']])
+        if self.fmt in ('wyr', 'duel'):
+            return None
+        if self.fmt == 'song':
+            return r.get('say') or speakable(r['title'])
+        if self.fmt in ('opening', 'scene'):
+            return speakable(r['title'])
+        return speakable(str(r.get('answer') or r.get('name') or '').split(' (')[0])
+
+    def _line_problems(self, text, m, slot):
+        p = line_check.problems(self.plan, text, m['kind'], m.get('name'), m.get('others') or ())
+        if p and slot:
+            self.line_swaps.append({'slot': slot, 'line': text, 'why': p})
+            print(f'line check: {slot} {text!r} dropped: {"; ".join(p)}', file=sys.stderr)
+        return p
+
+    def safe_line(self, slot, i=None, base=None):
+        """The format's plain line for a slot: a themed edition's intro outside the art formats, and what replaces a line that
+        failed the topic / format check."""
+        if slot == 'intro':
+            if base is None:
+                base = INTRO.get(self.fmt)
+                if isinstance(base, dict):
+                    base = base.get(self.topic) or 'Guess it from the emojis!'
+            base = base or ('Which would you pick?' if self.fmt == 'wyr' else 'How many can you get right?')
+            return f"{self.edition['label'].capitalize()}! {base}" if self.edition else base
+        if slot == 'outro':
+            return 'Which would you pick? Comment below!' if self.fmt == 'wyr' else DUEL_OUTRO[0] if self.fmt == 'duel' else OUTRO_POOL[2]
+        if slot.startswith('reveal') and i is not None:
+            r = self.plan['rounds'][i]
+            name = self.reveal_name(r)
+            if self.fmt == 'song':
+                return f"{name}, by {r.get('sayArtist') or speakable(r['artist'])}!"
+            return line_check.tidy(f'{name}!') if name else None
+        return None
 
     def ai_budget(self, k, n, text, dur):
         """Longest the line in slot k may be so the timing is exactly as tight as with the fixed lines."""
@@ -555,7 +652,8 @@ class PopRenderer(QuizRenderer):
         self.draw_timer(frame, win if tl < lead else q - tl, win, y=y)
 
     # ── static layers ──
-    def prepare_pop(self):
+    def screen_text(self):
+        """The title card's two lines, checked like the narrator lines (a neutral title when they name another topic)."""
         fmt, rounds = self.fmt, self.plan['rounds']
         if fmt == 'city':
             cname = CITY_COUNTRY[rounds[0]['iso2']][0]
@@ -565,8 +663,21 @@ class PopRenderer(QuizRenderer):
             title, sub = opts.get(self.topic) or opts.get('mixed') or next(iter(opts.values()))
         if self.edition:
             sub = self.edition['label']
-        self.title = text_layer(title, 112, stroke=10, max_w=980)
         sub = sub.replace('5/5', f'{len(rounds)}/{len(rounds)}')   # a 3-round quick cut said 'GET 5/5'
+        out = []
+        for t in (title, sub):
+            p = line_check.problems(self.plan, t, 'screen')
+            if p:
+                print(f'line check: screen {t!r} replaced: {"; ".join(p)}', file=sys.stderr)
+                self.line_swaps = getattr(self, 'line_swaps', []) + [{'slot': 'screen', 'line': t, 'why': p}]
+                t = 'QUIZ TIME' if t == title else 'HOW MANY CAN YOU GET?'
+            out.append(t)
+        return out
+
+    def prepare_pop(self):
+        fmt, rounds = self.fmt, self.plan['rounds']
+        title, sub = self.screen = self.screen_text()
+        self.title = text_layer(title, 112, stroke=10, max_w=980)
         self.subtitle = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
         self.levels = []
         for i, r in enumerate(rounds):
@@ -1924,6 +2035,10 @@ class PopRenderer(QuizRenderer):
         return {'duration': round(self.duration, 2), 'frames': nf, 'renderSec': round(time.time() - t0, 1),
                 'voice': sum(c is not None for c in clips), 'voiceLines': len(idx), 'lufs': lufs_i, 'truePeak': tp,
                 'aiLines': list(self.ai_log.values()) if getattr(self, 'ai_log', None) else None,
+                # every spoken line + the title card, for the pre-upload line check (pipeline/quiz-guard.js)
+                'spoken': [{'slot': m['slot'], 'kind': m['kind'], 'line': lines[k], 'name': m.get('name'), 'others': m.get('others')}
+                           for k, m in enumerate(getattr(self, 'spoken_meta', [])) if k < len(lines) and lines[k]],
+                'screen': list(getattr(self, 'screen', []) or []), 'lineSwaps': getattr(self, 'line_swaps', None) or None,
                 'fetch': self.fetch_log, 'audioCheck': {k: v for k, v in (self.audio_log or {}).items() if k not in ('lines', 'clips')},
                 'placements': sorted((self.audio_log or {}).get('lines', []) + (self.audio_log or {}).get('clips', []), key=lambda x: x['start'])}
 

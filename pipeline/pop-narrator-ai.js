@@ -14,6 +14,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const lineCheck = require('./quiz-line-check');
 
 const ROOT = path.join(__dirname, '..');
 const MEMORY = path.resolve(ROOT, process.env.MEMORY_DIR || 'memory', 'pop-ai-lines.json');
@@ -33,12 +34,15 @@ function nameTokens() {
   const common = new Set(['the', 'and', 'you', 'who', 'one', 'day', 'beach', 'summer', 'night', 'love', 'king', 'queen', 'star', 'girl',
     'boy', 'man', 'lady', 'black', 'white', 'red', 'blue', 'little', 'big', 'sun', 'moon', 'sky', 'snow', 'rose', 'hope', 'joy', 'grace']);
   NAME_TOKENS = new Set();
-  try {
-    const chars = JSON.parse(fs.readFileSync(path.join(ROOT, 'core', 'quiz', 'assets', 'anime-characters.json'), 'utf8')).characters;
-    for (const c of chars) {
-      for (const w of String(c.name).toLowerCase().split(/[^a-z]+/)) if (w.length >= 3 && !common.has(w)) NAME_TOKENS.add(w);
-    }
-  } catch {}
+  // anime characters, K-pop idols and VTubers (2026-10-23: idol / VTuber names were not covered)
+  for (const [file, field] of [['anime-characters.json', 'characters'], ['kpop-idols.json', 'idols'], ['vtubers.json', 'vtubers']]) {
+    try {
+      const items = JSON.parse(fs.readFileSync(path.join(ROOT, 'core', 'quiz', 'assets', file), 'utf8'))[field] || [];
+      for (const c of items) {
+        for (const w of String(c.name || '').toLowerCase().split(/[^a-z]+/)) if (w.length >= 3 && !common.has(w)) NAME_TOKENS.add(w);
+      }
+    } catch {}
+  }
   return NAME_TOKENS;
 }
 
@@ -81,7 +85,8 @@ function checkLine(slot, line, short) {
   if (s.replace(/\{a\}/g, '').toLowerCase().split(/[^a-z]+/).some(w => toks.has(w))) return 'a name';
   // capitalised words mid-sentence are names (except I)
   const mid = s.replace(/\{a\}/g, '').split(/(?<=[.!?])\s+/).flatMap(sent => sent.split(/\s+/).slice(1));
-  if (mid.some(w => /^[A-Z]/.test(w) && w !== 'I' && !/^I'/.test(w))) return 'capitalised word';
+  // (topic / place / edition words like K-pop, VTuber, Asian, Halloween are allowed: the topic check judges them)
+  if (mid.some(w => /^[A-Z]/.test(w) && w !== 'I' && !/^I'/.test(w) && !lineCheck.capitalOk(w))) return 'capitalised word';
   if (recentlyUsed(s)) return 'used in the last 60 days';
   return null;
 }
@@ -99,11 +104,11 @@ function quizWhat(plan) {
     case 'eyes': return `guess the ${who} from one eye`;
     case 'outfit': return `guess the ${who} from their outfit`;
     case 'duel': return `pick which of two ${who}s fans prefer`;
-    case 'wyr': return `would you rather (${subj} edition)`;
+    case 'wyr': return `would you rather (${({ cities: 'Asia travel', food: 'Asian food' })[plan.topic] || subj} edition)`;
     case 'trivia': return `${subj} trivia`;
     case 'emoji': return `guess the ${subj} from emojis`;
     case 'opening': return 'guess the anime from its opening song';
-    case 'song': return `guess the ${plan.topic === 'anime' ? 'anime opening' : subj} song`;
+    case 'song': return `guess the ${plan.topic === 'anime' ? 'anime' : plan.topic === 'kpop' ? 'K-pop' : 'K-pop, anime or J-pop'} song`;
     case 'scene': return 'guess the anime from one scene';
     case 'voice': return 'guess the anime character from their voice';
     case 'idol': return 'guess the K-pop idol';
@@ -111,44 +116,31 @@ function quizWhat(plan) {
     case 'nightcity': return 'guess the Asian city from its night skyline';
     case 'cityphoto': return 'guess the Asian city from a photo';
     case 'cuisine': return 'guess the Asian dish';
+    case 'city': return `guess the ${t || 'Asian'} city from its dot on the map`;
     default: return `a ${subj} quiz`;
   }
 }
 
-// Topic words a spoken line may use; a line naming another topic is wrong for this quiz.
-const TOPIC_WORDS = {
-  anime: /\b(anime|manga|otaku)\b/i, kpop: /\b(k-?pop|idols?)\b/i, vtuber: /\bv-?tubers?\b/i,
-  city: /\b(cit(y|ies)|skylines?|travel|trips?)\b/i, food: /\b(food|dish(es)?|eat|taste|cuisine|hungry)\b/i,
-  song: /\b(songs?|tracks?|tunes?|music|openings?)\b/i, flag: /\b(flags?|countr(y|ies)|maps?)\b/i,
-};
-function allowedTopics(plan) {
-  if (plan.topic === 'mixed') return new Set(Object.keys(TOPIC_WORDS));
-  const a = new Set();
-  const f = plan.format, t = plan.topic;
-  if (t === 'anime' || ['character', 'silhouette', 'eyes', 'outfit', 'opening', 'scene', 'voice'].includes(f) && t !== 'kpop' && t !== 'vtubers') a.add('anime');
-  if (t === 'kpop' || t === 'kpop song' || f === 'idol') a.add('kpop');
-  if (t === 'vtubers' || f === 'vtuber') a.add('vtuber');
-  if (t === 'cities' || ['nightcity', 'cityphoto', 'city'].includes(f) || (f === 'wyr' && /travel/i.test(plan.edition && plan.edition.id || ''))) a.add('city');
-  if (t === 'food' || f === 'cuisine' || (f === 'wyr' && /food/i.test(plan.edition && plan.edition.id || ''))) a.add('food');
-  if (t === 'kpop song' || ['song', 'opening'].includes(f) || (f === 'emoji' && /song/.test(t))) a.add('song');
-  if (['flag', 'shape', 'capital', 'city'].includes(f)) a.add('flag');
-  return a;
-}
+// Topic / format / edition / count rules: core/quiz/line-rules.json (shared with the renderer's check and the pre-upload guard).
+// A reveal template is checked without its {a}.
 function wrongTopic(plan, line) {
-  const ok = allowedTopics(plan);
-  for (const [k, re] of Object.entries(TOPIC_WORDS)) if (!ok.has(k) && re.test(String(line || ''))) return `wrong topic (${k})`;
-  return null;
+  const p = lineCheck.problems(plan, String(line || '').replace(/\{a\}/g, ' '), { kind: 'narration' });
+  return p.length ? `wrong for this quiz (${p[0]})` : null;
 }
+const allowedTopics = plan => lineCheck.allowed(plan);
 
 function prompt(plan, edition, n) {
   const fmt = plan.format;
   const what = quizWhat(plan);
-  const theme = edition ? `This is the "${edition.name}" themed edition (${edition.label}); match its mood (for example: "${(edition.intro || [])[0] || ''}").` : '';
+  // the theme's own intro lines are about characters ("Guess who's in costume!"): an example only where the answers are characters
+  const art = ['character', 'silhouette', 'eyes', 'outfit'].includes(fmt);
+  const theme = edition ? `This is the "${edition.label.toLowerCase()}" themed edition; match its mood${art ? ` (for example: "${(edition.intro || [])[0] || ''}")` : ''}.` : '';
   return [
     'You write short spoken lines for the narrator of a YouTube Shorts quiz. Calm, cool, upbeat. Pure flavour and hype: '
     + 'NEVER state a fact about any character, show, person or event, NEVER write a name, number, statistic or claim, '
     + 'nothing about bodies or looks, no slang, no profanity, plain English, easy for text-to-speech (short words, natural rhythm). English only.',
-    `Quiz: ${what}. ${theme}\nWrite:\n`
+    `Quiz: ${what}. ${theme} When a line says what the quiz is about, use exactly that subject, never another one `
+    + '(anime, K-pop, VTubers, songs, cities, food); never say how many rounds or questions there are.\nWrite:\n'
     + '- "intro": the opening line (max 12 words), plus "intro_short" (max 7 words);\n'
     + '- "outro": the closing line asking viewers to comment their score (max 10 words), plus "outro_short" (max 6 words);\n'
     + `- "reveals": ${n} reveal TEMPLATES said right after the answer appears. Each contains {a} exactly once where the code puts the `

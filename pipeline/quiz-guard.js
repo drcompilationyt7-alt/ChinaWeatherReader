@@ -5,13 +5,17 @@
  *
  *   checkPlan(plan, need)            before rendering: round count, a real answer per round, edition membership,
  *                                    local picture files (exist, non-empty, not blank)
- *   checkRender(res, need)           after rendering: rounds kept, video length, sampled frames not blank / static
+ *   checkRender(res, need)           after rendering: rounds kept, video length, sampled frames not blank / static, and every
+ *                                    spoken line + the title card against the topic / format rules (quiz-line-check.js:
+ *                                    "Guess the anime" in a K-pop quiz, another edition, a wrong round count, a reveal that
+ *                                    does not say its own answer)
  */
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const learn = require('../core/learning-models');
 const { themePool, loadThemes, hasRevealImage } = require('./pop-quiz-content');
+const lineCheck = require('./quiz-line-check');
 
 const ROOT = path.join(__dirname, '..');
 const QA = path.join(ROOT, 'core', 'quiz', 'qa_guard.py');
@@ -112,6 +116,10 @@ async function checkRender(res, need) {
   rounds.forEach((r, i) => { if (!real(roundLabel(r))) out.push(`rendered round ${i + 1} has no answer`); });
   if (res && res.plan && res.plan.format === 'trivia') {
     rounds.forEach((r, i) => { if (!r.photoCredit) out.push(`trivia round ${i + 1} was rendered without its reveal picture`); });
+  }
+  // owner 2026-10-23 "make sure all voice lines are correct": the renderer already swaps failing lines; anything left is a bug
+  if (res && res.plan && (res.spoken || res.screen)) {
+    for (const p of lineCheck.checkSpoken(res.plan, res.spoken, res.screen)) out.push(`line check: ${p}`);
   }
   if (!res || !res.path || !fs.existsSync(res.path) || !fs.statSync(res.path).size) {
     out.push('video file missing or empty');

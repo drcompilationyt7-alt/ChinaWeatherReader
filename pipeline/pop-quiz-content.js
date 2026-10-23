@@ -261,7 +261,14 @@ function loadThemes() {
 function themePool(tid, fmt) {
   let ex = {};
   try { ex = JSON.parse(fs.readFileSync(EXTRAS_FILE, 'utf8')); } catch {}
-  const items = (((ex.themes || {})[tid] || {})[fmt]) || [];
+  let items = (((ex.themes || {})[tid] || {})[fmt]) || [];
+  // 2026-10-23 line audit: the villains pool holds non-villains (Frieren, Luffy, Himmel, and names on its own exclude list) while the
+  // narrator says "Only the bad guys today": a theme with a curated name list only uses the items on that list
+  const sel = ((loadThemes().themes || {})[tid] || {}).select || {};
+  if (Array.isArray(sel.names) && sel.names.length) {
+    const ok = new Set(sel.names.map(n => n.toLowerCase())), bad = new Set((sel.exclude || []).map(n => n.toLowerCase()));
+    items = items.filter(it => ok.has(String(it.name || '').toLowerCase()) && !bad.has(String(it.name || '').toLowerCase()));
+  }
   const withFile = items.map(it => (fmt === 'character' && it.dir ? { ...it, image_file: path.join(POP2, it.dir, `${it.file_id || it.id}.jpg`) } : it));
   return mediaPool(fmt, withFile);
 }

@@ -663,6 +663,7 @@ async function runWorldQuizPipeline(opts = {}) {
     }
     if (cPlanFile) { try { fs.unlinkSync(cPlanFile); } catch {} }
     if (!r) continue;
+    if (r.lineSwaps) logger.warn(`Line check swapped ${r.lineSwaps.length} line(s): ${r.lineSwaps.slice(0, 4).map(s => `${s.slot} "${String(s.line).slice(0, 50)}" (${s.why[0]})`).join('; ')}`);
     const bad = await guard.checkRender(r, need);
     if (bad.length) {
       failures.push(`${cand.format} video: ${bad.slice(0, 4).join('; ')}`);

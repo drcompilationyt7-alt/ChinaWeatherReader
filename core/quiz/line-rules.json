@@ -1,0 +1,72 @@
+{
+  "_about": "Topic / format consistency rules for every narrator line and on-screen title of a quiz (2026-10-23: a K-pop song emoji quiz said 'Guess the anime from these emojis!'). One rule set, read by core/quiz/line_check.py (the renderer swaps a failing line for a safe template before the TTS) and pipeline/quiz-line-check.js (the AI-line validator and the pre-upload guard). A narration line may only use the word categories its format and topic allow; a line naming another edition, a round count that is not the video's, or a reveal without its own round's answer is a mismatch. Content lines (trivia questions, would-you-rather options and reasons, duel questions) are the items themselves and are only checked for counts / placeholders.",
+  "categories": {
+    "anime": "\\b(anime|manga|otakus?|weebs?)\\b",
+    "kpop": "\\b(k-?pop|idols?)\\b",
+    "vtuber": "\\bv-?tubers?\\b",
+    "city": "\\b(cit(y|ies)|skylines?|travel(l?ers?)?|trips?)\\b",
+    "map": "\\bmaps?\\b",
+    "food": "\\b(foods?|foodies?|dish(es)?|eat(ing)?|tastes?|cuisine|hungry|snacks?|menu)\\b",
+    "song": "\\b(songs?|tracks?|tunes?|music|openings?|headphones|lyrics?|singers?)\\b",
+    "flag": "\\b(flags?|countr(y|ies)|capitals?|borders?)\\b",
+    "drama": "\\b([kc]-?dramas?|dramas?|movies?|films?)\\b",
+    "character": "\\bcharacters?\\b",
+    "guess_who": "\\b(guess who|who is (this|it|that)|who's (this|that|it)|whose)\\b",
+    "guess": "\\b(guess|name (the|it|them|this|that))\\b"
+  },
+  "format": {
+    "character": ["anime", "character", "guess_who", "guess"],
+    "silhouette": ["anime", "character", "guess_who", "guess"],
+    "eyes": ["anime", "character", "guess_who", "guess"],
+    "outfit": ["anime", "character", "guess_who", "guess"],
+    "voice": ["anime", "character", "guess_who", "guess"],
+    "duel": ["anime", "character"],
+    "opening": ["anime", "song", "guess"],
+    "scene": ["anime", "guess"],
+    "emoji": ["guess"],
+    "trivia": ["guess"],
+    "wyr": [],
+    "song": ["song", "guess"],
+    "idol": ["kpop", "guess_who", "guess"],
+    "vtuber": ["vtuber", "guess_who", "guess"],
+    "nightcity": ["city", "guess"],
+    "cityphoto": ["city", "guess"],
+    "cuisine": ["food", "guess"],
+    "city": ["city", "map", "guess"],
+    "flag": ["flag", "guess"],
+    "shape": ["flag", "map", "guess"],
+    "capital": ["flag", "city", "guess"],
+    "bigger": ["flag", "map"],
+    "crowd": ["flag"]
+  },
+  "topic": {
+    "anime": ["anime"],
+    "anime character": ["anime", "character"],
+    "kpop song": ["kpop", "song"],
+    "kpop": ["kpop", "song"],
+    "kdrama": ["drama"],
+    "cdrama": ["drama"],
+    "vtubers": ["vtuber"],
+    "cities": ["city"],
+    "food": ["food"],
+    "mixed": "*"
+  },
+  "format_topic": {
+    "trivia|anime": ["character"],
+    "trivia|vtubers": ["character"],
+    "wyr|anime": ["character"]
+  },
+  "editions": {
+    "halloween": "\\b(halloween|spooky|trick or treat)\\b",
+    "winter": "\\b(christmas|holidays?|winter|snow(y|ball)?|santa)\\b",
+    "beach": "\\b(beach(-goers)?|surf'?s?|seaside)\\b",
+    "festival": "\\b(festival(-goers)?|yukata|fireworks)\\b",
+    "maid": "\\b(maids?|maid cafe|master)\\b",
+    "gym": "\\b(sports day|gym|athletes?)\\b",
+    "valentine": "\\b(valentine'?s?|chocolates?)\\b",
+    "glasses": "\\bglasses\\b",
+    "villains": "\\b(villains?|bad guys)\\b"
+  },
+  "count_nouns": "questions?|rounds?|levels?|characters?|songs?|idols?|cities|dish(es)?|flags?|anime|emojis?|pairs?|duels?|picks?|countries|vtubers?",
+  "capital_ok": "^(K-?pop|J-?pop|C-?pop|VTubers?|K-?drama|C-?drama|Asian?|Chinese|Japanese|Korean|China|Japan|Korea|Halloween|Christmas|Valentine's|Valentine)[.,!?']*$"
+}

@@ -594,7 +594,7 @@ class QuizRenderer:
     # ── output ──
     def render(self, out_path):
         t0 = time.time()
-        lines = self.voice_lines()
+        lines = self.check_lines(self.voice_lines())
         clips = sound.tts_lines(lines, voices=[self.voice_name] if self.voice_name else None,
                                 workdir=self.workdir) if self.use_voice else [None] * len(lines)
         n_r = len(self.plan['rounds'])
@@ -617,7 +617,30 @@ class QuizRenderer:
         if proc.wait() != 0:
             raise RuntimeError('ffmpeg failed')
         return {'duration': round(self.duration, 2), 'frames': n, 'renderSec': round(time.time() - t0, 1),
-                'voice': sum(c is not None for c in clips), 'voiceLines': len(clips)}
+                'voice': sum(c is not None for c in clips), 'voiceLines': len(clips),
+                'spoken': self.spoken, 'screen': list(TITLE.get(self.fmt, ()))}
+
+    def check_lines(self, lines):
+        """Topic / format consistency (core/quiz/line_check.py): a failing line becomes the format's plain line, else silence."""
+        import line_check
+        rounds = self.plan['rounds']
+        n = len(rounds)
+        names = [str(r.get('answer') or '') for r in rounds]
+        self.spoken = []
+        for k, line in enumerate(lines):
+            m = {'slot': 'intro' if k == 0 else f'reveal {k}' if k <= n else 'last' if k == n + 1 else 'outro', 'kind': 'narration'}
+            if 1 <= k <= n and names[k - 1]:
+                m['name'], m['others'] = names[k - 1], [x for j, x in enumerate(names) if j != k - 1 and len(x) >= 4]
+            p = line_check.problems(self.plan, line, m['kind'], m.get('name'), m.get('others') or ())
+            if line and p:
+                print(f"line check: {m['slot']} {line!r} dropped: {'; '.join(p)}", file=sys.stderr)
+                line = {0: INTRO_LINE.get(self.fmt), n + 1: 'Last one!', n + 2: 'Drop your score in the comments!'}.get(k) or f"{m.get('name')}!"
+                if line_check.problems(self.plan, line, m['kind'], m.get('name'), m.get('others') or ()):
+                    line = None
+                lines[k] = line
+            if line:
+                self.spoken.append({**m, 'line': line})
+        return lines
 
 
 # narrator settings of the quiz channel's CI run (.github/workflows/quiz-channel.yml env); --ci-voice applies them locally
