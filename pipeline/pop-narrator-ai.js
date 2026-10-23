@@ -86,11 +86,63 @@ function checkLine(slot, line, short) {
   return null;
 }
 
+// What the quiz is about, from format AND topic (2026-10-23: a K-pop song emoji quiz said "guess the anime").
+const SUBJECT = { anime: 'anime', 'kpop song': 'K-pop song', kpop: 'K-pop', vtubers: 'VTuber', cdrama: 'Chinese drama',
+  cities: 'Asian city', food: 'Asian dish', CN: 'Chinese', JP: 'Japanese', KR: 'Korean', mixed: 'Asian pop culture' };
+function quizWhat(plan) {
+  const t = SUBJECT[plan.topic] || null;
+  const subj = t || 'pop culture';
+  const who = plan.topic === 'vtubers' ? 'VTuber' : plan.topic === 'kpop' ? 'K-pop idol' : 'anime character';
+  switch (plan.format) {
+    case 'character': return `guess the ${who} from a blurred picture`;
+    case 'silhouette': return `guess the ${who} from their silhouette`;
+    case 'eyes': return `guess the ${who} from one eye`;
+    case 'outfit': return `guess the ${who} from their outfit`;
+    case 'duel': return `pick which of two ${who}s fans prefer`;
+    case 'wyr': return `would you rather (${subj} edition)`;
+    case 'trivia': return `${subj} trivia`;
+    case 'emoji': return `guess the ${subj} from emojis`;
+    case 'opening': return 'guess the anime from its opening song';
+    case 'song': return `guess the ${plan.topic === 'anime' ? 'anime opening' : subj} song`;
+    case 'scene': return 'guess the anime from one scene';
+    case 'voice': return 'guess the anime character from their voice';
+    case 'idol': return 'guess the K-pop idol';
+    case 'vtuber': return 'guess the VTuber';
+    case 'nightcity': return 'guess the Asian city from its night skyline';
+    case 'cityphoto': return 'guess the Asian city from a photo';
+    case 'cuisine': return 'guess the Asian dish';
+    default: return `a ${subj} quiz`;
+  }
+}
+
+// Topic words a spoken line may use; a line naming another topic is wrong for this quiz.
+const TOPIC_WORDS = {
+  anime: /\b(anime|manga|otaku)\b/i, kpop: /\b(k-?pop|idols?)\b/i, vtuber: /\bv-?tubers?\b/i,
+  city: /\b(cit(y|ies)|skylines?|travel|trips?)\b/i, food: /\b(food|dish(es)?|eat|taste|cuisine|hungry)\b/i,
+  song: /\b(songs?|tracks?|tunes?|music|openings?)\b/i, flag: /\b(flags?|countr(y|ies)|maps?)\b/i,
+};
+function allowedTopics(plan) {
+  if (plan.topic === 'mixed') return new Set(Object.keys(TOPIC_WORDS));
+  const a = new Set();
+  const f = plan.format, t = plan.topic;
+  if (t === 'anime' || ['character', 'silhouette', 'eyes', 'outfit', 'opening', 'scene', 'voice'].includes(f) && t !== 'kpop' && t !== 'vtubers') a.add('anime');
+  if (t === 'kpop' || t === 'kpop song' || f === 'idol') a.add('kpop');
+  if (t === 'vtubers' || f === 'vtuber') a.add('vtuber');
+  if (t === 'cities' || ['nightcity', 'cityphoto', 'city'].includes(f) || (f === 'wyr' && /travel/i.test(plan.edition && plan.edition.id || ''))) a.add('city');
+  if (t === 'food' || f === 'cuisine' || (f === 'wyr' && /food/i.test(plan.edition && plan.edition.id || ''))) a.add('food');
+  if (t === 'kpop song' || ['song', 'opening'].includes(f) || (f === 'emoji' && /song/.test(t))) a.add('song');
+  if (['flag', 'shape', 'capital', 'city'].includes(f)) a.add('flag');
+  return a;
+}
+function wrongTopic(plan, line) {
+  const ok = allowedTopics(plan);
+  for (const [k, re] of Object.entries(TOPIC_WORDS)) if (!ok.has(k) && re.test(String(line || ''))) return `wrong topic (${k})`;
+  return null;
+}
+
 function prompt(plan, edition, n) {
   const fmt = plan.format;
-  const what = { character: 'guess the anime character from a blurred picture', silhouette: 'guess the anime character from their silhouette',
-    eyes: 'guess the anime character from one eye', outfit: 'guess the anime character from their outfit', duel: 'pick which of two characters fans prefer',
-    wyr: 'would you rather', trivia: 'anime trivia', emoji: 'guess the anime from emojis', opening: 'guess the anime opening song' }[fmt] || 'a pop culture quiz';
+  const what = quizWhat(plan);
   const theme = edition ? `This is the "${edition.name}" themed edition (${edition.label}); match its mood (for example: "${(edition.intro || [])[0] || ''}").` : '';
   return [
     'You write short spoken lines for the narrator of a YouTube Shorts quiz. Calm, cool, upbeat. Pure flavour and hype: '
@@ -118,8 +170,8 @@ async function aiNarratorLines(plan, edition, llmJSON) {
   if (!r) return null;
   const rejected = [];
   const pair = (slot, main, short) => {
-    const e1 = checkLine(slot, main, false);
-    const e2 = checkLine(slot, short, true);
+    const e1 = checkLine(slot, main, false) || wrongTopic(plan, main);
+    const e2 = checkLine(slot, short, true) || wrongTopic(plan, short);
     if (e1) rejected.push(`${slot}: "${String(main).slice(0, 50)}" (${e1})`);
     if (e2) rejected.push(`${slot} short: "${String(short).slice(0, 50)}" (${e2})`);
     if (e1 && e2) return null;
@@ -133,4 +185,4 @@ async function aiNarratorLines(plan, edition, llmJSON) {
   };
 }
 
-module.exports = { aiNarratorLines, checkLine, recordAiLines, BUDGET };
+module.exports = { quizWhat, wrongTopic, allowedTopics, aiNarratorLines, checkLine, recordAiLines, BUDGET };
