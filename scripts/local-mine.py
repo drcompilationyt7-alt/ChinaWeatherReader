@@ -498,8 +498,10 @@ def sound_batch(st):
     env = job_env()
     env.update(SOUND_VID_SHARD='1', REFRESH_PER_SOURCE='14')
     cmd = [sys.executable, os.path.join(WT, 'core', 'pools', 'sound_refresh.py'), 'mine', '--work', work, '--shard', '0/1',
-           '--budget-min', str(SOUND_BUDGET), '--queries', str(SOUND_Q), '--max-sources', str(min(SOUND_SRC, cap_left(st)))]
-    rc, txt = run_job('sound-mine', cmd, WT, env, SOUND_BUDGET + 30, youtube=True)
+           '--budget-min', str(SOUND_BUDGET * 8), '--queries', str(SOUND_Q), '--max-sources', str(min(SOUND_SRC, cap_left(st)))]
+    # the pool code's budget is WALL time and our pauses would eat it (2026-10-23 test: the mini was never judged): a wide wall
+    # budget there, the real cap is our ACTIVE-time cap (paused minutes do not count)
+    rc, txt = run_job('sound-mine', cmd, WT, env, SOUND_BUDGET * 2, youtube=True)
     fs = rj(os.path.join(work, 'out', 'fetch.json'), None) or rj(os.path.join(work, 'fetch.json'), {})
     new = [k for k, v in (fs.get('seen') or {}).items() if k not in seen0 and v != 'have']
     st['sources'] += len(new)
@@ -510,7 +512,7 @@ def sound_batch(st):
     if fs:
         push_fetch_state([fs], f'{len(new)} sources')
     bot = bot_check(txt, st, 'sound')
-    if not os.path.isfile(os.path.join(work, 'out', 'approved.json')) or not rep.get('approved'):
+    if not rj(os.path.join(work, 'out', 'approved.json'), {}):
         shutil.rmtree(work, ignore_errors=True)
     return bot
 
