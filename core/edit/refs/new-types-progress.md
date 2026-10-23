@@ -968,6 +968,23 @@ push from it would upload a pool without them). Queries: +6 suffixes (900 total)
     (bot checks: grep BOT-CHECK in the mine logs; publish ok?). (3) backfill rounds: `gh workflow run slowmo-pool-mine.yml -f
     backfill=true -f force=true` and `gh workflow run edit-pool-refresh.yml -f backfill=true -f dry_run=false -f budget_min=200`
     (as drcompilationyt7-alt), one round at a time per workflow; stop if a round logs >= 3 bot checks.
+- **2026-10-23 session-start review (review agent)**. slowmo-cand-20261022-s0..s5 had already been reviewed on 10-22 (4 sg approved, 6
+  rejected; manifests pushed 21:37). The backfill rounds are superseded by the one-job rotation (ee211e5).
+  - **Slow-mo, first rotation night (pool-mine-nightly 39865698441, 1 shard, 3h53)**: slowmo-cand-20261023-s0-sg6-db1 = 7 clips.
+    By eye (8-frame strips + mpdecimate held-frame count): **3 approved** (sg c_YEcxGMrIngQ_41100 hair in the wind, c_zvolzAxb5Kw_16900
+    green hair at sunset, c_ZK9RxMzGgQk_166500 looking up through gold leaves), **4 rejected** (n2 c_zvolzAxb5Kw_8600 nearly static,
+    20 of 120 frames distinct; n3 c_CnEVXmhybQA_78400 talking + a second person's head; n4 c_iGOUOvNcCmE_68300 Marin open-mouth laugh;
+    n6 db c_zHZmtcILK1I_186400 Fern talking). Imported with --delete-remote; push-manifests done (sources_seen 1360).
+    Pool **summer_glow 38 / dreamy_bloom 13** (target 60, `need` = go). Yield: 7 staged -> 3 approved from ONE job (was 3 shards:
+    10-20 19 -> 5, 10-21 12 -> 3; 6-shard test 10-22 10 -> 4), so the same approved count per night at 1/3 to 1/6 of the GitHub load.
+  - **Sound, the 10-22 restage**: sound-cand-20261022-n12 (12 clips). Zoomed hit-window strips: **5 approved** (c_WTltKnS7r2U_60090
+    Gojo / Sukuna punch block, c_1MSkCTOWdWs_101975 Eren vs Armored punch, c_ULHqLR9cpj8_208530 Bleach blade clash with sparks,
+    c_A_5JOOeFi5g_326030 Gyomei ground stomp, c_A_5JOOeFi5g_225697 Sanemi / Kokushibo clash flash), **7 rejected** (118190 spear swing
+    with no contact + foreground silhouette; 32942 tiny figure landing in the dark; 161608 unclear slash on mecha; 105748 wide, tiny
+    clash; 17977 wide debris shot, small figures; 712018 MAD paper frame + cuts just before the hit; 357881 wide slash, impact off-centre
+    at the edge). CI import run 39962527792 success: 5 added, **pins 70** (de950c4), tar deleted.
+  - **Quiz**: the rotation has not had a quiz night yet. The 6 older quiz tars from the pre-rotation quiz miner (10-21 art0 80 /
+    light 28 / people 15 / photos 122, 10-22 art1 2 / llm 12) are still on edit-pools-staging, NOT reviewed.
 
 **Pool upload**: `push --preset slowmo` (summer_glow 29 reviewed clean + dreamy_bloom 12; cine_reject media skipped) -> edit-pools.
 
