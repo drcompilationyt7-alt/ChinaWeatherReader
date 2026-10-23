@@ -337,6 +337,15 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     sameSong++;
     if ((action === 'retime' || action === 'recut') && (sameSong >= 3 || type !== 'slowmo')) action = 'reseed';
     if (action === 'reseed' && sameSong >= 3) action = 'new_song';
+    // dry run 40019693642 (sound): two reseeds of one song gave the same scores to 0.03 - the sound planner takes the best
+    // matches whatever the seed, so a sound 'reseed' is another song; any type: a repeat of the previous verdict = another song
+    const prevA = attempts.length > 1 ? attempts[attempts.length - 2] : null;
+    const same = prevA && prevA.song === att.song && prevA.overall != null && Math.abs(Number(prevA.overall) - Number(J.overall)) < 0.05
+      && Object.keys(prevA.failed || {}).sort().join() === Object.keys(J.failed || {}).sort().join();
+    if (action === 'reseed' && (type === 'sound' || same)) action = 'new_song';
+    // a sound short the pool cannot fill to 30 s (8_length) on two songs: no song fixes it -> stem now, not after 5 renders
+    const shortLen = attempts.filter(a => a.failed && a.failed['8_length_30_50s'] != null).length;
+    if (type === 'sound' && shortLen >= 2) { att.next = 'stop'; stopReason = 'the sound pool cannot fill 30 s (8_length on 2 songs)'; break; }
     if (action === 'retime' || action === 'recut') {
       const prev = repair || {};
       const jr = readJson(J.repairPath, {}) || {};

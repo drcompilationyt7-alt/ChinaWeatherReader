@@ -1239,3 +1239,66 @@ days fall back; with the USABLE pool the CI render sees (46 usable clips, 41 of 
   29 clips, 9 fresh -> 18 / 23 shots reuse 3j / 3g clips. Old blue 9.38 file deleted.
 - Rotation stays stem:1,sound:1,slowmo:0 (3g posts 10-24; slow-mo only after the owner approves blue v2 AND the pool has
   >= 22 fresh clips).
+
+### 2026-10-23: lyric timing per word (blue v3) + the judged CI repair loop (lyrics / one-shot agent)
+Owner: "the lyrics is still a bit off also we have to make sure in the github action when we generate this type of video it
+works one shot" + "well not one shot, if the github when creating the slow mo edit is not good we have to fix it, we must
+publish a video every day".
+
+**Measurement (words never written: indices only).** Per word on the RENDERED file: Demucs vocals; wav2vec2 base AND lv60k
+CTC forced alignment of the exact LRC words; word-start events of the stem (energy onset after a dip, MFCC timbre change,
+voice onset after silence; events inside one held note / in a decay are not word starts); ink = the frame each word first
+appears (= the plan item start rounded up to a frame; checked against frame jumps). Hand check of blue's intro with the
+pitch / level / brightness contour (the one-letter word starts where the pitch leaves the previous note, 0.84-0.87; the next
+word's /w/ darkening at 1.05-1.11; the last two words start after level gaps at 2.85 / 3.19).
+- _sX2 (blue reference, its own intro line): ink 0.00-0.06 s BEFORE the sung onset (median 0.035), legible 1 streak frame later.
+- blue v2: ink - onset -0.04, +0.04, **+0.79, +0.42, +0.80** (3 of 5 words on a later note of the melisma, all late).
+- Golden Hour approved renders, same check: 3g 6 entries, 5 off (max 0.41 s), 3j 5 entries, 3 off (max 0.20 s) + 1 sung
+  word never shown.
+**Root cause:** on a held legato line the CTC aligner (and lyric_check's whisper cross-check, whose times sit on the vowel
+opening) puts a word on a LATER note: the blank state absorbs the held vowel and the letters are emitted at its end. The two
+CTC models fail on different words (base: a word at its final consonant; lv60k: the last word crammed at the window end),
+never early; a vowel-initial word after a legato vowel is emitted late by both. Not the 0.9x speed (the stem is aligned at
+version speed; the errors are whole notes), not frame rounding (<= 33 ms), not the smear-in (one streak frame, as _sX2). The
+beat_lead quantise also moved the first word 0.11 s early. The old 3_lyrics compared each word with the nearest onset of ANY
+word (-0.15..+0.25), so v2 scored 8.73.
+**Fix:** lyric_check.intro_ensemble (cinematic_slowmo, RULES ensemble=True, LYRICS_ENSEMBLE=0 off): per intro word the
+candidates (both CTC models; the aligner's time and whisper only as weak candidates; for a vowel-initial word the previous
+word's last-letter end as an 'after' candidate), the stem's word-start events + virtual events (two models agreeing with no
+event near; the earlier model when they disagree and nothing marks it), a monotone DP with cost = distance + 0.3 x lateness
+vs the earliest model + weakness; a voice onset after silence wins over later events. lyric_text: ink = sung - 0.03 (no beat
+snap), min item / merge 0.20 s (was 0.26 / 0.30: a 0.25 s pair was merged, its 2nd word shown 0.25 s early). judge_slowmo
+3_lyrics: per word with the same machinery on the rendered audio (LRC words of the window, whisper medium finds the first
+word, plan item starts as ink); on time = |ink - (onset - 0.03)| <= 0.08; another note (> 0.25) caps at 5; a dropped sung
+word -2; frame-detector entry count only without per-word data; 'short' < 0.25 s (_sX2 holds 0.28-0.32 s). LRCLIB: 6 tries
+2-30 s backoff + in-process memo (503s seen here; never on disk).
+**Results (re-planned with the new code, judged per word on the rendered audio):** blue 6 / 6 words within -0.017..+0.07
+(the 0.07 = the window's first, cut word), 3j 7 / 7 shown (was 5 + 1 missing), max 0.063 s (was 0.20), 3g 7 / 7 shown,
+6 within, max 0.18 s (the held last word; was 5 off, max 0.41). 3g / 3j cut lists untouched (lyrics only).
+**blue v3 (CI dry run 40015849071, `--song yung_kai_blue@v0.9 --fresh-override --seed 11`): PASS 9.82 on attempt 1 / 5
+(22.3 min), 3_lyrics 10 (5 / 5 words -0.017..+0.047 s, mean +0.002), 11 / 12 / 13 / 14 = 10, 4_mix 8.34.** Review:
+review-shorts/edits/new-types/slowmo_dryrun_blue_v3_9.82.mp4 + _TIMING-TEST_reused-clips.md (per-word + per-cut tables,
+v2 before) + slowmo_dryrun_blue_v3-judge/. blue v2 files deleted.
+
+**CI repair loop (pipeline/newtype-pipeline.js runNewType):** up to NEWTYPE_MAX_ATTEMPTS 5 renders within NEWTYPE_BUDGET_MIN
+210 and (scheduled runs) not after NEWTYPE_DEADLINE_UTC 08:30 (the 02:47 run then still has the stem fallback + upload
+hours before 12:00). Each attempt: render (--no-mark; the upload marks clips / song) -> guard -> judge (slow-mo:
+judge_slowmo; sound: judge_sound vs FB15 from the cached reference measures core/edit/refs/sound-judge-ref-FB15TNFAHVU.json,
+JUDGE_PRE_HI_MS 800, strict PASS + mean >= SOUND_JUDGE_MIN 9.0) -> core/edit/judge_repair.py: retime (lyric_t0 per entry =
+judge onset - 0.03) / recut (moves loose / off-sync switches onto the attack, avoids mid-wave / held-tail switches, adds
+missed strong starts: planners._cine_ci_repair) keep song + seed and re-render only the changed ~12 s parts (CINE_PART_CACHE,
+content-hashed engine parts); reseed (smooth / beauty / variety, or repairs used up: 3 tries per song); new_song (mix /
+length / no-SFX / layout; SLOWMO_EXCLUDE_SONGS / SOUND_EXCLUDE_SONGS). pool_too_small stops at once. Last resort = stem
+(the runner's existing fallback) + job summary table + memory/newtype-repairs.jsonl (every day) + memory/newtype-fallback.json
++ a GitHub issue (not on dry runs). Pre-flight: model warm-up step (judge_repair.py --warm-models: wav2vec2 base + lv60k,
+htdemucs, faster-whisper base / medium; cache key v4), slow-mo song pick skips songs without LRCLIB lyrics (4 picks), the
+freshness check runs before any render. Workflow: concurrency group daily-create (the 07:47 backup waits, then sees the
+day's upload). vibe_pool mark-used now records under the type (sound / slowmo), as the render did.
+**Sound dry run (CI 40019693642, `--fresh-override` = PIPELINE TEST: the reuse cap lifted because the pool lacks fresh pins;
+labelled, never posted):** the judge ran on the runner from the cached reference (no reference video needed); 5 attempts in
+76 min (smooth criminal x3, levitating x2), all NOT PASS 8.57-8.68: 8_length 4.4 / 6.2 ("clean picture capacity 19.9 s ->
+11 bars = 22.3 s": the pinned-hit pool cannot fill 30 s), 16_drum_onsets 4.6-6.4, 17_no_frozen 4-5, 7_variety 7.6 -> stem
+fallback as designed (job summary + memory/newtype-fallback.json with dryRun true; no issue on dry runs). Two reseeds of one
+song gave the same scores (the sound planner takes the best matches whatever the seed) -> fixed: a sound 'reseed' is another
+song, a repeated verdict on one song goes to another song, and 8_length failing on 2 songs stops the loop (stem ~45 min
+earlier). A passing sound video needs more pinned hits (pool growth), not repairs. Rotation weights unchanged.
