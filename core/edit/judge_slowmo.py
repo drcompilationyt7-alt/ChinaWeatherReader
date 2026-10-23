@@ -47,6 +47,7 @@ import argparse
 import glob
 import io
 import json
+import math
 import os
 import subprocess
 import sys
@@ -621,7 +622,7 @@ def plan_info(plan_path):
                 # lyric_text re-triggers a word held longer than max_hold on the beats (same sung time as the item before):
                 # a deliberate punch of the held word, not a new sung word
                 phrase=((p.get('planner') or {}).get('lyric_text') or {}).get('phrase_check'),
-                n_items=len(words),
+                n_items=len(words), item_t0=[float(it['t0']) for it in words if it.get('lyric', True)],
                 retrig=[float(it['t0']) for k, it in enumerate(words) if k and abs(float(it.get('sung', -1)) - float(words[k - 1].get('sung', -2))) < 0.02])
 
 
@@ -707,10 +708,24 @@ def scorecard(C, R, P, items):
             terr = f"word - vocal onset (s) {[round(e, 2) for e in errs]} ({int(sum(good))}/{len(good)} within -0.15..+0.25)"
         else:
             s_time, terr = 7.0, 'vocal onsets not measured (--no-vocals)'
+        LWc = C.get('lyric_words') or {}
+        if LWc.get('rows'):
+            # 2026-10-23: per word (which word, its own sung onset; the nearest-any-onset check above passed blue v2 with 3 of
+            # 5 words 0.4-0.8 s late): on time = first ink within LW_TOL of (onset - LW_LEAD); a word on another note caps it
+            # at 5 (NOT PASS); a sung intro word that never shows costs 2
+            rows_ = LWc['rows']
+            okf = float(np.mean([r_['ok'] for r_ in rows_]))
+            s_time = lin(okf, 0.5, 1.0)
+            wrong = [r_['entry'] for r_ in rows_ if r_['wrong_note']]
+            if wrong:
+                s_time = min(s_time, 5.0)
+            s_time = max(0.0, s_time - 2.0 * len(LWc.get('dropped') or []))
+            terr = (f"per word (ink - sung onset, s) {[r_['err'] for r_ in rows_]} -> {int(sum(r_['ok'] for r_ in rows_))}/{len(rows_)} "
+                    f"within {LW_TOL:.2f} of a {LW_LEAD:.2f} lead, other note {wrong}, dropped words {LWc.get('dropped')}")
         rh = [w['letter_h'] for w in R['words']] or [0.055]
         lh = float(np.median([w['letter_h'] for w in W_]))
         s_size = band(lh / float(np.median(rh)), 0.8, 1.35, 0.5, 1.9)
-        short = [w['t'] for w in W_[:-1] if w['on_s'] < 0.35]
+        short = [w['t'] for w in W_[:-1] if w['on_s'] < 0.25]     # _sX2's own words hold 0.28-0.32 s (2026-10-23; was 0.35)
         smear_max = max([w['smear_frames'] / R['fps'] for w in R['words']] or [0.2]) + 0.05
         smear = [w['t'] for w in W_ if w['smear_frames'] / C['fps'] > smear_max]
         dim = [w['t'] for w in W_ if w['ink_luma'] < 45]
@@ -721,10 +736,12 @@ def scorecard(C, R, P, items):
         # writes the verdict (lyric_text.phrase_check, no words stored); on screen, one detected word entry per planned item
         ph = (P or {}).get('phrase')
         ph_bad = bool(ph) and not ph.get('ok')
-        ent_bad = bool(P) and P.get('n_items') and abs(len(W_) - int(P['n_items'])) > 0
+        # the frame detector's entry count (it splits a smear-in / merges a short word); with the per-word check (plan item
+        # starts + which word) the count is that check's business
+        ent_bad = bool(P) and P.get('n_items') and abs(len(W_) - int(P['n_items'])) > 0 and not LWc.get('rows')
         S['3_lyrics'] = round(0.0 if (not_lyric or ph_bad) else (0.6 * s_time + 0.4 * s_leg) - (2.0 if ent_bad else 0.0), 2)
         E['3_lyrics'] = (f"{len(W_)} words at {[w['t'] for w in W_]}; {terr} -> {s_time:.1f}; letter height {lh:.3f} W "
-                         f"(ref {np.median(rh):.3f}), shorter than 0.35 s {short}, smear > {smear_max:.2f} s {smear}, dim {dim} -> {s_leg:.1f}"
+                         f"(ref {np.median(rh):.3f}), shorter than 0.25 s {short}, smear > {smear_max:.2f} s {smear}, dim {dim} -> {s_leg:.1f}"
                          + ('; NON-LYRIC words on screen' if not_lyric else '')
                          + (f"; lyric sequence: {ph.get('why')} ({ph.get('shown_items')} items / {ph.get('lyric_words')} sung words)" if ph else
                             '; lyric sequence: not recorded (render before 2026-10-18)')
@@ -1689,6 +1706,149 @@ def evidence(C, out_dir, label):
 
 
 # ------------------------------------------------------------------------------------------------ main
+# 3_lyrics per word (2026-10-23, owner on blue v2: "the lyrics is still a bit off" while 3_lyrics scored 8.73): the old
+# timing check took the NEAREST vocal onset of any word (-0.15..+0.25 s), so a word shown on the next note of a melisma
+# passed. This check knows WHICH word: the synced LRC words around the intro, the start word from whisper medium on the
+# rendered vocals, both CTC models on the exact words + the stem's word-start events (lyric_check.intro_ensemble's DP),
+# and the frame each new word appears (a jump of the word band). Words are never stored or printed: indices only.
+LW_LEAD = 0.03            # _sX2: first ink 0.00-0.06 s before the sung onset (median 0.035)
+LW_TOL = 0.08             # |ink - (onset - LW_LEAD)| within this = on time
+LW_WRONG_NOTE = 0.25      # farther than this = the word sits on another note (NOT PASS)
+
+
+def word_swaps(path, t1, thr=6.0):
+    """(times of the frames where a new word lands on the black intro, word-band ink end) from a light decode"""
+    W_, H_ = 270, 480
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-t', f'{float(t1):.3f}', '-i', path, '-vf', f'scale={W_}:{H_}', '-f', 'rawvideo',
+                        '-pix_fmt', 'rgb24', '-'], capture_output=True, check=True).stdout
+    _, _, fps, _ = ffprobe(path)
+    F = np.frombuffer(r, np.uint8).reshape(-1, H_, W_, 3)
+    band = F[:, int(0.40 * H_):int(0.62 * H_)].max(axis=3).astype(np.float32)
+    ink = (band > 110)
+    wide = np.array([(lambda xs: (xs[-1] - xs[0]) / W_ if len(xs) else 0.0)(np.where(m.any(0))[0]) for m in ink])
+    full = ink.mean(axis=(1, 2)) > 0.6                         # the picture is in (the body)
+    sw = []
+    for i in range(1, len(band)):
+        if full[i]:
+            break
+        d = float(np.abs(band[i] - band[i - 1]).mean())
+        inter = float((ink[i] & ink[i - 1]).sum())
+        uni = float((ink[i] | ink[i - 1]).sum()) or 1.0
+        if d >= thr and ink[i].any() and (ink[i].mean() > 1.3 * ink[i - 1].mean() or inter / uni < 0.5) and (not sw or i / fps - sw[-1] > 0.12):
+            sw.append(i / fps)
+    last = max([i / fps for i in range(len(band)) if wide[i] >= 0.2 and not full[i]] or [0.0])
+    return sw, last
+
+
+def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
+    """-> dict(rows=[{entry, ink, word, onset, err}], dropped=[word idx], ...) or None (no synced lyrics / no words)"""
+    import difflib
+    import re
+    import lyrics as LY
+    import lyric_check as LC
+    c = LY._get(f'get/{int(lrc_id)}', {})
+    rec = LY._record(c, 'lrclib:id') if c else None
+    if not rec or not rec.get('synced'):
+        return None
+    sp = float(speed or 1.0)
+    L = [(float(x['t']) / sp - float(m_start), str(x.get('text') or '')) for x in rec['lines'] if x.get('t') is not None]
+    L = [x for x in L if any(ch.isalnum() for ch in x[1])]
+    first = max([k for k, x in enumerate(L) if x[0] <= 0.0] or [0])
+    lines = [x for k, x in enumerate(L) if k >= first and x[0] < intro_end]
+    words = [re.sub(r"[^A-Z']", '', LY.romanise(w)) for _, tx in lines for w in tx.split()]
+    words = [w for w in words if w]
+    if not words:
+        return None
+    t1 = float(intro_end) + 0.3
+    v16 = LY.vocal_stem(path, 0.0, t1, threads=2)
+    heard = _jw_words(v16)
+    hw = [(a_, re.sub(r"[^A-Z']", '', LY.romanise(w_))) for a_, _, w_ in heard if a_ < intro_end]
+    hw = [x for x in hw if x[1]]
+    sm = difflib.SequenceMatcher(None, [x[1] for x in hw], words, autojunk=False)
+    blocks = [b for b in sm.get_matching_blocks() if b.size]
+    if not blocks:
+        return dict(error='the recogniser heard none of the lyric words of the intro')
+    s = max(0, blocks[0].b - blocks[0].a)
+    e = blocks[-1].b + blocks[-1].size              # one past the last heard lyric word
+    ws_idx = list(range(s, max(e, s + 1)))
+    cands = [[] for _ in ws_idx]
+    for b in blocks:
+        for q in range(b.size):
+            j = b.b + q - s
+            if 0 <= j < len(cands):
+                cands[j].append(('weak', float(hw[b.a + q][0])))
+    log = {}
+    LC.ctc_candidates(v16, [words[j] for j in ws_idx], cands, log)
+    if os.environ.get("JUDGE_LW_DEBUG"):
+        print("[lw] shape", [(len(words[j]), words[j][:1] in "AEIOU", words[j][-1:] in "AEIOUY") for j in ws_idx], file=sys.stderr)
+    if any(not c_ for c_ in cands):
+        return dict(error='no candidate time for some word', log=log)
+    ev = LC._events(v16, LY.SR)
+    if os.environ.get("JUDGE_LW_DEBUG"):
+        print("[lw] cands", [[x if not isinstance(x, tuple) else ("a", round(x[1], 2)) for x in c_] for c_ in cands], "events", [(round(t, 2), round(x, 2)) for t, x in ev], file=sys.stderr)
+    pick = LC.assign(cands, [t for t, _ in ev], [x for _, x in ev], gaps=list(LC._GAPS)) if ev else None
+    if pick is None:
+        return dict(error='no monotone word assignment', log=log)
+    on = [float(p) for p in pick]
+    swaps, ink_end = word_swaps(path, intro_end + 0.05)
+    src = 'frames'
+    if entries:
+        # the plan's item starts, on the frame the renderer first draws them (verified on blue v2: 0.382 -> 0.400,
+        # 0.865 -> 0.867, 3.26 -> 3.267 = the frame jumps); the frame detector is the fallback without a plan
+        fps_ = ffprobe(path)[2]
+        swaps, src = [math.ceil(float(x) * fps_ - 1e-6) / fps_ for x in entries], 'plan'
+    # entries -> words: monotone, cost |ink - (onset - lead)|; a skipped word right after the previous entry's word
+    # (<= 0.35 s) rides in that item (a merged pair), otherwise it is a dropped word
+    n, m = len(swaps), len(on)
+    INF = 1e9
+    D = np.full((n, m), INF)
+    P = np.full((n, m), -1, int)
+
+    def drop_cost(a_, b_):                      # words a_..b_-1 skipped
+        c_ = 0.0
+        for j in range(a_, b_):
+            prev_on = on[a_ - 1] if a_ > 0 else -9.0
+            if on[j] < 0.15 or on[j] > intro_end - 0.45 or on[j] - prev_on <= 0.35:
+                continue
+            c_ += 1.0
+        return c_
+    for j in range(m):
+        D[0, j] = abs(swaps[0] - (on[j] - LW_LEAD)) + drop_cost(0, j) if n else INF
+    for k in range(1, n):
+        for j in range(k, m):
+            best, bj = INF, -1
+            for i in range(k - 1, j):
+                x = D[k - 1, i] + drop_cost(i + 1, j)
+                if x < best:
+                    best, bj = x, i
+            D[k, j] = best + abs(swaps[k] - (on[j] - LW_LEAD))
+            P[k, j] = bj
+    if not n:
+        return dict(error='no words detected on screen', log=log)
+    j = int(np.argmin([D[-1, x] + drop_cost(x + 1, m) for x in range(m)]))
+    asg = [0] * n
+    for k in range(n - 1, -1, -1):
+        asg[k] = j
+        j = int(P[k, j])
+    rows, used = [], set(asg)
+    for k, j in enumerate(asg):
+        err = swaps[k] - on[j]
+        rows.append(dict(entry=k, ink=round(swaps[k], 3), word=j, onset=round(on[j], 3), err=round(err, 3),
+                         ok=abs(err + LW_LEAD) <= LW_TOL, wrong_note=abs(err + LW_LEAD) > LW_WRONG_NOTE))
+    dropped = []
+    for j in range(m):
+        if j in used:
+            continue
+        prev = max([u for u in used if u < j] or [-1])
+        if on[j] < 0.15 or on[j] > intro_end - 0.45 or (prev >= 0 and on[j] - on[prev] <= 0.35):
+            continue
+        dropped.append(j)
+    errs = [r_['err'] for r_ in rows]
+    return dict(rows=rows, dropped=dropped, n_words=m, onsets=[round(x, 3) for x in on], last_ink=round(ink_end, 3), entries_from=src,
+                last_word_end_gap=None, mean=round(float(np.mean(errs)), 3), max_abs=round(float(np.max(np.abs(errs))), 3),
+                n_off=int(sum(not r_['ok'] for r_ in rows)), log=log)
+
+
 def measure(path, plan=None, vocals=True):
     v = scan(path)
     cuts, _ = detect_cuts(v)
@@ -1749,6 +1909,13 @@ def measure(path, plan=None, vocals=True):
             C['vocal_onsets'], _ = vocal_onsets(path, min(v['dur'], max(w['t'] for w in words) + 1.5))
         except Exception as e:  # noqa: BLE001
             print('[judge_slowmo] vocal onsets failed:', repr(e)[:200], file=sys.stderr)
+    if vocals and words and plan and plan.get('lrc_id') and plan.get('music_start') is not None:
+        try:
+            C['lyric_words'] = lyric_word_timing(path, intro_end or (max(w['t'] for w in words) + 1.0), plan['lrc_id'],
+                                                 float(plan['music_start']), plan.get('speed') or 1.0,
+                                                 entries=plan.get('item_t0'))
+        except Exception as e:  # noqa: BLE001
+            print('[judge_slowmo] lyric word timing failed:', repr(e)[:200], file=sys.stderr)
     for w in C['words']:
         w.pop('frame', None)
     return C

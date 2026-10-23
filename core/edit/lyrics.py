@@ -168,27 +168,39 @@ class _Pace:
 _PACE = None
 
 
-def _get(path, params, tries=3):
-    """GET API/path?params -> parsed JSON, None on 404. Paced, retried on 429 / 5xx / network errors."""
+_MEMO = {}       # this process only (never on disk: LYRICS_NO_STORE): one answer per URL
+
+
+def _get(path, params, tries=None):
+    """GET API/path?params -> parsed JSON, None on 404. Paced, retried on 429 / 5xx / network errors.
+    2026-10-23: LRCLIB answered 503 to 3 of ~10 requests here in one hour; tries default LRCLIB_TRIES (6) with a
+    2-4-8-16-30 s backoff, and an in-memory memo so one process asks once."""
     global _PACE
     _PACE = _PACE or _Pace()
     url = f'{API}/{path}?{urllib.parse.urlencode(params)}'
+    if url in _MEMO:
+        return _MEMO[url]
+    tries = int(tries or os.environ.get('LRCLIB_TRIES', '6'))
     err = None
     for k in range(tries):
         _PACE.wait()
         try:
             req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept': 'application/json'})
             with urllib.request.urlopen(req, timeout=25) as r:
-                return json.loads(r.read().decode('utf-8'))
+                out = json.loads(r.read().decode('utf-8'))
+                _MEMO[url] = out
+                return out
         except urllib.error.HTTPError as e:
             if e.code == 404:
+                _MEMO[url] = None
                 return None
             err = e
             if e.code not in (429, 500, 502, 503, 504):
                 break
         except (urllib.error.URLError, OSError, ValueError) as e:
             err = e
-        time.sleep(2.0 * (k + 1))
+        if k + 1 < tries:
+            time.sleep(min(30.0, 2.0 * (2 ** k)))
     raise RuntimeError(f'lrclib {path} failed: {err}')
 
 

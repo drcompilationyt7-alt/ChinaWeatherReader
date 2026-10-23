@@ -96,9 +96,10 @@ RULES = {
              'y 0.6, pastel lilac with a strong halo, in p50 333 ms spread, out p50 133 ms'),
     'cinematic_slowmo': dict(
         refs=['_sX2EUexbW8'], where='intro_black', mode='on_black', prob=1.0,
-        lag=0.0, pick='all', max_words=1, max_chars=12, min_gap_beats=0.0, share=1.0, quantise='beat_lead',
-        beat_lead=0.09, min_item_s=0.26, abut=True, end_before_drop=0.24, xcheck=True, drop_tail_s=0.7, merge_s=0.30,
+        lag=0.0, pick='all', max_words=1, max_chars=12, min_gap_beats=0.0, share=1.0, quantise='lead', lead=0.03,
+        ensemble=True, beat_lead=0.09, min_item_s=0.20, abut=True, end_before_drop=0.24, xcheck=True, drop_tail_s=0.7, merge_s=0.20,
         max_hold=1.1, no_repeat=True, complete_phrase=True,   # owner 2026-10-18: no re-triggered word (TO TO), no missing word
+        # 2026-10-23: min_item_s 0.26 -> 0.20, merge_s 0.30 -> 0.20 (_sX2 holds words 0.28-0.32 s; a 0.25 s pair was merged and the second word shown 0.25 s early)
         style='lyric_neon', box=(0.063, 0.068), ref_aspect='9:16', y=0.505, x_jit=0.0, y_jit=0.0, flip=None,
         anim_in='smear_shrink', dur_in=(0.04, 0.04), scale0=(1.0, 1.0), rot0=0.0,
         anim_out='fade', dur_out=0.12, hold=(0.35, 2.0), min_before_cut=0.0,
@@ -277,6 +278,20 @@ def sung_words(plan, song, artist, song_audio=None, rate=1.0, threads=2, offline
         except Exception as e:  # noqa: BLE001
             if stats is not None:
                 stats['xcheck'] = f'skipped: {e}'
+    if RULES.get(pid, {}).get('ensemble') and ws and not offline and os.environ.get('LYRICS_ENSEMBLE', '1') != '0':
+        # 2026-10-23 (owner on blue v2: "the lyrics is still a bit off"; measured +0.4..+0.8 s on 3 of 5 words): the words on
+        # black are re-timed by lyric_check.intro_ensemble (two CTC models on the exact words + the stem's word-start events,
+        # a late-biased monotone DP). Times only in the log.
+        try:
+            import lyric_check as LC
+            drop = float(plan.get('drop') or 6.0)
+            ws, elog = LC.intro_ensemble(ws, plan['music'], ms, ms + (drop + 0.3) * rate, threads=max(2, threads))
+            if stats is not None:
+                stats['ensemble'] = dict(elog, moves=[dict(m_, was=round((m_['was'] - ms) / rate, 3), now=round((m_['now'] - ms) / rate, 3))
+                                                      for m_ in elog.get('moves') or []])
+        except Exception as e:  # noqa: BLE001
+            if stats is not None:
+                stats['ensemble'] = f'skipped: {type(e).__name__}: {str(e)[:160]}'
     out = []
     for w in ws:
         a, b = (float(w['t_start']) - ms) / rate, (float(w['t_end']) - ms) / rate
@@ -507,6 +522,12 @@ def build(preset, words, plan, rng=None):
         if rule.get('quantise') == 'half_beat':
             grid = np.arange(0.0, D, P / 2.0) if P > 0 else np.array([t])
             t = float(grid[int(np.argmin(np.abs(grid - t)))]) if len(grid) else t
+        elif rule.get('quantise') == 'lead':
+            # 2026-10-23: _sX2 measured per word (CTC + stem events): first ink 0.00-0.06 s before the sung onset (median 0.035),
+            # legible one streak frame later; no beat snap (the 'beat_lead' snap moved blue v2's first word 0.11 s early)
+            t = max(0.0, t - float(rule.get('lead', 0.03)))
+            if cand and t < cand[-1][0] + float(rule.get('min_item_s', 0.0)):
+                t = cand[-1][0] + float(rule.get('min_item_s', 0.0))
         elif rule.get('quantise') == 'beat_lead':
             # _sX2: a word lands on the song's tracked beat nearest its syllable, a frame or two early
             rb = np.asarray(plan.get('raw_beats') or plan.get('beats') or [], float) - float(rule.get('beat_lead', 0.05))

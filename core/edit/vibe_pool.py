@@ -905,8 +905,11 @@ def main():
         for role in ('short', 'long'):
             ids = res.get(f'clips_{role}') or (res.get('clips_used') if role == 'short' else None) or []
             if ids:
-                mark_used(res['preset'], res['vibe'], ids, sound_id=res.get('sound_used'),
+                # vibe_edit's result: 'type' (sound / slowmo) is the ledger key the render itself uses; 'preset' is the preset
+                # id (sound_hit_sync / cinematic_slowmo). 2026-10-23: every CI attempt renders --no-mark, the upload marks
+                mark_used(res.get('type') or res['preset'], res['vibe'], ids, sound_id=res.get('sound_used'),
                           video=res.get(role) or '', role=role)
+        write_index()
         print(json.dumps({'ok': True}))
     elif a.cmd == 'gore-check':
         rep = gore_check(presets, apply=a.apply)

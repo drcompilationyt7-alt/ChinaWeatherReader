@@ -108,8 +108,7 @@ function runCli(args, timeoutMin, extraEnv = {}) {
 /**
  * Pre-upload guard (owner 2026-10-20 after the empty quiz short: never post an empty / broken video). Returns the problems
  * (empty = ok). Every new type: the file, its length, the shot count of the plan, sampled frames not blank / static
- * (core/quiz/qa_guard.py). Slow-mo also needs a judge_slowmo PASS (cut timing incl. the wave / no-SFX / hold checks, beauty,
- * lyrics, mix, layout) - NEWTYPE_JUDGE=off skips the judge (tests only). runNewType throws on a problem -> the runner posts stem.
+ * (core/quiz/qa_guard.py). The quality judges (judge_slowmo / judge_sound) run in judgeRender, inside the repair loop.
  */
 const GUARD = { sound: { len: [15, 75], shots: 15 }, slowmo: { len: [25, 50], shots: 12 } };
 function guardRender(type, rep, videoPath, work) {
@@ -141,56 +140,224 @@ function guardRender(type, rep, videoPath, work) {
     if ((v.blankShare || 0) > 0.2) bad.push(`blank frames ${v.blankShare}`);
     if ((v.staticShare || 0) > 0.4) bad.push(`static frames ${v.staticShare}`);
   } catch (e) { bad.push(`video check failed: ${(e.message || '').slice(0, 120)}`); }
-  if (type === 'slowmo' && process.env.NEWTYPE_JUDGE !== 'off') {
-    const jd = path.join(work, 'judge');
-    try {
-      const args = [CORE('judge_slowmo.py'), videoPath, jd, '--label', path.basename(videoPath), ...(plan ? ['--plan', path.resolve(work, rep.plan_short)] : [])];
-      execFileSync(python(), args, { timeout: 40 * 60000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' }, maxBuffer: 64 * 1024 * 1024 });
-    } catch (e) { logger.warn(`judge_slowmo: ${(e.message || '').slice(0, 200)}`); }
-    const jr = readJson(path.join(jd, 'report.json'), null);
-    if (!jr) bad.push('judge_slowmo wrote no report');
-    else {
-      logger.info(`judge_slowmo: overall ${jr.overall} ${jr.pass ? 'PASS' : 'NOT PASS'} ${JSON.stringify(jr.scores || {})}`);
-      if (!jr.pass) bad.push(`judge_slowmo NOT PASS (overall ${jr.overall})`);
-    }
-  }
   return bad;
 }
 
+/**
+ * The quality judge of the rendered file + what to change (core/edit/judge_repair.py). Slow-mo: judge_slowmo (every criterion
+ * >= 8, overall >= 8.5; lyrics per word, waves / sync / holds / groove). Sound: judge_sound against the FB15 reference
+ * (cached measures core/edit/refs/sound-judge-ref-FB15TNFAHVU.json: the reference video is not on the runner), the owner's
+ * build-up pre-roll (JUDGE_PRE_HI_MS 800), strict PASS (every criterion >= 8) AND mean >= SOUND_JUDGE_MIN (9.0).
+ * NEWTYPE_JUDGE=off skips it (tests only). -> {pass, overall, failed, action, repairPath, jd, why}
+ */
+function judgeRender(type, rep, videoPath, work, tag) {
+  if (process.env.NEWTYPE_JUDGE === 'off') return { pass: true, overall: null, action: 'none', skipped: true };
+  const jd = path.join(work, 'judge');
+  const planPath = rep.plan_short ? (path.isAbsolute(rep.plan_short) ? rep.plan_short : path.resolve(work, rep.plan_short)) : null;
+  const env = { ...process.env, PYTHONIOENCODING: 'utf-8' };
+  try {
+    if (type === 'slowmo') {
+      execFileSync(python(), [CORE('judge_slowmo.py'), videoPath, jd, '--label', path.basename(videoPath), ...(planPath ? ['--plan', planPath] : [])],
+        { timeout: 45 * 60000, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024 });
+    } else {
+      execFileSync(python(), [CORE('judge_sound.py'), videoPath, path.join(ROOT, 'edit-refs', 'sound', 'FB15TNFAHVU.mp4'), jd,
+        ...(planPath ? ['--plan', planPath] : []), '--label', tag || 'sound',
+        '--ref-cache', path.join(ROOT, 'core', 'edit', 'refs', 'sound-judge-ref-FB15TNFAHVU.json'), '--per-sec', '8'],
+      { timeout: 45 * 60000, encoding: 'utf8', env: { ...env, JUDGE_PRE_HI_MS: process.env.JUDGE_PRE_HI_MS || '800' }, maxBuffer: 64 * 1024 * 1024 });
+    }
+  } catch (e) { logger.warn(`judge (${type}): ${(e.message || '').slice(0, 300)}`); }
+  const report = path.join(jd, 'report.json');
+  const repairPath = path.join(work, 'repair.json');
+  try {
+    execFileSync(python(), [CORE('judge_repair.py'), '--type', type, '--report', report, '--out', repairPath],
+      { timeout: 120000, encoding: 'utf8', env });
+  } catch (e) { logger.warn(`judge_repair: ${(e.message || '').slice(0, 200)}`); }
+  const r = readJson(repairPath, null) || { pass: false, action: 'reseed', why: ['no repair verdict'] };
+  r.repairPath = repairPath;
+  r.jd = jd;
+  logger.info(`judge ${type} ${tag || ''}: ${r.pass ? 'PASS' : 'NOT PASS'} overall ${r.overall} failed ${JSON.stringify(r.failed || {})} -> ${r.action}`);
+  return r;
+}
+
+/** time left for another attempt: NEWTYPE_BUDGET_MIN from the start of the loop, and (scheduled runs) a UTC clock deadline that
+ * leaves the stem fallback + the upload well before PUBLISH_HOUR_UTC */
+function timeLeft(t0, lastMin) {
+  const budget = Number(process.env.NEWTYPE_BUDGET_MIN || 210);
+  const used = (Date.now() - t0) / 60000;
+  if (used + lastMin * 1.15 > budget) return false;
+  const dl = String(process.env.NEWTYPE_DEADLINE_UTC || '08:30');
+  if (process.env.DRY_RUN !== 'true' && /^\d{1,2}:\d{2}$/.test(dl)) {
+    const [h, m] = dl.split(':').map(Number);
+    const now = new Date();
+    const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), h, m);
+    if (Date.now() + lastMin * 1.15 * 60000 > end) return false;
+  }
+  return true;
+}
+
+/** the attempts of a new-type day: job summary (always), memory/newtype-repairs.jsonl (always), and on the last-resort stem
+ * fallback memory/newtype-fallback.json + a GitHub issue with the failing judge verdicts (the coordinator fixes the cause) */
+async function reportAttempts(type, attempts, ok, reason) {
+  const lines = [`### ${type}: ${ok ? 'PASS' : 'FAILED -> stem fallback'} after ${attempts.length} attempt(s)${reason ? ` (${reason})` : ''}`, '',
+    '| # | song | seed | input | minutes | result | overall | failed criteria | next |', '|---|---|---|---|---|---|---|---|---|'];
+  for (const a of attempts) {
+    const failed = Object.entries(a.failed || {}).map(([k, v]) => `${k} ${v}`).join(', ') || '-';
+    lines.push(`| ${a.n} | ${a.song || '-'} | ${a.seed ?? '-'} | ${a.input || 'first'} | ${a.min ?? '-'} | ${a.result || '-'} | ${a.overall ?? '-'} | ${failed} | ${a.next || '-'} |`);
+  }
+  const md = lines.join('\n') + '\n';
+  if (process.env.GITHUB_STEP_SUMMARY) { try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n'); } catch {} }
+  logger.info(md);
+  const rec = { at: new Date().toISOString(), type, ok, reason: reason || null, dryRun: process.env.DRY_RUN === 'true', attempts };
+  try { fs.mkdirSync(MEM(), { recursive: true }); fs.appendFileSync(path.join(MEM(), 'newtype-repairs.jsonl'), JSON.stringify(rec) + '\n'); } catch {}
+  if (ok) return;
+  try { fs.writeFileSync(path.join(MEM(), 'newtype-fallback.json'), JSON.stringify(rec, null, 1)); } catch {}
+  const repo = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GITHUB_TOKEN;
+  if (!repo || !token || process.env.DRY_RUN === 'true' || typeof fetch !== 'function') return;
+  const run = process.env.GITHUB_RUN_ID ? `https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}` : '';
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `${type} edit fell back to stem on ${rec.at.slice(0, 10)}`,
+        body: `The daily ${type} edit failed the judge after ${attempts.length} attempt(s); the day posted a stem edit.\n\nRun: ${run}\n\n${md}\n`
+          + 'Judge reports: the run artifact "renders" (output/meme/work-*/judge). Fix the root cause next session.' }),
+    });
+    logger.info(`fallback issue: HTTP ${r.status}`);
+  } catch (e) { logger.warn(`fallback issue: ${(e.message || '').slice(0, 160)}`); }
+}
+
+const stripArgs = (args, names) => {
+  const out = [];
+  for (let i = 0; i < args.length; i++) {
+    if (names.includes(args[i])) { i++; continue; }
+    out.push(args[i]);
+  }
+  return out;
+};
+const nextSeed = (s, k) => (Number.isFinite(Number(s)) ? Number(s) : 7) + k;
+
+/**
+ * One new-type video, repaired until the judge passes (owner 2026-10-23: "if the github when creating the slow mo edit is not
+ * good we have to fix it, we must publish a video every day"). Attempt 1 renders as before; a NOT PASS feeds the judge's
+ * measured failures back (core/edit/judge_repair.py): 'retime' (lyric words re-timed) / 'recut' (switches moved / dropped /
+ * added) keep the song + seed and re-render only the changed parts (CINE_PART_CACHE); 'reseed' = another clip order;
+ * 'new_song' = another song (SLOWMO_EXCLUDE_SONGS). At most NEWTYPE_MAX_ATTEMPTS (5) within NEWTYPE_BUDGET_MIN (210 min) and
+ * before NEWTYPE_DEADLINE_UTC (08:30, scheduled runs); a pool that is too small stops at once. Throws when nothing passed ->
+ * the runner posts the stem edit (last resort) and reportAttempts files the issue. Every attempt renders with --no-mark: only
+ * the posted video marks its clips / song (recordUpload).
+ */
 async function runNewType({ type, outputDir, wantLong = false } = {}) {
   if (!CT[type]) throw new Error(`unknown new type "${type}"`);
   if (type === 'sound') musicPoolFeedback();
   if (type === 'slowmo') musicPoolFeedback('slowmo');
-  const work = path.join(outputDir, `work-${type}-${Date.now()}`);
-  fs.mkdirSync(work, { recursive: true });
   const cli = CORE('vibe_edit.py');
   if (!fs.existsSync(cli)) throw new Error(`render CLI missing: ${cli}`);
-  const args = [cli, '--type', type, '--out', work, ...(wantLong ? ['--landscape-long'] : []),
-    ...(process.env.DRY_RUN === 'true' ? ['--no-mark'] : []),   // a dry run never touches the pool ledger
-    ...(process.env.NEWTYPE_CLI_ARGS ? process.env.NEWTYPE_CLI_ARGS.split(' ').filter(Boolean) : [])];
-  const t0 = Date.now();
+  const maxAttempts = Number(process.env.NEWTYPE_MAX_ATTEMPTS || 5);
+  const userArgs = process.env.NEWTYPE_CLI_ARGS ? process.env.NEWTYPE_CLI_ARGS.split(' ').filter(Boolean) : [];
+  const partCache = path.join(outputDir, `partcache-${type}`);
   const tenv = typeEnv(type);
   logger.info(`${type} render env: ${Object.entries(tenv).map(([k, v]) => `${k}=${v}`).join(' ')}`);
-  const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 90 : 45)), tenv);
-  const rep = readJson(path.join(work, 'result.json'), null);
-  if (rep && rep.ok === false && /^pool_too_small/.test(String(rep.reason || ''))) {
-    // the pool cannot give variety (reuse cap) AND good matches today: no sound video, the runner posts stem
-    logger.warn(`${type}: pool too small -> stem fallback (${String(rep.reason).slice(0, 200)})`);
-    throw new Error(`${type} pool too small: ${String(rep.reason).slice(0, 300)}`);
+  const tLoop = Date.now();
+  const attempts = [];
+  const excluded = [];
+  let song = null;
+  let seed = null;
+  let repair = null;          // {moves, avoid, need, lyric_t0}: the next attempt on the same song + seed
+  let input = 'first';
+  let sameSong = 0;
+  let lastMin = 30;
+  let stopReason = null;
+  for (let n = 1; n <= maxAttempts; n++) {
+    if (n > 1 && !timeLeft(tLoop, lastMin)) { stopReason = 'time budget'; break; }
+    const t0 = Date.now();
+    const work = path.join(outputDir, `work-${type}-${Date.now()}`);
+    fs.mkdirSync(work, { recursive: true });
+    let extra = userArgs;
+    if (song) extra = stripArgs(extra, ['--song']);
+    if (seed != null) extra = stripArgs(extra, ['--seed']);
+    const args = [cli, '--type', type, '--out', work, ...(wantLong ? ['--landscape-long'] : []), '--no-mark', ...extra,
+      ...(song ? ['--song', String(song)] : []), ...(seed != null ? ['--seed', String(seed)] : [])];
+    const env = { ...tenv, CINE_PART_CACHE: partCache, SLOWMO_EXCLUDE_SONGS: excluded.join(','), SOUND_EXCLUDE_SONGS: excluded.join(',') };
+    if (repair && type === 'slowmo') {
+      const rp = path.join(work, 'repair-in.json');
+      fs.writeFileSync(rp, JSON.stringify(repair));
+      env.SLOWMO_REPAIR = rp;
+    }
+    const att = { n, song, seed, input, work: path.basename(work) };
+    attempts.push(att);
+    logger.info(`${type} attempt ${n}/${maxAttempts}: ${input}${song ? ` song ${song}` : ''}${seed != null ? ` seed ${seed}` : ''}`);
+    const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 90 : 45)), env);
+    const rep = readJson(path.join(work, 'result.json'), null);
+    att.min = Math.round((Date.now() - t0) / 6000) / 10;
+    if (rep) { att.song = rep.song || song; att.seed = rep.seed ?? seed; }
+    if (rep && rep.ok === false && /^pool_too_small/.test(String(rep.reason || ''))) {
+      // the pool cannot give variety (reuse cap) AND good matches today: no repair can fix it -> stem now
+      att.result = 'pool too small';
+      stopReason = `pool too small: ${String(rep.reason).slice(0, 160)}`;
+      break;
+    }
+    if (!rep || rep.ok === false || err) {
+      const why = rep && rep.reason ? String(rep.reason) : ((err && err.message) || 'no result');
+      att.result = `render failed: ${why.slice(0, 120)}`;
+      lastMin = Math.max(lastMin, att.min);
+      if (/^pool_low/.test(why) || (/^no_song/.test(why) && !att.song)) { stopReason = why.slice(0, 160); break; }
+      // a song-level failure (no lyrics / no audio / no layout for its waves) -> another song; anything else -> another seed
+      if (/no_lyrics|no audio|no_song|no wave|bad plan|pool_low|only \d+ usable/.test(why) && att.song) {
+        excluded.push(String(att.song).split('@')[0]); song = null; sameSong = 0; seed = nextSeed(att.seed, 211); att.next = 'new_song';
+      } else { song = att.song || song; seed = nextSeed(att.seed, 101); sameSong++; att.next = 'reseed'; }
+      repair = null; input = att.next;
+      continue;
+    }
+    const abs = f => (f ? (path.isAbsolute(f) ? f : path.resolve(work, f)) : null);
+    const videoPath = abs(rep.short);
+    if (!videoPath || !fs.existsSync(videoPath)) {
+      att.result = 'no short written'; song = att.song; seed = nextSeed(att.seed, 101); repair = null; input = att.next = 'reseed'; continue;
+    }
+    const problems = guardRender(type, rep, videoPath, work);
+    if (problems.some(p => /fresh-clip override/.test(p))) { att.result = problems.join('; '); stopReason = 'fresh-clip override outside a dry run'; break; }
+    if (problems.some(p => /pool too small/.test(p))) { att.result = problems.join('; '); stopReason = 'pool too small (reuse)'; break; }
+    if (problems.length) {
+      att.result = `guard: ${problems.join('; ').slice(0, 160)}`;
+      song = att.song; seed = nextSeed(att.seed, 101); repair = null; input = att.next = 'reseed'; sameSong++;
+      lastMin = Math.max(lastMin, att.min);
+      continue;
+    }
+    const J = judgeRender(type, rep, videoPath, work, `${type}-a${n}`);
+    att.min = Math.round((Date.now() - t0) / 6000) / 10;
+    att.overall = J.overall; att.failed = J.failed; att.result = J.pass ? 'PASS' : 'NOT PASS';
+    lastMin = input === 'retime' ? Math.max(10, att.min) : Math.max(15, att.min);
+    if (J.pass) {
+      await reportAttempts(type, attempts, true);
+      logger.success(`${type}: judge PASS on attempt ${n} (overall ${J.overall})`);
+      return finishNewType(type, rep, work, videoPath, abs, t0, attempts);
+    }
+    // what next: the judge's own repair first (same song + seed), then another clip order, then another song
+    song = att.song; seed = att.seed;
+    let action = J.action || 'reseed';
+    sameSong++;
+    if ((action === 'retime' || action === 'recut') && (sameSong >= 3 || type !== 'slowmo')) action = 'reseed';
+    if (action === 'reseed' && sameSong >= 3) action = 'new_song';
+    if (action === 'retime' || action === 'recut') {
+      const prev = repair || {};
+      const jr = readJson(J.repairPath, {}) || {};
+      repair = { moves: [...(prev.moves || []), ...(jr.moves || [])], avoid: [...(prev.avoid || []), ...(jr.avoid || [])],
+        need: [...(prev.need || []), ...(jr.need || [])], lyric_t0: { ...(prev.lyric_t0 || {}), ...(jr.lyric_t0 || {}) } };
+    } else if (action === 'reseed') {
+      seed = nextSeed(seed, 101); repair = null;
+    } else {
+      if (song) excluded.push(String(song).split('@')[0]);
+      song = null; seed = nextSeed(seed, 211); repair = null; sameSong = 0;
+    }
+    att.next = action; input = action;
   }
-  if (!rep || rep.ok === false || err) {
-    throw new Error(`${type} render failed: ${rep && rep.reason ? rep.reason : ((err && err.message) || 'no result').slice(0, 200)}`);
-  }
-  const abs = f => (f ? (path.isAbsolute(f) ? f : path.resolve(work, f)) : null);
-  const videoPath = abs(rep.short);
-  if (!videoPath || !fs.existsSync(videoPath)) throw new Error('the render CLI wrote no short');
-  const problems = guardRender(type, rep, videoPath, work);
-  if (problems.length) throw new Error(`${type} pre-upload guard: ${problems.join('; ')}`);
-  logger.success(`${type}: pre-upload guard ok`);
+  await reportAttempts(type, attempts, false, stopReason || 'attempts used up');
+  throw new Error(`${type}: no attempt passed the judge (${attempts.map(a => `${a.n}: ${a.result}`).join(' | ').slice(0, 400)})`);
+}
+
+async function finishNewType(type, rep, work, videoPath, abs, t0, attempts) {
   let longPath = abs(rep.long);
   if (longPath && !fs.existsSync(longPath)) longPath = null;
   logger.success(`${type}: rendered ${path.basename(videoPath)}${longPath ? ' + long' : ''} in ${Math.round((Date.now() - t0) / 1000)} s (vibe ${rep.vibe})`);
-
   const song = rep.song_title ? String(rep.song_title) : (rep.song && !/^s_/.test(String(rep.song)) ? String(rep.song) : null);
   const facts = { keyword: VIBE_KEYWORD[rep.vibe] || null, vibe: rep.vibe || null, song, source: null, theme: 'anime' };
   const meta = await optimizeMetadata({ channel: 'meme', contentType: CT[type], facts });
@@ -201,9 +368,9 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     categoryId: '1', playlistTitle: PLAYLIST[type], comment: meta.comment, country: 'Global',
     category: `edit-${type}`, editType: 'edit', long: false, facts,
     meme: { song: song || rep.vibe || type, theme: 'anime', emoji: meta.emoji, clipIds: rep.clips_used || [], clipChannels: [],
-      settings: { vibe: rep.vibe, duration: rep.duration_short, pool: type, render_s: rep.render_s }, onVideoTitle: meta.onVideoTitle,
-      meta: meta.arms, metaChoice: meta.choice, contentType: CT[type], why: `rotation ${type}`, long: false, vibe: rep.vibe,
-      musicPoolId: rep.music_pool ? rep.song : null, songSection: rep.song_section || null },
+      settings: { vibe: rep.vibe, duration: rep.duration_short, pool: type, render_s: rep.render_s, attempts: attempts.length },
+      onVideoTitle: meta.onVideoTitle, meta: meta.arms, metaChoice: meta.choice, contentType: CT[type], why: `rotation ${type}`,
+      long: false, vibe: rep.vibe, musicPoolId: rep.music_pool ? rep.song : null, songSection: rep.song_section || null },
     workDir: work,
   };
 }

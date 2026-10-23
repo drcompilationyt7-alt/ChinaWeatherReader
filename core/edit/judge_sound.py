@@ -965,11 +965,21 @@ def run(args):
     ref_aligned = args.ref_song is None and ref_song is not None
     print('[judge] audio: candidate', flush=True)
     ca = analyse_audio(args.candidate, cand_song, cand_off, cand_bpm)
-    print('[judge] audio: reference', flush=True)
-    ra = analyse_audio(ref, ref_song, args.ref_song_offset, args.ref_bpm, aligned=ref_aligned)
-
+    # 2026-10-23 (CI: the judge runs before every sound upload; the reference video is not on the runner): --ref-cache
+    # holds the reference's measures (numbers only), written once locally with --write-ref-cache
+    RC = None
+    if getattr(args, 'ref_cache', None) and not os.path.exists(ref) and os.path.exists(args.ref_cache):
+        with open(args.ref_cache, encoding='utf-8') as fh:
+            RC = json.load(fh)
+        print('[judge] reference: cached measures', args.ref_cache, flush=True)
+        ra = RC['audio']
+        rfps, rdur = RC['fps'], RC['dur']
+    else:
+        print('[judge] audio: reference', flush=True)
+        ra = analyse_audio(ref, ref_song, args.ref_song_offset, args.ref_bpm, aligned=ref_aligned)
     _, _, cfps, cdur = ffprobe(args.candidate)
-    _, _, rfps, rdur = ffprobe(ref)
+    if RC is None:
+        _, _, rfps, rdur = ffprobe(ref)
     cg, rg = ca['grid'], ra['grid']
     nb_ref = max(4, int((rdur - rg['downbeat0']) / (4 * rg['period'])) * 4)
 
@@ -997,14 +1007,21 @@ def run(args):
     for t in clear_t:
         fi = int(round(t * cfps))
         keep_c |= {fi + o * st_c for o in range(-2, 3)}
-    print('[judge] picture: reference', flush=True)
-    rv = scan_video(ref, set(range(int(rdur * rfps) + 2)))
+    rv = None
+    if RC is None:
+        print('[judge] picture: reference', flush=True)
+        rv = scan_video(ref, set(range(int(rdur * rfps) + 2)))
     print('[judge] picture: candidate', flush=True)
     cvid = scan_video(args.candidate, keep_c)
 
     out = {}
     ref_id = os.path.splitext(os.path.basename(ref))[0]
+    if RC is not None:
+        out['reference'] = dict(label='reference', audio=ra, picture=RC['picture'], hits=RC['hits'], _v={'cut_source': 'cached'},
+                                _cutset=set(), _cuts_s=RC.get('cuts_s') or [], cause_summary=RC.get('cause_summary'))
     for X, a, v, lab in ((None, ca, cvid, args.label), (None, ra, rv, 'reference')):
+        if lab == 'reference' and RC is not None:
+            continue
         cuts, _ = detect_cuts(v)
         v['cut_source'] = f'detected ({len(cuts)})'
         if lab == 'reference' and ref_id in REF_CUTS:
@@ -1037,6 +1054,12 @@ def run(args):
         found = sum(any(abs(h['t'] - p['t']) <= 0.05 and h['clear'] for h in C['hits']) for p in planned_aud)
         C['plan_check'] = dict(planned_audible=len(planned_aud), planned_picture_only=len(plan['hits']) - len(planned_aud),
                                planned_audible_found_clear=found)
+    if getattr(args, 'write_ref_cache', None) and RC is None:
+        with open(args.write_ref_cache, 'w', encoding='utf-8') as fh:
+            json.dump(dict(ref=os.path.basename(ref), fps=rfps, dur=rdur, audio={k: v for k, v in ra.items() if not k.startswith('_')},
+                           picture=R['picture'], hits=R['hits'], cuts_s=[round(c_, 4) for c_ in R['_cuts_s']]), fh,
+                      default=lambda o: o.tolist() if hasattr(o, 'tolist') else str(o))
+        print('[judge] wrote the reference cache', args.write_ref_cache, flush=True)
     # visible-cause stats for both
     for X in (C, R):
         ch = [h for h in X['hits'] if h['clear'] and h.get('cause')]
@@ -1065,21 +1088,27 @@ def run(args):
         card2['mean_scores'] = mean_sc
         card2['mean_PASS'] = bool(all(v >= 8 for k, v in mean_sc.items() if k != '9_overall_vs_ref') and mean_sc['9_overall_vs_ref'] >= 8.5)
     print('[judge] sheets', flush=True)
-    try:
-        sheets = make_sheets(args.out_dir, C, R, sel, mapping)
-    except Exception as e:  # noqa: BLE001  (a sheet problem must not lose the metrics)
-        print('[judge] sheets failed:', e, flush=True)
-        sheets = []
-    hit_strips(os.path.join(args.out_dir, 'hits_cand.jpg'), C, f"{args.label}: clear hits")
-    hit_strips(os.path.join(args.out_dir, 'hits_ref.jpg'), R, "reference: clear hits")
-    timeline_png(os.path.join(args.out_dir, 'timeline.png'), C, R)
+    sheets = []
+    if RC is None:
+        try:
+            sheets = make_sheets(args.out_dir, C, R, sel, mapping)
+        except Exception as e:  # noqa: BLE001  (a sheet problem must not lose the metrics)
+            print('[judge] sheets failed:', e, flush=True)
+    for fn, f_ in (('hits_cand', lambda: hit_strips(os.path.join(args.out_dir, 'hits_cand.jpg'), C, f"{args.label}: clear hits")),
+                   ('hits_ref', lambda: hit_strips(os.path.join(args.out_dir, 'hits_ref.jpg'), R, "reference: clear hits") if RC is None else None),
+                   ('timeline', lambda: timeline_png(os.path.join(args.out_dir, 'timeline.png'), C, R))):
+        try:
+            f_()
+        except Exception as e:  # noqa: BLE001
+            print(f'[judge] {fn} failed:', e, flush=True)
     import soundfile as sf
     sf.write(os.path.join(args.out_dir, 'cand_cliplayer.wav'), C['audio']['_res'], SR)
-    sf.write(os.path.join(args.out_dir, 'ref_cliplayer.wav'), R['audio']['_res'], SR)
+    if RC is None:
+        sf.write(os.path.join(args.out_dir, 'ref_cliplayer.wav'), R['audio']['_res'], SR)
 
     def strip(X):
         a = {k: v for k, v in X['audio'].items() if not k.startswith('_')}
-        return dict(audio=a, picture=X['picture'], hits=X['hits'], cause_summary=X['cause_summary'],
+        return dict(audio=a, picture=X['picture'], hits=X['hits'], cause_summary=X.get('cause_summary'),
                     plan_check=X.get('plan_check'), cuts_s=[round(c, 3) for c in X['_cuts_s']],
                     cut_source=X['_v'].get('cut_source'), motion_base=X['_v'].get('motion_base'))
     rep = dict(candidate=args.candidate, reference=ref, label=args.label, grid_candidate=cg, grid_reference=rg,
@@ -1141,6 +1170,8 @@ def main():
     ap.add_argument('--ref2', default=None, help='second reference video (e.g. edit-refs/sound/jKSxAkOS3JY.mp4); scored the same way, mean of both')
     ap.add_argument('--ref2-song', default=None)
     ap.add_argument('--ref2-bpm', type=float, default=None)
+    ap.add_argument('--ref-cache', default=None, help='reference measures (json) used when REFERENCE is not on disk (CI)')
+    ap.add_argument('--write-ref-cache', default=None, help='write the reference measures to this json (local, once)')
     ap.add_argument('--per-sec', type=int, default=24)
     ap.add_argument('--seed', type=int, default=1)
     run(ap.parse_args())

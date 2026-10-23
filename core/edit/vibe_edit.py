@@ -88,8 +88,10 @@ def music_pool_song(forced, rng):
             # only songs whose pool section rendered at the approved (sound_11b) quality on CI: core/edit/assets/sound-song-verified.json
             # (written after a judge_sound PASS of a .github/workflows/sound-song-verify.yml render); none verified = the vibe songs
             ver = {k for k, v in (VP.read_json(VERIFIED_P, {}) or {}).get('songs', {}).items() if v.get('pass')}
+            # the CI repair loop's 'another song' attempt (pipeline/newtype-pipeline.js)
+            ex = {x.strip() for x in os.environ.get('SOUND_EXCLUDE_SONGS', '').split(',') if x.strip()}
             pool = MP.load_pool()
-            pool['songs'] = [x for x in pool['songs'] if x['id'] in ver]
+            pool['songs'] = [x for x in pool['songs'] if x['id'] in ver and x['id'] not in ex] or                 [x for x in pool['songs'] if x['id'] in ver]
             if not pool['songs']:
                 log('music pool: no verified song yet: the vibe songs')
                 return None
@@ -127,7 +129,29 @@ def slowmo_pool_song(forced, rng):
              'audio_path': MP.fetch_audio(rec), 'section_start': rec['section']['start'], 'section_end': rec['section']['end'],
              'section_hero': rec['section'].get('hero'), 'speed': sp}
     else:
-        s = SM.pick(sound_history('slowmo-edit'), fetch=True, rng=rng)
+        # pre-flight (2026-10-23, CI must get it right in one run): a song without LRCLIB lyrics would fail late (no_lyrics) -
+        # skip it here and pick another (up to 4 picks); LRCLIB down = keep the pick (cine_vibe decides)
+        excl = {SM.split_id(x.strip())[0] for x in os.environ.get('SLOWMO_EXCLUDE_SONGS', '').split(',') if x.strip()}
+        s = None
+        for _k in range(4):
+            s = SM.pick(sound_history('slowmo-edit'), fetch=False, rng=rng, exclude=excl)
+            if not s:
+                break
+            try:
+                import lyrics as LY
+                has = bool(LY.fetch(s['song'], s.get('artist') or '').get('lines'))
+            except Exception as e:  # noqa: BLE001
+                log(f'slow-mo pre-flight: lyrics check failed ({type(e).__name__}): keeping {s["id"]}')
+                has = True
+            if has:
+                break
+            log(f'slow-mo pre-flight: no lyrics for {s["id"]}: another song')
+            excl.add(s['id'])
+            s = None
+        if s:
+            rec = next((x for x in SM.load_pool()['songs'] if x['id'] == s['id']), None)
+            p_ = MP.fetch_audio(rec) if rec else None
+            s.update(audio_path=p_ or s.get('audio_path'))
     if not s or not s.get('audio_path') or not os.path.exists(s['audio_path']):
         log('slow-mo music pool: no audio for', (s or {}).get('id'))
         return None

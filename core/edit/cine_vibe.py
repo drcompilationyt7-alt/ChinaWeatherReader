@@ -23,6 +23,7 @@ import json
 import math
 import os
 import random
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -344,6 +345,17 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             # start, the shot count follows the waves (planners._cine_wave_cuts; falls back to the hold cuts)
             base_opts['cine_wave_cuts'] = True
             base_opts['cine_song_speed'] = float(song_speed or 1.0)   # waves at the calibration tempo (music_moments.tempo_scale)
+        ci_rep = {}
+        if os.environ.get('SLOWMO_REPAIR'):
+            # 2026-10-23 CI repair loop (pipeline/newtype-pipeline.js): the previous attempt's judge failures on the RENDERED
+            # file (core/edit/judge_repair.py): cut moves / drops / adds for the planner, lyric re-times for the words intro
+            try:
+                with open(os.environ['SLOWMO_REPAIR'], encoding='utf-8') as f:
+                    ci_rep = json.load(f) or {}
+            except (OSError, ValueError) as e:
+                log(f'repair file unreadable ({e}): none')
+            if any(ci_rep.get(k) for k in ('moves', 'avoid', 'need')):
+                base_opts['cine_repair'] = {k: ci_rep.get(k) or [] for k in ('moves', 'avoid', 'need')}
         if os.environ.get('CINE_PIN_PLAN'):
             # re-time an approved edit: its clips / order / entry points, its song window and intro, new cuts only
             with open(os.environ['CINE_PIN_PLAN'], encoding='utf-8') as f:
@@ -392,6 +404,8 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                 sm = LT.attach(plan, dict(seed=seed, preset='cinematic_slowmo'), song=title, artist=artist or '',
                                preset='cinematic_slowmo', song_audio=song_original or song, seed=seed)
                 lyr_items = len(sm.get('words') or [])
+                if ci_rep.get('lyric_t0'):
+                    log('CI repair: lyric re-times ' + json.dumps(_retime_lyrics(plan, ci_rep['lyric_t0'])))
             except Exception as e:  # noqa: BLE001
                 import traceback
                 traceback.print_exc()
@@ -456,6 +470,55 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
         return res
     finally:
         res['render_s'] = round(time.time() - t_start, 1)
+
+
+def _retime_lyrics(plan, t0s, min_s=0.2):
+    """CI repair: {entry index: new first-ink time} measured by the judge on the rendered file (sung onset - lead). The words
+    intro abuts (each word holds until the next), so the previous item's exit moves with it. Indices only in the log."""
+    its = [it for o in plan.get('overlays') or [] if o.get('type') == 'lyric_text' for it in o.get('items') or []
+           if it.get('lyric', True)]
+    done = []
+    for k_, t in sorted(((int(k), float(v)) for k, v in dict(t0s).items()), key=lambda x: x[0]):
+        if not 0 <= k_ < len(its):
+            continue
+        lo = float(its[k_ - 1]['t0']) + min_s if k_ > 0 else 0.0
+        hi = float(its[k_ + 1]['t0']) - min_s if k_ + 1 < len(its) else float(its[k_]['t_out']) - min_s
+        t = round(min(max(t, lo), hi), 4)
+        if hi < lo:
+            continue
+        old = float(its[k_]['t0'])
+        its[k_]['t0'] = t
+        if k_ > 0 and its[k_ - 1].get('anim_out') == 'cut' and abs(float(its[k_ - 1]['t_out']) - old) < 0.05:
+            its[k_ - 1]['t_out'] = its[k_ - 1]['t1'] = t
+        done.append([k_, round(old, 3), t])
+    for o in plan.get('overlays') or []:
+        if o.get('type') == 'lyric_text' and o.get('items'):
+            o['t0'] = round(min(float(i['t0']) for i in o['items']), 4)
+    return done
+
+
+def _part_key(plan, a, b, pad=0.6):
+    """content hash of what the engine draws in [a, b] (the shots / overlays touching it + every other plan setting) - a
+    repaired re-render reuses the unchanged parts (CINE_PART_CACHE)"""
+    import hashlib
+
+    def touches(x):
+        try:
+            return float(x.get('t0', -1e9)) < b + pad and float(x.get('t1', 1e9)) > a - pad
+        except (TypeError, ValueError):
+            return True
+    shots = [x for x in plan.get('shots') or [] if touches(x)]
+    ovs = []
+    for o in plan.get('overlays') or []:
+        if o.get('items'):
+            its = [i for i in o['items'] if touches(i)]
+            if its:
+                ovs.append(dict(o, items=its))
+        elif touches(o):
+            ovs.append(o)
+    rest = {k: v for k, v in plan.items() if k not in ('shots', 'overlays', 'audio', 'song_fx', 'sfx', 'planner', 'clip_audio')}
+    blob = json.dumps(dict(a=round(a, 4), b=round(b, 4), shots=shots, ovs=ovs, rest=rest), sort_keys=True, default=str)
+    return hashlib.sha1(blob.encode('utf-8')).hexdigest()[:24]
 
 
 def _run_watch(cmd, log_path):
@@ -524,8 +587,19 @@ def run_engine(res, plan, pp, out, wd):
             rc, tail, peak = _run_watch(cmd, elog)
         else:
             parts = []
+            pc = os.environ.get('CINE_PART_CACHE')
+            keys = [_part_key(plan, a, b) for a, b in segs] if pc else [None] * len(segs)
+            hits = [bool(pc) and os.path.exists(os.path.join(pc, k_ + '.mp4')) for k_ in keys]
+            if all(hits):
+                hits[-1] = False                 # one engine run still writes the song mix (audio.wav)
+            res['parts_reused'] = int(sum(hits))
             for i, (a, b) in enumerate(segs):
                 po = os.path.join(ew, f'part{i:02d}.mp4')
+                if hits[i]:
+                    shutil.copyfile(os.path.join(pc, keys[i] + '.mp4'), po)
+                    log(f'engine part {i + 1}/{len(segs)} {a:.2f}-{b:.2f} s: unchanged, reused (CI repair)')
+                    parts.append(po)
+                    continue
                 c = [x if x != out else po for x in cmd] + ['--start', f'{a:.4f}', '--end', f'{b:.4f}']
                 rc, tail, pk = _run_watch(c, elog)
                 peak = max(peak, pk)
@@ -533,6 +607,12 @@ def run_engine(res, plan, pp, out, wd):
                 if rc != 0 or not os.path.exists(po):
                     rc = rc or 1
                     break
+                if pc:
+                    try:
+                        os.makedirs(pc, exist_ok=True)
+                        shutil.copyfile(po, os.path.join(pc, keys[i] + '.mp4'))
+                    except OSError:
+                        pass
                 parts.append(po)
             if rc == 0:
                 lst = os.path.join(ew, 'parts.txt')

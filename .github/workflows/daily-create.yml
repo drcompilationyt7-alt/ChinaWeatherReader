@@ -85,6 +85,14 @@ env:
   NEWTYPE_CLI_ARGS: ${{ github.event.inputs.newtype_args || '' }}
   # sound short: ~5-15 min on the 4-core runner (CPU, libx264); the cap leaves room for a cold model cache
   NEWTYPE_TIMEOUT_MIN: ${{ vars.NEWTYPE_TIMEOUT_MIN || '60' }}
+  # 2026-10-23 (owner: "if the github when creating the slow mo edit is not good we have to fix it, we must publish a video every
+  # day"): the judged repair loop (pipeline/newtype-pipeline.js runNewType) - at most NEWTYPE_MAX_ATTEMPTS renders within
+  # NEWTYPE_BUDGET_MIN, no new attempt after NEWTYPE_DEADLINE_UTC on scheduled runs (the 02:47 run then still has the stem
+  # fallback + upload hours before PUBLISH_HOUR_UTC 12:00); a fallback writes the job summary + memory/newtype-fallback.json
+  # and opens an issue
+  NEWTYPE_MAX_ATTEMPTS: ${{ vars.NEWTYPE_MAX_ATTEMPTS || '5' }}
+  NEWTYPE_BUDGET_MIN: ${{ vars.NEWTYPE_BUDGET_MIN || '210' }}
+  NEWTYPE_DEADLINE_UTC: ${{ vars.NEWTYPE_DEADLINE_UTC || '08:30' }}
   # Long versions of the sound / slowmo shorts (pipeline/longform-queue.js): rendered with the short, parked in a release
   # asset, uploaded 7 days after the short. LONG_ENABLED=off disables; the cadence is capped (see the queue header).
   LONG_ENABLED: ${{ vars.LONG_ENABLED || 'off' }}
@@ -94,11 +102,18 @@ env:
   GITHUB_TOKEN: ${{ secrets.GH_PAT || github.token }}
   EDIT_POOL_DIR: output/edit-pools
 
+# one daily run at a time (2026-10-23): a repair loop can run for hours; the 07:47 backup waits for it and then sees the
+# day's upload in meme-history instead of rendering a second short
+concurrency:
+  group: daily-create
+  cancel-in-progress: false
+
 jobs:
   create-shorts:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     timeout-minutes: 360
 
     steps:
@@ -202,9 +217,21 @@ jobs:
             ~/.cache/clip_finder
           # v2 = also the SigLIP weights and the anime-face onnx of the sound edit; v3 = + the slow-mo models (faster-whisper
           # base / medium, wav2vec2, htdemucs); the stem-only setup keeps its v1 cache
-          key: meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v3' }}
+          # v4 (2026-10-23) = + wav2vec2 lv60k (the slow-mo lyric ensemble + the judge's per-word lyric check)
+          key: meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v4' }}
           restore-keys: |
-            meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v2' }}
+            meme-models-${{ env.DAILY_ROTATION == 'off' && 'v1' || 'v3' }}
+
+      - name: Warm the slow-mo / sound judge models (from the cache; downloads retried, never fails the day)
+        if: env.CONTENT_MODE == 'meme' && env.DAILY_ROTATION != 'off'
+        continue-on-error: true
+        run: |
+          # pre-flight (2026-10-23): every model the renders and the judges load, so a missing model fails here (and is
+          # retried) instead of late inside a render; the stem edit does not need them
+          for i in 1 2 3; do
+            if python3 core/edit/judge_repair.py --warm-models; then break; fi
+            echo "model warm-up attempt $i failed; retrying"; sleep 30
+          done
 
       - name: Install Python dependencies (quiz)
         if: env.CONTENT_MODE == 'quiz' || env.CONTENT_MODE == 'pause'
@@ -317,6 +344,7 @@ jobs:
             output/meme/work-*/judge/*.md
             output/meme/work-*/judge/*.jpg
             output/meme/work-*/judge/*.png
+            output/meme/work-*/repair*.json
           retention-days: 7
 
       - name: Save memory
@@ -330,6 +358,7 @@ jobs:
                    memory/dspy-title-program.json memory/dspy-title-status.json config/channel-pool.json config/trend-banks \
                    memory/experiments.jsonl memory/outcomes.json memory/metadata-choices.jsonl memory/metadata-arms.json \
                    memory/yt-suggest-cache.json memory/longform-queue.json memory/edit-pool-used.json \
+                   memory/newtype-repairs.jsonl memory/newtype-fallback.json \
                    core/edit/assets/sound-music-pool.json core/edit/assets/slowmo-music-pool.json; do
             if [ -e "$f" ]; then git add "$f"; fi
           done

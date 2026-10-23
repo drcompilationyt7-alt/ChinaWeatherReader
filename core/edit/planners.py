@@ -3075,6 +3075,10 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
     repair = None
     if not pin and os.environ.get('SLOWMO_JUDGE_REPAIR', '1') != '0':
         sw, st_, repair = _cine_judge_repair(A, start, D, sw, st_, opts.get('cine_song_speed'), WV_SHOT[0] * tsc, max_sh)
+    ci_rep = None
+    if not pin and opts.get('cine_repair'):
+        sw, st_, ci_rep = _cine_ci_repair(sw, st_, opts['cine_repair'], lead, D, WV_SHOT[0] * tsc, max_sh)
+        log('cinematic: CI repair (judge of the rendered file): ' + json.dumps(ci_rep))
     cuts = [round(t + lead, 4) for t in sw]
     lens = [max(1, int(round((b - a) / main))) for a, b in zip(sw, sw[1:] + [D])]
     pat = ['move', 'still', 'move', 'move', 'still']
@@ -3088,9 +3092,62 @@ def _cine_wave_cuts(A, start, d, end, lead, opts, rng, pin=None):
                 groove=G,
                 waves=[dict(a=x['a'], b=x['b'], s=x['strength'], why=x['why']) for x in Wv['waves']],
                 cuts=[dict(sw=round(C[i]['sw'], 3), attack=C[i]['a'], why=C[i]['why'], s=C[i]['strength'], beat=C[i]['beat'])
-                      for i in idx], skipped=skipped, judge_repair=repair)
+                      for i in idx], skipped=skipped, judge_repair=repair, ci_repair=ci_rep)
     log('cinematic: wave cuts: %d shots, skipped wave starts %s' % (len(sw), json.dumps(skipped)))
     return cuts, lens, kinds, lifts, main, info
+
+
+def _cine_ci_repair(sw, st_, rep, lead, D, lo, max_sh, max_shot=7.0, tol=0.10):
+    """2026-10-23 (owner: "if the github when creating the slow mo edit is not good we have to fix it"): the CI repair loop
+    (pipeline/newtype-pipeline.js, core/edit/judge_repair.py) re-plans the same song / seed with the failures the judge
+    measured on the RENDERED file, in edit seconds: moves [[cut, to]] (a loose / off-sync switch onto its attack),
+    avoid [cut] (a switch mid-wave or in a held tail: dropped when the merged shot stays <= max_shot s), need [t] (a missed
+    strong wave start: a switch added when both shots keep >= lo s). Switch 0 (the hero = the end of the words intro) never
+    moves. -> (sw, strengths, log)"""
+    sw, st_ = list(sw), list(st_)
+    out = dict(moved=[], dropped=[], added=[], kept=[])
+
+    def near(t):
+        if len(sw) < 2:
+            return None
+        k = min(range(1, len(sw)), key=lambda i: abs(sw[i] - t))
+        return k if abs(sw[k] - t) <= tol else None
+
+    def room(k, t):
+        a = sw[k - 1] if k - 1 >= 0 else 0.0
+        b = sw[k + 1] if k + 1 < len(sw) else D
+        return a + lo <= t <= b - lo
+    for a_, b_ in rep.get('moves') or []:
+        k = near(float(a_) - lead)
+        t = float(b_) - lead
+        if k is not None and room(k, t):
+            out['moved'].append([round(sw[k] + lead, 3), round(t + lead, 3)])
+            sw[k] = t
+        else:
+            out['kept'].append(round(float(a_), 3))
+    for a_ in rep.get('avoid') or []:
+        k = near(float(a_) - lead)
+        if k is None:
+            continue
+        b = sw[k + 1] if k + 1 < len(sw) else D
+        if b - sw[k - 1] <= max_shot:
+            out['dropped'].append(round(sw[k] + lead, 3))
+            del sw[k]
+            del st_[k]
+        else:
+            out['kept'].append(round(float(a_), 3))
+    for a_ in rep.get('need') or []:
+        t = float(a_) - lead
+        if len(sw) >= max_sh or any(abs(x - t) < 0.4 for x in sw):
+            continue
+        j = sum(1 for x in sw if x < t)
+        a = sw[j - 1] if j >= 1 else None
+        b = sw[j] if j < len(sw) else D
+        if a is not None and a + lo <= t <= b - lo:
+            sw.insert(j, t)
+            st_.insert(j, 1.0)
+            out['added'].append(round(t + lead, 3))
+    return sw, st_, out
 
 
 def _cine_judge_repair(A, start, D, sw, st_, speed, lo, max_sh, passes=4):

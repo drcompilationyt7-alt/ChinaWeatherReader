@@ -262,15 +262,21 @@ def split_id(vid):
     return str(vid), None
 
 
-def pick(history=None, fetch=False, rng=None, pool_path=None, when=None):
+def pick(history=None, fetch=False, rng=None, pool_path=None, when=None, exclude=None):
     """the next slow-mo song AND version. Every song is two candidates (speed 1.0 and its slowed speed, ~50 / 50 by equal priors);
     the cooldown / no-repeat unit is song + version (history ids 'id@v0.85'), and the last video's song is never picked again in
-    either version. -> pick_song's dict + {version_id, speed, section_hero}"""
+    either version. exclude: base ids to skip (default env SLOWMO_EXCLUDE_SONGS, comma separated: the CI repair loop's
+    'another song' attempt, a song without lyrics). -> pick_song's dict + {version_id, speed, section_hero}"""
     import tempfile
     rng = rng or random.Random()
     pool = load_pool(pool_path)
     hist = list(history or [])
     last = split_id((hist[-1].get('id') if isinstance(hist[-1], dict) else hist[-1]) if hist else '')[0]
+    if exclude is None:
+        exclude = {split_id(x.strip())[0] for x in os.environ.get('SLOWMO_EXCLUDE_SONGS', '').split(',') if x.strip()}
+    exclude = set(exclude or ())
+    if exclude and len([r for r in pool['songs'] if r['id'] not in exclude]) >= 1:
+        pool = dict(pool, songs=[r for r in pool['songs'] if r['id'] not in exclude])
     virt = []
     for rec in pool['songs']:
         if last and rec['id'] == last and len(pool['songs']) > 1:
