@@ -1629,6 +1629,55 @@
     9.155,
     36.571
    ]
+  },
+  {
+   "videoId": "jQNeOZ20gD8",
+   "url": "https://www.youtube.com/watch?v=jQNeOZ20gD8",
+   "postedAt": "2026-10-23T08:11:46.516Z",
+   "publishAt": "2026-10-23T12:00:00.000Z",
+   "song": "soda pop",
+   "theme": "anime",
+   "emoji": "🎧,🎶",
+   "title": "soda pop acapella saja boys 🎧🎶",
+   "clipIds": [
+    "5VPZZ0NND-8",
+    "UNXsatjDB4M",
+    "HLqE5GYe150",
+    "KfWTHmYl4YU",
+    "-JStINmfSbk",
+    "983bBbJx0Mk"
+   ],
+   "clipChannels": [
+    "Entertainment Access",
+    "GH'S",
+    "K-Anime Studio",
+    "LitHero27",
+    "Sony Pictures Animation",
+    "TEDDY STUDIO"
+   ],
+   "clipSource": "KPop Demon Hunters",
+   "settings": {
+    "drop": 14,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-stack-drop"
+   },
+   "onVideoTitle": "full drop hits",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "title-source",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-milestone",
+    "descHook": "op-desc-stack-drop",
+    "titlePattern": "{song} acapella {artist} {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson + insights (bonus -0.12)",
+   "whyMode": "insight-driven",
+   "bpm": 125.99,
+   "titlePattern": "{song} acapella {artist} {e}"
   }
  ]
 }
