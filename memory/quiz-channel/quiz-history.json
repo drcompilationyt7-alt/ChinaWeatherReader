@@ -983,6 +983,107 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "QKjJqfS91jE",
+   "url": "https://www.youtube.com/watch?v=QKjJqfS91jE",
+   "postedAt": "2026-10-23T07:48:44.276Z",
+   "publishAt": "2026-10-23T12:00:00.000Z",
+   "format": "song",
+   "theme": "kpop",
+   "seed": 994249297,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Let's test your pop culture skills!",
+     "template": "Let's test your pop culture skills!",
+     "sec": 1.68
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your final score below!",
+     "template": "Drop your final score below!",
+     "sec": 1.56
+    }
+   ],
+   "titleTemplate": "song-3sec",
+   "title": "Guess the Song in 3 Seconds 🔥 #kpop",
+   "answers": [
+    "song:seven|jung kook",
+    "song:how you like that|blackpink",
+    "song:gee|girls' generation"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "speed",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "dKsEZJg5w9M",
+   "url": "https://www.youtube.com/watch?v=dKsEZJg5w9M",
+   "postedAt": "2026-10-23T07:54:47.799Z",
+   "publishAt": "2026-10-23T21:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 271032264,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Guess the anime from these emojis!",
+     "template": "Guess the anime from these emojis!",
+     "sec": 2.25
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your final score in the comments below!",
+     "template": "Drop your final score in the comments below!",
+     "sec": 2.01
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Gangnam Style.",
+     "template": null,
+     "sec": 1.37
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai-short",
+     "line": "Yes, Pink Venom!",
+     "template": "Yes, {a}!",
+     "sec": 0.71
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "That was Supernova.",
+     "template": null,
+     "sec": 1.44
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis: can you get 3/3? 🧠 #kpop",
+   "answers": [
+    "emoji:gangnam style (psy)",
+    "emoji:pink venom (blackpink)",
+    "emoji:supernova (aespa)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "llm",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

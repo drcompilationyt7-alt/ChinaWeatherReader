@@ -351,6 +351,28 @@
       "titleSource": "idol-llm",
       "quizFormat": "idol",
       "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=QKjJqfS91jE",
+      "title": "Guess the Song in 3 Seconds 🔥 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-23T07:48:44.515Z",
+      "videoId": "QKjJqfS91jE",
+      "category": "quiz-song",
+      "titleSource": "song-3sec",
+      "quizFormat": "song",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=dKsEZJg5w9M",
+      "title": "guess the kpop song from emojis: can you get 3/3? 🧠 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-23T07:54:48.043Z",
+      "videoId": "dKsEZJg5w9M",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-llm",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
     }
   ]
 }
