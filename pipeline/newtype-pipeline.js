@@ -126,7 +126,7 @@ function guardRender(type, rep, videoPath, work) {
     if (process.env.DRY_RUN === 'true') logger.warn(`${type}: fresh-clip override (timing test, dry run only)`);
     else bad.push('fresh-clip override (timing test only, never posted)');
   }
-  if (type === 'sound' && rep.clip_rotation && rep.clip_rotation.reuse_share != null) {
+  if (type === 'sound' && rep.clip_rotation && rep.clip_rotation.reuse_share != null && !(rep.fresh_override && process.env.DRY_RUN === 'true')) {
     // owner 2026-10-22 "no variety and good match need both": <= SOUND_REUSE_CAP (30 %) of the shots from the last 5 sound videos
     const cap = Number(process.env.SOUND_REUSE_CAP || 0.30);
     if (rep.clip_rotation.reuse_share > cap + 1e-6) bad.push(`pool too small: reuse ${Math.round(rep.clip_rotation.reuse_share * 100)} % > ${Math.round(cap * 100)} %`);

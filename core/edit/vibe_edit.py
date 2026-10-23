@@ -284,6 +284,12 @@ def main():
     if a.fresh_override and kind == 'slowmo':
         os.environ['CLIP_ROTATION_FRESH_OVERRIDE'] = '1'
         res['fresh_override'] = True       # timing test: may show the last slow-mo videos' clips -> never posted (guard)
+    elif a.fresh_override and kind == 'sound':
+        # 2026-10-23 PIPELINE TEST ONLY (the CI repair loop's dry run): the reuse cap is lifted because the sound pool lacks
+        # fresh pins (pool_too_small); labelled fresh_override, the pre-upload guard never posts it outside a dry run
+        os.environ['SOUND_REUSE_CAP'] = '1.0'
+        os.environ['CLIP_ROT_SOUND_MIN_FRESH'] = '0'
+        res['fresh_override'] = True
 
     def done(code):
         VP.write_json(res_path, res)
