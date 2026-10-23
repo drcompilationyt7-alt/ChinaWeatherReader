@@ -521,6 +521,46 @@
     "word": "slash",
     "note": "auto (vision model) 2026-10-21 (Sword of A Stranger Intro Fight)"
    }
+  ],
+  "c_WTltKnS7r2U_60090": [
+   {
+    "t": 1.315,
+    "action": "sword",
+    "word": "block",
+    "note": "auto (vision model) 2026-10-22 (Jujutsu Kaisen Sakuga MAD)"
+   }
+  ],
+  "c_1MSkCTOWdWs_101975": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-22 (Attack on Titan Season 4 Part 2 - 1080p EREN VS RE)"
+   }
+  ],
+  "c_ULHqLR9cpj8_208530": [
+   {
+    "t": 0.843,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-10-22 (Bleach TYBW 4K Sakuga MAD - (cour 2))"
+   }
+  ],
+  "c_A_5JOOeFi5g_326030": [
+   {
+    "t": 0.301,
+    "action": "sword",
+    "word": "stomp",
+    "note": "auto (vision model) 2026-10-22 (KOKUSHIBO vs SANEMI & MUICHIRO 🔥 | Demon Slayer In)"
+   }
+  ],
+  "c_A_5JOOeFi5g_225697": [
+   {
+    "t": 0.952,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-10-22 (KOKUSHIBO vs SANEMI & MUICHIRO 🔥 | Demon Slayer In)"
+   }
   ]
  }
 }
