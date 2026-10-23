@@ -539,11 +539,23 @@ def preset_allow_only():
     return os.environ.get('SOUND_ALLOW_ONLY', '0') == '1'
 
 
+def queued_prebuilt(preset):
+    """Hand-made videos of the preset still waiting in memory/prebuilt-queue.json (scripts/prebuilt-queue.js records each in the
+    ledger only when it posts): they count as the newest videos, so a generated video never repeats their clips
+    (owner 2026-10-22, slow-mo: 3g queued for 10-24 shares no clip with the next generated one)."""
+    q = read_json(os.path.join(os.path.dirname(ledger_path()), 'prebuilt-queue.json'), {}) or {}
+    out = []
+    for e in q.get('items') or []:
+        if e.get('type') == preset and not e.get('done') and not e.get('videoId') and e.get('clipIds'):
+            out.append({'at': f"{e.get('date') or '2999-12-31'}T12:00:00Z", 'clips': list(e['clipIds']), 'prebuilt': e.get('asset')})
+    return sorted(out, key=lambda h: h['at'])
+
+
 def rotate(preset, vibe, clips, led=None):
     """owner 2026-10-20 (all edit types): variety, reuse only here and there -> core/edit/clip_rotation.py. The level
     (CLIP_ROTATION_LEVEL, raised by vibe_edit.py on a pool_low retry) hands the planner more candidates."""
     led = led or load_ledger()
-    hist = CR.history(led, preset)
+    hist = CR.history(led, preset) + queued_prebuilt(preset)
     pins = _sound_pins() if preset == 'sound' else None
     counts = (lambda s: s['pool_id'] in pins) if pins is not None else (lambda s: True)
     seed = os.environ.get('CLIP_ROTATION_SEED')

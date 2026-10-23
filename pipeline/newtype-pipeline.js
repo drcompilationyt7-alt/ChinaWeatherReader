@@ -86,6 +86,7 @@ const SLOWMO_ENV = {
   SLOWMO_MUSIC_POOL: '1', YT_JS_RUNTIMES: 'node', LYRICS_NO_STORE: '1', CINE_LYRICS: '1',
   EDIT_NO_SHAKE: '1', EDIT_ROTATE_HINT: '1', EDIT_POOL_REVIEWED_ONLY: '1', SLOWMO_COOLDOWN_VIDEOS: '1',
   CINE_SEGMENT_S: '12', EDIT_PREFETCH: '0', EDIT_GPU: '0',
+  LYRICS_WHISPER: 'medium',   // 2026-10-23: the lyric check / head-line pins need the judge's model (base misheard blue's intro line)
 };
 const typeEnv = type => {
   const base = type === 'sound' ? SOUND_ENV : (type === 'slowmo' ? SLOWMO_ENV : { EDIT_NO_SHAKE: '1', EDIT_GPU: '0' });
@@ -98,7 +99,7 @@ function runCli(args, timeoutMin, extraEnv = {}) {
   return new Promise(resolve => {
     execFile(python(), args, { timeout: timeoutMin * 60000, maxBuffer: 128 * 1024 * 1024,
       env: { ...process.env, ...extraEnv, PYTHONIOENCODING: 'utf-8', EDIT_POOL_DIR: poolRoot() } }, (err, stdout, stderr) => {
-      if (stderr) process.stderr.write(String(stderr).slice(-3000));
+      if (stderr) process.stderr.write(String(stderr).slice(process.env.DRY_RUN === 'true' ? -60000 : -3000));   // a dry run keeps the whole story
       resolve({ err, stdout: String(stdout || '') });
     });
   });
@@ -121,6 +122,16 @@ function guardRender(type, rep, videoPath, work) {
   const nShots = plan && Array.isArray(plan.shots) ? plan.shots.length - (type === 'slowmo' ? 1 : 0) : 0;   // slow-mo: minus the words-on-black intro
   if (nShots < g.shots) bad.push(`${nShots} shots (< ${g.shots})`);
   if ((rep.clips_short || []).length < Math.ceil(g.shots / 2)) bad.push(`${(rep.clips_short || []).length} distinct clips`);
+  if (rep.fresh_override) {
+    // vibe_edit --fresh-override: a slow-mo TIMING TEST that may repeat the last videos' clips; a dry run shows it, nothing posts it
+    if (process.env.DRY_RUN === 'true') logger.warn(`${type}: fresh-clip override (timing test, dry run only)`);
+    else bad.push('fresh-clip override (timing test only, never posted)');
+  }
+  if (type === 'sound' && rep.clip_rotation && rep.clip_rotation.reuse_share != null) {
+    // owner 2026-10-22 "no variety and good match need both": <= SOUND_REUSE_CAP (30 %) of the shots from the last 5 sound videos
+    const cap = Number(process.env.SOUND_REUSE_CAP || 0.30);
+    if (rep.clip_rotation.reuse_share > cap + 1e-6) bad.push(`pool too small: reuse ${Math.round(rep.clip_rotation.reuse_share * 100)} % > ${Math.round(cap * 100)} %`);
+  }
   try {
     const out = execFileSync(python(), [path.join(ROOT, 'core', 'quiz', 'qa_guard.py'), '--video', videoPath, '--samples', '16'],
       { timeout: 300000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
@@ -162,6 +173,11 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   logger.info(`${type} render env: ${Object.entries(tenv).map(([k, v]) => `${k}=${v}`).join(' ')}`);
   const { err } = await runCli(args, Number(process.env.NEWTYPE_TIMEOUT_MIN || (wantLong ? 90 : 45)), tenv);
   const rep = readJson(path.join(work, 'result.json'), null);
+  if (rep && rep.ok === false && /^pool_too_small/.test(String(rep.reason || ''))) {
+    // the pool cannot give variety (reuse cap) AND good matches today: no sound video, the runner posts stem
+    logger.warn(`${type}: pool too small -> stem fallback (${String(rep.reason).slice(0, 200)})`);
+    throw new Error(`${type} pool too small: ${String(rep.reason).slice(0, 300)}`);
+  }
   if (!rep || rep.ok === false || err) {
     throw new Error(`${type} render failed: ${rep && rep.reason ? rep.reason : ((err && err.message) || 'no result').slice(0, 200)}`);
   }

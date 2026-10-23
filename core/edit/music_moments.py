@@ -617,6 +617,33 @@ def tempo_scale(speed):
     return round(r, 4) if r < 0.97 else 1.0
 
 
+# 2026-10-22/23 (owner on the "blue" dry run: "the transition timing is off, the momentum logic needs updating"). Measured on
+# real edits of "blue" (6LM8-q3PnVs 1.5 M views, Ulco4K08-u4, EEdpjFviGJg, 1CFWede1erg, MS3S7SaPJN0) and of "Until I Found You"
+# vs our round-6 cuts (refs/new-types-progress.md 2026-10-23): a GROOVE song (a steady drum / bass pulse under short sung
+# words) is cut TIGHT on the sung attack (6LM8: 0..0.06 s before it, median 0.02-0.03 s); ours sat 0.08-0.11 s early on 10 / 23
+# cuts (the ballad rule's 0.10 s lead / beat - LEAD snap, calibrated on Golden Hour's soft legato onsets). Golden Hour has no
+# such pulse (0.37 slowed / 0.40 regular, blue 0.56): the approved 3g / 3j rule stays. Pulse clarity = the autocorrelation
+# peak (0.3-1.3 s) of the percussive onset envelope.
+GROOVE_PULSE = 0.47      # pulse clarity from which a song is a groove song
+GROOVE_PRE = 0.03        # (s) a groove switch sits this close before the sung attack (refs 0..0.06 s)
+
+
+def groove(path, t0=0.0, dur=None):
+    """-> dict(pulse, perc, period, groove): how strongly a steady percussive pulse drives the window"""
+    import librosa
+    y = load(path, t0, dur).astype(np.float32)
+    _, yp = librosa.effects.hpss(y)
+    perc = float(np.sum(yp.astype(np.float64) ** 2) / (np.sum(y.astype(np.float64) ** 2) + 1e-9))
+    env = librosa.onset.onset_strength(y=yp, sr=SR, hop_length=512)
+    env = (env - env.mean()) / (env.std() + 1e-9)
+    ac = np.correlate(env, env, 'full')[len(env) - 1:] / max(1, len(env))
+    fr = SR / 512.0
+    lo, hi = int(0.3 * fr), int(1.3 * fr)
+    k = lo + int(np.argmax(ac[lo:hi])) if hi > lo + 1 and len(ac) > hi else lo
+    pulse = float(ac[k]) if len(ac) > k else 0.0
+    return dict(pulse=round(pulse, 3), perc=round(perc, 3), period=round(k / fr, 3), groove=bool(pulse >= GROOVE_PULSE))
+
+
 def _ref_tempo_stem(path, t0, dur, r, threads=2):
     """the Demucs vocal stem of [t0, t0 + dur] of `path` played 1 / r times slower (the MIX resampled first, pitch follows,
     exactly like song_fx.make_version: the approved slowed analysis separated the slowed mix, and Demucs on the regular mix

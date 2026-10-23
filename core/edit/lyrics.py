@@ -95,7 +95,7 @@ SR = 16000                   # model rate
 HOP = 0.02                   # wav2vec2 frame stride
 FRAME_T0 = 0.0125            # centre of frame 0 (400-sample receptive field, 320-sample stride)
 ONSET_LAT = 0.005            # the flux peak sits one 5 ms hop after a synthetic attack (selftest)
-VERSION = 10                 # bump when the word output changes (invalidates the words cache)
+VERSION = 12                 # bump when the word output changes (invalidates the words cache)
 
 
 def log(*a):
@@ -569,7 +569,8 @@ def build_graph(ws):
     return (np.array(kind), np.array(label), np.array(word), np.array(G), np.array(first), np.array(last))
 
 
-def viterbi(lp, ws, prior=None, skip_pen=-7.0, jump_pen=-14.0, star_pen=-2.2, start_mid_pen=-3.0, free_ends=True):
+def viterbi(lp, ws, prior=None, skip_pen=-7.0, jump_pen=-14.0, star_pen=-2.2, start_mid_pen=-3.0, free_ends=True,
+            start_ks=None, start_skip=-3.0):
     """Best path of the letters of `ws` through the log-probs `lp` (T, 29).
 
     States: gap G_k before word k (blank or word separator, or ANY letter at `star_pen` per frame: ad-libs,
@@ -613,8 +614,13 @@ def viterbi(lp, ws, prior=None, skip_pen=-7.0, jump_pen=-14.0, star_pen=-2.2, st
     delta[kind != 0] = start_mid_pen
     if not free_ends and len(ws):
         delta[:] = NEG
-        delta[G[0]] = 0.0
-        delta[first[0]:last[0] + 1] = start_mid_pen
+        # start_ks: a line cut by the window start may begin at any of its words, each word left out before the start
+        # costing its own skip penalty (start_skip)
+        for n, k in enumerate(start_ks or [0]):
+            c = n * float(start_skip)
+            delta[G[k]] = c
+            if k < len(ws):
+                delta[first[k]:last[k] + 1] = c + start_mid_pen
     wordcol = np.clip(word, 0, max(0, len(ws) - 1))
 
     prevcol = np.clip(word - 1, 0, max(0, len(ws) - 1))
@@ -953,7 +959,17 @@ def _lrc_sequence(lat, song_map, a, rate, edge=0.3):
             tok['skip'] = (-20.0 if inside else -3.0) if w.get('optional') else (-30.0 if inside else -3.0)
             aa = s0 + (max(L, ss0) - song0) / r
             bb = s0 + (min(E, ss1) - song0) / r
-            seq.append({'tok': tok, 'a': (aa - a) * rate, 'b': (bb - a) * rate})
+            seq.append({'tok': tok, 'a': (aa - a) * rate, 'b': (bb - a) * rate, 'head': L < ss0 - edge})
+            if L < ss0 - edge:
+                # a line cut by the window start: where its words fall in song time, spread over the line's sung span
+                # by letter count (the span = up to the next line, at most ~0.5 s per word + 1 s), to tell the words
+                # sung BEFORE the window (not heard here) from the ones sung in it
+                lw = [x for x in lat if x['line_t'] == L]
+                wt = np.array([len(x.get('norm') or x['text']) + 1.0 for x in lw])
+                span = min(E - L, 0.5 * len(lw) + 1.0)
+                k = next(i for i, x in enumerate(lw) if x is w)
+                seq[-1]['est'] = L + span * float(wt[:k].sum() + 0.5 * wt[k]) / float(wt.sum())
+                seq[-1]['pre'] = seq[-1]['est'] < ss0
     return seq
 
 
@@ -990,14 +1006,25 @@ def _foreign(hyp, anchors, min_p=0.5, min_alp=-0.6, tol=1.0, run=3):
             cur = []
         elif not ok:
             cur.append((h, strong))
+    # 2026-10-23 (blue @0.9, the window starts inside a line): the line cut by the window start is sung there - the
+    # recogniser mishearing its short words (base model) must not turn it into a 'foreign' stretch when at least one heard
+    # word in that line's span agrees with it (a TikTok intro over the song agrees with nothing)
+    hd = [x for x in anchors if x.get('head')]
+    if hd and out:
+        h0, h1 = min(x['a'] for x in hd), max(max(x['b'], x['a']) for x in hd)
+        agree = any(ok for h, ok, _s in conf if h0 - tol <= h['t0'] <= h1 + tol and
+                    any(_wsim(_ntok(h['text']), re.sub(r'[^a-z0-9]', '', (x['tok'].get('norm') or '').lower())) >= 0.75 for x in hd))
+        if agree:
+            out = [(f0, f1) for f0, f1 in out if f1 <= h0 or f0 >= h1]
     return out
 
 
 def _anchor_prior(seq, T, tol=0.7, slope=-0.25):
     """(T, W) penalty for word k outside its recogniser interval +- tol (model time)."""
     ts = FRAME_T0 + np.arange(T) * HOP
-    lo = np.array([s['a'] for s in seq]) - tol
-    hi = np.array([max(s['b'], s['a']) for s in seq]) + tol
+    tl = np.array([float(s.get('tol', tol)) for s in seq])        # a word pinned by the recogniser: its own tolerance
+    lo = np.array([s['a'] for s in seq]) - tl
+    hi = np.array([max(s['b'], s['a']) for s in seq]) + tl
     d = np.maximum(lo[None] - ts[:, None], 0) + np.maximum(ts[:, None] - hi[None], 0)
     return (slope * np.minimum(d, 20.0)).astype(np.float32)
 
@@ -1272,6 +1299,42 @@ def words(song, artist, audio_path, t0=0.0, t1=None, duration=None, song_t0=None
             seq = [x['tok'] for x in anchors]
             pr_fn = lambda T: _anchor_prior(anchors, T, tol=0.6)
             kw = {'jump_pen': NEG, 'free_ends': False}
+            # 2026-10-22 (blue @0.9 dry run 6): the window starts mid-line. With a cheap skip (-3) for every word of that
+            # line the aligner smeared its first word over the next two and skipped two ('I' shown 1.35 s late). The
+            # words sung before the window are a PREFIX of that line: the path may start at any of its words (the prefix
+            # is not sung here), and every word from the start on must be placed like a full line's word.
+            head = []
+            for k, x in enumerate(anchors):
+                if not x.get('head'):
+                    break
+                head.append(k)
+            if head and os.environ.get('LYRICS_HEAD_START', '1') != '0':
+                for k in head:
+                    if not seq[k].get('optional'):
+                        seq[k] = dict(seq[k], skip=-30.0)
+                # 2026-10-23: the path starts at the first word estimated inside the window (+- 1 word, the estimate's
+                # error); starting anywhere later (skipping the whole sung prefix, what the -3 per word allowed: blue r6
+                # dry run, the prefix vanished) is not offered
+                k_est = sum(1 for k in head if anchors[k].get('pre'))
+                # the recogniser's own times for the prefix words it heard (same spelling, in order): the line's span
+                # says nothing about WHERE in the window a word is sung, and the CTC path smeared a held one-letter
+                # word ('I', a melisma) 1.2 s late. A heard word pins its token to +-0.2 s of the recogniser's start.
+                if hyp:
+                    hs = sorted((h for h in hyp if h.get('p', 0) >= 0.4 and _ntok(h['text'])), key=lambda h: h['t0'])
+                    j0, pinned = 0, 0
+                    for k in head:
+                        nk = re.sub(r'[^a-z0-9]', '', (seq[k].get('norm') or '').lower())
+                        for j in range(j0, len(hs)):
+                            if hs[j]['t0'] > anchors[k]['b'] + 0.6:
+                                break
+                            if _wsim(_ntok(hs[j]['text']), nk) >= 0.75 and hs[j]['t0'] >= anchors[k]['a'] - 0.6:
+                                anchors[k] = dict(anchors[k], a=hs[j]['t0'], b=hs[j]['t0'], tol=0.2)
+                                j0, pinned = j + 1, pinned + 1
+                                break
+                    tm['head_pinned'] = pinned
+                kw['start_ks'] = [k for k in (k_est, k_est - 1, k_est + 1) if 0 <= k <= head[-1] + 1]
+                kw['start_skip'] = float(os.environ.get('LYRICS_HEAD_SKIP', '-1.5'))
+                tm['head_line'] = [len(head), k_est]
         else:
             mapj = map_hyp([h['text'] for h in hyp], lat) if lat else [None] * len(hyp)
             anchors = _anchor_sequence(hyp, mapj, lat, min_p=0.3 if not lat else 0.45)

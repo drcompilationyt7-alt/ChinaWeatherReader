@@ -351,13 +351,28 @@ def word_events(v):
     ink = v['ink']
     ev = []
     cur = None
+    gap = 0
     for t, x in enumerate(ink):
         if x is None:
+            # 2026-10-22 (blue dry run 6): a one-letter word ('I') smearing in drops under the ink threshold for a frame or
+            # two and came back as a second entry (2.233 + 2.333 s). A gap of <= 3 frames whose ink returns where it was
+            # is the same word; a longer gap ends it
             if cur:
-                cur['end'] = t
-                ev.append(cur)
-                cur = None
+                gap += 1
+                if gap > 3:
+                    cur['end'] = t - gap + 1
+                    ev.append(cur)
+                    cur, gap = None, 0
             continue
+        if cur is not None and gap:
+            m0 = cur.get('last_mask')
+            if m0 is not None:
+                inter, uni = (m0 & x['mask']).sum(), (m0 | x['mask']).sum()
+                if uni and inter / uni < 0.2:
+                    cur['end'] = t - gap
+                    ev.append(cur)
+                    cur = None
+        gap = 0
         new = cur is None
         if cur is not None and t >= 3 and ink[t - 3] is not None:
             m0, m1 = ink[t - 3]['mask'], x['mask']
@@ -375,12 +390,30 @@ def word_events(v):
         if new:
             cur = dict(a=t, area_max=x['area'], sharps=[], boxes=[], lums=[])
         cur['area_max'] = max(cur['area_max'], x['area'])
+        cur['last_mask'] = x['mask']
         cur['sharps'].append(x['sharp'])
         cur['boxes'].append(x['box'])
         cur['lums'].append(x['lum'])
     if cur:
-        cur['end'] = len(ink)
+        cur['end'] = len(ink) - gap
         ev.append(cur)
+    # 2026-10-23 (blue v2 dry run): a word's smear-in (a tall motion-blurred streak, never legible) came out as its own
+    # 0.2 s entry before the word ("6 entries vs 5 planned" + a 'short' word). A short entry that never gets sharp and is
+    # followed at once by a sharp one is that word's entrance: merged into it.
+    fps_ = float(v['fps'])
+    merged = []
+    for e in ev:
+        if merged:
+            p = merged[-1]
+            n_p = p['end'] - p['a']
+            hs = float(np.median(e['sharps'][min(len(e['sharps']) - 1, 3):] or e['sharps']))
+            if n_p <= int(0.3 * fps_) and e['a'] - p['end'] <= 2 and max(p['sharps'] or [0]) < 0.6 * hs:
+                e = dict(e, a=p['a'], sharps=p['sharps'] + e['sharps'], boxes=p['boxes'] + e['boxes'], lums=p['lums'] + e['lums'],
+                         area_max=max(p['area_max'], e['area_max']))
+                merged[-1] = e
+                continue
+        merged.append(e)
+    ev = merged
     out = []
     for e in ev:
         n = e['end'] - e['a']
@@ -873,6 +906,21 @@ def scorecard(C, R, P, items):
     else:
         S['13_hold_outro'], E['13_hold_outro'] = 0.0, 'hold tail / outro check not measured'
         ok = False                         # any mid-wave cut or missed strong wave start fails (owner rule)
+    GC = C.get('groove')
+    if GC is not None and GC.get('groove'):
+        sh = float(GC['share'])
+        S['14_groove'] = round(max(0.0, min(10.0, 10.0 - 5.0 * max(0.0, sh - 0.10))), 2)
+        kinds = [r_['kind'] for r_ in GC['rows']]
+        E['14_groove'] = (f"groove song (pulse {GC['pulse']}, beat {GC.get('period')} s): {len(kinds)} body cuts, on the beat "
+                          f"{kinds.count('beat')}, tight on the sung attack {kinds.count('tight')}, release / gap {kinds.count('other')}, "
+                          f"LOOSE {len(GC['loose'])} ({sh:.0%}, max {JG_LOOSE_MAX:.0%}) {GC['loose'][:10]}")
+        if sh > JG_LOOSE_MAX and len(GC['loose']) >= JG_LOOSE_MIN:
+            ok = False
+            S['14_groove'] = min(S['14_groove'], 5.0)
+        overall = round(float(np.mean(list(S.values()))), 2)
+        ok = ok and overall >= PASS_ALL and all(x >= PASS_EACH for x in S.values())
+    elif GC is not None:
+        E['14_groove'] = f"no steady pulse (pulse {GC.get('pulse')} < {JG_PULSE}): the ballad rule (11 / 12) only"
     return S, E, overall, ok
 
 
@@ -905,6 +953,24 @@ JW_REF_SPEED = 0.85      # every JW_* duration was calibrated on SLOWED 0.85 aud
                          # missed (3h passed 9.94). A faster version is judged at the reference tempo: its MIX is resampled
                          # (pitch follows) before Demucs and the event times are mapped back.
 SYNC_TOL = 0.15          # 12_sync: the switch -> wave-start error the edit may show systematically (s)
+# 14 groove v2 (2026-10-23, owner on the "blue" dry run: "the transition timing is off, the momentum logic needs updating").
+# Measured with this judge's own analysis on the rendered audio of real edits of "blue" (6LM8-q3PnVs 1.5 M views, Ulco4K08-u4,
+# EEdpjFviGJg; 1CFWede1erg = a fast-cut AMV, 49 cuts in 41 s, and MS3S7SaPJN0 = an MV whose cuts sit a constant 0.16 s early,
+# an upload A/V offset, are reported but not used to set the bar) vs our round-6 render (refs/new-types-progress.md, 2026-10-23):
+# - a groove song is cut TIGHT on the sung attack: the cut sits 0..0.06 s before the attack (6LM8 median 0.02-0.03 s) or on the
+#   beat itself (cut - beat -0.07..+0.03 s). Our r6 sat 0.08-0.11 s before the attack on 10 / 23 cuts (the 0.10 s lead and the
+#   beat - 0.065 s snap calibrated on Golden Hour, whose soft legato onsets hide a 3-frame lead; blue's short percussive words
+#   do not): 6LM8 1 / 15 loose, Ulco 2 / 7, EEdp 2 / 5, ours 8 / 23.
+# - the momentum unit of a groove song is the PHRASE: the refs leave about half the word-level starts uncut (a shot carries
+#   2-8 beats, up to ~6 s over several words; they skip the legato / stepwise continuations), so a strong word start is only
+#   'missed' when the shot over it already runs >= JG_MISS_SHOT s. Ballads (Golden Hour) keep the approved every-wave rule.
+JG_PULSE = 0.45          # pulse clarity (autocorrelation peak of the percussive onsets, 0.3-1.3 s) of a groove song
+                         # (blue windows 0.43-0.56 on 5 / 6 edits; Golden Hour 0.29 / 0.34, Until I Found You 0.23 / 0.43)
+JG_TIGHT = (-0.06, 0.07) # (s) attack - switch for a switch tight on the sung attack (refs: 6LM8 all 13 within it)
+JG_BEAT = (-0.07, 0.03)  # (s) switch - beat for a switch on the beat
+JG_LOOSE_MAX = 0.30      # more loose switches than this share of the judged body cuts (and >= JG_LOOSE_MIN) = NOT PASS
+JG_LOOSE_MIN = 3
+JG_MISS_SHOT = 6.0       # groove: a strong word start without a switch is 'missed' only when the shot over it is this long
 SYNC_NEAR = 0.80         # a strong wave start and a switch this close belong together (the switch was meant for it)
 
 
@@ -1097,6 +1163,54 @@ def wave_events(path, dur, words=True, speed=None):
     return dict(attacks=out, releases=rel, F=F, words=W, dur=float(dur), tscale=r)
 
 
+def _jw_groove(path, dur):
+    """the rendered mix's percussive pulse (own code: HPSS, onset autocorrelation, beat tracking on the percussive part)
+    -> dict(groove, pulse, period, beats)"""
+    import librosa
+    import lyrics as LY
+    sr = 22050
+    y = LY.load_audio(path, 0.0, float(dur), sr, 1)[0].astype(np.float32)
+    _, yp = librosa.effects.hpss(y)
+    env = librosa.onset.onset_strength(y=yp, sr=sr, hop_length=512)
+    z = (env - env.mean()) / (env.std() + 1e-9)
+    ac = np.correlate(z, z, 'full')[len(z) - 1:] / max(1, len(z))
+    fr = sr / 512.0
+    lo, hi = int(0.3 * fr), int(1.3 * fr)
+    k = lo + int(np.argmax(ac[lo:hi])) if len(ac) > hi else lo
+    pulse = float(ac[k]) if len(ac) > k else 0.0
+    _, bt = librosa.beat.beat_track(onset_envelope=env, sr=sr, hop_length=512, units='time', tightness=200)
+    bt = np.asarray(bt, float)
+    per = float(np.median(np.diff(bt))) if len(bt) > 2 else k / fr
+    return dict(groove=bool(pulse >= JG_PULSE), pulse=round(pulse, 3), period=round(per, 3), beats=[round(float(x), 3) for x in bt])
+
+
+def groove_check(E, G, cuts, body_from, rows=None, end_guard=1.0, dur=None):
+    """14: each body switch ON a main beat, TIGHT on a sung attack, or a release / vocal-gap switch; else loose"""
+    if not G or not G.get('groove'):
+        return dict(groove=False, pulse=(G or {}).get('pulse'), rows=[], loose=[], share=0.0)
+    bt = np.asarray(G['beats'], float)
+    other = {r_['cut'] for r_ in rows or [] if not str(r_['what']).startswith('wave start')}
+    res = []
+    for c in cuts:
+        if c < body_from + 0.3 or (dur is not None and c > dur - end_guard):
+            continue
+        near = [a[0] - c for a in E['attacks'] if a[2] and -0.15 <= a[0] - c <= 0.40]
+        if any(JG_TIGHT[0] <= x <= JG_TIGHT[1] for x in near):
+            k = 'tight'
+        elif len(bt) and JG_BEAT[0] <= c - float(bt[np.argmin(np.abs(bt - c))]) <= JG_BEAT[1]:
+            k = 'beat'
+        elif not near or round(c, 3) in other:
+            k = 'other'                    # no sung attack it announces (a vocal gap / release switch): not judged here
+        else:
+            k = 'loose'
+        nxt = [a[0] - c for a in E['attacks'] if -0.2 <= a[0] - c <= 0.5]
+        res.append(dict(cut=round(c, 3), kind=k, attack_after=round(min(nxt, key=abs), 3) if nxt else None))
+    loose = [r_['cut'] for r_ in res if r_['kind'] == 'loose']
+    n = len([r_ for r_ in res if r_['kind'] != 'other'])
+    return dict(groove=True, pulse=G['pulse'], period=G['period'], rows=res, loose=loose,
+                share=round(len(loose) / max(1, n), 3))
+
+
 def _jw_state(E, t):
     """what the voice is doing at t: ('gap'|'hold'|'phrase', since the last attack s, until the next attack s)"""
     F = E['F']
@@ -1115,13 +1229,24 @@ def wave_judge(path, cuts, dur, body_from=None, end_guard=1.0, E=None, speed=Non
     """per cut: the attack it announces / the state it falls in; MISSED strong attacks. -> dict(rows, missed, bad, E, sync)"""
     if E is None:
         E = wave_events(path, dur, speed=speed)
+    if 'groove' not in E:
+        try:
+            E['groove'] = _jw_groove(path, dur) if os.environ.get('JUDGE_GROOVE', '1') != '0' else None
+        except Exception as e:  # noqa: BLE001
+            print('[judge_slowmo] groove analysis failed:', repr(e)[:200], file=sys.stderr)
+            E['groove'] = None
     tsc = float(E.get('tscale') or 1.0)
     hop = E['F'].get('hop', JW_HOP)
     cuts = sorted(cuts)
+    grv = bool((E.get('groove') or {}).get('groove'))
     body_from = cuts[0] if body_from is None and cuts else (body_from or 0.0)
     rows, bad = [], []
     for k, c in enumerate(cuts):
         hit = [a for a in E['attacks'] if a[4] - JW_HIT[1] <= c <= a[0] - JW_HIT[0]]
+        if not hit and grv:
+            # groove v2: a switch up to 0.15 s ahead of a strong sung attack announces it (a legato onset has no fall to
+            # time against); how tight it is, is criterion 14's question (it counts there as loose beyond 0.07 s)
+            hit = [a for a in E['attacks'] if a[2] and JW_HIT[0] <= a[0] - c <= JW_HIT[1]]
         rel = [r for r in E['releases'] if -0.15 <= r - c <= 0.22]
         near = min(E['attacks'], key=lambda a: abs(a[0] - c)) if E['attacks'] else None
         gap = round(near[0] - c, 3) if near else None
@@ -1140,7 +1265,7 @@ def wave_judge(path, cuts, dur, body_from=None, end_guard=1.0, E=None, speed=Non
             what = ('mid-hold' if st == 'hold' else 'mid-phrase') + (f' ({since:.2f} s into it, next attack in {until:.2f} s)'
                                                                      if since is not None and until is not None else '')
             ok = False
-        rows.append(dict(cut=round(c, 3), what=what, ok=ok, gap_to_wave_start=gap, word=word))
+        rows.append(dict(cut=round(c, 3), what=what, ok=ok, gap_to_wave_start=gap, word=_mask(word)))
         if not ok:
             bad.append(round(c, 3))
     missed = []
@@ -1155,6 +1280,8 @@ def wave_judge(path, cuts, dur, body_from=None, end_guard=1.0, E=None, speed=Non
         last = max([c for c in cuts if c <= t] or [-9.0])
         if t - last < JW_MIN_SHOT * tsc:
             continue                       # (too close after a switch to take another: that shot starts with it)
+        if grv and t - last < JG_MISS_SHOT:
+            continue                       # groove song: one shot carries a phrase of several words (the real edits, 14)
         i = int(round(t / hop))
         pk = float(E['F']['lv'][i:i + int(0.4 / JW_HOP)].max())
         if pk < -15.0:
@@ -1163,7 +1290,7 @@ def wave_judge(path, cuts, dur, body_from=None, end_guard=1.0, E=None, speed=Non
         if float((seg_ >= pk - 10.0).sum()) * JW_HOP < JW_CARRY:
             continue                       # a blip (an ad-lib syllable in a fading tail, 3h 27.98 s): it carries no wave
         word = next((w[2] for w in E['words'] if abs(w[0] - t) <= 0.35), '')
-        missed.append(dict(t=round(t, 3), rise_db=r, why=why, word=word, prev_cut=round(last, 3)))
+        missed.append(dict(t=round(t, 3), rise_db=r, why=why, word=_mask(word), prev_cut=round(last, 3)))
     try:
         TO = tail_outro_check(path, E, cuts, dur, body_from)
     except Exception as e:  # noqa: BLE001
@@ -1174,7 +1301,9 @@ def wave_judge(path, cuts, dur, body_from=None, end_guard=1.0, E=None, speed=Non
         # (owner 2026-10-20 on 3i): not 'missed'
         missed = [m for m in missed if not any(a_ + 0.3 < m['t'] < e_ for a_, e_ in TO['tails'])
                   and not (TO['outro'] is not None and m['t'] > TO['outro'] + 0.5)]
-    return dict(rows=rows, missed=missed, bad=bad, E=E, sync=sync_check(E, cuts, dur, body_from, end_guard), tail_outro=TO)
+    GC = groove_check(E, E.get('groove'), cuts, body_from, rows, end_guard, dur)
+    return dict(rows=rows, missed=missed, bad=bad, E=E, sync=sync_check(E, cuts, dur, body_from, end_guard), tail_outro=TO,
+                groove=GC)
 
 
 def av_drift(path, music, m_start, dur, plan_cuts=None, cuts=None, win=2.0):
@@ -1241,7 +1370,7 @@ def line_sync(E, cuts, dur, lrc_id, m_start, speed, body_from, end_guard=1.0):
             err = 0.0 if lo <= cut <= hi else (cut - hi if cut > hi else cut - lo)
         else:
             cut, err = None, None
-        rows.append(dict(line=str(L['text'])[:40], t=round(t, 3), attack=round(a[0], 3) if a else None,
+        rows.append(dict(line=f"line {len(rows) + 1} ({len(str(L['text']).split())} words)", t=round(t, 3), attack=round(a[0], 3) if a else None,
                          cut=None if cut is None else round(cut, 3), err=None if err is None else round(err, 3)))
     off = [r_ for r_ in rows if r_['err'] is None or abs(r_['err']) > SYNC_TOL]
     return dict(rows=rows, off=[r_['t'] for r_ in off])
@@ -1363,7 +1492,9 @@ def sync_check(E, cuts, dur, body_from, end_guard=1.0):
             continue                       # (a breath / consonant / pick-up of a start whose switch is on: one wave start)
         # 2026-10-21 (CI dry run "blue" @v0.9): the same excuses as criterion 11 - an attack closer than JW_MIN_SHOT after
         # a switch that sits ON another strong start belongs to that shot (12.96 "is" 0.55 s after "sky", switched)
-        prev_on = [c_ for c_ in cuts if 0.0 <= t - c_ < JW_MIN_SHOT * tsc
+        # groove v2: a shot that starts ON a strong start carries the phrase's next words (up to JG_MISS_SHOT)
+        carry = JG_MISS_SHOT if (E.get('groove') or {}).get('groove') else JW_MIN_SHOT * tsc
+        prev_on = [c_ for c_ in cuts if 0.0 <= t - c_ < carry
                    and any(a[2] and a[0] != t and a[4] - JW_HIT[1] <= c_ <= a[0] - JW_HIT[0] for a in E['attacks'])]
         if prev_on:
             continue
@@ -1372,7 +1503,7 @@ def sync_check(E, cuts, dur, body_from, end_guard=1.0):
             continue                       # (no switch meant for it: criterion 11 'missed' when it carries)
         c = min(near, key=lambda c_: abs(_e(c_)))
         word = next((w[2] for w in E['words'] if abs(w[0] - t) <= 0.35), '')
-        rows.append(dict(start=round(t, 3), fall=round(t0, 3), cut=round(c, 3), err=round(_e(c), 3), word=word, why=why))
+        rows.append(dict(start=round(t, 3), fall=round(t0, 3), cut=round(c, 3), err=round(_e(c), 3), word=_mask(word), why=why))
     errs = np.array([abs(r_['err']) for r_ in rows]) if rows else np.zeros(0)
     med = float(np.median(errs)) if len(errs) else 0.0
     mean = float(np.mean(errs)) if len(errs) else 0.0
@@ -1384,6 +1515,12 @@ def sync_check(E, cuts, dur, body_from, end_guard=1.0):
     ok = med <= SYNC_TOL and mean <= SYNC_TOL and best < 2
     return dict(rows=rows, n=len(rows), median_abs=round(med, 3), mean_abs=round(mean, 3), off=off,
                 worst=max(rows, key=lambda r_: abs(r_['err'])) if rows else None, run=best, ok=bool(ok))
+
+
+def _mask(w):
+    """owner rule: no lyrics in files / logs - a heard word is reported as its first letter + length ('w4')"""
+    w = str(w or '').strip()
+    return f"{w[0]}{len(w)}" if w else ''
 
 
 def wave_table_md(WJ, label):
@@ -1408,8 +1545,18 @@ def wave_table_md(WJ, label):
               '| line | LRC start (s) | first attack (s) | switch (s) | error (s) |', '|---|---|---|---|---|']
         L += [f"| {r_['line']} | {r_['t']:.2f} | {r_['attack']} | {r_['cut']} | {r_['err']}"
               f"{' **OFF**' if r_['t'] in SY['lines']['off'] else ''} |" for r_ in SY['lines']['rows']]
+    GC = WJ.get('groove')
+    if GC and GC.get('groove'):
+        L += ['', f"## Groove (14): pulse {GC['pulse']}, beat {GC.get('period')} s - every body switch on a main beat or tight "
+                  f"on the sung attack ({JG_TIGHT[0]:+.2f}..{JG_TIGHT[1]:+.2f} s before it); loose {len(GC['loose'])} "
+                  f"({GC['share']:.0%}, max {JG_LOOSE_MAX:.0%})", '',
+              '| cut (s) | kind | nearest sung attack - cut (s) |', '|---|---|---|']
+        L += [f"| {r_['cut']:.2f} | {r_['kind']}{' **LOOSE**' if r_['kind'] == 'loose' else ''} | {r_['attack_after']} |"
+              for r_ in GC['rows']]
+    elif GC is not None:
+        L += ['', f"## Groove (14): no steady pulse (pulse {GC.get('pulse')}): the ballad rule only"]
     if SY:
-        L += ['', f"## A/V sync (12): {'OK' if SY['ok'] else 'FAIL'} - |error| median {SY['median_abs']} s, mean {SY['mean_abs']} s, "
+        L += ['', f"## A/V sync (12):{'OK' if SY['ok'] else 'FAIL'} - |error| median {SY['median_abs']} s, mean {SY['mean_abs']} s, "
                   f"off-sync starts {len(SY['off'])}, longest run {SY['run']} (tol {SYNC_TOL} s)", '',
               '| strong wave start (s) | fall (s) | switch (s) | error (s, + late / - early) | word |', '|---|---|---|---|---|']
         L += [f"| {r_['start']:.2f} | {r_['fall']:.2f} | {r_['cut']:.2f} | {r_['err']:+.2f}{' **OFF**' if abs(r_['err']) > SYNC_TOL else ''} | {r_['word']} |"
@@ -1440,7 +1587,7 @@ def wave_plot(WJ, cuts, out, title):
     for r in E['releases']:
         ax[0].axvline(r, color='#e08000', lw=1.2, ls='--')
     for w0, w1, w in E['words']:
-        ax[1].text(w0, yl[1] - 1, w, fontsize=8, rotation=60, va='top')
+        ax[1].text(w0, yl[1] - 1, _mask(w), fontsize=8, rotation=60, va='top')
     for r in WJ['rows']:
         col = '#090' if r['ok'] else '#e00'
         for x in ax:
@@ -1588,7 +1735,8 @@ def measure(path, plan=None, vocals=True):
                                            plan.get('speed') or 1.0, C['cuts'][0])
         C['waves'] = dict(rows=WJ['rows'], missed=WJ['missed'], bad=WJ['bad'], tscale=WJ['E'].get('tscale'),
                           attacks=[list(map(float, a[:2])) + [bool(a[2]), a[3], float(a[4])] for a in WJ['E']['attacks']],
-                          releases=WJ['E']['releases'], words=WJ['E']['words'])
+                          releases=WJ['E']['releases'], words=[(a_, b_, _mask(w_)) for a_, b_, w_ in WJ['E']['words']])
+        C['groove'] = WJ.get('groove')
     except Exception as e:  # noqa: BLE001
         print('[judge_slowmo] wave judge failed:', repr(e)[:200], file=sys.stderr)
     if plan and plan.get('music') and os.path.exists(str(plan['music'])) and plan.get('music_start') is not None:

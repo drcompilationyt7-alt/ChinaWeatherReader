@@ -1165,3 +1165,77 @@ Eastern), never touch cwr-* / apq-*, kernel `john123abc/zyo-clipscore`, cap 20 G
   mining ..." and "Sound pool growth ...", concurrency group, day / budget gate, pip install kaggle on python 3.11); add the secret
   via gh from ~/.kaggle/access_token without printing; (5) wire one call to `clipscore review` at the end of slowmo_grow.cmd_pull /
   sound_refresh.pull_staged (coordinate with the mining agent); then tell the miners they can stage more.
+
+### 2026-10-23: momentum model v2 (groove songs), lyric head line, slow-mo freshness, sound reuse cap (two-fixes agent)
+Picked up the cut-off agent's uncommitted work (clip_rotation hard cap, sound_edit Lagrangian reuse cap, a first groove
+criterion, lyric head-line start) and finished / corrected it. Stash `autostash` kept.
+
+**Study (refs only, nothing copied):** blue = 6LM8-q3PnVs (AMV 1.5 M), 1CFWede1erg (AMV 1.1 M), MS3S7SaPJN0 (MV 666 k),
+Ulco4K08-u4 (Waguri beauty edit), EEdpjFviGJg; second song = Until I Found You (5jgBLnTHKR8 Shikimori edit 3.7 M,
+DfwpBMfE6aw 967 k, MUWTKixDRE4). Each judged with judge_slowmo's own analysis on its own audio. Per-cut tables + summary:
+**core/edit/refs/slowmo-momentum-v2.md**.
+- The first groove criterion (cut-off agent) did NOT separate ours from the refs on the rendered file: r6 had 1 / 23 loose
+  (its beat window let a cut 0.135 s before the beat count as "on the beat"), and the every-wave 'missed' rule failed every
+  real blue edit (6LM8 15 missed, Ulco 12): blue's short words each read as a strong start.
+- What the real blue edits do: (1) the cut sits 0..0.06 s before the sung attack (6LM8 median 0.02-0.03 s, 13 / 13 within
+  -0.06..+0.07); ours sat 0.08-0.11 s early on 10 / 23 cuts (the ballad 0.10 s lead + beat - 0.065 snap; the planner's beat
+  tracker also ran at 65 bpm on a 99 bpm song). (2) the momentum unit is the PHRASE: they leave ~half of the word starts
+  uncut, shots carry 2-8 beats (up to ~6 s); legato / stepwise continuations get a cut 1 in 5 times vs 1 in 2 for other
+  word starts; 2 of our cuts (49.63 / 62.87 song s, both legato) had no ref cut at all. 1CFW (0.8 s shots) and MS3S (a
+  constant 0.16 s early = upload offset) are reported, not used for the bar.
+- Until I Found You (pulse 0.23 / 0.43 = ballad): the popular edits hold through many word starts too (5jgB: 9 'missed' in
+  14 s) - they fail the owner's own every-wave ballad rule, which stays (owner-approved on 3e / 3g).
+
+**Model v2 (groove = percussive pulse clarity >= 0.47 on the song mix / >= 0.45 on the rendered audio; Golden Hour 0.37 / 0.40,
+judge 0.29 / 0.34 -> ballad rule untouched):**
+- planners._cine_wave_cuts: groove switch = attack - 0.03 s, no beat snap (MM.GROOVE_PRE); a wave starting with a legato /
+  step continuation (not a phrase start) is optional (strength min(s, WV_MUST - 0.1) x 0.6). Judge repair: a LOOSE switch
+  moves tight onto its attack (or onto the beat just before it) when 11 / 13 do not get worse.
+- judge_slowmo criterion 14_groove: tight = attack - cut in [-0.06, +0.07] s, beat = cut - beat in [-0.07, +0.03] s, else loose;
+  NOT PASS when loose > 30 % and >= 3; score 10 - 5 x max(0, share - 0.10). 11 'missed' on a groove song only when the shot
+  over the strong start already runs >= 6 s (JG_MISS_SHOT). The old lag rule (switch on the beat a late word lags) removed:
+  the refs never cut 0.2-0.3 s ahead of a word.
+- Result: 6LM8 14 = 10 (1 / 16 loose), missed 15 -> 0; Ulco 2 / 8, EEdp 2 / 5 pass 14; **our r6 8 / 23 loose -> NOT PASS**;
+  blue v2 plan (plan-only) 3 / 22 loose, 0 bad / missed / tail. 6LM8 still has 1 mid-phrase + 1 hold-tail cut (the owner's
+  hold rules, kept).
+- **3g / 3j: cut lists unchanged.** Both windows are ballads for planner and judge; plan-only with the HEAD planner and the v2
+  planner give identical cuts (3j window checked twice), judge v2 on the rendered 3g / 3j = 0 bad / 0 missed / 0 sync off /
+  0 tail, 14 n/a.
+
+**Lyrics (lyrics.py VERSION 12):** blue r6 window starts mid-line. Root causes: (a) the foreign-words check (whisper base
+mishears the line's short words) declared the line a 'foreign' stretch -> its words were replaced and dropped on screen;
+(b) the head-start path could skip the whole prefix for -3 per word, and did; (c) the CTC path smeared the held one-letter
+word 1.2 s late. Fix: the line cut by the window is never 'foreign' when one heard word in its span agrees with it; its words
+get a song-time estimate (letters over the line span) and the path must start at the first word estimated in the window (+-1);
+words the recogniser heard (same spelling, in order) pin their token to +-0.2 s; slow-mo runs the check with whisper
+**medium** (SLOWMO_ENV LYRICS_WHISPER, the judge's model). Blue r6 window: the 5 sung prefix words now show in order, the held
+one-letter word at 0.86 s (sung 1.0; was 2.33), the others within 0.3-0.5 s.
+
+**Slow-mo freshness:** clip_rotation 'slowmo' = hard mode, window 3, cap 0 (no clip of the last 3 slow-mo videos, the queued
+prebuilt ones included via vibe_pool.queued_prebuilt), min_fresh 22, else result pool_too_small -> stem. Local pool today:
+summer_glow 38 reviewed, 20 excluded (3j posted + 3g queued), **18 fresh < 22 -> no slow-mo** until the pool grows.
+`vibe_edit --fresh-override` (slow-mo timing tests only): the recent clips come back after the fresh ones, result.json
+fresh_override, the pre-upload guard blocks it outside DRY_RUN.
+
+**Sound:** hard reuse cap 30 % of the last 5 sound videos (14-day horizon), best matches inside the cap (Lagrangian price on
+recent clips + LRU tie-break, reuse_limit keeps only the best recent clips), pool_too_small -> stem; guard re-checks reuse.
+Simulation on the real ledger (scratchpad sim/sound_sim.py, 30 days, sound on ~1 day in 2): with the 70 pins 80 % of sound
+days fall back; with the USABLE pool the CI render sees (46 usable clips, 41 of them in the last 3 sound videos) **94 %**,
+68 % / 48 % / 27 % at +2 / +4 / +7 usable pins a day.
+
+**Dry runs (branch dryrun-1023, one job at a time):**
+- Sound 39972450894: the reuse cap worked as designed -> **pool_too_small -> stem** (46 usable clips, 41 in the last 3 sound
+  videos; 4 usable fresh scene slots). No sound video can meet cap + judge >= 9 today; the judge >= 9 dry run waits for the pool.
+- Slow-mo blue v2 (`--song yung_kai_blue@v0.9 --fresh-override --seed 11`): run 39976921001 crashed in the no-lyrics path
+  (shot 0 < 1 frame) -> cine_vibe: a music-pool slow-mo without lyrics fails fast `no_lyrics` (CINE_REQUIRE_LYRICS);
+  dry runs keep the full stderr. 39981959552: 8.6 (3_lyrics 6.98 = the judge splitting a word's smear-in into its own entry;
+  12 = 0 from a 0.19 s groove-repair move off a line start + a phrase-carried word counted off-sync; 11 one mid-hold).
+  Fixes: judge merges a never-sharp smear-in into the word after it; 12b: on a groove song a shot that starts on a strong
+  start carries the phrase (as 11); 11 groove: a switch <= 0.15 s ahead of a strong attack announces it; repair moves capped
+  at 0.12 s. 39987315103: 9.44 (11: a switch on a pick-up word 0.7 s before a switched phrase) -> repair drops such
+  pick-up switches when the judge counts stay. **39994023604: 9.73 PASS** (11 / 12 / 13 / 14 = 10, 3_lyrics 8.73, 4_mix 8.34).
+  Review: review-shorts/edits/new-types/slowmo_dryrun_blue_v2_9.73.mp4 + _TIMING-TEST_reused-clips.md (per-cut table, own
+  onset check: 22 / 23 on an onset, 33.63 the one to look at) + slowmo_dryrun_blue_v2-judge/. TIMING TEST: CI summer_glow has
+  29 clips, 9 fresh -> 18 / 23 shots reuse 3j / 3g clips. Old blue 9.38 file deleted.
+- Rotation stays stem:1,sound:1,slowmo:0 (3g posts 10-24; slow-mo only after the owner approves blue v2 AND the pool has
+  >= 22 fresh clips).

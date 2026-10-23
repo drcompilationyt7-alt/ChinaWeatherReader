@@ -244,6 +244,9 @@ def main():
     ap.add_argument('--song', help='sound id from core/edit/vibes.json (default: random, not in cooldown)')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--no-mark', action='store_true', help='do not mark clips / song used (tests, owner samples)')
+    ap.add_argument('--fresh-override', action='store_true',
+                    help='slow-mo TIMING TEST only: the clips of the last videos may come back when too few fresh clips are left '
+                         '(labelled fresh_override; the pre-upload guard never posts it)')
     ap.add_argument('--threads', type=int, default=0, help='ffmpeg threads for the watermark pass (0 = auto)')
     a = ap.parse_args()
     kind = a.type
@@ -254,6 +257,9 @@ def main():
     res = {'ok': False, 'type': kind, 'preset': VP.load_vibes()['presets'][kind]['preset_id'], 'seed': seed,
            'short': None, 'long': None, 'render_s': {}}
     res_path = os.path.join(a.out, 'result.json')
+    if a.fresh_override and kind == 'slowmo':
+        os.environ['CLIP_ROTATION_FRESH_OVERRIDE'] = '1'
+        res['fresh_override'] = True       # timing test: may show the last slow-mo videos' clips -> never posted (guard)
 
     def done(code):
         VP.write_json(res_path, res)
@@ -309,6 +315,19 @@ def main():
         os.environ['SOUND_COOLDOWN_VIDEOS'] = str(cooldowns[0])
     shots = get_shots()
     res['cooldown_videos'] = cooldowns[0]
+    if kind in VP.REUSE_PRESETS:
+        import clip_rotation as CR
+        rc = CR.config(kind)
+        rot = {k: v for k, v in VP.LAST_ROTATION.items() if k.startswith(kind + '/')}
+        res['clip_rotation'] = {'choice': rot}
+        if rc.get('hard') and rot and all(v.get('mode') == 'hard_cap' for v in rot.values())                 and not any(v.get('fresh_override') for v in rot.values()):
+            # owner 2026-10-22 (sound): variety AND good matches; too few fresh clips for <= cap reuse -> no sound video today
+            fresh = sum(int(v.get('fresh') or 0) for v in rot.values())
+            if fresh < int(rc.get('min_fresh') or 0):
+                res.update(reason=f'pool_too_small: {fresh} fresh clips (< {int(rc["min_fresh"])}) for <= {float(rc["cap"]):.0%} reuse '
+                                  f'of the last {int(rc["window"])} {kind} videos')
+                log(res['reason'])
+                done(2)
     log(f'{kind}/{vibe}: {len(shots)} fresh clips, song {song["id"]} ({song["file"]}), seed {seed}')
     work = os.path.join(a.out, f'work-{kind}-{vibe}')
     os.makedirs(work, exist_ok=True)
@@ -331,7 +350,7 @@ def main():
             res['render_s']['short'] = round(time.time() - t0, 1)
             if not r.get('ok'):
                 res.update(reason=r.get('reason') or 'short_failed', short_report=r)
-                done(2 if str(r.get('reason') or '').startswith('pool_low') else 1)
+                done(2 if str(r.get('reason') or '').startswith(('pool_low', 'pool_too_small')) else 1)
             final = os.path.join(a.out, f'{kind}-{vibe}-short.mp4')
             t0 = time.time()
             WM.burn(r['video'], final, threads=a.threads, rot90=is_rot90(r.get('plan')),
@@ -342,7 +361,8 @@ def main():
             if kind in VP.REUSE_PRESETS:
                 # owner 2026-10-20: reuse only here and there -> the reuse share of every video is logged (result.json)
                 import clip_rotation as CR
-                rep = CR.report(used_short, CR.history(VP.load_ledger(), kind), int(CR.config(kind)['window']))
+                rep = CR.report(used_short, CR.history(VP.load_ledger(), kind) + VP.queued_prebuilt(kind),
+                                int(CR.config(kind)['window']))
                 res['clip_rotation'] = dict(rep, choice={k: v for k, v in VP.LAST_ROTATION.items()})
                 log(f"clip rotation: {rep['reused']} of {rep['shots']} shots reused from the last {rep['window']} {kind} videos "
                     f"({rep['reuse_share']:.0%}; from the previous video {rep['from_last_video']:.0%})")
