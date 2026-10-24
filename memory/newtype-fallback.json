@@ -1,97 +1,45 @@
 {
- "at": "2026-10-23T21:50:02.485Z",
+ "at": "2026-10-23T23:57:04.539Z",
  "type": "sound",
  "ok": false,
- "reason": "attempts used up",
+ "reason": "the sound pool cannot fill 30 s (8_length on 2 songs)",
  "dryRun": true,
  "attempts": [
   {
    "n": 1,
-   "song": "michael_jackson_smooth_criminal",
-   "seed": 87622,
+   "song": "le_sserafim_antifragile",
+   "seed": 41,
    "input": "first",
-   "work": "work-sound-1792787622672",
+   "work": "work-sound-1792797080117",
    "min": 30.8,
    "overall": 8.57,
    "failed": {
-    "7_variety": 7.6,
-    "8_length_30_50s": 4.4,
-    "16_drum_onsets_recreated": 4.6,
-    "17_no_frozen_frames": 5,
-    "9_overall_vs_ref": 6.9
-   },
-   "result": "NOT PASS",
-   "next": "reseed"
-  },
-  {
-   "n": 2,
-   "song": "michael_jackson_smooth_criminal",
-   "seed": 87723,
-   "input": "reseed",
-   "work": "work-sound-1792789472417",
-   "min": 14.7,
-   "overall": 8.57,
-   "failed": {
-    "7_variety": 7.6,
-    "8_length_30_50s": 4.4,
-    "16_drum_onsets_recreated": 4.6,
-    "17_no_frozen_frames": 5,
-    "9_overall_vs_ref": 6.9
-   },
-   "result": "NOT PASS",
-   "next": "reseed"
-  },
-  {
-   "n": 3,
-   "song": "michael_jackson_smooth_criminal",
-   "seed": 87824,
-   "input": "reseed",
-   "work": "work-sound-1792790352604",
-   "min": 9,
-   "overall": 8.6,
-   "failed": {
-    "7_variety": 7.6,
-    "8_length_30_50s": 4.4,
-    "16_drum_onsets_recreated": 5,
-    "17_no_frozen_frames": 5,
-    "9_overall_vs_ref": 6.9
+    "5_density_no_dead": 6.1,
+    "8_length_30_50s": 6.1,
+    "16_drum_onsets_recreated": 2.7,
+    "17_no_frozen_frames": 4,
+    "9_overall_vs_ref": 5.2
    },
    "result": "NOT PASS",
    "next": "new_song"
   },
   {
-   "n": 4,
-   "song": "dua_lipa_levitating",
-   "seed": 88035,
+   "n": 2,
+   "song": "le_sserafim_antifragile",
+   "seed": 252,
    "input": "new_song",
-   "work": "work-sound-1792790892675",
-   "min": 11,
-   "overall": 8.68,
+   "work": "work-sound-1792798925193",
+   "min": 15,
+   "overall": 8.55,
    "failed": {
-    "8_length_30_50s": 6.2,
-    "16_drum_onsets_recreated": 6.4,
+    "5_density_no_dead": 6.1,
+    "8_length_30_50s": 6.1,
+    "16_drum_onsets_recreated": 2.7,
     "17_no_frozen_frames": 4,
-    "9_overall_vs_ref": 6.5
+    "9_overall_vs_ref": 5.2
    },
    "result": "NOT PASS",
-   "next": "reseed"
-  },
-  {
-   "n": 5,
-   "song": "dua_lipa_levitating",
-   "seed": 88136,
-   "input": "reseed",
-   "work": "work-sound-1792791554606",
-   "min": 10.8,
-   "overall": 8.67,
-   "failed": {
-    "8_length_30_50s": 6.2,
-    "16_drum_onsets_recreated": 6,
-    "17_no_frozen_frames": 4,
-    "9_overall_vs_ref": 6.5
-   },
-   "result": "NOT PASS",
-   "next": "reseed"
+   "next": "stop"
   }
  ]
 }
