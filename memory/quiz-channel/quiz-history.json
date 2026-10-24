@@ -1084,6 +1084,91 @@
     "titleStyle": "llm",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "d7Xhac5vfFI",
+   "url": "https://www.youtube.com/watch?v=d7Xhac5vfFI",
+   "postedAt": "2026-10-24T07:28:23.944Z",
+   "publishAt": "2026-10-24T12:00:00.000Z",
+   "format": "shape",
+   "theme": "asia",
+   "seed": 82163639,
+   "length": "quick",
+   "titleTemplate": "shape-guess",
+   "title": "Guess the Country by Its Shape #geography",
+   "answers": [
+    "VN",
+    "PH",
+    "JP"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "zFNElVtTZiM",
+   "url": "https://www.youtube.com/watch?v=zFNElVtTZiM",
+   "postedAt": "2026-10-24T07:31:33.482Z",
+   "publishAt": "2026-10-24T21:00:00.000Z",
+   "format": "cityphoto",
+   "theme": "asia",
+   "seed": 80428408,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the Asian city from this photo? Let's go!",
+     "template": "Can you guess the Asian city from this photo? Let's go!",
+     "sec": 3.13
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How did you do? Comment your score down below!",
+     "template": "How did you do? Comment your score down below!",
+     "sec": 2.42
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai",
+     "line": "That one is Seoul, of course!",
+     "template": "That one is {a}, of course!",
+     "sec": 1.61
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "You got it, it is Nara!",
+     "template": "You got it, it is {a}!",
+     "sec": 1.4
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "That was Hangzhou.",
+     "template": null,
+     "sec": 1.15
+    }
+   ],
+   "titleTemplate": "cphoto-name",
+   "title": "Can You Name These 3 Asian Cities? 🔥",
+   "answers": [
+    "cityphoto:KR:seoul#b7e10c",
+    "cityphoto:JP:nara#14hzg28",
+    "cityphoto:CN:hangzhou#5nbdew"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "format3",
+    "titleStyle": "challenge",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

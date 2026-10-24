@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=T1hGqwqU0rU",
-      "title": "Only Travel Nerds Get 3/3 ✈️",
-      "country": "Global",
-      "postedAt": "2026-09-23T07:55:10.638Z",
-      "videoId": "T1hGqwqU0rU",
-      "category": "quiz-cityphoto",
-      "titleSource": "cphoto-travel",
-      "quizFormat": "cityphoto",
-      "quizTheme": "asia"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=_NXBxpZnYS8",
       "title": "who would you pick anime: teacher roommate fight ⚔️",
       "country": "Global",
@@ -373,6 +362,28 @@
       "titleSource": "emoji-llm",
       "quizFormat": "emoji",
       "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=d7Xhac5vfFI",
+      "title": "Guess the Country by Its Shape #geography",
+      "country": "Global",
+      "postedAt": "2026-10-24T07:28:23.947Z",
+      "videoId": "d7Xhac5vfFI",
+      "category": "quiz-shape",
+      "titleSource": "shape-guess",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=zFNElVtTZiM",
+      "title": "Can You Name These 3 Asian Cities? 🔥",
+      "country": "Global",
+      "postedAt": "2026-10-24T07:31:33.633Z",
+      "videoId": "zFNElVtTZiM",
+      "category": "quiz-cityphoto",
+      "titleSource": "cphoto-name",
+      "quizFormat": "cityphoto",
+      "quizTheme": "asia"
     }
   ]
 }
