@@ -1347,3 +1347,12 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
 - **Local miner**: no code change needed: every sound batch / stage syncs its worktree to origin/main, so it uses the new
   source filter / recall gate / near-miss check. It resumes sound after tonight's slow-mo nightly. RISK: the PC Gemini keys were
   quota-exhausted this evening (resets ~07:00 UTC): minis judged before that get 'no model answered' = rejected.
+- **Offline re-run on 40105420785** (its artifacts keep only the 14 vision-approved minis + every verdict with the full votes):
+  new gates = 15 -> 31 vision passes. STAGED `sound-cand-20261024-rescore-n7.tar` (the 7 near misses the old check dropped; 1080p;
+  4 needs_sharpen, 5 graded; by eye ~2 look like real hits: RD4rr7JcatM_478663 Zenitsu slash, 9QDFXPpH0gk_138326 sword; 71513 has
+  a cut ON the hit). The 16 new score passes had no media: re-cut from YouTube (sections; 4 came back audio-less / video-less, 2
+  were 720p, 1 text, 1 pre-filter, 1 unsure hit time) -> 7 ready in the scratchpad (refetch/shard), by eye 2-4 real hits
+  (coQ0iydIZfI_66588 punch to the face, whFAGQSDyTg_120656 flying kick); NOT staged: hit_import.safety needs ~1 GB and the PC
+  stayed at ~3 GB free. hit_t of re-cut clips comes from the transient detector (not the original cut), check the pins on review.
+- hit_vision.ask: a 404 now disables only that KEY for the model (one PC key does not serve the models; returning None made every
+  mini 'no model answered' -> the PC sound batch of 19:47 UTC passed 0 of 5).
