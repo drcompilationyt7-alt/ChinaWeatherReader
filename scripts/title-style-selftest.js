@@ -38,8 +38,8 @@ async function meme() {
       ? { song: String(u.song).toLowerCase(), source: u.clipSource || u.source || null, theme: u.theme || 'anime' }
       : { keyword: KW[u.vibe] || null, vibe: u.vibe || null, song: u.song, source: null, theme: 'anime' };
     const m = await metadata.optimizeMetadata({ channel: 'meme', contentType: ct, facts, llm: false, rng: rngFrom(1000 + i) });
-    const front = ct === 'stem-edit' ? [facts.song] : [facts.keyword || 'anime'];
-    const v = ts.check(m.title, 'meme', { front });
+    const sn = require('../core/metadata/catalog').songName(facts);
+    const v = ts.check(m.title, 'meme', { front: [sn], require: [sn] });   // the song name is always in the title
     results.meme.push({ plan: `${ct} ${u.song}`, old: u.title, title: m.title, how: m.arms.titleStyle, ok: v.ok, why: v.reasons });
   }
 }

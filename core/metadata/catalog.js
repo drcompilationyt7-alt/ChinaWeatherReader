@@ -93,14 +93,25 @@ const STEM_EDIT = {
 };
 
 /** Generic edit spec for the new edit types (core/edit, pipeline/edit-pipeline.js). */
-function editSpec({ describe, keyword, must, subject, extra = {} }) {
+// "Golden Hour (slowed)" / "golden hour slowed + reverb" -> "golden hour" (+ slowed flag)
+const SLOWED_RE = /\s*[([]?\s*(super |ultra )?slowed(\s*(\+|&|and)\s*reverb)?\s*[)\]]?\s*/i;
+const songName = f => (f.song ? lower(String(f.song).replace(SLOWED_RE, ' ')).replace(/\s+/g, ' ').trim() : null);
+const isSlowed = f => !!f.slowed || SLOWED_RE.test(String(f.song || ''));
+/**
+ * songFirst (sound / slow-mo, owner 2026-10-24): people search "<song> edit", so the song leads the keyword
+ * ("golden hour anime edit", "golden hour (slowed) anime edit") instead of the vibe keyword ("anime summer slow motion edit").
+ */
+const songKeyword = f => `${songName(f)}${isSlowed(f) ? ' (slowed)' : ''} anime edit`;
+
+function editSpec({ describe, keyword, must, subject, songFirst = false, extra = {} }) {
+  const byS = f => songFirst && !!songName(f);
   return {
     channel: 'meme',
     channelName: 'Zero Yen Otaku (anime, J-pop and K-pop edit Shorts)',
     lowerOnVideo: true,
     describe,
-    keyword: f => lower(f.keyword) || keyword(f),
-    must: f => (f.keyword ? [[lower(f.keyword)]] : must(f)),
+    keyword: f => (byS(f) ? songKeyword(f) : lower(f.keyword) || keyword(f)),
+    must: f => (byS(f) ? [[songName(f)], ['edit', 'amv', 'anime']] : f.keyword ? [[lower(f.keyword)]] : must(f)),
     subject,
     searchSeeds: f => [lower(f.keyword) || keyword(f), f.song && `${lower(subject(f) || '')} ${lower(f.song)}`.trim()],
     suggestMust: f => (f.keyword ? [[lower(f.keyword)]] : must(f)),
@@ -112,6 +123,7 @@ function editSpec({ describe, keyword, must, subject, extra = {} }) {
       titleStyle: [
         { id: 'kw-emoji', template: '{kw} {e}' },
         { id: 'kw-song', template: '{kw} | {withSong} {e}' },  // song names are searched with edits ("gojo edit specialz")
+        { id: 'song-anime', template: "{song} but it's anime {e}" },   // sound / slow-mo (song-first must): "antifragile but it's anime"
         { id: 'kw-suggest', template: '{suggest} {e}' },
         { id: 'llm-hook', llm: true, fallback: 'kw-emoji', example: '{kw} goes crazy {e}',
           guide: 'the keyword first, then a 2-4 word hype tail in lowercase meme voice, 20-40 characters' },
@@ -173,6 +185,7 @@ const SOUND_EDIT = editSpec({
   keyword: f => (f.source ? `${lower(f.source)} edit` : 'anime sound design edit'),
   must: f => [[f.source ? lower(f.source) : 'anime'], ['edit', 'amv', 'sound']],
   subject: f => lower(f.character || f.source || 'anime'),
+  songFirst: true,
   extra: { samples: [{ source: 'Demon Slayer', song: 'gurenge', theme: 'anime' }] },
 });
 const SLOWMO_EDIT = editSpec({
@@ -180,6 +193,7 @@ const SLOWMO_EDIT = editSpec({
   keyword: f => (f.source ? `${lower(f.source)} slow motion edit` : 'anime slow motion edit'),
   must: f => [[f.source ? lower(f.source) : 'anime'], ['edit', 'amv', 'slow motion', 'slowmo']],
   subject: f => lower(f.character || f.source || 'anime'),
+  songFirst: true,
   extra: { samples: [{ source: 'Demon Slayer', vibe: 'calm', theme: 'anime' }, { source: null, vibe: 'epic', theme: 'anime' }] },
 });
 // full-length 16:9 versions (not Shorts) of the sound / slowmo shorts, uploaded about a week after the short and linking to it
@@ -296,7 +310,7 @@ function varsFor(spec, f) {
   const subject = spec.subject ? spec.subject(f) : lower(f.source);
   const fmt = String(f.formatTags || '').split(/\s+/).map(t => t.replace(/^#/, '')).filter(Boolean);
   return {
-    song: lower(f.song), Song: f.song || null,
+    song: songName(f), Song: f.song || null,
     source: lower(f.source), Source: f.source || null,
     artist: lower(f.artist), character: lower(f.character), group: lower(f.group), member: lower(f.member),
     subject, kw: spec.keyword(f) || null,
@@ -311,4 +325,4 @@ function varsFor(spec, f) {
   };
 }
 
-module.exports = { SPECS, STEM_EDIT, QUIZ, EDIT_EMOJI, poolKey, channelKey, specFor, varsFor, lower };
+module.exports = { songName, isSlowed, SPECS, STEM_EDIT, QUIZ, EDIT_EMOJI, poolKey, channelKey, specFor, varsFor, lower };

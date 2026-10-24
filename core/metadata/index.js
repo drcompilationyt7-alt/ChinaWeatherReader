@@ -81,8 +81,10 @@ function frontOf(spec, f) {
 function titleRules(spec, f) {
   const st = styleOf(spec);
   const front = st ? frontOf(spec, f) : [];
+  // Zero Yen Otaku (owner 2026-10-24): the song name is in every Shorts title (search brings a third of the views)
+  const require = st && spec.channel === 'meme' && catalog.songName(f) ? [catalog.songName(f)] : [];
   return { maxLen: maxTitle(spec), must: spec.must(f), allowImpossible: !!f.hard, forbidden: f.forbidden || [],
-    style: st ? t => titleStyle.styleReasons(t, spec.channel, { front }) : null };
+    style: st ? t => titleStyle.styleReasons(t, spec.channel, { front, require }) : null };
 }
 
 /** LLM-written titles of a naturalTitles channel (the quiz) also go through the keyword-dump check. */
@@ -500,7 +502,9 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
     }
   }
   if (!title) {
-    title = clean(`${spec.channel === 'quiz' && f.Keyword ? f.Keyword : keyword} ${eTitle}`);
+    const sn = spec.channel === 'meme' ? catalog.songName(f) : null;
+    const base = spec.channel === 'quiz' && f.Keyword ? f.Keyword : sn && !rules.contains(keyword, sn) ? `${sn} ${keyword}` : keyword;
+    title = clean(`${base} ${eTitle}`);
     used.titleStyle = 'keyword-only';
   }
   title = unsad(clean(title));

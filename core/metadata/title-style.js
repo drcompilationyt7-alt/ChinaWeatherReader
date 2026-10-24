@@ -19,7 +19,8 @@ const STYLES = {
   // Zero Yen Otaku: "<song / anime / character> <keyword> <2-4 word hook>" in the meme voice
   meme: {
     maxLen: 52, coreMax: 42, target: 34, maxEmoji: 1, maxHashtags: 1, maxWords: 8, frontWithin: 25, maxCapsWords: 1,
-    guide: 'The subject first (song, anime or character name) with the search keyword ("<song> acapella", "<anime> edit"), '
+    guide: 'The SONG name is always in the title (people search "<song> edit"); the subject first (song, anime or character) '
+      + 'with the search keyword ("<song> acapella", "<song> anime edit", "<character> edit | <song>"), "(slowed)" for a slowed song if it fits, '
       + 'then at most a 2-4 word hook. 20-42 characters before the emoji. One emoji at most, at the end. '
       + 'No filler ("stem build up", "goes insane on", "but every frame is"), no list of names.',
   },
@@ -66,6 +67,7 @@ function frontIndex(core, phrases) {
 /**
  * Style problems of a Shorts title for a channel ([] = fine).
  * o.front: phrases one of which must appear in the first `frontWithin` characters (the search keyword / subject).
+ * o.require: phrases that must all appear in the visible text (the song name on Zero Yen Otaku).
  */
 function styleReasons(title, channel, o = {}) {
   const st = typeof channel === 'object' ? channel : STYLES[channel];
@@ -83,6 +85,10 @@ function styleReasons(title, channel, o = {}) {
   if (capsWords(core).length > st.maxCapsWords) out.push('style: shouting (too many all-caps words)');
   const words = norm(core).split(' ').filter(w => w.length >= 4 && !/^(edit|quiz|only|this|that|with|from|your)$/.test(w));
   if (new Set(words).size < words.length) out.push('style: repeats a word');
+  // o.require: phrases that must be in the visible text (Zero Yen Otaku: the song name; people search "<song> edit")
+  for (const r of [].concat(o.require || []).filter(Boolean)) {
+    if (!contains(core, r)) out.push(`style: no "${r}" in the visible text`);
+  }
   const front = [].concat(o.front || [], st.front || []).filter(Boolean);
   if (front.length) {
     const i = frontIndex(core, front);
