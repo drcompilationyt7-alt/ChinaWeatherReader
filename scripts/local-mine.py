@@ -680,7 +680,7 @@ def quiz_batch(st):
         cj = os.path.join(o, 'candidates.json')
         if os.path.isfile(cj):
             c = rj(cj, {})
-            c['shard'] = 'pc-' + shard
+            c['shard'] = f"pc{now_utc():%H%M}-{shard}"      # 2026-10-24: a second batch the same day must not clobber the first tar
             wj(cj, c)
             if os.path.isfile(os.path.join(o, 'state.json')):
                 shutil.copy2(os.path.join(o, 'state.json'), state)    # the next shard dedupes against this one's picks
