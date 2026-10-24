@@ -156,9 +156,9 @@ def ask(model, parts):
         try:
             return _call(model, k, parts)
         except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return None                      # model not served
-            if e.code in (400, 401, 403):
+            # 2026-10-24: a 404 is per KEY (one PC key's project does not serve the model): that key is dead for this model,
+            # the others are tried (returning None here made every mini 'no model answered' whenever the rotation hit that key)
+            if e.code in (400, 401, 403, 404):
                 _DEAD.add((model, k))
             if e.code == 429:
                 try:
