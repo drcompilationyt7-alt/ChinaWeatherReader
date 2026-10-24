@@ -1678,6 +1678,46 @@
    "whyMode": "insight-driven",
    "bpm": 125.99,
    "titlePattern": "{song} acapella {artist} {e}"
+  },
+  {
+   "videoId": "7idvk5Z_S6k",
+   "url": "https://www.youtube.com/watch?v=7idvk5Z_S6k",
+   "postedAt": "2026-10-24T05:48:41.993Z",
+   "publishAt": "2026-10-24T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Golden Hour",
+   "theme": "anime",
+   "emoji": "✨",
+   "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
+   "clipIds": [
+    "c_RVDy_c27AtY_26400",
+    "c_KyVN14u4pvo_33700",
+    "c_W1uBeTXPcZA_43100",
+    "c__nAObEu6UJc_75500",
+    "c_RVDy_c27AtY_31100",
+    "c_IvK62Isjc5s_17800",
+    "c_ez6kAVRkI50_24600",
+    "c_ld1hJRg2vtw_100",
+    "c_gh8moSuawPc_86400",
+    "c_j7YiygBQHY0_36400",
+    "c_56jgd7Nxq1g_18600",
+    "c_ISOIATL26Fo_259600",
+    "c_djXtjnXDRl4_22800",
+    "c_W1uBeTXPcZA_38100",
+    "c_T158RMP422c_58300",
+    "c_UZUoCqfeh8U_112750",
+    "c_c4I2rbIWhU8_45100",
+    "c_56jgd7Nxq1g_111000"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 39.4,
+    "pool": "slowmo",
+    "prebuilt": true
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "jvke_golden_hour@v0.85"
   }
  ]
 }

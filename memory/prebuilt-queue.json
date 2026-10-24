@@ -88,7 +88,10 @@
    ],
    "duration": 39.4,
    "why": "owner-picked",
-   "done": false
+   "done": true,
+   "videoId": "7idvk5Z_S6k",
+   "url": "https://www.youtube.com/watch?v=7idvk5Z_S6k",
+   "publishAt": "2026-10-24T12:00:00.000Z"
   }
  ]
 }
