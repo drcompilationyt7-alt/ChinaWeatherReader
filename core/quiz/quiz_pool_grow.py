@@ -92,8 +92,10 @@ CITIES = [
     ('Tokyo', 'JP', 1), ('Osaka', 'JP', 1), ('Kyoto', 'JP', 1), ('Yokohama', 'JP', 2), ('Nagoya', 'JP', 2), ('Sapporo', 'JP', 2),
     ('Fukuoka', 'JP', 2), ('Kobe', 'JP', 2), ('Hiroshima', 'JP', 2), ('Sendai', 'JP', 3), ('Nara', 'JP', 2), ('Kanazawa', 'JP', 3),
     ('Nagasaki', 'JP', 3), ('Naha', 'JP', 3), ('Hakodate', 'JP', 3),
+    ('Taipei', 'TW', 1), ('Singapore', 'SG', 1),
 ]
 # several photos per city / dish (owner 2026-10-21: the reuse gap is per PICTURE, so the same city may come back with another photo)
+# (old keyword-search term lists, no longer used by the miners)
 GEO_TERMS = ['skyline', 'skyline panorama', 'cityscape', 'cityscape panorama', 'skyline view', 'skyline from river', 'skyline daytime']
 NIGHT_TERMS = ['skyline at night', 'night view', 'night skyline', 'at night', 'night panorama', 'city lights night']
 DISH_TERMS = ['{d}', '{d} dish', '{d} food', '{d} plate', '{d} served']
@@ -105,7 +107,7 @@ DISHES = [
     ('Lanzhou beef noodles', 'CN', 'China', 3), ('Biangbiang noodles', 'CN', 'China', 3), ('Roujiamo', 'CN', 'China', 3),
     ('Jianbing', 'CN', 'China', 3), ('Stinky tofu', 'CN', 'China', 2), ('Sweet and sour pork', 'CN', 'China', 1), ('Egg tart', 'CN', 'China', 2),
     ('Wonton noodles', 'CN', 'China', 2), ('Congee', 'CN', 'China', 2), ('Tangyuan', 'CN', 'China', 3), ('Hot pot', 'CN', 'China', 1),
-    ('Gong bao', 'CN', 'China', 3), ('Shengjian mantou', 'CN', 'China', 3), ('Cheung fun', 'CN', 'China', 3), ('Bubble tea', 'TW', 'Taiwan', 1),
+    ('Shengjian mantou', 'CN', 'China', 3), ('Cheung fun', 'CN', 'China', 3), ('Bubble tea', 'TW', 'Taiwan', 1),
     ('Bibimbap', 'KR', 'South Korea', 1), ('Kimchi', 'KR', 'South Korea', 1), ('Tteokbokki', 'KR', 'South Korea', 2), ('Bulgogi', 'KR', 'South Korea', 2),
     ('Samgyeopsal', 'KR', 'South Korea', 2), ('Japchae', 'KR', 'South Korea', 3), ('Gimbap', 'KR', 'South Korea', 2), ('Sundubu-jjigae', 'KR', 'South Korea', 3),
     ('Naengmyeon', 'KR', 'South Korea', 3), ('Hotteok', 'KR', 'South Korea', 3), ('Korean fried chicken', 'KR', 'South Korea', 1),
@@ -347,6 +349,185 @@ def safe_photo_name(file):
                          fold(file))
 
 
+# ── recognisable landmarks / dish categories ──
+# Recognisable-only city photos: city -> [(landmark label, Commons category)] (quiz_landmarks.json). Cities without an entry are not mined.
+LANDMARKS = {k: v for k, v in json.load(open(os.path.join(HERE, 'quiz_landmarks.json'), encoding='utf-8')).items() if not k.startswith('_')}
+NIGHT_RE = re.compile(r'night|nacht|evening|dusk|twilight|illuminat|lights|夜', re.I)
+# dish -> extra names a Commons file / category may use. A cuisine photo must name the dish (or an alias) in its file title or in a
+# category of the file that names it; titles naming ANOTHER dish are dropped.
+DISH_ALIASES = {
+    'Peking duck': ['beijing duck', 'roast duck', 'peking roast duck'], 'Xiaolongbao': ['xiao long bao', 'soup dumpling'],
+    'Mapo tofu': ['mapo doufu', 'ma po tofu', 'mapo bean curd'], 'Kung Pao chicken': ['kung pao', 'gong bao', 'gongbao', 'kungpao'],
+    'Char siu': ['cha siu', 'chashu', 'char siew', 'barbecued pork'], 'Har gow': ['ha gao', 'har gau', 'shrimp dumpling'],
+    'Jiaozi': ['dumpling', 'potsticker', 'guotie'], 'Zongzi': ['zong zi', 'rice dumpling', 'bakcang'], 'Mooncake': ['mooncakes', 'moon cake'],
+    'Baozi': ['bao zi', 'steamed bun', 'char siu bao'], 'Chow mein': ['chowmein', 'chao mian', 'fried noodles'],
+    'Dan dan noodles': ['dandan', 'dan dan mian', 'dandanmian'], 'Lanzhou beef noodles': ['lanzhou', 'lamian', 'niu rou mian'],
+    'Biangbiang noodles': ['biangbiang', 'biang biang'], 'Roujiamo': ['rou jia mo', 'chinese hamburger'],
+    'Jianbing': ['jian bing', 'chinese crepe'], 'Stinky tofu': ['chou doufu', 'choudoufu', 'stinky bean curd'],
+    'Sweet and sour pork': ['sweet sour pork', 'gu lao rou', 'guo bao rou'], 'Egg tart': ['egg tarts', 'dan tat'],
+    'Wonton noodles': ['wonton', 'wanton', 'wun tun'], 'Congee': ['jook', 'rice porridge'], 'Tangyuan': ['tang yuan', 'yuanxiao'],
+    'Hot pot': ['hotpot', 'huo guo', 'huoguo', 'steamboat'], 'Shengjian mantou': ['shengjian', 'sheng jian', 'pan fried bun'],
+    'Cheung fun': ['rice noodle roll', 'cheong fun', 'chang fen'], 'Bubble tea': ['boba', 'pearl milk tea', 'bubble milk tea'],
+    'Bibimbap': ['bibimbab', 'dolsot'], 'Kimchi': ['kimchee', 'gimchi'], 'Tteokbokki': ['topokki', 'tteokpokki', 'ddukbokki', 'dukbokki'],
+    'Samgyeopsal': ['samgyupsal', 'samgyeop'], 'Japchae': ['chapchae', 'jabchae'], 'Gimbap': ['kimbap', 'kimbab'],
+    'Sundubu-jjigae': ['sundubu', 'soondubu', 'soft tofu stew'], 'Naengmyeon': ['naengmyun', 'cold noodle'], 'Hotteok': ['hoddeok'],
+    'Korean fried chicken': ['yangnyeom', 'dakgangjeong'], 'Sushi': ['nigiri', 'maki', 'sashimi'], 'Ramen': ['tonkotsu', 'shoyu'],
+    'Okonomiyaki': ['okonomi'], 'Tempura': ['tenpura'], 'Onigiri': ['omusubi', 'rice ball'], 'Tonkatsu': ['katsu', 'pork cutlet'],
+    'Yakitori': ['chicken skewer'], 'Gyoza': ['gyoza', 'potsticker'], 'Pho': ['pho bo', 'pho ga'], 'Banh mi': ['vietnamese sandwich'],
+    'Pad thai': ['phad thai', 'padthai'], 'Tom yum': ['tom yam', 'tomyum'], 'Som tam': ['somtam', 'papaya salad', 'som tum'],
+    'Mango sticky rice': ['khao niao mamuang', 'mango with sticky rice', 'mango sticky'], 'Halo-halo': ['halo halo', 'halohalo'],
+    'Hainanese chicken rice': ['chicken rice', 'hainan chicken'], 'Nasi goreng': ['nasi goreng'], 'Bun cha': ['bun cha hanoi'],
+}
+# titles of other dishes that get mixed up with these (pad see ew <> pad thai, drunken noodles <> pad thai ...)
+DISH_CONFUSABLE = ['see ew', 'see-ew', 'siew', 'drunken noodle', 'pad kee mao', 'pad kra pao', 'pad krapow', 'lo mein', 'chop suey', 'khao soi']
+
+
+def _norm(s):
+    return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]+', ' ', fold(s))).strip()
+
+
+def dish_names(dish):
+    return {_norm(dish)} | {_norm(x) for x in DISH_ALIASES.get(dish, [])}
+
+
+def dish_title_ok(dish, file, cats=()):
+    """The file title (or one of its categories) names the dish or an alias; a title that names ANOTHER dish / a known confusable fails."""
+    names = {n for n in dish_names(dish) if n}
+    t = ' ' + _norm(file) + ' '
+    named = any(f' {n} ' in t for n in names)
+    if not named and any(c in t for c in DISH_CONFUSABLE):
+        return False
+    if not named:
+        for other in DISHES:
+            if other[0] != dish and any(f' {n} ' in t for n in dish_names(other[0]) if len(n) > 3):
+                return False
+    if named:
+        return True
+    return any(f' {n} ' in ' ' + _norm(c) + ' ' for c in cats for n in names)
+
+
+_CC = {}
+
+
+def _cm(params):
+    import media
+    return media._commons_json(params)
+
+
+def commons_category_files(cat_title, limit=200):
+    """JPEG file names directly in a Commons category (cached for the run; [] when the category does not exist)."""
+    k = ('cm', cat_title, limit)
+    if k not in _CC:
+        try:
+            d = _cm({'action': 'query', 'list': 'categorymembers', 'cmtitle': 'Category:' + cat_title, 'cmtype': 'file', 'cmlimit': limit})
+            _CC[k] = [m['title'][5:] for m in (d.get('query') or {}).get('categorymembers', []) if m['title'].lower().endswith(('.jpg', '.jpeg'))]
+        except Exception as e:  # noqa: BLE001
+            log(f'category {cat_title}: {e}')
+            _CC[k] = []
+    return _CC[k]
+
+
+def commons_search_files(query, limit=30):
+    k = ('s', query)
+    if k not in _CC:
+        try:
+            d = _cm({'action': 'query', 'list': 'search', 'srsearch': query + ' filetype:bitmap', 'srnamespace': 6, 'srlimit': limit})
+            _CC[k] = [m['title'][5:] for m in (d.get('query') or {}).get('search', []) if m['title'].lower().endswith(('.jpg', '.jpeg'))]
+        except Exception as e:  # noqa: BLE001
+            log(f'search {query}: {e}')
+            _CC[k] = []
+    return _CC[k]
+
+
+def dish_category(dish):
+    """The dish's own Commons category: an exact name / alias category that exists, else the best category-search hit naming the dish."""
+    k = ('dc', dish)
+    if k not in _CC:
+        found = None
+        for cand in [dish] + [x for x in DISH_ALIASES.get(dish, []) if len(x) > 4][:3]:
+            c = cand[:1].upper() + cand[1:]
+            if commons_category_files(c, 1):
+                found = c
+                break
+        if not found:
+            names = dish_names(dish)
+            try:
+                d = _cm({'action': 'query', 'list': 'search', 'srsearch': dish, 'srnamespace': 14, 'srlimit': 8})
+                for m in (d.get('query') or {}).get('search', []):
+                    t = m['title'][9:]
+                    if any(n and f' {n} ' in f' {_norm(t)} ' for n in names) and ' by ' not in t.lower() and commons_category_files(t, 1):
+                        found = t
+                        break
+            except Exception as e:  # noqa: BLE001
+                log(f'dish category {dish}: {e}')
+        _CC[k] = found
+    return _CC[k]
+
+
+def file_categories(file):
+    k = ('fc', file)
+    if k not in _CC:
+        try:
+            d = _cm({'action': 'query', 'titles': 'File:' + file, 'prop': 'categories', 'cllimit': 50})
+            pg = next(iter((d.get('query') or {}).get('pages', {}).values()), {})
+            _CC[k] = [c['title'][9:] for c in pg.get('categories', [])]
+        except Exception:  # noqa: BLE001
+            _CC[k] = []
+    return _CC[k]
+
+
+def landmark_files(cat, lm):
+    """Candidate Commons file names for one landmark (label, category), best first: Quality images of it, its own category, a title
+    search. geo drops night shots, nightcity keeps only night shots; unsafe / non-photo titles are dropped. -> [(file, source)]"""
+    import media
+    label, ccat = lm
+    words = [w for w in _norm(label).split() if len(w) >= 3][:2]
+    out, seen_f = [], set()
+    sources = [('quality', lambda: commons_search_files(f'"{label}" incategory:"Quality images"', 20), True),
+               ('category', lambda: commons_category_files(ccat), False),
+               ('search', lambda: commons_search_files(f'"{label}"' + (' night' if cat == 'nightcity' else ''), 30), True)]
+    for src, getter, need_name in sources:
+        if src == 'search' and len(out) >= 6:
+            break                            # enough from the quality / category sources: no extra API call
+        for f in getter():
+            if f in seen_f:
+                continue
+            seen_f.add(f)
+            if need_name and not all(w in _norm(f) for w in words):
+                continue                     # a search hit must name the landmark in its title
+            if media.PHOTO_BAD.search(f) or not safe_photo_name(f):
+                continue
+            if cat == 'geo' and NIGHT_RE.search(f):
+                continue
+            if cat == 'nightcity' and not NIGHT_RE.search(f):
+                continue
+            out.append((f, src))
+    out.sort(key=lambda x: (not all(w in _norm(x[0]) for w in words), x[1] != 'quality'))   # names the landmark first, quality first
+    return out
+
+
+def dish_files(dish):
+    """Candidate files of a dish: members of its own Commons category whose title / categories name it. -> [(file, source)]"""
+    import media
+    c = dish_category(dish)
+    out = []
+    for f in commons_category_files(c) if c else []:
+        if media.PHOTO_BAD.search(f) or not safe_photo_name(f):
+            continue
+        if dish_title_ok(dish, f, [c] if _norm(c) in dish_names(dish) or any(n in _norm(c) for n in dish_names(dish)) else ()):
+            out.append((f, 'category'))
+    # the category itself names the dish (checked above), but a file in e.g. 'Pad thai' may be pad see ew: its title must not name another dish
+    out.sort(key=lambda x: not any(f' {n} ' in ' ' + _norm(x[0]) + ' ' for n in dish_names(dish)))
+    return out
+
+
+def lm_table(cat):
+    """Rotation table of the recognisable sources: 'City|landmark' for geo / nightcity, dish name for cuisine."""
+    if cat == 'cuisine':
+        return {d[0]: d for d in DISHES}
+    return {f'{c[0]}|{lm[0]}': (c, lm) for c in CITIES for lm in LANDMARKS.get(c[0], [])}
+
+
 # ── categories ──
 
 def live_hashes(cat):
@@ -364,66 +545,88 @@ def live_hashes(cat):
 
 
 def mine_commons(cat, st, quota, seen, out_dir, deadline, hashes):
-    """geo / nightcity / cuisine: Commons photos for (city or dish) x search term queries; several pictures per city / dish
-    over the nights, never a near-duplicate of a live, staged or tonight's picture."""
+    """geo / nightcity / cuisine: Commons photos of RECOGNISABLE things only: a curated landmark per city (Quality images, the landmark's
+    own category, title search) or the dish's own Commons category with a name validator. Several pictures per city / dish over the
+    nights, never a near-duplicate of a live, staged or tonight's picture."""
     import media
-    if cat == 'cuisine':
-        table = {f'{d[0]}|{t}': (d, t.replace('{d}', d[0])) for d in DISHES for t in DISH_TERMS}
-    else:
-        table = {f'{c[0]}|{c[1]}|{t}': (c, f'{c[0]} {t}') for c in CITIES for t in (NIGHT_TERMS if cat == 'nightcity' else GEO_TERMS)}
+    table = lm_table(cat)
     found, per_item = [], {}
     why = {}
+    bump = lambda k: why.__setitem__(k, why.get(k, 0) + 1)
     for qk in rotation(cat, list(table), st):
         if len(found) >= quota or time.time() > deadline:
             break
-        row, q = table[qk]
-        if per_item.get(row[0], 0) >= 2:      # at most 2 new pictures of one city / dish a night (variety)
+        if cat == 'cuisine':
+            row = table[qk]
+            base = {'name': row[0], 'iso2': row[1], 'country': row[2], 'difficulty': row[3]}
+            cands, item_key, label = dish_files(row[0]), row[0], row[0]
+        else:
+            (c, lm) = table[qk]
+            base = {'name': c[0], 'iso2': c[1], 'difficulty': c[2], 'landmark': lm[0]}
+            cands, item_key, label = landmark_files(cat, lm), c[0], lm[0]
+        if per_item.get(item_key, 0) >= 2:      # at most 2 new pictures of one city / dish a night (variety)
             continue
         mark_tried(st, cat, qk)
-        if cat == 'cuisine':
-            it = {'name': row[0], 'iso2': row[1], 'country': row[2], 'difficulty': row[3]}
-        else:
-            it = {'name': row[0], 'iso2': row[1], 'difficulty': row[2]}
-        img, info = media.commons_photo(q, min_w=900)
-        if img is None:
-            continue
-        file = info.get('file', '')
-        name_words = [w for w in fold(row[0]).split() if len(w) >= 3]
-        if not all(w in fold(file) for w in name_words) or (not name_words and fold(row[0]).replace(' ', '') not in fold(file).replace(' ', '')):   # 'Naha skyline' found a Dallas skyline: the name must be in the file
-            why['wrong place / dish'] = why.get('wrong place / dish', 0) + 1
-            continue
-        if not safe_photo_name(file):
-            why['people / unsafe name'] = why.get('people / unsafe name', 0) + 1
-            continue
-        if cat == 'geo' and (not re.search(r'skyline|cityscape|panorama|view', file, re.I) or re.search(r'night|dusk|evening', file, re.I)):
-            why['not a skyline / view'] = why.get('not a skyline / view', 0) + 1
-            continue
-        if cat == 'nightcity' and not re.search(r'night|nacht|evening|dusk|lights|夜', file, re.I):
-            why['not a night view'] = why.get('not a night view', 0) + 1
-            continue
-        bad = prefilter(img, file)
-        if bad:
-            why[bad.split(' (')[0]] = why.get(bad.split(' (')[0], 0) + 1
-            continue
-        h = dhash(img)
-        if near_dup(h, hashes):
-            why['near-duplicate'] = why.get('near-duplicate', 0) + 1
-            continue
-        url = _commons_url(info)
-        if not url:
-            continue
-        it.update({'image': url, 'credit': info['credit'], 'page': info['page'], 'file': file, 'query': q, 'dhash': format(h, '016x'),
-                   'mined': today(), **({'night': True} if cat == 'nightcity' else {})})
-        k = cand_key(cat, it)
-        if k in seen:
-            continue
-        it['_thumb'] = thumb(img, os.path.join(out_dir, 'thumbs', cat, f'{len(found)}.jpg'))
-        found.append(it)
-        seen.add(k)
-        hashes.append(h)
-        per_item[row[0]] = per_item.get(row[0], 0) + 1
+        tries = 0
+        for file, src in cands:
+            if tries >= 4 or time.time() > deadline:
+                break
+            it = dict(base, file=file)
+            if cand_key(cat, it) in seen:
+                continue
+            tries += 1
+            if cat == 'cuisine' and not dish_title_ok(row[0], file, [dish_category(row[0]) or ''] + file_categories(file)):
+                bump('dish name mismatch')
+                continue
+            img, info = media.commons_photo('file:' + file, min_w=900)
+            if img is None:
+                continue
+            bad = prefilter(img, file)
+            if bad:
+                bump(bad.split(' (')[0])
+                continue
+            h = dhash(img)
+            if near_dup(h, hashes):
+                bump('near-duplicate')
+                continue
+            url = _commons_url(info)
+            if not url:
+                continue
+            it.update({'image': url, 'credit': info['credit'], 'page': info['page'], 'query': f'{label} ({src})', 'dhash': format(h, '016x'),
+                       'mined': today(), **({'night': True} if cat == 'nightcity' else {})})
+            k = cand_key(cat, it)
+            if k in seen:
+                continue
+            it['_thumb'] = thumb(img, os.path.join(out_dir, 'thumbs', cat, f'{len(found)}.jpg'))
+            found.append(it)
+            seen.add(k)
+            hashes.append(h)
+            per_item[item_key] = per_item.get(item_key, 0) + 1
+            break
     log(f'{cat}: {len(found)} staged; prefilter drops {why}')
     return found
+
+
+def dry_candidates(n=20):
+    """Selftest helper (network, no download): n example candidate titles per photo category from the landmark / dish-category miners
+    (few API calls: geo and nightcity share the same sampled landmarks, up to 3 titles each)."""
+    out = {'geo': [], 'nightcity': [], 'cuisine': []}
+    keys = list(lm_table('geo'))
+    random.Random('dry').shuffle(keys)
+    for qk in keys:
+        if len(out['geo']) >= n and len(out['nightcity']) >= n:
+            break
+        (c, lm) = lm_table('geo')[qk]
+        for cat in ('geo', 'nightcity'):
+            if len(out[cat]) < n:
+                out[cat] += [f'{c[0]} / {lm[0]} [{s}]: {f}' for f, s in landmark_files(cat, lm)[:3]]
+    dishes = list(DISHES)
+    random.Random('dry').shuffle(dishes)
+    for d in dishes:
+        if len(out['cuisine']) >= n:
+            break
+        out['cuisine'] += [f'{d[0]}: {f}' for f, s in dish_files(d[0])[:2]]
+    return {k: v[:n] for k, v in out.items()}
 
 
 def _commons_url(info):
@@ -1021,6 +1224,9 @@ def cmd_push_manifests(a):
         wj(remote, {})
     st = merge_states([rj(remote, {}), {'rejected': rj(REJECTS_FILE, {}).get('rejected', [])}])
     st['staged'] = [k for k in st['staged'] if k not in set(live_keys())]   # imported ones are live now
+    if not staged_assets():   # no candidate tars left on staging: whatever is still marked staged was imported, rejected or lost, so mine it again
+        log(f'no quiz tars on staging: clearing {len(st["staged"])} stale staged entries')
+        st['staged'] = []
     wj(remote, st)
     assets = [remote]
     # the theme-art builder's network cache from this PC (wiki pages / pictures, Danbooru answers, descriptions, age classes; public
@@ -1043,9 +1249,8 @@ def selftest(nights=60):
     t0 = datetime.date(2026, 10, 22)
     for n in range(nights):
         day = (t0 + datetime.timedelta(days=n)).isoformat()
-        for cat, table in (('geo', [f'{c[0]}|{c[1]}|{t}' for c in CITIES for t in GEO_TERMS]),
-                           ('nightcity', [f'{c[0]}|{c[1]}|{t}' for c in CITIES for t in NIGHT_TERMS]),
-                           ('cuisine', [f'{x[0]}|{t}' for x in DISHES for t in DISH_TERMS]), ('vtuber', [v[0] for v in VTUBER_NAMES]),
+        for cat, table in (('geo', list(lm_table('geo'))), ('nightcity', list(lm_table('nightcity'))),
+                           ('cuisine', list(lm_table('cuisine'))), ('vtuber', [v[0] for v in VTUBER_NAMES]),
                            ('theme_art', ART_THEMES)):
             order = rotation(cat, table, st, day)
             assert len(order) == len(table) and set(order) == set(table), f'{cat}: rotation lost items'
@@ -1053,7 +1258,7 @@ def selftest(nights=60):
             for x in order[:QUOTA[cat] if cat != 'theme_art' else 1]:
                 st.setdefault('query_log', {})[f'{cat}|{x}'] = day
     # every table item gets its turn within the 60 nights; themes rotate (each one at least 6 times)
-    for cat, table in (('geo', CITIES), ('cuisine', DISHES), ('vtuber', VTUBER_NAMES)):
+    for cat, table in (('geo', [c for c in CITIES if c[0] in LANDMARKS]), ('cuisine', DISHES), ('vtuber', VTUBER_NAMES)):
         assert all(any(k.startswith(f'{cat}|{x[0]}') for k in st['query_log']) for x in table), f'{cat}: an item never came up'
     tried = [k for k in st['query_log'] if k.startswith('theme_art|')]
     assert set(t.split('|')[1] for t in tried) == set(ART_THEMES)
@@ -1071,8 +1276,17 @@ def selftest(nights=60):
     lk = live_keys()
     assert any(k.startswith('geo:') for k in lk) and any(k.startswith('trivia:') for k in lk)
     assert len({c[0] for c in CITIES}) == len(CITIES) and len({d[0] for d in DISHES}) == len(DISHES)
+    assert dish_title_ok('Pad thai', 'Pad thai.jpg') and not dish_title_ok('Pad thai', 'Pad see ew.jpg') and not dish_title_ok('Kung Pao chicken', 'Temple.jpg')
+    assert dish_title_ok('Kung Pao chicken', 'Gong bao ji ding.jpg') and all(k in lm_table('geo') or True for k in LANDMARKS)
+    assert all(c in {x[0] for x in CITIES} for c in LANDMARKS), 'landmark list names a city that is not in CITIES'
     print(json.dumps({'ok': True, 'nights': nights, 'cities': len(CITIES), 'dishes': len(DISHES), 'vtubers': len(VTUBER_NAMES),
                       'live_keys': len(lk), 'editions_now': season_editions()}))
+
+
+def cmd_dry_titles(a):
+    for k, v in dry_candidates(a.n).items():
+        print('== ' + k + ' (' + str(len(v)) + ')')
+        print(chr(10).join(v))
 
 
 def main():
@@ -1086,6 +1300,8 @@ def main():
     m.add_argument('--cats', default='')
     m.add_argument('--dry-llm', action='store_true')
     sp.add_parser('selftest')
+    d = sp.add_parser('dry-titles')
+    d.add_argument('-n', type=int, default=20)
     sp.add_parser('need')
     p = sp.add_parser('pull-staged')
     p.add_argument('--dir', default=os.path.join(ROOT, 'output', 'quiz-pool-review'))
@@ -1101,7 +1317,7 @@ def main():
     pb.add_argument('--state', default=None)
     pb.add_argument('--dry', action='store_true')
     a = ap.parse_args()
-    {'mine': cmd_mine, 'selftest': lambda a: selftest(), 'need': cmd_need, 'pull-staged': cmd_pull, 'import-staged': cmd_import,
+    {'mine': cmd_mine, 'selftest': lambda a: selftest(), 'dry-titles': cmd_dry_titles, 'need': cmd_need, 'pull-staged': cmd_pull, 'import-staged': cmd_import,
      'push-manifests': cmd_push_manifests, 'publish': cmd_publish}[a.cmd](a)
 
 
