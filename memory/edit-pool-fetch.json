@@ -226,9 +226,9 @@
   "oDI154XEl8c": "download failed",
   "YkUgY2sCGzo": "ok",
   "Lb0G3YPaHfk": "ok",
-  "wPcdTJY9kc0": "unclean: burned-in text (0.41 top / 0.00 bottom)",
+  "wPcdTJY9kc0": "ok",
   "MnELmsLLEwY": "ok",
-  "HaJXloFGy54": "unclean: burned-in text (0.42 top / 0.45 bottom)",
+  "HaJXloFGy54": "ok",
   "ayBl9b5gopE": "ok",
   "g_MsszLruro": "download failed",
   "RSE1-VsXc-0": "download failed",
@@ -245,7 +245,7 @@
   "iGA225WpTpE": "ok",
   "7ajxxDNYURo": "unclean: burned-in text (0.12 top / 0.18 bottom); burned-in text (0.42 top / 0.43 bottom)",
   "68XqMBbDnQM": "download failed",
-  "AjZ5OV5Ma8A": "unclean: burned-in text (0.00 top / 0.20 bottom)",
+  "AjZ5OV5Ma8A": "ok",
   "pQr4nW-ZEMA": "unclean: burned-in text (0.42 top / 0.45 bottom)",
   "e-nvOhUXjgI": "unclean: burned-in text (0.39 top / 0.41 bottom)",
   "chjVPTdBel8": "ok",
@@ -975,7 +975,9 @@
   "ATVgMQ0iFtQ": "ok",
   "VPhoxeEPOUA": "unclean: borders (0.17)",
   "rweo1_yRB0c": "ok",
-  "kJpq9lsldUk": "ok"
+  "kJpq9lsldUk": "ok",
+  "opK9pvmE-lM": "download failed: ERROR: [youtube] opK9pvmE-lM: Requested format is not available. Use --list-formats for a list of available formats",
+  "4q3V2-RDFuY": "ok"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1419,6 +1421,7 @@
   "Akame ga Kill fight scene": 14,
   "Gangsta fight scene": 14,
   "Psycho-Pass fight scene": 14,
-  "Fate Zero fight scene": 14
+  "Fate Zero fight scene": 14,
+  "Fate Stay Night UBW fight scene": 14
  }
 }
