@@ -51,11 +51,11 @@ const STEM_EDIT = {
   seeds: {
     titleStyle: [
       { id: 'kw-emoji', template: '{song} acapella {e}' },
-      { id: 'kw-source', template: '{song} acapella ({source} edit) {e}' },
+      { id: 'kw-source', template: '{song} acapella ({source}) {e}' },   // was '({source} edit)': too long for the ~40 visible characters
       { id: 'kw-suggest', template: '{suggest} {e}' },
       { id: 'llm-hook', llm: true, fallback: 'kw-emoji', example: '{song} acapella but the drums come in {e}',
-        guide: 'the keyword "<song> acapella" first, then a short hype or curiosity tail about the stems building up or the drop, lowercase meme voice' },
-      { id: 'llm-free', llm: true, fallback: 'kw-source', example: '{song} acapella ({source} edit) {e}',
+        guide: 'the keyword "<song> acapella" first, then a 2-4 word hype or curiosity tail (the drop, the drums), lowercase meme voice, 20-40 characters' },
+      { id: 'llm-free', llm: true, fallback: 'kw-source', example: '{song} acapella ({source}) {e}',
         guide: 'your best algorithm-aware title for this exact Short: the keyword first, may name the anime or group' },
     ],
     ovStyle: [
@@ -114,7 +114,7 @@ function editSpec({ describe, keyword, must, subject, extra = {} }) {
         { id: 'kw-song', template: '{kw} | {withSong} {e}' },  // song names are searched with edits ("gojo edit specialz")
         { id: 'kw-suggest', template: '{suggest} {e}' },
         { id: 'llm-hook', llm: true, fallback: 'kw-emoji', example: '{kw} goes crazy {e}',
-          guide: 'the keyword first, then a short hype tail in lowercase meme voice' },
+          guide: 'the keyword first, then a 2-4 word hype tail in lowercase meme voice, 20-40 characters' },
         { id: 'llm-free', llm: true, fallback: 'kw-song', example: '{kw} | {withSong} {e}',
           guide: 'your best algorithm-aware title for this exact Short, keyword first' },
       ],
@@ -208,6 +208,8 @@ const QUIZ = {
   describe: f => `A ${f.n}-round ${f.format} quiz (${f.topicLabel || f.topic || f.theme}): ${f.roundsText || 'guess before the answer is revealed'}.`,
   keyword: f => lower(f.keyword),
   must: f => [[].concat(f.any && f.any.length ? f.any : [lower(f.keyword)])],
+  // the format must be named up front: "Only Real Otakus Get 3/3" says nothing searchable (fan words do not count)
+  front: f => f.front || [].concat(f.any && f.any.length ? f.any : [lower(f.keyword)]).filter(a => a && !/^(otakus?|fans?)$/i.test(a)),
   searchSeeds: f => [lower(f.keyword)],
   suggestMust: f => [[lower(f.keyword)]],
   cta: f => f.cta || 'Comment your score 👇',

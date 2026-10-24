@@ -103,7 +103,8 @@ function placeholders(template) {
 }
 
 /**
- * Validate a title. rules: {maxLen, must: [[alternatives], ...], allowImpossible, forbidden: [answers], maxHashtags}
+ * Validate a title. rules: {maxLen, must: [[alternatives], ...], allowImpossible, forbidden: [answers], maxHashtags,
+ *   style: title => [reasons] (the channel style check)}
  * Returns {ok, reasons}.
  */
 function validateTitle(title, rules = {}) {
@@ -135,6 +136,8 @@ function validateTitle(title, rules = {}) {
     if (a && squash(a).length > 3 && contains(t, a)) { reasons.push('reveals an answer'); break; }
   }
   if (rules.natural) reasons.push(...dumpReasons(t, rules));
+  // the channel's Shorts title style (core/metadata/title-style.js: length, emoji, keyword up front, no filler)
+  if (typeof rules.style === 'function') reasons.push(...rules.style(t));
   return { ok: !reasons.length, reasons };
 }
 

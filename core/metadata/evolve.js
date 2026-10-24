@@ -22,6 +22,9 @@ const llm = require('./llm');
 const { suggestMany } = require('./suggest');
 const { EXPERT_SYSTEM, _internal } = require('./index');
 const { loadDecisions } = require('../experiment-log');
+const { STYLES } = require('./title-style');
+// the channel's Shorts title style (none for long-form pools)
+const STYLE_OF = spec => (!spec.long && STYLES[spec.channel]) || null;
 
 const { DIMS, loadState, saveState, armsFor, observations, posteriors, readChoices, decisionsFor } = learner;
 const { specFor, channelKey, poolKey } = catalog;
@@ -137,7 +140,8 @@ function oproPrompt(pool, spec, arms, obs, samples, niche) {
   const kw = spec.keyword(samples[0] || {});
   lines.push('',
     `Placeholders for templates: ${ph} ({e} = the emoji set, put at the end if you leave it out; {e1} = its first emoji).`,
-    `Rules: titles at most ${spec.maxTitle || 70} characters with the emoji and must contain the main keyword (e.g. "${kw}"); on-video texts (ovStyle)`
+    STYLE_OF(spec) ? `Title style (enforced; a template that breaks it is refused): ${STYLE_OF(spec).guide} At most ${STYLE_OF(spec).maxLen} characters with the emoji and hashtag.` : '',
+    `Rules: titles at most ${spec.maxTitle || (STYLE_OF(spec) || {}).maxLen || 70} characters with the emoji and must contain the main keyword (e.g. "${kw}"); on-video texts (ovStyle)`
       + ' at most 26 characters, Latin letters only, no emoji; hashtag sets 1-3 specific tags (lowercase letters and digits, or tag'
       + ' placeholders), at most 1 in the title, no generic tags (#viral #fyp #trending ...); emoji sets energetic only, from: '
       + `${rules.ENERGETIC_EMOJI.join(' ')}; description hooks one line with the keyword; no invented statistics, no fake claims, never sexual.`,
@@ -186,7 +190,7 @@ function validateProposal(pool, spec, p, arms, samples) {
     const armT = { id, template: tpl };
     const res = applicable((ctx, s) => {
       if (!rules.placeholders(tpl).every(k => k === 'e1' || (ctx.vars[k] !== null && ctx.vars[k] !== undefined))) return null;
-      if (dim === 'titleStyle') return !!_internal.renderTitleArm(armT, ctx, '🔥🎧', '');
+      if (dim === 'titleStyle') return !!_internal.renderTitleArm(armT, ctx, STYLE_OF(spec) ? '🔥' : '🔥🎧', '');
       const line = _internal.renderDescArm(armT, ctx, '🔥');
       const kw = spec.keyword(s);
       return !!line && (rules.contains(line, kw) || (ctx.vars.hook && rules.contains(line, ctx.vars.hook)));
@@ -194,7 +198,7 @@ function validateProposal(pool, spec, p, arms, samples) {
     if (!res.n || res.okN < res.n || res.n < Math.ceil(samples.length / 2)) {
       // the validator's reason on the first video, for the report
       const ctx0 = ctxOf(samples[0] || {});
-      const text = rules.fill(tpl, { ...ctx0.vars, e: '🔥🎧', e1: '🔥' });
+      const text = rules.fill(tpl, { ...ctx0.vars, e: dim === 'titleStyle' && STYLE_OF(spec) ? '🔥' : '🔥🎧', e1: '🔥' });
       const reasons = text === null ? ['needs facts most videos lack']
         : (dim === 'titleStyle' ? rules.validateTitle(text, ctx0.rules) : rules.validateLine(text, { maxLen: 240 })).reasons;
       return { ok: false, why: `fails on ${res.n - res.okN}/${res.n} recent videos: ${reasons.join(', ') || 'no keyword'}` };

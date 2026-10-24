@@ -112,6 +112,8 @@ def main():
             desc += '\n\n' + '\n'.join(music)
         by_file[f'{slug}.mp4'] = {'type': 'short', 'file': f'{slug}.mp4', 'title': spec['title'], 'description': desc[:4900],
                                   'tags': spec.get('tags', []), 'categoryId': spec.get('categoryId', '28')}
+        if spec.get('keyword'):  # the title's subject when it is not China itself (push-week.js title style check)
+            by_file[f'{slug}.mp4']['keyword'] = spec['keyword']
         print(f'✓ {slug}: {props["durationInFrames"] / 30:.1f} s, built in {time.time() - t0:.0f} s', flush=True)
 
     items = [by_file[k] for k in sorted(by_file)]

@@ -35,6 +35,7 @@ const { aiNarratorLines, recordAiLines } = require('./pop-narrator-ai');
 const { decay, appendDecision } = require('../core/experiment-log');
 const pop = require('./pop-quiz-meta');
 const metadata = require('../core/metadata');
+const titleStyle = require('../core/metadata/title-style');
 
 const logger = new Logger('WorldQuiz');
 
@@ -117,43 +118,43 @@ const TITLE_TEMPLATES = {
     { id: 'flag-3sec', style: 'speed', text: () => 'Guess the Flag in 3 Seconds 🌍', when: p => p.theme === 'world' },
     { id: 'flag-all5', style: 'challenge', text: p => `Can You Name All ${p.rounds.length} Flags? 🚩` },
     { id: 'flag-ramp', style: 'ramp', text: () => 'Flag Quiz: Easy to IMPOSSIBLE 🔥', when: p => p.theme === 'world' },
-    { id: 'flag-expert', style: 'fans', text: p => `Only Flag Experts Get ${p.rounds.length}/${p.rounds.length} 🌍` },
-    { id: 'flag-casual', style: 'casual', text: () => 'this flag quiz gets hard fast 🔥✌️' },
-    { id: 'flag-casual-last', style: 'casual', text: () => 'nobody gets the last flag 👀🔥', when: p => p.rounds.some(r => r.decoy) },
+    { id: 'flag-expert', style: 'fans', text: p => `Flag Quiz: Only Experts Get ${p.rounds.length}/${p.rounds.length} 🌍` },
+    { id: 'flag-casual', style: 'casual', text: () => 'this flag quiz gets hard fast 🔥' },
+    { id: 'flag-casual-last', style: 'casual', text: () => 'this flag quiz has a trap at the end 👀', when: p => p.rounds.some(r => r.decoy) },
     { id: 'flag-timer', style: 'speed', text: () => 'Name These Flags Before Time Runs Out ⏱️' },
     { id: 'flag-theme', style: 'challenge', text: p => `${THEME_WORD[p.theme]} Flag Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🌏`, when: p => p.theme in THEME_WORD },
     { id: 'flag-theme-3sec', style: 'speed', text: p => p.theme === 'americas' ? 'Flags of the Americas in 3 Seconds 🌎' : `Guess the ${THEME_WORD[p.theme]} Flag in 3 Seconds 🌏`, when: p => p.theme in THEME_WORD },
-    { id: 'flag-lookalike', style: 'fans', text: () => 'Most People Get the Last Flag Wrong 😅', when: p => p.rounds.some(r => r.decoy) },
+    { id: 'flag-lookalike', style: 'fans', text: () => 'Flag Quiz: Watch Out for the Last One 😅', when: p => p.rounds.some(r => r.decoy) },
   ],
   shape: [
     { id: 'shape-guess', style: 'keyword', text: () => 'Guess the Country by Its Shape 🗺️' },
     { id: 'shape-all5', style: 'challenge', text: p => `Can You Recognize These ${p.rounds.length} Countries? 🗺️` },
-    { id: 'shape-casual', style: 'casual', text: () => 'guess the country by its shape 👀🗺️' },
+    { id: 'shape-casual', style: 'casual', text: () => 'guess the country by its shape 👀' },
     { id: 'shape-ramp', style: 'ramp', text: () => 'Country Shape Quiz: Easy to IMPOSSIBLE 🔥' },
     { id: 'shape-outline', style: 'keyword', text: () => 'Name the Country From Its Outline 🌍' },
-    { id: 'shape-theme', style: 'challenge', text: p => `${THEME_WORD[p.theme]} Countries by Shape: How Many Do You Know? 🌏`, when: p => p.theme in THEME_WORD && p.theme !== 'americas' },
+    { id: 'shape-theme', style: 'challenge', text: p => `${THEME_WORD[p.theme]} Country Shape Quiz: How Many? 🌏`, when: p => p.theme in THEME_WORD && p.theme !== 'americas' },
   ],
   capital: [
     { id: 'cap-3sec', style: 'speed', text: () => 'Name the Capital in 3 Seconds 🏛️' },
-    { id: 'cap-trap', style: 'fans', text: p => `Most People Get #${p.rounds.findIndex(r => r.decoy) + 1} Wrong 😅 Capital Quiz`, when: p => p.rounds.some(r => r.decoy) },
+    { id: 'cap-trap', style: 'fans', text: p => `Capital Quiz: Watch Out for No. ${p.rounds.findIndex(r => r.decoy) + 1} 😅`, when: p => p.rounds.some(r => r.decoy) },
     { id: 'cap-ramp', style: 'ramp', text: () => 'Capital City Quiz: Easy to IMPOSSIBLE 🔥' },
     { id: 'cap-know', style: 'challenge', text: () => 'Do You Know These Capitals? 🌍' },
-    { id: 'cap-casual', style: 'casual', text: () => 'most people fail this capital quiz 🔥✌️' },
-    { id: 'cap-theme', style: 'challenge', text: p => p.theme === 'americas' ? 'Capitals of the Americas Quiz 🌎' : `${THEME_WORD[p.theme]} Capitals Quiz: Can You Get ${p.rounds.length}/${p.rounds.length}? 🏛️`, when: p => p.theme in THEME_WORD },
+    { id: 'cap-casual', style: 'casual', text: () => 'this capital quiz gets hard fast 🔥' },
+    { id: 'cap-theme', style: 'challenge', text: p => p.theme === 'americas' ? 'Capitals of the Americas Quiz 🌎' : `${THEME_WORD[p.theme]} Capital Quiz: Get ${p.rounds.length}/${p.rounds.length}? 🏛️`, when: p => p.theme in THEME_WORD },
   ],
   bigger: [
     { id: 'big-actually', style: 'keyword', text: () => 'Which Country Is Actually Bigger? 🤯' },
     { id: 'big-vs', style: 'keyword', text: p => `${p.rounds[0].left.name} vs ${p.rounds[0].right.name}: Which Is Bigger? 🌍`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 34 },
     { id: 'big-maplies', style: 'challenge', text: () => 'The Map Lies! Which Country Is Bigger? 🗺️' },
     { id: 'big-realsize', style: 'keyword', text: () => 'Real Size Quiz: Which Country Is Bigger? 📏' },
-    { id: 'big-casual', style: 'casual', text: () => 'the map has been lying to you 🤯🗺️' },
+    { id: 'big-casual', style: 'casual', text: () => 'which country is bigger? the map lies 🤯' },
   ],
   crowd: [
     { id: 'crowd-more', style: 'keyword', text: () => 'Which Country Has More People? 👥' },
     { id: 'crowd-vs', style: 'keyword', text: p => `${p.rounds[0].left.name} or ${p.rounds[0].right.name}: Who Has More People? 🤔`, when: p => (p.rounds[0].left.name + p.rounds[0].right.name).length <= 30 },
     { id: 'crowd-harder', style: 'challenge', text: () => 'Population Quiz: Harder Than It Looks 🤯' },
     { id: 'crowd-guess', style: 'keyword', text: () => 'Guess Which Country Has More People 🌍' },
-    { id: 'crowd-casual', style: 'casual', text: () => 'i did not expect #1 🤯👥' },
+    { id: 'crowd-casual', style: 'casual', text: () => 'which country has more people? 👥' },
   ],
   ...pop.POP_TITLE_TEMPLATES,
 };
@@ -386,6 +387,30 @@ function hasHardRound(plan) {
 function titleOptions(plan) {
   const noHard = !hasHardRound(plan);
   return TITLE_TEMPLATES[plan.format].filter(t => (!t.when || t.when(plan)) && !(noHard && /-ramp$/.test(t.id)));
+}
+
+/**
+ * The final title in the channel's Shorts style (core/metadata/title-style.js: <= 50 characters, the format keyword in the
+ * first 30, one emoji). A themed edition is named after the keyword ("Guess the Anime Character (Glasses Edition) 👓"),
+ * no longer as an all-caps prefix; when nothing with the edition fits, the plan's own templates, then the bare keyword.
+ */
+function fitQuizTitle(title, plan) {
+  const f = quizFacts(plan);
+  const front = [].concat(f.any && f.any.length ? f.any : [f.keyword]).filter(a => a && !/^(otakus?|fans?)$/i.test(a));
+  const bases = [title, ...titleOptions(plan).filter(t => !t.llm && typeof t.text === 'function').map(t => t.text(plan))];
+  const ed = plan.edition;
+  const cands = [];
+  if (ed && !String(title).toUpperCase().includes(String(ed.label || '').toUpperCase())) {
+    const name = titleStyle.titleCase(ed.label || `${ed.name} edition`);
+    const e = ed.emoji || '';
+    const cores = bases.map(b => titleStyle.coreOf(b)).filter(c => c && c !== c.toLowerCase());   // not the lowercase casual ones
+    for (const c of cores) cands.push(`${c} (${name}) ${e}`);
+    // the short format label of the plan's own templates ("Anime Eyes Quiz: Easy to IMPOSSIBLE" -> "Anime Eyes Quiz: Glasses Edition")
+    for (const c of cores) { const m = c.match(/^(.{4,30}?\bQuiz)\b/); if (m) cands.push(`${m[1]}: ${name} ${e}`); }
+    cands.push(`${f.Keyword}: ${name} ${e}`, `${f.Keyword} (${name}) ${e}`);
+  }
+  cands.push(...bases, `${f.Keyword} ${f.topicEmoji || ''}`);
+  return titleStyle.firstFit(cands.map(c => String(c).replace(/\s+/g, ' ').trim()), 'quiz', { front }) || title;
 }
 
 /** What the metadata optimizer needs to know about a quiz (no answers in the title, keyword, hook, ...). */
@@ -713,10 +738,7 @@ async function runWorldQuizPipeline(opts = {}) {
     title = t.text(plan);
     titleTemplate = t.id;
   }
-  if (plan.edition && !String(title).toUpperCase().includes(plan.edition.label)) {   // themed: the edition always leads the title
-    title = `${plan.edition.label} ${plan.edition.emoji || ''} ${title}`.replace(/\s+/g, ' ');
-  }
-  title = pop.clean(title).substring(0, 100);  // YouTube rejects < and > in titles and descriptions
+  title = pop.clean(fitQuizTitle(title, plan)).substring(0, 100);  // YouTube rejects < and > in titles and descriptions
   logger.info(`Title [${titleTemplate}${meta ? `; ${Object.entries(meta.arms).filter(([k]) => k !== 'contentType')
     .map(([k, v]) => `${k} ${v}${meta.modes[k] ? `/${meta.modes[k]}` : ''}`).join(', ')}; llm ${meta.llm}` : ''}]: ${title}`);
 
@@ -773,5 +795,5 @@ async function runWorldQuizPipeline(opts = {}) {
   };
 }
 
-module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickBalanced, poolAvailability, FORMATS, FALLBACK_WEIGHTS, pickLength, findHit, pickTitleTemplate, titleOptions, quizFacts,
+module.exports = { runWorldQuizPipeline, recordUpload, loadHistory, pickFormat, pickBalanced, poolAvailability, FORMATS, FALLBACK_WEIGHTS, pickLength, findHit, pickTitleTemplate, titleOptions, quizFacts, fitQuizTitle,
   quizMetadata, buildDescription, buildTags, TITLE_TEMPLATES, PLAYLISTS };

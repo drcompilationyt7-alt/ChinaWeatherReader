@@ -29,6 +29,7 @@ const rules = require('./rules');
 const llm = require('./llm');
 const { suggestMany, bestSuggestTitle } = require('./suggest');
 const editInsights = require('../reflect/edit-insights');
+const titleStyle = require('./title-style');
 
 const { DIMS, armsFor, observations, choose, appendChoice } = learner;
 const { poolKey, specFor, varsFor } = catalog;
@@ -48,6 +49,9 @@ const EXPERT_SYSTEM = [
   '- The title matters most for YouTube search, suggested videos, the channel page and after a tap, and it tells the system who the '
     + 'Short is for. Put the searchable keyword first, in the words people actually type ("<song> acapella", "<anime> edit", '
     + '"<character> edit", "guess the kpop song"). Lowercase meme voice is normal in anime and K-pop edit niches.',
+  '- The Shorts player cuts the title after about 40 characters, so it must be SHORT: the subject keyword in the first 25-30 '
+    + 'characters, one idea, then at most a few words of hook. No filler, no stacked names, no "#shorts", one emoji at most '
+    + '(added separately). Top Shorts in these niches show 25-45 characters of text.',
   '- Hashtags: 1-3 specific ones (the anime, the group, the format); generic ones (#viral #fyp #trending) do nothing.',
   '- The description\'s first line shows in search results: say plainly what the video is, keyword first, no keyword stuffing.',
   'Hard rules: no clickbait the video does not deliver (viewers swipe and the Short dies); no invented numbers or statistics '
@@ -64,10 +68,21 @@ const MIMIC_EXPLORE = Math.max(0.3, Number(process.env.META_MIMIC_EXPLORE || 0.3
 const normTitle = t => String(t || '').toLowerCase().replace(/\s+/g, ' ').trim();
 const uniq = xs => [...new Set(xs)];
 const tagStr = tags => tags.map(t => `#${t}`).join(' ');
-const maxTitle = spec => spec.maxTitle || 70;
+/** The channel's Shorts title style (core/metadata/title-style.js); none for long-form. */
+const styleOf = spec => (!spec.long && titleStyle.STYLES[spec.channel]) || null;
+const maxTitle = spec => spec.maxTitle || (styleOf(spec) || {}).maxLen || 70;
+/** Phrases one of which must sit at the front of the title: the spec's own, else its first must-group (song / anime / character). */
+function frontOf(spec, f) {
+  if (spec.front) return spec.front(f) || [];
+  const g = (spec.must(f) || [])[0];
+  return [].concat(g || []).filter(Boolean);
+}
 
 function titleRules(spec, f) {
-  return { maxLen: maxTitle(spec), must: spec.must(f), allowImpossible: !!f.hard, forbidden: f.forbidden || [] };
+  const st = styleOf(spec);
+  const front = st ? frontOf(spec, f) : [];
+  return { maxLen: maxTitle(spec), must: spec.must(f), allowImpossible: !!f.hard, forbidden: f.forbidden || [],
+    style: st ? t => titleStyle.styleReasons(t, spec.channel, { front }) : null };
 }
 
 /** LLM-written titles of a naturalTitles channel (the quiz) also go through the keyword-dump check. */
@@ -131,6 +146,7 @@ function renderTitleArm(arm, ctx, eTitle, tags) {
     if (!t) return null;
     templateId = t.id;
     text = ctx.emojiKeep ? unsad(t.text) : `${stripEmoji(t.text)} ${eTitle}`.trim();
+    if (styleOf(ctx.spec)) text = titleStyle.capEmoji(text, styleOf(ctx.spec).maxEmoji);
   } else {
     const tpl = [].concat(arm.template || arm.templates || [])[0];
     text = fill(tpl, { ...ctx.vars, e: eTitle });
@@ -166,7 +182,7 @@ function eligibleFor(dim, arm, ctx) {
   if (arm.notFor && ctx.f.format && arm.notFor.includes(ctx.f.format)) return false;
   if (arm.llm) return !!ctx.llmOk;
   switch (dim) {
-    case 'titleStyle': return !!renderTitleArm(arm, { ...ctx, rng: () => 0 }, '🔥🔥', '');
+    case 'titleStyle': return !!renderTitleArm(arm, { ...ctx, rng: () => 0 }, styleOf(ctx.spec) ? '🔥' : '🔥🔥', '');
     case 'ovStyle': return !!renderOnVideoArm(arm, ctx);
     case 'hashtagSet': return !!renderHashtags(arm, ctx.vars);
     case 'emojiSet': return !!arm.keep || (arm.pool || []).some(p => fill(p, ctx.vars) !== null);
@@ -225,13 +241,15 @@ async function generate(ctx, chosen, { keyword, suggestions, obs, eTitle, tagsTi
     desc: chosen.descHook && chosen.descHook.llm,
   };
   if (!need.title && !need.ov && !need.desc) return null;
-  const room = Math.min(60, maxTitle(spec) - (eTitle ? len(eTitle) + 1 : 0) - (tagsTitle ? len(tagsTitle) + 1 : 0));
+  const st = styleOf(spec);
+  const room = Math.min(st ? st.coreMax : 60, maxTitle(spec) - (eTitle ? len(eTitle) + 1 : 0) - (tagsTitle ? len(tagsTitle) + 1 : 0));
   const ex = arm => (arm.example ? fill(arm.example, { ...vars, e: '' }) : null);
   const must = spec.must(f).map(g => [].concat(g).filter(Boolean)).filter(g => g.length);
   const lines = [
     `Channel: ${spec.channelName}`,
     `The video: ${spec.describe(f)}`,
     `Main search keyword: "${keyword}" (every title must contain it, ideally first)`,
+    st ? `Title style for this channel: ${st.guide} Aim for about ${st.target} characters.` : '',
     must.length ? `Every title must contain: ${must.map(g => g.map(x => `"${x}"`).join(' or ')).join(', and ')}` : '',
     suggestions.length ? `Real YouTube autocomplete phrases that match this video (how people search): ${suggestions.slice(0, 10).join(' | ')}` : '',
     examplesText(obs),
@@ -272,7 +290,7 @@ async function generate(ctx, chosen, { keyword, suggestions, obs, eTitle, tagsTi
 }
 
 /** Candidate score: keyword first, real search phrasing, sweet-spot length, not a repeat; the LLM's guess only nudges. */
-function scoreTitle(text, { keyword, suggestions, recent, pull }) {
+function scoreTitle(text, { keyword, suggestions, recent, pull, target = null }) {
   const t = norm(stripEmoji(text).replace(/#[\p{L}\p{N}_]+/gu, ''));
   const k = norm(keyword);
   let s = 0;
@@ -280,7 +298,7 @@ function scoreTitle(text, { keyword, suggestions, recent, pull }) {
   else if (k && t.includes(k) && t.indexOf(k) < 20) s += 0.5;
   if (suggestions.some(p => norm(p) !== k && t.includes(norm(p)))) s += 0.3;
   const L = len(text);
-  if (L >= 25 && L <= 60) s += 0.2;
+  if (target ? L >= 18 && L <= target + 8 : L >= 25 && L <= 60) s += 0.2;   // the channel's sweet spot (title-style.js)
   if ((recent || []).some(r => norm(stripEmoji(r)) === t)) s -= 0.6;
   if (Number.isFinite(pull)) s += 0.15 * (Math.max(1, Math.min(10, pull)) - 5.5) / 4.5;
   return s;
@@ -389,7 +407,9 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
   const em = renderEmoji(chosen.emojiSet, ctx.vars, rng);
   if (chosen.emojiSet) used.emojiSet = chosen.emojiSet.id;
   ctx.emojiKeep = em.keep;
-  const eTitle = em.list.join('');
+  // the title carries at most the style's emoji count (the on-video image emoji keep the whole set)
+  const st = styleOf(spec);
+  const eTitle = em.list.slice(0, st ? st.maxEmoji : 3).join('');
 
   // hashtags
   let tags = chosen.hashtagSet && renderHashtags(chosen.hashtagSet, ctx.vars);
@@ -431,7 +451,7 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
           if (i < 0) i = left.length - 1;
           const { p } = left.splice(i, 1)[0];
           for (const v of variants) {
-            const text = fill(p.template, { ...ctx.vars, e: v.split(',').join('') });
+            const text = fill(p.template, { ...ctx.vars, e: v.split(',').slice(0, st ? st.maxEmoji : 3).join('') });
             if (!text || !validateTitle(text, ctx.rules).ok) break;
             if (seen.has(normTitle(text))) continue;
             title = text; mimicked = p;
@@ -458,7 +478,7 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
         const text = cleanLLM(c.text);
         const full = [text, eTitle, withTags ? tagStr(tags.title) : ''].filter(Boolean).join(' ');
         const v = validateTitle(full, llmTitleRules(ctx, keyword));
-        return { text: full, pull: c.pull, ok: v.ok, why: v.reasons, score: v.ok ? scoreTitle(full, { keyword, suggestions, recent, pull: c.pull }) : null };
+        return { text: full, pull: c.pull, ok: v.ok, why: v.reasons, score: v.ok ? scoreTitle(full, { keyword, suggestions, recent, pull: c.pull, target: st && st.target }) : null };
       });
       const ok = candidates.filter(c => c.ok).sort((a, b) => b.score - a.score);
       if (ok.length) {
@@ -480,7 +500,7 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
     }
   }
   if (!title) {
-    title = clean(`${keyword} ${eTitle}`);
+    title = clean(`${spec.channel === 'quiz' && f.Keyword ? f.Keyword : keyword} ${eTitle}`);
     used.titleStyle = 'keyword-only';
   }
   title = unsad(clean(title));

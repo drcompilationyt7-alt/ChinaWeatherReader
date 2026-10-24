@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const titleStyle = require('../../core/metadata/title-style');
 
 const REPO = process.env.CHINA_REPO || 'drcompilationyt7-alt/ChinaWeatherReader';
 const MAX_ASSET = 2 * 1024 ** 3 - 1;
@@ -70,6 +71,12 @@ for (const [i, it] of items.entries()) {
   else if (it.date < tomorrow) errors.push(`${where}: date ${it.date} is not in the future`);
   if (it.publish_utc && !/^\d{2}:\d{2}$/.test(it.publish_utc)) errors.push(`${where}: publish_utc must be HH:MM`);
   if (!it.title || it.title.length > 100 || /[<>]/.test(it.title)) errors.push(`${where}: title must be 1-100 chars, no < >`);
+  // Shorts title style (core/metadata/title-style.js, research 2026-10-24): <= 55 characters, China / the place in the
+  // first 30, no #shorts, no hashtags, no all-caps. item.keyword may name the subject when it is not China itself.
+  if (it.type === 'short' && it.title) {
+    const tv = titleStyle.check(it.title, 'china', { front: it.keyword ? [it.keyword] : [] });
+    if (!tv.ok) errors.push(`${where}: title "${it.title}" breaks the Shorts title style: ${tv.reasons.join('; ')}`);
+  }
   if (Buffer.byteLength(it.description || '') > 5000 || /[<>]/.test(it.description || '')) errors.push(`${where}: description over 5000 bytes or has < >`);
   if ((it.tags || []).join(',').length > 480) errors.push(`${where}: tags too long (YouTube max ~500 chars)`);
   for (const f of [it.file, it.thumbnail, it.captions].filter(Boolean)) {

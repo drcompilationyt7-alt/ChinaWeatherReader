@@ -42,6 +42,17 @@ const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8'))
     if (!dry) { (e.skipped = e.skipped || []).push(`${today}: ${why}`); e.date = next; fs.writeFileSync(QFILE, JSON.stringify(q, null, 1)); }
     return;
   }
+  // the channel's Shorts title style (core/metadata/title-style.js): a hand-written title that breaks it (too long, filler,
+  // 2+ emoji) falls back to its optional titleShort, then to "<song> <type keyword> <first emoji>"
+  {
+    const ts = require('../core/metadata/title-style');
+    const { emojiList } = require('../core/metadata/rules');
+    const kw = { 'edit-slowmo': 'slow motion edit', 'edit-sound': 'sound design edit' }[e.category] || 'edit';
+    const e1 = emojiList(e.title)[0] || '';
+    const fit = ts.firstFit([e.title, e.titleShort, `${String(e.song || '').toLowerCase()} ${kw} ${e1}`], 'meme', { front: [e.song].filter(Boolean) });
+    if (fit && fit !== e.title) { console.log(`prebuilt-queue: title "${e.title}" breaks the title style (${ts.check(e.title, 'meme', { front: [e.song] }).reasons.join('; ')}) -> "${fit}"`); e.title = fit; }
+    else if (!fit) console.warn(`prebuilt-queue: ! no title variant fits the style; keeping "${e.title}"`);
+  }
   const hour = String(process.env.PUBLISH_HOUR_UTC || '12').padStart(2, '0');
   const publishAt = `${today}T${hour}:00:00.000Z`;
   console.log(`prebuilt-queue: ${dry ? '[dry run] would upload' : 'uploading'} "${e.title}" (${e.asset}) publishAt ${publishAt}; ${e.clipIds.length} clips; song ${e.song}`);

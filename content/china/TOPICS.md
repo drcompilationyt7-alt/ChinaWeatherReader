@@ -4,6 +4,8 @@
 - Every claim is fact-checked with a web search before scripting.
 - Company figures are labeled as claims.
 
+**Shorts titles (enforced by scripts/china/push-week.js, rules in core/metadata/title-style.js):** one factual headline of 30-50 characters (55 max) with China / Chinese or the city / company in the first 30 characters (the player shows about 40). No #shorts, no hashtags, no all-caps words, no claim the video does not prove. Good: "China Built a 57-Floor Tower in 19 Days", "Shenzhen: Border Town to 18 Million People". If the subject is not China itself, set "keyword" on the item (e.g. "Huawei").
+
 **Weekly mix (7 Shorts):** about 3 tech/build, 2 economy/geopolitics, 2 society. Never two Shorts on the same pillar on consecutive days.
 
 ## Pillars
