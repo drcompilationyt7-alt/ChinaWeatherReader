@@ -71,6 +71,14 @@ STAGE_AT = 8                    # stage the pending sound batches once this many
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
 MIN_FREE_GB, FLOOR_FREE_GB, MAX_OTHER_CPU, INPUT_IDLE_S = 4.0, 2.0, 50.0, 120
+# NOW mode (owner 2026-10-24 "u can use pc to mine right now"; LOCAL_MINE_NOW=1, local-mine.ps1 start -Now): no owner-activity
+# pause and no 19:00 UTC YouTube blackout (the GitHub-run guard stays: no YouTube while a mining workflow is queued / running, a
+# running YouTube job is terminated when one starts); start at >= 3 GB free, pause under 2.5 GB; quiz (no YouTube) may run up
+# to QUIZ_NOW_MAX times a day while YouTube waits. IDLE priority, 4 threads, one job, heavy-process pause: unchanged.
+NOW = os.environ.get('LOCAL_MINE_NOW') == '1'
+QUIZ_NOW_MAX = int(os.environ.get('LOCAL_MINE_QUIZ_NOW_MAX', '4'))
+if NOW:
+    MIN_FREE_GB, FLOOR_FREE_GB = 3.0, 2.5
 HEAVY_NAMES = {'ffmpeg', 'blender', 'aerender', 'afterfx', 'adobe premiere pro', 'resolve', 'handbrake', 'handbrakecli', 'obs64',
                'x264', 'x265', 'melt', 'vegas', 'davinci resolve', 'photoshop', 'unity', 'unrealeditor'}
 BOT_RE = re.compile(r"bot-block|BOT-CHECK|not a bot|sign in to confirm(?! your age)|http error 429|too many requests|"
@@ -258,7 +266,7 @@ class Monitor:
             return False, f'other CPU {cpu:.0f} %'
         if heavy:
             return False, f'busy: {heavy}'
-        if inp < INPUT_IDLE_S:
+        if inp < INPUT_IDLE_S and not NOW:
             return False, f'owner active ({inp:.0f} s ago)'
         return True, 'idle'
 
@@ -386,6 +394,14 @@ def gh_mining_busy():
     return None
 
 
+def quiz_mining_busy():
+    """NOW mode, quiz jobs: only a GitHub QUIZ mining run conflicts (same staging state); a sound / slow-mo run does not"""
+    r = gh('run', 'list', '--workflow', 'quiz-pool-mine.yml', '-L', '5', '--json', 'status', timeout=120)
+    if r.returncode != 0:
+        return 'gh run list failed (quiz-pool-mine.yml)'
+    return 'quiz-pool-mine.yml is queued / running' if any(x.get('status') != 'completed' for x in json.loads(r.stdout or '[]')) else None
+
+
 def tonight_pool(day):
     rot = gh('variable', 'get', 'MINE_ROTATION', timeout=60).stdout.strip()
     r = subprocess.run([sys.executable, os.path.join(WT, 'scripts', 'pool-mine-rotation.py'), '--rotation', rot, '--date', day],
@@ -396,7 +412,7 @@ def tonight_pool(day):
 def youtube_blackout():
     """19:00 UTC .. 04:00 UTC: when tonight's nightly job mines a YouTube pool, wait until that run has completed"""
     n = now_utc()
-    if 4 <= n.hour < 19:
+    if NOW or 4 <= n.hour < 19:
         return None
     night = (n if n.hour >= 19 else n - dt.timedelta(days=1)).date()
     pool = tonight_pool(night.isoformat())
@@ -645,7 +661,11 @@ def quiz_batch(st):
     env.update(MEMORY_DIR='memory/quiz-channel')
     env.pop('EDIT_POOL_DIR', None)
     qg = [sys.executable, os.path.join(WT, 'core', 'quiz', 'quiz_pool_grow.py')]
-    for shard, cats in (('photos', 'nightcity,cuisine,geo'), ('llm', 'wyr_food,wyr_travel')):
+    shards = (('photos', 'nightcity,cuisine,geo'), ('llm', 'wyr_food,wyr_travel'))
+    if NOW:                       # no-YouTube categories: Commons photos, LLM pairs / puzzles, Wikidata / wiki people
+        shards = (('photos', 'nightcity,cuisine,geo'), ('llm', 'wyr_food,wyr_travel,emoji,trivia,kpop_song'),
+                  ('people', 'kpop_idol,vtuber'))
+    for shard, cats in shards:
         w = os.path.join(base, 'w-' + shard)
         rc, txt = run_job(f'quiz-{shard}', qg + ['mine', '--shard', shard, '--cats', cats, '--work', w, '--state', state,
                                                   '--budget-min', str(QUIZ_BUDGET)], WT, env, QUIZ_BUDGET + 30)
@@ -676,6 +696,7 @@ def quiz_batch(st):
             log(f'quiz publish failed: {(r.stderr or "")[-300:]}')
     shutil.rmtree(base, ignore_errors=True)
     st['quiz_done'] = True
+    st['quiz_runs'] = st.get('quiz_runs', 0) + 1
     return False
 
 
@@ -711,7 +732,7 @@ def guards(st, youtube=True):
         return f"bot-check back-off until {dt.datetime.fromtimestamp(st['backoff_until'], dt.timezone.utc):%H:%M} UTC"
     if not os.path.isfile(COOKIES) and youtube:
         return 'no spare cookies file'
-    b = gh_mining_busy()
+    b = gh_mining_busy() if youtube or not NOW else quiz_mining_busy()
     if b:
         return b
     return youtube_blackout() if youtube else None
@@ -740,7 +761,7 @@ def cmd_run(a):
         psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS)
         MON = Monitor()
         ensure_worktree()
-        log(f'local miner started (pid {os.getpid()}, cap {DAILY_CAP} sources / day)')
+        log(f'local miner started (pid {os.getpid()}, cap {DAILY_CAP} sources / day{", NOW mode: no owner-activity pause" if NOW else ""})')
         while not stop_requested():
             st = day_state()
             wj(STATE, st)
@@ -750,10 +771,11 @@ def cmd_run(a):
                 nxt = 'slowmo' if yt % 3 == 2 else 'sound'          # sound : slow-mo = 2 : 1
                 if nxt == 'sound' and pending_count() >= 30:
                     nxt = 'slowmo'                                   # sound review backlog: grow slow-mo meanwhile
+            quiz_ok = not st['quiz_done'] or (NOW and st.get('quiz_runs', 0) < QUIZ_NOW_MAX)
             if not st['quiz_done'] and (st['batches'] >= 2 or nxt is None):
                 nxt = 'quiz'
             why = guards(st, youtube=nxt in YT_POOLS) if nxt else None
-            if why and nxt in YT_POOLS and not st['quiz_done'] and not guards(st, youtube=False):
+            if why and nxt in YT_POOLS and quiz_ok and not guards(st, youtube=False):
                 nxt, why = 'quiz', None                              # YouTube blocked: do the quiz job meanwhile
             if why or not nxt:
                 if pending_dirs() and not gh_mining_busy() and wait_idle('sound stage'):
