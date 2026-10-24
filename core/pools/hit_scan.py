@@ -36,8 +36,8 @@ for p in (os.path.join(ROOT, 'core', 'edit'), os.path.join(ROOT, 'core', 'meme')
 
 CHUNK_S = 150.0
 SUB_RE = re.compile(r'\b(eng(lish)?[ .-]?sub(s|bed|titles?)?|subbed|subtitles?|sub(s)? ?(on|ita|esp|indo)|hardsub|cc)\b|\[sub\]|\(sub\)', re.I)
-SKIP_RE = re.compile(r'twixtor|creditless|ncop|nced|op|ed|opening|ending|ost|aesthetic|cute moments|romantic|amv|reaction|tutorial', re.I)
-ACTION_RE = re.compile(r'fight|battle|gun|sword|clash|vs|versus|combat|shoot|slash|punch|kick|mask|sakuga|action|reload|duel|katana|sheath|slap|slam|glass|break|shot|sound', re.I)
+SKIP_RE = re.compile(r'twixtor|creditless|\bncop\b|\bnced\b|\bop\b|\bed\b|opening|ending|\bost\b|aesthetic|cute moments|romantic|\bamv\b|reaction|tutorial', re.I)
+ACTION_RE = re.compile(r'fight|battle|gun|sword|clash|\bvs\b|versus|combat|shoot|slash|punch|kick|mask|sakuga|action|reload|duel|katana|sheath|slap|slam|glass|break|shot|sound', re.I)
 TAG_VIBE = {'clap': 'crisp', 'object': 'crisp', 'chain': 'crisp'}       # everything else -> impact
 
 
