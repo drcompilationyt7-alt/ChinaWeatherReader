@@ -31,6 +31,7 @@ by-eye step replaced by a vision model and stricter automatic bars:
     python core/pools/sound_refresh.py stage --pool P --new NEW.json --out DIR [--sheets 'report/new-hits*.jpg']
     python core/pools/sound_refresh.py apply-staged --pool P --tars T.tar ... [--reject id,id]
     python core/pools/sound_refresh.py pull-staged [--out DIR]
+    python core/pools/sound_refresh.py sharpen-staged [--work DIR] [--dry]   (Kaggle GPU, Mon-Thu: the staged quality.needs_sharpen clips)
 """
 import argparse
 import datetime as _dt
@@ -249,7 +250,7 @@ def _judge(work, out, rep, t0, budget_min):
             v = HV.judge(p, float(m['hit_t']), m.get('tag'), tmp=os.path.join(work, 'vtmp'))
         except Exception as e:  # noqa: BLE001
             v = {'ok': False, 'why': f'vision error {str(e)[:120]}', 'votes': []}
-        rec = {'vision': {k: v.get(k) for k in ('ok', 'word', 'why', 'votes')}}
+        rec = {'vision': {k: v.get(k) for k in ('ok', 'word', 'why', 'votes', 'score', 'strict')}}
         if v.get('ok'):
             try:
                 ok, info = HI.safety(p)
@@ -260,7 +261,7 @@ def _judge(work, out, rep, t0, budget_min):
                 shutil.copy2(p, os.path.join(out, 'mini', name + '.mp4'))
                 if v.get('strip') and os.path.isfile(v['strip']):
                     shutil.copy2(v['strip'], os.path.join(out, 'strips', name + '.jpg'))
-                approved[name] = dict(m, word=v['word'], safety=info,
+                approved[name] = dict(m, word=v['word'], safety=info, vision_score=v.get('score'), vision_strict=v.get('strict'),
                                       vision=[{'model': x['model'], 'conf': (x.get('answer') or {}).get('confidence'),
                                                'note': (x.get('answer') or {}).get('note')} for x in v.get('votes') or []])
         verdicts[name] = rec
@@ -337,7 +338,8 @@ def merge(pool, shards, new_out):
                 'hit_scan': {'tag': tag, 'score': m.get('score')},
                 'safety': {'gate': 'pass', 'checked': 'refresh: NudeNet every 0.125 s + SigLIP unsafe/safe + text bands + vision model',
                            'unsafe': sf.get('unsafe')},
-                'auto_hit': {'action': tag, 'word': m.get('word'), 't': m['hit_t'], 'vision': m.get('vision'), 'added': today()},
+                'auto_hit': {'action': tag, 'word': m.get('word'), 't': m['hit_t'], 'vision': m.get('vision'), 'added': today(),
+                             'score': m.get('vision_score'), 'strict': m.get('vision_strict')},
                 'reviewed': {'by': 'auto (vision model + safety gates)', 'at': today()},
                 'sfx': [{'t': float(m['hit_t'])}], 'query': 'monthly refresh (auto-approved)',
                 'status': 'fresh', 'added': today(), 'used_at': None, 'used_in': None,
@@ -346,7 +348,8 @@ def merge(pool, shards, new_out):
             live.append(dict(row, vis={'sig': sig}))
             allow.setdefault('clips', {})[iid] = [{'t': round(float(m['hit_t']), 3), 'action': tag, 'word': m.get('word'),
                                                     'note': f"auto (vision model) {today()} ({str(m.get('title') or '')[:50]})"}]
-            new.append({'id': iid, 'vibe': vibe, 'mini': name, 'strip': os.path.join(sd, 'strips', name + '.jpg')})
+            new.append({'id': iid, 'vibe': vibe, 'mini': name, 'strip': os.path.join(sd, 'strips', name + '.jpg'),
+                        'score': m.get('vision_score')})
             res[name] = iid
     for v, man in mans.items():
         VP.save_manifest('sound', v, man, root=pool)
@@ -373,7 +376,10 @@ def sharpen(pool, new_p, budget_min=240.0):
     todo = [n for n in news if not os.path.isfile(_clip_path(pool, n) + '.up.json')]
     if not todo:
         return {'sharpened': 0}
-    if os.environ.get('KAGGLE_API_TOKEN') and os.environ.get('KAGGLE_USERNAME'):
+    # 2026-10-24: Kaggle is NOT used inline any more (the KAGGLE_API_TOKEN secret is now set): the near misses are sharpened by
+    # `sharpen-staged` (Mon-Thu, shared weekly ledger); a Kaggle session inside the 20 min swap budget timed out with the kernel still
+    # running. SOUND_SHARPEN_KAGGLE_INLINE=1 restores the old inline call.
+    if os.environ.get('SOUND_SHARPEN_KAGGLE_INLINE') == '1' and os.environ.get('KAGGLE_API_TOKEN') and os.environ.get('KAGGLE_USERNAME'):
         try:                     # 2026-10-24: bounded by the same budget, so the staging after it always finishes in time
             r = subprocess.run([sys.executable, os.path.join(ROOT, 'scripts', 'edit-upscale-kaggle.py'), 'run', '--pool', pool],
                                timeout=max(60, int(budget_min * 60)))
@@ -412,21 +418,24 @@ def metrics(path, hit_t):
     import numpy as np
     cap = cv2.VideoCapture(path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
-    sh, lu = [], []
+    sh, lu, hi = [], [], []
     for dt in (-0.3, -0.2, -0.1, 0.0, 0.1):
         cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, int(round((hit_t + dt) * fps))))
         ok, f = cap.read()
         if not ok:
             continue
         g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+        h0 = g.shape[0]
         if g.shape[0] != 1080:
             g = cv2.resize(g, (int(round(g.shape[1] * 1080 / g.shape[0])), 1080), interpolation=cv2.INTER_AREA)
         sh.append(float(cv2.Laplacian(g, cv2.CV_64F).var()))
         lu.append(float(g.mean()))
+        hi.append(float(np.percentile(g, 95)))
     cap.release()
     if not sh:
         return None
-    return {'sharp': round(float(np.median(sh)), 1), 'luma': round(float(np.median(lu)), 1)}
+    return {'sharp': round(float(np.median(sh)), 1), 'luma': round(float(np.median(lu)), 1), 'p95': round(float(np.median(hi)), 1),
+            'h': int(h0)}
 
 
 def baseline(pool, out=None):
@@ -454,6 +463,60 @@ def baseline(pool, out=None):
     return b
 
 
+# 2026-10-24 NEAR MISSES (sound yield round 2): the hard p10 cut dropped 10 of 13 clips on 10-24 (7 soft, 3 dark), most of them a
+# little under the bar. Measured on those clips (the pool's Real-ESRGAN realesr-animevideov3 x2, metric at 1080 lines): sharpening
+# multiplies the hit-window sharpness by ~1.9-3.7 (5.7 -> 11.1, 7.3 -> 13.6, ~15 -> 41-55). So:
+#   (a 720p clip gains only x1.1-1.4: 6.4 -> 7.1, 3.5 -> 5.0, so a soft 720p clip is dropped as before)
+#   soft  sharp >= SOFT_FIX_MIN (5.5 = p10 / 1.9), >= 1000 lines, not sharpened yet -> KEPT, flagged quality.needs_sharpen (sharpened on Kaggle
+#         Mon-Thu by `sharpen-staged`; until then it waits staged); below that, or still soft after sharpening -> dropped
+#   dark  luma >= DARK_FIX_MIN (26) with real highlights (p95 >= 70) -> a gamma lift (ffmpeg eq, <= 1.6) right here on the CPU to
+#         the baseline p10 + 4, re-measured, flagged quality.graded; darker / flat -> dropped
+SOFT_FIX_MIN = float(os.environ.get('SOUND_SOFT_FIX_MIN', '5.5'))
+DARK_FIX_MIN = float(os.environ.get('SOUND_DARK_FIX_MIN', '26'))
+DARK_P95_MIN = float(os.environ.get('SOUND_DARK_P95_MIN', '70'))
+
+
+def grade(path, gamma):
+    """in-place gamma lift (video re-encoded crf 16, audio copied); True when the clip was replaced"""
+    tmp = path + '.grade.mp4'
+    r = subprocess.run(['ffmpeg', '-y', '-v', 'error', '-nostdin', '-i', path, '-vf', f'eq=gamma={gamma:.3f}', '-c:v', 'libx264', '-crf', '16',
+                        '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-threads', '2', '-c:a', 'copy', '-movflags', '+faststart', tmp],
+                       capture_output=True, text=True)
+    if r.returncode != 0 or not os.path.isfile(tmp):
+        return False
+    os.replace(tmp, path)
+    return True
+
+
+def classify(path, t, b):
+    """-> (verdict 'pass' | 'needs_sharpen' | 'drop', why, metrics, quality flags); grades a fixable dark clip in place"""
+    import math
+    mt = metrics(path, t) if os.path.isfile(path) else None
+    if not mt:
+        return 'drop', 'unreadable', mt, {}
+    q = {}
+    sharpened = os.path.isfile(path + '.up.json')
+    if mt['luma'] < b['luma']['p10']:
+        if mt['luma'] < DARK_FIX_MIN or mt.get('p95', 255) < DARK_P95_MIN:
+            return 'drop', f"dark ({mt['luma']} < fix floor {DARK_FIX_MIN} or flat, p95 {mt.get('p95')})", mt, q
+        target = b['luma']['p10'] + 4
+        gamma = min(1.6, max(1.05, math.log(max(mt['luma'], 1) / 255) / math.log(target / 255)))
+        if grade(path, gamma):
+            m2 = metrics(path, t) or mt
+            q['graded'] = {'gamma': round(gamma, 3), 'luma_before': mt['luma'], 'luma_after': m2['luma']}
+            mt = dict(m2, luma_before=mt['luma'])
+        if mt['luma'] < b['luma']['p10']:
+            return 'drop', f"dark after the grade ({mt['luma']} < baseline p10 {b['luma']['p10']})", mt, q
+    if mt['sharp'] < b['sharp']['p10']:
+        if sharpened or mt['sharp'] < SOFT_FIX_MIN or mt.get('h', 1080) < 1000:
+            tail = ' after sharpening' if sharpened else (f', {mt.get("h")}p: sharpening barely helps' if mt.get('h', 1080) < 1000
+                                                          else f', < fix floor {SOFT_FIX_MIN}')
+            return 'drop', f"soft ({mt['sharp']} < baseline p10 {b['sharp']['p10']}{tail})", mt, q
+        q['needs_sharpen'] = True
+        return 'needs_sharpen', f"soft ({mt['sharp']} < p10 {b['sharp']['p10']}): Kaggle sharpening fixes it", mt, q
+    return 'pass', None, mt, q
+
+
 def check(pool, new_p, report_p=None):
     import numpy as np
     b = read_json(BASELINE_P, None)
@@ -463,19 +526,24 @@ def check(pool, new_p, report_p=None):
     import vibe_pool as VP
     allow = read_json(ALLOW_P, {'clips': {}})
     news, keep, drop = _new(new_p), [], []
+    quality = {}
     for n in news:
         p = _clip_path(pool, n)
         t = float(allow['clips'].get(n['id'], [{'t': 1.2}])[0]['t'])
-        mt = metrics(p, t) if os.path.isfile(p) else None
-        why = None
-        if not mt:
-            why = 'unreadable'
-        elif mt['sharp'] < b['sharp']['p10']:
-            why = f"soft ({mt['sharp']} < baseline p10 {b['sharp']['p10']})"
-        elif mt['luma'] < b['luma']['p10']:
-            why = f"dark ({mt['luma']} < baseline p10 {b['luma']['p10']})"
+        verdict, why, mt, q = classify(p, t, b)
         n['metrics'] = mt
-        (drop if why else keep).append(dict(n, why=why))
+        n['quality'] = dict(q, verdict=verdict, metrics=mt)
+        quality[n['id']] = n['quality']
+        (drop if verdict == 'drop' else keep).append(dict(n, why=why))
+    for v in ('impact', 'crisp'):                    # the quality flags go into the rows (staged with them, shown on the sheet)
+        man = VP.load_manifest('sound', v, root=pool)
+        hit = False
+        for it in man['items']:
+            if it['id'] in quality:
+                it['quality'] = quality[it['id']]
+                hit = True
+        if hit:
+            VP.save_manifest('sound', v, man, root=pool)
     for n in drop:                                   # undo the import of this clip only (grow-only: old clips untouched)
         man = VP.load_manifest('sound', n['vibe'], root=pool)
         man['items'] = [it for it in man['items'] if it['id'] != n['id']]
@@ -486,11 +554,16 @@ def check(pool, new_p, report_p=None):
                 os.remove(f)
     write_json(ALLOW_P, allow)
     VP.write_index(pool)
-    med = lambda k: round(float(np.median([n['metrics'][k] for n in keep])), 1) if keep else None
-    rep = {'baseline': b, 'new_checked': len(news), 'kept': len(keep), 'dropped': [{'id': n['id'], 'why': n['why']} for n in drop],
+    ok = [n for n in keep if n['quality']['verdict'] == 'pass']
+    med = lambda k: round(float(np.median([n['metrics'][k] for n in ok])), 1) if ok else None
+    rep = {'baseline': b, 'new_checked': len(news), 'kept': len(keep),
+           'needs_sharpen': [n['id'] for n in keep if n['quality'].get('needs_sharpen')],
+           'graded': [n['id'] for n in keep if n['quality'].get('graded')],
+           'dropped': [{'id': n['id'], 'why': n['why']} for n in drop],
            'batch_median': {'sharp': med('sharp'), 'luma': med('luma')},
-           'batch_vs_baseline_p50': {k: (round(med(k) / b[k]['p50'], 2) if keep else None) for k in ('sharp', 'luma')},
+           'batch_vs_baseline_p50': {k: (round(med(k) / b[k]['p50'], 2) if ok else None) for k in ('sharp', 'luma')},
            'pins_total': len(allow['clips'])}
+    keep.sort(key=lambda n: -(n.get('score') or 0))  # review order: the vision score, best first
     write_json(new_p, keep)
     if report_p:
         write_json(report_p, rep)
@@ -505,11 +578,14 @@ def sheet(pool, new_p, out):
     import hit_vision as HV
     allow = read_json(ALLOW_P, {'clips': {}})['clips']
     rows = []
-    for n in _new(new_p):
+    # 2026-10-24: best vision score first (fast review); the label carries the score and the quality flags
+    for n in sorted(_new(new_p), key=lambda n: -(n.get('score') or 0)):
         p = _clip_path(pool, n)
         if not os.path.isfile(p):
             continue
         t = float((allow.get(n['id']) or [{'t': 1.2}])[0]['t'])
+        q = n.get('quality') or {}
+        flags = ' '.join(x for x in ('NEEDS SHARPEN' if q.get('needs_sharpen') else '', 'graded' if q.get('graded') else '') if x)
         tmp = os.path.join(os.path.dirname(out), '_sheet_tmp')
         os.makedirs(tmp, exist_ok=True)
         st, _ = HV.strip(p, t, os.path.join(tmp, n['id'] + '.jpg'), cols=18, cw=160)
@@ -518,7 +594,7 @@ def sheet(pool, new_p, out):
         img = cv2.imread(st)
         word = (allow.get(n['id']) or [{}])[0].get('word') or ''
         lab = np.zeros((26, img.shape[1], 3), np.uint8)
-        cv2.putText(lab, f"{n['id']}  {word}", (6, 19), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(lab, f"{n['id']}  {word}  score {n.get('score') or '-'}  {flags}", (6, 19), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
         rows.append(np.vstack([lab, img]))
     if not rows:
         return None
@@ -553,6 +629,8 @@ def stage(pool, new_p, out_dir, sheets=()):
     if not rows:
         log('stage: nothing new to stage')
         return None
+    order = [n['id'] for n in news]
+    rows = {k: rows[k] for k in sorted(rows, key=lambda k: order.index(k) if k in order else len(order))}
     os.makedirs(out_dir, exist_ok=True)
     name = f"sound-cand-{today().replace('-', '')}-n{len(rows)}.tar"
     tp = os.path.join(out_dir, name)
@@ -633,6 +711,147 @@ def pull_staged(dest):
     return got
 
 
+# ------------------------------------------------------------------ Kaggle sharpening of the staged near misses (2026-10-24)
+# check() keeps clips a little too soft as quality.needs_sharpen (CPU sharpening is ~38 min per clip on the runner). This mode
+# (.github/workflows/sound-sharpen-kaggle.yml, Monday-Thursday only) takes them from the staged tars on edit-pools-staging, sharpens
+# them on a Kaggle GPU (scripts/edit-upscale-kaggle.py, kernel <user>/edit-upscale-refresh; never a cwr-* / apq-* kernel),
+# re-measures them against the baseline and re-uploads each tar (sharp ones flagged quality.sharpened, still-soft ones removed).
+# GPU time is booked in the SHARED weekly ledger clipscore-ledger.json (cap ZYO_WEEK_MIN, 1200 min = 20 h, with zyo-clipscore).
+
+LEDGER_ASSET = 'clipscore-ledger.json'
+WEEK_MIN = float(os.environ.get('ZYO_WEEK_MIN', '1200'))
+SHARPEN_SESSION_MIN = float(os.environ.get('SOUND_SHARPEN_SESSION_MIN', '40'))
+
+
+def kaggle_day_ok(now=None):
+    """Monday-Thursday on both UTC and US Eastern (UTC-5 is the safe side of the Sunday / Friday edges)"""
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    return now.weekday() <= 3 and (now - _dt.timedelta(hours=5)).weekday() <= 3
+
+
+def _week(now=None):
+    y, w, _ = (now or _dt.datetime.now(_dt.timezone.utc)).isocalendar()
+    return f'{y}-W{w:02d}'
+
+
+def _ledger(tmp):
+    os.makedirs(tmp, exist_ok=True)
+    r = subprocess.run(['gh', 'release', 'download', STAGE_TAG, '--pattern', LEDGER_ASSET, '--dir', tmp, '--clobber'],
+                       capture_output=True, text=True, timeout=300)
+    return read_json(os.path.join(tmp, LEDGER_ASSET), {}) if r.returncode == 0 else {}
+
+
+def _book(tmp, minutes, stats):
+    lg = _ledger(tmp)
+    lg.setdefault(_week(), []).append({'at': _dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds'), 'kind': 'sound-sharpen',
+                                       'minutes': round(minutes, 1), 'gpu_hours': round(minutes / 60, 3), 'stats': stats})
+    lg['_week_totals'] = {k: round(sum(x.get('minutes', 0) for x in v) / 60, 2) for k, v in lg.items() if k.startswith('20')}
+    p = os.path.join(tmp, LEDGER_ASSET)
+    write_json(p, lg)
+    subprocess.run(['gh', 'release', 'upload', STAGE_TAG, p, '--clobber'], capture_output=True, timeout=300)
+
+
+def sharpen_staged(work, dry=False):
+    import tarfile
+    os.makedirs(work, exist_ok=True)
+    if not dry:
+        if not kaggle_day_ok():
+            return {'skipped': 'Friday-Sunday: Kaggle belongs to the owner\'s other project; near misses wait staged'}
+        if not (os.environ.get('KAGGLE_USERNAME') and (os.environ.get('KAGGLE_API_TOKEN') or os.path.isfile(
+                os.path.expanduser('~/.kaggle/access_token')))):
+            return {'skipped': 'no Kaggle credentials (KAGGLE_API_TOKEN secret / KAGGLE_USERNAME variable)'}
+        used = sum(x.get('minutes', 0) for x in _ledger(os.path.join(work, '_ledger')).get(_week(), []))
+        if WEEK_MIN - used < SHARPEN_SESSION_MIN + 10:
+            return {'skipped': f'weekly Kaggle cap: {used:.0f} of {WEEK_MIN:.0f} min used'}
+    out = subprocess.run(['gh', 'release', 'view', STAGE_TAG, '--json', 'assets', '-q', '.assets[].name'], capture_output=True, text=True,
+                         timeout=120)
+    tars = [n for n in out.stdout.split() if n.startswith('sound-cand-') and n.endswith('.tar')]
+    pool = os.path.join(work, 'pool')
+    shutil.rmtree(pool, ignore_errors=True)
+    todo, metas = {}, {}
+    for n in tars:
+        d = os.path.join(work, n[:-4])
+        shutil.rmtree(d, ignore_errors=True)
+        subprocess.run(['gh', 'release', 'download', STAGE_TAG, '--pattern', n, '--dir', work, '--clobber'], check=True, timeout=1800)
+        with tarfile.open(os.path.join(work, n)) as t:
+            t.extractall(d, members=[m for m in t.getmembers() if m.isfile() and '..' not in m.name and not m.name.startswith('/')])
+        rows = read_json(os.path.join(d, 'rows.json'), {})
+        want = [cid for cid, r in rows.items() if (r['row'].get('quality') or {}).get('needs_sharpen')
+                and not (r['row'].get('quality') or {}).get('sharpened')]
+        if not want:
+            continue
+        metas[n] = d
+        for cid in want:
+            v = rows[cid]['vibe']
+            os.makedirs(os.path.join(pool, 'sound', v, 'clips'), exist_ok=True)
+            shutil.copy2(os.path.join(d, 'clips', v, cid + '.mp4'), os.path.join(pool, 'sound', v, 'clips', cid + '.mp4'))
+            todo[cid] = (n, v)
+    if not todo:
+        return {'tars': len(tars), 'near_misses': 0}
+    for v in {v for _, v in todo.values()}:
+        write_json(os.path.join(pool, 'sound', v, 'clips.json'),
+                   {'items': [{'id': cid, 'file': f'clips/{cid}.mp4', 'status': 'fresh'} for cid, (_, vv) in todo.items() if vv == v]})
+    log(f'sharpen-staged: {len(todo)} near misses in {len(metas)} tars')
+    if dry:
+        return {'tars': len(tars), 'near_misses': len(todo), 'dry': True}
+    t0 = time.time()
+    env = dict(os.environ, EDIT_UPSCALE_ALL='1', EDIT_UPSCALE_MONTH_MIN='100000', EDIT_UPSCALE_SESSION_MIN=str(int(SHARPEN_SESSION_MIN)),
+               MEMORY_DIR=os.path.relpath(os.path.join(work, '_mem'), ROOT))
+    r = subprocess.run([sys.executable, os.path.join(ROOT, 'scripts', 'edit-upscale-kaggle.py'), 'run', '--pool', pool,
+                        '--out', os.path.join(work, 'bundle')], env=env, timeout=int((SHARPEN_SESSION_MIN + 40) * 60))
+    minutes = (time.time() - t0) / 60
+    b = read_json(BASELINE_P, None)
+    res = {'near_misses': len(todo), 'kaggle_rc': r.returncode, 'minutes': round(minutes, 1), 'sharpened': [], 'still_soft': [],
+           'not_done': []}
+    per_tar = {}
+    for cid, (n, v) in todo.items():
+        cp = os.path.join(pool, 'sound', v, 'clips', cid + '.mp4')
+        d = metas[n]
+        if not os.path.isfile(cp + '.up.json'):
+            res['not_done'].append(cid)
+            continue
+        al = read_json(os.path.join(d, 'allow.json'), {})
+        t = float((al.get(cid) or [{'t': 1.2}])[0]['t'])
+        mt = metrics(cp, t)
+        good = bool(mt and b and mt['sharp'] >= b['sharp']['p10'])
+        per_tar.setdefault(n, []).append((cid, v, good, mt))
+        res['sharpened' if good else 'still_soft'].append(cid)
+    for n, items in per_tar.items():
+        d = metas[n]
+        rows = read_json(os.path.join(d, 'rows.json'), {})
+        al = read_json(os.path.join(d, 'allow.json'), {})
+        for cid, v, good, mt in items:
+            if good:
+                shutil.copy2(os.path.join(pool, 'sound', v, 'clips', cid + '.mp4'), os.path.join(d, 'clips', v, cid + '.mp4'))
+                q = rows[cid]['row'].setdefault('quality', {})
+                q.update(needs_sharpen=False, sharpened={'where': 'kaggle', 'at': today(), 'metrics': mt}, verdict='pass')
+            else:
+                rows.pop(cid, None)
+                al.pop(cid, None)
+                try:
+                    os.remove(os.path.join(d, 'clips', v, cid + '.mp4'))
+                except OSError:
+                    pass
+        live = subprocess.run(['gh', 'release', 'view', STAGE_TAG, '--json', 'assets', '-q', '.assets[].name'], capture_output=True,
+                              text=True, timeout=120).stdout.split()
+        if n not in live:
+            log(f'{n}: imported / removed meanwhile: not re-uploaded')
+            continue
+        write_json(os.path.join(d, 'rows.json'), rows)
+        write_json(os.path.join(d, 'allow.json'), al)
+        tp = os.path.join(work, 'up', n)
+        os.makedirs(os.path.dirname(tp), exist_ok=True)
+        with tarfile.open(tp, 'w') as t:
+            for root, _, fs in os.walk(d):
+                for f in sorted(fs):
+                    t.add(os.path.join(root, f), os.path.relpath(os.path.join(root, f), d).replace(os.sep, '/'))
+        subprocess.run(['gh', 'release', 'upload', STAGE_TAG, tp, '--clobber'], check=True, timeout=1800)
+        log(f'{n}: re-staged ({sum(1 for x in items if x[2])} sharpened, {sum(1 for x in items if not x[2])} still soft -> removed)')
+    if r.returncode == 0 or minutes > 2:
+        _book(os.path.join(work, '_ledger'), minutes, {k: (len(v) if isinstance(v, list) else v) for k, v in res.items()})
+    return res
+
+
 def selftest():
     """query list + video-id shard layout (2026-10-21 yield push); the pre-filter has its own selftest (clip_prefilter.py)"""
     import zlib
@@ -662,7 +881,7 @@ def selftest():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['mine', 'merge', 'sharpen', 'check', 'sheet', 'baseline', 'queries', 'stage', 'apply-staged',
-                                    'pull-staged', 'selftest'])
+                                    'pull-staged', 'sharpen-staged', 'selftest'])
     ap.add_argument('--tars', nargs='*')
     ap.add_argument('--reject', default='')
     ap.add_argument('--sheets', nargs='*', default=[])
@@ -672,6 +891,7 @@ def main():
     ap.add_argument('--max-sources', type=int, default=12)
     ap.add_argument('--queries', type=int, default=6)
     ap.add_argument('--no-judge', action='store_true')
+    ap.add_argument('--dry', action='store_true')
     ap.add_argument('--pool', default=os.environ.get('EDIT_POOL_DIR') or os.path.join(ROOT, 'output', 'edit-pools'))
     ap.add_argument('--from', dest='shards', nargs='*')
     ap.add_argument('--new')
@@ -696,6 +916,8 @@ def main():
         r = stage(a.pool, a.new, a.out, a.sheets)
     elif a.cmd == 'apply-staged':
         r = apply_staged(a.pool, a.tars or [], a.reject.replace(' ', ',').split(','))
+    elif a.cmd == 'sharpen-staged':
+        r = sharpen_staged(a.work or os.path.join(ROOT, 'output', 'sound-sharpen-staged'), a.dry)
     elif a.cmd == 'pull-staged':
         r = pull_staged(a.out or os.path.join(ROOT, 'output', 'edit-pools', '_staged_sound'))
     else:

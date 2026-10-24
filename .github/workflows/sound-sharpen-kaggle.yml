@@ -1,0 +1,52 @@
+name: Sound near misses - Kaggle sharpening of the staged clips (Mon-Thu)
+
+# 2026-10-24 (sound yield round 2). The nightly sound mining keeps clips a little too soft as quality.needs_sharpen in the staged
+# tars (core/pools/sound_refresh.py check: CPU sharpening on a runner is ~38 min per clip). This job takes them from the
+# edit-pools-staging release, sharpens them on a Kaggle GPU (scripts/edit-upscale-kaggle.py: kernel <user>/edit-upscale-refresh,
+# Real-ESRGAN realesr-animevideov3 x2; never a cwr-* / apq-* kernel), re-measures them against the quality baseline and re-uploads
+# each tar (sharp -> quality.sharpened, still soft -> removed). Monday-Thursday only (UTC and US Eastern; Friday-Sunday Kaggle is
+# the owner's other project); the GPU minutes go into the weekly ledger shared with zyo-clipscore (clipscore-ledger.json, 20 h cap).
+# Needs the KAGGLE_API_TOKEN secret + the KAGGLE_USERNAME variable; without them it skips (the near misses wait staged).
+# 08:15 UTC: after the nightly mining (19:30 -> <= 00:30 UTC) and before the session-start review.
+
+on:
+  schedule:
+    - cron: '15 8 * * 1-4'
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'List the near misses only (no Kaggle session)'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: kaggle-sound-sharpen
+  cancel-in-progress: false
+
+jobs:
+  sharpen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+      GH_REPO: ${{ github.repository }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libgl1
+          python -m pip install -U pip
+          python -m pip install opencv-python-headless numpy kaggle
+      - name: Sharpen the staged near misses
+        run: |
+          set -o pipefail
+          DRY=""; [ "${{ inputs.dry }}" = "true" ] && DRY="--dry"
+          python core/pools/sound_refresh.py sharpen-staged --work work $DRY | tee result.json
+          { echo '### Kaggle sharpening of the staged sound near misses'; echo '```'; head -c 3000 result.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

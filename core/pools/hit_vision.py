@@ -41,6 +41,19 @@ PROBLEMS = ['live_action', 'video_game', 'logo_or_watermark', 'subtitles_or_text
             'gesture_or_pose', 'no_contact_visible', 'cause_too_small', 'too_dark_or_blurry', 'cut_before_action', 'sound_off_sync',
             'nudity_or_sexual', 'minor_in_danger', 'unclear']
 
+# 2026-10-24 RECALL GATE (sound yield round 2; the owner: Claude's review of the staged sheet is the final gate, stage more borderline
+# hits). The strict two-model AND (both clear, conf >= 0.85, ...) had precision 0.81 / recall 0.25 on the labelled hit-calib set
+# (52 eye-approved / 104 rejected minis, run 39163794333), so it threw away 3 of 4 real hits. Now a clip passes when the strict
+# rule passes OR the votes' SCORE >= HIT_VISION_SCORE_BAR (1.3) with no JUNK problem from any model. Per vote: accepted 1.0, only the
+# confidence below the bar = conf, a wrong / missing action word, cause-not-before or no-contact = 0.8 x conf, 'not clear' with soft
+# problems only = 0.3 x (1 - conf); summed over the models. Re-scored on the same labelled set: precision 0.62, recall 0.79 (two-model
+# subset 0.58 / 0.84; the score plateau is flat over bars 1.2-1.5). The score also orders the staged clips for the review.
+# HIT_VISION_MODE=strict restores the old gate.
+JUNK = {'live_action', 'video_game', 'logo_or_watermark', 'subtitles_or_text', 'nudity_or_sexual', 'minor_in_danger', 'fx_flash_only',
+        'face_or_reaction_only'}
+SCORE_BAR = float(os.environ.get('HIT_VISION_SCORE_BAR', '1.3'))
+MODE = os.environ.get('HIT_VISION_MODE', 'recall')
+
 PROMPT = """You review clips for an anime "sound edit": every shot must show the ONE obvious physical action that makes the sharp sound,
 so that a first-time viewer instantly knows what made it (a gun aimed then fired, a blade swing then the clash, a fist landing ON a body,
 a boot stomping, a door slammed, a glass shattering, a reload). The sharp sound is at about {hit:.2f} s into the clip.
@@ -186,6 +199,38 @@ def accept(v, bar):
     return True, w0
 
 
+def vote_score(v, bar=None):
+    """(score, junk problems) of one model answer (see RECALL GATE)"""
+    if not isinstance(v, dict):
+        return 0.0, []
+    probs = [p for p in (v.get('problems') or []) if p in PROBLEMS]
+    junk = sorted(set(probs) & JUNK)
+    try:
+        conf = float(v.get('confidence') or 0)
+    except (TypeError, ValueError):
+        conf = 0.0
+    ok, why = accept(v, MIN_CONF if bar is None else bar)
+    if junk:
+        return 0.0, junk
+    if ok:
+        return 1.0, []
+    if why.startswith(('not clear', 'problems')):
+        return 0.3 * (1 - conf), []
+    if why.startswith('confidence'):
+        return conf, []
+    return 0.8 * conf, []                       # cause not before / action word / no contact: a likely hit the model hedged on
+
+
+def gate_score(votes):
+    """(score, junk) over the answered votes"""
+    sc, junk = 0.0, []
+    for v in votes:
+        s, j = vote_score(v.get('answer'))
+        sc += s
+        junk += j
+    return round(sc, 3), sorted(set(junk))
+
+
 def judge(mini, hit_t, tag=None, tmp=None):
     """Never raises: a corrupt / undecodable clip returns {'ok': False, 'broken': True, 'why': ...} (logged with its id)."""
     try:
@@ -225,10 +270,17 @@ def _judge(mini, hit_t, tag=None, tmp=None):
     if len(votes) == 1:                           # one model served: it must clear a higher bar
         ok, why = accept(votes[0]['answer'], max(MIN_CONF, 0.92))
         votes[0].update(ok=ok, why=why)
-    good = votes and all(v['ok'] for v in votes)
+    strict = bool(votes) and all(v['ok'] for v in votes)
+    score, junk = gate_score(votes)
+    good = strict or (MODE != 'strict' and len(votes) >= 2 and not junk and score >= SCORE_BAR)
     words = [v['why'] for v in votes if v['ok']]
-    out = {'ok': bool(good), 'word': words[0] if good else None, 'votes': votes, 'strip': st,
-           'why': 'accepted' if good else ('no model answered' if not votes else '; '.join(f"{v['model']}: {v['why']}" for v in votes if not v['ok']))}
+    if good and not words:                      # passed on the score: the most confident model's action word
+        best = max(votes, key=lambda v: float((v.get('answer') or {}).get('confidence') or 0))
+        words = (str((best.get('answer') or {}).get('action_word') or '').lower().split() or ['hit'])[:1]
+    why = ('accepted' if strict else f'accepted on score {score}') if good else (
+        'no model answered' if not votes else '; '.join(f"{v['model']}: {v['why']}" for v in votes if not v['ok']) + f' (score {score})')
+    out = {'ok': bool(good), 'strict': strict, 'score': score, 'junk': junk, 'word': words[0] if good else None, 'votes': votes, 'strip': st,
+           'why': why}
     return out
 
 
@@ -246,6 +298,7 @@ def calibrate(d, part=None):
         hit_t = float(lab['hit_t'])
         r = judge(p, hit_t, tmp=os.path.join(d, '_tmp'))
         rows.append({'name': name, 'label': bool(lab['ok']), 'pred': r['ok'], 'why': r['why'], 'broken': bool(r.get('broken')),
+                     'strict': r.get('strict'), 'score': r.get('score'), 'answers': [v.get('answer') for v in r['votes']],
                      'conf': [((v.get('answer') or {}).get('confidence')) for v in r['votes']]})
         log(f"{name}: label {lab['ok']} pred {r['ok']} ({r['why'][:80]})")
     broken = [r['name'] for r in rows if r.get('broken')]
@@ -273,6 +326,13 @@ def selftest():
     os.replace(bad, os.path.join(d, 'c', 'corrupt.mp4'))
     rep = calibrate(os.path.join(d, 'c'))
     assert rep['n'] == 0 and rep['broken'] == ['corrupt'] and rep['rows'][0]['broken'], rep
+    # recall gate: one strict accept + one confidence-only miss passes on the score; any junk problem vetoes
+    good = {'clear': True, 'action_word': 'punch', 'cause_before_sound': True, 'contact_visible': True, 'confidence': 0.9, 'problems': []}
+    low = dict(good, confidence=0.7)
+    junk = dict(good, clear=False, problems=['logo_or_watermark'])
+    assert gate_score([{'answer': good}, {'answer': low}]) == (1.7, [])
+    assert gate_score([{'answer': good}, {'answer': junk}])[1] == ['logo_or_watermark']
+    assert gate_score([{'answer': low}, {'answer': dict(good, clear=False, confidence=0.9, problems=['unclear'])}])[0] < SCORE_BAR
     print('selftest ok')
 
 

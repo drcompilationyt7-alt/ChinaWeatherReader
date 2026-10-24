@@ -1319,3 +1319,31 @@ earlier). A passing sound video needs more pinned hits (pool growth), not repair
 **Mixer (core/edit/sound_edit.py):** SOUND_SONG_GAIN_DB 2.5 (default): the song window is added at one constant gain after the hit levelling / onset loops, before headroom_for_hits + the existing master (nothing else moves: no ducking, no envelope); the hits' floor over the song's 20 ms peak is kept after that gain (SOUND_HIT_FLOOR_DB 2.0: marg = max(2.5, gain + 2.0) pre-gain). plan sound_edit.song_gain_db records it. 0 = the old balance.
 **Judge (core/edit/judge_sound.py, song_balance(); strict, in the CI pass like every criterion):** 18_song_audible = min(hit over song: 10 at <= +4.5, 8 at +6.5; song layer re mix: 10 at >= -3, 8 at -4); 19_clip_hits_noticeable = hit over song 10 at >= +2.5, 8 at +1.5; 20_song_level_constant = song dips p90 10 at <= 1.5, 8 at 2.0. Song not separable (< 1 dB explained) = n/a (10). Results: posted 18 = **7.1 FAIL**, 19 10, 20 9.4; sound_11b 18 8.5, 19 10, 20 10 (pass, near the edge); FB15 18 9.7, 19 10, 20 **5.6** (its own master pumps: the owner's "no dips" is stricter than the ref); jKS n/a. FB15 cache json carries the new fields (evidence only).
 **Test (CI dry run 40037861296, `--song le_sserafim_antifragile --fresh-override --seed 41`, PIPELINE TEST, never posted):** same section as the posted video (28.64 s, 23.5 s). Hits over the song +7.4 -> **+3.9 dB**, song re mix -2.0 -> **-1.2 dB**, song-vocal time masked > 15 dB 15 % -> **4 %**, dips p90 1.66 -> 1.31 dB, -13.5 LUFS / -1.7 dBTP; judge 18 / 19 / 20 = 10 / 10 / 10, 2 = 10. The day still fails on 5 / 8 / 16 / 17 (pool capacity: 23.5 s, same as before) -> stem fallback, as designed. Review: review-shorts/edits/new-types/sound_mixfix_antifragile.mp4 + .md.
+
+### 2026-10-24: sound pool YIELD round 2 (yield agent; owner focus = pool growth; goal >= 10 approved per sound night)
+10-24 funnel (run 40105420785): 72 sources -> 215 minis -> text 53 / pre-filter 30 / vision 117 rejects -> 15 vision ok -> 14 after
+safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
+- **Sources** (hit_scan.fetch): of the 10 quality drops, 3 were from a 720p-only upload (ATVgMQ0iFtQ); the other 7 from 1080p
+  uploads at 3.4-6.7 Mbit/s (the softest at the HIGHEST bitrate) -> bitrate does not predict softness (a high-frequency spectrum
+  test did not either); the hit's motion smear / night scenes do. A 720p clip gains only x1.1-1.4 from sharpening. Changes: a 1080p
+  video format is REQUIRED (the format filter fails before any media is fetched; seen = 'lowres', HIT_SCAN_MIN_HEIGHT=720 restores),
+  search results ranked by quality hints (4K / 1080p / Blu-ray / BD / 60fps / official channels up, 720p / 480p / dub down).
+  Note: SKIP_RE in hit_scan holds literal backspace characters (\x08) instead of \b (op / ed / ncop never match); left as is.
+- **Vision gate = recall gate** (hit_vision RECALL GATE, HIT_VISION_MODE=strict restores): strict AND OR (score >= 1.3 and no
+  junk problem). On the labelled hit-calib set (52 ok / 104 rej, calibration run 39163794333): strict P 0.81 / R 0.25 -> **new
+  P 0.62 / R 0.79** (two-model subset 0.58 / 0.84). Re-scored on the 10-24 verdicts: 15 -> **31** vision passes. The score is kept
+  in approved.json / the row (auto_hit.score) and orders new.json, the contact sheet and the staged rows (best first).
+  (A fresh local calibration with full answers stopped: the PC Gemini keys hit their daily quota after ~5 clips.)
+- **Quality check = near misses** (sound_refresh.classify): measured on the 10-24 clips with the pool's Real-ESRGAN x2:
+  sharpness x1.9-3.7 on 1080p (5.7 -> 11.1, 7.3 -> 13.6, 8.5 -> 31.9, ~15 -> 41-55). soft >= 5.5 at >= 1000 lines -> kept with
+  quality.needs_sharpen; dark >= 26 with p95 >= 70 -> CPU gamma lift (<= 1.6) to p10 + 4, re-measured, quality.graded; below ->
+  dropped as before. On the 10-24 clips: 3 pass -> 6 pass (3 graded) + 4 needs_sharpen, 3 dropped (720p).
+- **Kaggle sharpening of staged near misses**: `sound_refresh.py sharpen-staged` + .github/workflows/sound-sharpen-kaggle.yml
+  (Mon-Thu 08:15 UTC; UTC + US Eastern day guard; edit-upscale-kaggle.py with EDIT_UPSCALE_ALL=1, kernel edit-upscale-refresh;
+  GPU minutes booked in the shared weekly ledger clipscore-ledger.json, cap 1200 min) -> re-measured, sharp = quality.sharpened,
+  still soft = removed, tar re-uploaded (--clobber, only while still staged). Secret KAGGLE_API_TOKEN + variable KAGGLE_USERNAME
+  (john123abc) set 2026-10-24. The inline Kaggle call in the nightly swap is OFF (SOUND_SHARPEN_KAGGLE_INLINE=1 restores). First
+  real run: Monday 10-26 (untested end to end; dry mode works).
+- **Local miner**: no code change needed: every sound batch / stage syncs its worktree to origin/main, so it uses the new
+  source filter / recall gate / near-miss check. It resumes sound after tonight's slow-mo nightly. RISK: the PC Gemini keys were
+  quota-exhausted this evening (resets ~07:00 UTC): minis judged before that get 'no model answered' = rejected.

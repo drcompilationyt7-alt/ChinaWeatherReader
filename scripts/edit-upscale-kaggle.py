@@ -38,6 +38,9 @@ MONTH_GPU_MIN = int(os.environ.get('EDIT_UPSCALE_MONTH_MIN', 90))
 SESSION_MAX_MIN = int(os.environ.get('EDIT_UPSCALE_SESSION_MIN', 60))
 DATASET_SLUG, KERNEL_SLUG = 'edit-upscale-input', 'edit-upscale-refresh'
 MAX_CLIPS = int(os.environ.get('EDIT_UPSCALE_MAX_CLIPS', 80))
+# 2026-10-24: EDIT_UPSCALE_ALL=1 (sound_refresh.py sharpen-staged): every clip of the given pool dir without a sidecar, no
+# fresh / vis.hit filter (the staged near misses carry quality.needs_sharpen instead of the visible-source stamp)
+TAKE_ALL = os.environ.get('EDIT_UPSCALE_ALL') == '1'
 
 
 def log(*a):
@@ -91,7 +94,8 @@ def pick_clips(pool, limit=MAX_CLIPS):
             for it in json.load(open(mp, encoding='utf-8')).get('items', []):
                 rel = f"{preset}/{vibe}/{it.get('file')}"
                 f = os.path.join(pool, rel)
-                if it.get('status', 'fresh') == 'fresh' and (it.get('vis') or {}).get('hit') and os.path.isfile(f) and not os.path.isfile(f + '.up.json'):
+                want = TAKE_ALL or (it.get('status', 'fresh') == 'fresh' and (it.get('vis') or {}).get('hit'))
+                if want and os.path.isfile(f) and not os.path.isfile(f + '.up.json'):
                     out.append((rel, it.get('id')))
     return out[:limit]
 

@@ -159,6 +159,27 @@ BOTBLOCK_RE = re.compile(r"confirm(?:\s+that)?\s+you(?:'re| are)?\s+not\s+a\s+bo
                          r"temporarily blocked|not a bot|use --cookies|requires (?:login|authentication)", re.I)
 
 
+# 2026-10-24 SOURCE QUALITY (sound yield round 2): 3 of the 10 clips the 10-24 quality check dropped came from a 720p-only upload;
+# the other 7 were 1080p uploads at 3.4-6.7 Mbit/s (the softest at the HIGHEST bitrate: bitrate does not predict it, the motion
+# smear / night scenes of the hit do). So: a 1080p video format is REQUIRED (the format filter fails before any media is fetched,
+# the video is remembered as 'lowres'; HIT_SCAN_MIN_HEIGHT=720 restores the old floor), and search results are ranked so that
+# 4K / 1080p / Blu-ray / official uploads are taken first.
+MIN_HEIGHT = int(os.environ.get('HIT_SCAN_MIN_HEIGHT', '1080'))
+SOURCE_FORMAT = f'bv*[height<=1080][height>={MIN_HEIGHT}]+ba/b[height<=1080][height>={MIN_HEIGHT}]'
+HQ_TITLE = re.compile(r'\b(4k|2160p?|uhd|1440p|blu-?ray|\bbd\b|bdrip|1080p|60 ?fps|hdr|remaster(ed)?|official)\b', re.I)
+LQ_TITLE = re.compile(r'\b(480p|360p|240p|720p|low quality|camrip|reupload|re-upload|dub(bed)?)\b', re.I)
+OFFICIAL_CH = re.compile(r'crunchyroll|netflix|aniplex|toho|muse asia|ani-one|funimation|viz media|bandai|kadokawa|mappa|ufotable|'
+                         r'tms|toei|sentai|hidive|gkids|pony canyon|\bavex\b|warner bros', re.I)
+
+
+def source_rank(e):
+    """search-result order: quality hints in the title / an official channel up, low-res hints down; views break ties (log)"""
+    import math
+    title, ch = e.get('title') or '', e.get('channel') or e.get('uploader') or ''
+    return (2.0 * bool(HQ_TITLE.search(title)) + 1.5 * bool(OFFICIAL_CH.search(ch)) - 3.0 * bool(LQ_TITLE.search(title))
+            + 0.1 * math.log10(1 + (e.get('view_count') or 0)))
+
+
 def _yt(args, timeout=900):
     cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '--socket-timeout', '25', '--sleep-requests', '1', '--sleep-interval', '3', '--max-sleep-interval', '6',
            '--js-runtimes', os.environ.get('YT_JS_RUNTIMES', 'node')] + args   # yt-dlp[default] (EJS solver) + node: YouTube's JS challenge
@@ -231,7 +252,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
         """-> True when the source was kept; sets res['blocked'] on a bot check"""
         pacer.wait('download')
         out = os.path.join(dest, f'{vid}__all.%(ext)s')
-        args = ['--no-playlist', '-f', os.environ.get('HIT_SCAN_FORMAT') or 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]',
+        args = ['--no-playlist', '-f', os.environ.get('HIT_SCAN_FORMAT') or SOURCE_FORMAT,
                 '--merge-output-format', 'mkv', '--max-filesize', os.environ.get('HIT_SCAN_MAXSIZE', '450M'), '-o', out]
         if retry:
             args += ['--no-simulate', '--print', 'after_move:META\t%(title)s\t%(channel)s\t%(view_count)s\t%(duration)s']
@@ -244,6 +265,11 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
                 log('bot-block on download: stop fetching')
                 return False
             err = [ln for ln in (r.stderr or '').splitlines() if 'ERROR' in ln or 'WARNING' in ln]
+            if re.search(r'requested format is not available', r.stderr or '', re.I):
+                st['seen'][vid] = f'lowres: no {MIN_HEIGHT}p video format'   # 2026-10-24: skipped before any download
+                res['lowres'] = res.get('lowres', 0) + 1
+                log(f'{vid}: {st["seen"][vid]}')
+                return False
             st['seen'][vid] = 'download failed: ' + (err[-1] if err else (r.stderr or '').strip()[-160:])[:200]
             log(f'{vid}: {st["seen"][vid]}')
             return False
@@ -297,6 +323,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
             ents = []
         st['queries'][q] = len(ents)
         taken_q = 0
+        ents = sorted(ents, key=lambda e: -source_rank(e))    # 2026-10-24: 4K / Blu-ray / official uploads first (stable order)
         for e in ents:
             if taken_q >= per_query or over():
                 break
@@ -313,7 +340,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
                 taken_q += 1
         write_json(st_p, st)
     write_json(st_p, st)
-    out = dict(st, got=res['got'])
+    out = dict(st, got=res['got'], lowres=res.get('lowres', 0))
     if res['blocked']:
         out['_blocked'] = res['blocked']
     return out
