@@ -218,7 +218,7 @@ class Monitor:
         ps = self.ps
         total = ps.cpu_percent(None)
         ours = self.ours()
-        our_cpu, heavy = 0.0, None
+        our_cpu, our_rss, heavy = 0.0, 0.0, None
         for p in ps.process_iter(['name']):
             try:
                 c = p.cpu_percent(None)
@@ -226,6 +226,11 @@ class Monitor:
                 continue
             if p.pid in ours:
                 our_cpu += c
+                if p.pid != os.getpid():
+                    try:
+                        our_rss += p.memory_info().rss / 2 ** 30
+                    except ps.Error:
+                        pass
                 continue
             if p.pid in (0, 4):
                 continue
@@ -241,7 +246,7 @@ class Monitor:
         other = max(0.0, total - our_cpu / self.ncpu)
         free = ps.virtual_memory().available / 2 ** 30
         with self.lock:
-            self.samples.append((time.time(), free, other, heavy, self.input_idle_s()))
+            self.samples.append((time.time(), free, other, heavy, self.input_idle_s(), our_rss))
 
     def _loop(self):
         while True:
@@ -257,10 +262,12 @@ class Monitor:
             s = list(self.samples)
         if len(s) < 6:
             return False, 'warming up'
-        free, inp = s[-1][1], s[-1][4]
+        free, inp, ours = s[-1][1], s[-1][4], s[-1][5]
         cpu = sum(x[2] for x in s) / len(s)
         heavy = next((x[3] for x in reversed(s) if x[3]), None)
-        if free < (FLOOR_FREE_GB if running else MIN_FREE_GB):
+        # 2026-10-24: while a job runs, the floor counts our own job's memory as free (suspending it frees nothing: the
+        # 10-24 quiz job paused itself at 1.7 GB free for good); a hard 1 GB floor still pauses whatever the cause
+        if (free + ours if running else free) < (FLOOR_FREE_GB if running else MIN_FREE_GB) or free < 1.0:
             return False, f'RAM {free:.1f} GB free'
         if cpu >= MAX_OTHER_CPU:
             return False, f'other CPU {cpu:.0f} %'
