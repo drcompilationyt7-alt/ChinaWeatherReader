@@ -1356,3 +1356,21 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
   stayed at ~3 GB free. hit_t of re-cut clips comes from the transient detector (not the original cut), check the pins on review.
 - hit_vision.ask: a 404 now disables only that KEY for the model (one PC key does not serve the models; returning None made every
   mini 'no model answered' -> the PC sound batch of 19:47 UTC passed 0 of 5).
+
+### 2026-10-24 evening session review (review agent)
+- **Sound** sound-cand-20261024-rescore-n7: **1 approved** (c_RD4rr7JcatM_478663 Zenitsu fire slash, continuous at full fps,
+  centred, build-up visible), **6 rejected**: 39680 Dorohedoro wide / small figures; 57547 Akame tiny unclear shot after a scene
+  change; 138326 sword draw (cut ~0.35 s before the pin, static hilt as the only build-up, softest 5.7); 71513 cut ON the hit;
+  145097 wide, spark before the pin; 32431 dark, figure at the edge. CI import 40132056451 (cc1430a): 1 added, **pins 72**, tar deleted.
+- **Slow-mo**: nothing staged (no PC / nightly slow-mo tars). Pool summer_glow 38 / dreamy_bloom 13 (target 60).
+- **Quiz** (PC tars llm-n45 / llm-n46 / people-n10 / photos-n34 = 135): **99 approved / 36 rejected** (6197b5b, push-manifests done).
+  geo 1/10 (only the Shanghai Pudong panorama is recognisable; the rest generic city views); nightcity 4/12 (HK, Tokyo Tower,
+  Shenzhen Bay, Kanazawa Tsuzumi gate; rejected an indoor cafe with people, NASA satellite, mall front, Ling Long tower with a
+  watermark, generic streets, Kimono Forest); cuisine 8/12 (rejected pad see ew labelled pad thai, a temple labelled gong bao,
+  a menu stall, an omelette-wrapped nasi goreng); kpop songs 16/16; idols 8/10 (Park Yoo-chun scandal, Heechul labelled M&D);
+  emoji 19/22 (unsure facts: Steins;Gate cosmic strings, Antifragile meteorite; Crown duplicate); trivia 29/32 (Gura answer
+  "A", dim sum = dumplings, "Tokyo Tower is in Tokyo"); wyr food 5/9 (jjajangmyeon is not spicy, unclear dorayaki photo,
+  night-market pair duplicate, people as subject); wyr travel 9/12 (Shibuya/Bukchon duplicate, unrecognisable tea-house /
+  city-wall and panda-base / Nara photos).
+- **Still below ~40**: nightcity 25, cuisine 37, wyr food 14 / cities 19 (anime 9, kpop 4), kpop emoji 31, anime songs 35.
+  The geo miner's Commons picks are mostly generic cityscapes: steer its queries to landmarks / famous skylines.
