@@ -924,7 +924,9 @@
   "9kPJN6aTQuo": "ok",
   "AMhupM_SFxU": "ok",
   "FQtY1nk_HLE": "unclean: borders (0.10)",
-  "yhTFMswNNtE": "ok"
+  "yhTFMswNNtE": "ok",
+  "EDUxRHeHv6o": "ok",
+  "TTfuMynIdPg": "download failed: ERROR: [youtube] TTfuMynIdPg: Video unavailable"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1322,6 +1324,8 @@
   "Attack on Titan fight scene 4K": 14,
   "Jujutsu Kaisen Shibuya Incident fight scene 4K": 14,
   "Jujutsu Kaisen 0 fight scene 4K": 14,
-  "Demon Slayer Infinity Castle fight scene 4K": 14
+  "Demon Slayer Infinity Castle fight scene 4K": 14,
+  "Demon Slayer Swordsmith Village fight scene 4K": 14,
+  "Demon Slayer Entertainment District fight scene 4K": 14
  }
 }
