@@ -291,6 +291,62 @@
    "mined": "2026-10-21",
    "night": true,
    "reviewed": "2026-10-21"
+  },
+  {
+   "name": "Hong Kong",
+   "iso2": "CN",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Hong_Kong_Harbour_Night_2019-06-11.jpg/1280px-Hong_Kong_Harbour_Night_2019-06-11.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Benh LIEU SONG (Flickr, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg",
+   "file": "Hong Kong Harbour Night 2019-06-11.jpg",
+   "query": "Hong Kong night view",
+   "dhash": "e0f2913024b4f4f4",
+   "mined": "2026-10-24",
+   "night": true,
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Tokyo",
+   "iso2": "JP",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fa/Tokyo_at_night_panorama%2C_2017_%2833281608123%29.jpg/1280px-Tokyo_at_night_panorama%2C_2017_%2833281608123%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Dime Gontar from Kiev, Ukraine, CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Tokyo_at_night_panorama,_2017_(33281608123).jpg",
+   "file": "Tokyo at night panorama, 2017 (33281608123).jpg",
+   "query": "Tokyo night panorama",
+   "dhash": "86915878edc89888",
+   "mined": "2026-10-24",
+   "night": true,
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Shenzhen",
+   "iso2": "CN",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Night_View_of_Office_Buildings_in_Shenzhen_Bay.jpg/1280px-Night_View_of_Office_Buildings_in_Shenzhen_Bay.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Sparktour, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Night_View_of_Office_Buildings_in_Shenzhen_Bay.jpg",
+   "file": "Night View of Office Buildings in Shenzhen Bay.jpg",
+   "query": "Shenzhen night view",
+   "dhash": "78f8f9b1f0e8d9d9",
+   "mined": "2026-10-24",
+   "night": true,
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Kanazawa",
+   "iso2": "JP",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/Tsuzumimon_Gate_in_front_of_Kanazawa_Station_at_night_20150120.JPG/1280px-Tsuzumimon_Gate_in_front_of_Kanazawa_Station_at_night_20150120.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "そらみみ, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Tsuzumimon_Gate_in_front_of_Kanazawa_Station_at_night_20150120.JPG",
+   "file": "Tsuzumimon Gate in front of Kanazawa Station at night 20150120.JPG",
+   "query": "Kanazawa night view",
+   "dhash": "17f1f0603293d93c",
+   "mined": "2026-10-24",
+   "night": true,
+   "reviewed": "2026-10-24"
   }
  ]
 }

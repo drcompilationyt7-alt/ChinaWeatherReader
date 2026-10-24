@@ -538,6 +538,18 @@
    "dhash": "e0a1d0d0f1e189c8",
    "mined": "2026-10-23",
    "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Shanghai",
+   "iso2": "CN",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Shanghai_panorama_2006_2.JPG/1280px-Shanghai_panorama_2006_2.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Don-kun, CC BY 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Shanghai_panorama_2006_2.JPG",
+   "file": "Shanghai panorama 2006 2.JPG",
+   "dhash": "c8c0f8f8f8f865ec",
+   "mined": "2026-10-24",
+   "reviewed": "2026-10-24"
   }
  ]
 }
