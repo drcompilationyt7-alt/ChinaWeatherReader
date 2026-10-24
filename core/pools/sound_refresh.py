@@ -391,8 +391,14 @@ def sharpen(pool, new_p, budget_min=240.0):
         if (time.time() - t0) / 60 > budget_min:
             log('CPU sharpening budget used up: the rest stay 1080p')
             break
-        r = subprocess.run([sys.executable, os.path.join(ROOT, 'core', 'edit', 'upscale_pool.py'), '--in', _clip_path(pool, n),
-                            '--device', 'cpu', '--tile', os.environ.get('UPSCALE_TILE', '360')])
+        # 2026-10-24: bounded by what is left (one clip took 38 min of a 20 min budget); the result is written atomically
+        try:
+            r = subprocess.run([sys.executable, os.path.join(ROOT, 'core', 'edit', 'upscale_pool.py'), '--in', _clip_path(pool, n),
+                                '--device', 'cpu', '--tile', os.environ.get('UPSCALE_TILE', '360')],
+                               timeout=max(60, budget_min * 60 - (time.time() - t0)))
+        except subprocess.TimeoutExpired:
+            log(f"{n['id']}: CPU sharpening over the budget: the rest stay 1080p")
+            break
         done += int(r.returncode == 0 and os.path.isfile(_clip_path(pool, n) + '.up.json'))
         log(f"{n['id']}: sharpened {done}/{len(todo)} ({(time.time() - t0) / 60:.0f} min)")
     return {'sharpened': done, 'of': len(todo), 'via': 'cpu', 'minutes': round((time.time() - t0) / 60, 1)}
