@@ -478,6 +478,66 @@
    "dhash": "b8fcf0e49da96c79",
    "mined": "2026-10-21",
    "reviewed": "2026-10-21"
+  },
+  {
+   "name": "Suzhou",
+   "iso2": "CN",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Skyline_of_Suzhou_02.jpg/1280px-Skyline_of_Suzhou_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Mudaxiong, CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Skyline_of_Suzhou_02.jpg",
+   "file": "Skyline of Suzhou 02.jpg",
+   "dhash": "19334e4d09434504",
+   "mined": "2026-10-23",
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Fukuoka",
+   "iso2": "JP",
+   "difficulty": 2,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Fukuoka_Skyline_of_Seaside_Momochi.jpg/1280px-Fukuoka_Skyline_of_Seaside_Momochi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Nryate, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Fukuoka_Skyline_of_Seaside_Momochi.jpg",
+   "file": "Fukuoka Skyline of Seaside Momochi.jpg",
+   "dhash": "3fafcf8be379186c",
+   "mined": "2026-10-23",
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Shanghai",
+   "iso2": "CN",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Shanghai_skyline_waterfront_pudong_5166168_69_70.jpg/1280px-Shanghai_skyline_waterfront_pudong_5166168_69_70.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Ermell, CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Shanghai_skyline_waterfront_pudong_5166168_69_70.jpg",
+   "file": "Shanghai skyline waterfront pudong 5166168 69 70.jpg",
+   "dhash": "e1c3c498d61773e7",
+   "mined": "2026-10-23",
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Nanjing",
+   "iso2": "CN",
+   "difficulty": 3,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/Skyline_in_Nanjing_%2820250325%29.jpg/1280px-Skyline_in_Nanjing_%2820250325%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Fumikas Sagisavas, CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Skyline_in_Nanjing_(20250325).jpg",
+   "file": "Skyline in Nanjing (20250325).jpg",
+   "dhash": "7959d9f1f136f0f0",
+   "mined": "2026-10-23",
+   "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Osaka",
+   "iso2": "JP",
+   "difficulty": 1,
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Skyline_view_of_Osaka.jpg/1280px-Skyline_view_of_Osaka.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Ian G Shingler, CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Skyline_view_of_Osaka.jpg",
+   "file": "Skyline view of Osaka.jpg",
+   "dhash": "e0a1d0d0f1e189c8",
+   "mined": "2026-10-23",
+   "reviewed": "2026-10-24"
   }
  ]
 }

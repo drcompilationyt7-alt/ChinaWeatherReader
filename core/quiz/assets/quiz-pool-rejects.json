@@ -32,10 +32,13 @@
   "geo:JP:hiroshima:hiroshima skyline jpg",
   "geo:JP:kanazawa:cityscape of kanazawa 01 jpg",
   "geo:JP:kanazawa:skyline of kanazawa ishikawa from castle inn kanazawa jpg",
+  "geo:JP:kobe:kobe skyline from meriken park panoramio jpg",
+  "geo:JP:kyoto:kyoto skyline jpg",
   "geo:JP:nagasaki:cityscape of nagasaki nagasaki prefecture island of kyushu japan jpg",
   "geo:JP:naha:dallas skyline jpg",
   "geo:JP:nara:manhattan skyline looking south from the hudson river nara 548392 jpg",
   "geo:JP:nara:skyline drive view from skyline drive nara 7722214 jpg",
+  "geo:JP:osaka:cityscape osaka japan 8550004607 jpg",
   "geo:JP:sapporo:sapporo city skyline jpg",
   "geo:JP:sendai:cityscape from sendai castle 20251221b jpg",
   "geo:JP:sendai:sendai skyline and hirose river from hyojogawara bridge jpg",
@@ -90,6 +93,9 @@
   "theme_art:glasses:character:76832",
   "theme_art:glasses:character:83025",
   "theme_art:glasses:character:89020",
-  "theme_art:glasses:character:89568"
+  "theme_art:glasses:character:89568",
+  "wyr:explore high tech shenzhen hubs|cruise futuristic songdo incheon",
+  "wyr:slurp warm yatai food in fukuoka|eat spicy seafood stew in incheon",
+  "wyr:snack on savory steamed pork buns|dip crispy spring rolls in sauce"
  ]
 }
