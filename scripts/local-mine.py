@@ -474,7 +474,9 @@ def push_fetch_state(fstates, label):
         for fs in fstates:
             for k in ('seen', 'queries'):
                 for key, v in (fs.get(k) or {}).items():
-                    d.setdefault(k, {}).setdefault(key, v)
+                    old = d.setdefault(k, {}).get(key)
+                    if old is None or (k == 'seen' and v != old and str(old).startswith('unclean: burned-in text') and ';' not in str(old)):
+                        d[k][key] = v          # 2026-10-24: a text-only reject retried (text is per clip now) takes the new verdict
         if json.dumps(d, sort_keys=True) == before:
             return True
         wj(p, d)

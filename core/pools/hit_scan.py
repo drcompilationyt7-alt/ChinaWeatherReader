@@ -198,7 +198,12 @@ def source_clean(path, tmp):
             continue
         frames = SP.read_frames(pv, 10)
         res = SP.analyse(frames, SP.text_bands(pv))
-        reasons += [r for r in res['reasons'] if not r.startswith('soft')]
+        # 2026-10-24: burned-in text is checked PER CLIP (the <= 3 s mini around the hit: sound_refresh.mine before the vision
+        # call + hit_import.safety), not per source. Subtitles show during dialogue; the fight hits between the lines are clean,
+        # and whole fight sources (Kaiju No. 8, Dandadan, Vinland Saga) were thrown out for a line at 0.06-0.13 bottom.
+        # HIT_SCAN_SOURCE_TEXT=1 restores the old per-source reject.
+        keep_text = os.environ.get('HIT_SCAN_SOURCE_TEXT') == '1'
+        reasons += [r for r in res['reasons'] if not r.startswith('soft') and (keep_text or not r.startswith('burned-in text'))]
         try:
             os.remove(pv)
         except OSError:
@@ -206,8 +211,10 @@ def source_clean(path, tmp):
     return not reasons, sorted(set(reasons))
 
 
-def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate=False):
-    """Search -> filter -> download (<= 1080p) -> clean check. Sources land in WORK/src as <id>__all.mkv. State: WORK/fetch.json."""
+def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate=False, retry_ids=()):
+    """Search -> filter -> download (<= 1080p) -> clean check. Sources land in WORK/src as <id>__all.mkv. State: WORK/fetch.json.
+    retry_ids: videos seen before and rejected for burned-in text only (2026-10-24: text is now judged per clip), downloaded
+    again directly (they passed the title / length / views filters the first time). Returns the state + 'got' (+ '_blocked')."""
     import library as L
     dest = os.path.join(work, 'src')
     os.makedirs(dest, exist_ok=True)
@@ -218,9 +225,60 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
     _vshard = tuple(int(x) for x in _vs.split('/')) if re.fullmatch(r'\d+/\d+', _vs) else None
     n_search = int(os.environ.get('HIT_SCAN_SEARCH_N', '14'))
     t0 = time.time()
-    got = 0
-    for q in queries or DEFAULT_SOURCE_QUERIES:
-        if got >= max_sources or (budget_min and time.time() - t0 > budget_min * 60):
+    res = {'got': 0, 'blocked': None}
+
+    def download(vid, title, channel, views, dur, retry=False):
+        """-> True when the source was kept; sets res['blocked'] on a bot check"""
+        pacer.wait('download')
+        out = os.path.join(dest, f'{vid}__all.%(ext)s')
+        args = ['--no-playlist', '-f', os.environ.get('HIT_SCAN_FORMAT') or 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]',
+                '--merge-output-format', 'mkv', '--max-filesize', os.environ.get('HIT_SCAN_MAXSIZE', '450M'), '-o', out]
+        if retry:
+            args += ['--no-simulate', '--print', 'after_move:META\t%(title)s\t%(channel)s\t%(view_count)s\t%(duration)s']
+        r = _yt(args + [f'https://www.youtube.com/watch?v={vid}'])
+        f = glob.glob(os.path.join(dest, vid + '__all.mkv'))
+        if r.returncode != 0 or not f:
+            if BOTBLOCK_RE.search(r.stderr or ''):
+                pacer.penalise(r.stderr[-150:])
+                res['blocked'] = 'download'
+                log('bot-block on download: stop fetching')
+                return False
+            err = [ln for ln in (r.stderr or '').splitlines() if 'ERROR' in ln or 'WARNING' in ln]
+            st['seen'][vid] = 'download failed: ' + (err[-1] if err else (r.stderr or '').strip()[-160:])[:200]
+            log(f'{vid}: {st["seen"][vid]}')
+            return False
+        pacer.reward()
+        for ln in (r.stdout or '').splitlines():
+            if ln.startswith('META\t'):
+                parts = (ln.split('\t') + [''] * 5)[1:5]
+                title, channel = parts[0] or title, parts[1] or channel
+                views = int(parts[2]) if parts[2].isdigit() else views
+                dur = float(parts[3]) if parts[3].replace('.', '', 1).isdigit() else dur
+        ok, why = source_clean(f[0], os.path.join(work, 'tmp'))
+        if not ok:
+            os.remove(f[0])
+            st['seen'][vid] = 'unclean: ' + '; '.join(why)[:80]
+            log(f'{vid} {title[:50]!r}: {st["seen"][vid]}')
+            return False
+        with open(os.path.join(dest, vid + '.info.json'), 'w', encoding='utf-8') as fh:
+            json.dump({'id': vid, 'title': title, 'channel': channel, 'view_count': views, 'tags': []}, fh)
+        st['seen'][vid] = 'ok'
+        res['got'] += 1
+        log(f'{vid} {title[:60]!r} ({dur}s, {views} views) fetched' + (' (text retry)' if retry else ''))
+        return True
+
+    def over():
+        return res['got'] >= max_sources or res['blocked'] or (budget_min and time.time() - t0 > budget_min * 60)
+
+    for vid in retry_ids or ():
+        if over() or (gate and not wait_resources()):
+            break
+        if glob.glob(os.path.join(edit_cache(), 'src', vid + '__*')) or glob.glob(os.path.join(dest, vid + '__*')):
+            continue
+        download(vid, vid, '', None, None, retry=True)
+        write_json(st_p, st)
+    for q in (queries if queries is not None else DEFAULT_SOURCE_QUERIES):
+        if over():
             break
         if q in st['queries']:
             continue
@@ -231,6 +289,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
         if r.returncode != 0 and BOTBLOCK_RE.search(r.stderr or ''):
             pacer.penalise(r.stderr[-150:])
             log('bot-block on search: stop fetching')
+            res['blocked'] = 'search'
             break
         try:
             ents = json.loads(r.stdout or '{}').get('entries') or []
@@ -239,7 +298,7 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
         st['queries'][q] = len(ents)
         taken_q = 0
         for e in ents:
-            if taken_q >= per_query or got >= max_sources:
+            if taken_q >= per_query or over():
                 break
             vid, title = e.get('id'), e.get('title') or ''
             dur, views = e.get('duration') or 0, e.get('view_count') or 0
@@ -250,37 +309,19 @@ def fetch(work, queries=None, per_query=3, max_sources=20, budget_min=None, gate
             if glob.glob(os.path.join(edit_cache(), 'src', vid + '__*')) or glob.glob(os.path.join(dest, vid + '__*')):
                 st['seen'][vid] = 'have'
                 continue
-            pacer.wait('download')
-            out = os.path.join(dest, f'{vid}__all.%(ext)s')
-            r = _yt(['--no-playlist', '-f', os.environ.get('HIT_SCAN_FORMAT') or 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]', '--merge-output-format', 'mkv',
-                     '--max-filesize', os.environ.get('HIT_SCAN_MAXSIZE', '450M'), '-o', out, f'https://www.youtube.com/watch?v={vid}'])
-            f = glob.glob(os.path.join(dest, vid + '__all.mkv'))
-            if r.returncode != 0 or not f:
-                if BOTBLOCK_RE.search(r.stderr or ''):
-                    pacer.penalise(r.stderr[-150:])
-                    write_json(st_p, st)
-                    log('bot-block on download: stop fetching')
-                    return st
-                err = [ln for ln in (r.stderr or '').splitlines() if 'ERROR' in ln or 'WARNING' in ln]
-                st['seen'][vid] = 'download failed: ' + (err[-1] if err else (r.stderr or '').strip()[-160:])[:200]
-                log(f'{vid}: {st["seen"][vid]}')
-                continue
-            pacer.reward()
-            ok, why = source_clean(f[0], os.path.join(work, 'tmp'))
-            if not ok:
-                os.remove(f[0])
-                st['seen'][vid] = 'unclean: ' + '; '.join(why)[:80]
-                log(f'{vid} {title[:50]!r}: {st["seen"][vid]}')
-                continue
-            with open(os.path.join(dest, vid + '.info.json'), 'w', encoding='utf-8') as fh:
-                json.dump({'id': vid, 'title': title, 'channel': e.get('channel') or e.get('uploader'), 'view_count': views, 'tags': []}, fh)
-            st['seen'][vid] = 'ok'
-            taken_q += 1
-            got += 1
-            log(f'{vid} {title[:60]!r} ({dur}s, {views} views) fetched')
+            if download(vid, title, e.get('channel') or e.get('uploader'), views, dur):
+                taken_q += 1
         write_json(st_p, st)
     write_json(st_p, st)
-    return st
+    out = dict(st, got=res['got'])
+    if res['blocked']:
+        out['_blocked'] = res['blocked']
+    return out
+
+
+def text_retry_ids(seen):
+    """seen videos rejected for burned-in text ONLY (no watermark / borders / softness reason): retried since text is per clip"""
+    return [k for k, v in (seen or {}).items() if isinstance(v, str) and v.startswith('unclean: burned-in text') and ';' not in v]
 
 
 # ------------------------------------------------------------------ scan
@@ -557,7 +598,7 @@ def main():
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
     if a.cmd == 'fetch':
-        print(json.dumps({k: len(v) for k, v in fetch(a.work, None, 3, a.max_sources, a.budget_min, a.gate).items()}))
+        print(json.dumps({k: (len(v) if isinstance(v, (dict, list)) else v) for k, v in fetch(a.work, None, 3, a.max_sources, a.budget_min, a.gate).items()}))
     elif a.cmd == 'scan':
         st = scan(a.work, a.src, a.max_per_source, a.limit_sources, a.budget_min, a.gate, not a.no_tags)
         print(json.dumps({'sources': len(st['sources']), 'kept': sum(len(s.get('kept') or []) for s in st['sources'].values())}))

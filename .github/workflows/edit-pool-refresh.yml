@@ -174,12 +174,14 @@ jobs:
     needs: plan
     if: needs.plan.outputs.go == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 185     # hard cap (mine 185 + swap 100 + plan = inside 5 h)
+    timeout-minutes: 235     # hard cap. 2026-10-24: mine 235 + swap 60 + pick/plan ~2 = inside the 5 h nightly; mining is TIME-BASED
     strategy:
       max-parallel: 1
       matrix:
         shard: [0]               # ONE shard (k=0, n=1): crc32(id) % 1 == 0 keeps every video exactly once
     steps:
+      - name: Job clock (the mining budget is counted from the job start, setup included)
+        run: echo "JOB_T0=$(date +%s)" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -215,15 +217,22 @@ jobs:
 
       - name: Mine shard ${{ matrix.shard }} (fetch -> hit_scan -> visible-source gate -> pre-filter -> vision gate -> safety)
         env:
-          BUDGET: ${{ needs.plan.outputs.dry == 'true' && '60' || inputs.budget_min || '150' }}
-          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '8' }}
-          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '16' }}
+          BUDGET_IN: ${{ needs.plan.outputs.dry == 'true' && '60' || inputs.budget_min || '' }}
+          NQ: ${{ needs.plan.outputs.dry == 'true' && '2' || '120' }}
+          NSRC: ${{ needs.plan.outputs.dry == 'true' && '3' || '90' }}
           NSH: '1'
           REFRESH_PER_SOURCE: '14'
           SOUND_VID_SHARD: '1'
         run: |
           python core/pools/clip_prefilter.py selftest > /dev/null
           python core/pools/sound_refresh.py selftest > /dev/null
+          # 2026-10-24 TIME-BASED: fetch / scan / judge in batches until the budget = 220 min after the job start (setup
+          # included) minus nothing else; the loop stops new fetches ~30 min before the end, so the judging and the artifact
+          # upload finish inside the 235 min cap, and the swap job (<= 60 min) stages inside the 5 h nightly.
+          SPENT=$(( ($(date +%s) - JOB_T0) / 60 ))
+          BUDGET=$(( 220 - SPENT ))
+          if [ -n "$BUDGET_IN" ] && [ "$BUDGET_IN" -lt "$BUDGET" ]; then BUDGET=$BUDGET_IN; fi
+          echo "setup took $SPENT min; mining budget $BUDGET min, <= $NSRC sources, <= $NQ queries"
           python core/pools/sound_refresh.py mine --work work --shard ${{ matrix.shard }}/$NSH --budget-min "$BUDGET" \
             --queries "$NQ" --max-sources "$NSRC" | tail -c 4000
           du -sh work/out || true
@@ -243,7 +252,7 @@ jobs:
     needs: [plan, mine]
     if: ${{ !cancelled() && needs.plan.outputs.go == 'true' && (needs.mine.result == 'success' || needs.mine.result == 'failure') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 100     # hard cap; sharpening is bounded to 40 min so staging always finishes
+    timeout-minutes: 60      # hard cap; sharpening is bounded to 20 min so staging always finishes (inside the 5 h nightly)
     permissions:
       contents: write
     env:
@@ -291,7 +300,7 @@ jobs:
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
-          SHARPEN_MIN: ${{ needs.plan.outputs.dry == 'true' && '40' || '40' }}
+          SHARPEN_MIN: '20'
         run: |
           set -e
           mkdir -p report

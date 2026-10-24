@@ -53,6 +53,7 @@ HIT_BLOCK_P = os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-hit-blocklist.
 BASELINE_P = os.environ.get('SOUND_PINS_BASELINE') or os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-pins-baseline.json')
 CRISP_TAGS = {'clap', 'object', 'chain'}
 PREFILTER = os.environ.get('SOUND_PREFILTER', '1') != '0'
+TEXT_MAX = float(os.environ.get('SOUND_TEXT_MAX', '0.02'))       # per-clip burned-in text band (= hit_import.safety)
 # dense mining (2026-10-17: short build-up + hit + quick cut doubled the yield per source)
 DENSE = {'HIT_SCAN_SPACING': '1.5', 'HIT_SCAN_PRE_MIN': '0.3', 'HIT_SCAN_POST_MIN': '0.2', 'HIT_SCAN_PER_MIN': '16', 'HIT_SCAN_CAP': '20'}
 # query generator: shows that gave eye-approved hits first, then more action shows; the suffixes that worked (fetch14-24)
@@ -142,6 +143,10 @@ def pick_queries(shard, n_shards, n, state):
 # ------------------------------------------------------------------ mine (one shard)
 
 def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=6, judge=True):
+    """TIME-BASED (2026-10-24: the nightly used 45 min of its budget): batches of MINE_BATCH_Q queries -> fetch -> scan -> cut ->
+    prune -> judge, repeated until the budget is near (no new batch with < MINE_FETCH_RESERVE_MIN left), the query list
+    (n_queries) or the source cap (max_sources) is used up, or a bot check. Sources are pruned after every batch (disk stays small);
+    the shard artifact is written after every batch, so a hard stop still leaves the judged clips."""
     import hit_scan as HS
     t0 = time.time()
     os.makedirs(work, exist_ok=True)
@@ -153,75 +158,122 @@ def mine(work, shard=0, n_shards=1, budget_min=240.0, max_sources=12, n_queries=
     qs = pick_queries(shard, n_shards, n_queries, state)
     if os.environ.get('SOUND_VID_SHARD') == '1':
         os.environ['HIT_SCAN_VID_SHARD'] = f'{shard}/{n_shards}'
-    log(f'shard {shard}/{n_shards}: {len(qs)} queries: {qs}')
-    rep = {'shard': shard, 'queries': qs, 'started': today()}
-    st2 = HS.fetch(work, qs, per_query=int(os.environ.get('REFRESH_PER_QUERY', '2')), max_sources=max_sources,
-                   budget_min=budget_min * 0.4)
-    rep['queries_searched'] = sum(1 for q in qs if q in st2.get('queries', {}))
-    srcs = glob.glob(os.path.join(work, 'src', '*__all.mkv'))
-    rep['sources'] = len(srcs)
+    log(f'shard {shard}/{n_shards}: {len(qs)} queries, <= {max_sources} sources, {budget_min:.0f} min: {qs[:12]} ...')
+    rep = {'shard': shard, 'queries': qs, 'started': today(), 'batches': 0, 'sources': 0, 'minis': 0}
     os.environ.update({k: os.environ.get(k) or v for k, v in DENSE.items()})
-    left = budget_min - (time.time() - t0) / 60
-    HS.scan(work, [os.path.join(work, 'src', '*__all.mkv')], max_per_source=int(os.environ.get('REFRESH_PER_SOURCE', '14')),
-            budget_min=max(5.0, left * 0.6))
-    rep['minis'] = HS.cut(work)
-    HS.prune_sources(work)
-    side = read_json(os.path.join(work, 'mini.json'), {})
     out = os.path.join(work, 'out')
     os.makedirs(os.path.join(out, 'mini'), exist_ok=True)
     os.makedirs(os.path.join(out, 'strips'), exist_ok=True)
+    batch_q = int(os.environ.get('MINE_BATCH_Q', '4'))
+    fetch_reserve = float(os.environ.get('MINE_FETCH_RESERVE_MIN', str(min(30.0, budget_min * 0.2))))
+
+    def left():
+        return budget_min - (time.time() - t0) / 60
+
+    # sources rejected earlier for burned-in text only: retried first-class (a few per batch) now that text is judged per clip
+    retry = HS.text_retry_ids(st['seen'])
+    if os.environ.get('HIT_SCAN_VID_SHARD'):
+        k, n = (int(x) for x in os.environ['HIT_SCAN_VID_SHARD'].split('/'))
+        retry = [v for v in retry if __import__('zlib').crc32(v.encode()) % n == k]
+    retry_n = int(os.environ.get('MINE_RETRY_PER_BATCH', '3'))
+    rep['text_retry_pending'] = len(retry)
+    got, qi, ri = 0, 0, 0
+    while (qi < len(qs) or ri < len(retry)) and got < max_sources and left() > fetch_reserve:
+        bq = qs[qi:qi + batch_q]
+        br = retry[ri:ri + retry_n]
+        qi, ri = qi + len(bq), ri + len(br)
+        st2 = HS.fetch(work, bq, per_query=int(os.environ.get('REFRESH_PER_QUERY', '2')), max_sources=max_sources - got,
+                       budget_min=max(3.0, left() - fetch_reserve), retry_ids=br)
+        rep['text_retried'] = ri
+        got += int(st2.get('got') or 0)
+        rep['batches'] += 1
+        rep['queries_searched'] = sum(1 for q in qs[:qi] if q in st2.get('queries', {}))
+        rep['sources'] = got
+        HS.scan(work, [os.path.join(work, 'src', '*__all.mkv')], max_per_source=int(os.environ.get('REFRESH_PER_SOURCE', '14')),
+                budget_min=max(3.0, left() - fetch_reserve / 2))
+        rep['minis'] = HS.cut(work)
+        HS.prune_sources(work)
+        if judge:
+            _judge(work, out, rep, t0, budget_min)
+        _write_shard(work, out, rep, t0)
+        log(f"batch {rep['batches']}: {got} sources, {rep['minis']} minis, {rep.get('approved', 0)} approved, {left():.0f} min left")
+        if st2.get('_blocked'):
+            rep['stopped'] = 'bot-block (' + str(st2['_blocked']) + ')'
+            log('bot check: no more fetching tonight')
+            break
+    return _write_shard(work, out, rep, t0)
+
+
+def _judge(work, out, rep, t0, budget_min):
+    import hit_vision as HV
+    import hit_import as HI
+    import clip_prefilter as CP
+    import edit_fx as FX
+    side = read_json(os.path.join(work, 'mini.json'), {})
     verdicts = read_json(os.path.join(out, 'verdicts.json'), {})
     approved = read_json(os.path.join(out, 'approved.json'), {})
-    if judge:
-        import hit_vision as HV
-        import hit_import as HI
-        import clip_prefilter as CP
-        for name, m in side.items():
-            if name in verdicts:
-                continue
-            if (time.time() - t0) / 60 > budget_min:
-                log('budget used up before every mini was judged')
-                break
-            p = os.path.join(work, 'mini', name + '.mp4')
-            if not os.path.isfile(p):
-                continue
-            if PREFILTER:
-                # 2026-10-21 cheap CPU pre-filter (impact at the hit, action size / centre / spread) BEFORE the paid vision call
-                try:
-                    pok, pwhy, pf = CP.sound_check(p, float(m['hit_t']))
-                except Exception as e:  # noqa: BLE001
-                    pok, pwhy, pf = True, [], {'error': str(e)[:120]}
-                if not pok:
-                    verdicts[name] = {'prefilter': {'why': pwhy, 'feats': pf}}
-                    rep['prefilter_rejects'] = rep.get('prefilter_rejects', 0) + 1
-                    write_json(os.path.join(out, 'verdicts.json'), verdicts)
-                    log(f"{name}: rejected (prefilter: {'; '.join(pwhy)[:90]})")
-                    continue
-            try:
-                v = HV.judge(p, float(m['hit_t']), m.get('tag'), tmp=os.path.join(work, 'vtmp'))
-            except Exception as e:  # noqa: BLE001
-                v = {'ok': False, 'why': f'vision error {str(e)[:120]}', 'votes': []}
-            rec = {'vision': {k: v.get(k) for k in ('ok', 'word', 'why', 'votes')}}
-            if v.get('ok'):
-                try:
-                    ok, info = HI.safety(p)
-                except Exception as e:  # noqa: BLE001
-                    ok, info = False, {'why': f'safety error {str(e)[:120]}'}
-                rec['safety'] = info
-                if ok:
-                    shutil.copy2(p, os.path.join(out, 'mini', name + '.mp4'))
-                    if v.get('strip') and os.path.isfile(v['strip']):
-                        shutil.copy2(v['strip'], os.path.join(out, 'strips', name + '.jpg'))
-                    approved[name] = dict(m, word=v['word'], safety=info,
-                                          vision=[{'model': x['model'], 'conf': (x.get('answer') or {}).get('confidence'),
-                                                   'note': (x.get('answer') or {}).get('note')} for x in v.get('votes') or []])
-            verdicts[name] = rec
+    for name, m in side.items():
+        if name in verdicts:
+            continue
+        if (time.time() - t0) / 60 > budget_min:
+            log('budget used up before every mini was judged')
+            break
+        p = os.path.join(work, 'mini', name + '.mp4')
+        if not os.path.isfile(p):
+            continue
+        # 2026-10-24 PER-CLIP burned-in text (the source is no longer rejected for it): the <= 3 s mini IS the hit window;
+        # text anywhere in it = reject, before the paid vision call (hit_import.safety checks it again)
+        try:
+            tb = FX.text_bands(p)
+        except Exception:  # noqa: BLE001
+            tb = (0.0, 0.0)
+        if max(float(tb[0] or 0), float(tb[1] or 0)) > TEXT_MAX:
+            verdicts[name] = {'text': [round(float(tb[0]), 3), round(float(tb[1]), 3)]}
+            rep['text_rejects'] = rep.get('text_rejects', 0) + 1
             write_json(os.path.join(out, 'verdicts.json'), verdicts)
-            write_json(os.path.join(out, 'approved.json'), approved)
-            log(f"{name}: {'APPROVED ' + str(v.get('word')) if name in approved else 'rejected'} ({str(v.get('why'))[:90]})")
+            log(f'{name}: rejected (burned-in text {tb[0]:.2f} top / {tb[1]:.2f} bottom)')
+            continue
+        if PREFILTER:
+            # 2026-10-21 cheap CPU pre-filter (impact at the hit, action size / centre / spread) BEFORE the paid vision call
+            try:
+                pok, pwhy, pf = CP.sound_check(p, float(m['hit_t']))
+            except Exception as e:  # noqa: BLE001
+                pok, pwhy, pf = True, [], {'error': str(e)[:120]}
+            if not pok:
+                verdicts[name] = {'prefilter': {'why': pwhy, 'feats': pf}}
+                rep['prefilter_rejects'] = rep.get('prefilter_rejects', 0) + 1
+                write_json(os.path.join(out, 'verdicts.json'), verdicts)
+                log(f"{name}: rejected (prefilter: {'; '.join(pwhy)[:90]})")
+                continue
+        try:
+            v = HV.judge(p, float(m['hit_t']), m.get('tag'), tmp=os.path.join(work, 'vtmp'))
+        except Exception as e:  # noqa: BLE001
+            v = {'ok': False, 'why': f'vision error {str(e)[:120]}', 'votes': []}
+        rec = {'vision': {k: v.get(k) for k in ('ok', 'word', 'why', 'votes')}}
+        if v.get('ok'):
+            try:
+                ok, info = HI.safety(p)
+            except Exception as e:  # noqa: BLE001
+                ok, info = False, {'why': f'safety error {str(e)[:120]}'}
+            rec['safety'] = info
+            if ok:
+                shutil.copy2(p, os.path.join(out, 'mini', name + '.mp4'))
+                if v.get('strip') and os.path.isfile(v['strip']):
+                    shutil.copy2(v['strip'], os.path.join(out, 'strips', name + '.jpg'))
+                approved[name] = dict(m, word=v['word'], safety=info,
+                                      vision=[{'model': x['model'], 'conf': (x.get('answer') or {}).get('confidence'),
+                                               'note': (x.get('answer') or {}).get('note')} for x in v.get('votes') or []])
+        verdicts[name] = rec
+        write_json(os.path.join(out, 'verdicts.json'), verdicts)
+        write_json(os.path.join(out, 'approved.json'), approved)
+        log(f"{name}: {'APPROVED ' + str(v.get('word')) if name in approved else 'rejected'} ({str(v.get('why'))[:90]})")
+    rep.update(judged=len(verdicts), approved=len(approved))
+
+
+def _write_shard(work, out, rep, t0):
     fst = read_json(os.path.join(work, 'fetch.json'), {'seen': {}, 'queries': {}})
     write_json(os.path.join(out, 'fetch.json'), fst)
-    rep.update(judged=len(verdicts), approved=len(approved), minutes=round((time.time() - t0) / 60, 1),
+    rep.update(minutes=round((time.time() - t0) / 60, 1),
                scan={sid: s.get('stats') for sid, s in read_json(os.path.join(work, 'scan.json'), {'sources': {}})['sources'].items()})
     write_json(os.path.join(out, 'report.json'), rep)
     return rep
@@ -322,7 +374,13 @@ def sharpen(pool, new_p, budget_min=240.0):
     if not todo:
         return {'sharpened': 0}
     if os.environ.get('KAGGLE_API_TOKEN') and os.environ.get('KAGGLE_USERNAME'):
-        r = subprocess.run([sys.executable, os.path.join(ROOT, 'scripts', 'edit-upscale-kaggle.py'), 'run', '--pool', pool])
+        try:                     # 2026-10-24: bounded by the same budget, so the staging after it always finishes in time
+            r = subprocess.run([sys.executable, os.path.join(ROOT, 'scripts', 'edit-upscale-kaggle.py'), 'run', '--pool', pool],
+                               timeout=max(60, int(budget_min * 60)))
+        except subprocess.TimeoutExpired:
+            r = subprocess.CompletedProcess([], 1)
+            log('kaggle sharpening over its budget: the rest stay 1080p')
+            return {'sharpened': 0, 'via': 'kaggle timeout'}
         if r.returncode == 0:
             todo = [n for n in news if not os.path.isfile(_clip_path(pool, n) + '.up.json')]
             if not todo:
