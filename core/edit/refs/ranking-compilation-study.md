@@ -220,5 +220,19 @@ So the reference is **not** a model of safe practice; it survives because it is 
 - One editor takedown = one strike, and the group is already on a warning.
 - The lowest-risk alternative uses the same layout with **our own edits** (the edit studio already makes character edits) in the band. Viewers mostly cannot tell, and it removes the editor risk entirely. The label / anime claims are then the same as for our current edits.
 
+## 5. Production design: pool / backlog (coordinator 2026-10-24; not wired)
+
+The daily video never downloads. It works like the other edit pools:
+1. **Stage (mining).**
+   - `--mode stage --topic X` runs in the nightly GitHub rotation or the local idle miner: one job at a time, the spare account, paced.
+   - It pauses while `pool-mine-nightly` runs. `--offline` uses the cache only.
+   - It searches, downloads and gates the needed ranks (#5, #4, #3 + spare #2), then cuts the best ≤ 35 s window of each passing edit into `$EDIT_POOL_DIR/_staged/ranking/<topic>/`.
+   - The `manifest.json` per item records: source id / title / channel, **editor @handle**, window, char confidence + votes, safety / watermark status.
+2. **Review.** Claude looks at the staged clips by eye: per-second random 20-60 frame sheets plus the sound. Then `--mode import --ids a,b --reject c` copies the passing ones into `$EDIT_POOL_DIR/ranking/<topic>/` with status `reviewed`.
+3. **Assemble (daily).** `--mode assemble --topic X --out f.mp4` uses the reviewed pool only.
+   - A topic is eligible (`--mode eligible`) only when every revealed rank has a usable reviewed edit.
+   - An edit is not reused within `REUSE_GAP` = 8 ranking uploads, so it is never used back-to-back. This uses the ledger key `ranking_recent` in `memory/edit-pool-used.json`.
+   - The description comes from `describe()`: plain-text @handles, no links.
+
 ## Prototype run
 (appended after the run)

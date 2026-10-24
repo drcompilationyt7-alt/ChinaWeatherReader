@@ -928,17 +928,216 @@ def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False):
     return report
 
 
+# ---------------------------------------------------------------- pool / backlog (production design, 2026-10-24)
+# The daily video never downloads. Mining (the nightly GitHub rotation or the local idle miner, one job at
+# a time, spare account) STAGES candidates. Claude reviews them by eye (pull-staged -> sheets -> import).
+# The daily job only ASSEMBLES from the reviewed pool. NOT wired into any rotation yet.
+#
+# $EDIT_POOL_DIR/ranking/<topic>/manifest.json      (staged: $EDIT_POOL_DIR/_staged/ranking/<topic>/)
+# {"version": 1, "topic": "jjk_strongest", "title": [...], "built": ISO,
+#  "entries": [{"rank": 5, "name": "TOJI", "chars": [...],
+#     "items": [{"id": "r_<source_id>_<start_ms>", "file": "clips/r_<...>.mp4",      # the cut excerpt (<= 35 s)
+#                "source_id": "...", "source_title": "...", "source_channel": "...", "editor_handle": "@...",
+#                "source_views": 123, "source_dur": 61.0, "start": 12.3, "end": 47.3,
+#                "char_conf": 0.83, "char_match": {...}, "safety": "pass", "watermark": "none",
+#                "status": "staged|reviewed|rejected", "added": "YYYY-MM-DD"}]}]}
+# Used ledger: memory/edit-pool-used.json items["ranking/<topic>/clip/<id>"] = {"used_at", "video"}, plus
+# "ranking_recent": the source ids of the last uploads, newest last -> REUSE_GAP.
+POOL_MAX_SEG = 35.0
+REUSE_GAP = 8               # an edit is not reused within the next 8 ranking uploads (as the quiz pools)
+NEEDED_RANKS = (5, 4, 3, 2)  # revealed (#5 #4 #3) + one spare; #1 never shows
+
+
+def pool_dir(staged=False):
+    root = os.path.abspath(os.environ.get('EDIT_POOL_DIR') or os.path.join(ROOT, 'output', 'edit-pools'))
+    return os.path.join(root, '_staged', 'ranking') if staged else os.path.join(root, 'ranking')
+
+
+def _manifest(d, topic):
+    p = os.path.join(d, topic, 'manifest.json')
+    if os.path.exists(p):
+        return json.load(open(p, encoding='utf-8'))
+    T = TOPICS[topic]
+    return {'version': 1, 'topic': topic, 'title': T['title'], 'built': None,
+            'entries': [{'rank': i + 1, 'name': e['name'], 'chars': e['chars'], 'items': []}
+                        for i, e in enumerate(T['entries'])]}
+
+
+def _save(d, topic, man):
+    os.makedirs(os.path.join(d, topic), exist_ok=True)
+    man['built'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    json.dump(man, open(os.path.join(d, topic, 'manifest.json'), 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
+
+
+def cut_clip(src, s, e, out):
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '4', '-ss', f'{s:.3f}', '-t', f'{e - s:.3f}', '-i', src,
+                    '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', '-threads', '4', '-c:a', 'aac', '-b:a', '256k',
+                    out], check=True)
+
+
+def stage(topic, work, per_entry=2):
+    """Mining step. Search / download / gates / models for the needed ranks, then cut the best <= 35 s
+    window of each passing edit into the staged pool. Review + import is a separate step."""
+    T = TOPICS[topic]
+    idle()
+    YT_CACHE[0] = os.path.join(work, 'cache', 'yt')
+    entries = T['entries']
+    jh = {}
+
+    def get_judge():
+        if 'j' not in jh:
+            wait_ram('the SigLIP / analysis models')
+            jh['j'] = Judge(os.path.join(work, 'cache'))
+        return jh['j']
+    report = {'topic': topic, 'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [],
+              'entries': [], '_dl': {}}
+    sd = pool_dir(staged=True)
+    man = _manifest(sd, topic)
+    for rank in NEEDED_RANKS:
+        i = rank - 1
+        e = entries[i]
+        others = [o for o in entries if o is not e]
+        pre = find_source(e, None, None, work, 0, set(), report, max_dl=2 + 2 * per_entry)
+        ent = man['entries'][i]
+        for res, row in pre:
+            res = evaluate(res, e, others, get_judge(), POOL_MAX_SEG)
+            row.update({k: res.get(k) for k in ('verdict', 'why', 'conf', 'window', 'match')})
+            if res['verdict'] != 'ok':
+                continue
+            w = res['window']
+            iid = f'r_{res["id"]}_{int(w["s"] * 1000)}'
+            if any(it['id'] == iid for it in ent['items']):
+                continue
+            cut_clip(res['path'], w['s'], w['e'], os.path.join(sd, topic, 'clips', iid + '.mp4'))
+            ent['items'].append({'id': iid, 'file': f'clips/{iid}.mp4', 'source_id': res['id'],
+                                 'source_title': res['title'], 'source_channel': res['channel'],
+                                 'editor_handle': res.get('handle'), 'source_views': res.get('views'),
+                                 'source_dur': res.get('dur'), 'start': w['s'], 'end': w['e'],
+                                 'char_conf': res['conf'], 'char_match': res['match'],
+                                 'safety': 'pass', 'watermark': 'none', 'status': 'staged',
+                                 'added': time.strftime('%Y-%m-%d')})
+            if sum(1 for it in ent['items'] if it['status'] == 'staged') >= per_entry:
+                break
+        _save(sd, topic, man)
+    report.pop('_dl', None)
+    json.dump(report, open(os.path.join(sd, topic, 'stage-report.json'), 'w', encoding='utf-8'), indent=1,
+              ensure_ascii=False, default=str)
+    return man
+
+
+def import_reviewed(topic, ids, reject=()):
+    """Move reviewed staged items (by id) into the pool. `reject` ids are marked rejected in staging."""
+    import shutil
+    sd, pd = pool_dir(True), pool_dir(False)
+    sm, pm = _manifest(sd, topic), _manifest(pd, topic)
+    n = 0
+    for se, pe in zip(sm['entries'], pm['entries']):
+        for it in se['items']:
+            if it['id'] in reject:
+                it['status'] = 'rejected'
+            elif it['id'] in ids and it['status'] == 'staged':
+                os.makedirs(os.path.join(pd, topic, 'clips'), exist_ok=True)
+                shutil.copy2(os.path.join(sd, topic, it['file']), os.path.join(pd, topic, it['file']))
+                it['status'] = 'reviewed'
+                pe['items'] = [x for x in pe['items'] if x['id'] != it['id']] + [dict(it)]
+                n += 1
+    _save(sd, topic, sm)
+    _save(pd, topic, pm)
+    return n
+
+
+def _ledger():
+    p = os.path.join(os.environ.get('MEMORY_DIR') or os.path.join(ROOT, 'memory'), 'edit-pool-used.json')
+    try:
+        return p, json.load(open(p, encoding='utf-8'))
+    except Exception:
+        return p, {'version': 1, 'items': {}, 'moments': {}}
+
+
+def usable_items(entry, ledger):
+    recent = ledger.get('ranking_recent', [])[-REUSE_GAP:]
+    out = [it for it in entry['items'] if it['status'] == 'reviewed' and it['source_id'] not in recent]
+    return sorted(out, key=lambda it: (-(it.get('char_conf') or 0), -(it.get('source_views') or 0)))
+
+
+def eligible(topic, n_show=3):
+    """A topic is eligible only when every revealed rank has a usable reviewed edit."""
+    _, led = _ledger()
+    man = _manifest(pool_dir(False), topic)
+    ranks = sorted(range(1, len(man['entries']) + 1), reverse=True)[:n_show]
+    return all(usable_items(man['entries'][r - 1], led) for r in ranks)
+
+
+def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=False, mark_used=False):
+    """The daily step: assemble only from the reviewed pool (no network)."""
+    T = TOPICS[topic]
+    rng = random.Random(seed)
+    n_show = n_show or rng.choice(REVEAL)
+    if not eligible(topic, n_show):
+        raise SystemExit(f'topic {topic} not eligible: a revealed rank has no usable reviewed edit')
+    lengths = plan_lengths(rng, n_show)
+    lp, led = _ledger()
+    pd = pool_dir(False)
+    man = _manifest(pd, topic)
+    names = [e['name'] for e in man['entries']]
+    parts, shown, entries = [], set(), []
+    idle()
+    os.makedirs(work, exist_ok=True)
+    for k, rank in enumerate(sorted(range(1, len(names) + 1), reverse=True)[:n_show]):
+        it = usable_items(man['entries'][rank - 1], led)[0]
+        shown.add(rank - 1)
+        clip = os.path.join(pd, topic, it['file'])
+        win = {'s': 0.0, 'e': min(lengths[k], it['end'] - it['start'])}
+        png = os.path.join(work, f'ov_pool_{rank}.png')
+        credit = f'edit: {it.get("editor_handle") or it["source_channel"]}' if onscreen_credit else ''
+        overlay_png(png, T['title'], names, shown, credit)
+        part = os.path.join(work, f'part_pool_{rank}.mp4')
+        wait_ram('rendering')
+        render_entry(clip, win, png, part)
+        parts.append(part)
+        entries.append({'rank': rank, 'name': names[rank - 1], 'source': it['source_id'],
+                        'handle': it.get('editor_handle'), 'channel': it['source_channel'], 'item': it['id']})
+    concat(parts, out)
+    desc = describe(T['title'], entries)
+    if mark_used:
+        for e in entries:
+            led.setdefault('items', {})[f'ranking/{topic}/clip/{e["item"]}'] = {
+                'used_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'video': os.path.basename(out)}
+            led.setdefault('ranking_recent', []).append(e['source'])
+        json.dump(led, open(lp, 'w', encoding='utf-8'), indent=1)
+    return {'out': out, 'entries': entries, 'description': desc}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--topic', default='jjk_strongest', choices=sorted(TOPICS))
-    ap.add_argument('--out', required=True)
+    ap.add_argument('--out', help='output mp4 (build / assemble)')
     ap.add_argument('--work', default=os.path.join(ROOT, 'output', 'ranking-proto'))
     ap.add_argument('--show', type=int, choices=(2, 3), help='entries revealed (default: random as the references)')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--offline', action='store_true', help='cached searches / downloads only (e.g. while GitHub mining runs)')
     ap.add_argument('--onscreen-credit', action='store_true', help='small "edit: @handle" under the clip (refs: none)')
     ap.add_argument('--describe', help='print the description from an existing .report.json and exit')
+    ap.add_argument('--mode', default='build', choices=('build', 'stage', 'import', 'eligible', 'assemble'),
+                    help='build = one-off prototype (search + render); stage / import / eligible / assemble = pool path')
+    ap.add_argument('--ids', default='', help='import: comma-separated staged item ids that passed review')
+    ap.add_argument('--reject', default='', help='import: comma-separated staged item ids that failed review')
     a = ap.parse_args()
+    if a.mode == 'stage':
+        OFFLINE[0] = a.offline
+        stage(a.topic, a.work)
+        return
+    if a.mode == 'import':
+        print(import_reviewed(a.topic, set(filter(None, a.ids.split(','))), set(filter(None, a.reject.split(',')))))
+        return
+    if a.mode == 'eligible':
+        print(eligible(a.topic, a.show or 3))
+        return
+    if a.mode == 'assemble':
+        r = assemble(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit)
+        print(r['description'])
+        return
     if a.describe:
         rep = json.load(open(a.describe, encoding='utf-8'))
         print(describe(TOPICS[rep['topic']]['title'], rep['entries']))
