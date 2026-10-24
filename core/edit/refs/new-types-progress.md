@@ -1302,3 +1302,20 @@ fallback as designed (job summary + memory/newtype-fallback.json with dryRun tru
 song gave the same scores (the sound planner takes the best matches whatever the seed) -> fixed: a sound 'reseed' is another
 song, a repeated verdict on one song goes to another song, and 8_length failing on 2 songs stops the loop (stem ~45 min
 earlier). A passing sound video needs more pinned hits (pool growth), not repairs. Rotation weights unchanged.
+
+### 2026-10-23: sound edit MIX BALANCE - song up, constant (mix agent; owner on ANTIFRAGILE hrdvNehinLY: "the actual song is hard to hear too quiet", then "no dips, the song is same throughout", "just increase the final mix of the song")
+**Measured (judge split = aligned song fitted per band / 0.25 s; song stem in the mix vs its source; ffmpeg ebur128):**
+
+| | hit over song (20 ms, at the hit, median) | song layer re mix (0.5 s median / p10) | song dips p90 / max (0.1 s, vs source) | LUFS / dBTP |
+|---|---|---|---|---|
+| posted ANTIFRAGILE (YouTube file) | **+7.4 dB** | -2.0 / -4.9 dB | 1.66 / 5.7 dB (master limiter under the hits) | -13.5 / -1.0 |
+| sound_11b (approved, Shape of You) | +6.0 | -2.3 / -5.4 | 1.42 / 3.4 | -13.4 / -1.4 |
+| FB15TNFAHVU (ref) | +3.2 | -3.2 / -7.0 | 2.59 / 4.6 (its own clipped master) | -6.0 / +4.8 |
+| jKSxAkOS3JY (ref) | n/a: its song is not separable (0.01 dB of the mix explained = a remade beat) | | | -7.1 / +4.4 |
+
+- Lyrics: Demucs vocals of the clean song sections: the refs' windows carry NO song vocals (FB15 / jKS instrumental), so they cannot calibrate intelligibility. Song-vocal time masked > 15 dB by the clip layer (1-4 kHz, 0.25 s): posted 0.15, sound_11b 0.10 (ANTIFRAGILE's vocals sit 1.2 dB lower in its own mix). Not in the judge (keep it minimal; Demucs on CI).
+- The posted mix and sound_11b are the SAME mixer and nearly the same balance; ANTIFRAGILE (vocal-led, dense) just shows it. The song itself was never ducked by the planner (constant), but the master limiter dips it 1.5-3 dB under each hit.
+- Simulation (posted rebuilt from its split: constant song x gain + clip layer, -13.5 LUFS master): +0 dB -> hits +6.0 (no pumping alone -1.4 dB), +2.0 -> +4.0, +2.5 -> +3.5, +3.0 -> +3.1, +3.5 -> +3.0 BUT the judge's 'clear' hits 31 -> 19 of 34 (criterion 2 under its bar); +2.5 keeps 24 / 35 clear (criterion 2 = 10), dips p90 0.14 dB.
+**Mixer (core/edit/sound_edit.py):** SOUND_SONG_GAIN_DB 2.5 (default): the song window is added at one constant gain after the hit levelling / onset loops, before headroom_for_hits + the existing master (nothing else moves: no ducking, no envelope); the hits' floor over the song's 20 ms peak is kept after that gain (SOUND_HIT_FLOOR_DB 2.0: marg = max(2.5, gain + 2.0) pre-gain). plan sound_edit.song_gain_db records it. 0 = the old balance.
+**Judge (core/edit/judge_sound.py, song_balance(); strict, in the CI pass like every criterion):** 18_song_audible = min(hit over song: 10 at <= +4.5, 8 at +6.5; song layer re mix: 10 at >= -3, 8 at -4); 19_clip_hits_noticeable = hit over song 10 at >= +2.5, 8 at +1.5; 20_song_level_constant = song dips p90 10 at <= 1.5, 8 at 2.0. Song not separable (< 1 dB explained) = n/a (10). Results: posted 18 = **7.1 FAIL**, 19 10, 20 9.4; sound_11b 18 8.5, 19 10, 20 10 (pass, near the edge); FB15 18 9.7, 19 10, 20 **5.6** (its own master pumps: the owner's "no dips" is stricter than the ref); jKS n/a. FB15 cache json carries the new fields (evidence only).
+**Test (CI dry run 40037861296, `--song le_sserafim_antifragile --fresh-override --seed 41`, PIPELINE TEST, never posted):** same section as the posted video (28.64 s, 23.5 s). Hits over the song +7.4 -> **+3.9 dB**, song re mix -2.0 -> **-1.2 dB**, song-vocal time masked > 15 dB 15 % -> **4 %**, dips p90 1.66 -> 1.31 dB, -13.5 LUFS / -1.7 dBTP; judge 18 / 19 / 20 = 10 / 10 / 10, 2 = 10. The day still fails on 5 / 8 / 16 / 17 (pool capacity: 23.5 s, same as before) -> stem fallback, as designed. Review: review-shorts/edits/new-types/sound_mixfix_antifragile.mp4 + .md.
