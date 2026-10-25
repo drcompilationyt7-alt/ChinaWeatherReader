@@ -1718,6 +1718,57 @@
    },
    "vibe": "summer_glow",
    "musicPoolId": "jvke_golden_hour@v0.85"
+  },
+  {
+   "videoId": "OP4oWjr6juI",
+   "url": "https://www.youtube.com/watch?v=OP4oWjr6juI",
+   "postedAt": "2026-10-25T08:02:52.561Z",
+   "publishAt": "2026-10-25T12:00:00.000Z",
+   "song": "yoru ni kakeru",
+   "theme": "japanese",
+   "emoji": "🎶,🔥",
+   "title": "yoru ni kakeru acapella but the beat drops 🎶",
+   "clipIds": [
+    "Z60STT4_wfc",
+    "BjAYy_gnDKI",
+    "A75an3iVh9Y",
+    "COnYtI6VP4A",
+    "N-UlfPpbUYc",
+    "xPhNWi1zD0M",
+    "jIh4vx7cPXs"
+   ],
+   "clipChannels": [
+    "Asian Pop Footage!",
+    "CJDA_OFFICIAL",
+    "Davie504",
+    "Futaba...",
+    "Shitou02",
+    "YOASOBI",
+    "omotea “omotti”"
+   ],
+   "clipSource": "YOASOBI",
+   "settings": {
+    "drop": 10,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-layer-build"
+   },
+   "onVideoTitle": "wait for the beat drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "op-desc-layer-build",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson + insights (bonus +1.29)",
+   "whyMode": "insight-driven",
+   "bpm": 129.98,
+   "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
 }
