@@ -512,6 +512,20 @@
    "dhash": "196dccc6c4ccd823",
    "mined": "2026-10-24",
    "reviewed": "2026-10-24"
+  },
+  {
+   "name": "Japchae",
+   "iso2": "KR",
+   "country": "South Korea",
+   "difficulty": 3,
+   "file": "2016.06.11.105029 Japchae Heidelberg.jpg",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/2016.06.11.105029_Japchae_Heidelberg.jpg/1280px-2016.06.11.105029_Japchae_Heidelberg.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "credit": "Hermann Luyken, CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:2016.06.11.105029_Japchae_Heidelberg.jpg",
+   "query": "Japchae (category)",
+   "dhash": "2fcf933b2b9f5f2b",
+   "mined": "2026-10-25",
+   "reviewed": "2026-10-25"
   }
  ]
 }
