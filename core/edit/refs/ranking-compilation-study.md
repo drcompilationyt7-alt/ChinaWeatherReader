@@ -260,7 +260,7 @@ Owner: "instead lets do we credit them and prioritise old ones like 1 year old".
 
 **Allow-list:** `core/edit/refs/ranking-editor-allowlist.json` is for editors who granted permission directly.
 
-**Permission survey** (cached JSJK sources, 17 popular edits): 0 permitted.
+**Permission survey** (cached JJK sources, 17 popular edits): 0 permitted.
 - 13 have only a "no copyright intended / fair use" disclaimer. That is not a grant.
 - 1 sells project files. A paid project is not a repost licence.
 - 1 says "do not reupload unless transformative". That is a veto.
