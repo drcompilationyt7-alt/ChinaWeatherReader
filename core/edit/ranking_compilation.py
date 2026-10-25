@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 
 os.environ.setdefault('EDIT_THREADS', '4')           # library.Siglip torch threads
 os.environ.setdefault('OMP_NUM_THREADS', '4')
@@ -55,6 +56,7 @@ REVEAL = (3, 3, 3, 2)            # 3 of the 4 references reveal 3 entries, one r
 TOTAL = 59.5
 SEG_3 = ((19.0, 25.0), (18.0, 23.0))   # first two of three; the third gets the rest (refs: 21/20/18.5, 25/19/15.5)
 SEG_2 = ((29.0, 35.0),)                # first of two; the second gets the rest (ref: 35/24.5)
+CHAR_MIN = 0.6                   # share of character-voting frames the entry's character must win
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 MIN_VIEWS, MIN_LIKE_RATIO = 20_000, 0.015
 MAX_SRC_DUR = 150                # longer uploads are full-fight AMVs / compilations, not edits
@@ -70,16 +72,29 @@ TOPICS = {
     'jjk_strongest': {
         'title': ['STRONGEST', 'JJK CHARACTERS'], 'kind': 'character',
         'entries': [
-            {'name': 'SUKUNA', 'chars': ['Sukuna'], 'anime': 'JUJUTSU KAISEN',
+            {'name': 'SUKUNA', 'chars': ['Sukuna'], 'tags': ['ryoumen_sukuna_(jujutsu_kaisen)'], 'anime': 'JUJUTSU KAISEN',
              'q': ['sukuna edit 4k', 'ryomen sukuna amv edit'], 'alias': [r'sukuna']},
-            {'name': 'GOJO', 'chars': ['Satoru Gojo'], 'anime': 'JUJUTSU KAISEN',
+            {'name': 'GOJO', 'chars': ['Satoru Gojo'], 'tags': ['gojou_satoru'], 'anime': 'JUJUTSU KAISEN',
              'q': ['gojo edit 4k', 'gojo satoru amv edit'], 'alias': [r'gojo']},
             {'name': 'YUTA', 'chars': ['Yuta Okkotsu'], 'anime': 'JUJUTSU KAISEN',
              'q': ['yuta okkotsu edit 4k', 'yuta amv edit'], 'alias': [r'yuta', r'okkotsu']},
-            {'name': 'YUJI', 'chars': ['Yuji Itadori'], 'anime': 'JUJUTSU KAISEN',
+            {'name': 'YUJI', 'chars': ['Yuji Itadori'], 'tags': ['itadori_yuuji'], 'anime': 'JUJUTSU KAISEN',
              'q': ['yuji itadori edit 4k', 'itadori amv edit'], 'alias': [r'yuji', r'itadori']},
             {'name': 'TOJI', 'chars': ['Toji Fushiguro'], 'anime': 'JUJUTSU KAISEN',
              'q': ['toji fushiguro edit 4k', 'toji amv edit'], 'alias': [r'toji']},
+        ]},
+    # best waifu: ranked by fans = AniList favourites (quiz pool), adult female characters only
+    'best_waifu': {
+        'title': ['BEST', 'WAIFU'], 'kind': 'character',
+        'entries': [
+            {'name': 'FRIEREN', 'chars': ['Frieren'], 'tags': ['frieren'], 'anime': 'Frieren', 'q': ['frieren edit 4k'], 'alias': [r'frieren']},
+            {'name': 'KURISU', 'chars': ['Kurisu Makise'], 'tags': ['makise_kurisu'], 'anime': 'Steins;Gate', 'q': ['kurisu makise edit'],
+             'alias': [r'kurisu', r'makise']},
+            {'name': 'NICO ROBIN', 'chars': ['Nico Robin'], 'tags': ['nico_robin'], 'anime': 'ONE PIECE', 'q': ['nico robin edit 4k'],
+             'alias': [r'robin']},
+            {'name': 'YOR', 'chars': ['Yor Forger'], 'tags': ['yor_briar'], 'anime': 'SPY x FAMILY', 'q': ['yor forger edit 4k'], 'alias': [r'\byor\b']},
+            {'name': 'C.C.', 'chars': ['C.C.'], 'tags': ['c.c.'], 'anime': 'Code Geass', 'q': ['c.c. code geass edit'],
+             'alias': [r'\bc\.?c\.?\b', r'code geass']},
         ]},
     'romance_peak': {
         'title': ['PEAK', 'ROMANCE ANIME'], 'kind': 'anime',
@@ -90,7 +105,7 @@ TOPICS = {
              'q': ['blue box anime edit 4k'], 'alias': [r'blue box', r'ao no hako', r'chinatsu']},
             {'name': 'HORIMIYA', 'chars': ['Kyouko Hori', 'Izumi Miyamura'], 'anime': 'Horimiya',
              'q': ['horimiya edit 4k'], 'alias': [r'horimiya']},
-            {'name': 'MY DRESS-UP DARLING', 'chars': ['Marin Kitagawa', 'Wakana Gojo'], 'anime': 'Sono Bisque Doll',
+            {'name': 'MY DRESS-UP DARLING', 'chars': ['Marin Kitagawa', 'Wakana Gojo'], 'tags': ['kitagawa_marin', 'gojou_wakana'], 'anime': 'Sono Bisque Doll',
              'q': ['marin kitagawa edit 4k'], 'alias': [r'marin', r'dress.?up darling', r'bisque']},
             {'name': 'THE FRAGRANT FLOWER', 'chars': ['Kaoruko Waguri', 'Rintarou Tsumugi'], 'anime': 'Kaoru Hana',
              'q': ['fragrant flower blooms with dignity edit 4k'], 'alias': [r'fragrant flower', r'kaoru hana', r'waguri']},
@@ -100,7 +115,7 @@ TOPICS = {
 # ---------------------------------------------------------------- helpers
 
 
-MIN_FREE_GB = 5.2
+MIN_FREE_GB = float(os.environ.get('RANKING_MIN_FREE_GB') or 5.2)   # owner rule; low-memory mode: 1.5
 
 
 def wait_ram(what, need=MIN_FREE_GB, max_wait=6 * 3600):
@@ -194,7 +209,7 @@ def full_info(vid):
         except ValueError:
             return None
         keep = ('id', 'title', 'description', 'tags', 'channel', 'uploader', 'uploader_id', 'channel_id', 'view_count',
-                'like_count', 'width', 'height', 'duration', 'upload_date')
+                'like_count', 'width', 'height', 'duration', 'upload_date', 'license')
         return {k: d.get(k) for k in keep}
     return _cached(f'i_{vid}', run)
 
@@ -212,7 +227,7 @@ def download(info, dest_dir):
     return p if os.path.exists(p) else None
 
 
-def prefilter(e, entry):
+def prefilter(e, entry, min_views=None):
     """Flat search entry -> (ok, reason)."""
     t = (e.get('title') or '')
     if L.EXPLICIT_RE.search(t):
@@ -222,7 +237,7 @@ def prefilter(e, entry):
     d = e.get('duration') or 0
     if not 12 <= d <= MAX_SRC_DUR:
         return False, f'dur_{d}'
-    if (e.get('view_count') or 0) < MIN_VIEWS:
+    if (e.get('view_count') or 0) < (MIN_VIEWS if min_views is None else min_views):
         return False, 'views'
     if re.search(r'\b(vs\.?|versus|full fight|compilation|ranking|tier ?list|top \d+)\b', t, re.I) and entry.get('solo', True):
         return False, 'not_solo_edit'      # a vs-fight edit or another list: not "an edit of X"
@@ -473,6 +488,50 @@ def pick_windows(ana, au, txt, seg_len, k=6):
 
 # ---------------------------------------------------------------- character match + safety
 
+class Tagger:
+    """WD ViT tagger v3 (SmilingWolf, Apache-2.0, ONNX, ~380 MB): danbooru character tags. A far stronger
+    "is this character on screen" check than SigLIP for the characters it knows (Gojo, Yuji, Sukuna, Megumi,
+    Frieren, Kurisu, Robin, Yor, C.C., Marin, Makima, Zero Two ...). Characters it does not know (Toji,
+    Yuta, most romance leads) fall back to the SigLIP + AniList-art check. Also gives the rating tags."""
+    URL = 'https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/resolve/main/'
+
+    def __init__(self):
+        import csv
+        import onnxruntime as ort
+        d = os.path.join(os.path.expanduser('~'), '.cache', 'wd_tagger')
+        os.makedirs(d, exist_ok=True)
+        for f in ('model.onnx', 'selected_tags.csv'):
+            if not os.path.exists(os.path.join(d, f)):
+                urllib.request.urlretrieve(self.URL + f, os.path.join(d, f))
+        so = ort.SessionOptions()
+        so.intra_op_num_threads = 4
+        self.sess = ort.InferenceSession(os.path.join(d, 'model.onnx'), so, providers=['CPUExecutionProvider'])
+        self.inp = self.sess.get_inputs()[0]
+        self.size = self.inp.shape[1] if isinstance(self.inp.shape[1], int) else 448
+        rows = list(csv.reader(open(os.path.join(d, 'selected_tags.csv'), encoding='utf-8')))[1:]
+        self.names = [r[1] for r in rows]
+        self.cat = np.array([int(r[2]) for r in rows])
+        self.char_idx = np.where(self.cat == 4)[0]
+        self.rating_idx = np.where(self.cat == 9)[0]
+
+    def has(self, tag):
+        return tag in self.names
+
+    def __call__(self, img):
+        h, w = img.shape[:2]
+        m = max(h, w)
+        sq = np.full((m, m, 3), 255, np.uint8)
+        sq[(m - h) // 2:(m - h) // 2 + h, (m - w) // 2:(m - w) // 2 + w] = img
+        x = cv2.resize(sq, (self.size, self.size), interpolation=cv2.INTER_AREA).astype(np.float32)[None]
+        return self.sess.run(None, {self.inp.name: x})[0][0]
+
+    def chars(self, probs, thr=0.5):
+        return {self.names[i]: float(probs[i]) for i in self.char_idx if probs[i] >= thr}
+
+    def rating(self, probs):
+        return {self.names[i]: float(probs[i]) for i in self.rating_idx}
+
+
 class Judge:
     def __init__(self, cache_dir):
         self.cache = L.Cache(cache_dir, 2000)
@@ -512,6 +571,41 @@ class Judge:
         prompts = [f'an anime screenshot of {nm} from {(self.char(nm) or {}).get("anime", "anime")}' for nm in names]
         self.refs[key] = (emb, np.array(owners), self.sig.text(prompts))
         return self.refs[key]
+
+    def tagger(self):
+        if not hasattr(self, '_tagger'):
+            try:
+                self._tagger = Tagger()
+            except Exception as e:      # noqa: BLE001 - no tagger -> SigLIP only
+                log(f'WD tagger unavailable: {e}')
+                self._tagger = None
+        return self._tagger
+
+    def match_tags(self, frames, target_tags):
+        """Tagger vote: frames where any known character is tagged (>= 0.5); the target wins a frame when
+        its tag is the strongest character tag there. -> (conf, details) or None if no target tag is known."""
+        tg = self.tagger()
+        tags = [t for t in (target_tags or []) if tg and tg.has(t)]
+        if not tags:
+            return None
+        wins, votes, others, explicit = 0, 0, {}, 0
+        for f in frames:
+            pr = tg(f)
+            r = tg.rating(pr)
+            if r.get('explicit', 0) >= 0.5 or r.get('questionable', 0) >= 0.6:
+                explicit += 1
+            ch = tg.chars(pr)
+            if not ch:
+                continue
+            votes += 1
+            best = max(ch, key=ch.get)
+            if best in tags:
+                wins += 1
+            else:
+                others[best] = others.get(best, 0) + 1
+        conf = wins / votes if votes else 0.0
+        return conf, {'method': 'wd_tagger', 'votes': votes, 'wins': wins, 'others': others,
+                      'frames': len(frames), 'rating_flags': explicit}
 
     def match(self, frames, target_names, other_names):
         """Share of character frames where a target character beats every other candidate.
@@ -598,10 +692,10 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=4,
                 continue
             cands.append(e)
     cands.sort(key=lambda e: -(e.get('view_count') or 0))       # popularity as a proxy for "good edit"
-    clean = []
-    for e in cands:
-        if len(clean) >= 2 or report['_dl'].get(entry['name'], 0) >= max_dl:
-            break
+    # rights + priority on the infos first (old edits / inactive editors / permitted first; vetoed and
+    # blocklisted editors skipped), then download in that order
+    ranked = []
+    for e in cands[:max(8, 2 * max_dl)]:
         info = full_info(e['id'])
         if info is None and OFFLINE[0]:
             continue                                  # not fetched yet; offline run
@@ -609,6 +703,19 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=4,
         if not ok:
             report['reject'][why] = report['reject'].get(why, 0) + 1
             continue
+        rt = rights(info, fetch_extra=not OFFLINE[0])
+        rt['entry'] = entry['name']
+        save_proof(rt, work)
+        if not rt['usable']:
+            why = 'blocklisted' if rt['blocked'] else 'editor_forbids_repost'
+            report['reject'][why] = report['reject'].get(why, 0) + 1
+            continue
+        ranked.append((rt['priority'], info, rt))
+    ranked.sort(key=lambda x: -x[0])
+    clean = []
+    for _, info, rt in ranked:
+        if len(clean) >= 2 or report['_dl'].get(entry['name'], 0) >= max_dl:
+            break
         report['_dl'][entry['name']] = report['_dl'].get(entry['name'], 0) + 1
         path = download(info, os.path.join(work, 'src'))
         if not path and OFFLINE[0]:
@@ -619,9 +726,12 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=4,
             continue
         report['downloaded'] += 1
         res = text_gate(path, info)
+        res['rights'] = {k: rt.get(k) for k in ('permitted', 'type', 'age_days', 'channel_idle_days', 'priority',
+                                                 'onscreen_credit', 'reason')}
         row = {k: res.get(k) for k in ('id', 'title', 'channel', 'handle', 'views', 'verdict', 'why', 'persistent', 'marks', 'logos',
                                        'handles', 'subs_n')}
         row['entry'] = entry['name']
+        row['rights'] = res['rights']
         report['evaluated'].append(row)
         row['brand_n'] = res.get('brand_n')
         if res['verdict'] == 'reject':
@@ -750,6 +860,7 @@ def evaluate(res, entry, others, judge, seg_len):
         if w['subs'] > 0.15:
             w['reject'] = 'subtitles'
             continue
+        wait_ram('the next window')
         ts = [t for t in fr_t if w['s'] <= t < w['e']]                     # 2 fps
         frames = [ana['frames'][t] for t in ts]
         if not frames:
@@ -758,11 +869,22 @@ def evaluate(res, entry, others, judge, seg_len):
         if not ok:
             w['reject'] = why
             continue
-        conf, det = judge.match(frames, tgt, oth)
+        mt = judge.match_tags(frames, entry.get('tags'))
+        if mt is not None:
+            conf, det = mt
+            if det['rating_flags'] > 0.1 * len(frames):
+                w['reject'] = 'rating'
+                continue
+        else:
+            conf, det = judge.match(frames, tgt, oth)
+            det['method'] = 'siglip_art'
         w['conf'], w['match'] = round(conf, 2), det
         top_other = max(det['others'].values()) if det['others'] else 0
         # the entry's character must win the window; reject when another character dominates
-        if det['votes'] >= 4 and conf >= 0.5 and top_other < det['wins']:
+        # the entry's character must clearly own the window: >= 60 % of the voting frames and at least twice
+        # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
+        if (det['votes'] >= (6 if det.get('method') == 'wd_tagger' else 4) and conf >= CHAR_MIN
+                and det['wins'] >= 2 * top_other):
             res.update(verdict='ok', why='', window=w, conf=round(conf, 2), match=det, windows=wins)
             return res
         w['reject'] = 'character'
@@ -783,13 +905,13 @@ def font(size, weight=800):
     return f
 
 
-def overlay_png(path, title, names, shown, credit):
+def overlay_png(path, title, names, shown, credit, label=''):
     """The list overlay: 2-line title, 5 numbered slots (filled when shown), small credit."""
     from PIL import Image, ImageDraw, ImageFilter
     im = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     sh = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     d, ds = ImageDraw.Draw(im), ImageDraw.Draw(sh)
-    ft, fn, fe, fc = font(72, 800), font(52, 800), font(38, 800), font(30, 600)
+    ft, fn, fe, fc = font(72, 800), font(52, 800), font(38, 800), font(27, 700)
 
     def put(xy, s, f, anchor='la', fill=(255, 255, 255, 255)):
         ds.text((xy[0] + 3, xy[1] + 4), s, font=f, anchor=anchor, fill=(0, 0, 0, 200))
@@ -803,8 +925,10 @@ def overlay_png(path, title, names, shown, credit):
         put((182, y), f'{i + 1}.', fn)
         if i in shown:
             put((250, y + 8), names[i], fe)
-    if credit:
-        put((W // 2, BAND_Y + 608 + 22), credit, fc, 'ma', fill=(255, 255, 255, 230))
+    if credit:                     # small, in the band's lower-right corner: readable, unobtrusive
+        put((W - 22, BAND_Y + 608 - 14), credit, fc, 'rd', fill=(255, 255, 255, 215))
+    if label:                      # e.g. PREVIEW - not permission-checked, never upload
+        put((W // 2, H - 70), label, fc, 'ma', fill=(255, 60, 60, 255))
     sh = sh.filter(ImageFilter.GaussianBlur(5))
     Image.alpha_composite(sh, im).save(path)
 
@@ -859,7 +983,7 @@ def plan_lengths(rng, n):
     return first + [max(12.0, TOTAL - sum(first))]
 
 
-def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False):
+def build(topic, out, work, n_show=None, seed=None, onscreen_credit=True, label=''):
     T = TOPICS[topic]
     rng = random.Random(seed)
     entries = T['entries'][:5]
@@ -903,7 +1027,8 @@ def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False):
         log(f'#{i + 1} {e["name"]}: {r["id"]} by {r["channel"]} window {r["window"]["s"]}-{r["window"]["e"]} conf {r["conf"]}')
         report['entries'].append({'rank': i + 1, 'name': e['name'], 'source': r['id'], 'channel': r['channel'],
                                   'handle': r.get('handle'), 'title': r['title'], 'views': r['views'], 'window': r['window'],
-                                  'conf': r['conf'], 'match': r['match'], 'source_dur': r['dur']})
+                                  'conf': r['conf'], 'match': r['match'], 'source_dur': r['dur'],
+                                  'rights': r.get('rights')})
         json.dump(report, open(os.path.splitext(out)[0] + '.report.json', 'w', encoding='utf-8'), indent=1,
                   ensure_ascii=False, default=str)
     parts, shown = [], set()
@@ -914,7 +1039,8 @@ def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False):
         shown.add(i)
         png = os.path.join(work, f'ov_{i}.png')
         # on-screen credit: off by default as in the references (owner: credit in the description)
-        overlay_png(png, T['title'], names, shown, f'edit: {r.get("handle") or r["channel"]}' if onscreen_credit else '')
+        overlay_png(png, T['title'], names, shown, f'edit: {r.get("handle") or r["channel"]}' if onscreen_credit else '',
+                    label)
         part = os.path.join(work, f'part_{i}.mp4')
         wait_ram('rendering')
         render_entry(r['path'], r['window'], png, part)
@@ -926,6 +1052,289 @@ def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False):
               ensure_ascii=False, default=str)
     log('wrote', out)
     return report
+
+
+# ---------------------------------------------------------------- permission (owner 2026-10-24: permitted edits ONLY)
+# "use only edits whose editors gave permission ... even if they allow permission the quality must still be up there".
+# A source enters the pool only with a STORED proof (exact text / licence + date). Types:
+#   cc_by      YouTube licence "Creative Commons Attribution licence (reuse allowed)" (yt-dlp `license`)
+#   explicit   the editor's own description / pinned comment clearly allows reposting / using the edit
+#   allowlist  the editor granted permission directly (core/edit/refs/ranking-editor-allowlist.json, owner-kept)
+# NOT permission (recorded with the reason, never used):
+#   "no copyright intended" / fair-use disclaimers (a disclaimer, not a grant);
+#   paid project files / shops (Payhip, Boosty, Gumroad...): buying a project lets YOU make an edit, it does not
+#   let you repost the editor's render;
+#   conditional wording ("do not reupload unless transformative", "credit me if you use clips"): only clips /
+#   only transformative use, a ranking re-post is not clearly covered;
+#   any "do not reupload / repost / steal" anywhere in the text vetoes the explicit grant.
+ALLOWLIST = os.path.join(HERE, 'refs', 'ranking-editor-allowlist.json')
+PERMIT_MIN_VIEWS = 5_000          # permitted edits are rare: a lower bar here, quality is still gated by res /
+                                  # watermark / character / safety / by-eye review
+CC_SEARCH_SP = 'EgIwAQ%253D%253D'      # YouTube search filter "Creative Commons"
+GRANT_RE = re.compile(
+    r"(free to (use|repost|re-?upload|post)|feel free to (use|repost|re-?upload|post|share)|"
+    r"you (can|may|are allowed to) (use|repost|re-?upload|post) (this|my|these|it)|"
+    r"(repost|re-?upload)s? (are |is )?(allowed|welcome|ok|fine)|"
+    r"(use|repost|re-?upload) (it |this |my edits? )?with credit|"
+    r"allowed to (use|repost|re-?upload)|copyright[- ]free edit|free edits? to use|"
+    r"credit me if you (use|repost|re-?upload|post) (this|it|my edit))", re.I)
+VETO_RE = re.compile(r"(do ?n[o']?t|please don.?t|no) (re-?upload|repost|steal|use)|"
+                     r"without (my )?permission|re-?uploads? (are )?not allowed|unless (it.?s )?transformative", re.I)
+DISCLAIMER_RE = re.compile(r"no copyright intended|no copyright infringement|fair use|section 107|"
+                           r"all rights (to|belong)|don.?t own", re.I)
+SHOP_RE = re.compile(r"payhip|boosty|gumroad|ko-?fi|patreon|project files?|\bpf\b|\.aep|editing shop", re.I)
+
+
+def search_cc(q, n=20):
+    """YouTube search restricted to Creative Commons uploads."""
+    def run():
+        pace()
+        url = f'https://www.youtube.com/results?search_query={urllib.parse.quote_plus(q)}&sp={CC_SEARCH_SP}'
+        out = ytdlp(['--flat-playlist', '-J', '--playlist-end', str(n), url])
+        try:
+            return json.loads(out).get('entries') or []
+        except ValueError:
+            return []
+    return _cached(f'cc_{q}_{n}', run)
+
+
+def find_permitted(topic, ranks=(5, 4, 3, 2), per_entry_info=8, pinned_top=4):
+    """Permission survey + proofs for one topic: CC-licensed edits and edits whose editor publicly allows
+    reuse. Writes every proof (permitted or not, with the reason) to $EDIT_POOL_DIR/ranking/_permissions/.
+    Returns {rank: [permitted proofs]} and a summary."""
+    T = TOPICS[topic]
+    out, summary = {}, {'checked': 0, 'permitted': 0, 'types': {}, 'not_permitted_reasons': {}}
+    for rank in ranks:
+        e = T['entries'][rank - 1]
+        name = e['name'].lower()
+        cands, seen = [], set()
+        lists = [search_cc(f'{name} edit'), search_cc(f'{name} amv')]
+        for q in (f'{name} edit free to use', f'{name} edit no copyright free to use'):
+            lists.append(search(q) or [])
+        for lst in lists:
+            for c in lst or []:
+                if c.get('id') in seen:
+                    continue
+                seen.add(c.get('id'))
+                ok, why = prefilter(c, e, min_views=PERMIT_MIN_VIEWS)
+                if ok:
+                    cands.append(c)
+        cands.sort(key=lambda c: -(c.get('view_count') or 0))
+        got = []
+        for k, c in enumerate(cands[:per_entry_info]):
+            info = full_info(c['id'])
+            if not info:
+                continue
+            ok, why = info_gate(info)
+            if not ok:
+                continue
+            proof = permission(info, fetch_pinned=k < pinned_top)
+            proof['entry'] = e['name']
+            proof['topic'] = topic
+            proof['title'] = info.get('title')
+            save_proof(proof, None)
+            summary['checked'] += 1
+            if proof['permitted']:
+                got.append(proof)
+                summary['permitted'] += 1
+                summary['types'][proof['type']] = summary['types'].get(proof['type'], 0) + 1
+            else:
+                r = proof['reason'][:50]
+                summary['not_permitted_reasons'][r] = summary['not_permitted_reasons'].get(r, 0) + 1
+        out[rank] = got
+        log(f'{topic} #{rank} {e["name"]}: {len(got)} permitted of {min(len(cands), per_entry_info)} checked')
+    return out, summary
+
+
+# ---------------------------------------------------------------- source rules (owner 2026-10-24, final)
+# "instead lets do we credit them and prioritise old ones like 1 year old" (the owner heard the risk and decided):
+# * any edit that passes the quality bar may be used WITH credit (@handle in the description + on-screen);
+# * edits >= 1 year old first, then editors whose channel looks inactive (no upload for ~6 months);
+# * HARD SKIP editors who say "don't repost / reupload / use my edits" (description, pinned comment, channel
+#   about) and editors on the takedown blocklist; the checked text is stored as a snapshot per source;
+# * CC / free-to-use edits rank above the rest (permission() above, now a bonus).
+BLOCKLIST = os.path.join(HERE, 'refs', 'ranking-editor-blocklist.json')
+OLD_DAYS, INACTIVE_DAYS = 365, 182
+
+
+def load_blocklist():
+    try:
+        return {k.lower() for k in json.load(open(BLOCKLIST, encoding='utf-8')).get('editors', {})}
+    except Exception:
+        return set()
+
+
+def channel_meta(info):
+    """Channel 'about' text + the newest upload's (approximate) date: one small request, cached."""
+    cid = info.get('channel_id')
+    if not cid:
+        return {}
+
+    def run():
+        pace()
+        out = ytdlp(['--flat-playlist', '-J', '--playlist-end', '2', '--extractor-args', 'youtubetab:approximate_date',
+                     f'https://www.youtube.com/channel/{cid}/videos'])
+        try:
+            d = json.loads(out)
+        except ValueError:
+            return None
+        ts = [e.get('timestamp') for e in (d.get('entries') or []) if e.get('timestamp')]
+        return {'about': d.get('description') or '', 'latest_ts': max(ts) if ts else None,
+                'followers': d.get('channel_follower_count')}
+    return _cached(f'ch_{cid}', run) or {}
+
+
+def rights(info, fetch_extra=True):
+    """Snapshot of what the editor says + the priority signals. -> dict (stored per source)."""
+    proof = permission(info, fetch_pinned=fetch_extra)          # CC / explicit grant / allow-list / veto
+    ch = channel_meta(info) if fetch_extra else {}
+    about = ch.get('about') or ''
+    veto = VETO_RE.search(about)
+    if veto and not proof.get('permitted'):
+        proof['reason'] = f'channel about forbids it: "{veto.group(0)}"'
+        proof['evidence'] = {'where': 'channel_about', 'text': _snip(about, veto)}
+    handle = (info.get('uploader_id') or '').lower()
+    now = time.time()
+    up = info.get('upload_date')
+    age_days = (now - time.mktime(time.strptime(up, '%Y%m%d'))) / 86400 if up else None
+    last = ch.get('latest_ts')
+    idle_days = (now - last) / 86400 if last else None
+    forbids = bool(re.search(r'forbids', proof.get('reason') or ''))
+    proof.update({
+        'blocked': handle in load_blocklist(),
+        'forbids_repost': forbids,
+        'age_days': round(age_days) if age_days is not None else None,
+        'channel_idle_days': round(idle_days) if idle_days is not None else None,
+        'snapshot': {'description': (info.get('description') or '')[:4000], 'about': about[:2000],
+                     'pinned': (_cached(f'c_{info.get("id")}', lambda: None) or {}).get('pinned')},
+    })
+    proof['usable'] = not proof['blocked'] and not forbids
+    # priority: permission bonus > old (>= 1 year) > inactive channel > popularity
+    proof['priority'] = (3.0 * bool(proof.get('permitted')) + 2.0 * bool(age_days and age_days >= OLD_DAYS)
+                         + 1.0 * bool(idle_days and idle_days >= INACTIVE_DAYS)
+                         + 0.1 * np.log10(1 + (info.get('view_count') or 0)))
+    return proof
+
+
+def survey(topic, ranks=(5, 4, 3, 2), per_entry=12):
+    """Pool-size survey under the final source rules (no downloads): per rank, search candidates that pass
+    the title / length / views gates, then the info gates (landscape, >= 720p, like ratio) and the rights
+    check (veto / blocklist, CC / free-to-use bonus, age, channel idle). Proof snapshots are stored."""
+    T = TOPICS[topic]
+    out = {'topic': topic, 'ranks': {}}
+    for rank in ranks:
+        e = T['entries'][rank - 1]
+        seen, cands = set(), []
+        lists = [search(q) or [] for q in e['q']]
+        lists.append(search_cc(f'{e["name"].lower()} edit') or [])
+        for lst in lists:
+            for c in lst:
+                if c.get('id') in seen:
+                    continue
+                seen.add(c.get('id'))
+                if prefilter(c, e)[0]:
+                    cands.append(c)
+        cands.sort(key=lambda c: -(c.get('view_count') or 0))
+        row = {'name': e['name'], 'search_pass': len(cands), 'info_pass': 0, 'usable': 0, 'old_1y': 0,
+               'idle_6m': 0, 'permitted': 0, 'vetoed': 0, 'blocked': 0, 'ids': []}
+        for c in cands[:per_entry]:
+            info = full_info(c['id'])
+            if not info or not info_gate(info)[0]:
+                continue
+            row['info_pass'] += 1
+            rt = rights(info, fetch_extra=not OFFLINE[0])
+            rt['entry'], rt['topic'] = e['name'], topic
+            save_proof(rt, None)
+            row['vetoed'] += bool(rt['forbids_repost'])
+            row['blocked'] += bool(rt['blocked'])
+            if rt['usable']:
+                row['usable'] += 1
+                row['old_1y'] += bool(rt['age_days'] and rt['age_days'] >= OLD_DAYS)
+                row['idle_6m'] += bool(rt['channel_idle_days'] and rt['channel_idle_days'] >= INACTIVE_DAYS)
+                row['permitted'] += bool(rt.get('permitted'))
+                row['ids'].append((info['id'], info.get('uploader_id'), rt['age_days'], round(rt['priority'], 2)))
+        out['ranks'][rank] = row
+        log(f'{topic} #{rank} {e["name"]}: search {row["search_pass"]}, info {row["info_pass"]}, usable '
+            f'{row["usable"]} (>=1y {row["old_1y"]}, idle {row["idle_6m"]}, permitted {row["permitted"]}, vetoed {row["vetoed"]})')
+    return out
+
+
+def load_allowlist():
+    try:
+        return json.load(open(ALLOWLIST, encoding='utf-8')).get('editors', {})
+    except Exception:
+        return {}
+
+
+def pinned_comment(vid):
+    """The uploader's pinned comment text (one small request), cached like the infos."""
+    def run():
+        pace()
+        out = ytdlp(['-J', '--skip-download', '--write-comments', '--extractor-args',
+                     'youtube:max_comments=10,all,0,0;comment_sort=top', f'https://www.youtube.com/watch?v={vid}'])
+        try:
+            cs = json.loads(out).get('comments') or []
+        except ValueError:
+            return {'pinned': None}
+        pin = [c for c in cs if c.get('is_pinned') and c.get('author_is_uploader')]
+        return {'pinned': pin[0].get('text') if pin else ''}
+    r = _cached(f'c_{vid}', run)
+    return (r or {}).get('pinned')
+
+
+def _snip(text, m, pad=140):
+    a, b = max(0, m.start() - pad), min(len(text), m.end() + pad)
+    return text[a:b].replace('\n', ' | ')
+
+
+def permission(info, fetch_pinned=True):
+    """-> proof dict {permitted, type, evidence, reason, checked_at, ...}. Never raises."""
+    now = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    base = {'source_id': info.get('id'), 'editor_handle': info.get('uploader_id'), 'channel': info.get('channel'),
+            'license': info.get('license'), 'checked_at': now, 'permitted': False, 'type': None,
+            'evidence': None, 'reason': ''}
+    allow = load_allowlist()
+    h = (info.get('uploader_id') or '').lower()
+    for k, v in allow.items():
+        if k.lower() == h:
+            return dict(base, permitted=True, type='allowlist', evidence=v,
+                        reason='editor granted permission directly (owner allow-list)',
+                        onscreen_credit=bool(v.get('credit_onscreen')))
+    lic = info.get('license') or ''
+    if 'creative commons' in lic.lower():
+        return dict(base, permitted=True, type='cc_by', evidence=lic,
+                    reason='YouTube CC BY licence: reuse allowed with attribution', onscreen_credit=False)
+    texts = [('description', info.get('description') or '')]
+    if fetch_pinned:
+        pc = pinned_comment(info['id'])
+        if pc:
+            texts.append(('pinned_comment', pc))
+    for where, t in texts:
+        veto = VETO_RE.search(t)
+        g = GRANT_RE.search(t)
+        if g and not veto:
+            return dict(base, permitted=True, type='explicit', evidence={'where': where, 'text': _snip(t, g)},
+                        reason=f'the editor\'s {where} allows reuse: "{g.group(0)}"',
+                        onscreen_credit=bool(re.search(r'credit', _snip(t, g), re.I)))
+        if veto:
+            return dict(base, reason=f'{where} forbids it: "{veto.group(0)}"',
+                        evidence={'where': where, 'text': _snip(t, veto)})
+    for where, t in texts:
+        if DISCLAIMER_RE.search(t):
+            m = DISCLAIMER_RE.search(t)
+            return dict(base, reason='only a copyright disclaimer (not a grant)', evidence={'where': where, 'text': _snip(t, m)})
+        if SHOP_RE.search(t):
+            m = SHOP_RE.search(t)
+            return dict(base, reason='sells project files / edits (a paid project is not a repost licence)',
+                        evidence={'where': where, 'text': _snip(t, m)})
+    return dict(base, reason='no permission statement found')
+
+
+def save_proof(proof, work):
+    d = os.path.join(pool_dir(False), '_permissions')
+    os.makedirs(d, exist_ok=True)
+    json.dump(proof, open(os.path.join(d, f'{proof["source_id"]}.json'), 'w', encoding='utf-8'), indent=1,
+              ensure_ascii=False, default=str)
 
 
 # ---------------------------------------------------------------- pool / backlog (production design, 2026-10-24)
@@ -1015,7 +1424,8 @@ def stage(topic, work, per_entry=2):
                                  'editor_handle': res.get('handle'), 'source_views': res.get('views'),
                                  'source_dur': res.get('dur'), 'start': w['s'], 'end': w['e'],
                                  'char_conf': res['conf'], 'char_match': res['match'],
-                                 'safety': 'pass', 'watermark': 'none', 'status': 'staged',
+                                 'safety': 'pass', 'watermark': 'none', 'rights': res.get('rights'),
+                                 'status': 'staged',
                                  'added': time.strftime('%Y-%m-%d')})
             if sum(1 for it in ent['items'] if it['status'] == 'staged') >= per_entry:
                 break
@@ -1057,8 +1467,10 @@ def _ledger():
 
 def usable_items(entry, ledger):
     recent = ledger.get('ranking_recent', [])[-REUSE_GAP:]
-    out = [it for it in entry['items'] if it['status'] == 'reviewed' and it['source_id'] not in recent]
-    return sorted(out, key=lambda it: (-(it.get('char_conf') or 0), -(it.get('source_views') or 0)))
+    blocked = load_blocklist()
+    out = [it for it in entry['items'] if it['status'] == 'reviewed' and it['source_id'] not in recent
+           and (it.get('editor_handle') or '').lower() not in blocked]
+    return sorted(out, key=lambda it: (-((it.get('rights') or {}).get('priority') or 0), -(it.get('char_conf') or 0)))
 
 
 def eligible(topic, n_show=3):
@@ -1069,7 +1481,7 @@ def eligible(topic, n_show=3):
     return all(usable_items(man['entries'][r - 1], led) for r in ranks)
 
 
-def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=False, mark_used=False):
+def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=True, mark_used=False):
     """The daily step: assemble only from the reviewed pool (no network)."""
     T = TOPICS[topic]
     rng = random.Random(seed)
@@ -1117,13 +1529,29 @@ def main():
     ap.add_argument('--show', type=int, choices=(2, 3), help='entries revealed (default: random as the references)')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--offline', action='store_true', help='cached searches / downloads only (e.g. while GitHub mining runs)')
-    ap.add_argument('--onscreen-credit', action='store_true', help='small "edit: @handle" under the clip (refs: none)')
+    ap.add_argument('--no-onscreen-credit', action='store_true', help='drop the small "edit: @handle" line (default on)')
     ap.add_argument('--describe', help='print the description from an existing .report.json and exit')
-    ap.add_argument('--mode', default='build', choices=('build', 'stage', 'import', 'eligible', 'assemble'),
+    ap.add_argument('--mode', default='build', choices=('build', 'stage', 'import', 'eligible', 'assemble', 'permits', 'survey'),
                     help='build = one-off prototype (search + render); stage / import / eligible / assemble = pool path')
+    ap.add_argument('--label', default='', help='burned-in label, e.g. "PREVIEW - not permission-checked, never upload"')
     ap.add_argument('--ids', default='', help='import: comma-separated staged item ids that passed review')
     ap.add_argument('--reject', default='', help='import: comma-separated staged item ids that failed review')
     a = ap.parse_args()
+    if a.mode == 'survey':
+        YT_CACHE[0] = os.path.join(a.work, 'cache', 'yt')
+        OFFLINE[0] = a.offline
+        idle()
+        print(json.dumps(survey(a.topic), ensure_ascii=False, indent=1, default=str))
+        return
+    if a.mode == 'permits':
+        YT_CACHE[0] = os.path.join(a.work, 'cache', 'yt')
+        OFFLINE[0] = a.offline
+        idle()
+        res, summ = find_permitted(a.topic)
+        print(json.dumps({'topic': a.topic, 'summary': summ,
+                          'permitted': {r: [(p['source_id'], p['editor_handle'], p['type']) for p in v] for r, v in res.items()}},
+                         ensure_ascii=False, indent=1))
+        return
     if a.mode == 'stage':
         OFFLINE[0] = a.offline
         stage(a.topic, a.work)
@@ -1135,7 +1563,7 @@ def main():
         print(eligible(a.topic, a.show or 3))
         return
     if a.mode == 'assemble':
-        r = assemble(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit)
+        r = assemble(a.topic, a.out, a.work, a.show, a.seed, not a.no_onscreen_credit)
         print(r['description'])
         return
     if a.describe:
@@ -1144,7 +1572,7 @@ def main():
         return
     os.makedirs(a.work, exist_ok=True)
     OFFLINE[0] = a.offline
-    build(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit)
+    build(a.topic, a.out, a.work, a.show, a.seed, not a.no_onscreen_credit, a.label)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,5 @@
+{
+  "_about": "TAKEDOWN BLOCKLIST for ranking / list compilations. If an editor complains (comment, email, DM, copyright claim): 1) take the video down the same day, 2) add their @handle here (key = YouTube handle exactly as on their channel), 3) commit. ranking_compilation.py never uses a listed editor again (search, staging and the daily assembly all skip them).",
+  "_example": {"@editorhandle": {"added": "2026-10-25", "why": "asked us to remove their edit", "video": "file / YouTube id of our video"}},
+  "editors": {}
+}

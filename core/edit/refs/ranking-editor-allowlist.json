@@ -1,0 +1,14 @@
+{
+  "_about": "Editors who granted Zero Yen Otaku permission to use their edits in ranking / list compilations. Owner-kept. Add one entry per editor (key = their YouTube @handle, exactly as on the channel). Keep the proof (DM / email screenshot or text) where 'proof' says. ranking_compilation.permission() treats every listed editor as permitted; nobody else is, without a CC licence or an explicit public grant.",
+  "_example": {
+    "@editorhandle": {
+      "granted": "2026-10-25",
+      "how": "YouTube comment reply / Discord DM / email",
+      "proof": "Desktop/edit-refs/ranking/permissions/editorhandle.png",
+      "scope": "any of my edits, ranking compilations, with credit",
+      "credit_onscreen": false,
+      "notes": ""
+    }
+  },
+  "editors": {}
+}

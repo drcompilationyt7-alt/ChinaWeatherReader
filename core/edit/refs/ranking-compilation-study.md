@@ -234,5 +234,59 @@ The daily video never downloads. It works like the other edit pools:
    - An edit is not reused within `REUSE_GAP` = 8 ranking uploads, so it is never used back-to-back. This uses the ledger key `ranking_recent` in `memory/edit-pool-used.json`.
    - The description comes from `describe()`: plain-text @handles, no links.
 
+## 6. Source rules, final (owner 2026-10-24, after hearing the risk)
+Owner: "instead lets do we credit them and prioritise old ones like 1 year old". This replaces the permission-only idea.
+
+**What is allowed:**
+- Any edit that passes the quality bar may be used, **with credit**:
+  - a plain `@handle` per entry in the description, no links (`describe()`);
+  - a small on-screen line "edit: @handle" in the band's lower-right corner. It is **on by default**; `--no-onscreen-credit` turns it off.
+
+**Priority** (`rights()` → `priority`):
+- CC / free-to-use / allow-listed editor: +3.
+- Upload ≥ 1 year old: +2.
+- Channel idle ≥ 6 months: +1. The newest upload comes from one cached channel request.
+- Then popularity.
+
+**Hard skips:**
+- The editor says "don't repost / reupload / use" (`VETO_RE`) in the description, the pinned comment or the channel about.
+- The editor is on the takedown blocklist.
+
+**Proof:** every checked source gets a snapshot: description, about, pinned comment, licence, date, the reason. It is stored in `$EDIT_POOL_DIR/ranking/_permissions/<id>.json`.
+
+**Takedowns:**
+- Add the editor to `core/edit/refs/ranking-editor-blocklist.json`. Search, staging and the daily assembly all skip them from then on.
+- **Remove the video the same day on any complaint.**
+
+**Allow-list:** `core/edit/refs/ranking-editor-allowlist.json` is for editors who granted permission directly.
+
+**Permission survey** (cached JSJK sources, 17 popular edits): 0 permitted.
+- 13 have only a "no copyright intended / fair use" disclaimer. That is not a grant.
+- 1 sells project files. A paid project is not a repost licence.
+- 1 says "do not reupload unless transformative". That is a veto.
+- 2 say nothing.
+
+**Project files** (owner asked):
+- Popular editors sell their AE projects (Payhip / Boosty, $5-20).
+- `aep_replay.py` can replay an AE project with our footage and free effect implementations. Fidelity is limited: Magic Bullet Looks, Twixtor, RSMB and Curves / LUT are no-ops, and the block-system remakes have not reached the 9/10 bar.
+- The licence of a bought project normally lets the buyer make their own edits, not repost the editor's render.
+- So feasible only as "our edit built from their template" (a different product). It is not a way to legally reuse their exact render.
+
+### Character check, revised
+The SigLIP + AniList-art vote was too weak in the preview:
+- a Toji window passed at 0.5 with Yuta at 7 of 16 votes;
+- a Yuji window passed with Nobara at 6 of 14.
+
+**Now:**
+- **WD ViT tagger v3** (danbooru character tags, ONNX, CPU) is used for the characters it knows: Gojo, Yuji, Sukuna, Megumi, Frieren, Kurisu, Robin, Yor, C.C., Marin, Makima, Zero Two. It also gives a rating check.
+- SigLIP + art is the fallback for characters it does not know: Toji, Yuta, most romance leads.
+- **Pass:** the entry's character wins ≥ 60 % of the character-voting frames and at least twice any other character.
+- The Gojo window scored 0.86 by tagger. The two marginal ones are now rejected.
+- Toji / Yuta need either more source candidates or a topic list built from taggable characters.
+
+### Low-memory mode (owner: "can u do the last step even if the little ram we have")
+- `RANKING_MIN_FREE_GB=1.5`: pause when free RAM falls below it, resume when it recovers.
+- One heavy process, ≤ 4 threads, IDLE priority, models loaded once and lazily, 2 fps frames at 448 px.
+
 ## Prototype run
 (appended after the run)
