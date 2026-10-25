@@ -114,6 +114,32 @@
      "why": "titleStyle already has 8 active arms"
     }
    ]
+  },
+  {
+   "week": "2026-W43",
+   "pool": "quiz/quiz",
+   "at": "2026-10-25T07:07:43.933Z",
+   "n": 31,
+   "retired": [],
+   "added": [
+    {
+     "dim": "descHook",
+     "id": "op-target-comment",
+     "mu0": 0.47
+    },
+    {
+     "dim": "emojiSet",
+     "id": "op-hype-eyes",
+     "mu0": 0.43
+    }
+   ],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "op-easy-to-hard",
+     "why": "titleStyle already has 8 active arms"
+    }
+   ]
   }
  ],
  "pools": {
@@ -154,6 +180,21 @@
        ]
       },
       "why": "The fire emoji set is currently the top performing set (+0.50), while quiz-specific icons show positive lift. Combining fire with the brain emoji highlights both high energy and quiz intelligence with"
+     },
+     "op-hype-eyes": {
+      "status": "active",
+      "source": "opro-2026-W43",
+      "added": "2026-W43",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "pool": [
+        "👀",
+        "🤯",
+        "🔥"
+       ]
+      },
+      "why": "Combines the top individual performer 🔥 (+0.42) with high-curiosity visual/reaction emojis 👀 and 🤯 from the strong 'op-quiz-pop' pool (+0.41)."
      }
     },
     "titleStyle": {
@@ -205,134 +246,158 @@
        "fallback": "challenge"
       },
       "why": "no-peek is the top performing description hook (+0.62) and comment engagement prompts scored +0.43. Joining the retention warning with a clear score-commenting call-to-action drives both watch time an"
+     },
+     "op-target-comment": {
+      "status": "active",
+      "source": "opro-2026-W43",
+      "added": "2026-W43",
+      "mu0": 0.47,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "Sets a clear target score rule upfront, enforces no peeking retention rule, and directly asks for score comments.",
+       "example": "Can you get 3/3? {hook} No peeking 👀 Comment your final score!",
+       "fallback": "challenge"
+      },
+      "why": "Builds on top-performing desc hooks 'op-comment-score' (+0.65) and 'no-peek' (+0.56) by combining target difficulty goal with strict retention and comment prompts."
      }
     }
    },
    "posterior": {
-    "week": "2026-W42",
-    "n": 25,
+    "week": "2026-W43",
+    "n": 31,
     "dims": {
      "titleStyle": {
       "ramp": {
-       "uses": 6,
-       "mean": 0.57,
-       "sd": 0.42
+       "uses": 7,
+       "mean": 0.41,
+       "sd": 0.39
       },
-      "op-exact-search": {
-       "uses": 0,
-       "mean": 0.47,
-       "sd": 1
+      "keyword": {
+       "uses": 4,
+       "mean": 0.33,
+       "sd": 0.51
+      },
+      "challenge": {
+       "uses": 2,
+       "mean": 0.22,
+       "sd": 0.64
       },
       "casual": {
        "uses": 7,
-       "mean": 0.25,
-       "sd": 0.4
+       "mean": 0.18,
+       "sd": 0.41
       },
-      "keyword": {
-       "uses": 3,
-       "mean": 0.12,
-       "sd": 0.56
+      "op-exact-search": {
+       "uses": 2,
+       "mean": 0.06,
+       "sd": 0.62
       },
       "speed": {
        "uses": 1,
-       "mean": 0.02,
-       "sd": 0.74
-      },
-      "challenge": {
-       "uses": 1,
-       "mean": 0,
-       "sd": 0.74
+       "mean": 0.01,
+       "sd": 0.75
       },
       "fans": {
-       "uses": 3,
-       "mean": -0.58,
-       "sd": 0.55
+       "uses": 4,
+       "mean": -0.42,
+       "sd": 0.51
       },
       "llm": {
        "uses": 4,
-       "mean": -0.66,
-       "sd": 0.51
+       "mean": -0.6,
+       "sd": 0.52
       }
      },
      "hashtagSet": {
       "title-tag": {
-       "uses": 15,
-       "mean": 0.43,
-       "sd": 0.28
+       "uses": 20,
+       "mean": 0.36,
+       "sd": 0.25
       },
       "two": {
        "uses": 8,
-       "mean": -0.45,
-       "sd": 0.38
+       "mean": -0.46,
+       "sd": 0.4
       },
       "format3": {
-       "uses": 2,
-       "mean": -0.62,
-       "sd": 0.62
+       "uses": 3,
+       "mean": -0.46,
+       "sd": 0.55
       }
      },
      "emojiSet": {
-      "fire": {
-       "uses": 11,
-       "mean": 0.5,
-       "sd": 0.33
-      },
-      "op-fire-brain": {
+      "op-hype-eyes": {
        "uses": 0,
        "mean": 0.43,
        "sd": 1
+      },
+      "fire": {
+       "uses": 12,
+       "mean": 0.42,
+       "sd": 0.32
+      },
+      "op-quiz-pop": {
+       "uses": 4,
+       "mean": 0.41,
+       "sd": 0.48
       },
       "topic": {
        "uses": 7,
-       "mean": 0.18,
-       "sd": 0.39
+       "mean": 0.14,
+       "sd": 0.41
       },
-      "op-quiz-pop": {
-       "uses": 1,
-       "mean": 0.09,
-       "sd": 0.77
+      "op-fire-brain": {
+       "uses": 2,
+       "mean": -0.21,
+       "sd": 0.64
       },
       "none": {
        "uses": 2,
-       "mean": -0.25,
-       "sd": 0.62
+       "mean": -0.23,
+       "sd": 0.64
       },
       "template": {
        "uses": 4,
-       "mean": -1.1,
-       "sd": 0.51
+       "mean": -1.03,
+       "sd": 0.53
       }
      },
      "descHook": {
-      "no-peek": {
-       "uses": 11,
-       "mean": 0.62,
-       "sd": 0.32
-      },
       "op-comment-score": {
+       "uses": 3,
+       "mean": 0.65,
+       "sd": 0.54
+      },
+      "no-peek": {
+       "uses": 12,
+       "mean": 0.56,
+       "sd": 0.31
+      },
+      "op-target-comment": {
        "uses": 0,
-       "mean": 0.43,
+       "mean": 0.47,
        "sd": 1
       },
       "op-score-challenge": {
-       "uses": 0,
-       "mean": 0.43,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.28,
+       "sd": 0.77
       },
       "keyword": {
        "uses": 9,
-       "mean": -0.36,
-       "sd": 0.36
+       "mean": -0.37,
+       "sd": 0.38
       },
       "challenge": {
-       "uses": 5,
-       "mean": -0.48,
-       "sd": 0.46
+       "uses": 6,
+       "mean": -0.72,
+       "sd": 0.44
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-18T06:48:58.101Z"
+ "updatedAt": "2026-10-25T07:07:43.934Z"
 }

@@ -97,6 +97,59 @@
     }
    ],
    "rejected": []
+  },
+  {
+   "week": "2026-W43",
+   "pool": "meme/stem-edit",
+   "at": "2026-10-25T07:06:53.675Z",
+   "n": 29,
+   "retired": [
+    {
+     "dim": "titleStyle",
+     "id": "kw-emoji",
+     "uses": 7,
+     "mean": -0.54,
+     "best": "kw-suggest",
+     "z": 2.11
+    },
+    {
+     "dim": "ovStyle",
+     "id": "ov-question",
+     "uses": 4,
+     "mean": -0.5,
+     "best": "op-ov-stem-event",
+     "z": 2.53
+    }
+   ],
+   "added": [
+    {
+     "dim": "ovStyle",
+     "id": "op-ov-layer-stage",
+     "mu0": 0.47
+    },
+    {
+     "dim": "descHook",
+     "id": "op-desc-layer-build",
+     "mu0": 0.43
+    }
+   ],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "op-title-drop-action",
+     "why": "fails on 2/12 recent videos: no keyword"
+    }
+   ]
+  },
+  {
+   "week": "2026-W43",
+   "pool": "meme/sound-edit",
+   "at": "2026-10-25T07:06:53.677Z",
+   "n": 2,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "2 scored uploads: proposals start at 5"
   }
  ],
  "pools": {
@@ -130,6 +183,11 @@
        "fallback": "kw-emoji"
       },
       "why": "Combines top-performing title concepts op-stem-action (+0.92) and kw-suggest (+0.64), leveraging specific stem progression hooks from top videos (+1.65, +1.66 scores)."
+     },
+     "kw-emoji": {
+      "status": "retired",
+      "retiredAt": "2026-W43",
+      "why": "mean -0.54 after 7 uses vs kw-suggest (z 2.11)"
      }
     },
     "ovStyle": {
@@ -160,6 +218,25 @@
        "fallback": "ov-kw"
       },
       "why": "Builds on op-ov-stem-event (+1.12 mean score) which scored highest among on-screen text arms by clearly signaling upcoming sound shifts in the first half second."
+     },
+     "ov-question": {
+      "status": "retired",
+      "retiredAt": "2026-W43",
+      "why": "mean -0.50 after 4 uses vs op-ov-stem-event (z 2.53)"
+     },
+     "op-ov-layer-stage": {
+      "status": "active",
+      "source": "opro-2026-W43",
+      "added": "2026-W43",
+      "mu0": 0.47,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "short on-screen text under 26 characters explicitly highlighting the isolated starting stem (e.g. 'vocals only first', 'just vocals')",
+       "example": "vocals only first",
+       "fallback": "ov-kw"
+      },
+      "why": "On-screen overlays featuring 'vocals only first' were present in two of the top uploads (+1.84 and +1.34 scores). It creates instant visual and acoustic contrast, lowering swipe-away rates in the firs"
      }
     },
     "emojiSet": {
@@ -204,171 +281,309 @@
        "fallback": "layers"
       },
       "why": "Refines top-performing descHook arm 'layers' (+0.77) by combining step-by-step stem building with explicit payoff promise of the final edit drop."
+     },
+     "op-desc-layer-build": {
+      "status": "active",
+      "source": "opro-2026-W43",
+      "added": "2026-W43",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "one plain sentence starting with '{song} acapella', explicitly detailing the layer-by-layer stem addition leading into the anime edit drop",
+       "example": "{song} acapella stem by stem layer build into the full {Source} edit drop {e1}",
+       "fallback": "layers"
+      },
+      "why": "The 'layers' descHook is currently the highest performing description arm (+1.03 score). Doubling down on combining the acapella keyword with explicit 'stem by stem' build terminology reinforces searc"
      }
     }
    },
    "posterior": {
-    "week": "2026-W42",
-    "n": 26,
+    "week": "2026-W43",
+    "n": 29,
     "dims": {
      "titleStyle": {
       "op-stem-action": {
        "uses": 1,
-       "mean": 0.92,
-       "sd": 0.77
+       "mean": 0.77,
+       "sd": 0.74
       },
       "kw-suggest": {
-       "uses": 3,
-       "mean": 0.64,
-       "sd": 0.56
+       "uses": 5,
+       "mean": 0.75,
+       "sd": 0.46
       },
       "op-stem-stack": {
        "uses": 0,
        "mean": 0.47,
        "sd": 1
       },
+      "llm-free": {
+       "uses": 9,
+       "mean": 0.16,
+       "sd": 0.36
+      },
       "kw-source": {
        "uses": 3,
-       "mean": 0.04,
+       "mean": -0.04,
        "sd": 0.54
-      },
-      "llm-free": {
-       "uses": 8,
-       "mean": 0.01,
-       "sd": 0.37
       },
       "llm-hook": {
        "uses": 4,
-       "mean": -0.27,
-       "sd": 0.51
+       "mean": -0.3,
+       "sd": 0.53
       },
       "kw-emoji": {
        "uses": 7,
-       "mean": -0.41,
-       "sd": 0.39
+       "mean": -0.54,
+       "sd": 0.41
       }
      },
      "ovStyle": {
       "op-ov-stem-event": {
-       "uses": 2,
-       "mean": 1.12,
-       "sd": 0.64
+       "uses": 5,
+       "mean": 1.21,
+       "sd": 0.45
       },
       "op-ov-milestone": {
        "uses": 0,
        "mean": 0.47,
        "sd": 1
       },
+      "op-ov-layer-stage": {
+       "uses": 0,
+       "mean": 0.47,
+       "sd": 1
+      },
       "ov-drop": {
        "uses": 8,
-       "mean": 0.09,
-       "sd": 0.38
+       "mean": 0,
+       "sd": 0.39
       },
       "ov-kw": {
        "uses": 4,
-       "mean": 0,
-       "sd": 0.49
+       "mean": -0.06,
+       "sd": 0.5
       },
       "ov-llm": {
        "uses": 5,
-       "mean": -0.05,
+       "mean": -0.1,
        "sd": 0.46
-      },
-      "ov-layers": {
-       "uses": 3,
-       "mean": -0.4,
-       "sd": 0.55
       },
       "ov-question": {
        "uses": 4,
-       "mean": -0.4,
-       "sd": 0.49
+       "mean": -0.5,
+       "sd": 0.51
+      },
+      "ov-layers": {
+       "uses": 3,
+       "mean": -0.51,
+       "sd": 0.57
       }
      },
      "hashtagSet": {
       "minimal": {
-       "uses": 7,
-       "mean": 0.6,
-       "sd": 0.4
+       "uses": 8,
+       "mean": 0.63,
+       "sd": 0.37
       },
       "title-source": {
-       "uses": 8,
-       "mean": 0.11,
-       "sd": 0.38
-      },
-      "niche3": {
        "uses": 10,
-       "mean": -0.44,
-       "sd": 0.34
+       "mean": 0.26,
+       "sd": 0.35
       },
       "edit-community": {
        "uses": 1,
-       "mean": -0.58,
-       "sd": 0.76
+       "mean": -0.55,
+       "sd": 0.77
+      },
+      "niche3": {
+       "uses": 10,
+       "mean": -0.55,
+       "sd": 0.35
       }
      },
      "emojiSet": {
       "op-fire-moai": {
-       "uses": 3,
-       "mean": 1.26,
-       "sd": 0.56
+       "uses": 6,
+       "mean": 1.21,
+       "sd": 0.41
       },
       "fire": {
        "uses": 7,
-       "mean": 0.23,
-       "sd": 0.39
+       "mean": 0.12,
+       "sd": 0.4
       },
       "music": {
        "uses": 3,
-       "mean": -0.21,
-       "sd": 0.56
+       "mean": -0.24,
+       "sd": 0.57
       },
       "moai": {
        "uses": 8,
-       "mean": -0.27,
-       "sd": 0.38
+       "mean": -0.37,
+       "sd": 0.39
       },
       "spark": {
        "uses": 5,
-       "mean": -0.55,
-       "sd": 0.45
+       "mean": -0.6,
+       "sd": 0.46
       }
      },
      "descHook": {
       "layers": {
-       "uses": 3,
-       "mean": 0.77,
-       "sd": 0.57
+       "uses": 6,
+       "mean": 1.03,
+       "sd": 0.42
       },
       "op-desc-stack-drop": {
        "uses": 0,
        "mean": 0.43,
        "sd": 1
       },
+      "op-desc-layer-build": {
+       "uses": 0,
+       "mean": 0.43,
+       "sd": 1
+      },
       "drop": {
        "uses": 11,
-       "mean": 0.26,
+       "mean": 0.14,
        "sd": 0.33
       },
       "question": {
        "uses": 5,
-       "mean": -0.33,
-       "sd": 0.45
+       "mean": -0.44,
+       "sd": 0.46
       },
       "stems": {
        "uses": 5,
-       "mean": -0.43,
-       "sd": 0.46
+       "mean": -0.53,
+       "sd": 0.48
       },
       "llm-line": {
        "uses": 2,
-       "mean": -0.58,
-       "sd": 0.64
+       "mean": -0.59,
+       "sd": 0.66
+      }
+     }
+    }
+   }
+  },
+  "meme/sound-edit": {
+   "arms": {},
+   "posterior": {
+    "week": "2026-W43",
+    "n": 2,
+    "dims": {
+     "titleStyle": {
+      "llm-hook": {
+       "uses": 1,
+       "mean": 0.01,
+       "sd": 0.77
+      },
+      "kw-song": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "song-anime": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-suggest": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-free": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-emoji": {
+       "uses": 1,
+       "mean": -0.01,
+       "sd": 0.76
+      }
+     },
+     "ovStyle": {
+      "ov-kw": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-song": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "ov-llm": {
+       "uses": 2,
+       "mean": 0,
+       "sd": 0.65
+      }
+     },
+     "hashtagSet": {
+      "niche3": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "title-subject": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "minimal": {
+       "uses": 2,
+       "mean": 0,
+       "sd": 0.65
+      }
+     },
+     "emojiSet": {
+      "fire": {
+       "uses": 1,
+       "mean": 0.01,
+       "sd": 0.77
+      },
+      "music": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "spark": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "moai": {
+       "uses": 1,
+       "mean": -0.01,
+       "sd": 0.76
+      }
+     },
+     "descHook": {
+      "kw-line": {
+       "uses": 1,
+       "mean": 0.01,
+       "sd": 0.77
+      },
+      "llm-line": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "rate": {
+       "uses": 1,
+       "mean": -0.01,
+       "sd": 0.76
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-18T06:48:34.061Z"
+ "updatedAt": "2026-10-25T07:06:53.677Z"
 }
