@@ -1374,3 +1374,21 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
   city-wall and panda-base / Nara photos).
 - **Still below ~40**: nightcity 25, cuisine 37, wyr food 14 / cities 19 (anime 9, kpop 4), kpop emoji 31, anime songs 35.
   The geo miner's Commons picks are mostly generic cityscapes: steer its queries to landmarks / famous skylines.
+
+### 2026-10-25 morning review (review agent)
+- **Slow-mo** slowmo-cand-20261025-s0-sg9-db0 (9 summer_glow; ffmpeg strips, no cv2 on the PC python): **3 approved** (DyX4tduQRU4_5300
+  dark-haired girl laughing, continuous; JJ_0CYf70Rk_34400 blonde, hands clasped, hair in wind; ZPyt5_6dzUU_33900 red-haired girl,
+  chin on hands, night), **6 rejected**: Krsa0q9XTbY_101700 Shikimori talking at the end; WvS45cBvuh0_84800 live-action (Rosé,
+  not anime); XkV46XkUBEk_38000 pigeons cover the face + 3 repeated frames; jlzKJ3wez3k_95300 dissolve (double face); sA-hqr2boM0_65000
+  garish / milky colour; urf4j5N3zsQ_84300 dissolve at the start + a freeze + talking. Pool **summer_glow 41 / dreamy_bloom 13**; manifests pushed.
+- **Quiz** (photos-n23 / llm-n28 / people-n10 = 61): **45 approved / 16 rejected** (08a6a56, push-manifests done, staging empty).
+  geo 5/10 (Fushimi Inari, Landmark Tower, Sapporo clock tower, Todai-ji, Fukuoka Tower; rejected Chaotianmen with people, a Tianjin
+  statue, a Kyoto Tower close-up, a mural labelled Yellow Crane Tower, a French folk-dance photo labelled Xiamen); nightcity 6/12
+  (rejected Gyeongbokgung with a logo, a night market with people, an unclear Senso-ji gate, a daytime forest labelled Jeju, the Star Ferry
+  in daylight, a dark Hangzhou gate); cuisine 1/1; idols 9/10 (Han Geng: left SJ through a lawsuit, nameplate in the photo); emoji 11/12
+  (FMA near-duplicate); trivia 12/15 (BTS leader + Haeundae are duplicates, banh mi picture is a shop front); wyr food 1/1.
+- **Still below ~40**: nightcity 31, cuisine 38, wyr food 15 / cities 19 (anime 9, kpop 4), kpop emoji 36, anime songs 35.
+- **dry-titles** (c5f6a04 miners): no Commons rate limit this time. The first run hit DNS / timeout errors and then crashed on a cp932
+  print (run with PYTHONIOENCODING=utf-8). Geo / night titles are on target (landmark categories). Cuisine about 15/20 correct;
+  wrong ones: Kimchi -> "Kimchi refrigerator", Satay -> HK satay-beef macaroni, Udon -> "Erik Ko", Tonkatsu -> "1952 - Tonkatsu taisho".
+  The cuisine path needs a reject list for appliance / person / restaurant-name titles.
