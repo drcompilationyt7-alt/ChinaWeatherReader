@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=_NXBxpZnYS8",
-      "title": "who would you pick anime: teacher roommate fight ⚔️",
-      "country": "Global",
-      "postedAt": "2026-09-24T07:48:11.603Z",
-      "videoId": "_NXBxpZnYS8",
-      "category": "quiz-duel",
-      "titleSource": "duel-llm",
-      "quizFormat": "duel",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=8dJefQwj140",
       "title": "VTuber Quiz: Easy to IMPOSSIBLE 🔥 #vtuber",
       "country": "Global",
@@ -384,6 +373,28 @@
       "titleSource": "cphoto-name",
       "quizFormat": "cityphoto",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=l8PFbFuyw0w",
+      "title": "guess the anime character by outfit 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-25T07:46:42.955Z",
+      "videoId": "l8PFbFuyw0w",
+      "category": "quiz-outfit",
+      "titleSource": "outfit-llm",
+      "quizFormat": "outfit",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=cU3LbHOvW9M",
+      "title": "Guess the Anime Character Silhouette 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-10-25T07:55:13.175Z",
+      "videoId": "cU3LbHOvW9M",
+      "category": "quiz-silhouette",
+      "titleSource": "silhouette-llm",
+      "quizFormat": "silhouette",
+      "quizTheme": "anime"
     }
   ]
 }

@@ -1,4 +1,15 @@
 {
+ "guess the anime character silhouette": {
+  "at": "2026-10-25T07:54:53.055Z",
+  "s": [
+   "guess the anime character silhouette",
+   "guess the anime character by their silhouette"
+  ]
+ },
+ "guess the anime character by outfit": {
+  "at": "2026-10-25T07:46:24.123Z",
+  "s": []
+ },
  "kpop quiz": {
   "at": "2026-10-25T07:07:17.578Z",
   "s": [
@@ -179,10 +190,6 @@
    "guess the anime from emojis",
    "guess the anime character from emoji"
   ]
- },
- "guess the anime character by outfit": {
-  "at": "2026-10-17T07:08:32.421Z",
-  "s": []
  },
  "guess the anime character by eyes": {
   "at": "2026-10-16T07:26:11.442Z",

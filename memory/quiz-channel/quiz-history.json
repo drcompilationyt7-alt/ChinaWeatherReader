@@ -1169,6 +1169,128 @@
     "titleStyle": "challenge",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "l8PFbFuyw0w",
+   "url": "https://www.youtube.com/watch?v=l8PFbFuyw0w",
+   "postedAt": "2026-10-25T07:46:42.768Z",
+   "publishAt": "2026-10-25T12:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 637347732,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character from their outfit? Let's go!",
+     "template": "Can you guess the anime character from their outfit? Let's go!",
+     "sec": 3.32
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your score in the comments!",
+     "template": "Drop your score in the comments!",
+     "sec": 1.6
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Nico Robin. Did you get it?",
+     "template": null,
+     "sec": 1.43
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Boom! You just saw Yor Forger!",
+     "template": "Boom! You just saw {a}!",
+     "sec": 1.91
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Hae-In Cha!",
+     "template": null,
+     "sec": 1.25
+    }
+   ],
+   "titleTemplate": "outfit-llm",
+   "title": "guess the anime character by outfit 🔥 #anime",
+   "answers": [
+    "outfit:nico robin#ndvi58",
+    "outfit:yor forger#1ley34e",
+    "outfit:hae-in cha#17bv1rs"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "cU3LbHOvW9M",
+   "url": "https://www.youtube.com/watch?v=cU3LbHOvW9M",
+   "postedAt": "2026-10-25T07:55:13.003Z",
+   "publishAt": "2026-10-25T21:00:00.000Z",
+   "format": "silhouette",
+   "theme": "anime",
+   "seed": 407467312,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character just from the silhouette?",
+     "template": "Can you guess the anime character just from the silhouette?",
+     "sec": 2.87
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your final score in the comments!",
+     "template": "Drop your final score in the comments!",
+     "sec": 1.84
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Frieren. Did you get it?",
+     "template": null,
+     "sec": 1.55
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Shinobu Kocho!",
+     "template": null,
+     "sec": 0.87
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Beatrix Amerhauser!",
+     "template": null,
+     "sec": 1.6
+    }
+   ],
+   "titleTemplate": "silhouette-llm",
+   "title": "Guess the Anime Character Silhouette 🔥 #anime",
+   "answers": [
+    "silhouette:frieren#16h4jrv",
+    "silhouette:shinobu kocho#lauu2",
+    "silhouette:beatrix amerhauser#4kjz2x"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "llm",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
