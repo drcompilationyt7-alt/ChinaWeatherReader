@@ -1765,6 +1765,14 @@ def save_proof(proof, work):
 PROOF_DIR = [None]          # where save_proof() writes (ranking_pool sets the staging dir)
 
 
+def cut_clip(src, s, e, out):
+    """The stored excerpt: only [s, e] of the source edit (re-encoded, high quality, its own audio)."""
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '4', '-ss', f'{s:.3f}', '-t', f'{e - s:.3f}', '-i', src,
+                    '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', '-threads', '4', '-c:a', 'aac', '-b:a', '256k',
+                    '-movflags', '+faststart', out], check=True)
+
+
 def pool_dir(staged=False):
     root = os.path.abspath(os.environ.get('EDIT_POOL_DIR') or os.path.join(ROOT, 'output', 'edit-pools'))
     return os.path.join(root, '_staged', 'ranking') if staged else os.path.join(root, 'ranking', 'pool')

@@ -95,10 +95,10 @@ jobs:
           python core/edit/ranking_topics.py check
           python core/edit/ranking_pool.py plan | head -20
       - name: Mine (one job, paced)
+        env:
+          ENTRIES: ${{ inputs.entries }}
         run: |
-          ARGS=""
-          if [ -n "${{ inputs.entries }}" ]; then ARGS="--entries ${{ inputs.entries }}"; fi
-          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '150' }}" --work work $ARGS | tail -c 4000
+          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '150' }}" --work work --entries "$ENTRIES" | tail -c 4000
           rm -f /tmp/yt_cookies.txt
       - name: Publish to edit-pools-staging
         if: always()

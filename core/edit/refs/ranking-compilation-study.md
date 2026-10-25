@@ -441,7 +441,24 @@ show's Fandom wiki page + /Gallery files whose NAME is only about this character
 ...", "Maki and Yuta ...", is skipped). One dominant face per picture (group shots dropped), the WD tagger vetoes a
 picture where it sees another known character, a consistency filter drops outliers. A frame votes for the candidate
 with the best mean of its top-3 reference similarities, only with a 0.03 margin; tagger-known characters keep the WD
-tagger vote. Pass rule unchanged: >= 60 % of the voting frames and >= 2x any other character.
+tagger vote. Pass rule: >= 60 % of the voting frames, >= 2x any other character, and >= 6 voting frames (a 4-vote bank
+pass called a Horimiya edit "Fragrant Flower"; every true bank pass had >= 6). Genre entries: the other-gender vote is off
+(the target is a whole cast), any character of the show counts.
+
+**Evaluation** (`ranking_charcheck_eval.py`, the 42 downloaded watermark-free survey candidates, 2 x 20 s chunks each,
+every chunk checked for its own entry AND for every other entry of the list):
+
+| | own entry passes (candidates) | wrong-character passes (chunks) |
+|---|---|---|
+| v1: one AniList picture (same pipeline otherwise) | 25 / 42 (JJK 8, waifu 7, romance 10) | **7**: Toji on 2 Yuta edits; Blue Box / Fragrant Flower on Dress-Up / Horimiya / Blue Box edits |
+| v2: the reference bank (margin 0.03, >= 6 votes) | 21 / 42 (JJK 8, waifu 7, romance 6) | **0** |
+| v2 with margin 0.02 (tested, not used) | +3 (Dress-Up x2, Blue Box) | 1 (Blue Box edit passed as Dress-Up) |
+
+(Both versions also flag GOJO in MTFXS_Tna2w, a "Toji" edit that is half Gojo footage: a true detection, not counted.)
+- Precision first: every wrong-character pass is gone. The 4 romance passes v1 had and v2 lacks rested on 2-4 votes.
+- Toji now has a 23-picture bank (the wiki is "Toji", AniList "Touji": the bank searches both spellings).
+- Still 0 of 3 Yuta candidates pass: the Yuta edits are mostly Geto / Rika / masked or far shots (few clear Yuta faces).
+  Yuta needs more candidates (mining searches deeper) before jjk_strongest can show its #3.
 
 ### Watermark gate additions (the PJUNKIE miss)
 `xlPSek4600U` (@PJUNKIE, Yuta) passed the watermark gate: it ends on an "OVO EDITORS" group card and the editor's logo on
