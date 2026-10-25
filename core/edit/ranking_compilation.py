@@ -56,6 +56,7 @@ REVEAL = (3, 3, 3, 2)            # 3 of the 4 references reveal 3 entries, one r
 TOTAL = 59.5
 SEG_3 = ((19.0, 25.0), (18.0, 23.0))   # first two of three; the third gets the rest (refs: 21/20/18.5, 25/19/15.5)
 SEG_2 = ((29.0, 35.0),)                # first of two; the second gets the rest (ref: 35/24.5)
+MAX_CLEAN = 4                    # clean candidates per entry that go to the models (best one wins)
 CHAR_MIN = 0.6                   # share of character-voting frames the entry's character must win
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 MIN_VIEWS, MIN_LIKE_RATIO = 20_000, 0.015
@@ -79,7 +80,8 @@ TOPICS = {
             {'name': 'YUTA', 'chars': ['Yuta Okkotsu'], 'anime': 'JUJUTSU KAISEN',
              'q': ['yuta okkotsu edit 4k', 'yuta amv edit'], 'alias': [r'yuta', r'okkotsu']},
             {'name': 'YUJI', 'chars': ['Yuji Itadori'], 'tags': ['itadori_yuuji'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['yuji itadori edit 4k', 'itadori amv edit'], 'alias': [r'yuji', r'itadori']},
+             'q': ['yuji itadori edit 4k', 'itadori amv edit', 'itadori yuji black flash edit', 'yuji itadori shinjuku edit 4k'],
+             'alias': [r'yuji', r'itadori']},
             {'name': 'TOJI', 'chars': ['Toji Fushiguro'], 'anime': 'JUJUTSU KAISEN',
              'q': ['toji fushiguro edit 4k', 'toji amv edit'], 'alias': [r'toji']},
         ]},
@@ -667,18 +669,22 @@ class Judge:
 
 # ---------------------------------------------------------------- source finding per entry
 
-def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=4, pre=None):
+def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6, pre=None):
     """Best source edit + window for one entry, or None. Downloads up to `max_dl` candidates (most
     viewed first), runs the cheap watermark / text gates on all of them (that is the measured
     watermark-free rate), then the models (safety + character match + windows) on the clean ones."""
     if pre is not None:
-        clean = pre
-        for res, row in clean:
+        # evaluate every clean candidate and keep the STRONGEST (owner: "yuji edit can be better"):
+        # highest character share first, then the source priority (old / idle / permitted)
+        best = None
+        for res, row in pre:
             res = evaluate(res, entry, others, get_judge(), seg_len)
             row.update({k: res.get(k) for k in ('verdict', 'why', 'conf', 'window', 'match')})
             if res['verdict'] == 'ok':
-                return res
-        return None
+                key = (res['conf'], (res.get('rights') or {}).get('priority') or 0)
+                if best is None or key > best[0]:
+                    best = (key, res)
+        return best[1] if best else None
     seen, cands = set(), []
     for q in entry['q']:
         for e in (search(q) or []):
@@ -714,7 +720,7 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=4,
     ranked.sort(key=lambda x: -x[0])
     clean = []
     for _, info, rt in ranked:
-        if len(clean) >= 2 or report['_dl'].get(entry['name'], 0) >= max_dl:
+        if len(clean) >= MAX_CLEAN or report['_dl'].get(entry['name'], 0) >= max_dl:
             break
         report['_dl'][entry['name']] = report['_dl'].get(entry['name'], 0) + 1
         path = download(info, os.path.join(work, 'src'))
@@ -983,7 +989,7 @@ def plan_lengths(rng, n):
     return first + [max(12.0, TOTAL - sum(first))]
 
 
-def build(topic, out, work, n_show=None, seed=None, onscreen_credit=True, label=''):
+def build(topic, out, work, n_show=None, seed=None, onscreen_credit=False, label=''):
     T = TOPICS[topic]
     rng = random.Random(seed)
     entries = T['entries'][:5]
@@ -1481,7 +1487,7 @@ def eligible(topic, n_show=3):
     return all(usable_items(man['entries'][r - 1], led) for r in ranks)
 
 
-def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=True, mark_used=False):
+def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=False, mark_used=False):
     """The daily step: assemble only from the reviewed pool (no network)."""
     T = TOPICS[topic]
     rng = random.Random(seed)
@@ -1529,7 +1535,7 @@ def main():
     ap.add_argument('--show', type=int, choices=(2, 3), help='entries revealed (default: random as the references)')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--offline', action='store_true', help='cached searches / downloads only (e.g. while GitHub mining runs)')
-    ap.add_argument('--no-onscreen-credit', action='store_true', help='drop the small "edit: @handle" line (default on)')
+    ap.add_argument('--onscreen-credit', action='store_true', help='small "edit: @handle" line in the band corner (owner 2026-10-24: OFF, description credit only)')
     ap.add_argument('--describe', help='print the description from an existing .report.json and exit')
     ap.add_argument('--mode', default='build', choices=('build', 'stage', 'import', 'eligible', 'assemble', 'permits', 'survey'),
                     help='build = one-off prototype (search + render); stage / import / eligible / assemble = pool path')
@@ -1563,7 +1569,7 @@ def main():
         print(eligible(a.topic, a.show or 3))
         return
     if a.mode == 'assemble':
-        r = assemble(a.topic, a.out, a.work, a.show, a.seed, not a.no_onscreen_credit)
+        r = assemble(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit)
         print(r['description'])
         return
     if a.describe:
@@ -1572,7 +1578,7 @@ def main():
         return
     os.makedirs(a.work, exist_ok=True)
     OFFLINE[0] = a.offline
-    build(a.topic, a.out, a.work, a.show, a.seed, not a.no_onscreen_credit, a.label)
+    build(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit, a.label)
 
 
 if __name__ == '__main__':

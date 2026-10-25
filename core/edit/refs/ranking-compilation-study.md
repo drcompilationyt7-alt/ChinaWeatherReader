@@ -240,7 +240,7 @@ Owner: "instead lets do we credit them and prioritise old ones like 1 year old".
 **What is allowed:**
 - Any edit that passes the quality bar may be used, **with credit**:
   - a plain `@handle` per entry in the description, no links (`describe()`);
-  - a small on-screen line "edit: @handle" in the band's lower-right corner. It is **on by default**; `--no-onscreen-credit` turns it off.
+  - **No on-screen credit.** The owner reviewed PREVIEW2 ("no credit at the side, just in description is fine"). `--onscreen-credit` exists but is off.
 
 **Priority** (`rights()` → `priority`):
 - CC / free-to-use / allow-listed editor: +3.
@@ -283,6 +283,14 @@ The SigLIP + AniList-art vote was too weak in the preview:
 - **Pass:** the entry's character wins ≥ 60 % of the character-voting frames and at least twice any other character.
 - The Gojo window scored 0.86 by tagger. The two marginal ones are now rejected.
 - Toji / Yuta need either more source candidates or a topic list built from taggable characters.
+
+### Owner review of PREVIEW2 (2026-10-24)
+- "the format is good": the layout / countdown / band / blur / dip-to-black are approved. Keep them exactly.
+- "yuji edit can be better":
+  - Yuji gets more queries (black flash, Shinjuku).
+  - Every entry now evaluates up to `MAX_CLEAN` = 4 clean candidates.
+  - It keeps the strongest: highest character share under the strict rule, then source priority. It no longer takes the first that passes.
+- Segment length stays ~21 s per entry until the owner says whether "long" means longer.
 
 ### Low-memory mode (owner: "can u do the last step even if the little ram we have")
 - `RANKING_MIN_FREE_GB=1.5`: pause when free RAM falls below it, resume when it recovers.
