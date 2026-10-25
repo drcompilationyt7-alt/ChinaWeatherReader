@@ -109,7 +109,7 @@ What we still do differently:
    - **On-screen credit is off by default, as in the references.** `--onscreen-credit` adds a small "edit: @handle" under the clip; it is a cheap risk reducer (section 4).
 4. **Every entry shows its own character / anime** (owner, 2026-10-24). This is checked visually per segment; see below.
 
-### Segment picker (`pick_windows`)
+### Segment picker (`pick_windows`, superseded 2026-10-25 by the phrase windows in section 7)
 1. It works on the downloaded edit's audio (librosa RMS + onset + beats) and picture (frame difference at 10 fps, cuts).
 2. The **drop** is the beat where the next 3 s are loudest relative to the previous 3 s (dB jump + onset strength).
 3. Candidate windows are of the target length:
@@ -290,11 +290,116 @@ The SigLIP + AniList-art vote was too weak in the preview:
   - Yuji gets more queries (black flash, Shinjuku).
   - Every entry now evaluates up to `MAX_CLEAN` = 4 clean candidates.
   - It keeps the strongest: highest character share under the strict rule, then source priority. It no longer takes the first that passes.
-- Segment length stays ~21 s per entry until the owner says whether "long" means longer.
+- Segment length: now 18-24 s per entry, cut on the song's phrase ends and balanced across entries (section 7).
 
 ### Low-memory mode (owner: "can u do the last step even if the little ram we have")
 - `RANKING_MIN_FREE_GB=1.5`: pause when free RAM falls below it, resume when it recovers.
 - One heavy process, ≤ 4 threads, IDLE priority, models loaded once and lazily, 2 fps frames at 448 px.
 
+## 7. Eventful + song scoring, phrase windows, pool survey (2026-10-25)
+
+Owner feedback on PREVIEW2: Toji (@noctryx7) and Gojo (@XenozEdit) GOOD, Toji a bit long; Yuji (@Dr1zzy.aep.)
+"not eventful enough". Code: `core/edit/ranking_score.py` (scores + phrase windows), wired into
+`ranking_compilation.evaluate()`.
+
+### Scores (0-10 each)
+- **Eventful** = 0.25 cuts/s + 0.15 beat-synced cuts (cut within 70 ms of a beat / onset) + 0.2 motion
+  (frame difference) + 0.15 flashes/s (luma spikes) + 0.15 shakes/s (camera-shift reversals, phase correlation)
+  + 0.1 zooms/s (radial optical-flow bursts). Every frame up to 30 fps at 160x90, cached per source (`cache/ev`).
+- **Song** = 0.25 drop (dB jump on a beat in the first 60 % of the window; silence floored at -40 dB so an
+  editor's pause is not a 60 dB "drop") + 0.25 loudness + 0.3 pulse clarity + 0.1 punch + 0.1 bass.
+- **Popularity** (0-1): the same song used by other editors in the search cache (trending edit song) + the
+  edit's views. Song name from the description's MUSIC block / "Song:" / the title.
+- **Quality** = 0.6 eventful + 0.25 song + 1.5 popularity - 15 x on-screen text cover.
+- **Rank score** = quality + source bonus (>= 1 year old +1, idle channel +0.5, CC / free-to-use +1.5,
+  `--prefer` owner-approved +3).
+
+### Calibration (window as used in PREVIEW2 / the reference segments)
+| | eventful | song |
+|---|---|---|
+| Toji lynJABr10N4 (owner: good) | **8.1** | 5.7 |
+| Gojo thMXb5r792s (owner: good) | **9.7** | 6.7 |
+| Yuji IryZxcTZgzE (owner: not eventful) | **2.8** | 4.6 |
+| romance refs, 10 segments (composited 3:4, so motion is inflated and shakes are hidden) | 2.6-8.2, median ~4 | 2.7-6.3 |
+
+Gates: eventful >= 6.0 for action topics (JJK), >= 3.5 for calm ones (romance, waifu: the romance refs
+themselves score ~4); song >= 4.0.
+
+### Phrase windows
+Bars from the beat track (downbeat = the strongest onset phase); a phrase-end strength per bar boundary
+(MFCC + chroma novelty over 2 bars, an energy dip right before it, an editor cut on it, the 4-bar grid from the
+strongest bar). Windows start and end on those boundaries, 18-24 s (target 20), plus up to 2 length
+variants per region. `balance()` then picks one window per entry: best summed quality minus the length spread,
+total <= 63 s. 2-entry videos use 24-34 s.
+
+### Character check, revised again
+- **Bug fixed:** the topic used "Toji Fushiguro"; AniList has "Touji Fushiguro", so Toji had no art reference
+  at all. Also fixed: Shota Kazehaya, Kyoko Hori, Rintaro Tsumugi. Same-show distractors now match across
+  seasons ("JUJUTSU KAISEN Season 2").
+- Characters the WD tagger does not know (Toji, Yuta, most romance leads): `match_open()`. Frames with a
+  tagger-known distractor of the same show (Gojo, Megumi, Yuji, Nobara ...) vote for it, other-gender-only
+  frames vote "other_gender", the remaining person frames vote by **face crop vs AniList art similarity with
+  a 0.02 margin** (ambiguous frames abstain). SigLIP name prompts are no longer used there: they called
+  almost every JJK frame "Yuta". Same pass rule (>= 60 %, >= 2x any other).
+- Toji lynJABr10N4 now passes at 0.71 (it failed at 0.38 with the old SigLIP vote).
+- **Limit:** one AniList picture per character is a weak reference. Yuta edits (white uniform / Gojo-body
+  scenes) and both romance leads of Horimiya / Blue Box mostly fail. These entries cannot be verified yet.
+
+### Safety change
+NudeNet misfired on a Gojo eye close-up (WD rating "general" 0.95) and vetoed the owner-approved Starboy
+window. A NudeNet hit now counts only when the WD tagger confirms that frame (questionable + explicit >= 0.35).
+The SigLIP unsafe share and the tagger rating gate stay.
+
+### Pool survey (the final source rules; full gates on a sample)
+Rights level: the top 10 search hits per entry that pass title / length / views, then info gates and the
+rights check (proof snapshots in `$EDIT_POOL_DIR/ranking/_permissions/`). Full gates: the first 4-5 usable
+candidates per entry downloaded (old edits first) and run through watermark, subtitles, eventful + song,
+safety and character (`--mode deep-survey`, json + review sheet `deep-<topic>-sheet.jpg` in
+`Desktop/edit-refs/ranking/survey/`).
+
+| topic | entry | usable (rights) | >= 1 y | downloaded | watermark-free | **pass all** |
+|---|---|---|---|---|---|---|
+| jjk_strongest | #5 Toji | 8 | 7 | 4 (+1 owner-approved) | 4 | **1 (+1)** |
+| | #4 Yuji | 7 | 2 | 4 | 1 | **0** |
+| | #3 Yuta | 6 | 2 | 4 | 3 | **0** (character check) |
+| | #2 Gojo | 8 | 6 | 4 | 3 | **1** |
+| best_waifu | #5 C.C. | 7 | 7 | 4 | 4 | **2** |
+| | #4 Yor | 10 | 10 | 4 | 3 | **1** |
+| | #3 Nico Robin | 9 | 8 | 4 | 3 | **0** |
+| | #2 Kurisu | 4 | 4 | 4 | 1 | **1** |
+| romance_peak | #5 Fragrant Flower | 10 | 8 | 5 | 4 | **2** |
+| | #4 Dress-Up Darling | 10 | 8 | 5 | 3 | **2** |
+| | #3 Horimiya | 10 | 10 | 4 | 4 | **0** (character check) |
+| | #2 Blue Box | 10 | 8 | 5 | 4 | **0** (character check) |
+
+- 0 vetoes outside JJK Yuji (2 editors say no reuploads); 4 CC / free-to-use edits (C.C. 2, Yor 1, Horimiya 1).
+- About 30 % of downloaded usable edits pass every gate; the watermark gate and the character check are the
+  main losses.
+- **Buildable now:** JJK 3 entries only with the spare #2 (Gojo) standing in for Yuta (as PREVIEW2); waifu
+  3 entries the same way (C.C., Yor, Kurisu as #2); romance only 2 entries (#5, #4), the 2-entry format of
+  the reference BnsZETrlnFA.
+- **Cadence verdict: weekly, not daily.** Each entry has 0-2 passing edits, and an edit may not return
+  within 8 ranking uploads, so a topic gives ~1-2 videos before it needs new edits. Daily would need
+  ~30 topics with >= 3 verifiable entries each. One video a week, rotating topics, keeps the pool ahead and
+  matches the risk advice (section 4: not daily, never the channel's main identity). Raising it needs a
+  better character reference for tagger-unknown characters (several art images per character) and more
+  candidates per entry (deeper search).
+
 ## Prototype run
-(appended after the run)
+
+**v3 strict sample (2026-10-25, never uploaded):** `review-shorts/edits/new-types/ranking_jjk_strongest_v3.mp4`
+(+ `-sheets/`, `.description.txt`, `.report.json`), 58.2 s, no label, no on-screen credit.
+Built with `--show 3 --seed 7 --prefer lynJABr10N4,thMXb5r792s,mY7mgdslbdc`.
+
+| slot | entry | source | editor | window | length | eventful | song | character |
+|---|---|---|---|---|---|---|---|---|
+| #5 | Toji | lynJABr10N4 (owner: good) | @noctryx7 | 42.4-61.7 | 19.3 s (was 20.9) | 8.0 | 5.9 | 0.71 (open-set) |
+| #4 | Yuji | mY7mgdslbdc, 911 days old | @DivineHotdog | 106.1-125.3 | 19.3 s | 8.6 | 6.3 | 0.75 (tagger) |
+| #2 | Gojo | thMXb5r792s (owner: good) | @XenozEdit | 27.6-47.2 | 19.6 s | 10.0 | 6.5 | 0.79 (tagger) |
+
+- #3 Yuta: no edit passes the character check (see section 7), so the spare #2 shows, as in PREVIEW2.
+- The new Yuji was the only one of 12 downloaded Yuji edits that passed every gate (wide hunt, 3-4 min AMVs
+  allowed for Yuji). It is a 3-panel manga-animation edit, and its description credits other creators' manga
+  animations and TikTok edits that it reuses. The credit goes to @DivineHotdog only. **The owner should check
+  this one.**
+
