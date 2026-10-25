@@ -1,0 +1,121 @@
+name: Ranking pool mining (weekly, one light job, staging only)
+
+# The RANKING / LIST COMPILATION pool (core/edit/ranking_pool.py; study core/edit/refs/ranking-compilation-study.md):
+# ONE job, called once a week by pool-mine-nightly.yml (RANKING_MINE_WEEKDAY) or dispatched by hand (same concurrency group).
+#   state    the candidate URL lists + every checked source's verdict (ranking-state.json on the release edit-pools-staging)
+#            + the live pool's manifest (edit-pools release, manifests only): nothing is mined twice
+#   mine     entries that block whole topics first (ranking_pool.py plan); per entry: YouTube search (metadata), the rights
+#            check (editor vetoes / blocklist skipped, >= 1 year old + idle channels first), <= 3 downloads (spare cookies,
+#            paced), every gate (watermark incl. faint / editor-name tags and end cards, subtitles, eventful + song, safety,
+#            the multi-picture character check), the best phrase window -> ONLY that window + 1.5 s margin is kept
+#   publish  ranking-cand-<date>-ci-n<N>.tar (clips, review sheets, proof snapshots) + ranking-state.json -> edit-pools-staging
+# Nothing reaches the live pool here: the owner PC pulls, reviews and imports (ranking_pool.py pull-staged / review / import,
+# then node scripts/edit-pools-store.js push --preset ranking). Off: repository variable RANKING_MINE=off.
+
+on:
+  workflow_call:
+    inputs:
+      called:
+        type: string
+        default: 'false'
+      budget_min:
+        type: string
+        default: ''
+      entries:
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      called:
+        description: 'leave false'
+        required: false
+        default: 'false'
+      budget_min:
+        description: 'Mining budget in minutes (empty: 150)'
+        required: false
+        default: ''
+      entries:
+        description: 'Only these entries (names / keys, comma-separated); empty = the plan order'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ inputs.called == 'true' && format('pool-mine-called-{0}', github.run_id) || 'pool-mine' }}
+  cancel-in-progress: false
+
+env:
+  EDIT_POOL_DIR: output/edit-pools
+  YT_SPARE_COOKIES: /tmp/yt_cookies.txt
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
+  GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+  PYTHONIOENCODING: utf-8
+  EDIT_GPU: '0'
+  EDIT_THREADS: '4'
+  OMP_NUM_THREADS: '4'
+  RANKING_MIN_FREE_GB: '1.5'
+
+jobs:
+  mine:
+    if: vars.RANKING_MINE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libgl1 libglib2.0-0 libsndfile1
+          python -m pip install -U pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "yt-dlp[default]" yt-dlp-ejs opencv-python-headless numpy scipy pillow transformers sentencepiece protobuf \
+            "librosa==0.11.0" onnxruntime scikit-learn psutil soundfile rapidocr-onnxruntime
+      - name: Cache models (SigLIP, NudeNet, anime face, WD tagger)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            ~/.cache/torch
+            ~/.cache/clip_finder
+            ~/.cache/wd_tagger
+          key: ranking-mine-models-v1
+      - name: Cookies (spare account) + state + live manifest
+        run: |
+          if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; else echo "::warning::no YOUTUBE_COOKIES_EDIT secret"; fi
+          mkdir -p output/edit-pools/_staged/ranking /tmp/st
+          gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern ranking-state.json --dir /tmp/st \
+            && cp /tmp/st/ranking-state.json output/edit-pools/_staged/ranking/state.json || echo "no ranking-state.json yet"
+          node scripts/edit-pools-store.js pull --manifests-only --preset ranking || true
+          python core/edit/ranking_topics.py check
+          python core/edit/ranking_pool.py plan | head -20
+      - name: Mine (one job, paced)
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.entries }}" ]; then ARGS="--entries ${{ inputs.entries }}"; fi
+          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '150' }}" --work work $ARGS | tail -c 4000
+          rm -f /tmp/yt_cookies.txt
+      - name: Publish to edit-pools-staging
+        if: always()
+        run: |
+          mkdir -p staged
+          python core/edit/ranking_pool.py publish --dest staged --label ci | tee staged/summary.json
+          ls -la staged
+          for f in staged/ranking-cand-*.tar staged/ranking-state.json; do
+            [ -e "$f" ] && gh release upload edit-pools-staging "$f" --repo "$GITHUB_REPOSITORY" --clobber
+          done
+          { echo "### Ranking candidates staged"; echo '```'; cat staged/summary.json; echo '```';
+            echo "Review on the PC: python core/edit/ranking_pool.py pull-staged, review, import --ids ... --reject ..."; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Review sheets (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ranking-review-sheets
+          path: output/edit-pools/_staged/ranking/sheets
+          if-no-files-found: ignore
+          retention-days: 14

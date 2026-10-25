@@ -5,7 +5,10 @@ need[s] it, to grow"). Runs NEXT TO the light nightly GitHub job (pool-mine-nigh
 the candidates go to the release `edit-pools-staging` with the CI naming, so the normal review flow (pull-staged -> Claude review ->
 import on CI / import-staged) handles them. Nothing is ever imported or pushed to a live pool from here.
 
-Priorities: SOUND (pins are the bottleneck) -> SLOW-MO -> QUIZ IRL categories (night city / dishes / geo / wyr food + travel).
+Priorities: SOUND (pins are the bottleneck) -> SLOW-MO -> QUIZ IRL categories (night city / dishes / geo / wyr food + travel)
+-> RANKING (2026-10-25, lowest: at most one small batch a day, after >= 3 other batches; core/edit/ranking_pool.py mine on the
+entries that block whole topics -> ranking-cand-<date>-pc-n<N>.tar + the merged ranking-state.json; the same gates and safety
+rules as the weekly CI job).
 Per job it reuses the pool's own code in a private, clean git worktree of origin/main (LOCAL_MINE_DIR/repo), exactly as CI runs it:
   sound   core/pools/sound_refresh.py mine (fetch -> hit_scan -> visible-source -> pre-filter -> vision -> safety), small batches;
           then merge (vs the pulled live sound MANIFESTS) -> pool_visible stamp -> baseline check -> contact sheet -> stage ->
@@ -58,7 +61,7 @@ COOKIES = 'C:/Users/Home/yt-cookies.txt'
 REPO = 'drcompilationyt7-alt/ChinaWeatherReader'
 ACCOUNT = 'drcompilationyt7-alt'
 RELEASE = 'edit-pools-staging'
-YT_POOLS = ('sound', 'slowmo')
+YT_POOLS = ('sound', 'slowmo', 'ranking')
 MINE_WORKFLOWS = ('pool-mine-nightly.yml', 'edit-pool-refresh.yml', 'slowmo-pool-mine.yml', 'quiz-pool-mine.yml')
 
 DAILY_CAP = int(os.environ.get('LOCAL_MINE_DAILY_CAP', '60'))      # sources (download attempts) per UTC day
@@ -67,6 +70,7 @@ SOUND_Q = int(os.environ.get('LOCAL_MINE_SOUND_Q', '2'))
 SOUND_BUDGET = int(os.environ.get('LOCAL_MINE_SOUND_MIN', '45'))
 SLOWMO_BATCH, SLOWMO_BUDGET = 4, 50
 QUIZ_BUDGET = 30
+RANKING_BUDGET, RANKING_ENTRIES = 40, 3     # minutes / entries per ranking batch (one a day, low priority)
 STAGE_AT = 8                    # stage the pending sound batches once this many minis passed every gate (or at a pause / day end)
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
@@ -709,6 +713,42 @@ def quiz_batch(st):
 
 # ------------------------------------------------------------------ loop
 
+# ------------------------------------------------------------------ RANKING (lowest priority, one batch a day)
+
+def ranking_batch(st):
+    sync_wt()
+    stamp = now_utc().strftime('%Y%m%d-%H%M%S')
+    base = os.path.join(HOME, 'ranking', stamp)
+    pools = os.path.join(base, 'pools')
+    sd = os.path.join(pools, '_staged', 'ranking')
+    os.makedirs(sd, exist_ok=True)
+    env = job_env()
+    env.update(EDIT_POOL_DIR=pools, YT_SPARE_COOKIES=COOKIES, RANKING_MIN_FREE_GB='2.0')
+    tmp = os.path.join(base, 'st')
+    if gh('release', 'download', RELEASE, '--pattern', 'ranking-state.json', '--dir', tmp, '--clobber').returncode == 0:
+        shutil.copy2(os.path.join(tmp, 'ranking-state.json'), os.path.join(sd, 'state.json'))
+    subprocess.run(['node', os.path.join(WT, 'scripts', 'edit-pools-store.js'), 'pull', '--manifests-only', '--preset', 'ranking'],
+                   cwd=WT, env=env, capture_output=True, text=True, timeout=1800)
+    rp = [sys.executable, os.path.join(WT, 'core', 'edit', 'ranking_pool.py')]
+    rc, txt = run_job('ranking-mine', rp + ['mine', '--budget-min', str(RANKING_BUDGET), '--max-entries', str(RANKING_ENTRIES),
+                                            '--max-dl', '2', '--work', os.path.join(base, 'work')], WT, env, RANKING_BUDGET + 40,
+                      youtube=True)
+    st['sources'] += 2 * RANKING_ENTRIES                     # an upper bound (2 downloads per entry)
+    out = os.path.join(base, 'out')
+    r = subprocess.run(rp + ['publish', '--dest', out, '--label', 'pc'], cwd=WT, env=env, capture_output=True, text=True, timeout=1800)
+    tars = glob.glob(os.path.join(out, 'ranking-cand-*.tar'))
+    state = os.path.join(out, 'ranking-state.json')
+    if r.returncode == 0 and os.path.isfile(state):
+        gh('release', 'upload', RELEASE, *tars, state, '--clobber', check=True)
+        log(f"ranking batch {stamp}: staged {[os.path.basename(x) for x in tars] or 'nothing'}")
+    else:
+        log(f'ranking publish failed: {(r.stderr or "")[-300:]}')
+    st['ranking_done'] = True
+    bot = bot_check(txt, st, 'ranking')
+    shutil.rmtree(base, ignore_errors=True)
+    return bot
+
+
 def cap_left(st):
     return max(0, DAILY_CAP - st.get('sources', 0))
 
@@ -753,7 +793,7 @@ def run_one(job, st):
         log(f'{job}: not now ({why})')
         return False
     log(f'--- {job} batch (sources today {st["sources"]}/{DAILY_CAP})')
-    bot = {'sound': sound_batch, 'slowmo': slowmo_batch, 'quiz': quiz_batch}[job](st)
+    bot = {'sound': sound_batch, 'slowmo': slowmo_batch, 'quiz': quiz_batch, 'ranking': ranking_batch}[job](st)
     st['batches'] += 1
     st.setdefault('jobs', []).append(job)
     wj(STATE, st)
@@ -781,6 +821,8 @@ def cmd_run(a):
             quiz_ok = not st['quiz_done'] or (NOW and st.get('quiz_runs', 0) < QUIZ_NOW_MAX)
             if not st['quiz_done'] and (st['batches'] >= 2 or nxt is None):
                 nxt = 'quiz'
+            elif nxt and not st.get('ranking_done') and st['batches'] >= 3 and os.environ.get('LOCAL_MINE_RANKING', '1') != '0':
+                nxt = 'ranking'                                      # lowest priority: one small ranking batch a day
             why = guards(st, youtube=nxt in YT_POOLS) if nxt else None
             if why and nxt in YT_POOLS and quiz_ok and not guards(st, youtube=False):
                 nxt, why = 'quiz', None                              # YouTube blocked: do the quiz job meanwhile
@@ -854,7 +896,7 @@ def main():
     sp = ap.add_subparsers(dest='cmd', required=True)
     sp.add_parser('run')
     o = sp.add_parser('once')
-    o.add_argument('--job', choices=['sound', 'slowmo', 'quiz'], default='sound')
+    o.add_argument('--job', choices=['sound', 'slowmo', 'quiz', 'ranking'], default='sound')
     sp.add_parser('stop')
     sp.add_parser('status')
     a = ap.parse_args()

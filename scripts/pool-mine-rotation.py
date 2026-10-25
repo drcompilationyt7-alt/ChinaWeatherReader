@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Which pool does tonight's light mining run mine? Deterministic by UTC date: ordinal(date) % len(rotation).
 Usage: python scripts/pool-mine-rotation.py [--rotation slowmo,sound,quiz] [--date YYYY-MM-DD] [--days N]
-Prints the pool for the date (or N lines 'date pool' with --days). Unknown names are dropped; empty -> the default."""
+Prints the pool for the date (or N lines 'date pool' with --days). Unknown names are dropped; empty -> the default.
+2026-10-25: the RANKING compilation pool mines ONE night a week (it replaces that night's pool): weekday RANKING_MINE_WEEKDAY
+(Monday = 0 ... Sunday = 6; default 2 = Wednesday); RANKING_MINE=off removes it. A "ranking" name inside MINE_ROTATION also works."""
 import argparse, datetime as dt, os
 
 DEFAULT = ['slowmo', 'sound', 'quiz']
-KNOWN = set(DEFAULT)
+KNOWN = set(DEFAULT) | {'ranking'}
 
 
 def parse(rot):
@@ -14,6 +16,8 @@ def parse(rot):
 
 
 def pool_for(day, rot):
+    if os.environ.get('RANKING_MINE', 'on') != 'off' and day.weekday() == int(os.environ.get('RANKING_MINE_WEEKDAY') or 2):
+        return 'ranking'
     return rot[day.toordinal() % len(rot)]
 
 

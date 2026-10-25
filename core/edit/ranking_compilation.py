@@ -44,6 +44,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import library as L  # noqa: E402  (AnimeFaces, Siglip, face_crops, fetch_image, Cache, EXPLICIT_RE)
+import char_refs  # noqa: E402
+
+BANK_MARGIN = float(os.environ.get('RANKING_BANK_MARGIN') or 0.03)
+BANK_MIN = float(os.environ.get('RANKING_BANK_MIN') or 0.0)
+
+
+def L_max(a):
+    return float(np.max(a)) if len(a) else -1.0
 cf = L.cf             # clip_finder (NudeNet)
 cj = L.cj             # clip_judge (safety prompts)
 
@@ -57,6 +65,9 @@ TOTAL = 59.5
 # entry length: phrase-aligned windows of 18-24 s (3 entries) / 24-34 s (2), balanced (build -> balance)
 MAX_CLEAN = 4                    # clean candidates per entry that go to the models (best one wins)
 CHAR_MIN = 0.6                   # share of character-voting frames the entry's character must win
+# voting frames a pass needs: 6 for the tagger and the reference bank (2026-10-25: a 4-vote bank pass called a Horimiya
+# edit "Fragrant Flower"; every true bank pass of the survey had >= 6), 4 only for the old SigLIP fallback
+MIN_VOTES = {'wd_tagger': 6, 'tagger_open+bank': 6, 'siglip_art': 4, 'tagger_open+art_margin': 4}
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 MIN_VIEWS, MIN_LIKE_RATIO = 20_000, 0.015
 MAX_SRC_DUR = 150                # longer uploads are full-fight AMVs / compilations, not edits
@@ -64,66 +75,23 @@ COOKIES = os.environ.get('YT_SPARE_COOKIES', os.path.join(os.path.expanduser('~'
 PACE_S = 20                      # between YouTube requests (shared spare account)
 
 # ---------------------------------------------------------------- topics
-# rank 1 = best / strongest. 'chars' = AniList names in core/quiz/assets/anime-characters.json.
-# Strongest lists: community power-scaling consensus after the manga ended (Sept 2024), sanity-checked
-# against the JJK wiki's feats (Sukuna beat Gojo; Yuta in Gojo's body; Yuji's Shinjuku feats; Toji the
-# strongest non-sorcerer). Every list is a judgement call: the title says "ranking", not "fact".
-TOPICS = {
-    'jjk_strongest': {
-        'title': ['STRONGEST', 'JJK CHARACTERS'], 'kind': 'character',
-        'entries': [
-            {'name': 'SUKUNA', 'chars': ['Sukuna'], 'tags': ['ryoumen_sukuna_(jujutsu_kaisen)'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['sukuna edit 4k', 'ryomen sukuna amv edit'], 'alias': [r'sukuna']},
-            {'name': 'GOJO', 'chars': ['Satoru Gojo'], 'tags': ['gojou_satoru'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['gojo edit 4k', 'gojo satoru amv edit'], 'alias': [r'gojo']},
-            {'name': 'YUTA', 'chars': ['Yuta Okkotsu'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['yuta okkotsu edit 4k', 'yuta amv edit', 'yuta okkotsu amv 4k', 'yuta okkotsu edit'], 'alias': [r'yuta', r'okkotsu']},
-            {'name': 'YUJI', 'chars': ['Yuji Itadori'], 'tags': ['itadori_yuuji'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['yuji itadori edit 4k', 'itadori amv edit', 'itadori yuji black flash edit', 'yuji itadori shinjuku edit 4k',
-                   'yuji itadori edit', 'itadori yuji amv 4k', 'yuji itadori phonk edit'],
-             # few short Yuji edits exist (2026-10-25: 67 search hits, most are 3-4 min AMVs): accept full-song
-             # AMVs too; the phrase picker still takes one eventful 18-24 s window
-             'max_dur': 270,
-             'alias': [r'yuji', r'itadori']},
-            {'name': 'TOJI', 'chars': ['Touji Fushiguro'], 'anime': 'JUJUTSU KAISEN',
-             'q': ['toji fushiguro edit 4k', 'toji amv edit'], 'alias': [r'toji']},
-        ]},
-    # best waifu: ranked by fans = AniList favourites (quiz pool), adult female characters only
-    'best_waifu': {
-        'title': ['BEST', 'WAIFU'], 'kind': 'character',
-        'entries': [
-            {'name': 'FRIEREN', 'chars': ['Frieren'], 'tags': ['frieren'], 'anime': 'Frieren', 'q': ['frieren edit 4k', 'frieren amv edit'], 'alias': [r'frieren']},
-            {'name': 'KURISU', 'chars': ['Kurisu Makise'], 'tags': ['makise_kurisu'], 'anime': 'Steins;Gate', 'q': ['kurisu makise edit', 'kurisu makise amv edit 4k'],
-             'alias': [r'kurisu', r'makise']},
-            {'name': 'NICO ROBIN', 'chars': ['Nico Robin'], 'tags': ['nico_robin'], 'anime': 'ONE PIECE', 'q': ['nico robin edit 4k', 'nico robin amv edit'],
-             'alias': [r'robin']},
-            {'name': 'YOR', 'chars': ['Yor Forger'], 'tags': ['yor_briar'], 'anime': 'SPY x FAMILY', 'q': ['yor forger edit 4k', 'yor forger amv edit'], 'alias': [r'\byor\b']},
-            {'name': 'C.C.', 'chars': ['C.C.'], 'tags': ['c.c.'], 'anime': 'Code Geass', 'q': ['c.c. code geass edit', 'c.c. amv edit 4k'],
-             'alias': [r'\bc\.?c\.?\b', r'code geass']},
-        ]},
-    'romance_peak': {
-        'title': ['PEAK', 'ROMANCE ANIME'], 'kind': 'anime',
-        'entries': [
-            {'name': 'KIMI NI TODOKE', 'chars': ['Sawako Kuronuma', 'Shota Kazehaya'], 'anime': 'Kimi ni Todoke',
-             'q': ['kimi ni todoke edit 4k', 'kimi ni todoke amv'], 'alias': [r'kimi ni todoke', r'sawako']},
-            {'name': 'BLUE BOX', 'chars': ['Chinatsu Kano', 'Taiki Inomata'], 'anime': 'Blue Box',
-             'q': ['blue box anime edit 4k', 'ao no hako amv edit'], 'alias': [r'blue box', r'ao no hako', r'chinatsu']},
-            {'name': 'HORIMIYA', 'chars': ['Kyoko Hori', 'Izumi Miyamura'], 'anime': 'Horimiya',
-             'q': ['horimiya edit 4k', 'horimiya amv edit'], 'alias': [r'horimiya']},
-            {'name': 'MY DRESS-UP DARLING', 'chars': ['Marin Kitagawa', 'Wakana Gojo'], 'tags': ['kitagawa_marin', 'gojou_wakana'], 'anime': 'Sono Bisque Doll',
-             'q': ['marin kitagawa edit 4k', 'my dress up darling amv edit'], 'alias': [r'marin', r'dress.?up darling', r'bisque']},
-            {'name': 'THE FRAGRANT FLOWER', 'chars': ['Kaoruko Waguri', 'Rintaro Tsumugi'], 'anime': 'Kaoru Hana',
-             'q': ['fragrant flower blooms with dignity edit 4k', 'kaoru hana wa rin to saku amv edit'], 'alias': [r'fragrant flower', r'kaoru hana', r'waguri']},
-        ]},
-}
+# The topic library lives in core/edit/refs/ranking-topics.json (owner-editable; rank 1 = best / strongest), loaded and
+# sanity-checked by ranking_topics.py (power lists: canon 'above' pairs + pins; fan lists: AniList favourites; genre lists:
+# AniList score). 'chars' = AniList names; genre (kind 'anime') entries list the show's main characters (any of them,
+# or any other character of that show, counts as the show).
+import ranking_topics as RT  # noqa: E402
 
-# pace of the topic's edits (eventful gate, ranking_score calibration): action edits vs calmer romance / beauty
-TOPICS['jjk_strongest']['pace'] = 'action'
-TOPICS['best_waifu']['pace'] = 'calm'
-TOPICS['romance_peak']['pace'] = 'calm'
-for _T in TOPICS.values():
-    for _e in _T['entries']:
-        _e.setdefault('pace', _T['pace'])
+TOPICS = RT.load()
+
+
+def register_wikis(judge, entry, others=()):
+    """Tell the judge which Fandom wiki holds each character's reference pictures (char_refs.Bank)."""
+    for e in [entry, *others]:
+        for c in e.get('chars') or []:
+            if e.get('wiki'):
+                judge.wiki.setdefault(c, e['wiki'])
+            if e.get('kind', 'character') != 'anime' and len(e.get('chars') or []) == 1:
+                judge.alias.setdefault(c, e.get('search'))
 
 # ---------------------------------------------------------------- helpers
 
@@ -158,6 +126,8 @@ def log(*a):
 def ytdlp(args, timeout=600):
     cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '-q', '--js-runtimes', 'node', '--cookies', COOKIES] + args
     r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=timeout)
+    if r.stderr and re.search(r'confirm you.re not a bot|sign in to confirm|HTTP Error 429|rate.?limit', r.stderr, re.I):
+        log('yt-dlp:', r.stderr.strip()[-300:])            # the local miner's bot check reads this (back-off)
     return r.stdout
 
 
@@ -165,7 +135,9 @@ _last = [0.0]
 
 
 def mining_busy():
-    """True while a GitHub pool-mining run (same spare YouTube account) is queued / running."""
+    """True while a GitHub pool-mining run (same spare YouTube account) is queued / running (never inside that run)."""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        return False
     try:
         r = subprocess.run(['gh', 'run', 'list', '--workflow', 'pool-mine-nightly.yml', '-L', '3', '--json', 'status'],
                            capture_output=True, text=True, timeout=60, cwd=ROOT)
@@ -574,6 +546,9 @@ class Tagger:
 
 class Judge:
     def __init__(self, cache_dir):
+        self.cache_dir = cache_dir
+        self.wiki = {}                  # character name -> Fandom wiki slug (from the topic entry), for the reference bank
+        self.alias = {}                 # character name -> the entry's own spelling ("Touji Fushiguro" -> "toji fushiguro")
         self.cache = L.Cache(cache_dir, 2000)
         self.sig = L.Siglip(self.cache)
         cf.load_models()
@@ -732,7 +707,9 @@ class Judge:
                 dis.add(t)
             else:
                 unknown.append(n)
-        g = ((self.char(target_names[0]) or {}).get('gender') or '').lower()
+        # the other-gender vote only when every target has the same gender (a genre entry targets a whole show's cast)
+        gs = {((self.char(t) or {}).get('gender') or '').lower() for t in target_names}
+        g = gs.pop() if len(gs) == 1 else ''
         i_boy, i_girl = tg.names.index('1boy'), tg.names.index('1girl')
         others, rest, votes = {}, [], 0
         for f in frames:
@@ -748,21 +725,33 @@ class Judge:
                 others['other_gender'] = others.get('other_gender', 0) + 1
             elif max(boy, girl) >= 0.5:
                 rest.append(f)
-        # 3. face crops vs the AniList art only, with a margin (measured 2026-10-25: SigLIP's name prompts
-        #    call nearly every JJK frame "Yuta", while the art similarity picks Toji in the owner-approved Toji
-        #    edit 4 of 4 clear frames); ambiguous frames (margin < 0.02) abstain
+        # 3. face crops vs the multi-image reference bank (char_refs.Bank, 2026-10-25: AniList art + our quiz-pool pictures
+        #    + the show's wiki gallery, one face per picture, tagger-vetoed and consistency-filtered). Per candidate the
+        #    mean of its top-3 reference similarities; a frame votes only with a clear margin (BANK_MARGIN) and a
+        #    plausible absolute similarity (BANK_MIN); ambiguous frames abstain. (One AniList picture made Yuta / the
+        #    romance leads fail and a 0.02 margin on it was the only guard.)
         wins = 0
-        names = list(target_names) + [n for n in unknown if n not in target_names]
-        emb, owners, _ = self.ref_set(names)
-        nt = len(target_names)
+        names = list(dict.fromkeys(list(target_names) + [n for n in unknown if n not in target_names]))
+        nt = len(dict.fromkeys(target_names))
+        v1 = os.environ.get('RANKING_CHARCHECK') == 'v1'      # the old single-AniList-picture check (evaluation only)
+        if v1:
+            emb, owners, _ = self.ref_set(names)
+            refs = [emb[owners == k] for k in range(len(names))]
+        else:
+            bank = self.bank()
+            refs = [bank.build(n, wiki=self.wiki.get(n), alias=self.alias.get(n))['emb'] for n in names]
+        margin, top = (0.02, 1) if v1 else (BANK_MARGIN, 3)
+        if not len(refs[0]) and nt == 1:
+            return 0.0, {'method': 'bank', 'votes': 0, 'wins': 0, 'others': {}, 'frames': len(frames), 'rating_flags': 0,
+                         'why': 'no reference pictures'}
         for f in rest:
             fc = L.face_crops(f, self.faces, 2) if self.faces else []
-            if not fc or not len(emb):
+            if not fc:
                 continue
-            sims = self.sig.images(fc) @ emb.T
-            sc = np.array([sims[:, owners == k].max() if (owners == k).any() else -1 for k in range(len(names))])
+            ce = self.sig.images(fc)
+            sc = np.array([L_max(char_refs.Bank.score(ce, r, top)) for r in refs])
             order = np.argsort(-sc)
-            if sc[order[0]] - sc[order[1]] < 0.02 if len(sc) > 1 else False:
+            if sc[order[0]] < BANK_MIN or (len(sc) > 1 and sc[order[0]] - sc[order[1]] < margin):
                 continue
             votes += 1
             if order[0] < nt:
@@ -770,8 +759,13 @@ class Judge:
             else:
                 others[names[order[0]]] = others.get(names[order[0]], 0) + 1
         conf = wins / votes if votes else 0.0
-        return conf, {'method': 'tagger_open+art_margin', 'votes': votes, 'wins': wins, 'others': others,
+        return conf, {'method': 'tagger_open+bank', 'votes': votes, 'wins': wins, 'others': others,
                       'frames': len(frames), 'rating_flags': 0}
+
+    def bank(self):
+        if not hasattr(self, '_bank'):
+            self._bank = char_refs.Bank(self, self.cache_dir)
+        return self._bank
 
     def safe(self, frames):
         """(ok, reason): NudeNet per frame + SigLIP suggestive check (gore allowed since 2026-10-12)."""
@@ -952,6 +946,81 @@ def mark_scan(path, step=0.5, width=960, ncc_min=0.35, share_min=0.5):
     return out
 
 
+# editor tags / name cards / end cards (2026-10-25, the PJUNKIE miss: xlPSek4600U ends on an "OVO EDITORS" group card and the
+# editor's own logo on black at 29.5-33 s, while the 10 % end-card margin only kept out the last 3.3 s; its OCR never read
+# "PJUNKIE", and Flimzys' "10FLMZY" / maztrae's "MAZT" tags missed the exact channel-name match)
+TAG_RE = re.compile(r"edit(or)?s?|editz|amvs?|v?fx|prod|presents?|th(a|e)nk\w* *(you|u|yew|yow)? *(for|fov|4)? *w|"
+                    r"thanks? for|follow (me|my)|channel|subscri|sub|team|collab", re.I)
+
+
+def _handle_keys(res):
+    import difflib  # noqa: F401
+    return {k for k in re.split(r'[^a-z0-9]+', ((res.get('channel') or '') + ' ' + (res.get('handle') or '')).lower())
+            if len(k) >= 4 and k not in ('edit', 'edits', 'editz', 'amvs', 'anime', 'official', 'channel')}
+
+
+def fuzzy_handle(text, keys):
+    """OCR text that looks like the editor's name: substring either way, or >= 0.75 similar (prefix-aware)."""
+    import difflib
+    for t in re.split(r'[^a-z0-9]+', text.lower()):
+        t = re.sub(r'^\d+', '', t)
+        if len(t) < 4:
+            continue
+        for k in keys:
+            if ((t in k and len(t) >= 0.5 * len(k)) or (k in t and len(k) >= 5 and len(t) <= len(k) + 6)
+                    or difflib.SequenceMatcher(None, t, k).ratio() >= 0.78
+                    or (k[:4] == t[:4] and difflib.SequenceMatcher(None, t, k[:len(t)]).ratio() >= 0.8)):
+                return True
+    return False
+
+
+def card_frame(f):
+    """A logo / name card on black: >= 85 % dark pixels with a small bright centred element."""
+    g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+    if (g < 28).mean() < 0.85:
+        return False
+    m = g > 150
+    if m.mean() < 0.002:
+        return False
+    ys, xs = np.nonzero(m)
+    h, w = g.shape
+    cx, cy = xs.mean() / w, ys.mean() / h
+    return abs(cx - 0.5) < 0.2 and abs(cy - 0.5) < 0.25 and (xs.max() - xs.min()) < 0.6 * w
+
+
+def editor_tags(txt, res, ana, dur, lo, hi):
+    """-> (tags [{t, why, text}], lo, hi): seconds that show an editor / group tag, a thanks-for-watching card or a logo
+    card on black never enter a window; such a mark in the last 40 % of the edit ends the usable part there (an end
+    card sequence), in the first 25 % it starts after it (an intro card)."""
+    keys = _handle_keys(res)
+    tags = []
+    for t, boxes in (txt.get('per_t') or {}).items():
+        for tx, b in boxes:
+            area = round((b[2] - b[0]) * (b[3] - b[1]), 4) if b else None
+            if TAG_RE.search(tx):
+                tags.append({'t': float(t), 'why': 'tag_word', 'text': tx, 'area': area})
+            elif keys and fuzzy_handle(tx, keys):
+                tags.append({'t': float(t), 'why': 'editor_name', 'text': tx, 'area': area})
+    per_t = txt.get('per_t') or {}
+    for t, f in (ana or {}).get('frames', {}).items():
+        # a non-text logo on black, only in the edit's head / tail (a lyric word on black has OCR text: not a card)
+        if (t >= 0.8 * dur or t <= 0.1 * dur) and not per_t.get(t) and card_frame(f):
+            tags.append({'t': float(t), 'why': 'logo_card', 'text': ''})
+    # the editor's name at two or more moments >= 5 s apart inside the edit = a recurring watermark tag
+    # (teRmyO3US4A: "SANCHEZ" at 20.5 s and 28.5 s; Blubzz / Floby / Zeno / ZARKX the same pattern)
+    # a SMALL name (< 1 % of the picture) mid-edit is a faint corner tag that OCR caught once: the edit carries a watermark
+    mid = sorted(t['t'] for t in tags if t['why'] == 'editor_name' and 0.12 * dur < t['t'] < 0.85 * dur)
+    small = [t for t in tags if t['why'] == 'editor_name' and 0.12 * dur < t['t'] < 0.85 * dur and (t.get('area') or 1) < 0.01]
+    if (mid and mid[-1] - mid[0] >= 5.0) or small:
+        return sorted(tags, key=lambda x: x['t']), lo, lo          # nothing usable
+    for tg in tags:
+        if tg['t'] >= 0.6 * dur:
+            hi = min(hi, tg['t'] - 0.5)
+        elif tg['t'] <= 0.25 * dur:
+            lo = max(lo, tg['t'] + 0.5)
+    return sorted(tags, key=lambda x: x['t']), lo, hi
+
+
 def text_gate(path, info):
     """Watermark / handle / logo / persistent overlay gate (no models). The OCR results are cached per
     source (cache/tg/<id>.json next to src/): a rejected edit is not decoded again; a clean one is only
@@ -1016,19 +1085,55 @@ def quality(w, pop):
     return round(0.6 * w['eventful'] + 0.25 * w['song'] + 1.5 * pop, 2)
 
 
+def targets_and_distractors(judge, entry, others):
+    """Character entry: the entry's character(s) vs the other entries' characters + the 10 most-favourited other
+    characters of the same show. Genre (kind 'anime') entry: ANY character of that show is a target (the main
+    characters + every quiz-pool character of the show), the other entries' shows are the distractors."""
+    register_wikis(judge, entry, others)
+    tgt = list(entry['chars'])
+    oth = [c for o in others for c in o['chars'] if c not in tgt]
+    show = show_key((judge.char(tgt[0]) or {}).get('anime') if tgt else '') or show_key(entry.get('anime'))
+    if entry.get('kind') == 'anime':
+        keys = {show_key(entry.get('anime'))} | {show_key((judge.char(c) or {}).get('anime')) for c in tgt}
+        keys.discard('')
+        tgt += [c['name'] for c in sorted(judge.chars, key=lambda c: -(c.get('favourites') or 0))
+                if show_key(c.get('anime')) in keys and c['name'] not in tgt][:6]
+        for o in others:
+            ok = {show_key(o.get('anime'))} | {show_key((judge.char(c) or {}).get('anime')) for c in o['chars']}
+            oth += [c['name'] for c in sorted(judge.chars, key=lambda c: -(c.get('favourites') or 0))
+                    if show_key(c.get('anime')) in ok and c['name'] not in oth and c['name'] not in tgt][:2]
+    elif show:
+        same = sorted([c for c in judge.chars if show_key(c.get('anime')) == show and c['name'] not in tgt],
+                      key=lambda c: -(c.get('favourites') or 0))[:10]
+        oth += [c['name'] for c in same if c['name'] not in oth]
+    for c in tgt + oth:
+        if entry.get('wiki') and (c in tgt or show_key((judge.char(c) or {}).get('anime')) == show):
+            judge.wiki.setdefault(c, entry['wiki'])
+    oth = list(dict.fromkeys(oth))
+    return list(dict.fromkeys(tgt)), oth
+
+
 def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=()):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
     builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max)."""
     import ranking_score as RS
     txt, path = res['_txt'], res['path']
-    ana = res.get('_ana') or decode(path)
+    ana = res.get('_ana')
     v, a = RS.curves(path, os.path.join(os.path.dirname(os.path.dirname(path)), 'cache', 'ev'))
     dur = a['dur']
     lo, hi = min(1.5, 0.08 * dur), dur - max(2.0, 0.1 * dur)           # skip the editor's intro / end card
+    ana = ana if ana is not None else decode(path)
+    tags, lo, hi = editor_tags(txt, res, ana, dur, lo, hi)
+    res['editor_tags'] = tags
+    if hi <= lo:
+        res.update(verdict='reject', why='editor_tag', windows=[], quality=0, conf=0, match=None)
+        res.pop('_ana', None)
+        return res
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
     seg = (seg[0], min(seg[1], MAX_SHARE * dur))
-    wins = RS.phrase_windows(v, a, lo, hi, seg=seg, k=8, skip=txt.get('brand_t', []))
+    skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags})
+    wins = RS.phrase_windows(v, a, lo, hi, seg=seg, k=8, skip=skip) if hi - lo >= seg[0] else []
     pop, song = RS.song_popularity(res.get('_info') or {}, all_infos)
     txt_t = np.array(sorted(txt['per_t']))
     txt_cov = np.array([sum((b[2] - b[0]) * (b[3] - b[1]) for _, b in txt['per_t'][t]) for t in txt_t]) if len(txt_t) else np.zeros(0)
@@ -1040,14 +1145,7 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         w['song_pop'], w['song_name'] = pop, song
         w['quality'] = round(quality(w, pop) - 15 * w['text_cover'], 2)
     wins.sort(key=lambda w: -w['quality'])
-    tgt = entry['chars']
-    oth = [c for o in others for c in o['chars']]
-    # same-show distractors: the most popular characters of the same anime that are not targets
-    show = show_key((judge.char(tgt[0]) or {}).get('anime'))
-    if show:
-        same = sorted([c for c in judge.chars if show_key(c.get('anime')) == show and c['name'] not in tgt],
-                      key=lambda c: -(c.get('favourites') or 0))[:10]
-        oth += [c['name'] for c in same if c['name'] not in oth]
+    tgt, oth = targets_and_distractors(judge, entry, others)
     fr_t = sorted(ana['frames'])
     passed = []
     for w in wins:
@@ -1086,7 +1184,7 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         top_other = max(det['others'].values()) if det['others'] else 0
         # the entry's character must clearly own the window: >= 60 % of the voting frames and at least twice
         # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
-        if (det['votes'] >= (6 if det.get('method') == 'wd_tagger' else 4) and conf >= CHAR_MIN
+        if (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN
                 and det['wins'] >= 2 * top_other):
             passed.append(w)
             continue
@@ -1134,7 +1232,11 @@ def overlay_png(path, title, names, shown, credit, label=''):
         y = y0 + i * dy
         put((182, y), f'{i + 1}.', fn)
         if i in shown:
-            put((250, y + 8), names[i], fe)
+            fz, sz = fe, 38
+            while fz.getlength(names[i]) > W - 250 - 40 and sz > 22:      # long names shrink to fit the frame
+                sz -= 2
+                fz = font(sz, 800)
+            put((250, y + 8 + (38 - sz) // 2), names[i], fz)
     if credit:                     # small, in the band's lower-right corner: readable, unobtrusive
         put((W - 22, BAND_Y + 608 - 14), credit, fc, 'rd', fill=(255, 255, 255, 215))
     if label:                      # e.g. PREVIEW - not permission-checked, never upload
@@ -1651,195 +1753,21 @@ def permission(info, fetch_pinned=True):
 
 
 def save_proof(proof, work):
-    d = os.path.join(pool_dir(False), '_permissions')
+    d = PROOF_DIR[0] or os.path.join(pool_dir(True), 'proofs')
     os.makedirs(d, exist_ok=True)
     json.dump(proof, open(os.path.join(d, f'{proof["source_id"]}.json'), 'w', encoding='utf-8'), indent=1,
               ensure_ascii=False, default=str)
 
 
-# ---------------------------------------------------------------- pool / backlog (production design, 2026-10-24)
-# The daily video never downloads. Mining (the nightly GitHub rotation or the local idle miner, one job at
-# a time, spare account) STAGES candidates. Claude reviews them by eye (pull-staged -> sheets -> import).
-# The daily job only ASSEMBLES from the reviewed pool. NOT wired into any rotation yet.
-#
-# $EDIT_POOL_DIR/ranking/<topic>/manifest.json      (staged: $EDIT_POOL_DIR/_staged/ranking/<topic>/)
-# {"version": 1, "topic": "jjk_strongest", "title": [...], "built": ISO,
-#  "entries": [{"rank": 5, "name": "TOJI", "chars": [...],
-#     "items": [{"id": "r_<source_id>_<start_ms>", "file": "clips/r_<...>.mp4",      # the cut excerpt (<= 35 s)
-#                "source_id": "...", "source_title": "...", "source_channel": "...", "editor_handle": "@...",
-#                "source_views": 123, "source_dur": 61.0, "start": 12.3, "end": 47.3,
-#                "char_conf": 0.83, "char_match": {...}, "safety": "pass", "watermark": "none",
-#                "status": "staged|reviewed|rejected", "added": "YYYY-MM-DD"}]}]}
-# Used ledger: memory/edit-pool-used.json items["ranking/<topic>/clip/<id>"] = {"used_at", "video"}, plus
-# "ranking_recent": the source ids of the last uploads, newest last -> REUSE_GAP.
-POOL_MAX_SEG = 35.0
-REUSE_GAP = 8               # an edit is not reused within the next 8 ranking uploads (as the quiz pools)
-NEEDED_RANKS = (5, 4, 3, 2)  # revealed (#5 #4 #3) + one spare; #1 never shows
+# ---------------------------------------------------------------- pool
+# The production pool path (candidates -> mining -> staging -> review -> import -> weekly assembly) is
+# core/edit/ranking_pool.py (2026-10-25). The builder here keeps the gates, the models and the renderer.
+PROOF_DIR = [None]          # where save_proof() writes (ranking_pool sets the staging dir)
 
 
 def pool_dir(staged=False):
     root = os.path.abspath(os.environ.get('EDIT_POOL_DIR') or os.path.join(ROOT, 'output', 'edit-pools'))
-    return os.path.join(root, '_staged', 'ranking') if staged else os.path.join(root, 'ranking')
-
-
-def _manifest(d, topic):
-    p = os.path.join(d, topic, 'manifest.json')
-    if os.path.exists(p):
-        return json.load(open(p, encoding='utf-8'))
-    T = TOPICS[topic]
-    return {'version': 1, 'topic': topic, 'title': T['title'], 'built': None,
-            'entries': [{'rank': i + 1, 'name': e['name'], 'chars': e['chars'], 'items': []}
-                        for i, e in enumerate(T['entries'])]}
-
-
-def _save(d, topic, man):
-    os.makedirs(os.path.join(d, topic), exist_ok=True)
-    man['built'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-    json.dump(man, open(os.path.join(d, topic, 'manifest.json'), 'w', encoding='utf-8'), indent=1, ensure_ascii=False)
-
-
-def cut_clip(src, s, e, out):
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '4', '-ss', f'{s:.3f}', '-t', f'{e - s:.3f}', '-i', src,
-                    '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', '-threads', '4', '-c:a', 'aac', '-b:a', '256k',
-                    out], check=True)
-
-
-def stage(topic, work, per_entry=2):
-    """Mining step. Search / download / gates / models for the needed ranks, then cut the best <= 35 s
-    window of each passing edit into the staged pool. Review + import is a separate step."""
-    T = TOPICS[topic]
-    idle()
-    YT_CACHE[0] = os.path.join(work, 'cache', 'yt')
-    entries = T['entries']
-    jh = {}
-
-    def get_judge():
-        if 'j' not in jh:
-            wait_ram('the SigLIP / analysis models')
-            jh['j'] = Judge(os.path.join(work, 'cache'))
-        return jh['j']
-    report = {'topic': topic, 'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [],
-              'entries': [], '_dl': {}}
-    sd = pool_dir(staged=True)
-    man = _manifest(sd, topic)
-    for rank in NEEDED_RANKS:
-        i = rank - 1
-        e = entries[i]
-        others = [o for o in entries if o is not e]
-        pre = find_source(e, None, None, work, 0, set(), report, max_dl=2 + 2 * per_entry)
-        ent = man['entries'][i]
-        for res, row in pre:
-            res = evaluate(res, e, others, get_judge(), POOL_MAX_SEG, e.get('pace', 'action'), all_infos=cached_infos())
-            row.update({k: res.get(k) for k in ('verdict', 'why', 'conf', 'window', 'match')})
-            if res['verdict'] != 'ok':
-                continue
-            w = res['window']
-            iid = f'r_{res["id"]}_{int(w["s"] * 1000)}'
-            if any(it['id'] == iid for it in ent['items']):
-                continue
-            cut_clip(res['path'], w['s'], w['e'], os.path.join(sd, topic, 'clips', iid + '.mp4'))
-            ent['items'].append({'id': iid, 'file': f'clips/{iid}.mp4', 'source_id': res['id'],
-                                 'source_title': res['title'], 'source_channel': res['channel'],
-                                 'editor_handle': res.get('handle'), 'source_views': res.get('views'),
-                                 'source_dur': res.get('dur'), 'start': w['s'], 'end': w['e'],
-                                 'char_conf': res['conf'], 'char_match': res['match'],
-                                 'eventful': w.get('eventful'), 'song': w.get('song'), 'song_name': w.get('song_name'),
-                                 'quality': w.get('quality'),
-                                 'safety': 'pass', 'watermark': 'none', 'rights': res.get('rights'),
-                                 'status': 'staged',
-                                 'added': time.strftime('%Y-%m-%d')})
-            if sum(1 for it in ent['items'] if it['status'] == 'staged') >= per_entry:
-                break
-        _save(sd, topic, man)
-    report.pop('_dl', None)
-    json.dump(report, open(os.path.join(sd, topic, 'stage-report.json'), 'w', encoding='utf-8'), indent=1,
-              ensure_ascii=False, default=str)
-    return man
-
-
-def import_reviewed(topic, ids, reject=()):
-    """Move reviewed staged items (by id) into the pool. `reject` ids are marked rejected in staging."""
-    import shutil
-    sd, pd = pool_dir(True), pool_dir(False)
-    sm, pm = _manifest(sd, topic), _manifest(pd, topic)
-    n = 0
-    for se, pe in zip(sm['entries'], pm['entries']):
-        for it in se['items']:
-            if it['id'] in reject:
-                it['status'] = 'rejected'
-            elif it['id'] in ids and it['status'] == 'staged':
-                os.makedirs(os.path.join(pd, topic, 'clips'), exist_ok=True)
-                shutil.copy2(os.path.join(sd, topic, it['file']), os.path.join(pd, topic, it['file']))
-                it['status'] = 'reviewed'
-                pe['items'] = [x for x in pe['items'] if x['id'] != it['id']] + [dict(it)]
-                n += 1
-    _save(sd, topic, sm)
-    _save(pd, topic, pm)
-    return n
-
-
-def _ledger():
-    p = os.path.join(os.environ.get('MEMORY_DIR') or os.path.join(ROOT, 'memory'), 'edit-pool-used.json')
-    try:
-        return p, json.load(open(p, encoding='utf-8'))
-    except Exception:
-        return p, {'version': 1, 'items': {}, 'moments': {}}
-
-
-def usable_items(entry, ledger):
-    recent = ledger.get('ranking_recent', [])[-REUSE_GAP:]
-    blocked = load_blocklist()
-    out = [it for it in entry['items'] if it['status'] == 'reviewed' and it['source_id'] not in recent
-           and (it.get('editor_handle') or '').lower() not in blocked]
-    return sorted(out, key=lambda it: (-((it.get('rights') or {}).get('priority') or 0), -(it.get('char_conf') or 0)))
-
-
-def eligible(topic, n_show=3):
-    """A topic is eligible only when every revealed rank has a usable reviewed edit."""
-    _, led = _ledger()
-    man = _manifest(pool_dir(False), topic)
-    ranks = sorted(range(1, len(man['entries']) + 1), reverse=True)[:n_show]
-    return all(usable_items(man['entries'][r - 1], led) for r in ranks)
-
-
-def assemble(topic, out, work, n_show=None, seed=None, onscreen_credit=False, mark_used=False):
-    """The daily step: assemble only from the reviewed pool (no network)."""
-    T = TOPICS[topic]
-    rng = random.Random(seed)
-    n_show = n_show or rng.choice(REVEAL)
-    if not eligible(topic, n_show):
-        raise SystemExit(f'topic {topic} not eligible: a revealed rank has no usable reviewed edit')
-    lp, led = _ledger()
-    pd = pool_dir(False)
-    man = _manifest(pd, topic)
-    names = [e['name'] for e in man['entries']]
-    parts, shown, entries = [], set(), []
-    idle()
-    os.makedirs(work, exist_ok=True)
-    for k, rank in enumerate(sorted(range(1, len(names) + 1), reverse=True)[:n_show]):
-        it = usable_items(man['entries'][rank - 1], led)[0]
-        shown.add(rank - 1)
-        clip = os.path.join(pd, topic, it['file'])
-        win = {'s': 0.0, 'e': it['end'] - it['start']}          # the staged clip is already one phrase-aligned window
-        png = os.path.join(work, f'ov_pool_{rank}.png')
-        credit = f'edit: {it.get("editor_handle") or it["source_channel"]}' if onscreen_credit else ''
-        overlay_png(png, T['title'], names, shown, credit)
-        part = os.path.join(work, f'part_pool_{rank}.mp4')
-        wait_ram('rendering')
-        render_entry(clip, win, png, part)
-        parts.append(part)
-        entries.append({'rank': rank, 'name': names[rank - 1], 'source': it['source_id'],
-                        'handle': it.get('editor_handle'), 'channel': it['source_channel'], 'item': it['id']})
-    concat(parts, out)
-    desc = describe(T['title'], entries)
-    if mark_used:
-        for e in entries:
-            led.setdefault('items', {})[f'ranking/{topic}/clip/{e["item"]}'] = {
-                'used_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'video': os.path.basename(out)}
-            led.setdefault('ranking_recent', []).append(e['source'])
-        json.dump(led, open(lp, 'w', encoding='utf-8'), indent=1)
-    return {'out': out, 'entries': entries, 'description': desc}
+    return os.path.join(root, '_staged', 'ranking') if staged else os.path.join(root, 'ranking', 'pool')
 
 
 def main():
@@ -1852,12 +1780,10 @@ def main():
     ap.add_argument('--offline', action='store_true', help='cached searches / downloads only (e.g. while GitHub mining runs)')
     ap.add_argument('--onscreen-credit', action='store_true', help='small "edit: @handle" line in the band corner (owner 2026-10-24: OFF, description credit only)')
     ap.add_argument('--describe', help='print the description from an existing .report.json and exit')
-    ap.add_argument('--mode', default='build', choices=('build', 'stage', 'import', 'eligible', 'assemble', 'permits', 'survey', 'deep-survey'),
-                    help='build = one-off prototype (search + render); stage / import / eligible / assemble = pool path')
+    ap.add_argument('--mode', default='build', choices=('build', 'permits', 'survey', 'deep-survey'),
+                    help='build = one-off prototype (search + render); the pool path is core/edit/ranking_pool.py')
     ap.add_argument('--label', default='', help='burned-in label, e.g. "PREVIEW - not permission-checked, never upload"')
     ap.add_argument('--prefer', default='', help='build: comma-separated source ids to pin (owner-approved, or the reviewed top candidate from deep-survey): searched first + rank bonus')
-    ap.add_argument('--ids', default='', help='import: comma-separated staged item ids that passed review')
-    ap.add_argument('--reject', default='', help='import: comma-separated staged item ids that failed review')
     a = ap.parse_args()
     if a.mode == 'survey':
         YT_CACHE[0] = os.path.join(a.work, 'cache', 'yt')
@@ -1881,20 +1807,6 @@ def main():
         print(json.dumps({'topic': a.topic, 'summary': summ,
                           'permitted': {r: [(p['source_id'], p['editor_handle'], p['type']) for p in v] for r, v in res.items()}},
                          ensure_ascii=False, indent=1))
-        return
-    if a.mode == 'stage':
-        OFFLINE[0] = a.offline
-        stage(a.topic, a.work)
-        return
-    if a.mode == 'import':
-        print(import_reviewed(a.topic, set(filter(None, a.ids.split(','))), set(filter(None, a.reject.split(',')))))
-        return
-    if a.mode == 'eligible':
-        print(eligible(a.topic, a.show or 3))
-        return
-    if a.mode == 'assemble':
-        r = assemble(a.topic, a.out, a.work, a.show, a.seed, a.onscreen_credit)
-        print(r['description'])
         return
     if a.describe:
         rep = json.load(open(a.describe, encoding='utf-8'))

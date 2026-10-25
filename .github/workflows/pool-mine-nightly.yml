@@ -6,6 +6,8 @@ name: Pool mining (nightly, ONE pool per night, alternating, light)
 #             MINE_ROTATION="slowmo,sound,quiz" sets the order / weights (repeat a name to weight it). 2026-10-24 (owner: focus on
 #             the pool; sound is the bottleneck): MINE_ROTATION="sound,slowmo,sound,quiz" = sound every other night.
 #   sound     TIME-BASED since 2026-10-24: mines in batches until ~220 min after its job start, then the swap job stages (<= 60 min).
+#   ranking   2026-10-25: the ranking-compilation pool mines ONE night a week (RANKING_MINE_WEEKDAY, default 2 = Wednesday; it
+#             replaces that night's pool; RANKING_MINE=off removes it): ranking-pool-mine.yml, one job, <= ~3 h, staging only.
 #   off       repository variable POOL_MINE=off (all mining). The old per-pool variables no longer matter.
 #   mine      calls the pool's own workflow (slowmo-pool-mine / edit-pool-refresh / quiz-pool-mine) with called=true: the same
 #             mining, gates and STAGING as before, but one shard (k=0, n=1) with a hard time cap. The review / import flows
@@ -19,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       pool:
-        description: 'Force a pool (slowmo / sound / quiz); empty = tonight''s rotation'
+        description: 'Force a pool (slowmo / sound / quiz / ranking); empty = tonight''s rotation'
         required: false
         default: ''
 
@@ -39,10 +41,12 @@ jobs:
       - id: p
         env:
           MINE_ROTATION: ${{ vars.MINE_ROTATION }}
+          RANKING_MINE: ${{ vars.RANKING_MINE || 'on' }}
+          RANKING_MINE_WEEKDAY: ${{ vars.RANKING_MINE_WEEKDAY || '2' }}
           FORCE: ${{ inputs.pool }}
         run: |
           POOL=$(python3 scripts/pool-mine-rotation.py)
-          case "$FORCE" in slowmo|sound|quiz) POOL="$FORCE" ;; esac
+          case "$FORCE" in slowmo|sound|quiz|ranking) POOL="$FORCE" ;; esac
           echo "tonight: $POOL"
           echo "pool=$POOL" >> "$GITHUB_OUTPUT"
           echo "### Tonight's pool: $POOL" >> "$GITHUB_STEP_SUMMARY"
@@ -74,6 +78,16 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/quiz-pool-mine.yml
+    with:
+      called: 'true'
+    secrets: inherit
+
+  ranking:
+    needs: pick
+    if: needs.pick.outputs.pool == 'ranking'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/ranking-pool-mine.yml
     with:
       called: 'true'
     secrets: inherit

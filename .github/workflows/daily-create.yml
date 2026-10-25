@@ -28,11 +28,15 @@ on:
         required: false
         default: 'false'
       type:
-        description: 'Meme mode: force the edit type (sound / slowmo / stem; empty = daily rotation). stem stays the fallback'
+        description: 'Meme mode: force the edit type (sound / slowmo / ranking / stem; empty = daily rotation). stem stays the fallback'
         required: false
         default: ''
       newtype_args:
         description: 'Extra vibe_edit.py args for a sound / slowmo test (e.g. "--song s_kick_back --seed 41")'
+        required: false
+        default: ''
+      ranking_topic:
+        description: 'type=ranking: the topic key (core/edit/refs/ranking-topics.json); empty = the weekly rotation'
         required: false
         default: ''
 
@@ -79,8 +83,14 @@ env:
   # DAILY_ROTATION=off goes back to stem only.
   # 2026-10-17 owner: SOUND EDIT approved (sound_11b) -> repo variables DAILY_ROTATION=on, DAILY_TYPE_WEIGHTS=stem:1,sound:1,slowmo:0.
   # The sound render settings (sound_11b: beat remake, pinned hits, rotated layout + hint, no shake) are in pipeline/newtype-pipeline.js SOUND_ENV.
-  DAILY_ROTATION: ${{ (github.event.inputs.type == 'sound' || github.event.inputs.type == 'slowmo') && 'on' || vars.DAILY_ROTATION || 'off' }}
+  DAILY_ROTATION: ${{ (github.event.inputs.type == 'sound' || github.event.inputs.type == 'slowmo' || github.event.inputs.type == 'ranking') && 'on' || vars.DAILY_ROTATION || 'off' }}
   DAILY_TYPE_WEIGHTS: ${{ vars.DAILY_TYPE_WEIGHTS || 'stem:1,sound:1,slowmo:0' }}
+  # 2026-10-25 RANKING / list compilation (pipeline/newtype-pipeline.js runRanking): WEEKLY. On RANKING_WEEKDAY (UTC, 0 = Sunday,
+  # default 6 = Saturday) it replaces that day's type when DAILY_TYPE_WEIGHTS has ranking:1 (default ranking:0 = OFF until the
+  # owner approves the first CI-built one) and a topic has reviewed segments for every revealed entry; stem stays the fallback.
+  RANKING_WEEKDAY: ${{ vars.RANKING_WEEKDAY || '6' }}
+  RANKING_MIN_GAP_DAYS: ${{ vars.RANKING_MIN_GAP_DAYS || '6' }}
+  RANKING_TOPIC: ${{ github.event.inputs.ranking_topic || '' }}
   DAILY_FORCE_TYPE: ${{ github.event.inputs.type || '' }}
   NEWTYPE_CLI_ARGS: ${{ github.event.inputs.newtype_args || '' }}
   # sound short: ~5-15 min on the 4-core runner (CPU, libx264); the cap leaves room for a cold model cache
@@ -345,6 +355,7 @@ jobs:
             output/meme/work-*/judge/*.jpg
             output/meme/work-*/judge/*.png
             output/meme/work-*/repair*.json
+            output/meme/work-ranking-*/*.txt
           retention-days: 7
 
       - name: Save memory

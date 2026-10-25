@@ -47,7 +47,7 @@ const gh = (a, o = {}) => execFileSync('gh', a, { cwd: ROOT, env, encoding: 'utf
 const STAMP = path.join(dir, '.store-stamp.json');
 const manifestsOnly = args.includes('--manifests-only');
 const pruneLocal = args.includes('--prune-local');
-const PRESETS = ['sound', 'slowmo'];
+const PRESETS = ['sound', 'slowmo', 'ranking'];   // ranking: one 'vibe' dir ranking/pool (clips.json + clips/), 2026-10-25
 // Windows: the system bsdtar (Git's GNU tar reads "C:" in a path as a remote host)
 const WIN_TAR = path.join(process.env.SystemRoot || 'C:/Windows', 'System32', 'tar.exe');
 const TAR = process.platform === 'win32' && fs.existsSync(WIN_TAR) ? WIN_TAR : 'tar';
@@ -248,7 +248,8 @@ function push() {
     }
     for (const p of parts) fs.rmSync(p, { force: true });
   }
-  if (fs.existsSync(path.join(dir, 'index.json'))) gh(['release', 'upload', TAG, path.join(dir, 'index.json'), ...repo, '--clobber']);
+  // index.json is the sound / slow-mo vibe index: a ranking-only push never replaces it (2026-10-25)
+  if (onlyPreset !== 'ranking' && fs.existsSync(path.join(dir, 'index.json'))) gh(['release', 'upload', TAG, path.join(dir, 'index.json'), ...repo, '--clobber']);
   const pushedVibes = new Set(vs.map(v => `${v.preset}/${v.vibe}`));
   for (const a of assets() || []) {
     if (keep.has(a.name)) continue;
@@ -295,7 +296,7 @@ try {
   if (cmd === 'pull') pull();
   else if (cmd === 'push') push();
   else if (cmd === 'list') for (const a of assets() || []) console.log(a.name, a.size);
-  else { console.error('usage: edit-pools-store.js pull|push|list [--dir DIR] [--preset sound|slowmo] [--manifests-only] [--prune-local]'); process.exit(2); }
+  else { console.error('usage: edit-pools-store.js pull|push|list [--dir DIR] [--preset sound|slowmo|ranking] [--manifests-only] [--prune-local]'); process.exit(2); }
 } catch (e) {
   console.error(`edit-pools-store ${cmd}: ${(e.stderr || e.message || '').toString().slice(0, 400)}`);
   process.exit(cmd === 'pull' ? 0 : 1);   // a failed pull must never stop the daily short (the rotation falls back to stem)

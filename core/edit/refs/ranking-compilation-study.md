@@ -403,3 +403,105 @@ Built with `--show 3 --seed 7 --prefer lynJABr10N4,thMXb5r792s,mY7mgdslbdc`.
   animations and TikTok edits that it reuses. The credit goes to @DivineHotdog only. **The owner should check
   this one.**
 
+
+## 8. Production (2026-10-25: owner approved v3, "start setting this type ready")
+
+Owner decisions (final): the v3 / PREVIEW2 format; others' edits credited ONLY in the description (plain @handles, no
+links, nothing on screen); >= 1-year-old edits and idle channels first; hard-skip "no reupload" editors and the takedown
+blocklist; the entry must show THAT character; eventful edits + strong songs; segments end on phrase ends, 18-24 s,
+balanced; cadence WEEKLY with rotating topics. Owner 2026-10-25: Rimuru is #1 in any POWER list that includes him
+("if he is mentioned as power level he should be 1"), every ranking must make sense, no "best husbando" list.
+
+### Code
+| file | what |
+|---|---|
+| `core/edit/refs/ranking-topics.json` | the topic library (owner-editable, rank order = the file order) |
+| `core/edit/ranking_topics.py` | `check` (sanity), `refresh` (AniList favourites / scores / main characters, wiki check), `show` |
+| `core/edit/char_refs.py` | the multi-picture character reference bank |
+| `core/edit/ranking_pool.py` | plan / mine / publish / pull-staged / review / import / push-state / eligible / assemble / mark / status |
+| `core/edit/ranking_compilation.py` | the gates, the models, the renderer (+ the one-off `build`, survey, deep-survey) |
+| `.github/workflows/ranking-pool-mine.yml` | the weekly mining job (called by pool-mine-nightly.yml) |
+| `pipeline/newtype-pipeline.js` `runRanking` + `pipeline/daily-rotation.js` | the weekly daily-job slot + the pre-upload guard |
+| `core/edit/refs/ranking_charcheck_eval.py` | the character-check evaluation (old vs new) on the survey candidates |
+
+### Topic library and its sanity rules
+- `order: power`: community power-scaling consensus; every `above` pair (canon head-to-head / feat) must hold; `pin`s hold.
+  A power list with Rimuru pins him #1 and uses `reveal: top` (a 3-slot list counting down #3, #2, #1, all shown), so he
+  is both the highest-ranked and on screen, and no hidden slot claims someone stronger. This is the cleaner of the two
+  options: in the countdown format he would either sit in a hidden slot or below two blank "stronger" slots.
+- `order: fans`: AniList favourites, high to low ("ranked by fans" in the description).
+- `order: score`: genre lists, AniList average score, high to low; the entries are ANIME and any character of the show
+  counts in the character check.
+- `python core/edit/ranking_topics.py check` fails on a broken order (an inverted `above` pair, a pin elsewhere, a fan /
+  score list out of order unless `order_locked`), missing names, too few entries.
+
+### Character check v2 (multi-picture bank)
+Per character: the AniList art, our quiz-pool pictures of that AniList id (eyes portrait, outfit, theme art), and the
+show's Fandom wiki page + /Gallery files whose NAME is only about this character (a file naming anyone else, "Everyone
+...", "Maki and Yuta ...", is skipped). One dominant face per picture (group shots dropped), the WD tagger vetoes a
+picture where it sees another known character, a consistency filter drops outliers. A frame votes for the candidate
+with the best mean of its top-3 reference similarities, only with a 0.03 margin; tagger-known characters keep the WD
+tagger vote. Pass rule unchanged: >= 60 % of the voting frames and >= 2x any other character.
+
+### Watermark gate additions (the PJUNKIE miss)
+`xlPSek4600U` (@PJUNKIE, Yuta) passed the watermark gate: it ends on an "OVO EDITORS" group card and the editor's logo on
+black (29.5-33 s of 33.2 s), and the 10 % end-card margin kept out only the last 3.3 s. Now (`editor_tags`):
+- tag words anywhere (editors / edits / amv / fx / prod / presents / thanks for watching / follow / channel / subscribe);
+- the editor's name matched fuzzily (OCR "10FLMZY" = Flimzys, "MAZT" = maztrae, "ZYPER" = ZyperAmv);
+- a logo card on black (no OCR text, a small bright centred element) in the first 10 % / last 20 %;
+- a mark in the last 40 % ends the usable part there; in the first 25 % the usable part starts after it;
+- the editor's name at two moments >= 5 s apart, or a SMALL name (< 1 % of the picture) mid-edit = a recurring / faint
+  watermark: the whole source is rejected (teRmyO3US4A "SANCHEZ", Blubzz, Floby, Zeno, ZARKX, KieNai).
+
+### Pool path
+1. **Candidates** (metadata only): per entry, the search results that pass the title / length / views gates, cached 14
+   days in `ranking-state.json`, with every checked source's verdict (gate_reject / staged / rejected / reviewed), so
+   nothing is downloaded twice.
+2. **Mining** (`ranking_pool.py mine`): entries in `plan()` order, i.e. the entries that block whole topics first (an
+   entry that alone blocks a topic scores 1, two missing entries 0.5 each ...). Per entry <= 3 downloads (old / idle
+   editors first, vetoes and the blocklist skipped), every gate, the best phrase window; ONLY that window + 1.5 s margin
+   is stored (`clips/<id>.mp4`), the source edit is deleted. Each staged item has its review sheet (20 random frames), the
+   proof snapshot (description / about / pinned comment), the editor handle and the upload date.
+   - GitHub: one job a week, Wednesday (`RANKING_MINE_WEEKDAY`), in pool-mine-nightly's rotation; `RANKING_MINE=off` stops it.
+   - PC: `scripts/local-mine.py`, lowest priority, one small batch a day after >= 3 other batches (`LOCAL_MINE_RANKING=0`
+     stops it); the same guards (spare cookies, no YouTube while a GitHub mining run is queued / running, bot-check back-off).
+3. **Review + import** (owner PC) and 4. **assembly** (daily job, weekly slot): see the runbook.
+
+Pooling is per ENTRY (name + show), so one reviewed Gojo segment serves every list with Gojo.
+
+## 9. Runbook
+
+**Cadence.** One ranking video a week. The daily job's slot is Saturday (`RANKING_WEEKDAY=6`, UTC): that day the
+ranking video REPLACES the day's type (never a second post) when `DAILY_TYPE_WEIGHTS` contains `ranking:1`, a topic is
+eligible and the last ranking upload is >= 6 days old. **It stays OFF (ranking:0) until the owner approves the first
+CI-built video.** Topics rotate: an eligible topic not used in the last 4 ranking uploads, least recently used first; an
+edit is not reused within 8 ranking uploads; never two excerpts of one editor in a video. Mining runs Wednesday night.
+
+**Review routine (weekly, after Wednesday's mining):**
+```
+python core/edit/ranking_pool.py pull-staged          # the release's ranking-cand tars -> output/edit-pools/_staged/ranking
+python core/edit/ranking_pool.py review               # one line per staged item + its review sheet path
+#   check each sheet (and play the clip): THAT character, no watermark / editor tag / end card, no subtitles, safe, eventful
+python core/edit/ranking_pool.py import --ids r_a,r_b --reject r_c --by owner
+python core/edit/ranking_pool.py push-state           # the decisions -> ranking-state.json on edit-pools-staging
+GH_TOKEN=$(gh auth token -u drcompilationyt7-alt) node scripts/edit-pools-store.js push --preset ranking   # the live pool
+python core/edit/ranking_pool.py status               # per topic: reviewed / staged per revealed entry, ELIGIBLE
+```
+
+**Daily job.** `pipeline/newtype-pipeline.js runRanking` -> `ranking_pool.py assemble --topic auto`. Pre-upload guard:
+the file, 40-75 s and within 3 s of the segments' total, every revealed entry present with a reviewed segment of THAT
+entry whose character check passed (>= 0.6), distinct editors, a credit line per entry, no URL in the description,
+frames not blank / static (qa_guard), the title style (`"<keyword> 🔥 #<hashtag>"`, keyword first). Any failure -> the
+stem edit that day (a video every day) and an issue with the reason. A test without upload: Actions -> Daily Shorts
+Creation -> type `ranking`, dry_run `true` (optionally `ranking_topic`).
+
+**Takedown / complaint (same day):**
+1. Delete (or private) the video on YouTube at once.
+2. Add the editor to `core/edit/refs/ranking-editor-blocklist.json` (`"@handle": {"added", "why", "video"}`), commit,
+   push. Mining, staging and the daily assembly skip that editor from then on.
+3. Optionally reject their pool items (`ranking_pool.py import --reject <ids>`) and push the pool.
+
+**Adding / changing topics.** Edit `core/edit/refs/ranking-topics.json` (entries in rank order; `chars` = AniList names;
+`wiki` = the show's Fandom wiki for the reference pictures; power lists need `above` pairs), then
+`python core/edit/ranking_topics.py refresh` (AniList numbers; fan / score lists re-sort unless `order_locked`) and
+`python core/edit/ranking_topics.py check` (must print 0 errors). `ranking_pool.py plan` shows what mining does next.

@@ -1,0 +1,3047 @@
+{
+ "_about": "Topic library of the ranking / list compilation (Zero Yen Otaku). OWNER-EDITABLE. Entries are in RANK ORDER: the first entry is #1 (strongest / best). Check after any edit: python core/edit/ranking_topics.py check (refresh fills the AniList basis numbers: python core/edit/ranking_topics.py refresh).",
+ "_rules": {
+  "order": "power = community power-scaling consensus, checked against the 'above' pairs (canon head-to-heads / feats: the stronger one must rank higher) | fans = AniList favourites, high to low ('ranked by fans') | score = AniList average score, high to low (genre lists; the entries are ANIME, any good edit of that show).",
+  "reveal": "countdown = #5, #4 (and usually #3) are shown, #2 / #1 stay blank as the comment hook (the reference format) | top = a 3-slot list counting down #3, #2, #1, every slot shown. Owner 2026-10-25: 'if he is mentioned as power level he should be 1' -> a power list with Rimuru pins him to #1 (pin: 1) and uses reveal 'top', so he is both the highest-ranked and SHOWN; no hidden slot ever claims someone stronger than him.",
+  "pin": "an entry's 'pin': 1 (or 2, 3 ...) forces that rank; the checker fails a list where a pinned entry is elsewhere.",
+  "order_locked": "true = the refresh never re-sorts this list (an owner override); the checker still reports how it differs from the basis.",
+  "entry": "name = the on-screen name | chars = AniList character names (for a genre list: the show's main characters; any of them counts) | anime | search = the YouTube search phrase (default: the name) | tags = WD-tagger danbooru tags when the tagger knows the character | wiki = the show's Fandom wiki (reference pictures for the character check; the topic's wiki is the default) | max_dur = longest source upload allowed (default 150 s)."
+ },
+ "topics": {
+  "jjk_strongest": {
+   "title": [
+    "STRONGEST",
+    "JJK CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest jjk characters",
+   "hashtag": "jujutsukaisen",
+   "wiki": "jujutsu-kaisen",
+   "basis": "post-manga-ending (Sept 2024) power-scaling consensus; Sukuna beat Gojo; Yuta fought in Gojo's body; Yuji's Shinjuku feats; Toji the strongest non-sorcerer.",
+   "above": [
+    [
+     "SUKUNA",
+     "GOJO",
+     "Sukuna killed Gojo (ch. 236)"
+    ],
+    [
+     "SUKUNA",
+     "YUJI",
+     "Shinjuku: Yuji only wins with the whole team"
+    ],
+    [
+     "GOJO",
+     "TOJI",
+     "awakened Gojo beat revived Toji"
+    ],
+    [
+     "GOJO",
+     "YUTA",
+     "Yuta needs Gojo's body for the Sukuna fight"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "SUKUNA",
+     "chars": [
+      "Sukuna"
+     ],
+     "tags": [
+      "ryoumen_sukuna_(jujutsu_kaisen)"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "search": "sukuna",
+     "q": [
+      "sukuna edit 4k",
+      "ryomen sukuna amv edit"
+     ],
+     "anilist": {
+      "id": 133701,
+      "favourites": 11944,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GOJO",
+     "chars": [
+      "Satoru Gojo"
+     ],
+     "tags": [
+      "gojou_satoru"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "search": "gojo",
+     "q": [
+      "gojo edit 4k",
+      "gojo satoru amv edit"
+     ],
+     "anilist": {
+      "id": 127691,
+      "favourites": 39390,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "YUTA",
+     "chars": [
+      "Yuta Okkotsu"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "search": "yuta okkotsu",
+     "q": [
+      "yuta okkotsu edit 4k",
+      "yuta amv edit",
+      "yuta okkotsu amv 4k",
+      "yuta okkotsu edit"
+     ],
+     "alias": [
+      "yuta",
+      "okkotsu"
+     ],
+     "anilist": {
+      "id": 129571,
+      "favourites": 11666,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "YUJI",
+     "chars": [
+      "Yuji Itadori"
+     ],
+     "tags": [
+      "itadori_yuuji"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "search": "yuji itadori",
+     "max_dur": 270,
+     "q": [
+      "yuji itadori edit 4k",
+      "itadori amv edit",
+      "itadori yuji black flash edit",
+      "yuji itadori shinjuku edit 4k",
+      "yuji itadori edit",
+      "itadori yuji amv 4k",
+      "yuji itadori phonk edit"
+     ],
+     "alias": [
+      "yuji",
+      "itadori"
+     ],
+     "anilist": {
+      "id": 127212,
+      "favourites": 21286,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "TOJI",
+     "chars": [
+      "Touji Fushiguro"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "search": "toji fushiguro",
+     "q": [
+      "toji fushiguro edit 4k",
+      "toji amv edit"
+     ],
+     "alias": [
+      "toji"
+     ],
+     "anilist": {
+      "id": 162722,
+      "favourites": 7717,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "op_strongest": {
+   "title": [
+    "MOST OVERPOWERED",
+    "ANIME CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "top",
+   "keyword": "most overpowered anime characters",
+   "hashtag": "anime",
+   "basis": "owner request 2026-10-25 ('strongest in general, like slime, overlord, misfit ... the voldigoad guy'); Rimuru pinned #1 (owner rule); Anos above Ainz in the usual power-scaling threads (Anos one-shots gods; Ainz is a top-tier player character inside Yggdrasil rules).",
+   "above": [
+    [
+     "ANOS",
+     "AINZ",
+     "Anos' feats (destroying / recreating worlds) dwarf Ainz's"
+    ],
+    [
+     "RIMURU",
+     "ANOS",
+     "owner pin"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "RIMURU",
+     "pin": 1,
+     "chars": [
+      "Rimuru Tempest"
+     ],
+     "anime": "That Time I Got Reincarnated as a Slime",
+     "wiki": "tensura",
+     "search": "rimuru tempest",
+     "q": [
+      "rimuru tempest edit 4k",
+      "rimuru amv edit",
+      "rimuru edit"
+     ],
+     "alias": [
+      "rimuru"
+     ],
+     "anilist": {
+      "id": 123962,
+      "favourites": 13804,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ANOS",
+     "chars": [
+      "Anos Voldigoad"
+     ],
+     "anime": "The Misfit of Demon King Academy",
+     "wiki": "maou-gakuin",
+     "search": "anos voldigoad",
+     "q": [
+      "anos voldigoad edit 4k",
+      "anos edit",
+      "misfit of demon king academy amv edit"
+     ],
+     "alias": [
+      "anos",
+      "voldigoad",
+      "misfit"
+     ],
+     "anilist": {
+      "id": 138595,
+      "favourites": 3261,
+      "name": "Anos Voldigoad",
+      "in_pool": false
+     }
+    },
+    {
+     "name": "AINZ",
+     "chars": [
+      "Momonga"
+     ],
+     "anime": "Overlord",
+     "wiki": "overlordmaruyama",
+     "search": "ainz ooal gown",
+     "q": [
+      "ainz ooal gown edit 4k",
+      "ainz edit",
+      "overlord ainz amv edit"
+     ],
+     "alias": [
+      "ainz",
+      "momonga",
+      "overlord"
+     ],
+     "anilist": {
+      "id": 89103,
+      "favourites": 5555,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "SHADOW",
+     "chars": [
+      "Cid Kageno"
+     ],
+     "anime": "The Eminence in Shadow",
+     "wiki": "the-eminence-in-shadow",
+     "search": "cid kagenou shadow",
+     "q": [
+      "cid kagenou edit 4k",
+      "eminence in shadow edit",
+      "shadow i am atomic edit"
+     ],
+     "alias": [
+      "cid",
+      "shadow",
+      "eminence",
+      "atomic"
+     ],
+     "anilist": {
+      "id": 136837,
+      "favourites": 6998,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "WANG LING",
+     "chars": [
+      "Ling Wang"
+     ],
+     "anime": "The Daily Life of the Immortal King",
+     "search": "wang ling",
+     "q": [
+      "wang ling edit 4k",
+      "daily life of the immortal king edit"
+     ],
+     "alias": [
+      "wang ling",
+      "immortal king"
+     ],
+     "wiki": "the-daily-life-of-the-immortal-king",
+     "anilist": {
+      "id": 188942,
+      "favourites": 1041,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "strongest_overall": {
+   "title": [
+    "STRONGEST",
+    "ANIME CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest anime characters",
+   "hashtag": "anime",
+   "basis": "mainstream power-scaling consensus (VS-battles style tiers, popular ranking videos): Saitama (gag-limitless) and Goku (multiversal, Super) on top, Sung Jinwoo (Shadow Monarch) above Madara (Ten-Tails jinchuuriki), Gojo the top of his own verse but below the planet-level+ fighters.",
+   "above": [
+    [
+     "GOKU",
+     "MADARA",
+     "multiversal vs planetary"
+    ],
+    [
+     "SUNG JINWOO",
+     "GOJO",
+     "Shadow Monarch vs city-level+"
+    ],
+    [
+     "MADARA",
+     "GOJO",
+     "moon-level+ vs city-level+"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "SAITAMA",
+     "chars": [
+      "Saitama"
+     ],
+     "anime": "One-Punch Man",
+     "wiki": "onepunchman",
+     "search": "saitama",
+     "q": [
+      "saitama edit 4k",
+      "saitama amv edit"
+     ],
+     "anilist": {
+      "id": 73935,
+      "favourites": 15105,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GOKU",
+     "chars": [
+      "Son Goku"
+     ],
+     "anime": "Dragon Ball",
+     "wiki": "dragonball",
+     "search": "goku",
+     "q": [
+      "goku edit 4k",
+      "goku ultra instinct amv edit"
+     ],
+     "alias": [
+      "goku"
+     ],
+     "anilist": {
+      "id": 246,
+      "favourites": 9605,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "SUNG JINWOO",
+     "chars": [
+      "Sung Jinwoo"
+     ],
+     "anime": "Solo Leveling",
+     "wiki": "solo-leveling",
+     "search": "sung jinwoo",
+     "q": [
+      "sung jinwoo edit 4k",
+      "solo leveling jinwoo amv edit"
+     ],
+     "alias": [
+      "jinwoo",
+      "jin woo",
+      "solo leveling"
+     ],
+     "anilist": {
+      "id": 129928,
+      "favourites": 15239,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MADARA",
+     "chars": [
+      "Madara Uchiha"
+     ],
+     "anime": "Naruto",
+     "wiki": "naruto",
+     "search": "madara uchiha",
+     "q": [
+      "madara uchiha edit 4k",
+      "madara amv edit"
+     ],
+     "alias": [
+      "madara"
+     ],
+     "anilist": {
+      "id": 53901,
+      "favourites": 4776,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GOJO",
+     "chars": [
+      "Satoru Gojo"
+     ],
+     "tags": [
+      "gojou_satoru"
+     ],
+     "anime": "JUJUTSU KAISEN",
+     "wiki": "jujutsu-kaisen",
+     "search": "gojo",
+     "q": [
+      "gojo edit 4k",
+      "gojo satoru amv edit"
+     ],
+     "anilist": {
+      "id": 127691,
+      "favourites": 39390,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "demon_slayer_strongest": {
+   "title": [
+    "STRONGEST",
+    "DEMON SLAYER CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest demon slayer characters",
+   "hashtag": "demonslayer",
+   "wiki": "kimetsu-no-yaiba",
+   "basis": "manga-ending consensus: Yoriichi (nearly killed Muzan alone) > Muzan > Kokushibo (Upper 1) > Gyomei (strongest Hashira) > Akaza (Upper 3).",
+   "above": [
+    [
+     "YORIICHI",
+     "MUZAN",
+     "Yoriichi nearly killed Muzan"
+    ],
+    [
+     "MUZAN",
+     "KOKUSHIBO",
+     "Upper Moons serve Muzan"
+    ],
+    [
+     "KOKUSHIBO",
+     "GYOMEI",
+     "it took Gyomei + Sanemi + Muichiro + Genya"
+    ],
+    [
+     "KOKUSHIBO",
+     "AKAZA",
+     "Upper 1 vs Upper 3"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "YORIICHI",
+     "chars": [
+      "Yoriichi Tsugikuni"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "search": "yoriichi",
+     "q": [
+      "yoriichi edit 4k",
+      "yoriichi tsugikuni amv edit"
+     ],
+     "anilist": {
+      "id": 149220,
+      "favourites": 1260,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MUZAN",
+     "chars": [
+      "Muzan Kibutsuji"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "search": "muzan",
+     "q": [
+      "muzan edit 4k",
+      "muzan kibutsuji amv edit"
+     ],
+     "anilist": {
+      "id": 129132,
+      "favourites": 2140,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "KOKUSHIBO",
+     "chars": [
+      "Kokushibo"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "search": "kokushibo",
+     "q": [
+      "kokushibo edit 4k",
+      "kokushibo amv edit"
+     ],
+     "anilist": {
+      "id": 141918,
+      "favourites": 1100,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GYOMEI",
+     "chars": [
+      "Gyomei Himejima"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "search": "gyomei",
+     "q": [
+      "gyomei edit 4k",
+      "gyomei himejima amv edit"
+     ],
+     "anilist": {
+      "id": 137778,
+      "favourites": 1674,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "AKAZA",
+     "chars": [
+      "Akaza"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "search": "akaza",
+     "q": [
+      "akaza edit 4k",
+      "akaza amv edit"
+     ],
+     "anilist": {
+      "id": 141694,
+      "favourites": 4207,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "one_piece_strongest": {
+   "title": [
+    "STRONGEST",
+    "ONE PIECE CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest one piece characters",
+   "hashtag": "onepiece",
+   "wiki": "onepiece",
+   "basis": "post-Wano / Egghead consensus among currently active fighters: Shanks and Gear-5 Luffy on top, Kaido (beaten by Luffy), Mihawk (World's Strongest Swordsman), Zoro (still below Mihawk).",
+   "above": [
+    [
+     "LUFFY",
+     "KAIDO",
+     "Luffy beat Kaido in Wano"
+    ],
+    [
+     "MIHAWK",
+     "ZORO",
+     "Zoro has not surpassed Mihawk yet"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "SHANKS",
+     "chars": [
+      "Shanks"
+     ],
+     "anime": "ONE PIECE",
+     "search": "shanks",
+     "q": [
+      "shanks edit 4k",
+      "shanks amv edit"
+     ],
+     "anilist": {
+      "id": 727,
+      "favourites": 5815,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "LUFFY",
+     "chars": [
+      "Monkey D. Luffy"
+     ],
+     "tags": [
+      "monkey_d._luffy"
+     ],
+     "anime": "ONE PIECE",
+     "search": "luffy gear 5",
+     "q": [
+      "luffy gear 5 edit 4k",
+      "luffy amv edit"
+     ],
+     "alias": [
+      "luffy"
+     ],
+     "anilist": {
+      "id": 40,
+      "favourites": 36000,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "KAIDO",
+     "chars": [
+      "Kaidou"
+     ],
+     "anime": "ONE PIECE",
+     "search": "kaido",
+     "q": [
+      "kaido edit 4k",
+      "kaido amv edit"
+     ],
+     "alias": [
+      "kaido",
+      "kaidou"
+     ],
+     "anilist": {
+      "id": 90112,
+      "favourites": 5731,
+      "name": "Shun Kaidou",
+      "in_pool": false
+     }
+    },
+    {
+     "name": "MIHAWK",
+     "chars": [
+      "Dracule Mihawk"
+     ],
+     "anime": "ONE PIECE",
+     "search": "mihawk",
+     "q": [
+      "mihawk edit 4k",
+      "mihawk amv edit"
+     ],
+     "anilist": {
+      "id": 2064,
+      "favourites": 2391,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ZORO",
+     "chars": [
+      "Roronoa Zoro"
+     ],
+     "tags": [
+      "roronoa_zoro"
+     ],
+     "anime": "ONE PIECE",
+     "search": "zoro",
+     "q": [
+      "zoro edit 4k",
+      "zoro amv edit"
+     ],
+     "anilist": {
+      "id": 62,
+      "favourites": 28862,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "naruto_strongest": {
+   "title": [
+    "STRONGEST",
+    "NARUTO CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest naruto characters",
+   "hashtag": "naruto",
+   "wiki": "naruto",
+   "basis": "Shippuden ending: Naruto and Sasuke (beat Kaguya together) > Madara (Ten-Tails jinchuuriki) > Pain (Six Paths, beat Jiraiya / destroyed Konoha) > Itachi.",
+   "above": [
+    [
+     "NARUTO",
+     "MADARA",
+     "Naruto + Sasuke beat Madara / Kaguya"
+    ],
+    [
+     "MADARA",
+     "PAIN",
+     "Madara gave Nagato the Rinnegan"
+    ],
+    [
+     "SASUKE",
+     "ITACHI",
+     "end-of-series Sasuke"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "NARUTO",
+     "chars": [
+      "Naruto Uzumaki"
+     ],
+     "tags": [
+      "uzumaki_naruto"
+     ],
+     "anime": "Naruto",
+     "search": "naruto",
+     "q": [
+      "naruto edit 4k",
+      "naruto baryon mode amv edit"
+     ],
+     "anilist": {
+      "id": 17,
+      "favourites": 18183,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "SASUKE",
+     "chars": [
+      "Sasuke Uchiha"
+     ],
+     "tags": [
+      "uchiha_sasuke"
+     ],
+     "anime": "Naruto",
+     "search": "sasuke",
+     "q": [
+      "sasuke edit 4k",
+      "sasuke amv edit"
+     ],
+     "anilist": {
+      "id": 13,
+      "favourites": 13043,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MADARA",
+     "chars": [
+      "Madara Uchiha"
+     ],
+     "anime": "Naruto",
+     "search": "madara",
+     "q": [
+      "madara uchiha edit 4k",
+      "madara amv edit"
+     ],
+     "anilist": {
+      "id": 53901,
+      "favourites": 4776,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "PAIN",
+     "chars": [
+      "Pain"
+     ],
+     "anime": "Naruto",
+     "search": "pain",
+     "q": [
+      "pain naruto edit 4k",
+      "pain amv edit"
+     ],
+     "alias": [
+      "pain",
+      "nagato"
+     ],
+     "anilist": {
+      "id": 3180,
+      "favourites": 5396,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ITACHI",
+     "chars": [
+      "Itachi Uchiha"
+     ],
+     "tags": [
+      "uchiha_itachi"
+     ],
+     "anime": "Naruto",
+     "search": "itachi",
+     "q": [
+      "itachi edit 4k",
+      "itachi amv edit"
+     ],
+     "anilist": {
+      "id": 14,
+      "favourites": 21439,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "bleach_strongest": {
+   "title": [
+    "STRONGEST",
+    "BLEACH CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest bleach characters",
+   "hashtag": "bleach",
+   "wiki": "bleach",
+   "basis": "Thousand-Year Blood War ending: Ichigo (landed the final blow on Yhwach) ~ Yhwach > Aizen (Hogyoku) > Yamamoto > Kenpachi.",
+   "above": [
+    [
+     "AIZEN",
+     "YAMAMOTO",
+     "Hogyoku Aizen survived everyone"
+    ],
+    [
+     "YAMAMOTO",
+     "KENPACHI",
+     "the Captain-Commander"
+    ],
+    [
+     "YHWACH",
+     "AIZEN",
+     "Yhwach's Almighty"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "ICHIGO",
+     "chars": [
+      "Ichigo Kurosaki"
+     ],
+     "tags": [
+      "kurosaki_ichigo"
+     ],
+     "anime": "Bleach",
+     "search": "ichigo",
+     "q": [
+      "ichigo edit 4k",
+      "ichigo kurosaki amv edit"
+     ],
+     "alias": [
+      "ichigo"
+     ],
+     "anilist": {
+      "id": 5,
+      "favourites": 14544,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "YHWACH",
+     "chars": [
+      "Yhwach"
+     ],
+     "anime": "Bleach",
+     "search": "yhwach",
+     "q": [
+      "yhwach edit 4k",
+      "yhwach amv edit"
+     ],
+     "anilist": {
+      "id": 68537,
+      "favourites": 720,
+      "name": "Yhwach",
+      "in_pool": false
+     }
+    },
+    {
+     "name": "AIZEN",
+     "chars": [
+      "Sousuke Aizen"
+     ],
+     "tags": [
+      "aizen_sousuke"
+     ],
+     "anime": "Bleach",
+     "search": "aizen",
+     "q": [
+      "aizen edit 4k",
+      "aizen amv edit"
+     ],
+     "anilist": {
+      "id": 1086,
+      "favourites": 7030,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "YAMAMOTO",
+     "chars": [
+      "Genryusai Yamamoto"
+     ],
+     "anime": "Bleach",
+     "search": "yamamoto",
+     "q": [
+      "yamamoto bankai edit 4k",
+      "yamamoto amv edit"
+     ],
+     "alias": [
+      "yamamoto",
+      "genryusai"
+     ],
+     "anilist": {
+      "id": 5726,
+      "favourites": 756,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "KENPACHI",
+     "chars": [
+      "Kenpachi Zaraki"
+     ],
+     "anime": "Bleach",
+     "search": "kenpachi",
+     "q": [
+      "kenpachi edit 4k",
+      "kenpachi zaraki amv edit"
+     ],
+     "anilist": {
+      "id": 909,
+      "favourites": 6163,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "solo_leveling_strongest": {
+   "title": [
+    "STRONGEST",
+    "SOLO LEVELING CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest solo leveling characters",
+   "hashtag": "sololeveling",
+   "wiki": "solo-leveling",
+   "basis": "anime seasons 1-2: Jinwoo far above everyone; Beru (ant king, shadow) > Thomas Andre (National Level) > Igris > Cha Hae-In (S-rank).",
+   "above": [
+    [
+     "SUNG JINWOO",
+     "THOMAS ANDRE",
+     "Jinwoo beat Thomas"
+    ],
+    [
+     "IGRIS",
+     "CHA HAE-IN",
+     "a knight-commander shadow vs S-rank"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "SUNG JINWOO",
+     "chars": [
+      "Sung Jinwoo"
+     ],
+     "anime": "Solo Leveling",
+     "search": "sung jinwoo",
+     "q": [
+      "sung jinwoo edit 4k",
+      "jinwoo amv edit"
+     ],
+     "alias": [
+      "jinwoo",
+      "jin woo"
+     ],
+     "anilist": {
+      "id": 129928,
+      "favourites": 15239,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "BERU",
+     "chars": [
+      "Beru"
+     ],
+     "anime": "Solo Leveling",
+     "search": "beru",
+     "q": [
+      "beru solo leveling edit",
+      "beru ant king edit 4k"
+     ],
+     "anilist": {
+      "id": 159849,
+      "favourites": 1380,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "THOMAS ANDRE",
+     "chars": [
+      "Thomas Andre"
+     ],
+     "anime": "Solo Leveling",
+     "search": "thomas andre",
+     "q": [
+      "thomas andre edit 4k",
+      "thomas andre solo leveling edit"
+     ],
+     "alias": [
+      "thomas",
+      "andre"
+     ],
+     "anilist": {
+      "id": 184540,
+      "favourites": 150,
+      "name": "Thomas Andre",
+      "in_pool": false
+     }
+    },
+    {
+     "name": "IGRIS",
+     "chars": [
+      "Igris"
+     ],
+     "anime": "Solo Leveling",
+     "search": "igris",
+     "q": [
+      "igris edit 4k",
+      "igris solo leveling edit"
+     ],
+     "anilist": {
+      "id": 145722,
+      "favourites": 1825,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "CHA HAE-IN",
+     "chars": [
+      "Hae-In Cha"
+     ],
+     "anime": "Solo Leveling",
+     "search": "cha hae in",
+     "q": [
+      "cha hae in edit 4k",
+      "cha hae in solo leveling edit"
+     ],
+     "alias": [
+      "hae.?in"
+     ],
+     "anilist": {
+      "id": 138789,
+      "favourites": 4726,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "dragon_ball_strongest": {
+   "title": [
+    "STRONGEST",
+    "DRAGON BALL CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest dragon ball characters",
+   "hashtag": "dragonball",
+   "basis": "Dragon Ball Super (anime + Broly / Super Hero films): Beerus (God of Destruction) > Goku (Ultra Instinct) > Broly > Vegeta > Gohan (Beast is debated: kept below Vegeta).",
+   "above": [
+    [
+     "BEERUS",
+     "VEGETA",
+     "a God of Destruction"
+    ],
+    [
+     "BROLY",
+     "GOHAN",
+     "Broly needed Gogeta"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "BEERUS",
+     "chars": [
+      "Beerus"
+     ],
+     "anime": "Dragon Ball Super",
+     "wiki": "dragonball",
+     "search": "beerus",
+     "q": [
+      "beerus edit 4k",
+      "beerus amv edit"
+     ],
+     "anilist": {
+      "id": 76348,
+      "favourites": 1168,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GOKU",
+     "chars": [
+      "Son Goku"
+     ],
+     "anime": "Dragon Ball",
+     "wiki": "dragonball",
+     "search": "goku",
+     "q": [
+      "goku edit 4k",
+      "goku ultra instinct edit"
+     ],
+     "alias": [
+      "goku"
+     ],
+     "anilist": {
+      "id": 246,
+      "favourites": 9605,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "BROLY",
+     "chars": [
+      "Broly"
+     ],
+     "anime": "Dragon Ball Super: Broly",
+     "wiki": "dragonball",
+     "search": "broly",
+     "q": [
+      "broly edit 4k",
+      "broly amv edit"
+     ],
+     "anilist": {
+      "id": 4945,
+      "favourites": 1406,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "VEGETA",
+     "chars": [
+      "Vegeta"
+     ],
+     "anime": "Dragon Ball",
+     "wiki": "dragonball",
+     "search": "vegeta",
+     "q": [
+      "vegeta edit 4k",
+      "vegeta amv edit"
+     ],
+     "anilist": {
+      "id": 913,
+      "favourites": 7323,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "GOHAN",
+     "chars": [
+      "Gohan Son"
+     ],
+     "anime": "Dragon Ball",
+     "wiki": "dragonball",
+     "search": "gohan",
+     "q": [
+      "gohan beast edit 4k",
+      "gohan amv edit"
+     ],
+     "alias": [
+      "gohan"
+     ],
+     "anilist": {
+      "id": 2093,
+      "favourites": 3780,
+      "in_pool": true
+     }
+    }
+   ],
+   "wiki": "dragonball"
+  },
+  "aot_strongest": {
+   "title": [
+    "STRONGEST",
+    "ATTACK ON TITAN CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest attack on titan characters",
+   "hashtag": "attackontitan",
+   "wiki": "attackontitan",
+   "basis": "series ending: Eren (Founding Titan, the Rumbling) > Levi (humanity's strongest) > Mikasa > Zeke (Beast Titan, beaten by Levi) > Reiner.",
+   "above": [
+    [
+     "EREN",
+     "LEVI",
+     "the Founder"
+    ],
+    [
+     "LEVI",
+     "ZEKE",
+     "Levi beat Zeke twice"
+    ],
+    [
+     "ZEKE",
+     "REINER",
+     "Beast Titan vs Armored"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "EREN",
+     "chars": [
+      "Eren Yeager"
+     ],
+     "tags": [
+      "eren_yeager"
+     ],
+     "anime": "Attack on Titan",
+     "search": "eren yeager",
+     "q": [
+      "eren yeager edit 4k",
+      "eren amv edit"
+     ],
+     "alias": [
+      "eren"
+     ],
+     "anilist": {
+      "id": 40882,
+      "favourites": 31845,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "LEVI",
+     "chars": [
+      "Levi"
+     ],
+     "tags": [
+      "levi_(shingeki_no_kyojin)"
+     ],
+     "anime": "Attack on Titan",
+     "search": "levi ackerman",
+     "q": [
+      "levi ackerman edit 4k",
+      "levi amv edit"
+     ],
+     "alias": [
+      "levi"
+     ],
+     "anilist": {
+      "id": 45627,
+      "favourites": 38328,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MIKASA",
+     "chars": [
+      "Mikasa Ackerman"
+     ],
+     "tags": [
+      "mikasa_ackerman"
+     ],
+     "anime": "Attack on Titan",
+     "search": "mikasa",
+     "q": [
+      "mikasa edit 4k",
+      "mikasa ackerman amv edit"
+     ],
+     "anilist": {
+      "id": 40881,
+      "favourites": 25572,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ZEKE",
+     "chars": [
+      "Zeke"
+     ],
+     "anime": "Attack on Titan",
+     "search": "zeke",
+     "q": [
+      "zeke yeager edit 4k",
+      "beast titan zeke edit"
+     ],
+     "alias": [
+      "zeke",
+      "beast titan"
+     ],
+     "anilist": {
+      "id": 125661,
+      "favourites": 3430,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "REINER",
+     "chars": [
+      "Reiner Braun"
+     ],
+     "anime": "Attack on Titan",
+     "search": "reiner",
+     "q": [
+      "reiner braun edit 4k",
+      "reiner amv edit"
+     ],
+     "alias": [
+      "reiner"
+     ],
+     "anilist": {
+      "id": 46484,
+      "favourites": 7705,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "mha_strongest": {
+   "title": [
+    "STRONGEST",
+    "MY HERO ACADEMIA CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest mha characters",
+   "hashtag": "myheroacademia",
+   "wiki": "bokunoheroacademia",
+   "basis": "manga ending: Deku (beat Shigaraki / All For One) > Shigaraki > All Might (prime) > Endeavor (No. 1 hero after All Might) > Bakugo.",
+   "above": [
+    [
+     "DEKU",
+     "SHIGARAKI",
+     "final war"
+    ],
+    [
+     "ALL MIGHT",
+     "ENDEAVOR",
+     "the No. 1 hero"
+    ],
+    [
+     "ENDEAVOR",
+     "BAKUGO",
+     "pro vs student"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "DEKU",
+     "chars": [
+      "Izuku Midoriya"
+     ],
+     "tags": [
+      "midoriya_izuku"
+     ],
+     "anime": "My Hero Academia",
+     "search": "deku",
+     "q": [
+      "deku edit 4k",
+      "izuku midoriya amv edit"
+     ],
+     "alias": [
+      "deku",
+      "izuku",
+      "midoriya"
+     ],
+     "anilist": {
+      "id": 89028,
+      "favourites": 14054,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "SHIGARAKI",
+     "chars": [
+      "Tomura Shigaraki"
+     ],
+     "anime": "My Hero Academia",
+     "search": "shigaraki",
+     "q": [
+      "shigaraki edit 4k",
+      "tomura shigaraki amv edit"
+     ],
+     "anilist": {
+      "id": 89226,
+      "favourites": 5481,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ALL MIGHT",
+     "chars": [
+      "Toshinori Yagi"
+     ],
+     "anime": "My Hero Academia",
+     "search": "all might",
+     "q": [
+      "all might edit 4k",
+      "all might amv edit"
+     ],
+     "alias": [
+      "all ?might"
+     ],
+     "anilist": {
+      "id": 89224,
+      "favourites": 6852,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ENDEAVOR",
+     "chars": [
+      "Enji Todoroki"
+     ],
+     "anime": "My Hero Academia",
+     "search": "endeavor",
+     "q": [
+      "endeavor edit 4k",
+      "endeavor mha amv edit"
+     ],
+     "anilist": {
+      "id": 126158,
+      "favourites": 1906,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "BAKUGO",
+     "chars": [
+      "Katsuki Bakugo"
+     ],
+     "tags": [
+      "bakugou_katsuki"
+     ],
+     "anime": "My Hero Academia",
+     "search": "bakugo",
+     "q": [
+      "bakugo edit 4k",
+      "bakugo amv edit"
+     ],
+     "alias": [
+      "bakugo",
+      "bakugou"
+     ],
+     "anilist": {
+      "id": 88892,
+      "favourites": 16220,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "chainsaw_man_strongest": {
+   "title": [
+    "STRONGEST",
+    "CHAINSAW MAN CHARACTERS"
+   ],
+   "kind": "character",
+   "order": "power",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "strongest chainsaw man characters",
+   "hashtag": "chainsawman",
+   "wiki": "chainsaw-man",
+   "basis": "Part 1: Denji (Chainsaw Man / Pochita, ate Makima) > Makima (Control Devil) > Reze (Bomb) > Power > Aki.",
+   "above": [
+    [
+     "DENJI",
+     "MAKIMA",
+     "Denji ended Makima"
+    ],
+    [
+     "MAKIMA",
+     "REZE",
+     "Makima killed Reze"
+    ],
+    [
+     "REZE",
+     "POWER",
+     "Reze vs Power / Beam"
+    ]
+   ],
+   "entries": [
+    {
+     "name": "DENJI",
+     "chars": [
+      "Denji"
+     ],
+     "tags": [
+      "denji_(chainsaw_man)"
+     ],
+     "anime": "Chainsaw Man",
+     "search": "denji chainsaw man",
+     "q": [
+      "denji edit 4k",
+      "chainsaw man denji amv edit"
+     ],
+     "alias": [
+      "denji",
+      "chainsaw"
+     ],
+     "anilist": {
+      "id": 130102,
+      "favourites": 21019,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MAKIMA",
+     "chars": [
+      "Makima"
+     ],
+     "tags": [
+      "makima_(chainsaw_man)"
+     ],
+     "anime": "Chainsaw Man",
+     "search": "makima",
+     "q": [
+      "makima edit 4k",
+      "makima amv edit"
+     ],
+     "anilist": {
+      "id": 137080,
+      "favourites": 22256,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "REZE",
+     "chars": [
+      "Reze"
+     ],
+     "tags": [
+      "reze_(chainsaw_man)"
+     ],
+     "anime": "Chainsaw Man",
+     "search": "reze",
+     "q": [
+      "reze edit 4k",
+      "reze chainsaw man edit"
+     ],
+     "anilist": {
+      "id": 148740,
+      "favourites": 10322,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "POWER",
+     "chars": [
+      "Power"
+     ],
+     "tags": [
+      "power_(chainsaw_man)"
+     ],
+     "anime": "Chainsaw Man",
+     "search": "power chainsaw man",
+     "q": [
+      "power chainsaw man edit 4k",
+      "power csm amv edit"
+     ],
+     "alias": [
+      "power"
+     ],
+     "anilist": {
+      "id": 137079,
+      "favourites": 20544,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "AKI",
+     "chars": [
+      "Aki Hayakawa"
+     ],
+     "anime": "Chainsaw Man",
+     "search": "aki hayakawa",
+     "q": [
+      "aki hayakawa edit 4k",
+      "aki chainsaw man edit"
+     ],
+     "alias": [
+      "aki"
+     ],
+     "anilist": {
+      "id": 137081,
+      "favourites": 14736,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "best_waifu": {
+   "title": [
+    "BEST",
+    "WAIFU"
+   ],
+   "kind": "character",
+   "order": "fans",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "best anime waifu ranked by fans",
+   "hashtag": "waifu",
+   "basis": "AniList favourites (quiz pool, 2026-10). The waifu lists are opinion: the title / description say 'ranked by fans'. Minors only with modest content (the per-frame safety gate is strict for them).",
+   "entries": [
+    {
+     "name": "MIKASA",
+     "chars": [
+      "Mikasa Ackerman"
+     ],
+     "tags": [
+      "mikasa_ackerman"
+     ],
+     "anime": "Attack on Titan",
+     "wiki": "attackontitan",
+     "search": "mikasa",
+     "q": [
+      "mikasa edit 4k",
+      "mikasa ackerman amv edit"
+     ],
+     "anilist": {
+      "id": 40881,
+      "favourites": 25572,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MAKIMA",
+     "chars": [
+      "Makima"
+     ],
+     "tags": [
+      "makima_(chainsaw_man)"
+     ],
+     "anime": "Chainsaw Man",
+     "wiki": "chainsaw-man",
+     "search": "makima",
+     "q": [
+      "makima edit 4k",
+      "makima amv edit"
+     ],
+     "anilist": {
+      "id": 137080,
+      "favourites": 22256,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MARIN",
+     "chars": [
+      "Marin Kitagawa"
+     ],
+     "tags": [
+      "kitagawa_marin"
+     ],
+     "anime": "My Dress-Up Darling",
+     "search": "marin kitagawa",
+     "q": [
+      "marin kitagawa edit 4k",
+      "marin amv edit"
+     ],
+     "alias": [
+      "marin"
+     ],
+     "wiki": "my-dress-up-darling",
+     "anilist": {
+      "id": 133676,
+      "favourites": 17296,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "REM",
+     "chars": [
+      "Rem"
+     ],
+     "tags": [
+      "rem_(re:zero)"
+     ],
+     "anime": "Re:ZERO -Starting Life in Another World-",
+     "wiki": "rezero",
+     "search": "rem re zero",
+     "q": [
+      "rem re zero edit 4k",
+      "rem amv edit"
+     ],
+     "alias": [
+      "\\brem\\b"
+     ],
+     "anilist": {
+      "id": 88575,
+      "favourites": 16229,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ZERO TWO",
+     "chars": [
+      "Zero Two"
+     ],
+     "tags": [
+      "zero_two_(darling_in_the_franxx)"
+     ],
+     "anime": "DARLING in the FRANXX",
+     "wiki": "darling-in-the-franxx",
+     "search": "zero two",
+     "q": [
+      "zero two edit 4k",
+      "zero two amv edit"
+     ],
+     "alias": [
+      "zero ?two",
+      "02"
+     ],
+     "anilist": {
+      "id": 124381,
+      "favourites": 14715,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "best_waifu_2": {
+   "title": [
+    "BEST",
+    "WAIFU"
+   ],
+   "kind": "character",
+   "order": "fans",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "best anime waifu ranked by fans",
+   "hashtag": "waifu",
+   "basis": "AniList favourites (quiz pool, 2026-10); a second waifu list so the topic can rotate.",
+   "entries": [
+    {
+     "name": "FRIEREN",
+     "chars": [
+      "Frieren"
+     ],
+     "tags": [
+      "frieren"
+     ],
+     "anime": "Frieren",
+     "wiki": "frieren",
+     "search": "frieren",
+     "q": [
+      "frieren edit 4k",
+      "frieren amv edit"
+     ],
+     "anilist": {
+      "id": 176754,
+      "favourites": 22481,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "KURISU",
+     "chars": [
+      "Kurisu Makise"
+     ],
+     "tags": [
+      "makise_kurisu"
+     ],
+     "anime": "Steins;Gate",
+     "wiki": "steins-gate",
+     "search": "kurisu makise",
+     "q": [
+      "kurisu makise edit",
+      "kurisu makise amv edit 4k"
+     ],
+     "alias": [
+      "kurisu",
+      "makise"
+     ],
+     "anilist": {
+      "id": 34470,
+      "favourites": 22354,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "NICO ROBIN",
+     "chars": [
+      "Nico Robin"
+     ],
+     "tags": [
+      "nico_robin"
+     ],
+     "anime": "ONE PIECE",
+     "wiki": "onepiece",
+     "search": "nico robin",
+     "q": [
+      "nico robin edit 4k",
+      "nico robin amv edit"
+     ],
+     "alias": [
+      "robin"
+     ],
+     "anilist": {
+      "id": 61,
+      "favourites": 14814,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "NEZUKO",
+     "chars": [
+      "Nezuko Kamado"
+     ],
+     "tags": [
+      "kamado_nezuko"
+     ],
+     "anime": "Demon Slayer: Kimetsu no Yaiba",
+     "wiki": "kimetsu-no-yaiba",
+     "search": "nezuko",
+     "q": [
+      "nezuko edit 4k",
+      "nezuko amv edit"
+     ],
+     "anilist": {
+      "id": 127518,
+      "favourites": 14632,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "YOR",
+     "chars": [
+      "Yor Forger"
+     ],
+     "tags": [
+      "yor_briar"
+     ],
+     "anime": "SPY x FAMILY",
+     "wiki": "spy-x-family",
+     "search": "yor forger",
+     "q": [
+      "yor forger edit 4k",
+      "yor forger amv edit"
+     ],
+     "alias": [
+      "\\byor\\b"
+     ],
+     "anilist": {
+      "id": 138102,
+      "favourites": 14402,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "best_waifu_3": {
+   "title": [
+    "BEST",
+    "WAIFU"
+   ],
+   "kind": "character",
+   "order": "fans",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "best anime waifu ranked by fans",
+   "hashtag": "waifu",
+   "basis": "AniList favourites (quiz pool, 2026-10); keeps the survey-proven C.C. / Kurisu-era classics in a third list.",
+   "entries": [
+    {
+     "name": "EMILIA",
+     "chars": [
+      "Emilia"
+     ],
+     "tags": [
+      "emilia_(re:zero)"
+     ],
+     "anime": "Re:ZERO -Starting Life in Another World-",
+     "wiki": "rezero",
+     "search": "emilia re zero",
+     "q": [
+      "emilia re zero edit 4k",
+      "emilia amv edit"
+     ],
+     "alias": [
+      "emilia"
+     ],
+     "anilist": {
+      "id": 88572,
+      "favourites": 27685,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MAI SAKURAJIMA",
+     "chars": [
+      "Mai Sakurajima"
+     ],
+     "tags": [
+      "sakurajima_mai"
+     ],
+     "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+     "search": "mai sakurajima",
+     "q": [
+      "mai sakurajima edit 4k",
+      "mai sakurajima amv edit"
+     ],
+     "alias": [
+      "mai sakurajima",
+      "bunny girl"
+     ],
+     "wiki": "aobuta",
+     "anilist": {
+      "id": 127222,
+      "favourites": 21185,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "VIOLET",
+     "chars": [
+      "Violet Evergarden"
+     ],
+     "tags": [
+      "violet_evergarden"
+     ],
+     "anime": "Violet Evergarden",
+     "wiki": "violet-evergarden",
+     "search": "violet evergarden",
+     "q": [
+      "violet evergarden edit 4k",
+      "violet evergarden amv edit"
+     ],
+     "alias": [
+      "violet"
+     ],
+     "anilist": {
+      "id": 90169,
+      "favourites": 20383,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "ZERO TWO",
+     "chars": [
+      "Zero Two"
+     ],
+     "tags": [
+      "zero_two_(darling_in_the_franxx)"
+     ],
+     "anime": "DARLING in the FRANXX",
+     "wiki": "darling-in-the-franxx",
+     "search": "zero two",
+     "q": [
+      "zero two edit 4k",
+      "zero two amv edit"
+     ],
+     "alias": [
+      "zero ?two",
+      "02"
+     ],
+     "anilist": {
+      "id": 124381,
+      "favourites": 14715,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "C.C.",
+     "chars": [
+      "C.C."
+     ],
+     "tags": [
+      "c.c."
+     ],
+     "anime": "Code Geass",
+     "wiki": "codegeass",
+     "search": "c.c. code geass",
+     "q": [
+      "c.c. code geass edit",
+      "c.c. amv edit 4k"
+     ],
+     "alias": [
+      "\\bc\\.?c\\.?\\b",
+      "code geass"
+     ],
+     "anilist": {
+      "id": 1111,
+      "favourites": 10923,
+      "in_pool": true
+     }
+    }
+   ]
+  },
+  "romance_peak": {
+   "title": [
+    "PEAK",
+    "ROMANCE ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "best romance anime",
+   "hashtag": "romanceanime",
+   "basis": "AniList average score (refresh fills it); entries are shows, any good edit of the show counts.",
+   "entries": [
+    {
+     "name": "KAGUYA-SAMA",
+     "anime": "Kaguya-sama: Love is War -Ultra Romantic-",
+     "wiki": "kaguyasama-wa-kokurasetai",
+     "search": "kaguya sama",
+     "q": [
+      "kaguya sama edit 4k",
+      "kaguya sama love is war amv edit"
+     ],
+     "alias": [
+      "kaguya"
+     ],
+     "anilist": {
+      "id": 125367,
+      "title": "Kaguya-sama: Love is War -Ultra Romantic-",
+      "score": 89,
+      "popularity": 296759
+     },
+     "chars": [
+      "Kaguya Shinomiya",
+      "Chika Fujiwara",
+      "Miko Iino",
+      "Yuu Ishigami",
+      "Miyuki Shirogane"
+     ]
+    },
+    {
+     "name": "THE FRAGRANT FLOWER",
+     "anime": "The Fragrant Flower Blooms with Dignity",
+     "search": "fragrant flower blooms with dignity",
+     "q": [
+      "fragrant flower blooms with dignity edit 4k",
+      "kaoru hana wa rin to saku amv edit"
+     ],
+     "alias": [
+      "fragrant flower",
+      "kaoru hana",
+      "waguri"
+     ],
+     "wiki": "kaoruhana",
+     "anilist": {
+      "id": 181444,
+      "title": "The Fragrant Flower Blooms With Dignity",
+      "score": 84,
+      "popularity": 217490
+     },
+     "chars": [
+      "Kaoruko Waguri",
+      "Rintarou Tsumugi"
+     ]
+    },
+    {
+     "name": "HORIMIYA",
+     "anime": "Horimiya",
+     "search": "horimiya",
+     "q": [
+      "horimiya edit 4k",
+      "horimiya amv edit"
+     ],
+     "wiki": "horimiya",
+     "anilist": {
+      "id": 124080,
+      "title": "Horimiya",
+      "score": 81,
+      "popularity": 551204
+     },
+     "chars": [
+      "Izumi Miyamura",
+      "Kyouko Hori"
+     ]
+    },
+    {
+     "name": "BLUE BOX",
+     "anime": "Blue Box",
+     "search": "blue box anime",
+     "q": [
+      "blue box anime edit 4k",
+      "ao no hako amv edit"
+     ],
+     "alias": [
+      "blue box",
+      "ao no hako",
+      "chinatsu"
+     ],
+     "wiki": "bluebox",
+     "anilist": {
+      "id": 170942,
+      "title": "Blue Box",
+      "score": 81,
+      "popularity": 155072
+     },
+     "chars": [
+      "Hina Chouno",
+      "Chinatsu Kano",
+      "Taiki Inomata"
+     ]
+    },
+    {
+     "name": "MY DRESS-UP DARLING",
+     "anime": "My Dress-Up Darling",
+     "search": "my dress up darling",
+     "q": [
+      "marin kitagawa edit 4k",
+      "my dress up darling amv edit"
+     ],
+     "alias": [
+      "marin",
+      "dress.?up darling",
+      "bisque"
+     ],
+     "wiki": "my-dress-up-darling",
+     "anilist": {
+      "id": 132405,
+      "title": "My Dress-Up Darling",
+      "score": 80,
+      "popularity": 438776
+     },
+     "chars": [
+      "Marin Kitagawa",
+      "Wakana Gojou"
+     ]
+    },
+    {
+     "name": "KIMI NI TODOKE",
+     "anime": "Kimi ni Todoke: From Me to You",
+     "search": "kimi ni todoke",
+     "q": [
+      "kimi ni todoke edit 4k",
+      "kimi ni todoke amv"
+     ],
+     "alias": [
+      "kimi ni todoke",
+      "sawako"
+     ],
+     "wiki": "kiminitodoke",
+     "anilist": {
+      "id": 6045,
+      "title": "Kimi ni Todoke: From Me to You",
+      "score": 79,
+      "popularity": 255035
+     },
+     "chars": [
+      "Sawako Kuronuma",
+      "Shouta Kazehaya",
+      "Ayane Yano",
+      "Ryuu Sanada",
+      "Chizuru Yoshida"
+     ]
+    }
+   ]
+  },
+  "action_peak": {
+   "title": [
+    "PEAK",
+    "ACTION ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "best action anime",
+   "hashtag": "anime",
+   "basis": "AniList average score (refresh fills it).",
+   "entries": [
+    {
+     "name": "ATTACK ON TITAN",
+     "anime": "Attack on Titan Season 3 Part 2",
+     "wiki": "attackontitan",
+     "search": "attack on titan",
+     "q": [
+      "attack on titan edit 4k",
+      "attack on titan amv edit"
+     ],
+     "alias": [
+      "attack on titan",
+      "\\baot\\b",
+      "shingeki"
+     ],
+     "anilist": {
+      "id": 104578,
+      "title": "Attack on Titan Season 3 Part 2",
+      "score": 89,
+      "popularity": 619788
+     },
+     "chars": [
+      "Levi",
+      "Eren Yeager",
+      "Mikasa Ackerman",
+      "Armin Arlert",
+      "Erwin Smith"
+     ]
+    },
+    {
+     "name": "VINLAND SAGA",
+     "anime": "Vinland Saga",
+     "wiki": "vinlandsaga",
+     "search": "vinland saga",
+     "q": [
+      "vinland saga edit 4k",
+      "vinland saga amv edit"
+     ],
+     "anilist": {
+      "id": 101348,
+      "title": "Vinland Saga",
+      "score": 87,
+      "popularity": 555582
+     },
+     "chars": [
+      "Thorfinn Karlsefni",
+      "Askeladd",
+      "Canute Svenson"
+     ]
+    },
+    {
+     "name": "JUJUTSU KAISEN",
+     "anime": "JUJUTSU KAISEN Season 2",
+     "wiki": "jujutsu-kaisen",
+     "search": "jujutsu kaisen",
+     "q": [
+      "jujutsu kaisen edit 4k",
+      "jujutsu kaisen amv edit"
+     ],
+     "alias": [
+      "jujutsu",
+      "\\bjjk\\b"
+     ],
+     "anilist": {
+      "id": 145064,
+      "title": "JUJUTSU KAISEN Season 2",
+      "score": 86,
+      "popularity": 502179
+     },
+     "chars": [
+      "Satoru Gojou",
+      "Yuuji Itadori",
+      "Megumi Fushiguro",
+      "Nobara Kugisaki",
+      "Sukuna",
+      "Suguru Getou"
+     ]
+    },
+    {
+     "name": "DEMON SLAYER",
+     "anime": "Demon Slayer: Kimetsu no Yaiba Entertainment District Arc",
+     "wiki": "kimetsu-no-yaiba",
+     "search": "demon slayer",
+     "q": [
+      "demon slayer edit 4k",
+      "demon slayer amv edit"
+     ],
+     "alias": [
+      "demon slayer",
+      "kimetsu"
+     ],
+     "anilist": {
+      "id": 142329,
+      "title": "Demon Slayer: Kimetsu no Yaiba Entertainment District Arc",
+      "score": 86,
+      "popularity": 492229
+     },
+     "chars": [
+      "Tanjirou Kamado",
+      "Nezuko Kamado",
+      "Inosuke Hashibira",
+      "Zenitsu Agatsuma",
+      "Tengen Uzui"
+     ]
+    },
+    {
+     "name": "CHAINSAW MAN",
+     "anime": "Chainsaw Man",
+     "wiki": "chainsaw-man",
+     "search": "chainsaw man",
+     "q": [
+      "chainsaw man edit 4k",
+      "chainsaw man amv edit"
+     ],
+     "anilist": {
+      "id": 127230,
+      "title": "Chainsaw Man",
+      "score": 83,
+      "popularity": 646136
+     },
+     "chars": [
+      "Makima",
+      "Denji",
+      "Power",
+      "Aki Hayakawa"
+     ]
+    },
+    {
+     "name": "SOLO LEVELING",
+     "anime": "Solo Leveling",
+     "wiki": "solo-leveling",
+     "search": "solo leveling",
+     "q": [
+      "solo leveling edit 4k",
+      "solo leveling amv edit"
+     ],
+     "anilist": {
+      "id": 151807,
+      "title": "Solo Leveling",
+      "score": 80,
+      "popularity": 457493
+     },
+     "chars": [
+      "Jin-U Seong"
+     ]
+    }
+   ]
+  },
+  "isekai_peak": {
+   "title": [
+    "PEAK",
+    "ISEKAI ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "best isekai anime",
+   "hashtag": "isekai",
+   "basis": "AniList average score (refresh fills it).",
+   "entries": [
+    {
+     "name": "RE:ZERO",
+     "anime": "Re:ZERO -Starting Life in Another World- Season 2",
+     "wiki": "rezero",
+     "search": "re zero",
+     "q": [
+      "re zero edit 4k",
+      "re zero amv edit"
+     ],
+     "alias": [
+      "re:? ?zero"
+     ],
+     "anilist": {
+      "id": 108632,
+      "title": "Re:ZERO -Starting Life in Another World- Season 2",
+      "score": 83,
+      "popularity": 387463
+     },
+     "chars": [
+      "Emilia",
+      "Subaru Natsuki",
+      "Echidna",
+      "Otto Suwen",
+      "Garfiel Tinsel"
+     ]
+    },
+    {
+     "name": "MUSHOKU TENSEI",
+     "anime": "Mushoku Tensei: Jobless Reincarnation",
+     "wiki": "mushokutensei",
+     "search": "mushoku tensei",
+     "q": [
+      "mushoku tensei edit 4k",
+      "mushoku tensei amv edit"
+     ],
+     "anilist": {
+      "id": 108465,
+      "title": "Mushoku Tensei: Jobless Reincarnation",
+      "score": 81,
+      "popularity": 468250
+     },
+     "chars": [
+      "Roxy Migurdia",
+      "Rudeus Greyrat",
+      "Eris Boreas Greyrat",
+      "Sylphiette",
+      "Ruijerd Superdia"
+     ]
+    },
+    {
+     "name": "THE EMINENCE IN SHADOW",
+     "anime": "The Eminence in Shadow",
+     "wiki": "the-eminence-in-shadow",
+     "search": "eminence in shadow",
+     "q": [
+      "eminence in shadow edit 4k",
+      "eminence in shadow amv edit"
+     ],
+     "alias": [
+      "eminence",
+      "shadow garden",
+      "cid"
+     ],
+     "anilist": {
+      "id": 130298,
+      "title": "The Eminence in Shadow",
+      "score": 81,
+      "popularity": 321858
+     },
+     "chars": [
+      "Cid Kagenou",
+      "Alpha",
+      "Beta"
+     ]
+    },
+    {
+     "name": "REINCARNATED AS A SLIME",
+     "anime": "That Time I Got Reincarnated as a Slime",
+     "wiki": "tensura",
+     "search": "tensura rimuru",
+     "q": [
+      "tensura edit 4k",
+      "rimuru tempest amv edit"
+     ],
+     "alias": [
+      "rimuru",
+      "tensura",
+      "slime"
+     ],
+     "anilist": {
+      "id": 101280,
+      "title": "That Time I Got Reincarnated as a Slime",
+      "score": 80,
+      "popularity": 471636
+     },
+     "chars": [
+      "Rimuru Tempest"
+     ]
+    },
+    {
+     "name": "KONOSUBA",
+     "anime": "KONOSUBA -God's blessing on this wonderful world!",
+     "wiki": "konosuba",
+     "search": "konosuba",
+     "q": [
+      "konosuba edit 4k",
+      "konosuba amv edit"
+     ],
+     "alias": [
+      "konosuba",
+      "megumin"
+     ],
+     "anilist": {
+      "id": 21202,
+      "title": "KONOSUBA -God's blessing on this wonderful world!",
+      "score": 79,
+      "popularity": 525584
+     },
+     "chars": [
+      "Megumin",
+      "Kazuma Satou",
+      "Aqua",
+      "Darkness"
+     ]
+    },
+    {
+     "name": "OVERLORD",
+     "anime": "Overlord",
+     "wiki": "overlordmaruyama",
+     "search": "overlord",
+     "q": [
+      "overlord ainz edit 4k",
+      "overlord amv edit"
+     ],
+     "alias": [
+      "overlord",
+      "ainz"
+     ],
+     "anilist": {
+      "id": 20832,
+      "title": "Overlord",
+      "score": 76,
+      "popularity": 410838
+     },
+     "chars": [
+      "Momonga"
+     ]
+    }
+   ]
+  },
+  "sad_peak": {
+   "title": [
+    "SADDEST",
+    "ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "saddest anime",
+   "hashtag": "anime",
+   "basis": "AniList average score (refresh fills it).",
+   "entries": [
+    {
+     "name": "A SILENT VOICE",
+     "anime": "A Silent Voice",
+     "search": "a silent voice",
+     "q": [
+      "a silent voice edit 4k",
+      "koe no katachi amv edit"
+     ],
+     "alias": [
+      "silent voice",
+      "koe no katachi"
+     ],
+     "wiki": "koenokatachi",
+     "anilist": {
+      "id": 20954,
+      "title": "A Silent Voice",
+      "score": 88,
+      "popularity": 727475
+     },
+     "chars": [
+      "Shouko Nishimiya",
+      "Shouya Ishida",
+      "Naoka Ueno"
+     ]
+    },
+    {
+     "name": "VIOLET EVERGARDEN",
+     "anime": "Violet Evergarden",
+     "wiki": "violet-evergarden",
+     "search": "violet evergarden",
+     "q": [
+      "violet evergarden edit 4k",
+      "violet evergarden amv sad edit"
+     ],
+     "alias": [
+      "violet"
+     ],
+     "anilist": {
+      "id": 21827,
+      "title": "Violet Evergarden",
+      "score": 85,
+      "popularity": 554634
+     },
+     "chars": [
+      "Violet Evergarden"
+     ]
+    },
+    {
+     "name": "YOUR LIE IN APRIL",
+     "anime": "Your lie in April",
+     "search": "your lie in april",
+     "q": [
+      "your lie in april edit 4k",
+      "shigatsu wa kimi no uso amv edit"
+     ],
+     "alias": [
+      "lie in april",
+      "shigatsu",
+      "kaori"
+     ],
+     "wiki": "shigatsu-wa-kimi-no-uso",
+     "anilist": {
+      "id": 20665,
+      "title": "Your lie in April",
+      "score": 84,
+      "popularity": 621415
+     },
+     "chars": [
+      "Kaori Miyazono",
+      "Kousei Arima",
+      "Ryouta Watari",
+      "Tsubaki Sawabe"
+     ]
+    },
+    {
+     "name": "I WANT TO EAT YOUR PANCREAS",
+     "anime": "I Want to Eat Your Pancreas",
+     "search": "i want to eat your pancreas",
+     "q": [
+      "i want to eat your pancreas edit",
+      "kimi no suizou wo tabetai amv"
+     ],
+     "alias": [
+      "pancreas",
+      "suizou"
+     ],
+     "wiki": "i-want-to-eat-your-pancreas",
+     "anilist": {
+      "id": 99750,
+      "title": "I Want to Eat Your Pancreas",
+      "score": 84,
+      "popularity": 381021
+     },
+     "chars": [
+      "Sakura Yamauchi",
+      "Haruki Shiga"
+     ]
+    },
+    {
+     "name": "ANOHANA",
+     "anime": "Anohana: The Flower We Saw That Day",
+     "search": "anohana",
+     "q": [
+      "anohana edit 4k",
+      "anohana amv edit"
+     ],
+     "wiki": "anohana",
+     "anilist": {
+      "id": 9989,
+      "title": "Anohana: The Flower We Saw That Day",
+      "score": 80,
+      "popularity": 398193
+     },
+     "chars": [
+      "Meiko Honma",
+      "Naruko Anjou",
+      "Jinta Yadomi",
+      "Tetsudo Hisakawa",
+      "Atsumu Matsuyuki",
+      "Chiriko Tsurumi"
+     ]
+    }
+   ]
+  },
+  "comedy_peak": {
+   "title": [
+    "FUNNIEST",
+    "ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "funniest anime",
+   "hashtag": "anime",
+   "basis": "AniList average score (refresh fills it).",
+   "entries": [
+    {
+     "name": "BOCCHI THE ROCK",
+     "anime": "BOCCHI THE ROCK!",
+     "wiki": "bocchi-the-rock",
+     "search": "bocchi the rock",
+     "q": [
+      "bocchi the rock edit 4k",
+      "bocchi the rock amv edit"
+     ],
+     "alias": [
+      "bocchi"
+     ],
+     "anilist": {
+      "id": 130003,
+      "title": "BOCCHI THE ROCK!",
+      "score": 87,
+      "popularity": 271201
+     },
+     "chars": [
+      "Hitori Gotou",
+      "Nijika Ijichi",
+      "Ryou Yamada",
+      "Ikuyo Kita"
+     ]
+    },
+    {
+     "name": "GINTAMA",
+     "anime": "Gintama",
+     "search": "gintama",
+     "q": [
+      "gintama edit 4k",
+      "gintama amv edit"
+     ],
+     "wiki": "gintama",
+     "anilist": {
+      "id": 918,
+      "title": "Gintama",
+      "score": 85,
+      "popularity": 300036
+     },
+     "chars": [
+      "Gintoki Sakata",
+      "Kagura",
+      "Shinpachi Shimura",
+      "Sadaharu"
+     ]
+    },
+    {
+     "name": "SPY x FAMILY",
+     "anime": "SPY x FAMILY",
+     "wiki": "spy-x-family",
+     "search": "spy x family",
+     "q": [
+      "spy x family edit 4k",
+      "spy x family amv edit"
+     ],
+     "alias": [
+      "spy ?x ?family",
+      "anya",
+      "\\byor\\b"
+     ],
+     "anilist": {
+      "id": 140960,
+      "title": "SPY x FAMILY",
+      "score": 83,
+      "popularity": 579364
+     },
+     "chars": [
+      "Yor Forger",
+      "Anya Forger",
+      "Loid Forger"
+     ]
+    },
+    {
+     "name": "GRAND BLUE",
+     "anime": "Grand Blue Dreaming",
+     "search": "grand blue",
+     "q": [
+      "grand blue edit 4k",
+      "grand blue amv edit"
+     ],
+     "wiki": "grandblue",
+     "anilist": {
+      "id": 100922,
+      "title": "Grand Blue Dreaming",
+      "score": 82,
+      "popularity": 239425
+     },
+     "chars": [
+      "Chisa Kotegawa",
+      "Iori Kitahara",
+      "Kouhei Imamura",
+      "Aina Yoshiwara"
+     ]
+    },
+    {
+     "name": "KONOSUBA",
+     "anime": "KONOSUBA -God's blessing on this wonderful world!",
+     "wiki": "konosuba",
+     "search": "konosuba",
+     "q": [
+      "konosuba edit 4k",
+      "konosuba amv edit"
+     ],
+     "alias": [
+      "konosuba",
+      "megumin"
+     ],
+     "anilist": {
+      "id": 21202,
+      "title": "KONOSUBA -God's blessing on this wonderful world!",
+      "score": 79,
+      "popularity": 525584
+     },
+     "chars": [
+      "Megumin",
+      "Kazuma Satou",
+      "Aqua",
+      "Darkness"
+     ]
+    }
+   ]
+  },
+  "sports_peak": {
+   "title": [
+    "PEAK",
+    "SPORTS ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "action",
+   "reveal": "countdown",
+   "keyword": "best sports anime",
+   "hashtag": "anime",
+   "basis": "AniList average score (refresh fills it).",
+   "entries": [
+    {
+     "name": "HAIKYU!!",
+     "anime": "HAIKYU!! 3rd Season",
+     "wiki": "haikyuu",
+     "search": "haikyuu",
+     "q": [
+      "haikyuu edit 4k",
+      "haikyuu amv edit"
+     ],
+     "alias": [
+      "haikyu"
+     ],
+     "anilist": {
+      "id": 21698,
+      "title": "HAIKYU!! 3rd Season",
+      "score": 87,
+      "popularity": 366279
+     },
+     "chars": [
+      "Shouyou Hinata",
+      "Tobio Kageyama"
+     ]
+    },
+    {
+     "name": "HAJIME NO IPPO",
+     "anime": "Hajime no Ippo: The Fighting!",
+     "search": "hajime no ippo",
+     "q": [
+      "hajime no ippo edit 4k",
+      "hajime no ippo amv edit"
+     ],
+     "alias": [
+      "ippo"
+     ],
+     "wiki": "ippo",
+     "anilist": {
+      "id": 263,
+      "title": "Hajime no Ippo: The Fighting!",
+      "score": 87,
+      "popularity": 147505
+     },
+     "chars": [
+      "Ippo Makunouchi",
+      "Mamoru Takamura",
+      "Ichirou Miyata",
+      "Genji Kamogawa",
+      "Tatsuya Kimura",
+      "Masaru Aoki"
+     ]
+    },
+    {
+     "name": "SLAM DUNK",
+     "anime": "Slam Dunk",
+     "search": "slam dunk",
+     "q": [
+      "slam dunk edit 4k",
+      "slam dunk amv edit"
+     ],
+     "wiki": "slamdunk",
+     "anilist": {
+      "id": 170,
+      "title": "Slam Dunk",
+      "score": 83,
+      "popularity": 74504
+     },
+     "chars": [
+      "Hanamichi Sakuragi",
+      "Ryouta Miyagi",
+      "Hisashi Mitsui",
+      "Kaede Rukawa",
+      "Takenori Akagi",
+      "Haruko Akagi"
+     ]
+    },
+    {
+     "name": "KUROKO'S BASKETBALL",
+     "anime": "Kuroko's Basketball 3",
+     "search": "kuroko no basket",
+     "q": [
+      "kuroko no basket edit 4k",
+      "kuroko no basket amv edit"
+     ],
+     "alias": [
+      "kuroko"
+     ],
+     "wiki": "kurokonobasuke",
+     "anilist": {
+      "id": 20725,
+      "title": "Kuroko's Basketball 3",
+      "score": 81,
+      "popularity": 164685
+     },
+     "chars": [
+      "Tetsuya Kuroko",
+      "Ryouta Kise",
+      "Taiga Kagami"
+     ]
+    },
+    {
+     "name": "BLUE LOCK",
+     "anime": "BLUE LOCK",
+     "wiki": "blue-lock",
+     "search": "blue lock",
+     "q": [
+      "blue lock edit 4k",
+      "blue lock amv edit"
+     ],
+     "anilist": {
+      "id": 137822,
+      "title": "BLUE LOCK",
+      "score": 79,
+      "popularity": 331709
+     },
+     "chars": [
+      "Meguru Bachira",
+      "Yoichi Isagi",
+      "Hyouma Chigiri",
+      "Rensuke Kunigami"
+     ]
+    }
+   ]
+  },
+  "horror_peak": {
+   "title": [
+    "SCARIEST",
+    "ANIME"
+   ],
+   "kind": "anime",
+   "order": "score",
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "scariest horror anime",
+   "hashtag": "anime",
+   "basis": "AniList average score (refresh fills it). Gore is allowed (owner 2026-10-12); the safety gate still runs.",
+   "entries": [
+    {
+     "name": "THE PROMISED NEVERLAND",
+     "anime": "The Promised Neverland",
+     "search": "promised neverland",
+     "q": [
+      "promised neverland edit 4k",
+      "promised neverland amv edit"
+     ],
+     "alias": [
+      "neverland"
+     ],
+     "wiki": "yakusokunoneverland",
+     "anilist": {
+      "id": 101759,
+      "title": "The Promised Neverland",
+      "score": 83,
+      "popularity": 640054
+     },
+     "chars": [
+      "Ray",
+      "Norman",
+      "Emma"
+     ]
+    },
+    {
+     "name": "PARASYTE",
+     "anime": "Parasyte -the maxim-",
+     "search": "parasyte",
+     "q": [
+      "parasyte edit 4k",
+      "parasyte amv edit"
+     ],
+     "wiki": "kiseijuu",
+     "anilist": {
+      "id": 20623,
+      "title": "Parasyte -the maxim-",
+      "score": 81,
+      "popularity": 506645
+     },
+     "chars": [
+      "Shinichi Izumi",
+      "Migi"
+     ]
+    },
+    {
+     "name": "DEVILMAN CRYBABY",
+     "anime": "DEVILMAN crybaby",
+     "search": "devilman crybaby",
+     "q": [
+      "devilman crybaby edit 4k",
+      "devilman crybaby amv edit"
+     ],
+     "alias": [
+      "devilman"
+     ],
+     "wiki": "devilman",
+     "anilist": {
+      "id": 98460,
+      "title": "Devilman Crybaby",
+      "score": 76,
+      "popularity": 357101
+     },
+     "chars": [
+      "Akira Fudou",
+      "Ryo Asuka",
+      "Miki Makimura"
+     ]
+    },
+    {
+     "name": "TOKYO GHOUL",
+     "anime": "Tokyo Ghoul",
+     "search": "tokyo ghoul",
+     "q": [
+      "tokyo ghoul edit 4k",
+      "tokyo ghoul amv edit"
+     ],
+     "alias": [
+      "tokyo ghoul",
+      "kaneki"
+     ],
+     "wiki": "tokyoghoul",
+     "anilist": {
+      "id": 20605,
+      "title": "Tokyo Ghoul",
+      "score": 76,
+      "popularity": 749887
+     },
+     "chars": [
+      "Ken Kaneki",
+      "Touka Kirishima"
+     ]
+    },
+    {
+     "name": "ANOTHER",
+     "anime": "Another",
+     "search": "another anime",
+     "q": [
+      "another anime edit 4k",
+      "another anime amv edit"
+     ],
+     "alias": [
+      "\\banother\\b"
+     ],
+     "wiki": "another",
+     "anilist": {
+      "id": 11111,
+      "title": "Another",
+      "score": 71,
+      "popularity": 389820
+     },
+     "chars": [
+      "Mei Misaki",
+      "Kouichi Sakakibara"
+     ]
+    }
+   ]
+  }
+ },
+ "refreshed": "2026-10-25"
+}

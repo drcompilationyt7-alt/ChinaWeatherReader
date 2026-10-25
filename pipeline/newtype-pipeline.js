@@ -25,8 +25,8 @@ const logger = new Logger('NewTypes');
 const ROOT = path.join(__dirname, '..');
 const MEM = () => path.resolve(ROOT, process.env.MEMORY_DIR || 'memory');
 const HISTORY_FILE = () => path.join(MEM(), 'meme-history.json');
-const CT = { sound: 'sound-edit', slowmo: 'slowmo-edit' };
-const PLAYLIST = { sound: 'sound edits', slowmo: 'slow motion edits' };
+const CT = { sound: 'sound-edit', slowmo: 'slowmo-edit', ranking: 'ranking-edit' };
+const PLAYLIST = { sound: 'sound edits', slowmo: 'slow motion edits', ranking: 'anime rankings' };
 const VIBE_KEYWORD = { impact: 'anime sound design edit', crisp: 'anime sound design edit', summer_glow: 'anime summer slow motion edit',
   dreamy_bloom: 'anime sakura slow motion edit' };
 
@@ -56,7 +56,20 @@ function readyVibes(type) {
     return n;
   } catch (e) { logger.warn(`pool status (${type}): ${(e.message || '').slice(0, 120)}`); return 0; }
 }
-function poolSizes() { return { sound: readyVibes('sound'), slowmo: readyVibes('slowmo') }; }
+/** ranking: how many topics the reviewed pool can build now (core/edit/ranking_pool.py eligible). Never throws. */
+function rankingTopics() {
+  try {
+    if (!fs.existsSync(path.join(poolRoot(), 'ranking', 'pool', 'clips.json'))) return 0;
+    const out = execFileSync(python(), [CORE('ranking_pool.py'), 'eligible', '--json'],
+      { timeout: 120000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8', EDIT_POOL_DIR: poolRoot() } });
+    return (JSON.parse(out.trim().split('\n').pop()).eligible || []).length;
+  } catch (e) { logger.warn(`ranking eligible: ${(e.message || '').slice(0, 120)}`); return 0; }
+}
+function poolSizes() {
+  const w = require('./daily-rotation').parseWeights();
+  const wantRanking = w.ranking > 0 || process.env.DAILY_FORCE_TYPE === 'ranking';
+  return { sound: readyVibes('sound'), slowmo: readyVibes('slowmo'), ranking: wantRanking ? rankingTopics() : 0 };
+}
 const poolMin = () => Number(process.env.NEWTYPE_POOL_MIN || 1);
 
 /**
@@ -248,6 +261,7 @@ const nextSeed = (s, k) => (Number.isFinite(Number(s)) ? Number(s) : 7) + k;
  */
 async function runNewType({ type, outputDir, wantLong = false } = {}) {
   if (!CT[type]) throw new Error(`unknown new type "${type}"`);
+  if (type === 'ranking') return runRanking({ outputDir });
   if (type === 'sound') musicPoolFeedback();
   if (type === 'slowmo') musicPoolFeedback('slowmo');
   const cli = CORE('vibe_edit.py');
@@ -363,6 +377,104 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   throw new Error(`${type}: no attempt passed the judge (${attempts.map(a => `${a.n}: ${a.result}`).join(' | ').slice(0, 400)})`);
 }
 
+/**
+ * RANKING / LIST COMPILATION (weekly slot, 2026-10-25; core/edit/ranking_pool.py, study core/edit/refs/ranking-compilation-study.md):
+ * assembles a topic (the weekly rotation: eligible, not one of the last 4) from REVIEWED pool segments only (no network), other
+ * editors' edits credited as plain @handles in the description. Pre-upload guard (guardRanking): the file, the length, every
+ * revealed entry present with a reviewed segment of THAT entry whose character check passed, distinct editors, no URL in the
+ * description, a credit line per entry, frames not blank / static, the title style. Any failure throws -> the stem fallback.
+ */
+function guardRanking(rep, videoPath) {
+  const bad = [];
+  let size = 0;
+  try { size = fs.statSync(videoPath).size; } catch {}
+  if (size < 500 * 1024) bad.push(`video file ${size} bytes`);
+  const revealed = rep.revealed || [];
+  if (revealed.length < 2) bad.push(`only ${revealed.length} revealed entries`);
+  if ((rep.entries || []).length !== revealed.length) bad.push(`${(rep.entries || []).length} entries for ${revealed.length} revealed slots`);
+  for (const c of rep.checks || []) {
+    if (c.status !== 'reviewed') bad.push(`#${c.rank} ${c.entry}: segment not reviewed (${c.status})`);
+    if (c.entry_key !== c.item_entry_key) bad.push(`#${c.rank} ${c.entry}: the segment belongs to ${c.item_entry_key}`);
+    if (!(Number(c.char_conf) >= 0.6)) bad.push(`#${c.rank} ${c.entry}: character check ${c.char_conf}`);
+  }
+  if ((rep.checks || []).length !== revealed.length) bad.push('missing entry checks');
+  const eds = (rep.entries || []).map(e => String(e.handle || e.channel || '').toLowerCase());
+  if (new Set(eds).size !== eds.length) bad.push('two excerpts of one editor');
+  const desc = String(rep.description || '');
+  if (/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|tv|gg|ly|me|co)\b/i.test(desc)) bad.push('a link in the description');
+  for (const e of rep.entries || []) {
+    if (!new RegExp(`#${e.rank} .*edit by \\S+`).test(desc)) { bad.push(`no credit line for #${e.rank}`); break; }
+  }
+  try {
+    const out = execFileSync(python(), [path.join(ROOT, 'core', 'quiz', 'qa_guard.py'), '--video', videoPath, '--samples', '16'],
+      { timeout: 300000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
+    const v = JSON.parse(out.trim().split('\n').pop()).video || {};
+    const exp = Number(rep.duration_expected || 0);
+    if (!(v.duration >= 40 && v.duration <= 75)) bad.push(`length ${v.duration} s (expected 40-75)`);
+    if (exp && Math.abs(v.duration - exp) > 3) bad.push(`length ${v.duration} s vs the segments ${exp} s`);
+    if ((v.sampled || 0) < 12) bad.push(`only ${v.sampled || 0} frames decoded`);
+    if ((v.blankShare || 0) > 0.15) bad.push(`blank frames ${v.blankShare}`);
+    if ((v.staticShare || 0) > 0.4) bad.push(`static frames ${v.staticShare}`);
+  } catch (e) { bad.push(`video check failed: ${(e.message || '').slice(0, 120)}`); }
+  return bad;
+}
+
+/** the title: "<keyword> 🔥 #<hashtag>" (keyword first, short; core/metadata/title-style.js meme style), else the keyword alone */
+function rankingTitle(rep) {
+  const ts = require('../core/metadata/title-style');
+  const kw = String(rep.keyword || '').trim();
+  const cands = [rep.title, `${kw} 🔥 #${rep.hashtag || 'anime'}`, `${kw} 🔥`, kw];
+  for (const c of cands) if (c && ts.check(c, 'meme', { front: [kw] }).ok) return c;
+  return kw.slice(0, 42);
+}
+
+async function runRanking({ outputDir } = {}) {
+  const t0 = Date.now();
+  const work = path.join(outputDir, `work-ranking-${Date.now()}`);
+  fs.mkdirSync(work, { recursive: true });
+  const out = path.join(work, 'ranking.mp4');
+  const topic = process.env.RANKING_TOPIC || 'auto';
+  const att = { n: 1, song: null, seed: null, input: `topic ${topic}`, work: path.basename(work) };
+  const { err } = await runCli([CORE('ranking_pool.py'), 'assemble', '--topic', topic, '--out', out, '--work', path.join(work, 'parts')],
+    Number(process.env.NEWTYPE_TIMEOUT_MIN || 45), { RANKING_MIN_FREE_GB: process.env.RANKING_MIN_FREE_GB || '1.0' });
+  const rep = readJson(path.join(work, 'ranking.result.json'), null);
+  att.min = Math.round((Date.now() - t0) / 6000) / 10;
+  if (!rep || !rep.ok || err) {
+    att.result = `assemble failed: ${String((rep && rep.reason) || (err && err.message) || 'no result').slice(0, 160)}`;
+    await reportAttempts('ranking', [att], false, att.result);
+    throw new Error(`ranking: ${att.result}`);
+  }
+  // a named final file, as the renders artifact keeps it: ranking_<topic>.mp4 (+ result / title / description)
+  const videoPath = path.join(work, `ranking_${rep.topic}.mp4`);
+  fs.renameSync(out, videoPath);
+  fs.writeFileSync(path.join(work, 'result.json'), JSON.stringify({ ...rep, short: videoPath }, null, 1));
+  const problems = guardRanking(rep, videoPath);
+  const title = rankingTitle(rep);
+  if (!require('../core/metadata/title-style').check(title, 'meme', { front: [rep.keyword || ''] }).ok) problems.push(`title style: "${title}"`);
+  if (problems.length) {
+    att.result = `guard: ${problems.join('; ').slice(0, 300)}`;
+    await reportAttempts('ranking', [att], false, att.result);
+    throw new Error(`ranking: ${att.result}`);
+  }
+  att.result = 'PASS (guard)';
+  await reportAttempts('ranking', [att], true);
+  fs.writeFileSync(path.join(work, `ranking_${rep.topic}.title.txt`), title + '\n');
+  fs.writeFileSync(path.join(work, `ranking_${rep.topic}.description.txt`), rep.description + '\n');
+  logger.success(`ranking: ${rep.topic} -> ${path.basename(videoPath)} "${title}" in ${Math.round((Date.now() - t0) / 1000)} s`);
+  const hook = rep.reveal === 'top' ? 'agree with the order? 👀' : 'who are #2 and #1? 👀';
+  return {
+    success: true, videoPath, longPath: null, resultJson: path.join(work, 'result.json'), title,
+    description: rep.description, tags: [rep.keyword, rep.hashtag, 'anime', 'anime edit', 'anime ranking'].filter(Boolean),
+    categoryId: '1', playlistTitle: PLAYLIST.ranking, comment: hook, country: 'Global',
+    category: 'edit-ranking', editType: 'edit', long: false, facts: { keyword: rep.keyword, topic: rep.topic },
+    meme: { song: rep.topic, theme: 'anime', emoji: '🔥', clipIds: (rep.entries || []).map(e => e.source), clipChannels: (rep.entries || []).map(e => e.handle),
+      settings: { topic: rep.topic, entries: (rep.entries || []).map(e => `#${e.rank} ${e.name}`), pool: 'ranking' },
+      onVideoTitle: null, meta: null, metaChoice: null, contentType: CT.ranking, why: 'weekly ranking', long: false, vibe: null,
+      musicPoolId: null, songSection: null, rankingResult: path.join(work, 'result.json') },
+    workDir: work,
+  };
+}
+
 async function finishNewType(type, rep, work, videoPath, abs, t0, attempts) {
   let longPath = abs(rep.long);
   if (longPath && !fs.existsSync(longPath)) longPath = null;
@@ -420,6 +532,11 @@ function musicPoolFeedback(type = 'sound') {
 /** idempotent: the render already marks its items; this repeats it from result.json (memory/edit-pool-used.json) */
 function markUsed(result) {
   try {
+    if (result.meme && result.meme.rankingResult) {          // ranking: the reuse-gap ledger (memory/edit-pool-used.json)
+      execFileSync(python(), [CORE('ranking_pool.py'), 'mark', '--result', result.meme.rankingResult],
+        { timeout: 60000, env: { ...process.env, EDIT_POOL_DIR: poolRoot() } });
+      return;
+    }
     if (!result.resultJson || !fs.existsSync(CORE('vibe_pool.py'))) return;
     execFileSync(python(), [CORE('vibe_pool.py'), 'mark-used', '--result', result.resultJson],
       { timeout: 60000, env: { ...process.env, EDIT_POOL_DIR: poolRoot() } });
@@ -447,4 +564,4 @@ function recordUpload(result, upload) {
   if (m.metaChoice) recordMetadataChoice(m.metaChoice, { videoId: upload.videoId });
 }
 
-module.exports = { guardRender, runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, SLOWMO_ENV, CT };
+module.exports = { guardRender, guardRanking, rankingTitle, runRanking, rankingTopics, runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, SLOWMO_ENV, CT };
