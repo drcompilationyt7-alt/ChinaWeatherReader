@@ -382,6 +382,13 @@ DISH_ALIASES = {
 DISH_CONFUSABLE = ['see ew', 'see-ew', 'siew', 'drunken noodle', 'pad kee mao', 'pad kra pao', 'pad krapow', 'lo mein', 'chop suey', 'khao soi']
 
 
+NON_FOOD_RE = re.compile(
+    r' (refrigerators?|fridges?|machines?|appliances?|cooker|shops?|stores?|storefront|restaurants?|signs?|signboard|menus?|posters?'
+    r'|adverts?|advertisement|logo|trucks?|vans?|buildings?|street|portrait|actor|actress|chef|singer|taisho|film|movie|museum'
+    r'|factory|packag\w*|instant|macaroni|breakfast set|1[89]\d\d|20[0-2]\d) ')
+FOOD_WORD_RE = re.compile(r' (food|dish|bowl|plate|served|cuisine|noodles?|soup|rice|meal|dumplings?|skewers?|fried|stew|curry|dessert|snack) ')
+
+
 def _norm(s):
     return re.sub(r'\s+', ' ', re.sub(r'[^a-z0-9 ]+', ' ', fold(s))).strip()
 
@@ -395,6 +402,12 @@ def dish_title_ok(dish, file, cats=()):
     names = {n for n in dish_names(dish) if n}
     t = ' ' + _norm(file) + ' '
     named = any(f' {n} ' in t for n in names)
+    # 2026-10-25 review: "Kimchi refrigerator", a satay-beef macaroni breakfast, "Erik Ko" (a person), "1952 - Tonkatsu taisho"
+    # (a restaurant / film): not photos of the dish
+    if NON_FOOD_RE.search(t):
+        return False
+    if not named and not FOOD_WORD_RE.search(t):
+        return False
     if not named and any(c in t for c in DISH_CONFUSABLE):
         return False
     if not named:
