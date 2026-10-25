@@ -337,6 +337,10 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
                                             'windows': [w.get('reject') for w in (res.get('windows') or [])[:4]]}
                 continue
             it = stage_item(res, e, key, sd, RC)
+            if it.get('window_marks'):            # full-resolution tag / logo check of the cut window
+                st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark', 'marks': it['window_marks'][:3],
+                                            'entry': key, 'at': time.strftime('%Y-%m-%d')}
+                continue
             man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
             st['sources'][res['id']] = {'status': 'staged', 'entry': key, 'item': it['id'], 'at': time.strftime('%Y-%m-%d')}
             row['staged'].append(it['id'])
@@ -365,6 +369,11 @@ def stage_item(res, e, key, sd, RC):
     iid = f'r_{res["id"]}_{int(w["s"] * 1000)}'
     clip = os.path.join(sd, 'clips', iid + '.mp4')
     RC.cut_clip(res['path'], s0, e0, clip)
+    marks = RC.window_marks(clip, res, w['s'] - s0, w['e'] - s0)
+    if marks:
+        os.remove(clip)
+        log(f'{res["id"]}: watermark in the window {marks[:2]}')
+        return {'window_marks': marks}
     rt = res.get('rights') or {}
     info = res.get('_info') or {}
     proof = rj(os.path.join(RC.PROOF_DIR[0] or '', f'{res["id"]}.json'), {}) if RC.PROOF_DIR[0] else {}

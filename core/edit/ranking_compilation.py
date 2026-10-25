@@ -1765,11 +1765,63 @@ def save_proof(proof, work):
 PROOF_DIR = [None]          # where save_proof() writes (ranking_pool sets the staging dir)
 
 
+def window_marks(clip, res, t0=0.0, t1=None, step=0.5, corner=(0.22, 0.2)):
+    """Full-resolution watermark check of the cut excerpt's window [t0, t1] (2026-10-25 review: a tiny "a.editorx" tag and a
+    semi-transparent key icon passed the 448 px / 960 px scans). -> list of reasons (empty = clean).
+      * OCR every `step` s at full resolution: the editor's name (fuzzy), a handle / tag word -> reject;
+      * corner logo: per pixel, the share of frames with a strong edge; a compact blob present in >= 40 % of the frames,
+        not touching the region border (letterbox lines), while the picture around it changes (luma std) -> reject.
+    Stylised 3D name logos ("FL!CK") are not readable by OCR: the by-eye review stays the last gate."""
+    cap = cv2.VideoCapture(clip)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    i0, i1 = int(t0 * fps), min(n, int((t1 if t1 is not None else n / fps) * fps))
+    keys = _handle_keys(res)
+    reasons, grads, lumas = [], [], []
+    for i in range(i0, i1, max(1, int(round(fps * step)))):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+        ok, f = cap.read()
+        if not ok:
+            break
+        if f.shape[1] > 1920:
+            f = cv2.resize(f, (1920, int(f.shape[0] * 1920 / f.shape[1])))
+        for tx, _ in ocr(f):
+            if HANDLE_RE.search(tx) or TAG_RE.search(tx) or (keys and fuzzy_handle(tx, keys)):
+                reasons.append(f'text "{tx}" at {i / fps:.1f}s')
+        g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+        small = cv2.resize(g, (g.shape[1] // 2, g.shape[0] // 2), interpolation=cv2.INTER_AREA)
+        grads.append(cv2.morphologyEx(small, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8)) > 20)
+        lumas.append(small)
+    cap.release()
+    if len(grads) >= 8:
+        G = np.stack(grads)
+        Lm = np.stack(lumas).astype(np.float32)
+        H, W_ = G.shape[1:]
+        cw, ch = int(W_ * corner[0]), int(H * corner[1])
+        for name, (x0, y0) in {'top-left': (0, 0), 'top-right': (W_ - cw, 0), 'bottom-left': (0, H - ch),
+                               'bottom-right': (W_ - cw, H - ch)}.items():
+            pres = G[:, y0:y0 + ch, x0:x0 + cw].mean(0)
+            lstd = Lm[:, y0:y0 + ch, x0:x0 + cw].std(0)
+            mask = cv2.dilate((pres >= 0.4).astype(np.uint8), np.ones((3, 3), np.uint8))
+            num, _, st, _ = cv2.connectedComponentsWithStats(mask, 8)
+            for j in range(1, num):
+                bx, by, bw, bh, area = st[j]
+                if not (8 <= bw <= 0.6 * cw and 6 <= bh <= 0.6 * ch and area >= 30):
+                    continue
+                if bx <= 1 or by <= 1 or bx + bw >= cw - 1 or by + bh >= ch - 1:
+                    continue                                    # letterbox lines / frame edges
+                ring = lstd[max(0, by - bh):by + 2 * bh, max(0, bx - bw):bx + 2 * bw]
+                if np.median(ring) >= 15:                        # the picture around it moves: a fixed overlay
+                    reasons.append(f'logo {name} ({2 * bw}x{2 * bh}px, edge in >= 40 % of {len(G)} frames)')
+                    break
+    return reasons
+
+
 def cut_clip(src, s, e, out):
     """The stored excerpt: only [s, e] of the source edit (re-encoded, high quality, its own audio)."""
     os.makedirs(os.path.dirname(out), exist_ok=True)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '4', '-ss', f'{s:.3f}', '-t', f'{e - s:.3f}', '-i', src,
-                    '-c:v', 'libx264', '-crf', '16', '-preset', 'medium', '-threads', '4', '-c:a', 'aac', '-b:a', '256k',
+                    '-c:v', 'libx264', '-crf', '19', '-preset', 'medium', '-threads', '4', '-c:a', 'aac', '-b:a', '192k',
                     '-movflags', '+faststart', out], check=True)
 
 
