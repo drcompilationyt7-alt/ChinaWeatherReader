@@ -1291,6 +1291,73 @@
     "titleStyle": "llm",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "vkEIwQ8ojLg",
+   "url": "https://www.youtube.com/watch?v=vkEIwQ8ojLg",
+   "postedAt": "2026-10-26T08:04:17.139Z",
+   "publishAt": "2026-10-26T12:00:00.000Z",
+   "format": "wyr",
+   "theme": "anime",
+   "seed": 680273204,
+   "length": "quick",
+   "edition": "maid",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Welcome back! Ready for the ultimate anime would you rather quiz?",
+     "template": "Welcome back! Ready for the ultimate anime would you rather quiz?",
+     "sec": 3.54
+    }
+   ],
+   "titleTemplate": "wyr-anime-powers",
+   "title": "Would You Rather: Maid Cafe Edition ☕",
+   "answers": [
+    "wyr:host a festival maid cafe|work at an akihabara maid cafe",
+    "wyr:visit chika's chaotic maid booth|visit taiga's fierce maid booth",
+    "wyr:cast the ultimate omelet spell|order the secret butler menu"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "challenge"
+   }
+  },
+  {
+   "videoId": "oqF_caQxwok",
+   "url": "https://www.youtube.com/watch?v=oqF_caQxwok",
+   "postedAt": "2026-10-26T08:10:08.281Z",
+   "publishAt": "2026-10-26T21:00:00.000Z",
+   "format": "trivia",
+   "theme": "cities",
+   "seed": 48133065,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Drop your score in the comments!",
+     "template": null,
+     "sec": 1.54
+    }
+   ],
+   "titleTemplate": "trivia-casual",
+   "title": "asian cities quiz but it gets hard fast 👀 #asia",
+   "answers": [
+    "trivia:the shibuya crossing is in which city?",
+    "trivia:n seoul tower is located in which city?",
+    "trivia:which japanese city has a famous deer park?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "op-target-comment"
+   }
   }
  ]
 }
