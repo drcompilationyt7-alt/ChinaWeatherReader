@@ -1,45 +1,18 @@
 {
- "at": "2026-10-23T23:57:04.539Z",
+ "at": "2026-10-26T08:35:14.839Z",
  "type": "sound",
  "ok": false,
- "reason": "the sound pool cannot fill 30 s (8_length on 2 songs)",
- "dryRun": true,
+ "reason": "pool too small: pool_too_small: pool_low: 8 usable scenes (8 with a crisp hit) for 23 hits (19 audible) over 20.1 s (reuse cap 30%)",
+ "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "le_sserafim_antifragile",
-   "seed": 41,
+   "song": "lil_nas_x_montero",
+   "seed": 2302,
    "input": "first",
-   "work": "work-sound-1792797080117",
-   "min": 30.8,
-   "overall": 8.57,
-   "failed": {
-    "5_density_no_dead": 6.1,
-    "8_length_30_50s": 6.1,
-    "16_drum_onsets_recreated": 2.7,
-    "17_no_frozen_frames": 4,
-    "9_overall_vs_ref": 5.2
-   },
-   "result": "NOT PASS",
-   "next": "new_song"
-  },
-  {
-   "n": 2,
-   "song": "le_sserafim_antifragile",
-   "seed": 252,
-   "input": "new_song",
-   "work": "work-sound-1792798925193",
-   "min": 15,
-   "overall": 8.55,
-   "failed": {
-    "5_density_no_dead": 6.1,
-    "8_length_30_50s": 6.1,
-    "16_drum_onsets_recreated": 2.7,
-    "17_no_frozen_frames": 4,
-    "9_overall_vs_ref": 5.2
-   },
-   "result": "NOT PASS",
-   "next": "stop"
+   "work": "work-sound-1793002301954",
+   "min": 23.5,
+   "result": "pool too small"
   }
  ]
 }

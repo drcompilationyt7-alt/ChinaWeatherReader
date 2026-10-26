@@ -1394,7 +1394,8 @@
    "songSection": [
     7.993,
     36.782
-   ]
+   ],
+   "musicPerf": 4.73
   },
   {
    "videoId": "Wg57oflof3I",
@@ -1768,6 +1769,58 @@
    "why": "thompson + insights (bonus +1.29)",
    "whyMode": "insight-driven",
    "bpm": 129.98,
+   "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "p6Fu4I_fbEg",
+   "url": "https://www.youtube.com/watch?v=p6Fu4I_fbEg",
+   "postedAt": "2026-10-26T08:46:24.862Z",
+   "publishAt": "2026-10-26T12:00:00.000Z",
+   "song": "hanaichi monme",
+   "theme": "anime",
+   "emoji": "🗿,🔥",
+   "title": "hanaichi monme acapella but the beat drops 🗿",
+   "clipIds": [
+    "ZVkcjgTfLHU",
+    "U1Hdy-BnaMI",
+    "kdxoqy-ipqQ",
+    "X1fLmABFP9Q",
+    "x3rtzJqEu0Q",
+    "PjksZ-iUdb8",
+    "lQs8FbuIf_A",
+    "YNYkTXknYjE"
+   ],
+   "clipChannels": [
+    "Anicrad",
+    "Anime Tomodachi",
+    "Animeke Channel",
+    "Netflix Anime",
+    "Raaii",
+    "TMSアニメ公式チャンネル",
+    "Tambayan ni Kuys Toph"
+   ],
+   "clipSource": "Sakamoto Days",
+   "settings": {
+    "drop": 18,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-stack-drop"
+   },
+   "onVideoTitle": "vocals only first",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-layer-stage",
+    "descHook": "op-desc-stack-drop",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson + insights (bonus +0.54)",
+   "whyMode": "insight-driven",
+   "bpm": 160.06,
    "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
