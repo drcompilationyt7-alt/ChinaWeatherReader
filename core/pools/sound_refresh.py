@@ -708,6 +708,12 @@ def pull_staged(dest):
         with tarfile.open(tp) as t:
             t.extractall(x, members=[m for m in t.getmembers() if m.name.startswith('sheets/') or m.name.endswith('.json')])
         got.append({'tar': n, 'dir': x, 'clips': len(read_json(os.path.join(x, 'rows.json'), {}))})
+    try:                                              # zyo-clipscore: a ranked list for the review (no-op while off / unscored)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import clipscore
+        clipscore.review_hook('sound', tar_names=names, out_txt=os.path.join(dest, 'clipscore-review.txt'))
+    except ImportError:
+        pass
     return got
 
 

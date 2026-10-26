@@ -1,0 +1,245 @@
+{
+ "slowmo": {
+  "gates": [
+   {
+    "f": "stutter",
+    "op": "<=",
+    "t": 0.2261,
+    "rej": 10
+   },
+   {
+    "f": "hist_jump_max",
+    "op": "<=",
+    "t": 0.1515,
+    "rej": 8
+   },
+   {
+    "f": "sig_talk_m",
+    "op": "<=",
+    "t": 0.1429,
+    "rej": 8
+   },
+   {
+    "f": "rating_questionable_m",
+    "op": "<=",
+    "t": 0.0023,
+    "rej": 7
+   },
+   {
+    "f": "rating_questionable_x",
+    "op": "<=",
+    "t": 0.0058,
+    "rej": 7
+   },
+   {
+    "f": "sig_garish_x",
+    "op": "<=",
+    "t": 0.0463,
+    "rej": 7
+   }
+  ],
+  "weights": {
+   "cut_spike_max": {
+    "w": -0.468,
+    "mu": 8.3757,
+    "sd": 22.75816
+   },
+   "unique_share": {
+    "w": 0.434,
+    "mu": 0.91333,
+    "sd": 0.13033
+   },
+   "hist_jump_max": {
+    "w": -0.422,
+    "mu": 0.08826,
+    "sd": 0.06146
+   },
+   "sig_garish_x": {
+    "w": -0.416,
+    "mu": 0.03036,
+    "sd": 0.13126
+   },
+   "sig_garish_m": {
+    "w": -0.404,
+    "mu": 0.02121,
+    "sd": 0.10814
+   },
+   "emb_sim_min": {
+    "w": 0.386,
+    "mu": 0.96721,
+    "sd": 0.04367
+   },
+   "tag_outdoors_m": {
+    "w": 0.358,
+    "mu": 0.24729,
+    "sd": 0.26281
+   },
+   "stutter": {
+    "w": -0.354,
+    "mu": 0.05988,
+    "sd": 0.11436
+   },
+   "tag_sky_m": {
+    "w": 0.352,
+    "mu": 0.14665,
+    "sd": 0.24949
+   },
+   "sig_closeup_action_x": {
+    "w": -0.346,
+    "mu": 0.05686,
+    "sd": 0.13532
+   },
+   "sig_closeup_action_m": {
+    "w": -0.322,
+    "mu": 0.02465,
+    "sd": 0.07062
+   },
+   "tag_outdoors_x": {
+    "w": 0.31,
+    "mu": 0.29538,
+    "sd": 0.28072
+   }
+  },
+  "cut": 0.0118,
+  "cv": {
+   "precision": 0.689,
+   "recall": 0.721,
+   "tp": 31,
+   "fp": 14,
+   "fn": 12,
+   "n": 86
+  },
+  "current_gates": {
+   "precision": 0.623,
+   "recall": 1.0,
+   "tp": 43,
+   "fp": 26,
+   "fn": 0,
+   "n": 86
+  },
+  "beats_gates": false
+ },
+ "sound": {
+  "gates": [
+   {
+    "f": "tag_english_text_x",
+    "op": "<=",
+    "t": 0.1055,
+    "rej": 12
+   },
+   {
+    "f": "tag_watermark_x",
+    "op": "<=",
+    "t": 0.0564,
+    "rej": 12
+   },
+   {
+    "f": "tag_english_text_m",
+    "op": "<=",
+    "t": 0.0749,
+    "rej": 11
+   },
+   {
+    "f": "tag_watermark_m",
+    "op": "<=",
+    "t": 0.0382,
+    "rej": 11
+   },
+   {
+    "f": "tag_logo_m",
+    "op": "<=",
+    "t": 0.0126,
+    "rej": 10
+   },
+   {
+    "f": "tag_logo_x",
+    "op": "<=",
+    "t": 0.0216,
+    "rej": 10
+   }
+  ],
+  "weights": {
+   "tag_motion_lines_x": {
+    "w": 0.38,
+    "mu": 0.01848,
+    "sd": 0.03593
+   },
+   "tag_fighting_x": {
+    "w": 0.36,
+    "mu": 0.03905,
+    "sd": 0.07425
+   },
+   "tag_fighting_m": {
+    "w": 0.344,
+    "mu": 0.01945,
+    "sd": 0.03972
+   },
+   "tag_punching_m": {
+    "w": 0.338,
+    "mu": 0.03365,
+    "sd": 0.08136
+   },
+   "motion_peak": {
+    "w": 0.328,
+    "mu": 16.98124,
+    "sd": 36.61282
+   },
+   "tag_motion_lines_m": {
+    "w": 0.318,
+    "mu": 0.00773,
+    "sd": 0.01292
+   },
+   "tag_speed_lines_x": {
+    "w": 0.316,
+    "mu": 0.00953,
+    "sd": 0.02369
+   },
+   "tag_punching_x": {
+    "w": 0.312,
+    "mu": 0.0769,
+    "sd": 0.17508
+   },
+   "tag_speed_lines_m": {
+    "w": 0.302,
+    "mu": 0.00358,
+    "sd": 0.00731
+   },
+   "tag_english_text_m": {
+    "w": -0.29,
+    "mu": 0.04212,
+    "sd": 0.15288
+   },
+   "tag_watermark_m": {
+    "w": -0.286,
+    "mu": 0.0157,
+    "sd": 0.05271
+   },
+   "tag_2boys_x": {
+    "w": 0.27,
+    "mu": 0.34372,
+    "sd": 0.37718
+   }
+  },
+  "cut": -1.3783,
+  "cv": {
+   "precision": 0.333,
+   "recall": 0.574,
+   "tp": 31,
+   "fp": 62,
+   "fn": 23,
+   "n": 165
+  },
+  "current_gates": {
+   "precision": 0.367,
+   "recall": 1.0,
+   "tp": 54,
+   "fp": 93,
+   "fn": 0,
+   "n": 165
+  },
+  "beats_gates": false
+ },
+ "enabled": false,
+ "version": 1,
+ "note": "2026-10-26 calibration (Kaggle T4, 5-fold CV on the by-eye labels): NOT enabled. Current CPU gates (clip_prefilter) on the same clips: slow-mo P 0.62 / R 1.00, sound P 0.37 / R 1.00. clipscore verdict CV: slow-mo P 0.69 / R 0.72, sound P 0.33 / R 0.57. Rank only (no verdict) CV AUC slow-mo 0.77 (P 0.64 at R 0.9), sound 0.67 (P 0.35 at R 0.9). Switch on (CLIP_SCORE=on + enabled true) only after a re-calibration with more labels beats the gates on precision at R >= 0.9."
+}

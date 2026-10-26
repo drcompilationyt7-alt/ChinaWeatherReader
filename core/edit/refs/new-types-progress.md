@@ -1140,7 +1140,7 @@ inside the tail, round 4 as a strong start), so borderline syllables can still f
 - 3g queued for 2026-10-24: prebuilt-slowmo-3g.mp4 (md5 = output/newtypes/m3g, 39.4 s, 1080x1920 h264/aac), jvke_golden_hour@v0.85,
   18 clips, "golden hour (slowed) but every frame is an anime girl ✨ #anime".
 
-### 2026-10-22: Kaggle clip scoring (zyo-clipscore) - PAUSED (owner left; nothing run on Kaggle, nothing committed / pushed)
+### 2026-10-22: Kaggle clip scoring (zyo-clipscore) - BUILT 2026-10-26, OFF (did not beat the gates)
 Owner OK 2026-10-22: Kaggle GPU scores the clips GitHub already staged (no YouTube / cookies on Kaggle), Mon-Thu only (UTC and US
 Eastern), never touch cwr-* / apq-*, kernel `john123abc/zyo-clipscore`, cap 20 GPU h / week (>= 10 h left for other uses).
 - **Written (uncommitted, untested):** `scripts/kaggle/clipscore_kernel.py` (GPU FEATURES only: WD14 swinv2 v3 tags / rating / subject,
@@ -1165,6 +1165,18 @@ Eastern), never touch cwr-* / apq-*, kernel `john123abc/zyo-clipscore`, cap 20 G
   mining ..." and "Sound pool growth ...", concurrency group, day / budget gate, pip install kaggle on python 3.11); add the secret
   via gh from ~/.kaggle/access_token without printing; (5) wire one call to `clipscore review` at the end of slowmo_grow.cmd_pull /
   sound_refresh.pull_staged (coordinate with the mining agent); then tell the miners they can stage more.
+- **2026-10-26 DONE, built but OFF (clipscore agent):** core/pools/clipscore.py (calibrate / write_scores / rescore / review_hook) +
+  core/pools/clipscore-thresholds.json (enabled false) + .github/workflows/clip-score.yml (workflow_run after the three mining
+  workflows + 06:40 UTC Mon-Thu backup; runs only with repo variable CLIP_SCORE=on; day + shared-budget gate) + one guarded
+  review hook in slowmo_grow.cmd_pull (reorders index.json + review/clipscore.txt) and sound_refresh.pull_staged
+  (clipscore-review.txt); both no-ops while off (CLIP_SCORE_REVIEW=1 shows the order anyway). Kernel fixes: SigLIP output objects
+  (new transformers) + no_grad; a SigLIP error no longer drops the clip. 3 Kaggle sessions (77 min, T4; ledger
+  clipscore-ledger.json on edit-pools-staging, entries carry job / kind). **Calibration (5-fold CV, by-eye labels):** current CPU
+  gates (clip_prefilter on the same clips) slow-mo P 0.62 / R 1.00, sound P 0.37 / R 1.00; clipscore verdict slow-mo P 0.69 /
+  R 0.72, sound P 0.33 / R 0.57; rank only CV AUC slow-mo 0.77 (P 0.64 at R 0.9), sound 0.67 (P 0.35 at R 0.9). Does NOT beat
+  the gates at similar recall -> left off. Next: more labels (every review adds some), re-run `clipscore.py calibrate --feats ..
+  --baseline ..`; slow-mo is the closer one (garish / cut / stutter / outdoor features carry it). Sound-kind features cost ~9 s
+  per clip on a T4 (RAFT), slow-mo ~17 s (SigLIP so400m at 8 fps).
 
 ### 2026-10-23: momentum model v2 (groove songs), lyric head line, slow-mo freshness, sound reuse cap (two-fixes agent)
 Picked up the cut-off agent's uncommitted work (clip_rotation hard cap, sound_edit Lagrangian reuse cap, a first groove

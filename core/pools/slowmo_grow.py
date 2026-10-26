@@ -704,6 +704,11 @@ def cmd_pull(a):
     rv = os.path.join(d, 'review')
     shutil.rmtree(rv, ignore_errors=True)
     os.makedirs(rv)
+    try:                                              # zyo-clipscore: likely-good first (no-op while off / unscored)
+        import clipscore
+        rows = clipscore.review_hook('slowmo', rows, tar_names=pulled['assets'], out_txt=os.path.join(rv, 'clipscore.txt'))
+    except ImportError:
+        pass
     wj(os.path.join(rv, 'index.json'), rows)          # first: import-staged needs it even if the sheets fail
     try:
         for i in range(0, len(rows), 24):

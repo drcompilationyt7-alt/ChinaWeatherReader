@@ -1,0 +1,72 @@
+name: Clip scoring - Kaggle GPU features of the staged edit-pool candidates (Mon-Thu)
+
+# 2026-10-26 (zyo-clipscore). After each sound / slow-mo mining run, a Kaggle GPU session (kernel <user>/zyo-clipscore; never a
+# cwr-* / apq-* kernel) computes features of the staged candidate tars (edit-pools-staging): WD14 tags / rating, anime faces,
+# stutter, cuts, SigLIP prompts, RAFT motion at the hit. core/pools/clipscore.py turns them into verdicts + a rank score
+# (core/pools/clipscore-thresholds.json) and the scores go next to the tars as clipscore-<tar stem>.json; the session-start review
+# (slowmo_grow.py pull-staged / sound_refresh.py pull-staged) then shows the likely-good clips first. The eye still decides.
+# OFF unless the repo variable CLIP_SCORE=on (set only when the calibration beats the current gates). Monday-Thursday only (UTC and
+# US Eastern); GPU minutes go into the weekly ledger shared with the sound sharpening + AI art (clipscore-ledger.json, 20 h cap).
+
+on:
+  workflow_run:
+    workflows:
+      - 'Pool mining (nightly, ONE pool per night, alternating, light)'
+      - 'Slow-mo pool mining (nightly until ~115 clips per vibe, then monthly)'
+      - 'Sound pool growth (nightly until the target, staged, grow-only)'
+    types: [completed]
+  schedule:
+    - cron: '40 6 * * 1-4'        # backup: anything staged but unscored (GitHub starts schedules hours late)
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Build the kernel folder only (no Kaggle session)'
+        required: false
+        default: 'false'
+      force:
+        description: 'Run even when CLIP_SCORE is not on (test)'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: kaggle-clipscore
+  cancel-in-progress: false
+
+jobs:
+  score:
+    if: ${{ vars.CLIP_SCORE == 'on' || inputs.force == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+      GH_REPO: ${{ github.repository }}
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
+      MEMORY_DIR: work/memory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install
+        run: python -m pip install -q kaggle
+      - name: Day + budget gate
+        id: gate
+        run: |
+          python scripts/clipscore-kaggle.py check | tee check.json
+          python - <<'EOF'
+          import json, os
+          c = json.load(open('check.json'))
+          go = c['day_ok'] and c['left_min'] >= 15 and bool(c['tars_waiting']) and bool(os.environ.get('KAGGLE_API_TOKEN'))
+          open(os.environ['GITHUB_OUTPUT'], 'a').write(f"go={'true' if go else 'false'}\n")
+          print('go' if go else 'skip (day / budget / nothing waiting / no token)')
+          EOF
+      - name: Score the staged tars
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          set -o pipefail
+          DRY=""; [ "${{ inputs.dry }}" = "true" ] && DRY="--dry-run"
+          python scripts/clipscore-kaggle.py run $DRY | tee result.json
+          { echo '### Clip scoring'; echo '```'; head -c 3000 result.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
