@@ -577,6 +577,30 @@
     "word": "slash",
     "note": "auto (vision model) 2026-10-24 (Zenitsu Agatsuma || Demon Slayer Entertainment Arc)"
    }
+  ],
+  "c_TJpgv0NrD3E_329568": [
+   {
+    "t": 0.502,
+    "action": "metal",
+    "word": "clash",
+    "note": "auto (vision model) 2026-10-26 (Suzaku's Lancelot vs. Kallen's Guren | Code Geass:)"
+   }
+  ],
+  "c_zAYMK_djbns_4030": [
+   {
+    "t": 1.136,
+    "action": "impact",
+    "word": "crash",
+    "note": "auto (vision model) 2026-10-26 (Miyazawa Kenji Vs. Suehiro Tetchou | Bungo Stray D)"
+   }
+  ],
+  "c_SH9HRJFl0oM_66147": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-10-26 (Victor Remains Unmatched | UNDEAD UNLUCK)"
+   }
   ]
  }
 }
