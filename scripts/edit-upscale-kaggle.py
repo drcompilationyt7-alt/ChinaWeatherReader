@@ -213,7 +213,11 @@ def main():
     try:
         if kaggle('datasets', 'version', '-p', ds, '-m', 'upscale', '--dir-mode', 'tar', check=False).returncode != 0:
             kaggle('datasets', 'create', '-p', ds, '--dir-mode', 'tar')
-        time.sleep(90)
+        time.sleep(60)
+        for _ in range(12):                       # 2026-10-26: wait until the new dataset version is ready (was a fixed 90 s)
+            if 'ready' in (kaggle('datasets', 'status', f'{user}/{DATASET_SLUG}', check=False).stdout or '').lower():
+                break
+            time.sleep(30)
         kaggle('kernels', 'push', '-p', kn)
         status = wait(user, minutes + 20)
         if status != 'complete':

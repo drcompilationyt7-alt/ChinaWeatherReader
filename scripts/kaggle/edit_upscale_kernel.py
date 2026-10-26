@@ -15,7 +15,11 @@ import tarfile
 import time
 
 T0 = time.time()
-INP = next((os.path.join('/kaggle/input', d) for d in os.listdir('/kaggle/input') if d.startswith('edit-upscale-input')), '/kaggle/input/edit-upscale-input')
+# 2026-10-26: Kaggle mounts datasets nested (/kaggle/input/datasets/<user>/<slug>/...): the top-level lookup missed budget.json
+# (first real run 40337517332 -> FileNotFoundError). Walk the whole input tree, like ai_art_kernel.py.
+INP = next((dp for dp, _, fs in os.walk('/kaggle/input') if 'budget.json' in fs and 'edit-upscale-input' in dp),
+           next((dp for dp, _, fs in os.walk('/kaggle/input') if 'budget.json' in fs), '/kaggle/input/edit-upscale-input'))
+print('input:', INP, sorted(os.listdir(INP)) if os.path.isdir(INP) else [p for p, _, _ in os.walk('/kaggle/input')][:20], flush=True)
 WORK = '/kaggle/working'
 MINUTES = float(json.load(open(os.path.join(INP, 'budget.json')))['minutes'])
 END = T0 + MINUTES * 60 - 4 * 60
