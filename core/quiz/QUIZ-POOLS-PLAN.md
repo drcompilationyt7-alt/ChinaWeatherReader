@@ -99,3 +99,27 @@ Recent quizzes were almost all anime. The owner wants a balance, not all anime, 
 2. Text-only is boring. On the ANSWER REVEAL, show an image or a short video clip of the actual thing (the city, dish, landmark, idol, anime...). Use the reviewed geo / city / food / idol pools; footage must be CC / licensed.
    - The guard: a trivia round without a reveal visual is not allowed (fall back to another question).
 3. Also the title "asia city quiz: ice festival capital bund" reads like a keyword dump. Titles must read naturally.
+
+## 2026-10-26: AI costume art (Kaggle, Illustrious-XL) - tuned
+- **Why the 10-12 run passed 8 of 256 (3 %):** looked at the 86 characters' pictures by eye. About 40 % were usable; the gate threw them away.
+  - The AI-strict on-model gate (castmate margin >= 0.10, hair >= 0.55, eye >= 0.35) sits far above what a costume picture scores.
+    The eye-approved tune pictures scored margin -0.02..+0.19, hair 0.17..0.80, eye 0.07..0.41.
+  - The prompts: the theme words came before the character; 'adult, mature female' and the 'flat chest, petite' negatives pulled every face toward one generic busty look.
+    Male characters were drawn as girls (Kurapika, Light).
+  - Small faces in full-body pictures: the eye detector found no face ('no clear face', 23 rejects).
+- **Fixes (pop_gen.py):**
+  - make_prompt: name + series first and weighted; male negatives (1girl, breasts); modest negatives for anyone not a confirmed adult ('adult-modest' gets modest variants); theme part + pose rotate per k, so each character gets distinct pictures.
+  - plan_v2: explicit job list, 832x1216.
+  - score_stage: costume-mode gate COSTUME = margin >= -0.03, hair >= 0.15, eye >= 0.065. A small face passes on margin >= 0.03 + hair >= 0.30.
+    The WD14 safety gate, the artefact tags, the theme tag, the strict minor gate and the near-duplicate check are unchanged.
+  - score_stage stages a quiz-cand folder (file_id <id>_ai<k>) for pull-staged / review / import-staged.
+- **IP-Adapter (plus-face SDXL, from the AniList portrait) was tested and is OFF.**
+  - Auto pass: 6 of 20, against 13 of 20 for the plain v2 prompt.
+  - By eye: 11 of 20 usable, against 19 of 20.
+  - It washes the style toward the screenshot and drifts hair colours.
+  - img2img was not tried: the official art is a head shot, so it would keep that framing instead of a full-body costume.
+  - The kernel keeps the option (job field ipa > 0).
+- **Tune batch (40 pictures, about 21 GPU min):**
+  - Automatic pass: 19 of 40 overall; 13 of 20 for the plain v2 prompt.
+  - Old gate: 0 of 40.
+  - Most of the remaining losses are the strict minor WD14 gate ('rating sensitive' on modest costumes). That gate is kept on purpose.

@@ -5,7 +5,7 @@ Kaggle driver for AI-generated quiz art (owner 2026-10-11). Generation runs on K
   python scripts/pop-ai-art-kaggle.py run    [--minutes 120]                                   -> day guard, budget, push, wait, fetch into the gen/out folder
   python scripts/pop-ai-art-kaggle.py score  --scopes beach,halloween                          -> local gates + merge (ai-cache.json), then finish_theme
   python scripts/pop-ai-art-kaggle.py check                                                    -> weekday / weekly budget
-Rules: Kaggle only Monday-Thursday UTC (the owner's other project has Friday-Sunday), <= 180 GPU min per week for us, one session
+Rules: Kaggle only Monday-Thursday UTC (the owner's other project has Friday-Sunday), <= 360 GPU min per week for us (and the shared repo cap: clipscore-ledger.json on edit-pools-staging), one session
 time-boxed (default 120). Our names all start with apq-ai-art-; other kernels of the account are never touched.
 Auth: the kaggle CLI reads ~/.kaggle/access_token or KAGGLE_API_TOKEN; this script never reads, prints or writes it.
 """
@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
 OUTDIR = os.path.join(ROOT, 'output', 'ai-art')
 LEDGER = os.path.join(ROOT, os.environ.get('MEMORY_DIR', 'memory'), 'ai-art-kaggle.json')
-WEEK_MIN = int(os.environ.get('APQ_AI_WEEK_MIN', 180))
+WEEK_MIN = int(os.environ.get('APQ_AI_WEEK_MIN', 360))
 DATASET, KERNEL = 'apq-ai-art-input', 'apq-ai-art-gen'
 KAGGLE = os.environ.get('KAGGLE_EXE') or 'C:/Users/Home/Downloads/StockBot/.venv/Scripts/kaggle.exe'
 if not os.path.exists(KAGGLE):
@@ -30,7 +30,8 @@ if not os.path.exists(KAGGLE):
 
 
 def kaggle(*args, check=True):
-    r = subprocess.run([KAGGLE, *args], capture_output=True, text=True)
+    # PYTHONUTF8: the CLI writes the kernel log in the locale codepage otherwise (cp932 on this PC failed on a block character)
+    r = subprocess.run([KAGGLE, *args], capture_output=True, text=True, encoding='utf-8', errors='replace', env=dict(os.environ, PYTHONUTF8='1'))
     if check and r.returncode != 0:
         raise RuntimeError(f"kaggle {' '.join(args[:2])}: {(r.stderr or r.stdout or '')[-300:]}")
     return r
@@ -57,7 +58,43 @@ def used_min():
     return sum(s.get('minutes', 0) for s in ledger().get(week_key(), []))
 
 
+SHARED_TAG, SHARED_ASSET = 'edit-pools-staging', 'clipscore-ledger.json'
+SHARED_WEEK_MIN = float(os.environ.get('ZYO_WEEK_MIN', 1200))   # ONE GPU cap for every Kaggle job of this repo (<= 20 h / week)
+REPO = os.environ.get('GITHUB_REPOSITORY', 'drcompilationyt7-alt/ChinaWeatherReader')
+
+
+def shared_ledger():
+    """The shared weekly GPU ledger on the staging release (zyo-clipscore, sound-sharpen, apq-ai-art); {} when unreachable."""
+    import tempfile
+    d = tempfile.mkdtemp(prefix='gpu-ledger-')
+    r = subprocess.run(['gh', 'release', 'download', SHARED_TAG, '--repo', REPO, '--pattern', SHARED_ASSET, '--dir', d, '--clobber'],
+                       capture_output=True, text=True)
+    try:
+        return json.load(open(os.path.join(d, SHARED_ASSET), encoding='utf-8')) if r.returncode == 0 else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def shared_used_min():
+    return sum(s.get('minutes', 0) for s in shared_ledger().get(week_key(), []))
+
+
+def record_shared(minutes, status, stats=None):
+    """Append this session to the shared ledger (download, append, upload: never overwrites the other jobs' rows)."""
+    import tempfile
+    lg = shared_ledger()
+    lg.setdefault(week_key(), []).append({'at': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'job': 'apq-ai-art',
+                                          'minutes': round(minutes, 1), 'gpu_hours': round(minutes / 60, 3), 'status': status, 'stats': stats})
+    lg['_week_totals'] = {k: round(sum(s.get('minutes', 0) for s in v) / 60, 2) for k, v in lg.items() if k.startswith('20')}
+    p = os.path.join(tempfile.mkdtemp(prefix='gpu-ledger-up-'), SHARED_ASSET)
+    json.dump(lg, open(p, 'w', encoding='utf-8'), indent=1)
+    r = subprocess.run(['gh', 'release', 'upload', SHARED_TAG, p, '--clobber', '--repo', REPO], capture_output=True, text=True)
+    if r.returncode != 0:
+        print('shared ledger upload failed:', (r.stderr or '')[-200:], flush=True)
+
+
 def record(minutes, status, stats=None):
+    record_shared(minutes, status, stats)
     lg = ledger()
     lg.setdefault(week_key(), []).append({'at': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'minutes': round(minutes, 1), 'status': status, 'stats': stats})
     os.makedirs(os.path.dirname(LEDGER), exist_ok=True)
@@ -79,6 +116,10 @@ def bundle(minutes):
         shutil.rmtree(d, ignore_errors=True)
         os.makedirs(d)
     shutil.copyfile(os.path.join(OUTDIR, 'prompts.jsonl'), os.path.join(ds, 'prompts.jsonl'))
+    refs = os.path.join(OUTDIR, 'refs')   # plan_v2: official portraits for the IP-Adapter jobs (flat ref_<id>.jpg files)
+    need = {json.loads(x).get('ref') for x in open(os.path.join(ds, 'prompts.jsonl'), encoding='utf-8') if x.strip()} - {None}
+    for r in need:
+        shutil.copyfile(os.path.join(refs, r), os.path.join(ds, r))
     json.dump({'minutes': minutes}, open(os.path.join(ds, 'budget.json'), 'w'))
     json.dump({'title': DATASET, 'id': f'{user}/{DATASET}', 'licenses': [{'name': 'other'}]}, open(os.path.join(ds, 'dataset-metadata.json'), 'w'), indent=1)
     shutil.copyfile(os.path.join(ROOT, 'scripts', 'kaggle', 'ai_art_kernel.py'), os.path.join(kn, 'ai_art_kernel.py'))
@@ -99,7 +140,8 @@ def main():
     import pop_gen
     scopes = a.scopes.split(',')
     if a.cmd == 'check':
-        print(json.dumps({'weekday_ok': not day_blocked(), 'week_used_min': used_min(), 'week_left_min': max(0, WEEK_MIN - used_min())}))
+        print(json.dumps({'weekday_ok': not day_blocked(), 'week_used_min': used_min(), 'week_left_min': max(0, WEEK_MIN - used_min()),
+                          'shared_used_min': round(shared_used_min(), 1), 'shared_cap_min': SHARED_WEEK_MIN}))
     elif a.cmd == 'plan':
         os.makedirs(OUTDIR, exist_ok=True)
         lines = pop_gen.plan_prompts(scopes, a.chars, a.seeds, os.path.join(OUTDIR, 'prompts.jsonl'))
@@ -110,7 +152,7 @@ def main():
     elif a.cmd == 'run':
         if day_blocked():
             sys.exit("kaggle: not on Friday-Sunday (the owner's other project has the account)")
-        minutes = min(a.minutes, WEEK_MIN - used_min())
+        minutes = min(a.minutes, WEEK_MIN - used_min(), SHARED_WEEK_MIN - shared_used_min())
         if minutes < 20:
             sys.exit(f'kaggle: weekly budget used ({used_min()} of {WEEK_MIN} min)')
         ds, kn, user = bundle(minutes)

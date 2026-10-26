@@ -43,7 +43,7 @@ BASE_Q = 'masterpiece, best quality, amazing quality, very aesthetic, absurdres,
 NEG = ('lowres, worst quality, bad quality, bad anatomy, bad hands, extra digits, fewer digits, missing fingers, extra arms, extra legs, '
        'jpeg artifacts, signature, watermark, text, username, artist name, multiple views, chibi, monochrome, greyscale, cropped, out of frame, '
        'nsfw, explicit, nude, nipples, underwear, panties, bra, pantyshot, see-through, topless, child, loli, shota, aged down, '
-       'flat chest, petite, blurry, sketch, 3d, realistic, photo, ai-generated')
+       'blurry, sketch, 3d, realistic, photo, ai-generated')
 FEMALE_TAGS = 'adult, mature female, 1girl, solo'
 
 # theme prompt parts: {adult: [...], general: [...]} per sex. adult = confirmed adults without a strict override; general = everyone else
@@ -154,30 +154,42 @@ def appearance_tags(c, cache, ai):
     return tags
 
 
-def make_prompt(c, scope, cls, tag, look, rng):
-    """(prompt, negative, style_index). Adults get the adult variants of the theme; anyone else only the general ones."""
+POSES = ['standing', 'standing, hand on hip', 'standing, arms at sides', 'standing, waving', 'standing, contrapposto']
+# 2026-10-26 tuning (10-12 run: 8 of 256 passed): the theme words came before the character and 'adult, mature female' / the
+# 'flat chest, petite' negatives pulled every face toward one generic busty look (castmate margin = the top reject), and male
+# characters drawn as girls (Kurapika, Light). Now: the character name + series first and weighted, sex-specific negatives,
+# a pose + theme variant per k (distinct pictures per character), modest negatives for anyone not a confirmed adult.
+NEG_MALE = ', 1girl, female focus, breasts, makeup, lipstick'
+NEG_MODEST = ', large breasts, cleavage, swimsuit, bikini, midriff, thighhighs, garter straps'
+
+
+def make_prompt(c, scope, cls, tag, look, rng, k=None):
+    """(prompt, negative). Adults get the adult variants of the theme; anyone else only the general ones. k = variant number
+    (theme part + pose rotate with k; None = the old random pick)."""
     male = c.get('gender') == 'Male'
     st = STYLE.get(scope)
     who = 'm' if male else 'f'
     if st and who in st:
         pool = st[who]
-        adult_ok = cls in pv_adult()
+        adult_ok = cls == 'adult'   # 'adult-modest' (child-bodied adults, owner list) gets the modest variants only
         variants = pool.get('adult' if adult_ok else 'general') or pool.get('adult' if not adult_ok else 'general')
         if not adult_ok and not pool.get('general'):
             return None
-        theme_part = rng.choice(variants)
+        theme_part = rng.choice(variants) if k is None else variants[k % len(variants)]
     elif st:
         return None
     else:
         theme_part = ''
     name = re.sub(r'_\(.*\)$', '', tag).replace('_', ' ')
     series = re.findall(r'_\((.*)\)$', tag)
-    who_tag = ('1boy, solo, adult male' if male else FEMALE_TAGS) if cls in pv_adult() else ('1boy, solo' if male else '1girl, solo')
-    parts = [who_tag, name] + ([series[0].replace('_', ' ')] if series else []) + look + ['full body', 'standing', 'looking at viewer', 'simple background',
-                                                                                            'white background', 'sfw']
-    if theme_part:
-        parts.insert(3, theme_part)
-    return BASE_Q + ', ' + ', '.join(parts), NEG
+    ident = name + (', ' + series[0].replace('_', ' ') if series else '')
+    ident = ident.replace('(', '').replace(')', '')
+    who_tag = '1boy, solo, male focus' if male else '1girl, solo'
+    pose = POSES[(k or 0) % len(POSES)]
+    parts = [who_tag, f'({ident})1.2'] + look + ([theme_part] if theme_part else []) + ['full body', pose, 'looking at viewer',
+                                                                                   'simple background', 'white background', 'sfw']
+    neg = NEG + (NEG_MALE if male else '') + ('' if cls == 'adult' else NEG_MODEST)
+    return BASE_Q + ', ' + ', '.join(parts), neg
 
 
 def pv_adult():
@@ -411,6 +423,194 @@ def plan_prompts(scopes, n_per_scope=150, seeds=3, path=None):
             for ln in lines:
                 f.write(json.dumps(ln, ensure_ascii=False) + chr(10))
     return lines
+
+
+def plan_v2(spec, path, refdir, ipa_scale=0.5, seed_base=1000):
+    """Explicit job list (2026-10-26 tuning): spec = [(scope, char_id, [k, ...], use_ipa)]. use_ipa: the kernel conditions on the
+    character's AniList portrait through IP-Adapter plus-face (identity / hair / eyes, while the prompt sets the costume and pose).
+    The portrait goes to refdir/ref_<id>.jpg (the dataset ships it). Returns the job lines."""
+    import pop_extras as pe
+    chars = {c['id']: c for c in json.load(open(os.path.join(pe.ASSETS, 'anime-characters.json'), encoding='utf-8'))['characters']}
+    import pop_fanart as pf
+    anime = pe.anime_list()
+    cache = AICacheView(pe)
+    ai = load_ai_cache()
+    os.makedirs(refdir, exist_ok=True)
+    lines = []
+    for scope, cid, ks, use_ipa in spec:
+        c = chars[cid]
+        th = pe.themes()[scope]
+        cls = pe.theme_class(c, th, cache, anime)
+        if cls is None:
+            print('skip (theme age rule)', c['name'], scope)
+            continue
+        tag = cache.get(f"dbtag:{cid}")
+        if tag is None:
+            try:
+                tag = pf.find_tag(c, pe.show_titles(c, anime), cache)
+            except Exception:  # noqa: BLE001
+                tag = ''
+            cache.put(f"dbtag:{cid}", tag)
+        if not tag:
+            print('skip (no danbooru tag)', c['name'])
+            continue
+        look = appearance_tags(c, cache, ai)
+        ref = None
+        if use_ipa:
+            ref = f'ref_{cid}.jpg'
+            if not os.path.exists(os.path.join(refdir, ref)):
+                pe.load_img(c['image']).convert('RGB').save(os.path.join(refdir, ref), quality=92)
+        for k in ks:
+            p = make_prompt(c, scope, cls, tag, look, random.Random(cid), k)
+            if p is None:
+                break
+            lines.append({'scope': scope, 'id': cid, 'k': k, 'seed': cid * 101 + seed_base + k, 'prompt': p[0], 'negative': p[1],
+                          'w': 832, 'h': 1216, 'ipa': ipa_scale if use_ipa else 0, 'ref': ref, 'cls': cls})
+    lines.sort(key=lambda j: j['ipa'] > 0)   # the kernel loads IP-Adapter once, after the plain jobs
+    save_ai_cache(ai)
+    cache.save()
+    with open(path, 'w', encoding='utf-8') as f:
+        for ln in lines:
+            f.write(json.dumps(ln, ensure_ascii=False) + chr(10))
+    return lines
+
+
+# costume mode (2026-10-26 tuning, calibrated by eye on the 40-image tune batch; see QUIZ-POOLS-PLAN.md): a costume changes the head
+# (hats, hoods, horns, hair ornaments), so the castmate margin of a costume picture runs lower than the fan-art calibration. Every
+# staged AI picture is still reviewed by eye before import.
+# Tune batch 2026-10-26 (20 plain + 20 IP-Adapter pictures, labelled by eye): the eye-approved pictures had margin -0.02..+0.19,
+# hair 0.17..0.80, eye 0.07..0.41, so the old AI-strict gate (margin >= 0.10 over the castmate check, hair >= 0.55, eye >= 0.35) passed
+# none of them; the off-model ones sat at hair <= 0.18 or eye <= 0.063. Full-body faces are often too small for the eye detector:
+# no face is allowed when margin and hair are clearly on-model (no eye score then).
+COSTUME = {'margin': float(os.environ.get('AI_COSTUME_MARGIN', -0.03)), 'hair': float(os.environ.get('AI_COSTUME_HAIR', 0.15)),
+           'eye': float(os.environ.get('AI_COSTUME_EYE', 0.065)), 'noface_margin': 0.03, 'noface_hair': 0.30}
+
+
+def measure(path, c, ref, th, om, pe):
+    """Every number the gates use for one generated picture (no decision): artefact tags, theme hit, on-model scores."""
+    from PIL import Image
+    pic = Image.open(path).convert('RGB')
+    t = pv.tag(pe.flatten(pic))
+    bad = [k for k in ARTEFACT_TAGS if t['tags'].get(k, 0) >= ART_THRESH]
+    ok_t, hit = pe.theme_confirm(t, th)
+    s = om.scores(pic, ref) if ref['own'] and ref['hair'] is not None else None
+    return pic, {'artefact': bad, 'theme_hit': hit, 'onmodel': s, 'rating': {k: round(v, 3) for k, v in t['rating'].items()}}
+
+
+def costume_ok(m, th=None):
+    th = th or COSTUME
+    s = m['onmodel']
+    if m['artefact']:
+        return False, 'artefact ' + ','.join(m['artefact'])
+    if not m['theme_hit']:
+        return False, 'not on theme'
+    if not s:
+        return False, 'no official art'
+    if not s['face']:
+        if s['margin'] >= th.get('noface_margin', 9) and s['hair'] >= th.get('noface_hair', 9):
+            return True, 'ok (small face: margin + hair)'
+        return False, 'no clear face'
+    if s['margin'] < th['margin']:
+        return False, f"margin {s['margin']:+.2f}"
+    if s['hair'] < th['hair']:
+        return False, f"hair {s['hair']:.2f}"
+    if s['eye'] is not None and s['eye'] < th['eye']:
+        return False, f"eye {s['eye']:.2f}"
+    return True, 'ok'
+
+
+def score_stage(jobs_file, out_dir, log_file=None, thresholds=None):
+    """Gate the kernel's pictures for the jobs in jobs_file (costume mode) and STAGE the passing ones as a quiz-cand folder
+    (candidates.json + pop2/theme/<tid>/<fmt>/<id>_ai<k>.* + thumbs) for quiz_pool_grow pull-staged / review / import-staged.
+    Every picture's numbers go to log_file (calibration). Distinct pictures only (dHash vs the live pool and each other)."""
+    import pop_extras as pe
+    import pop_onmodel as om
+    sys.path.insert(0, os.path.dirname(HERE))
+    chars = {c['id']: c for c in json.load(open(os.path.join(pe.ASSETS, 'anime-characters.json'), encoding='utf-8'))['characters']}
+    rank = {c['id']: k for k, c in enumerate(sorted(chars.values(), key=lambda c: -c['favourites']))}
+    anime = pe.anime_list()
+    cache = AICacheView(pe)
+    ex = json.load(open(os.path.join(pe.ASSETS, 'character-extras.json'), encoding='utf-8'))
+    jobs = [json.loads(x) for x in open(jobs_file, encoding='utf-8') if x.strip()]
+    os.makedirs(out_dir, exist_ok=True)
+    have = {}   # (tid, fmt, cid) -> dhashes of the pictures the pool already has
+    for tid, fm in (ex.get('themes') or {}).items():
+        for fmt, items in fm.items():
+            for it in items:
+                if it.get('dhash'):
+                    have.setdefault((tid, fmt, it['id']), []).append(int(it['dhash'], 16))
+    found, rows = [], []
+    for j in jobs:
+        path = os.path.join(OUT, j['scope'], f"{j['id']}_{j['k']}.png")
+        if not os.path.exists(path):
+            continue
+        c, tid = chars[j['id']], j['scope']
+        th = pe.themes()[tid]
+        cls = pe.theme_class(c, th, cache, anime)
+        if cls is None:
+            continue
+        w = cache.get(f"wikichar:{c['id']}") or {}
+        try:
+            ref = pe.official_ref(c, w, cache)
+        except Exception as e:  # noqa: BLE001
+            rows.append({'scope': tid, 'id': c['id'], 'k': j['k'], 'error': str(e)[:80]})
+            continue
+        pic, m = measure(path, c, ref, th, om, pe)
+        ok, why = costume_ok(m, thresholds)
+        row = {'scope': tid, 'id': c['id'], 'name': c['name'], 'k': j['k'], 'ipa': j.get('ipa', 0), 'cls': cls, **m, 'ok': ok, 'why': why,
+               'fmts': {}, 'path': path}
+        if ok:
+            fmts = [f for f in ('character', 'silhouette', 'outfit') if f in th['formats']]
+            h = pe.dhash(pic)
+            for f in fmts:
+                if f == 'outfit' and not (cls in pv.ADULT_CLASSES and c.get('gender') == 'Female'):
+                    continue
+                if any(pe.hamming(h, x) <= pe.NEAR_DUP_BITS for x in have.get((tid, f, c['id']), [])):
+                    row['fmts'][f] = 'near duplicate'
+                    continue
+                r, wf = {'silhouette': pe.do_silhouette, 'outfit': pe.do_outfit, 'character': pe.do_character_art}[f](c, pic, cls)
+                if not r:
+                    row['fmts'][f] = str(wf)[:60]
+                    continue
+                fid = f"{c['id']}_ai{j['k']}"
+                d = f'theme/{tid}/{f}'
+                dd = os.path.join(out_dir, 'pop2', d)
+                os.makedirs(dd, exist_ok=True)
+                if f == 'silhouette':
+                    pe.save_jpg(r['col'], os.path.join(dd, f'{fid}.jpg'), 76)
+                    r['mask'].save(os.path.join(dd, f'{fid}.png'), optimize=True)
+                    files = [f'{d}/{fid}.jpg', f'{d}/{fid}.png']
+                    shown = r['col']
+                    r['col'] = r['mask'] = None
+                else:
+                    pe.save_jpg(r['full'], os.path.join(dd, f'{fid}.jpg'), 80)
+                    files = [f'{d}/{fid}.jpg']
+                    shown = r['full']
+                    r['full'] = None
+                r['source'] = {'kind': 'ai', 'srctype': 'AI', 'artist': f'AI-generated ({MODEL_NAME})', 'post': '', 'model': MODEL_NAME,
+                               'seed': j['seed'], 'ipadapter': j.get('ipa', 0), 'onmodel': m['onmodel'],
+                               'licence': 'Generated with Illustrious-XL v1.0 (CreativeML OpenRAIL++-M); character (c) its rights holders'}
+                r['theme_hit'], r['file_id'], r['dhash'] = m['theme_hit'], fid, format(h, '016x')
+                item = {'id': c['id'], 'name': c['name'], 'anime': c['anime'], 'favourites': c['favourites'],
+                        'difficulty': 1 if rank[c['id']] < 60 else 2 if rank[c['id']] < 180 else 3, 'gender': c.get('gender'), 'age': c.get('age'),
+                        'age_class': c.get('age_class'), 'age_evidence': c.get('age_evidence'), 'image': c['image'], 'edition': tid,
+                        **json.loads(json.dumps(r, default=lambda o: None)), 'dir': d, 'gate_class': cls}
+                tp = os.path.join(out_dir, 'thumbs', 'theme_art', f'{tid}_{f}_{fid}.jpg')
+                os.makedirs(os.path.dirname(tp), exist_ok=True)
+                im = shown.convert('RGB') if hasattr(shown, 'convert') else pic.copy()
+                im.thumbnail((360, 540))
+                im.save(tp, quality=82)
+                found.append({'theme': tid, 'fmt': f, 'id': c['id'], 'file_id': fid, 'item': item, 'files': files,
+                              '_thumb': os.path.relpath(tp, out_dir).replace(os.sep, '/')})
+                have.setdefault((tid, f, c['id']), []).append(h)
+                row['fmts'][f] = 'staged'
+        rows.append(row)
+        if log_file:
+            json.dump(rows, open(log_file, 'w', encoding='utf-8'), indent=0, default=str)
+    json.dump({'shard': 'ai', 'items': {'theme_art': found}}, open(os.path.join(out_dir, 'candidates.json'), 'w', encoding='utf-8'),
+              ensure_ascii=False, indent=1)
+    cache.save()
+    return rows, found
 
 
 def score_dir(scopes, minutes=40):
