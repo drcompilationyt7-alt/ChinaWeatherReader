@@ -5,10 +5,16 @@ need[s] it, to grow"). Runs NEXT TO the light nightly GitHub job (pool-mine-nigh
 the candidates go to the release `edit-pools-staging` with the CI naming, so the normal review flow (pull-staged -> Claude review ->
 import on CI / import-staged) handles them. Nothing is ever imported or pushed to a live pool from here.
 
-Priorities: SOUND (pins are the bottleneck) -> SLOW-MO -> QUIZ IRL categories (night city / dishes / geo / wyr food + travel)
--> RANKING (2026-10-25, lowest: at most one small batch a day, after >= 3 other batches; core/edit/ranking_pool.py mine on the
-entries that block whole topics -> ranking-cand-<date>-pc-n<N>.tar + the merged ranking-state.json; the same gates and safety
-rules as the weekly CI job).
+Priorities (2026-10-26, owner "increase pool for ranking"): YouTube jobs rotate RANKING 2 : SOUND 1 : SLOW-MO 1, plus the
+QUIZ IRL categories (no YouTube) once a day / while YouTube waits. Ranking = core/edit/ranking_pool.py mine, exactly as the
+CI job (every gate incl. the reference profile, character check, watermark, no-reupload, blocklist, manga flag -> the best
+window only), topic blockers first (RANKING_FIRST leads: Yuta, Madara, Sung Jinwoo; then plan(): other blockers, then an
+anime-footage Yuji) -> ranking-cand-<date>-pc-n<N>.tar + ranking-state.json MERGED with the release's current one (CI and
+the PC never fetch the same video). LOCAL_MINE_RANKING=0 turns ranking off. The gates need the WHOLE edit (end cards,
+persistent tags, the best window), so a source (<= 150 s, <= 1080p h264) is downloaded whole and deleted right after.
+Disk (owner 2026-10-26 "don't keep large pool on local"): a full download is deleted right after its window is cut / it is
+rejected; after a verified upload the batch dir (clips, tar, work) is deleted; leftovers of a crashed batch are deleted at
+the start of every batch. Only the small state / log files stay.
 Per job it reuses the pool's own code in a private, clean git worktree of origin/main (LOCAL_MINE_DIR/repo), exactly as CI runs it:
   sound   core/pools/sound_refresh.py mine (fetch -> hit_scan -> visible-source -> pre-filter -> vision -> safety), small batches;
           then merge (vs the pulled live sound MANIFESTS) -> pool_visible stamp -> baseline check -> contact sheet -> stage ->
@@ -62,15 +68,18 @@ REPO = 'drcompilationyt7-alt/ChinaWeatherReader'
 ACCOUNT = 'drcompilationyt7-alt'
 RELEASE = 'edit-pools-staging'
 YT_POOLS = ('sound', 'slowmo', 'ranking')
-MINE_WORKFLOWS = ('pool-mine-nightly.yml', 'edit-pool-refresh.yml', 'slowmo-pool-mine.yml', 'quiz-pool-mine.yml')
+MINE_WORKFLOWS = ('pool-mine-nightly.yml', 'edit-pool-refresh.yml', 'slowmo-pool-mine.yml', 'quiz-pool-mine.yml',
+                  'ranking-pool-mine.yml')
 
-DAILY_CAP = int(os.environ.get('LOCAL_MINE_DAILY_CAP', '60'))      # sources (download attempts) per UTC day
+DAILY_CAP = int(os.environ.get('LOCAL_MINE_DAILY_CAP', '80'))      # sources (download attempts) per UTC day
 SOUND_SRC = int(os.environ.get('LOCAL_MINE_SOUND_SRC', '4'))       # per sound batch: sources, queries, minutes
 SOUND_Q = int(os.environ.get('LOCAL_MINE_SOUND_Q', '2'))
 SOUND_BUDGET = int(os.environ.get('LOCAL_MINE_SOUND_MIN', '45'))
 SLOWMO_BATCH, SLOWMO_BUDGET = 4, 50
 QUIZ_BUDGET = 30
-RANKING_BUDGET, RANKING_ENTRIES = 40, 3     # minutes / entries per ranking batch (one a day, low priority)
+RANKING_BUDGET, RANKING_ENTRIES, RANKING_DL = 45, 3, 2   # minutes / entries (with a download) / downloads per entry (x2 blocker)
+RANKING_FIRST = os.environ.get('LOCAL_MINE_RANKING_FIRST', 'YUTA,MADARA,SUNG JINWOO')
+ROTATION = ('ranking', 'ranking', 'sound', 'slowmo')        # YouTube jobs, in turn
 STAGE_AT = 8                    # stage the pending sound batches once this many minis passed every gate (or at a pause / day end)
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
@@ -715,38 +724,94 @@ def quiz_batch(st):
 
 # ------------------------------------------------------------------ RANKING (lowest priority, one batch a day)
 
+def verify_staged(names):
+    """True when every name is an asset on the staging release (the upload landed)"""
+    have = staged_assets() or []
+    return all(os.path.basename(n) in have for n in names)
+
+
 def ranking_batch(st):
     sync_wt()
     stamp = now_utc().strftime('%Y%m%d-%H%M%S')
     base = os.path.join(HOME, 'ranking', stamp)
+    try:
+        return _ranking_batch(st, stamp, base)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)               # clips, tar, work, pulled manifests: nothing large stays
+
+
+def _ranking_batch(st, stamp, base):
     pools = os.path.join(base, 'pools')
     sd = os.path.join(pools, '_staged', 'ranking')
     os.makedirs(sd, exist_ok=True)
     env = job_env()
     env.update(EDIT_POOL_DIR=pools, YT_SPARE_COOKIES=COOKIES, RANKING_MIN_FREE_GB='2.0')
     tmp = os.path.join(base, 'st')
-    if gh('release', 'download', RELEASE, '--pattern', 'ranking-state.json', '--dir', tmp, '--clobber').returncode == 0:
-        shutil.copy2(os.path.join(tmp, 'ranking-state.json'), os.path.join(sd, 'state.json'))
-    subprocess.run(['node', os.path.join(WT, 'scripts', 'edit-pools-store.js'), 'pull', '--manifests-only', '--preset', 'ranking'],
-                   cwd=WT, env=env, capture_output=True, text=True, timeout=1800)
+    if gh('release', 'download', RELEASE, '--pattern', 'ranking-state.json', '--dir', tmp, '--clobber').returncode != 0:
+        log('ranking: no remote ranking-state.json: skipped (it is the dedupe with CI)')
+        return False
+    shutil.copy2(os.path.join(tmp, 'ranking-state.json'), os.path.join(sd, 'state.json'))
+    r = subprocess.run(['node', os.path.join(WT, 'scripts', 'edit-pools-store.js'), 'pull', '--manifests-only', '--preset', 'ranking',
+                        '--dir', pools], cwd=WT, env=env, capture_output=True, text=True, timeout=1800)
+    if not glob.glob(os.path.join(pools, 'ranking', '*', 'clips.json')):
+        log(f'ranking: could not pull the live ranking manifest: skipped ({(r.stderr or "")[-200:]})')
+        return False
+    for f in glob.glob(os.path.join(pools, 'ranking', '*', 'clips', '*')):   # the manifest is all the dedupe needs
+        os.remove(f)
     rp = [sys.executable, os.path.join(WT, 'core', 'edit', 'ranking_pool.py')]
     rc, txt = run_job('ranking-mine', rp + ['mine', '--budget-min', str(RANKING_BUDGET), '--max-entries', str(RANKING_ENTRIES),
-                                            '--max-dl', '2', '--work', os.path.join(base, 'work')], WT, env, RANKING_BUDGET + 40,
-                      youtube=True)
-    st['sources'] += 2 * RANKING_ENTRIES                     # an upper bound (2 downloads per entry)
+                                            '--max-dl', str(RANKING_DL), '--first', RANKING_FIRST,
+                                            '--work', os.path.join(base, 'work')], WT, env, RANKING_BUDGET + 40, youtube=True)
+    m = re.search(r'^\{\s*\n\s*"entries".*', txt, re.S | re.M)
+    try:
+        summ = json.loads(m.group(0)) if m else {}
+    except ValueError:
+        summ = {}
+    dl = summ.get('downloaded')
+    st['sources'] += dl if isinstance(dl, int) else 2 * RANKING_DL * RANKING_ENTRIES     # unknown (killed): an upper bound
+    rows = [f"{x.get('entry')}: dl {x.get('downloaded')}, staged {len(x.get('staged') or [])}"
+            + (f", {x['error'][:80]}" if x.get('error') else '') for x in summ.get('entries') or []]
+    log(f"ranking mine rc {rc}: {'; '.join(rows) or 'no summary (see logs/)'}")
+    shutil.rmtree(os.path.join(base, 'work'), ignore_errors=True)           # any full download left
     out = os.path.join(base, 'out')
-    r = subprocess.run(rp + ['publish', '--dest', out, '--label', 'pc'], cwd=WT, env=env, capture_output=True, text=True, timeout=1800)
+    r = subprocess.run(rp + ['publish', '--dest', out, '--label', 'pc', '--merge-remote'], cwd=WT, env=env, capture_output=True,
+                       text=True, timeout=1800)
     tars = glob.glob(os.path.join(out, 'ranking-cand-*.tar'))
     state = os.path.join(out, 'ranking-state.json')
     if r.returncode == 0 and os.path.isfile(state):
         gh('release', 'upload', RELEASE, *tars, state, '--clobber', check=True)
-        log(f"ranking batch {stamp}: staged {[os.path.basename(x) for x in tars] or 'nothing'}")
+        ok = verify_staged(tars)
+        log(f"ranking batch {stamp}: staged {[os.path.basename(x) for x in tars] or 'nothing'} "
+            f"({'upload verified' if ok else 'UPLOAD NOT VERIFIED'}); local files deleted")
     else:
         log(f'ranking publish failed: {(r.stderr or "")[-300:]}')
-    st['ranking_done'] = True
-    bot = bot_check(txt, st, 'ranking')
-    shutil.rmtree(base, ignore_errors=True)
-    return bot
+    return bot_check(txt, st, 'ranking')
+
+
+def cleanup_leftovers():
+    """a crashed / killed batch may leave its dirs: delete them before the next batch (the pending sound minis stay)"""
+    for sub in ('ranking', 'slowmo', 'quiz'):
+        for d in glob.glob(os.path.join(HOME, sub, '*')):
+            shutil.rmtree(d, ignore_errors=True)
+    for d in pending_dirs():
+        for x in ('src', 'mini', 'vtmp', 'tmp'):
+            shutil.rmtree(os.path.join(os.path.dirname(d), x), ignore_errors=True)
+    for lp in sorted(glob.glob(os.path.join(HOME, 'logs', '*.log')))[:-200]:
+        os.remove(lp)
+
+
+def disk_mb():
+    tot = 0
+    for root, dirs, files in os.walk(HOME):
+        if os.path.abspath(root) == os.path.abspath(WT):
+            dirs[:] = []
+            continue
+        for f in files:
+            try:
+                tot += os.path.getsize(os.path.join(root, f))
+            except OSError:
+                pass
+    return tot / 2 ** 20
 
 
 def cap_left(st):
@@ -792,11 +857,13 @@ def run_one(job, st):
     if why:
         log(f'{job}: not now ({why})')
         return False
+    cleanup_leftovers()
     log(f'--- {job} batch (sources today {st["sources"]}/{DAILY_CAP})')
     bot = {'sound': sound_batch, 'slowmo': slowmo_batch, 'quiz': quiz_batch, 'ranking': ranking_batch}[job](st)
     st['batches'] += 1
     st.setdefault('jobs', []).append(job)
     wj(STATE, st)
+    log(f'{job} batch done; miner disk {disk_mb():.0f} MB (without the repo worktree)')
     return bot
 
 
@@ -815,14 +882,13 @@ def cmd_run(a):
             nxt = None
             if cap_left(st) > 0:
                 yt = sum(1 for j in st['jobs'] if j in YT_POOLS)
-                nxt = 'slowmo' if yt % 3 == 2 else 'sound'          # sound : slow-mo = 2 : 1
+                rot = [j for j in ROTATION if j != 'ranking' or os.environ.get('LOCAL_MINE_RANKING', '1') != '0']
+                nxt = rot[yt % len(rot)]                             # ranking : sound : slow-mo = 2 : 1 : 1
                 if nxt == 'sound' and pending_count() >= 30:
                     nxt = 'slowmo'                                   # sound review backlog: grow slow-mo meanwhile
             quiz_ok = not st['quiz_done'] or (NOW and st.get('quiz_runs', 0) < QUIZ_NOW_MAX)
             if not st['quiz_done'] and (st['batches'] >= 2 or nxt is None):
                 nxt = 'quiz'
-            elif nxt and not st.get('ranking_done') and st['batches'] >= 3 and os.environ.get('LOCAL_MINE_RANKING', '1') != '0':
-                nxt = 'ranking'                                      # lowest priority: one small ranking batch a day
             why = guards(st, youtube=nxt in YT_POOLS) if nxt else None
             if why and nxt in YT_POOLS and quiz_ok and not guards(st, youtube=False):
                 nxt, why = 'quiz', None                              # YouTube blocked: do the quiz job meanwhile

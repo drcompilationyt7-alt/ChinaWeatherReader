@@ -105,7 +105,7 @@ jobs:
         if: always()
         run: |
           mkdir -p staged
-          python core/edit/ranking_pool.py publish --dest staged --label ci | tee staged/summary.json
+          python core/edit/ranking_pool.py publish --dest staged --label ci --merge-remote | tee staged/summary.json
           ls -la staged
           for f in staged/ranking-cand-*.tar staged/ranking-state.json; do
             [ -e "$f" ] && gh release upload edit-pools-staging "$f" --repo "$GITHUB_REPOSITORY" --clobber

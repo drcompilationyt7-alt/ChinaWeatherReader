@@ -288,7 +288,8 @@ def sheet(clip, out_png, label):
     return out_png
 
 
-def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, offline=False, entries=None, prefer=()):
+def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, offline=False, entries=None, prefer=(),
+         first=()):
     """Mining step (one job). Entries in plan() order (topic blockers first); per entry: candidate list, rights /
     info gates (old + idle editors first, vetoed / blocklisted skipped), download <= max_dl, every gate, the best
     phrase window -> staged clip (+ margin), review sheet, proof. Stops at the time budget."""
@@ -297,6 +298,7 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
     work = work or os.path.join(ROOT, 'output', 'ranking-mine')
     RC.YT_CACHE[0] = os.path.join(work, 'cache', 'yt')
     RC.OFFLINE[0] = offline
+    _KEEP[0] = offline
     RC.PREFER.update(prefer)
     sd = staged_dir()
     RC.PROOF_DIR[0] = os.path.join(sd, 'proofs')
@@ -321,7 +323,14 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
              for k, v in all_entries().items() if k in entries or v[0]['name'] in entries]
     summary = {'entries': [], 'staged': 0}
     topics = RT.load()
-    for p in todo[:max_entries]:
+    if first:                                  # --first: these entries lead (in that order), then the plan order
+        fl = [x.lower() for x in first]
+        pos = {p['key']: next((i for i, x in enumerate(fl) if x in (p['key'].lower(), p['name'].lower())), len(fl)) for p in todo}
+        todo = sorted(todo, key=lambda p: pos[p['key']])
+    tried = 0
+    for p in todo:
+        if tried >= max_entries:
+            break
         if (time.time() - t0) / 60 > budget_min:
             log('time budget used up')
             break
@@ -344,6 +353,12 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
             log(f'{e["name"]}: candidate search / download failed: {type(ex).__name__}: {ex}')
             summary['entries'].append({'entry': e['name'], 'key': key, 'error': f'{type(ex).__name__}: {ex}'[:300]})
             continue
+        if report['downloaded'] or report['_dl']:
+            tried += 1                         # an entry whose candidates are all checked costs no slot (search only)
+        for r in report['evaluated']:          # text-gate rejects: their full downloads go right away
+            if r.get('verdict') == 'reject':
+                _rm(os.path.join(work, 'src', f"{r.get('id')}.mp4"))
+        summary['downloaded'] = summary.get('downloaded', 0) + report['downloaded']
         row = {'entry': e['name'], 'key': key, 'candidates': len(cands), 'downloaded': report['downloaded'],
                'clean': len(pre), 'reject': report['reject'], 'staged': []}
         for r in report['evaluated']:
@@ -359,6 +374,7 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
                 log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')
                 res.update(verdict='reject', why=f'eval_error_{type(ex).__name__}', windows=[])
             if res['verdict'] != 'ok':
+                _rm(res.get('path'))
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': res.get('why') or 'no_window', 'entry': key,
                                             'at': time.strftime('%Y-%m-%d'),
                                             'windows': [w.get('reject') for w in (res.get('windows') or [])[:4]]}
@@ -367,7 +383,9 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
                 it = stage_item(res, e, key, sd, RC)
             except Exception as ex:  # noqa: BLE001
                 log(f'{res.get("id")}: staging failed: {type(ex).__name__}: {ex}')
+                _rm(res.get('path'))
                 continue
+            _rm(res.get('path'))                   # only the cut window is kept, the full download goes now
             if it.get('window_marks'):            # full-resolution tag / logo check of the cut window
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark', 'marks': it['window_marks'][:3],
                                             'entry': key, 'at': time.strftime('%Y-%m-%d')}
@@ -391,6 +409,18 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
     wj(sp, st)
     summary['minutes'] = round((time.time() - t0) / 60, 1)
     return summary
+
+
+_KEEP = [False]        # an --offline run re-uses the cached downloads
+
+
+def _rm(p):
+    """delete a full source download (never kept: owner 2026-10-26 'no large pool on local')"""
+    if p and os.path.exists(p) and not os.environ.get('RANKING_KEEP_SRC') and not _KEEP[0]:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
 
 
 def stage_item(res, e, key, sd, RC):
@@ -436,10 +466,18 @@ def stage_item(res, e, key, sd, RC):
 
 # ------------------------------------------------------------------ staging transport (CI / PC miner <-> owner PC)
 
-def publish(dest, label='ci'):
+def publish(dest, label='ci', merge_remote=False, release='edit-pools-staging'):
     """The staged items not yet published -> one tar (clips, sheets, proofs, a clips.json of just those items) + the
-    state, in `dest`. Marks them published (published_in) in the local staged manifest."""
+    state, in `dest`. Marks them published (published_in) in the local staged manifest. merge_remote: the release's
+    CURRENT state is downloaded and merged in first (CI and the PC miner both write it: neither clobbers the other)."""
     sd = staged_dir()
+    if merge_remote:
+        tmp = os.path.join(dest, '.remote')
+        os.makedirs(tmp, exist_ok=True)
+        r = gh('release', 'download', release, '--pattern', 'ranking-state.json', '--dir', tmp, '--clobber', check=False)
+        if r.returncode == 0:
+            wj(state_path(), merge_state(rj(os.path.join(tmp, 'ranking-state.json'), {}), rj(state_path(), {})))
+        shutil.rmtree(tmp, ignore_errors=True)
     man = manifest(sd)
     new = [it for it in man['items'] if it.get('status') == 'staged' and not it.get('published_in')]
     os.makedirs(dest, exist_ok=True)
@@ -747,6 +785,8 @@ def main():
     ap.add_argument('--entries', default='', help='mine: only these entry keys / names (comma-separated)')
     ap.add_argument('--offline', action='store_true')
     ap.add_argument('--prefer', default='', help='mine: source ids searched first + rank bonus (owner-approved edits)')
+    ap.add_argument('--first', default='', help='mine: these entry keys / names lead, in this order (then the plan)')
+    ap.add_argument('--merge-remote', action='store_true', help='publish: merge the release state in first')
     ap.add_argument('--dest')
     ap.add_argument('--label', default='ci')
     ap.add_argument('--ids', default='')
@@ -764,10 +804,11 @@ def main():
             print(f'{p["score"]:5.2f}  {p["name"]:<22} have {p["have"]}  blocks {",".join(p["topics"])}')
     elif a.cmd == 'mine':
         print(json.dumps(mine(a.budget_min, a.work, a.state, a.max_entries, a.max_dl, a.offline,
-                              set(filter(None, a.entries.split(','))) or None, set(filter(None, a.prefer.split(',')))),
+                              set(filter(None, a.entries.split(','))) or None, set(filter(None, a.prefer.split(','))),
+                              [x.strip() for x in a.first.split(',') if x.strip()]),
                          ensure_ascii=False, indent=1, default=str))
     elif a.cmd == 'publish':
-        print(json.dumps(publish(a.dest, a.label)))
+        print(json.dumps(publish(a.dest, a.label, a.merge_remote)))
     elif a.cmd == 'pull-staged':
         print(pull_staged(), 'new staged items')
     elif a.cmd == 'review':
