@@ -31,7 +31,7 @@ on:
         required: false
         default: 'false'
       budget_min:
-        description: 'Mining budget in minutes (empty: 150)'
+        description: 'Mining budget in minutes (empty: 255)'
         required: false
         default: ''
       entries:
@@ -58,7 +58,7 @@ jobs:
   mine:
     if: vars.RANKING_MINE != 'off'
     runs-on: ubuntu-latest
-    timeout-minutes: 210
+    timeout-minutes: 300
     permissions:
       contents: write
     steps:
@@ -98,7 +98,7 @@ jobs:
         env:
           ENTRIES: ${{ inputs.entries }}
         run: |
-          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '150' }}" --work work --entries "$ENTRIES" | tail -c 4000
+          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES" | tail -c 4000
           rm -f /tmp/yt_cookies.txt
       - name: Publish to edit-pools-staging
         if: always()

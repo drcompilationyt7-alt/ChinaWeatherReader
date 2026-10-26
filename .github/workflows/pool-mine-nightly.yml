@@ -2,12 +2,15 @@ name: Pool mining (nightly, ONE pool per night, alternating, light)
 
 # Owner 2026-10-21: "mine on GitHub Actions, but 1 action per pool, and each night a different job instead of all at once".
 # ONE scheduled run per night, ONE pool, ONE shard (no matrix, nothing in parallel), staging only, <= 5 h:
+#   week      2026-10-25 (owner: 7 days = 2 sound): fixed UTC-weekday schedule from the repo variable MINE_WEEK, e.g.
+#             "mon:sound,tue:slowmo,wed:ranking,thu:sound,fri:quiz,sat:slowmo,sun:quiz" (sound 2, slowmo 2, quiz 2, ranking 1).
+#             Unset -> the old rotation below (+ RANKING_MINE_WEEKDAY).
 #   rotation  slowmo -> sound -> quiz -> repeat, by UTC date (scripts/pool-mine-rotation.py: ordinal % 3). Repository variable
 #             MINE_ROTATION="slowmo,sound,quiz" sets the order / weights (repeat a name to weight it). 2026-10-24 (owner: focus on
 #             the pool; sound is the bottleneck): MINE_ROTATION="sound,slowmo,sound,quiz" = sound every other night.
 #   sound     TIME-BASED since 2026-10-24: mines in batches until ~220 min after its job start, then the swap job stages (<= 60 min).
 #   ranking   2026-10-25: the ranking-compilation pool mines ONE night a week (RANKING_MINE_WEEKDAY, default 2 = Wednesday; it
-#             replaces that night's pool; RANKING_MINE=off removes it): ranking-pool-mine.yml, one job, <= ~3 h, staging only.
+#             replaces that night's pool; RANKING_MINE=off removes it): ranking-pool-mine.yml, one job, <= ~5 h, staging only.
 #   off       repository variable POOL_MINE=off (all mining). The old per-pool variables no longer matter.
 #   mine      calls the pool's own workflow (slowmo-pool-mine / edit-pool-refresh / quiz-pool-mine) with called=true: the same
 #             mining, gates and STAGING as before, but one shard (k=0, n=1) with a hard time cap. The review / import flows
@@ -40,6 +43,7 @@ jobs:
       - uses: actions/checkout@v4
       - id: p
         env:
+          MINE_WEEK: ${{ vars.MINE_WEEK }}
           MINE_ROTATION: ${{ vars.MINE_ROTATION }}
           RANKING_MINE: ${{ vars.RANKING_MINE || 'on' }}
           RANKING_MINE_WEEKDAY: ${{ vars.RANKING_MINE_WEEKDAY || '2' }}
