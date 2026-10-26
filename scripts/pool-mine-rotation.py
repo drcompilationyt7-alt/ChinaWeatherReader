@@ -50,7 +50,10 @@ if __name__ == '__main__':
     ap.add_argument('--days', type=int, default=0)
     a = ap.parse_args()
     rot = parse(a.rotation)
-    d0 = dt.date.fromisoformat(a.date) if a.date else dt.datetime.now(dt.timezone.utc).date()
+    # the mining NIGHT's date: the 19:30 UTC schedule starts 5-6 h late in this repo (2026-10-26), i.e. after midnight UTC;
+    # a run that starts before 12:00 UTC still belongs to the previous evening's slot (else Wednesday's ranking run would
+    # mine Thursday's pool and Tuesday's late run would mine ranking)
+    d0 = dt.date.fromisoformat(a.date) if a.date else (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=12)).date()
     if a.days:
         for i in range(a.days):
             d = d0 + dt.timedelta(days=i)

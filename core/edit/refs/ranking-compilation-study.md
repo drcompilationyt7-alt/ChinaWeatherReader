@@ -606,3 +606,68 @@ staging only): entries MADARA, SUNG JINWOO, NEZUKO, NICO ROBIN, YUTA, PAIN, ITAC
 5. Owner approves the CI video -> repo variable `DAILY_TYPE_WEIGHTS` add `ranking:1` (Saturday slot).
 6. Open: Yuta still has 0 passing edits (needs deeper search); Toji / Yuji windows sum to 63 s with Gojo (cap the total at
    ~60 s in `pick_items` if the owner wants it shorter); the CI path of `assemble` has not run on GitHub yet.
+
+## 11. Owner decisions 2026-10-25 (late)
+- QUALITY BAR: source edits must be ON PAR WITH THE OWNER'S REFERENCES: real effects, tight sync to the song, 3D camera moves, text work. Plain footage / calm cuts are NOT enough, even for romance, but each must still carry the vibe of its theme (romance = soft but edited; action = heavy).
+- **Horimiya r_OaYRHPJZiXg_1790 (@karma7892) is REJECTED.** Remove it from the pool.
+- Drop the "free-to-use / CC first" preference. Sources = OLD uploads (>= 1 year, prefer inactive channels) + no watermark + credit in the description (plain @handles). The no-reupload hard skip + the blocklist stay.
+- Claude approves clips from now on, based on these preferences (Toji / Gojo = the bar). No owner approval per clip.
+- The Yuji @DivineHotdog clip: the owner saw this source in v3 (approved there).
+- Yuji @DivineHotdog: OK as a fallback, but the owner prefers ANIME-FOOTAGE edits over manga-panel edits. Keep searching for a Yuji edit made from anime clips that meets the bar, and replace it when one passes. General rule: prefer anime-footage edits over manga / panel edits.
+- Owner rule: the bar = ALL the reference edits we have already downloaded and analysed (the ranking refs + the owner's edit references in Desktop/edit-refs and core/edit/refs studies). A candidate must match their QUALITY and VIBE.
+  - Next step: build a reference profile from those analyses (effects density, camera / 3D motion, text work, beat-sync, colour / grade, cut rhythm) per theme.
+  - Score each candidate by its distance to that profile. Only near-reference candidates pass; the Toji / Gojo picks must pass.
+
+## 12. Reference-profile gate + manga detector + yield fixes (2026-10-26)
+
+**Reference profile** (`core/edit/ranking_profile.py`, profile `refs/ranking-ref-profile.json`). One decode pass per
+window measures effects (flashes / shakes / zooms per s, motion), camera (homography every 0.1 s inside a shot: zoom,
+roll, 3D tilt = the perspective terms, the share of time the camera moves), text (OCR 2 fps: share, movement), sync (cuts
+per s, cuts on a beat), rhythm (shot-length variation, flash cuts), grade (saturation, contrast, colour variation).
+Themes: action (power lists + action / isekai / sports), beauty (waifu lists), romance (romance / sad / comedy / horror);
+a pooled entry uses the strictest theme of its topics. Theme profile = quantiles of 37 reference windows: the 4 ranking
+refs' segments (band crop) + 27 anime owner refs (Desktop/edit-refs: character, general, fx, sound, dance; K-pop = live
+action, left out). Per feature 1.0 at / above the reference median, 0 at the floor; groups weighted; "hand" = max(camera
+work, text) = the editor's own work on top of the footage.
+Gate: score >= 5.5 action / 5.0 beauty / 5.0 romance AND hand >= 5.5 AND effects >= 3.5.
+
+| window | theme | score | hand | effects | verdict |
+|---|---|---|---|---|---|
+| Toji @noctryx7 (owner: good) | action | 9.66 | 10 | 9.3 | PASS |
+| Gojo @XenozEdit (owner: good) | action | 9.41 | 9.2 | 9.9 | PASS |
+| Yuji @DivineHotdog (manga fallback) | action | 8.87 | 9.7 | 10 | PASS, manga |
+| Horimiya @karma7892 (owner: rejected) | romance | 6.24 | 2.2 | 8.7 | fail (plain footage) |
+| old Yuji @Dr1zzy (owner: not eventful) | action | 7.14 | 10 | 2.5 | fail (few effects) |
+| raw Bluray fight pSOH-M3b_5w | action | 7.82 | 4.0 | 10 | fail (plain footage) |
+| Black Flash raw MIowFAWsIcU | action | 6.34 | 3.2 | 8.4 | fail |
+| creditless Blue Box OP UXclUH-r9ag | romance | 7.77 | 5.2 | 10 | fail |
+| reference windows | all | 3.4-9.9 | | | 33 / 37 pass |
+
+The 4 failing refs are 9-16 s vertical shorts / sound edits (h0HNYocSDE8, n_NvC1IQUMQ, _sX2EUexbW8, GHBmP7aUoUc), a
+different format from the 16:9 AMVs we pool. Survey edits (report only): 22 / 26 pass; the fails are plain / camera-less
+windows (Dress-Up @Visperv hand 1.7, C.C. @aura_hehe 4.0, Yor @a.editorx 4.7, Dress-Up @RazorVfx 5.0). The rejected Horimiya source passes in ANOTHER window (33-54 s, hand 5.8); the source itself is rejected in the state, so it is never mined again. Plain footage scores high on raw effects
+(fights flash and shake), so the "hand" sub-gate is what separates it. `python core/edit/ranking_profile.py calibrate`.
+
+**Manga vs anime footage.** Frame cues (grey + screentone, panel lines, speech bubbles) miss colour-tinted manga (Yuji
+@DivineHotdog: red / blue duotone line art in 3 vertical panels). SigLIP zero-shot (4 manga vs 4 anime prompts, 2 fps,
+share of frames p(manga) > 0.5): Yuji @DivineHotdog 0.74 vs anime edits 0.05-0.35 -> manga at >= 0.5. A manga flag is a
+rank penalty (-3, and anime-footage items are always picked first), never a reject. Raw monochrome fight footage also
+reads as manga, but it fails the reference gate first.
+
+**Wiring.** `evaluate(theme=...)` runs the gate on a window after the character check passes (`RANKING_REF_GATE=0`
+turns it off); the staged item carries `theme / ref_score / ref_groups / manga / manga_share`; rank score = quality + old
++ idle + 0.5 x ref_score - 3 x manga (the free-to-use bonus is gone). `ranking_pool.py rescreen [--apply]` re-checks the
+live pool; `remove --ids` drops items (pool + state). `plan()`: an entry with only a manga item asks for an anime
+replacement (0.3); an entry that alone blocks a topic gets twice the downloads.
+
+**Pool after the re-screen (pushed 2026-10-26):** Toji 9.66, Gojo 9.41, Yuji 8.87 (manga, fallback). Horimiya
+r_OaYRHPJZiXg_1790 removed (owner), state = rejected. No topic eligible: jjk_strongest needs YUTA; strongest_overall
+needs MADARA + SUNG JINWOO.
+
+**Yield fixes (run 40247085474 staged nothing):** it crashed on the first entry (Yuta) after 6.7 min: an AV1 download
+could not be decoded (0 frames -> content_box on an empty list) and `| tail` hid the failure. Now: h264 / avc1 first
+(`-S vcodec:h264`), unreadable files re-encoded to h264 once or skipped; `_text_gate` rejects < 10 frames (`no_frames`)
+and any gate exception becomes a reject (`gate_error_*`); evaluate / staging / each entry are wrapped (one bad candidate
+never kills the run); `set -o pipefail` in the mine step. Scheduled runs start 5-6 h late here, i.e. after midnight UTC:
+`pool-mine-rotation.py` now dates a run by its NIGHT (UTC now - 12 h), so Wednesday's ranking job still mines ranking.
+Yuta got 3 more search queries (a changed query list refreshes the 14-day candidate cache).

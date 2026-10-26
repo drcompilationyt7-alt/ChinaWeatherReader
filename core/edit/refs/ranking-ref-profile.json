@@ -1,0 +1,503 @@
+{
+ "built": "2026-10-26",
+ "groups": {
+  "effects": 0.26,
+  "camera": 0.22,
+  "sync": 0.2,
+  "rhythm": 0.1,
+  "text": 0.1,
+  "grade": 0.12
+ },
+ "feats": {
+  "flashes_per_s": "effects",
+  "shakes_per_s": "effects",
+  "zooms_per_s": "effects",
+  "motion": "effects",
+  "cam_zoom": "camera",
+  "cam_roll": "camera",
+  "cam_tilt": "camera",
+  "cam_active": "camera",
+  "text_share": "text",
+  "text_anim": "text",
+  "cuts_per_s": "sync",
+  "beat_sync": "sync",
+  "shot_cv": "rhythm",
+  "flash_cuts": "rhythm",
+  "sat": "grade",
+  "contrast": "grade",
+  "color_var": "grade"
+ },
+ "themes": {
+  "action": {
+   "n": 11,
+   "q": {
+    "flashes_per_s": {
+     "q10": 0.2227,
+     "q25": 0.3237,
+     "q50": 0.5931,
+     "q90": 1.2917
+    },
+    "shakes_per_s": {
+     "q10": 0.4644,
+     "q25": 0.6067,
+     "q50": 0.7917,
+     "q90": 1.155
+    },
+    "zooms_per_s": {
+     "q10": 0.8909,
+     "q25": 1.2344,
+     "q50": 2.1667,
+     "q90": 3.2459
+    },
+    "motion": {
+     "q10": 38.1108,
+     "q25": 43.1882,
+     "q50": 49.8821,
+     "q90": 72.8065
+    },
+    "cam_zoom": {
+     "q10": 0.009,
+     "q25": 0.0334,
+     "q50": 0.1436,
+     "q90": 0.2163
+    },
+    "cam_roll": {
+     "q10": 0.5912,
+     "q25": 0.9914,
+     "q50": 2.7981,
+     "q90": 4.5543
+    },
+    "cam_tilt": {
+     "q10": 0.0082,
+     "q25": 0.0143,
+     "q50": 0.0476,
+     "q90": 0.0957
+    },
+    "cam_active": {
+     "q10": 0.0999,
+     "q25": 0.1871,
+     "q50": 0.2561,
+     "q90": 0.4417
+    },
+    "text_share": {
+     "q10": 0.0,
+     "q25": 0.0834,
+     "q50": 0.1765,
+     "q90": 0.6923
+    },
+    "text_anim": {
+     "q10": 0.0,
+     "q25": 0.0,
+     "q50": 0.0,
+     "q90": 0.2821
+    },
+    "cuts_per_s": {
+     "q10": 0.0,
+     "q25": 0.5487,
+     "q50": 1.3344,
+     "q90": 2.3725
+    },
+    "beat_sync": {
+     "q10": 0.0,
+     "q25": 0.1363,
+     "q50": 0.4444,
+     "q90": 0.6364
+    },
+    "shot_cv": {
+     "q10": 0.0,
+     "q25": 0.41,
+     "q50": 0.5378,
+     "q90": 1.5925
+    },
+    "flash_cuts": {
+     "q10": 0.0,
+     "q25": 0.0624,
+     "q50": 0.2917,
+     "q90": 0.7917
+    },
+    "sat": {
+     "q10": 61.9853,
+     "q25": 65.2385,
+     "q50": 90.9023,
+     "q90": 127.4919
+    },
+    "contrast": {
+     "q10": 40.8833,
+     "q25": 42.0061,
+     "q50": 44.0281,
+     "q90": 54.9791
+    },
+    "color_var": {
+     "q10": 56.582,
+     "q25": 65.3214,
+     "q50": 78.018,
+     "q90": 96.7434
+    }
+   }
+  },
+  "beauty": {
+   "n": 14,
+   "q": {
+    "flashes_per_s": {
+     "q10": 0.1213,
+     "q25": 0.2753,
+     "q50": 0.5576,
+     "q90": 0.9542
+    },
+    "shakes_per_s": {
+     "q10": 0.1606,
+     "q25": 0.3694,
+     "q50": 0.8518,
+     "q90": 1.0008
+    },
+    "zooms_per_s": {
+     "q10": 0.5994,
+     "q25": 0.9672,
+     "q50": 1.4665,
+     "q90": 2.2384
+    },
+    "motion": {
+     "q10": 44.5027,
+     "q25": 52.9734,
+     "q50": 69.3808,
+     "q90": 95.6438
+    },
+    "cam_zoom": {
+     "q10": 0.0522,
+     "q25": 0.1057,
+     "q50": 0.1593,
+     "q90": 0.2758
+    },
+    "cam_roll": {
+     "q10": 1.3984,
+     "q25": 2.2343,
+     "q50": 3.2714,
+     "q90": 5.5207
+    },
+    "cam_tilt": {
+     "q10": 0.0141,
+     "q25": 0.0215,
+     "q50": 0.0404,
+     "q90": 0.078
+    },
+    "cam_active": {
+     "q10": 0.2242,
+     "q25": 0.2591,
+     "q50": 0.372,
+     "q90": 0.4729
+    },
+    "text_share": {
+     "q10": 0.0272,
+     "q25": 0.0918,
+     "q50": 0.2893,
+     "q90": 0.9072
+    },
+    "text_anim": {
+     "q10": 0.0,
+     "q25": 0.0,
+     "q50": 0.0716,
+     "q90": 0.2632
+    },
+    "cuts_per_s": {
+     "q10": 0.0959,
+     "q25": 0.427,
+     "q50": 0.756,
+     "q90": 1.3667
+    },
+    "beat_sync": {
+     "q10": 0.1719,
+     "q25": 0.2625,
+     "q50": 0.5,
+     "q90": 0.9333
+    },
+    "shot_cv": {
+     "q10": 0.1076,
+     "q25": 0.7602,
+     "q50": 0.9784,
+     "q90": 1.7873
+    },
+    "flash_cuts": {
+     "q10": 0.0,
+     "q25": 0.0104,
+     "q50": 0.0993,
+     "q90": 0.5
+    },
+    "sat": {
+     "q10": 49.3606,
+     "q25": 64.5785,
+     "q50": 73.3871,
+     "q90": 106.872
+    },
+    "contrast": {
+     "q10": 43.9471,
+     "q25": 46.8296,
+     "q50": 54.26,
+     "q90": 59.8428
+    },
+    "color_var": {
+     "q10": 50.3434,
+     "q25": 64.008,
+     "q50": 79.6775,
+     "q90": 105.2883
+    }
+   }
+  },
+  "romance": {
+   "n": 26,
+   "q": {
+    "flashes_per_s": {
+     "q10": 0.1155,
+     "q25": 0.2088,
+     "q50": 0.4431,
+     "q90": 1.0007
+    },
+    "shakes_per_s": {
+     "q10": 0.0,
+     "q25": 0.0334,
+     "q50": 0.2292,
+     "q90": 1.0006
+    },
+    "zooms_per_s": {
+     "q10": 0.5906,
+     "q25": 0.7443,
+     "q50": 1.1702,
+     "q90": 2.3586
+    },
+    "motion": {
+     "q10": 48.9429,
+     "q25": 57.6336,
+     "q50": 73.9453,
+     "q90": 99.2636
+    },
+    "cam_zoom": {
+     "q10": 0.0431,
+     "q25": 0.061,
+     "q50": 0.0951,
+     "q90": 0.2551
+    },
+    "cam_roll": {
+     "q10": 1.3426,
+     "q25": 1.4246,
+     "q50": 2.3255,
+     "q90": 4.8454
+    },
+    "cam_tilt": {
+     "q10": 0.0113,
+     "q25": 0.0137,
+     "q50": 0.0169,
+     "q90": 0.0706
+    },
+    "cam_active": {
+     "q10": 0.2058,
+     "q25": 0.2292,
+     "q50": 0.3163,
+     "q90": 0.4938
+    },
+    "text_share": {
+     "q10": 0.051,
+     "q25": 0.2386,
+     "q50": 0.5125,
+     "q90": 0.8643
+    },
+    "text_anim": {
+     "q10": 0.0,
+     "q25": 0.0312,
+     "q50": 0.2248,
+     "q90": 0.6044
+    },
+    "cuts_per_s": {
+     "q10": 0.2509,
+     "q25": 0.427,
+     "q50": 0.6944,
+     "q90": 1.7083
+    },
+    "beat_sync": {
+     "q10": 0.1726,
+     "q25": 0.3083,
+     "q50": 0.4891,
+     "q90": 0.8889
+    },
+    "shot_cv": {
+     "q10": 0.4131,
+     "q25": 0.6825,
+     "q50": 0.9691,
+     "q90": 1.5835
+    },
+    "flash_cuts": {
+     "q10": 0.0,
+     "q25": 0.0088,
+     "q50": 0.0993,
+     "q90": 0.6982
+    },
+    "sat": {
+     "q10": 46.6192,
+     "q25": 64.5785,
+     "q50": 74.548,
+     "q90": 105.4823
+    },
+    "contrast": {
+     "q10": 42.1223,
+     "q25": 46.4435,
+     "q50": 53.9486,
+     "q90": 58.7875
+    },
+    "color_var": {
+     "q10": 52.4629,
+     "q25": 66.712,
+     "q50": 78.4501,
+     "q90": 105.6209
+    }
+   }
+  }
+ },
+ "refs": [
+  {
+   "name": "rank:v1tnk8GwWD8#1",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:v1tnk8GwWD8#2",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:v1tnk8GwWD8#3",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:XSHZhNzRovw#1",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:XSHZhNzRovw#2",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:XQRx0mqFxbc#1",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:XQRx0mqFxbc#2",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:XQRx0mqFxbc#3",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:BnsZETrlnFA#1",
+   "theme": "romance"
+  },
+  {
+   "name": "rank:BnsZETrlnFA#2",
+   "theme": "romance"
+  },
+  {
+   "name": "owner:general/cj12R_cW2ac",
+   "theme": "action"
+  },
+  {
+   "name": "owner:general/L2c39drDVuk",
+   "theme": "action"
+  },
+  {
+   "name": "owner:general/m3lv7H6cu_Y",
+   "theme": "action"
+  },
+  {
+   "name": "owner:general/JQHKYzYDneE",
+   "theme": "action"
+  },
+  {
+   "name": "owner:fx/WGvtliE1298",
+   "theme": "action"
+  },
+  {
+   "name": "owner:sound/FB15TNFAHVU",
+   "theme": "action"
+  },
+  {
+   "name": "owner:sound/h0HNYocSDE8",
+   "theme": "action"
+  },
+  {
+   "name": "owner:sound/jKSxAkOS3JY",
+   "theme": "action"
+  },
+  {
+   "name": "owner:sound/n_NvC1IQUMQ",
+   "theme": "action"
+  },
+  {
+   "name": "owner:sound/qgzBYo7gvhE",
+   "theme": "action"
+  },
+  {
+   "name": "owner:dance/1L7mzyGhXCA",
+   "theme": "action"
+  },
+  {
+   "name": "owner:character/JDguApf568Q",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/KSjpckUTItU",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/TG_hmVvoWC4",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/YH_GH1nk1c0",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/eEPZ7fUpoE0",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/mGz9Fm14UfU",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:character/yUuiSey5kmE",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/S2rzMsl0N7k",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/ZkWQloS4jtM",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/zawBCooJwLw",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/_sX2EUexbW8",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/GHBmP7aUoUc",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:dance/ONlH6QaPl-8",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:dance/vnCJ-MhrY-0",
+   "theme": "beauty"
+  },
+  {
+   "name": "owner:general/i4fSruIkkxk",
+   "theme": "romance"
+  },
+  {
+   "name": "owner:character/rfsjEohxVaw",
+   "theme": "romance"
+  }
+ ]
+}

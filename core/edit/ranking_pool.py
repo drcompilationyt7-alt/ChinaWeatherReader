@@ -139,7 +139,8 @@ def usable(items, key, led, exclude_sources=()):
     out = [it for it in items if it.get('entry_key') == key and it.get('status') == 'reviewed'
            and it['source_id'] not in recent and (it.get('editor_handle') or '').lower().lstrip('@') not in bl
            and (it.get('char_conf') or 0) >= CHAR_MIN]
-    return sorted(out, key=lambda it: -(it.get('rank_score') or it.get('quality') or 0))
+    # anime-footage edits first (owner 2026-10-25: a manga-panel edit is only a fallback), then the rank score
+    return sorted(out, key=lambda it: (bool(it.get('manga')), -(it.get('rank_score') or it.get('quality') or 0)))
 
 
 def pick_items(T, items, led):
@@ -179,6 +180,14 @@ def choose_topic(topics=None):
     return sorted(fresh, key=lambda k: (last_used[k], list(topics).index(k)))[0]
 
 
+def entry_theme(topic_keys, topics=None):
+    """The reference-profile theme of an entry: the strictest of its topics' themes (action > beauty > romance)."""
+    import ranking_profile as RP
+    topics = topics or RT.load()
+    th = [RP.theme_of(k, topics.get(k)) for k in topic_keys] or ['action']
+    return min(th, key=lambda t: ['action', 'beauty', 'romance'].index(t))
+
+
 def plan(topics=None):
     """Mining order: entries that block topics. Each missing revealed entry of a topic scores 1 / (missing entries of
     that topic): an entry that alone blocks a topic (the Yuta case) comes first. Entries short of PER_ENTRY_TARGET
@@ -186,10 +195,14 @@ def plan(topics=None):
     topics = topics or RT.load()
     live = manifest(live_dir())['items']
     st = manifest(staged_dir())['items']
-    have = {}
-    for it in live + st:
+    have, anime = {}, {}
+    merged = {it['id']: it for it in st}
+    merged.update({it['id']: it for it in live})          # the live record (rescreened: manga flag) wins
+    for it in merged.values():
         if it.get('status') in ('reviewed', 'staged'):
             have[it['entry_key']] = have.get(it['entry_key'], 0) + 1
+            if not it.get('manga'):
+                anime[it['entry_key']] = anime.get(it['entry_key'], 0) + 1
     score, info = {}, {}
     for tk, T in topics.items():
         ranks = RT.revealed_ranks(T)
@@ -199,6 +212,9 @@ def plan(topics=None):
             info.setdefault(k, {'entry': T['entries'][r - 1], 'topics': []})['topics'].append(tk)
             if k in missing:
                 score[k] = score.get(k, 0) + 1.0 / len(missing)
+            elif not anime.get(k):
+                # only a manga-panel edit so far (owner: a fallback): look for an anime-footage replacement
+                score[k] = score.get(k, 0) + 0.3
             elif have.get(k, 0) < PER_ENTRY_TARGET:
                 score[k] = score.get(k, 0) + 0.05
     order = sorted(score, key=lambda k: -score[k])
@@ -229,7 +245,7 @@ def candidates(e, RC, st, refresh_days=14):
     """Cheap candidate URL list of an entry (search metadata only, cached in the state for refresh_days)."""
     k = entry_key(e)
     c = st['candidates'].get(k)
-    if c and time.time() - c.get('ts', 0) < refresh_days * 86400:
+    if c and time.time() - c.get('ts', 0) < refresh_days * 86400 and c.get('q', e['q']) == e['q']:   # new queries: refresh
         return c['items']
     seen, out = set(), []
     for q in e['q']:
@@ -241,7 +257,7 @@ def candidates(e, RC, st, refresh_days=14):
             if ok:
                 out.append({k2: x.get(k2) for k2 in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')})
     out.sort(key=lambda x: -(x.get('view_count') or 0))
-    st['candidates'][k] = {'name': e['name'], 'ts': time.time(), 'at': time.strftime('%Y-%m-%d'), 'items': out}
+    st['candidates'][k] = {'name': e['name'], 'ts': time.time(), 'at': time.strftime('%Y-%m-%d'), 'items': out, 'q': e['q']}
     return out
 
 
@@ -321,7 +337,13 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
             continue
         done = {sid for sid, v in st['sources'].items() if v.get('status') in ('staged', 'reviewed', 'rejected', 'gate_reject')}
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
-        pre = RC.find_source(e, None, None, work, 0, done, report, max_dl=max_dl)
+        # an entry that alone blocks a whole topic (Yuta for jjk_strongest) gets twice the downloads
+        try:
+            pre = RC.find_source(e, None, None, work, 0, done, report, max_dl=max_dl * (2 if p['score'] >= 1 else 1))
+        except Exception as ex:  # noqa: BLE001  (one bad entry never kills the run)
+            log(f'{e["name"]}: candidate search / download failed: {type(ex).__name__}: {ex}')
+            summary['entries'].append({'entry': e['name'], 'key': key, 'error': f'{type(ex).__name__}: {ex}'[:300]})
+            continue
         row = {'entry': e['name'], 'key': key, 'candidates': len(cands), 'downloaded': report['downloaded'],
                'clean': len(pre), 'reject': report['reject'], 'staged': []}
         for r in report['evaluated']:
@@ -330,13 +352,22 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
         for res, rrow in pre:
             if (time.time() - t0) / 60 > budget_min + 20:
                 break
-            res = RC.evaluate(res, e, others, judge(), SEG, e.get('pace', 'action'), all_infos=RC.cached_infos())
+            try:
+                res = RC.evaluate(res, e, others, judge(), SEG, e.get('pace', 'action'), all_infos=RC.cached_infos(),
+                                  theme=entry_theme(p['topics'], topics))
+            except Exception as ex:  # noqa: BLE001  (one bad candidate never kills the run)
+                log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')
+                res.update(verdict='reject', why=f'eval_error_{type(ex).__name__}', windows=[])
             if res['verdict'] != 'ok':
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': res.get('why') or 'no_window', 'entry': key,
                                             'at': time.strftime('%Y-%m-%d'),
                                             'windows': [w.get('reject') for w in (res.get('windows') or [])[:4]]}
                 continue
-            it = stage_item(res, e, key, sd, RC)
+            try:
+                it = stage_item(res, e, key, sd, RC)
+            except Exception as ex:  # noqa: BLE001
+                log(f'{res.get("id")}: staging failed: {type(ex).__name__}: {ex}')
+                continue
             if it.get('window_marks'):            # full-resolution tag / logo check of the cut window
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark', 'marks': it['window_marks'][:3],
                                             'entry': key, 'at': time.strftime('%Y-%m-%d')}
@@ -386,9 +417,13 @@ def stage_item(res, e, key, sd, RC):
           'char_conf': res.get('conf'), 'char_method': (res.get('match') or {}).get('method'),
           'char_votes': (res.get('match') or {}).get('votes'), 'char_others': (res.get('match') or {}).get('others'),
           'eventful': w.get('eventful'), 'song': w.get('song'), 'song_name': w.get('song_name'), 'quality': w.get('quality'),
-          'rank_score': res.get('rank_score') or round((w.get('quality') or 0) + 1.0 * bool((rt.get('age_days') or 0) >= 365)
-                                                        + 0.5 * bool((rt.get('channel_idle_days') or 0) >= 182)
-                                                        + 1.5 * bool(rt.get('permitted')), 2),
+          'theme': w.get('theme'), 'ref_score': w.get('ref_score'), 'ref_groups': w.get('ref_groups'),
+          'manga': bool(w.get('manga')), 'manga_share': w.get('manga_share'),
+          # owner 2026-10-25 late: the free-to-use bonus is dropped; old (>= 1 y) + idle editors, the reference-profile
+          # closeness, and anime footage over manga panels
+          'rank_score': round((w.get('quality') or 0) + 1.0 * bool((rt.get('age_days') or 0) >= 365)
+                              + 0.5 * bool((rt.get('channel_idle_days') or 0) >= 182)
+                              + 0.5 * (w.get('ref_score') or 0) - 3.0 * bool(w.get('manga')), 2),
           'safety': 'pass', 'watermark': 'none', 'editor_tags': [t for t in (res.get('editor_tags') or [])][:12],
           'rights': rt, 'proof': {'reason': proof.get('reason'), 'type': proof.get('type'),
                                   'evidence': proof.get('evidence'), 'snapshot_file': f'proofs/{res["id"]}.json'},
@@ -497,6 +532,76 @@ def import_items(ids, reject=(), by='owner'):
     save_manifest(ld, lm)
     wj(state_path(), st)
     return n
+
+
+def remove_items(ids, by='owner', why='rejected'):
+    """Live items -> out of the pool (manifest + clip), status rejected in staging and in the state (never mined again)."""
+    sd, ld = staged_dir(), live_dir()
+    sm, lm = manifest(sd), manifest(ld)
+    st = rj(state_path(), {'candidates': {}, 'sources': {}})
+    gone = []
+    for it in lm['items']:
+        if it['id'] in ids:
+            gone.append(it)
+            try:
+                os.remove(os.path.join(ld, it['file']))
+            except OSError:
+                pass
+    lm['items'] = [x for x in lm['items'] if x['id'] not in ids]
+    staged_ids = {x['id'] for x in sm['items']}
+    for it in gone:
+        if it['id'] not in staged_ids:
+            sm['items'].append({k: v for k, v in it.items()})
+    for it in sm['items']:
+        if it['id'] in ids:
+            it.update(status='rejected', reviewed_by=by, rejected_why=why, reviewed_at=time.strftime('%Y-%m-%d'))
+            st['sources'][it['source_id']] = {'status': 'rejected', 'entry': it['entry_key'], 'by': by, 'why': why,
+                                              'at': time.strftime('%Y-%m-%d')}
+    save_manifest(sd, sm)
+    save_manifest(ld, lm)
+    wj(state_path(), st)
+    return [x['id'] for x in gone]
+
+
+def rescreen(apply=False):
+    """Re-run the reference-profile gate + the manga detector on every live item's window (owner 2026-10-25 late:
+    on par with ALL our analysed references, anime footage over manga). Writes ref_score / manga into the live
+    manifest; with apply=True a failing item leaves the pool (status rejected, by claude-refgate)."""
+    import cv2
+    import library as L
+    import ranking_profile as RP
+    topics = RT.load()
+    ents = all_entries(topics)
+    sig = L.Siglip(L.Cache(os.path.join(ROOT, 'output', 'ranking-mine', 'cache'), 2000))
+    ld = live_dir()
+    lm = manifest(ld)
+    rows, fail = [], []
+    for it in lm['items']:
+        th = entry_theme(ents.get(it['entry_key'], (None, ['jjk_strongest']))[1], topics)
+        clip = os.path.join(ld, it['file'])
+        f = RP.measure(clip, it['clip_in'], it['clip_out'])
+        cap, frames = cv2.VideoCapture(clip), []
+        t = it['clip_in']
+        while t < it['clip_out']:                                  # 2 fps frames for the SigLIP manga check
+            cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+            ok, fr = cap.read()
+            if ok:
+                frames.append(cv2.resize(fr, (448, int(fr.shape[0] * 448 / fr.shape[1]))))
+            t += 0.5
+        cap.release()
+        f['manga_siglip'] = RP.manga_siglip(sig, frames)
+        g = RP.gate(f, th)
+        it.update(theme=th, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
+                  manga_share=g.get('manga_share'), rescreened=time.strftime('%Y-%m-%d'))
+        rows.append({'id': it['id'], 'entry': it['entry_name'], 'theme': th, 'ref_score': g['ref_score'],
+                     'groups': g['ref_groups'], 'manga_share': g.get('manga_share'), 'manga': g['manga'], 'ok': g['ok'],
+                     'why': g['why']})
+        if not g['ok']:
+            fail.append(it['id'])
+    save_manifest(ld, lm)
+    if apply and fail:
+        remove_items(set(fail), by='claude-refgate', why='below_reference_profile')
+    return rows
 
 
 def push_state(release='edit-pools-staging'):
@@ -632,7 +737,7 @@ def library_report(md=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['plan', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
-                                    'assemble', 'status', 'mark'])
+                                    'assemble', 'status', 'mark', 'remove', 'rescreen'])
     ap.add_argument('--result')
     ap.add_argument('--budget-min', type=float, default=60)
     ap.add_argument('--work')
@@ -651,6 +756,8 @@ def main():
     ap.add_argument('--out')
     ap.add_argument('--mark-used', action='store_true')
     ap.add_argument('--json', action='store_true')
+    ap.add_argument('--why', default='rejected')
+    ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     a = ap.parse_args()
     if a.cmd == 'plan':
         for p in plan():
@@ -685,6 +792,10 @@ def main():
         print('marked')
     elif a.cmd == 'status':
         print(library_report())
+    elif a.cmd == 'remove':
+        print(remove_items(set(filter(None, a.ids.split(','))), a.by, a.why), 'removed')
+    elif a.cmd == 'rescreen':
+        print(json.dumps(rescreen(a.apply), ensure_ascii=False, indent=1))
 
 
 if __name__ == '__main__':

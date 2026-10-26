@@ -98,6 +98,7 @@ jobs:
         env:
           ENTRIES: ${{ inputs.entries }}
         run: |
+          set -o pipefail
           python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES" | tail -c 4000
           rm -f /tmp/yt_cookies.txt
       - name: Publish to edit-pools-staging

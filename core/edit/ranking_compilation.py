@@ -224,9 +224,39 @@ def download(info, dest_dir):
     if OFFLINE[0]:
         return None
     pace()
-    ytdlp(['-f', 'bv*[height<=1080][height>=720]+ba/b[height<=1080][height>=720]', '--merge-output-format', 'mp4',
+    # h264 (avc1) first: an AV1 download could not be decoded by OpenCV on the runner (2026-10-26 run 40247085474:
+    # 0 frames -> crash on the first entry); other codecs only as a fallback, re-encoded when unreadable
+    ytdlp(['-f', 'bv*[vcodec^=avc1][height<=1080][height>=720]+ba/bv*[height<=1080][height>=720]+ba/'
+                 'b[height<=1080][height>=720]', '-S', 'vcodec:h264', '--merge-output-format', 'mp4',
            '-o', p, f'https://www.youtube.com/watch?v={info["id"]}'], timeout=900)
-    return p if os.path.exists(p) else None
+    if not os.path.exists(p):
+        return None
+    return p if ensure_decodable(p) else None
+
+
+def ensure_decodable(p):
+    """True when OpenCV reads frames from `p`; else re-encode it to h264 once (ffmpeg), else delete it (False)."""
+    def readable(x):
+        cap = cv2.VideoCapture(x)
+        ok = sum(bool(cap.read()[0]) for _ in range(5)) >= 3
+        cap.release()
+        return ok
+    if readable(p):
+        return True
+    tmp = p + '.h264.mp4'
+    log(f'{os.path.basename(p)}: OpenCV cannot decode it (AV1 / VP9?), re-encoding to h264')
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', p, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18',
+                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', tmp], capture_output=True, timeout=1200)
+    if r.returncode == 0 and os.path.exists(tmp) and readable(tmp):
+        os.replace(tmp, p)
+        return True
+    for x in (p, tmp):
+        try:
+            os.remove(x)
+        except OSError:
+            pass
+    log(f'{os.path.basename(p)}: undecodable, skipped')
+    return False
 
 
 def prefilter(e, entry, min_views=None):
@@ -301,6 +331,8 @@ def decode(path, step=0.5, width=448):
 
 def content_box(frames):
     """Letterbox-free box (x0, y0, x1, y1) in 0-1 from the mean brightness / variance."""
+    if not frames:
+        return (0, 0, 1, 1)
     st = np.stack([cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) for f in list(frames.values())[::4]]).astype(np.float32)
     m = st.mean(0) + st.std(0)
     rows, cols = np.where(m.mean(1) > 14)[0], np.where(m.mean(0) > 14)[0]
@@ -801,16 +833,19 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
         best = None
         for res, row in pre:
             res = evaluate(res, entry, others, get_judge(), seg_len, entry.get('pace', 'action'),
-                           all_infos=cached_infos())
+                           all_infos=cached_infos(), theme=entry.get('theme'))
             row.update({k: res.get(k) for k in ('verdict', 'why', 'conf', 'window', 'match', 'quality')})
             row['windows'] = [{k: w.get(k) for k in ('s', 'e', 'len', 'eventful', 'song', 'song_pop', 'song_name',
-                                                      'quality', 'conf', 'reject')} for w in res.get('windows', [])[:6]]
+                                                      'quality', 'conf', 'ref_score', 'manga', 'reject')} for w in res.get('windows', [])[:6]]
             if res['verdict'] == 'ok':
                 # strongest edit wins (owner 2026-10-25: eventful + strong song), the source rules as a bonus:
-                # old (>= 1 y) +1, idle channel +0.5, CC / free-to-use / allow-listed +1.5
+                # old (>= 1 y) +1, idle channel +0.5 (the free-to-use bonus is dropped, owner 2026-10-25 late),
+                # the reference-profile closeness, anime footage over manga panels
                 rt = res.get('rights') or {}
+                w = res.get('window') or {}
                 bonus = (1.0 * bool((rt.get('age_days') or 0) >= OLD_DAYS)
-                         + 0.5 * bool((rt.get('channel_idle_days') or 0) >= INACTIVE_DAYS) + 1.5 * bool(rt.get('permitted'))
+                         + 0.5 * bool((rt.get('channel_idle_days') or 0) >= INACTIVE_DAYS)
+                         + 0.5 * (w.get('ref_score') or 0) - 3.0 * bool(w.get('manga'))
                          + 3.0 * (res['id'] in PREFER))          # owner-approved edit (--prefer)
                 res['rank_score'] = round(res['quality'] + bonus, 2)
                 row['rank_score'] = res['rank_score']
@@ -863,7 +898,7 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
             report['reject']['download'] = report['reject'].get('download', 0) + 1
             continue
         report['downloaded'] += 1
-        res = text_gate(path, info)
+        res = text_gate(path, info)          # never raises (a broken candidate = reject gate_error_*)
         res['_info'] = info
         res['rights'] = {k: rt.get(k) for k in ('permitted', 'type', 'age_days', 'channel_idle_days', 'priority',
                                                  'onscreen_credit', 'reason')}
@@ -880,7 +915,8 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
     if get_judge is None:
         return clean                          # prefetch phase: network + cheap gates only
     for res, row in clean:
-        res = evaluate(res, entry, others, get_judge(), seg_len, entry.get('pace', 'action'), all_infos=cached_infos())
+        res = evaluate(res, entry, others, get_judge(), seg_len, entry.get('pace', 'action'), all_infos=cached_infos(),
+                       theme=entry.get('theme'))
         row.update({k: res.get(k) for k in ('verdict', 'why', 'conf', 'window', 'match')})
         if res['verdict'] == 'ok':
             return res
@@ -1031,7 +1067,12 @@ def text_gate(path, info):
         c['_txt']['per_t'] = {float(k): [(t, b) for t, b in v] for k, v in c['_txt']['per_t'].items()}
         c['path'] = path
         return c                      # frames are decoded lazily in evaluate() (low-memory mode)
-    res = _text_gate(path, info)
+    try:
+        res = _text_gate(path, info)
+    except Exception as ex:  # noqa: BLE001  (one bad candidate never kills the run)
+        log(f'{info.get("id")}: text gate failed: {type(ex).__name__}: {ex}')
+        return {'id': info['id'], 'title': info.get('title'), 'path': path, 'verdict': 'reject',
+                'why': f'gate_error_{type(ex).__name__}', '_txt': {'per_t': {}, 'subs': []}}
     os.makedirs(os.path.dirname(cp), exist_ok=True)
     res.pop('_ana', None)             # ~60 MB of frames per edit: decoded again lazily in evaluate()
     json.dump(res, open(cp, 'w', encoding='utf-8'), default=str)
@@ -1043,6 +1084,9 @@ def _text_gate(path, info):
            'handle': info.get('uploader_id'), 'path': path, 'views': info.get('view_count'),
            'likes': info.get('like_count'), 'height': info.get('height'), 'dur': info.get('duration'), 'verdict': 'clean'}
     ana = decode(path)
+    if len(ana['frames']) < 10:                       # undecodable / broken file: skip it, never crash
+        res.update(verdict='reject', why='no_frames', _txt={'per_t': {}, 'subs': []})
+        return res
     cbox = content_box(ana['frames'])
     txt = text_scan(ana, cbox)
     logos = logo_scan(ana, cbox)
@@ -1113,7 +1157,7 @@ def targets_and_distractors(judge, entry, others):
     return list(dict.fromkeys(tgt)), oth
 
 
-def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=()):
+def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
     builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max)."""
@@ -1186,12 +1230,31 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
         if (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN
                 and det['wins'] >= 2 * top_other):
+            # owner 2026-10-25 late: ON PAR with ALL our analysed reference edits in quality + the theme's vibe
+            # (ranking_profile: effects / camera + 3D / text / sync / rhythm / grade vs the theme's reference profile);
+            # manga-panel edits are only a fallback (flagged, ranked below anime-footage edits)
+            if theme and os.environ.get('RANKING_REF_GATE', '1') != '0':
+                import ranking_profile as RP
+                try:
+                    f = RP.measure(path, w['s'], w['e'], per_t={t: txt['per_t'][t] for t in txt['per_t']
+                                                                 if w['s'] <= t < w['e']}, audio=a)
+                    f['manga_siglip'] = RP.manga_siglip(judge.sig, frames)
+                    g = RP.gate(f, theme)
+                except Exception as ex:  # noqa: BLE001
+                    log(f'ref profile failed: {ex}')
+                    f, g = {}, {'ref_score': None, 'ref_groups': {}, 'manga': False, 'ok': True, 'why': 'error'}
+                w.update(theme=theme, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
+                         manga_share=g.get('manga_share'))
+                if not g['ok']:
+                    w['reject'] = g['why']
+                    continue
             passed.append(w)
             continue
         w['reject'] = 'character'
     res['windows'] = wins
     res.pop('_ana', None)
     if passed:
+        passed.sort(key=lambda w: (bool(w.get('manga')), -w['quality']))      # anime footage first
         best = passed[0]
         res.update(verdict='ok', why='', window=best, conf=best['conf'], match=best['match'], passed=passed,
                    quality=best['quality'])
@@ -1541,8 +1604,9 @@ def rights(info, fetch_extra=True):
                      'pinned': (_cached(f'c_{info.get("id")}', lambda: None) or {}).get('pinned')},
     })
     proof['usable'] = not proof['blocked'] and not forbids
-    # priority: permission bonus > old (>= 1 year) > inactive channel > popularity
-    proof['priority'] = (3.0 * bool(proof.get('permitted')) + 2.0 * bool(age_days and age_days >= OLD_DAYS)
+    # priority: old (>= 1 year) > inactive channel > popularity (owner 2026-10-25 late: the free-to-use / CC preference is
+    # dropped; `permitted` is still recorded as proof)
+    proof['priority'] = (2.0 * bool(age_days and age_days >= OLD_DAYS)
                          + 1.0 * bool(idle_days and idle_days >= INACTIVE_DAYS)
                          + 0.1 * np.log10(1 + (info.get('view_count') or 0)))
     return proof
