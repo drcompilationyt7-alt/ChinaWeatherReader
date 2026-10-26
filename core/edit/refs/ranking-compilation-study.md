@@ -435,6 +435,34 @@ balanced; cadence WEEKLY with rotating topics. Owner 2026-10-25: Rimuru is #1 in
 - `python core/edit/ranking_topics.py check` fails on a broken order (an inverted `above` pair, a pin elsewhere, a fan /
   score list out of order unless `order_locked`), missing names, too few entries.
 
+**The library (2026-10-25, 22 topics: 11 power, 3 fan / waifu, 8 genre lists; `ranking_topics.py show`):**
+```
+jjk_strongest [power, countdown]: #1 SUKUNA > #2 GOJO > #3 YUTA* > #4 YUJI* > #5 TOJI*
+op_strongest [power, top]: #1 RIMURU* > #2 ANOS* > #3 AINZ* > #4 SHADOW
+strongest_overall [power, countdown]: #1 SAITAMA > #2 GOKU > #3 SUNG JINWOO* > #4 MADARA* > #5 GOJO*
+demon_slayer_strongest [power, countdown]: #1 YORIICHI > #2 MUZAN > #3 KOKUSHIBO* > #4 GYOMEI* > #5 AKAZA*
+one_piece_strongest [power, countdown]: #1 SHANKS > #2 LUFFY > #3 KAIDO* > #4 MIHAWK* > #5 ZORO*
+naruto_strongest [power, countdown]: #1 NARUTO > #2 SASUKE > #3 MADARA* > #4 PAIN* > #5 ITACHI*
+bleach_strongest [power, countdown]: #1 ICHIGO > #2 YHWACH > #3 AIZEN* > #4 YAMAMOTO* > #5 KENPACHI*
+solo_leveling_strongest [power, countdown]: #1 SUNG JINWOO > #2 BERU > #3 THOMAS ANDRE* > #4 IGRIS* > #5 CHA HAE-IN*
+dragon_ball_strongest [power, countdown]: #1 BEERUS > #2 GOKU > #3 BROLY* > #4 VEGETA* > #5 GOHAN*
+aot_strongest [power, countdown]: #1 EREN > #2 LEVI > #3 MIKASA* > #4 ZEKE* > #5 REINER*
+mha_strongest [power, countdown]: #1 DEKU > #2 SHIGARAKI > #3 ALL MIGHT* > #4 ENDEAVOR* > #5 BAKUGO*
+chainsaw_man_strongest [power, countdown]: #1 DENJI > #2 MAKIMA > #3 REZE* > #4 POWER* > #5 AKI*
+best_waifu [fans, countdown]: #1 MIKASA > #2 MAKIMA > #3 MARIN* > #4 REM* > #5 ZERO TWO*
+best_waifu_2 [fans, countdown]: #1 FRIEREN > #2 KURISU > #3 NICO ROBIN* > #4 NEZUKO* > #5 YOR*
+best_waifu_3 [fans, countdown]: #1 EMILIA > #2 MAI SAKURAJIMA > #3 VIOLET* > #4 ZERO TWO* > #5 C.C.*
+romance_peak [score, countdown]: #1 KAGUYA-SAMA > #2 THE FRAGRANT FLOWER > #3 HORIMIYA* > #4 BLUE BOX* > #5 MY DRESS-UP DARLING* > #6 KIMI NI TODOKE
+action_peak [score, countdown]: #1 ATTACK ON TITAN > #2 VINLAND SAGA > #3 JUJUTSU KAISEN* > #4 DEMON SLAYER* > #5 CHAINSAW MAN* > #6 SOLO LEVELING
+isekai_peak [score, countdown]: #1 RE:ZERO > #2 MUSHOKU TENSEI > #3 THE EMINENCE IN SHADOW* > #4 REINCARNATED AS A SLIME* > #5 KONOSUBA* > #6 OVERLORD
+sad_peak [score, countdown]: #1 A SILENT VOICE > #2 VIOLET EVERGARDEN > #3 YOUR LIE IN APRIL* > #4 I WANT TO EAT YOUR PANCREAS* > #5 ANOHANA*
+comedy_peak [score, countdown]: #1 BOCCHI THE ROCK > #2 GINTAMA > #3 SPY x FAMILY* > #4 GRAND BLUE* > #5 KONOSUBA*
+sports_peak [score, countdown]: #1 HAIKYU!! > #2 HAJIME NO IPPO > #3 SLAM DUNK* > #4 KUROKO'S BASKETBALL* > #5 BLUE LOCK*
+horror_peak [score, countdown]: #1 THE PROMISED NEVERLAND > #2 PARASYTE > #3 DEVILMAN CRYBABY* > #4 TOKYO GHOUL* > #5 ANOTHER*
+(* = shown on screen)
+```
+No "best husbando" list (owner 2026-10-25).
+
 ### Character check v2 (multi-picture bank)
 Per character: the AniList art, our quiz-pool pictures of that AniList id (eyes portrait, outfit, theme art), and the
 show's Fandom wiki page + /Gallery files whose NAME is only about this character (a file naming anyone else, "Everyone
@@ -522,3 +550,59 @@ Creation -> type `ranking`, dry_run `true` (optionally `ranking_topic`).
 `wiki` = the show's Fandom wiki for the reference pictures; power lists need `above` pairs), then
 `python core/edit/ranking_topics.py refresh` (AniList numbers; fan / score lists re-sort unless `order_locked`) and
 `python core/edit/ranking_topics.py check` (must print 0 errors). `ranking_pool.py plan` shows what mining does next.
+
+## 10. STATE when saved (2026-10-26 ~01:10 UTC, owner left) + resume steps
+
+**Owner decisions (all final, 2026-10-24/25):**
+- Format = v3 / PREVIEW2 (3:4, band, blur, static title, 5-slot countdown, dip to black, each edit's own audio).
+- Others' edits, credit ONLY in the description (plain @handles, no links, nothing on screen); >= 1-year-old edits and
+  idle channels first; hard-skip "no reupload" editors + the takedown blocklist; remove a video the same day on complaint.
+- The entry must show THAT character; eventful edits + strong songs; phrase-end segments 18-24 s, balanced.
+- Cadence WEEKLY, rotating topics; the type replaces that day's stem, never a 2nd post; OFF until the owner approves the
+  first CI-built video.
+- LISTS FIRST: a big topic library (strongest overall / per show, waifu, romance / action / isekai / sad / comedy / sports
+  / horror; genre entries = ANIME, character entries = CHARACTERS); per entry a cheap candidate list (metadata), then
+  download + gates + only the chosen segment; mining fills the entries that block whole topics first.
+- NO "best husbando" list.
+- An OP list "strongest in general" (Rimuru, Ainz, Anos + the usual OP picks) = `op_strongest`.
+- Rimuru: not in every list, but in any POWER list that has him he is #1 AND shown -> `pin: 1` + `reveal: top`
+  (a 3-slot list #3 -> #1; no hidden slot claims someone stronger).
+- Every ranking must make sense: power lists = community consensus + canon `above` pairs; fan lists = AniList
+  favourites; genre lists = AniList score; owner overrides in the topic file (`order_locked`); `ranking_topics.py check`.
+
+**Done (pushed: 0e2d10a, 0c8740a, a7f62e0 + this save):** everything in sections 8-9 (library 22 topics, character bank,
+editor-tag + full-resolution window watermark gates, the pool path, weekly mining Wed, PC miner lowest priority, the daily
+weekly slot Sat with guards + stem fallback, ranking:0 = OFF). Tested: pool eligibility / reuse gap / distinct editors /
+topic rotation (synthetic), a local assemble of 3 reviewed segments (63.4 s, layout as v3) + `guardRanking` (passes; a
+broken copy fails on unreviewed / char 0.4 / same editor / link), titles pass `title-style` ("strongest jjk characters 🔥
+#jujutsukaisen"), longform + title selftests pass.
+
+**Pool now** (live, release `edit-pools` asset `pool-ranking-pool.tar`, 4 items):
+| item | entry | editor | reviewed by |
+|---|---|---|---|
+| r_lynJABr10N4_40660 | TOJI | @noctryx7 | owner (v3) |
+| r_thMXb5r792s_27610 | GOJO | @XenozEdit | owner (v3) |
+| r_mY7mgdslbdc_29000 | YUJI | @DivineHotdog | Claude (owner approved this source in v3, another window) - owner to confirm |
+| r_OaYRHPJZiXg_1790 | HORIMIYA | @karma7892 | Claude - owner to confirm (calm, plain footage) |
+Rejected in review: r_lze2HJlbwEE (Gojo, "FL!CK" name logo), r_QyRzyUmEt7M (Yor, tiny "a.editorx" tag),
+r_FDIFn1mnZb0 (C.C., key-icon logo); the last two are now caught by `window_marks`. Staging state pushed
+(`ranking-state.json` on `edit-pools-staging`, 46 sources).
+
+**No topic is eligible yet** (jjk needs YUTA; strongest_overall needs MADARA + SUNG JINWOO; waifu_2 needs NEZUKO + NICO
+ROBIN; romance needs BLUE BOX + DRESS-UP). So the CI dry run (task step 5) is NOT done yet.
+
+**In flight:** GitHub run 40247085474 (ranking-pool-mine, dispatched 23:58 UTC, queued behind the nightly sound mining;
+staging only): entries MADARA, SUNG JINWOO, NEZUKO, NICO ROBIN, YUTA, PAIN, ITACHI, BLUE BOX, MY DRESS-UP DARLING.
+
+**Resume steps:**
+1. When run 40247085474 is done: `python core/edit/ranking_pool.py pull-staged`, `review`, look at every sheet (and the
+   clip): THAT character, no tag / logo / end card / subtitles, safe, eventful. Owner reviews (Claude may pre-screen).
+2. `import --ids ... --reject ... --by owner`, `push-state`, then
+   `GH_TOKEN=$(gh auth token -u drcompilationyt7-alt) node scripts/edit-pools-store.js push --preset ranking`.
+3. `python core/edit/ranking_pool.py status` -> a topic shows ELIGIBLE (likely strongest_overall: Jinwoo / Madara / Gojo).
+4. CI dry run: Actions -> Daily Shorts Creation -> type `ranking`, dry_run `true`, ranking_topic `<topic>`. Download the
+   `renders` artifact -> `Desktop/review-shorts/edits/new-types/ranking_ci_dryrun_<topic>.mp4` + `.title.txt` /
+   `.description.txt` (written next to the mp4 in `output/meme/work-ranking-*`).
+5. Owner approves the CI video -> repo variable `DAILY_TYPE_WEIGHTS` add `ranking:1` (Saturday slot).
+6. Open: Yuta still has 0 passing edits (needs deeper search); Toji / Yuji windows sum to 63 s with Gojo (cap the total at
+   ~60 s in `pick_items` if the owner wants it shorter); the CI path of `assemble` has not run on GitHub yet.
