@@ -32,7 +32,7 @@ on:
         required: false
         default: 'false'
       budget_min:
-        description: 'Mining budget per shard in minutes (empty: 100)'
+        description: 'Mining budget per shard in minutes (empty: 115)'
         required: false
         default: ''
       shards:
@@ -79,7 +79,7 @@ jobs:
   mine:
     needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: 130     # per shard; the two run one after the other (2 x 130 = inside 5 h)
+    timeout-minutes: 135     # per shard; the two run one after the other (2 x 135 + plan + stage 20 = inside 5 h)
     env:
       QUIZ_MINE_SCALE: '2'
     strategy:
@@ -133,7 +133,7 @@ jobs:
         run: |
           python core/quiz/quiz_pool_grow.py selftest
           python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \
-            --budget-min "${{ inputs.budget_min || '100' }}" | tail -c 3000
+            --budget-min "${{ inputs.budget_min || '115' }}" | tail -c 3000
           du -sh work/out || true
       - name: Upload the shard
         if: always()
