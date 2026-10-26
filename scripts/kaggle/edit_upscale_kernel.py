@@ -28,11 +28,27 @@ repo = os.path.join(WORK, 'repo')
 pool = os.path.join(WORK, 'pool')
 os.makedirs(repo, exist_ok=True)
 os.makedirs(pool, exist_ok=True)
-with tarfile.open(os.path.join(INP, 'code.tar.gz')) as t:
-    t.extractall(repo)
-with tarfile.open(os.path.join(INP, 'clips.tar')) as t:
-    t.extractall(pool)
-sys.path.insert(0, os.path.join(repo, 'core', 'edit'))
+# 2026-10-26: Kaggle now auto-extracts dataset archives (code.tar.gz -> code/, clips.tar -> clips/): accept both forms.
+import shutil  # noqa: E402
+if os.path.isfile(os.path.join(INP, 'code.tar.gz')):
+    with tarfile.open(os.path.join(INP, 'code.tar.gz')) as t:
+        t.extractall(repo)
+else:
+    shutil.copytree(os.path.join(INP, 'code'), repo, dirs_exist_ok=True)
+if os.path.isfile(os.path.join(INP, 'clips.tar')):
+    with tarfile.open(os.path.join(INP, 'clips.tar')) as t:
+        t.extractall(pool)
+else:                                              # put each budget clip back at its relative path (the result tar keeps it)
+    have = [os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(INP, 'clips')) for f in fs if f.endswith('.mp4')]
+    for rel in json.load(open(os.path.join(INP, 'budget.json'))).get('clips', []):
+        src = next((h for h in have if h.replace(os.sep, '/').endswith('/' + rel)), None)
+        if src:
+            os.makedirs(os.path.dirname(os.path.join(pool, rel)), exist_ok=True)
+            shutil.copy2(src, os.path.join(pool, rel))
+        else:
+            print('missing in the input:', rel, flush=True)
+code_dir = next((dp for dp, _, fs in os.walk(repo) if 'upscale_pool.py' in fs), os.path.join(repo, 'core', 'edit'))
+sys.path.insert(0, code_dir)
 import upscale_pool as U  # noqa: E402
 
 files = sorted(os.path.join(dp, f) for dp, _, fs in os.walk(pool) for f in fs if f.endswith('.mp4'))
