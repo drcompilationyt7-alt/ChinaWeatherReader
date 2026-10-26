@@ -7,11 +7,14 @@ name: Sound near misses - Kaggle sharpening of the staged clips (Mon-Thu)
 # each tar (sharp -> quality.sharpened, still soft -> removed). Monday-Thursday only (UTC and US Eastern; Friday-Sunday Kaggle is
 # the owner's other project); the GPU minutes go into the weekly ledger shared with zyo-clipscore (clipscore-ledger.json, 20 h cap).
 # Needs the KAGGLE_API_TOKEN secret + the KAGGLE_USERNAME variable; without them it skips (the near misses wait staged).
-# 08:15 UTC: after the nightly mining (19:30 -> <= 00:30 UTC) and before the session-start review.
+# 05:15 UTC (2026-10-26: was 08:15): GitHub starts this repo's scheduled runs ~5-6 h late (daily-create 02:47 -> ~08:00,
+# upload-prebuilt 04:40 -> ~09:00-10:30), so 08:15 fired only in the afternoon, after the session-start review. 05:15 is the
+# earliest slot the Kaggle day guard allows on a Monday (US Eastern must be Monday too) and lands ~10-11 UTC in practice, after
+# the nightly mining. A late or duplicate run is harmless (already-sharpened / imported clips are skipped).
 
 on:
   schedule:
-    - cron: '15 8 * * 1-4'
+    - cron: '15 5 * * 1-4'
   workflow_dispatch:
     inputs:
       dry:
