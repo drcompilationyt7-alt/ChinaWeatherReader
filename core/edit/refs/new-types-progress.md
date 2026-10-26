@@ -1392,3 +1392,23 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
   print (run with PYTHONIOENCODING=utf-8). Geo / night titles are on target (landmark categories). Cuisine about 15/20 correct;
   wrong ones: Kimchi -> "Kimchi refrigerator", Satay -> HK satay-beef macaroni, Udon -> "Erik Ko", Tonkatsu -> "1952 - Tonkatsu taisho".
   The cuisine path needs a reject list for appliance / person / restaurant-name titles.
+
+### 2026-10-26 session-start review (review agent)
+- **Sound** sound-cand-20261026-n12: **3 approved** (c_TJpgv0NrD3E_329568 Code Geass whip strikes Lancelot, sparks on the pin;
+  c_zAYMK_djbns_4030 Bungo Stray Dogs body smashes a concrete block, transient 1.14 = pin; c_SH9HRJFl0oM_66147 Undead Unluck blade
+  on armour, sparks, cut ~0.6 s before with the dive as build-up), **9 rejected**: 152988 wide / small figures, dark; 41603 wide,
+  cause unclear; 65590 crash into pews hidden in dust; 69967 baton hand-over (no hit); 9697 briefcase opening (placing); 22191 punch
+  blurred, loudest transient 1.73 vs pin 1.4; 263502 cut ON the hit; 205837 flurry with ghosting, pin between two flashes; 167362
+  hammer clip carries a song (transients 0.33 / 2.77, not the pin). CI import 40339990531 (7ab1a15; 40339780074 failed on a GitHub
+  HTTP 500 asset upload, nothing committed): 3 added, **pins 75**, tar deleted.
+- **Kaggle sharpen** (sound-sharpen-kaggle.yml) had no runs: not disabled, file on main since 10-24 (Sat); its first slot was today
+  08:15 and this repo's schedules fire ~5-6 h late (daily-create 02:47 -> 08:08, upload 04:40 -> 09:07-10:31). Cron -> 05:15 UTC
+  (781c0af). Dispatched: 2 kernel bugs on the first real run, fixed: Kaggle mounts datasets nested
+  (/kaggle/input/datasets/<user>/<slug>, baabe99) and auto-extracts archives (code/ + clips/ folders, 68cc873); third run
+  40339026006: 2/2 sharpened, re-staged. Ledger 2026-W44: 8.1 min (3 sessions, 0.14 h of 20 h).
+- **Ranking mining** 40247085474 (10-25 23:58, "success") staged nothing: queued ~1 h 52 min for a runner (started 01:50), plan
+  22 topics / 9 entries (MADARA, SUNG JINWOO, NEZUKO, NICO ROBIN, YUTA, PAIN, ITACHI, BLUE BOX, MY DRESS-UP DARLING), budget 160 min;
+  the FIRST entry (YUTA) crashed after 6.7 min: a downloaded AV1 source could not be decoded on the runner (no AV1 decoder ->
+  0 frames) -> ranking_compilation.content_box np.stack([]) ValueError in text_gate. `| tail -c 4000` without pipefail hid the
+  exit code, so publish found 0 items. Funnel: 1 of 9 entries tried, 0 judged, 0 staged; not gates, not budget, downloads worked.
+  Fix (ranking agent): prefer h264 / avc1 in the ranking yt-dlp format, guard empty frames, `set -o pipefail` in the mine step.
