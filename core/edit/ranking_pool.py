@@ -245,10 +245,11 @@ def candidates(e, RC, st, refresh_days=14):
     """Cheap candidate URL list of an entry (search metadata only, cached in the state for refresh_days)."""
     k = entry_key(e)
     c = st['candidates'].get(k)
-    if c and time.time() - c.get('ts', 0) < refresh_days * 86400 and c.get('q', e['q']) == e['q']:   # new queries: refresh
+    qs = RC.queries(e)
+    if c and time.time() - c.get('ts', 0) < refresh_days * 86400 and c.get('q', qs) == qs:   # new queries: refresh
         return c['items']
     seen, out = set(), []
-    for q in e['q']:
+    for q in qs:
         for x in (RC.search(q) or []):
             if x.get('id') in seen:
                 continue
@@ -257,7 +258,7 @@ def candidates(e, RC, st, refresh_days=14):
             if ok:
                 out.append({k2: x.get(k2) for k2 in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')})
     out.sort(key=lambda x: -(x.get('view_count') or 0))
-    st['candidates'][k] = {'name': e['name'], 'ts': time.time(), 'at': time.strftime('%Y-%m-%d'), 'items': out, 'q': e['q']}
+    st['candidates'][k] = {'name': e['name'], 'ts': time.time(), 'at': time.strftime('%Y-%m-%d'), 'items': out, 'q': qs}
     return out
 
 

@@ -73,7 +73,9 @@ CHAR_MIN = 0.6                   # share of character-voting frames the entry's 
 # edit "Fragrant Flower"; every true bank pass of the survey had >= 6), 4 only for the old SigLIP fallback
 MIN_VOTES = {'wd_tagger': 6, 'tagger_open+bank': 6, 'siglip_art': 4, 'tagger_open+art_margin': 4}
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
-MIN_VIEWS, MIN_LIKE_RATIO = 20_000, 0.015
+# owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
+MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
+MIN_AGE_DAYS = 180
 MAX_SRC_DUR = 150                # longer uploads are full-fight AMVs / compilations, not edits
 COOKIES = os.environ.get('YT_SPARE_COOKIES', os.path.join(os.path.expanduser('~'), 'yt-cookies.txt'))
 PACE_S = 20                      # between YouTube requests (shared spare account)
@@ -193,7 +195,7 @@ def cached_infos():
     return [x for x in out if x]
 
 
-def search(q, n=20):
+def search(q, n=40):
     def run():
         pace()
         out = ytdlp(['--flat-playlist', '-J', f'ytsearch{n}:{q}'])
@@ -263,6 +265,16 @@ def ensure_decodable(p):
     return False
 
 
+def queries(entry):
+    """the entry's own queries + the plain "<character> edit" / "<anime> edit" searches (owner 2026-10-27);
+    an anime search still needs the character's name in the title (prefilter)"""
+    q = list(entry['q'])
+    for x in (entry.get('search') or entry['name'], entry.get('anime')):
+        if x and f'{x.lower()} edit' not in q:
+            q.append(f'{x.lower()} edit')
+    return q
+
+
 def prefilter(e, entry, min_views=None):
     """Flat search entry -> (ok, reason)."""
     t = (e.get('title') or '')
@@ -295,6 +307,9 @@ def info_gate(info):
         return False, f'like_ratio_{lk / v:.3f}'
     if L.EXPLICIT_RE.search(' '.join([info.get('title') or '', info.get('description') or '', ' '.join(info.get('tags') or [])])):
         return False, 'explicit_meta'
+    up = info.get('upload_date')
+    if not up or (time.time() - time.mktime(time.strptime(up, '%Y%m%d'))) / 86400 < MIN_AGE_DAYS:
+        return False, 'too_new'
     return True, ''
 
 
@@ -910,7 +925,7 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                     best = (res['rank_score'], res)
         return best[1] if best else None
     seen, cands = set(), []
-    for q in entry['q']:
+    for q in queries(entry):
         for e in (search(q) or []):
             if e.get('id') in seen or e.get('id') in used:
                 continue
