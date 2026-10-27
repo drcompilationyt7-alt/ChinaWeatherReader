@@ -444,11 +444,11 @@
   "ZnwnSVnvxrU": "unclean: borders (0.20); burned-in text (0.41 top / 0.00 bottom)",
   "yK0epJRoK7M": "ok",
   "-mErVHvJdko": "ok",
-  "Id2xUtIPF-E": "unclean: burned-in text (0.42 top / 0.19 bottom)",
+  "Id2xUtIPF-E": "ok",
   "yLDuKYCCnmw": "unclean: borders (0.11); burned-in text (0.00 top / 0.09 bottom)",
-  "usDpdMy12Yw": "unclean: burned-in text (0.18 top / 0.17 bottom)",
+  "usDpdMy12Yw": "ok",
   "FTqwKHqEC1M": "unclean: borders (0.16); burned-in text (0.00 top / 0.16 bottom)",
-  "fqXR5TiMYV0": "unclean: burned-in text (0.18 top / 0.34 bottom)",
+  "fqXR5TiMYV0": "ok",
   "yFgSoA8wsUY": "unclean: burned-in text (0.00 top / 0.17 bottom); burned-in text (0.00 top / 0.18 bottom)",
   "xhiCCHiYBcY": "unclean: burned-in text (0.00 top / 0.24 bottom); burned-in text (0.00 top / 0.25 bottom)",
   "E4wOjJJrDpE": "unclean: borders (0.25)",
@@ -1155,7 +1155,14 @@
   "Pc3jWVwX9So": "ok",
   "oZCofrW0am0": "lowres: no 1080p video format",
   "MS__posNjK8": "ok",
-  "a0LhJY3XRwg": "ok"
+  "a0LhJY3XRwg": "ok",
+  "dg0jt7_YLMA": "unclean: borders (0.24)",
+  "j3MdIXKQNHI": "unclean: borders (0.24); static watermark / logo",
+  "EI-5eLy3U4w": "unclean: borders (0.05); borders (0.07)",
+  "n-cSIpi3D80": "lowres: no 1080p video format",
+  "iWHAko58EO8": "lowres: no 1080p video format",
+  "eACYUYeXbks": "lowres: no 1080p video format",
+  "5rs6BWAAWS8": "ok"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1664,6 +1671,8 @@
   "Tokyo Revengers best fight scenes": 14,
   "Tokyo Ghoul best fight scenes": 14,
   "Devilman Crybaby best fight scenes": 14,
-  "Castlevania best fight scenes": 14
+  "Castlevania best fight scenes": 14,
+  "Ninja Scroll best fight scenes": 14,
+  "Afro Samurai best fight scenes": 14
  }
 }
