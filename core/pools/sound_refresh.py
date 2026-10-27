@@ -54,6 +54,10 @@ HIT_BLOCK_P = os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-hit-blocklist.
 BASELINE_P = os.environ.get('SOUND_PINS_BASELINE') or os.path.join(ROOT, 'core', 'edit', 'assets', 'sound-pins-baseline.json')
 CRISP_TAGS = {'clap', 'object', 'chain'}
 PREFILTER = os.environ.get('SOUND_PREFILTER', '1') != '0'
+# 2026-10-27: the daily sound edit is the BEAT REMAKE; its clean-window gate (sound_edit.remake_check: a build-up free of other
+# distinct transients, picture after the hit, no held frames) dropped 27 of the 36 fresh pins AFTER vision + owner review
+# (the sound short fell back to stem 10-23..27). Checked here before the paid vision call; SOUND_REMAKE_GATE=0 turns it off.
+REMAKE_GATE = os.environ.get('SOUND_REMAKE_GATE', '1') != '0'
 TEXT_MAX = float(os.environ.get('SOUND_TEXT_MAX', '0.02'))       # per-clip burned-in text band (= hit_import.safety)
 # dense mining (2026-10-17: short build-up + hit + quick cut doubled the yield per source)
 DENSE = {'HIT_SCAN_SPACING': '1.5', 'HIT_SCAN_PRE_MIN': '0.3', 'HIT_SCAN_POST_MIN': '0.2', 'HIT_SCAN_PER_MIN': '16', 'HIT_SCAN_CAP': '20'}
@@ -234,6 +238,20 @@ def _judge(work, out, rep, t0, budget_min):
             write_json(os.path.join(out, 'verdicts.json'), verdicts)
             log(f'{name}: rejected (burned-in text {tb[0]:.2f} top / {tb[1]:.2f} bottom)')
             continue
+        if REMAKE_GATE:
+            # the beat remake must be able to show this hit at all (else the pin is dead on arrival in the planner)
+            try:
+                import sound_edit as SE
+                rok, rwhy, rev = SE.remake_check(p, float(m['hit_t']), cache_dir=os.path.join(work, 'evcache'))
+            except Exception as e:  # noqa: BLE001
+                rok, rwhy, rev = True, [f'check error {str(e)[:100]}'], None
+            if not rok:
+                verdicts[name] = {'remake': {'why': rwhy, 'pre_room': (rev or {}).get('pre_room'),
+                                             'post_room': (rev or {}).get('post_room'), 'xs': (rev or {}).get('xs', [])[:3]}}
+                rep['remake_rejects'] = rep.get('remake_rejects', 0) + 1
+                write_json(os.path.join(out, 'verdicts.json'), verdicts)
+                log(f"{name}: rejected (beat remake: {', '.join(rwhy)})")
+                continue
         if PREFILTER:
             # 2026-10-21 cheap CPU pre-filter (impact at the hit, action size / centre / spread) BEFORE the paid vision call
             try:

@@ -2319,6 +2319,24 @@ REMAKE_STILL_THR = float(os.environ.get('SOUND_REMAKE_STILL_THR', '0.8'))  # mea
 _STILL_CACHE = {}
 
 
+def remake_fail(e, ex=None):
+    """Why the beat remake cannot use event e (empty = usable): no clean build-up after an earlier distinct transient, the scene
+    (or a held frame) ends before REMAKE_POST_MIN of picture after the hit, the next distinct action is too close, or the clip is
+    on sound-remake-exclude.json. Picture-only (silent_only) events skip the room gates. Needs remake_rooms / remake_stills first."""
+    why = []
+    if not e.get('silent_only'):
+        m = scene_margin(e)
+        if e['pre_room'] - m < 0.08:
+            why.append('pre_room')
+        if e['post_room0'] - m < REMAKE_POST_MIN:
+            why.append('post_room')
+        if _remake_too_tight(e):
+            why.append('too_tight')
+    if os.path.splitext(os.path.basename(e['path']))[0] in (remake_exclude() if ex is None else ex):
+        why.append('remake_exclude')
+    return why
+
+
 def _remake_too_tight(e):
     """A hit whose next distinct action follows within 0.14 s (e.g. rapid triple strikes) cannot be cut before it (the hit would show
     < REMAKE_POST_MIN) and that action cannot land on a 16th either (needs a stretch > 1.1): not usable in the beat remake."""
@@ -3108,10 +3126,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
             remake_rooms(events)
             remake_stills(events, _STILL_CACHE)
             ex = remake_exclude()
-            events = [e for e in events if (e.get('silent_only') or (e['pre_room'] - scene_margin(e) >= 0.08
-                                                                      and e['post_room0'] - scene_margin(e) >= REMAKE_POST_MIN
-                                                                      and not _remake_too_tight(e)))
-                      and os.path.splitext(os.path.basename(e['path']))[0] not in ex]
+            events = [e for e in events if not remake_fail(e, ex)]
             events = reuse_limit(events)
             aud_ev = [e for e in events if not e.get('silent_only')]
             # owner 2026-10-16 hard rule (no frozen frames): the edit can only be as long as the clips' clean picture (build-up +
@@ -3155,10 +3170,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
         # a hit whose picture freezes right after it (held impact drawing) cannot show REMAKE_POST_MIN of motion either
         n0 = len(events)
         ex = remake_exclude()
-        events = [e for e in events if (e.get('silent_only') or (e['pre_room'] - scene_margin(e) >= 0.08
-                                                                  and e['post_room0'] - scene_margin(e) >= REMAKE_POST_MIN
-                                                                      and not _remake_too_tight(e)))
-                  and os.path.splitext(os.path.basename(e['path']))[0] not in ex]
+        events = [e for e in events if not remake_fail(e, ex)]
         if len(events) < n0:
             log(f'beat remake: {n0 - len(events)} events dropped (no room for a build-up before the hit)')
     events = reuse_limit(events)
@@ -4457,17 +4469,39 @@ def allow_pin(events, raw):
             continue
         pinned.add(sh)
         for k, a in enumerate(ents):
-            ta = float(a['t'])
-            near = min(lst, key=lambda e: abs(float(e['t']) - ta))
-            e = dict(near, reject=None, silent_only=False, relaxed=None)
-            if abs(float(near['t']) - ta) > 0.12:
-                st = near.get('scene_t') or [0.0, float(near.get('dur') or ta + 1.0)]
-                e.update(t=round(ta, 3), pre_room=round(ta - float(st[0] or 0.0), 3),
-                         post_room=round(float(st[1] if st[1] is not None else ta + 1.0) - ta, 3))
-            e['id'] = f"{sh}:allow{k}"
-            e['allow_pinned'] = True
-            out.append(e)
+            out.append(_pin_event(lst, float(a['t']), f"{sh}:allow{k}"))
     return pinned, out
+
+
+def _pin_event(lst, ta, eid):
+    """The audible event for an approved hit at clip time ta (allow_pin): the detected event within 0.12 s, else the nearest one
+    moved onto ta."""
+    near = min(lst, key=lambda e: abs(float(e['t']) - ta))
+    e = dict(near, reject=None, silent_only=False, relaxed=None)
+    if abs(float(near['t']) - ta) > 0.12:
+        st = near.get('scene_t') or [0.0, float(near.get('dur') or ta + 1.0)]
+        e.update(t=round(ta, 3), pre_room=round(ta - float(st[0] or 0.0), 3),
+                 post_room=round(float(st[1] if st[1] is not None else ta + 1.0) - ta, 3))
+    e['id'] = eid
+    e['allow_pinned'] = True
+    return e
+
+
+def remake_check(path, t, cache_dir=None):
+    """Can the beat remake (SOUND_BEAT_REMAKE=1, the daily sound edit) ever show the hit at clip time t of this clip? The same
+    clean-window gate plan_sound_edit applies to every pinned event (remake_rooms + remake_stills + remake_fail): >= 0.08 s of
+    build-up after any earlier distinct clip transient, >= REMAKE_POST_MIN of picture after the hit before the scene cut / the
+    next distinct transient, no held (still) frames around it. 2026-10-27: 27 of the 36 fresh pins failed this gate in the
+    planner, after the vision model and the owner's review had approved them (core/pools/sound_refresh.py now checks it
+    before the vision call). Returns (ok, reasons, event)."""
+    ev = shot_events(_pool_shot({'path': path, 'sfx': [{'t': float(t)}]}), 0, cache_dir=cache_dir)
+    if not ev:
+        return False, ['no_sound_event'], None
+    e = _pin_event(ev, float(t), '0:check')
+    remake_rooms([e])
+    remake_stills([e], _STILL_CACHE)
+    why = remake_fail(e)
+    return not why, why, e
 
 
 def hit_blocklist():
