@@ -671,3 +671,42 @@ and any gate exception becomes a reject (`gate_error_*`); evaluate / staging / e
 never kills the run); `set -o pipefail` in the mine step. Scheduled runs start 5-6 h late here, i.e. after midnight UTC:
 `pool-mine-rotation.py` now dates a run by its NIGHT (UTC now - 12 h), so Wednesday's ranking job still mines ranking.
 Yuta got 3 more search queries (a changed query list refreshes the 14-day candidate cache).
+
+## 13. Review + Yuta / Madara gate diagnosis (2026-10-26 late)
+
+**Sung Jinwoo r_Ea6_MSvkf90_11170 (@Semo-editz0, "Timeless") REJECTED** (Claude): the first ~9 s of the 19 s window are
+Cha Hae-In, a beaten hunter and the ice elves with burned-in dialogue captions ("Kimu-san didn't noticed it back then");
+Jinwoo only owns the second half. Strong effects (ref 8.7) but not "the right character clearly dominant". The gate passed
+it because the non-Jinwoo frames abstain (5 other_gender votes, 11 / 16 wins).
+
+**Why every Yuta / Madara candidate failed** (all 6 re-downloaded, every window measured, sheets checked by eye):
+| source | what it is (by eye) | gate before | verdict |
+|---|---|---|---|
+| H1Q5zPXbefU Yuta "Gojo X Yuta" | a GOJO edit (Gojo 8-18 of the votes), "SANCHEZ" tag on a face | char 0-0.19, ref 8.7-9.5 | correct reject |
+| xlPSek4600U Yuta (@PJUNKIE) | real Yuta / Rika edit, but "PJUNKIE" mid-window + group end card | char 0.14 (4 of 7 votes other_gender = Rika) | reject stands (tag) |
+| WYWHKOjcqW8 Yuta (HENZUNA) | the same Sleepwalker edit, "HENZ" on the sword at 21.5 s | not eventful 4.06 (< 6) | reject stands |
+| tUwqNxc6KCA Yuta "Domain Expansion" | a pencil fan animation under a full-frame "@Z3NN28" watermark (the mark gate missed it) | not eventful 5.0 | correct reject |
+| hgTLtOVujAE Madara "Madara's Words" | old Madara + Obito dialogue / lyric text, calm | char 0 (8 of 9 votes other_gender), ref 8.1 (other windows 2-4) | correct reject (not on par) |
+| jNvctZn_1sw Madara "Fed Up" (HEICHOU, 2021) | GOOD: Madara on screen almost throughout, heavy effects, Susanoo | char 0.18-0.22, ref 8.4-8.8 (hand 8.3) | wrongly rejected |
+Causes: (1) the WD tagger knows neither Yuta, Rika, Madara nor Hashirama / Obito; it reads long-haired Madara, Rika and
+explosions as `1girl` -> `other_gender` votes; it reads Madara as `uchiha_sasuke` (0.94); (2) tiny face banks (Yuta 10
+refs vs Toji / Maki 21-23, Madara 7 vs Itachi 5): Yuta faces lost to Maki / Toji by < 0.03 and abstained; (3) Rika (Yuta's
+companion) voted against Yuta. The reference profile was never the blocker (every real edit scored 8-9.5).
+
+**Fix (precision first):**
+- `char_refs`: the wiki's file index by name prefix + the File-namespace search (files like "Reanimated Madara Uchiha"),
+  60 files, descriptor words (reanimated, elder, rinnegan, susanoo ...) no longer count as "someone else", spaced
+  "X and Y" / "vs" / clan files skipped (the filter only matched underscores). Banks: Yuta 10 -> 24 refs, Madara 7 -> 16,
+  Sung Jinwoo 10 -> 24, Sasuke 24. Bank cache version `BANK_V = 3` (old caches rebuild).
+- `match_open`: a tagger distractor vote is overruled when the bank prefers the target over THAT distractor's bank by
+  `ARB_MARGIN` 0.03 (and gives the frame to the target); a weak (< 0.7) look-alike tag on a frame without a face abstains;
+  `other_gender` votes need a face the bank does not give to the target (no face = no vote); entry `companions`
+  (YUTA: Rika Orimoto) abstain instead of voting against (Gojo deliberately NOT a companion: "Gojo X Yuta" must fail).
+- Tested and NOT used: bank margin 0.025 made Madara pass (0.60) but passed a Horimiya edit as Fragrant Flower.
+
+**Before / after:** labelled set (`ranking_charcheck_eval.py`, 42 survey candidates, 77 chunks): own-entry passes 21 -> 23,
+wrong-character passes 0 -> 0 (MTFXS_Tna2w = Gojo, the known true detection). Candidates: Madara jNvctZn 0.22 -> 0.57
+(4 of 7 votes; the rest are real Naruto / Gaara-sand / a Madara-Sasuke two-shot) = still 0.03 short of 0.60;
+xlPSek Yuta 0.14 -> 1.0 but 2 votes (Yuta faces still within the margin of Toji / Maki); H1Q5 Gojo edit stays 0-0.36.
+**Topic eligibility unchanged:** jjk_strongest needs a clean Yuta edit (none of the 6 is usable); strongest_overall needs
+Madara + Sung Jinwoo. No CI dry run. Next: mine more Madara / Jinwoo / Yuta candidates with the new banks.

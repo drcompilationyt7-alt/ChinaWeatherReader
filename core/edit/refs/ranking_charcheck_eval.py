@@ -26,7 +26,8 @@ SURVEY = os.path.join(os.path.expanduser('~'), 'Desktop', 'edit-refs', 'ranking'
 def check(judge, frames, entry, others):
     tgt, oth = RC.targets_and_distractors(judge, entry, others)
     mt = judge.match_tags(frames, entry.get('tags'))
-    conf, det = mt if mt is not None else judge.match_open(frames, tgt, oth, [t for o in others for t in o.get('tags', [])])
+    conf, det = mt if mt is not None else judge.match_open(frames, tgt, oth, [t for o in others for t in o.get('tags', [])],
+                                                                            entry.get('companions', ()))
     top_other = max(det['others'].values()) if det['others'] else 0
     need = 4 if os.environ.get('RANKING_CHARCHECK') == 'v1' and det.get('method') != 'wd_tagger' else RC.MIN_VOTES.get(det.get('method'), 6)
     ok = det['votes'] >= need and conf >= RC.CHAR_MIN and det['wins'] >= 2 * top_other

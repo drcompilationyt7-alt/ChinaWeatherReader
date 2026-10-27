@@ -48,6 +48,10 @@ import char_refs  # noqa: E402
 
 BANK_MARGIN = float(os.environ.get('RANKING_BANK_MARGIN') or 0.03)
 BANK_MIN = float(os.environ.get('RANKING_BANK_MIN') or 0.0)
+# a tagger distractor vote is overruled only when the bank prefers the target over THAT distractor by this much
+ARB_MARGIN = float(os.environ.get('RANKING_ARB_MARGIN') or 0.03)
+# ... and a tagger distractor vote on a frame WITHOUT a face counts only from this tag confidence (unknown target only)
+ARB_TAG_MIN = float(os.environ.get('RANKING_ARB_TAG_MIN') or 0.7)
 
 
 def L_max(a):
@@ -718,54 +722,43 @@ class Judge:
                     return t
         return None
 
-    def match_open(self, frames, target_names, other_names, extra_tags=()):
-        """Character check for a target the WD tagger does NOT know (Toji, Yuta, most romance leads):
-        1. frames where the tagger sees a KNOWN distractor of the same show / list (Gojo, Megumi, Yuji ...)
-           vote for that distractor (tags of other franchises are tagger confusions, ignored);
-        2. frames with only the other gender vote 'other_gender';
-        3. the remaining person frames go to the SigLIP + AniList-art vote among the target and the
-           same-show characters the tagger does not know (Toji vs Yuta vs Maki ...).
+    def match_open(self, frames, target_names, other_names, extra_tags=(), companions=()):
+        """Character check for a target the WD tagger does NOT know (Toji, Yuta, Madara, most romance leads):
+        1. frames where the tagger sees a KNOWN distractor of the same show / list (Gojo, Megumi, Sasuke ...)
+           vote for that distractor (tags of other franchises are tagger confusions, ignored) - unless the face bank
+           clearly prefers the target over that distractor (ARB_MARGIN): the tagger reads unknown characters as their
+           known look-alikes (2026-10-26: Madara -> uchiha_sasuke 0.94 on a Madara close-up);
+        2. frames with only the other gender vote 'other_gender' - only with a face the bank does not give to the
+           target (the tagger calls long-haired Madara and explosions '1girl'), and never when the entry has a companion
+           of that gender (Rika in Yuta edits): those frames abstain;
+        3. the remaining person frames go to the face bank among the target, the same-show characters the tagger does
+           not know (Toji vs Yuta vs Maki ...) and the entry's companions (a companion's frame abstains).
         -> (conf, details), same rule as the tagger: >= 60 % and >= 2x any other."""
         tg = self.tagger()
         if tg is None:
             conf, det = self.match(frames, target_names, other_names)
             det['method'] = 'siglip_art'
             return conf, det
-        dis = {t for t in extra_tags if tg.has(t)}
+        comp = [c for c in dict.fromkeys(companions or ()) if c not in target_names]
+        other_names = [n for n in other_names if n not in comp]
+        dis, tag_name = {t for t in extra_tags if tg.has(t)}, {}
         unknown = []
         for n in other_names:
             t = self.tag_for(n)
             if t:
                 dis.add(t)
+                tag_name.setdefault(t, n)
             else:
                 unknown.append(n)
         # the other-gender vote only when every target has the same gender (a genre entry targets a whole show's cast)
         gs = {((self.char(t) or {}).get('gender') or '').lower() for t in target_names}
         g = gs.pop() if len(gs) == 1 else ''
+        comp_g = {((self.char(c) or char_refs.anilist_char(c, self.cache_dir) or {}).get('gender') or '').lower()
+                  for c in comp}
         i_boy, i_girl = tg.names.index('1boy'), tg.names.index('1girl')
-        others, rest, votes = {}, [], 0
-        for f in frames:
-            pr = tg(f)
-            ch = {k: v for k, v in tg.chars(pr).items() if k in dis}
-            boy, girl = pr[i_boy], pr[i_girl]
-            if ch:
-                votes += 1
-                b = max(ch, key=ch.get)
-                others[b] = others.get(b, 0) + 1
-            elif (g == 'male' and girl >= 0.5 and boy < 0.35) or (g == 'female' and boy >= 0.5 and girl < 0.35):
-                votes += 1
-                others['other_gender'] = others.get('other_gender', 0) + 1
-            elif max(boy, girl) >= 0.5:
-                rest.append(f)
-        # 3. face crops vs the multi-image reference bank (char_refs.Bank, 2026-10-25: AniList art + our quiz-pool pictures
-        #    + the show's wiki gallery, one face per picture, tagger-vetoed and consistency-filtered). Per candidate the
-        #    mean of its top-3 reference similarities; a frame votes only with a clear margin (BANK_MARGIN) and a
-        #    plausible absolute similarity (BANK_MIN); ambiguous frames abstain. (One AniList picture made Yuta / the
-        #    romance leads fail and a 0.02 margin on it was the only guard.)
-        wins = 0
-        names = list(dict.fromkeys(list(target_names) + [n for n in unknown if n not in target_names]))
-        nt = len(dict.fromkeys(target_names))
         v1 = os.environ.get('RANKING_CHARCHECK') == 'v1'      # the old single-AniList-picture check (evaluation only)
+        names = list(dict.fromkeys(list(target_names) + [n for n in unknown if n not in target_names] + comp))
+        nt = len(dict.fromkeys(target_names))
         if v1:
             emb, owners, _ = self.ref_set(names)
             refs = [emb[owners == k] for k in range(len(names))]
@@ -776,23 +769,87 @@ class Judge:
         if not len(refs[0]) and nt == 1:
             return 0.0, {'method': 'bank', 'votes': 0, 'wins': 0, 'others': {}, 'frames': len(frames), 'rating_flags': 0,
                          'why': 'no reference pictures'}
-        for f in rest:
+        tag_refs = {}
+
+        def tref(t):                    # the bank of a tagger-known distractor (arbitration only)
+            if t not in tag_refs:
+                n = tag_name.get(t)
+                tag_refs[t] = (self.bank().build(n, wiki=self.wiki.get(n), alias=self.alias.get(n))['emb']
+                               if n and not v1 else np.zeros((0, 1), np.float32))
+            return tag_refs[t]
+
+        def crops_emb(f):
             fc = L.face_crops(f, self.faces, 2) if self.faces else []
-            if not fc:
-                continue
-            ce = self.sig.images(fc)
+            return self.sig.images(fc) if fc else None
+
+        def bank_pick(ce):
+            """-> the index (into names) of a clear bank winner, or None (ambiguous / implausible)"""
             sc = np.array([L_max(char_refs.Bank.score(ce, r, top)) for r in refs])
             order = np.argsort(-sc)
             if sc[order[0]] < BANK_MIN or (len(sc) > 1 and sc[order[0]] - sc[order[1]] < margin):
+                return None
+            return int(order[0])
+        others, votes, wins, arb = {}, 0, 0, 0
+        for f in frames:
+            pr = tg(f)
+            ch = {k: v for k, v in tg.chars(pr).items() if k in dis}
+            boy, girl = pr[i_boy], pr[i_girl]
+            if ch:
+                b = max(ch, key=ch.get)
+                if not v1 and nt == 1:
+                    ce = crops_emb(f)
+                    tr = tref(b)
+                    if ce is not None and len(tr):
+                        st = L_max(char_refs.Bank.score(ce, refs[0], top))
+                        sd = L_max(char_refs.Bank.score(ce, tr, top))
+                        if bank_pick(ce) == 0 and st - sd >= ARB_MARGIN:
+                            votes += 1
+                            wins += 1
+                            arb += 1
+                            continue
+                    elif ce is None and ch[b] < ARB_TAG_MIN:
+                        continue                # a weak look-alike tag on a frame without a face: no vote
+                votes += 1
+                others[b] = others.get(b, 0) + 1
+                continue
+            other_g = (g == 'male' and girl >= 0.5 and boy < 0.35) or (g == 'female' and boy >= 0.5 and girl < 0.35)
+            if other_g and not v1:
+                if comp_g & ({'female'} if g == 'male' else {'male'}):
+                    continue                    # the entry's companion (Rika) is that gender: no vote
+                ce = crops_emb(f)
+                if ce is None:
+                    continue                    # no face (an explosion, a sky): no vote
+                k = bank_pick(ce)
+                votes += 1
+                if k is not None and k < nt:
+                    wins += 1
+                else:
+                    others['other_gender'] = others.get('other_gender', 0) + 1
+                continue
+            if other_g:
+                votes += 1
+                others['other_gender'] = others.get('other_gender', 0) + 1
+                continue
+            if max(boy, girl) < 0.5:
+                continue
+            # 3. face crops vs the multi-image reference bank (char_refs.Bank: AniList art + our quiz-pool pictures + the
+            #    show's wiki files, one face per picture, tagger-vetoed and consistency-filtered). Per candidate the mean
+            #    of its top-3 reference similarities; a frame votes only with a clear margin (BANK_MARGIN) and a
+            #    plausible absolute similarity (BANK_MIN); ambiguous frames abstain.
+            ce = crops_emb(f)
+            if ce is None:
+                continue
+            k = bank_pick(ce)
+            if k is None or names[k] in comp:
                 continue
             votes += 1
-            if order[0] < nt:
+            if k < nt:
                 wins += 1
             else:
-                others[names[order[0]]] = others.get(names[order[0]], 0) + 1
+                others[names[k]] = others.get(names[k], 0) + 1
         conf = wins / votes if votes else 0.0
         return conf, {'method': 'tagger_open+bank', 'votes': votes, 'wins': wins, 'others': others,
-                      'frames': len(frames), 'rating_flags': 0}
+                      'frames': len(frames), 'rating_flags': 0, 'arbitrated': arb}
 
     def bank(self):
         if not hasattr(self, '_bank'):
@@ -1223,7 +1280,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 w['reject'] = 'rating'
                 continue
         else:
-            conf, det = judge.match_open(frames, tgt, oth, [t for o in others for t in o.get('tags', [])])
+            conf, det = judge.match_open(frames, tgt, oth, [t for o in others for t in o.get('tags', [])],
+                                         entry.get('companions', ()))
         w['conf'], w['match'] = round(conf, 2), det
         top_other = max(det['others'].values()) if det['others'] else 0
         # the entry's character must clearly own the window: >= 60 % of the voting frames and at least twice

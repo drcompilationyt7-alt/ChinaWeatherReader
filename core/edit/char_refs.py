@@ -34,9 +34,10 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 ASSETS = os.path.join(ROOT, 'core', 'quiz', 'assets')
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
 MAX_REFS = 24
-WIKI_FILES = 40            # wiki files looked at per character
+WIKI_FILES = 60            # wiki files looked at per character
+BANK_V = 3                 # bank format / source version (3: + the wiki file index by name prefix + file search, 60 files, 2026-10-26)
 BAD_FILE = re.compile(r'icon|logo|signature|map|banner|chibi|sprite|emoji|avatar|thumb|cosplay|figure|merch|plush|voice|seiyuu|'
-                      r'\.gif|\.svg|\.webm|sticker|stamp|nendoroid|card|volume|cover|vs\.?_|_and_|_&_|group|team|family', re.I)
+                      r'\.gif|\.svg|\.webm|sticker|stamp|nendoroid|card|volume|cover|vs\.?[ _]|[ _]and[ _]|[ _]&[ _]|group|team|family|clan', re.I)
 
 
 def log(*a):
@@ -67,7 +68,9 @@ anime manga prequel movie film season episode ep part arc chapter official key v
 face eyes smile smiling angry sad crying fight fighting battle attack attacks kills kill defeats defeated meets meeting appears
 appearance reveals revealed declares tells asks says using uses use form mode true power powers ability technique domain
 expansion cursed energy technique sword ring school uniform outfit casual summer winter night day image picture screenshot
-character design color colour version alt alternate design sketch infobox gallery'''.split())
+character design color colour version alt alternate design sketch infobox gallery
+reanimated revived reincarnated resurrected elder elderly kid teen teenage older younger rinnegan sharingan mangekyo mangekyō
+susanoo awakening awakens awakened attacked transformation transformed release jinchuriki sage warring states era'''.split())
 
 
 def other_names(filename, name):
@@ -158,7 +161,7 @@ def quiz_images(cid):
 def wiki_images(wiki, name, cache_dir, limit=WIKI_FILES, alias=None):
     """Files on the character's wiki page + /Gallery whose file name carries the character's name (AniList spelling or the
     entry's own spelling: "Touji" / "Toji")."""
-    p = os.path.join(cache_dir, 'wiki', f'{wiki}__{key_of(name)}.json')
+    p = os.path.join(cache_dir, 'wiki', f'{wiki}__{key_of(name)}__v{BANK_V}.json')
     if os.path.exists(p):
         return json.load(open(p, encoding='utf-8'))
     out = []
@@ -189,6 +192,31 @@ def wiki_images(wiki, name, cache_dir, limit=WIKI_FILES, alias=None):
                     if (re.search(r'\.(png|jpe?g|webp)$', f, re.I) and not BAD_FILE.search(f) and (ft & toks)
                             and not other_names(f, ' '.join(sorted(toks))) and f not in files):
                         files.append(f)
+            # 2026-10-26: the character page + gallery alone gave Madara 9 files / Yuta 12 (banks of 7 / 10 refs lost to
+            # look-alikes: Madara vs Itachi, Yuta vs Maki / Toji). The wiki's whole file index by name prefix ("Madara",
+            # "Yuta Okkotsu", "Okkotsu") adds the screenshots used on other pages; same filters (own name, no one else).
+            # Plus the file-namespace search ("Reanimated Madara Uchiha.png", "WZ Madara.png" do not start with the name).
+            pres = list(dict.fromkeys([nm for nm in names] + [t.capitalize() for nm in names for t in name_tokens(nm)
+                                                              if len(t) >= 4 and t not in COMMON]))
+            for kind, pre in [('prefix', x) for x in pres] + [('search', x) for x in names]:
+                try:
+                    if kind == 'prefix':
+                        al = [im['name'] for im in http(api + urllib.parse.urlencode(
+                            {'action': 'query', 'list': 'allimages', 'aiprefix': pre, 'ailimit': 200,
+                             'format': 'json'}))['query']['allimages']]
+                    else:
+                        al = [h['title'].split(':', 1)[1] for h in http(api + urllib.parse.urlencode(
+                            {'action': 'query', 'list': 'search', 'srsearch': pre, 'srnamespace': 6, 'srlimit': 100,
+                             'format': 'json'}))['query']['search']]
+                except Exception:  # noqa: BLE001
+                    continue
+                for nm_ in al:
+                    f = 'File:' + nm_.replace('_', ' ')
+                    ft = set(name_tokens(f))
+                    if (re.search(r'\.(png|jpe?g|webp)$', f, re.I) and not BAD_FILE.search(f) and (ft & toks)
+                            and not other_names(f, ' '.join(sorted(toks))) and f not in files):
+                        files.append(f)
+                time.sleep(0.3)
             # anime screenshots first ("anime", "episode", "ep"), then the rest
             files.sort(key=lambda f: (not re.search(r'anime|episode|\bep\b|_ep|season', f, re.I), f))
             files = files[:limit]
@@ -265,7 +293,7 @@ class Bank:
         npz, meta = os.path.join(self.dir, k + '.npz'), os.path.join(self.dir, k + '.json')
         if os.path.exists(npz) and os.path.exists(meta):
             m = json.load(open(meta, encoding='utf-8'))
-            if m.get('wiki') == wiki:
+            if m.get('wiki') == wiki and m.get('v') == BANK_V:
                 m['emb'] = np.load(npz)['emb']
                 self.mem[k] = m
                 return m
@@ -311,7 +339,7 @@ class Bank:
                     and (not ai or i in ai or S[i, ai[0]] >= float(np.nanmedian(S[ai[0]])) - 0.12)]
         keep = keep[:MAX_REFS] if 'anilist' not in srcs else ([i for i in keep if srcs[i] == 'anilist']
                                                               + [i for i in keep if srcs[i] != 'anilist'])[:MAX_REFS]
-        m = {'name': name, 'anime': anime or c.get('anime'), 'wiki': wiki, 'id': c.get('id'), 'gender': c.get('gender'),
+        m = {'name': name, 'v': BANK_V, 'anime': anime or c.get('anime'), 'wiki': wiki, 'id': c.get('id'), 'gender': c.get('gender'),
              'favourites': c.get('favourites'), 'n_raw': n_raw, 'n_faces': len(crops), 'n': len(keep),
              'src': [srcs[i] for i in keep], 'built': time.strftime('%Y-%m-%d')}
         np.savez_compressed(npz, emb=emb[keep] if len(keep) else emb[:0])
