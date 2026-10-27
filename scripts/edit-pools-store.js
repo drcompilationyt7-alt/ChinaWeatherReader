@@ -44,6 +44,16 @@ const repo = repoSlug ? ['--repo', repoSlug] : [];
 const env = { ...process.env, GH_TOKEN: process.env.GH_PAT || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '' };
 if (!env.GH_TOKEN) delete env.GH_TOKEN;   // local: the gh login
 const gh = (a, o = {}) => execFileSync('gh', a, { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], ...o });
+// upload with retries: --clobber deletes the old asset first, so a one-off GitHub 5xx (2026-10-26) would leave the pool missing
+function upload(file) {
+  for (let k = 1; ; k++) {
+    try { return gh(['release', 'upload', TAG, file, ...repo, '--clobber']); } catch (e) {
+      if (k >= 4) throw e;
+      console.warn(`upload ${path.basename(file)} failed (try ${k}/4): ${String(e.stderr || e.message).trim().split('\n').pop()}; retry in ${20 * k} s`);
+      execFileSync(process.execPath, ['-e', `setTimeout(() => {}, ${20000 * k})`]);
+    }
+  }
+}
 const STAMP = path.join(dir, '.store-stamp.json');
 const manifestsOnly = args.includes('--manifests-only');
 const pruneLocal = args.includes('--prune-local');
@@ -241,7 +251,7 @@ function push() {
     const parts = split(tar, PART);
     for (const p of parts) keep.add(path.basename(p));
     console.log(`push ${name}: ${files.length} files, ${(bytes / 1048576).toFixed(0)} MB in ${parts.length} asset(s)`);
-    for (const p of parts) gh(['release', 'upload', TAG, p, ...repo, '--clobber']);
+    for (const p of parts) upload(p);
     if (pruneLocal) {
       if (verifyUploaded(parts)) verified.push({ preset, vibe, files });
       else console.error(`prune: ${name} NOT verified on the release: local copy kept`);
@@ -249,7 +259,7 @@ function push() {
     for (const p of parts) fs.rmSync(p, { force: true });
   }
   // index.json is the sound / slow-mo vibe index: a ranking-only push never replaces it (2026-10-25)
-  if (onlyPreset !== 'ranking' && fs.existsSync(path.join(dir, 'index.json'))) gh(['release', 'upload', TAG, path.join(dir, 'index.json'), ...repo, '--clobber']);
+  if (onlyPreset !== 'ranking' && fs.existsSync(path.join(dir, 'index.json'))) upload(path.join(dir, 'index.json'));
   const pushedVibes = new Set(vs.map(v => `${v.preset}/${v.vibe}`));
   for (const a of assets() || []) {
     if (keep.has(a.name)) continue;
