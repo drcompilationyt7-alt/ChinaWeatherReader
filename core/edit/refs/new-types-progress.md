@@ -1424,3 +1424,14 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
   0 frames) -> ranking_compilation.content_box np.stack([]) ValueError in text_gate. `| tail -c 4000` without pipefail hid the
   exit code, so publish found 0 items. Funnel: 1 of 9 entries tried, 0 judged, 0 staged; not gates, not budget, downloads worked.
   Fix (ranking agent): prefer h264 / avc1 in the ranking yt-dlp format, guard empty frames, `set -o pipefail` in the mine step.
+
+### 2026-10-27 session-start review (review agent)
+- **Sound** sound-cand-20261027-n10 (Kaggle sharpen 10:30 run 40489071182: 0 near misses, nothing to sharpen): **2 approved**
+  (c_FCANUP9Xo3U_73604 Wind Breaker close kick into the guard, transient 0.40 = pin, adds a kick (only 4 kick pins);
+  c_I4xD8M7W8VE_35845 Akame ga Kill body slam into the ground with dust, transient 1.40 = pin, new show), **8 rejected**:
+  29560 Megalobox glove punch, three punches in 2 s (one landing on frame 0) and Megalobox fist already 7 pins; 20821 Wind Breaker
+  wide kick / punch / kick exchange, soft, loudest transient 2.45 not the pin, same source as 73604; 768238 Vinland Saga wide,
+  tiny figure falling through branches; 148415 Tokyo Revengers ground-and-pound, editor vignette, repeated punches, soft;
+  70434 Megalobox hand ejects a module (no hit) + black box on the last frames; 30539 Vinland Saga archers releasing (no contact,
+  weak read); 134042 "SENPAI KUN" watermark, dark crowd; 106364 Tokyo Ghoul kagune stomp tiny in the distance, cut at the start.
+  CI import 40514758107 (20c8ef9): 2 added, **pins 77**, tar deleted.
