@@ -1358,6 +1358,114 @@
     "titleStyle": "casual",
     "descHook": "op-target-comment"
    }
+  },
+  {
+   "videoId": "Bdue_y0j6m0",
+   "url": "https://www.youtube.com/watch?v=Bdue_y0j6m0",
+   "postedAt": "2026-10-27T08:10:50.323Z",
+   "publishAt": "2026-10-27T12:00:00.000Z",
+   "format": "cuisine",
+   "theme": "food",
+   "seed": 245835596,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Can you guess this Asian dish?",
+     "template": "Can you guess this Asian dish?",
+     "sec": 1.58
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Easy. Ramen!",
+     "template": null,
+     "sec": 1.6
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "It's Mango sticky rice!",
+     "template": null,
+     "sec": 1.94
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Dan dan noodles! You got it!",
+     "template": "{a}! You got it!",
+     "sec": 1.57
+    }
+   ],
+   "titleTemplate": "cuisine-llm",
+   "title": "guess the dish name asian food 🍜 #asianfood",
+   "answers": [
+    "cuisine:ramen#rx606i",
+    "cuisine:mango sticky rice#1q0alrn",
+    "cuisine:dan dan noodles#1yi5ols"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "NfkeJyCc7pA",
+   "url": "https://www.youtube.com/watch?v=NfkeJyCc7pA",
+   "postedAt": "2026-10-27T08:17:30.455Z",
+   "publishAt": "2026-10-27T21:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 247109171,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How did you do? Comment your score below!",
+     "template": "How did you do? Comment your score below!",
+     "sec": 2.02
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai-short",
+     "line": "That was Blood Sweat & Tears!",
+     "template": "That was {a}!",
+     "sec": 1.6
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Did you name Monster right away?",
+     "template": "Did you name {a} right away?",
+     "sec": 1.36
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Sorry Sorry!",
+     "template": null,
+     "sec": 1.39
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis quiz 🤯 #kpop",
+   "answers": [
+    "emoji:blood sweat & tears (bts)",
+    "emoji:monster (exo)",
+    "emoji:sorry sorry (super junior)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "challenge"
+   }
   }
  ]
 }

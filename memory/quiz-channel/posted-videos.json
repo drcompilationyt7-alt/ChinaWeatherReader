@@ -395,6 +395,28 @@
       "titleSource": "trivia-casual",
       "quizFormat": "trivia",
       "quizTheme": "cities"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Bdue_y0j6m0",
+      "title": "guess the dish name asian food 🍜 #asianfood",
+      "country": "Global",
+      "postedAt": "2026-10-27T08:10:50.595Z",
+      "videoId": "Bdue_y0j6m0",
+      "category": "quiz-cuisine",
+      "titleSource": "cuisine-llm",
+      "quizFormat": "cuisine",
+      "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=NfkeJyCc7pA",
+      "title": "guess the kpop song from emojis quiz 🤯 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-27T08:17:30.701Z",
+      "videoId": "NfkeJyCc7pA",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-llm",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
     }
   ]
 }
