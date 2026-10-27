@@ -1822,6 +1822,61 @@
    "whyMode": "insight-driven",
    "bpm": 160.06,
    "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "255vHZr50-0",
+   "url": "https://www.youtube.com/watch?v=255vHZr50-0",
+   "postedAt": "2026-10-27T09:19:44.041Z",
+   "publishAt": "2026-10-27T12:00:00.000Z",
+   "song": "99",
+   "theme": "anime",
+   "emoji": "🎶,🎧",
+   "title": "99 acapella but the beat drops 🎶",
+   "clipIds": [
+    "RU4qj0JDlek",
+    "VopWPhozmNw",
+    "hYzGNoYKXz0",
+    "Rfqup18-jH0",
+    "DYjSC_eCj2w",
+    "uvk25sTxAwQ",
+    "F5OJPUXJvHk",
+    "BdZG8CnSB0Y",
+    "oV14IYrlSe0"
+   ],
+   "clipChannels": [
+    "AnimeConnectsPeople",
+    "AnoKira Senpai",
+    "Joth Walia",
+    "Marufym",
+    "Neko Animation",
+    "RemRemu",
+    "RingWitDaHoodie Twixtor",
+    "TriaxFx",
+    "asteroid_field"
+   ],
+   "clipSource": "Mob Psycho 100",
+   "settings": {
+    "drop": 14,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-stack-drop"
+   },
+   "onVideoTitle": "full drop hits",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "title-source",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-milestone",
+    "descHook": "op-desc-stack-drop",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson + insights (bonus +0)",
+   "whyMode": "insight-driven",
+   "bpm": 94.99,
+   "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
 }

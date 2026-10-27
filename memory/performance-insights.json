@@ -1,95 +1,95 @@
 {
-  "updatedAt": "2026-10-26T08:11:41.527Z",
+  "updatedAt": "2026-10-27T08:54:27.982Z",
   "channel": {
     "title": "Zero Yen Otaku",
-    "subscribers": 15,
-    "totalViews": 16617,
-    "totalVideos": 37
+    "subscribers": 16,
+    "totalViews": 18723,
+    "totalVideos": 38
   },
-  "sampleSize": 36,
+  "sampleSize": 37,
   "reliable": true,
-  "globalMeanScore": 48.9,
-  "typicalScore": 8.5,
+  "globalMeanScore": 49.1,
+  "typicalScore": 8.9,
   "topTitles": [
     {
-      "videoId": "7idvk5Z_S6k",
-      "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
-      "views": 861,
-      "score": 493.1,
+      "videoId": "OP4oWjr6juI",
+      "title": "yoru ni kakeru acapella but the beat drops 🎶",
+      "views": 1036,
+      "score": 557.9,
       "country": "Global",
-      "ageDays": 1.8
+      "ageDays": 1.9
     },
     {
       "videoId": "jQNeOZ20gD8",
       "title": "soda pop acapella saja boys 🎧🎶",
-      "views": 1155,
-      "score": 225.9,
+      "views": 1158,
+      "score": 166,
       "country": "Global",
-      "ageDays": 2.8
+      "ageDays": 3.9
+    },
+    {
+      "videoId": "7idvk5Z_S6k",
+      "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
+      "views": 951,
+      "score": 160.9,
+      "country": "Global",
+      "ageDays": 2.9
     },
     {
       "videoId": "1_n7d7E6wO8",
       "title": "how you like that acapella but the beat drops 🗿⚡",
       "views": 1822,
-      "score": 131.4,
+      "score": 118.9,
       "country": "Global",
-      "ageDays": 9.8
+      "ageDays": 10.9
     },
     {
       "videoId": "Wg57oflof3I",
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "views": 1603,
-      "score": 121.4,
+      "views": 1605,
+      "score": 105.5,
       "country": "Global",
-      "ageDays": 6.7
+      "ageDays": 7.7
     },
     {
       "videoId": "2qzyPb-Mv28",
       "title": "anime sound design edit goes insane on believer 🔥",
       "views": 1041,
-      "score": 112.3,
+      "score": 99.1,
       "country": "Global",
-      "ageDays": 7.8
+      "ageDays": 8.9
     },
     {
       "videoId": "lpbT8Xc09Ek",
       "title": "anime sound design edit 🗿🔥",
       "views": 1038,
-      "score": 99.2,
+      "score": 84.3,
       "country": "Global",
-      "ageDays": 5.8
+      "ageDays": 6.9
     },
     {
       "videoId": "J91EYGAeUTI",
       "title": "golden hour but it's anime girls ✨ #anime",
       "views": 924,
-      "score": 97.3,
+      "score": 80.2,
       "country": "Global",
-      "ageDays": 4.8
+      "ageDays": 5.9
     },
     {
       "videoId": "hrdvNehinLY",
       "title": "anime sound design edit goes insane on antifragile 🎶🔥",
-      "views": 415,
-      "score": 80.8,
+      "views": 416,
+      "score": 63.8,
       "country": "Global",
-      "ageDays": 3.8
-    },
-    {
-      "videoId": "QZvICmvLzfI",
-      "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
-      "views": 1053,
-      "score": 66.7,
-      "country": "Global",
-      "ageDays": 8.8
+      "ageDays": 4.9
     },
     {
       "videoId": "NyccBq4DC_E",
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
       "views": 1170,
-      "score": 66.4,
+      "score": 60.7,
       "country": "Global",
-      "ageDays": 10.8
+      "ageDays": 11.9
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 1,
       "score": 0.1,
       "country": "Global",
-      "ageDays": 27.8
+      "ageDays": 28.9
     },
     {
       "videoId": "aJ9WPdgjEoU",
@@ -107,7 +107,7 @@
       "views": 5,
       "score": 0.1,
       "country": "Global",
-      "ageDays": 19.8
+      "ageDays": 20.9
     },
     {
       "videoId": "dXj0c9t-rqY",
@@ -115,7 +115,7 @@
       "views": 6,
       "score": 0.2,
       "country": "Global",
-      "ageDays": 23.8
+      "ageDays": 24.9
     },
     {
       "videoId": "TU8oZz2apfk",
@@ -123,7 +123,7 @@
       "views": 6,
       "score": 0.3,
       "country": "Global",
-      "ageDays": 28.8
+      "ageDays": 29.9
     },
     {
       "videoId": "h469omNRzVE",
@@ -131,92 +131,96 @@
       "views": 3,
       "score": 0.3,
       "country": "Global",
-      "ageDays": 25.8
+      "ageDays": 26.9
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
       "n": 17,
-      "lift": 0.85
+      "lift": 0.73
     }
   ],
   "countries": {
     "Global": {
-      "n": 30,
-      "meanScore": 58.4,
-      "weight": 1.28
+      "n": 29,
+      "meanScore": 62.2,
+      "weight": 1.45
     }
   },
   "channels": {},
   "categories": {
-    "edit-slowmo": {
-      "n": 2,
-      "meanScore": 295.2,
-      "weight": 1
+    "meme-japanese": {
+      "n": 5,
+      "meanScore": 142,
+      "weight": 1.6
     },
     "meme-anime": {
-      "n": 15,
-      "meanScore": 38.7,
-      "weight": 0.89
+      "n": 14,
+      "meanScore": 34.6,
+      "weight": 0.9
+    },
+    "edit-slowmo": {
+      "n": 2,
+      "meanScore": 120.6,
+      "weight": 1
     },
     "meme-kpop": {
-      "n": 6,
-      "meanScore": 22.5,
+      "n": 5,
+      "meanScore": 24.4,
       "weight": 0.6
     },
     "edit-sound": {
       "n": 3,
-      "meanScore": 97.4,
+      "meanScore": 82.4,
       "weight": 1.6
-    },
-    "meme-japanese": {
-      "n": 4,
-      "meanScore": 38.2,
-      "weight": 1.5
     }
   },
   "eggs": {},
   "history": [
     {
-      "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
-      "score": 6.203
+      "title": "yoru ni kakeru acapella but the beat drops 🎶",
+      "score": 6.326
     },
     {
       "title": "soda pop acapella saja boys 🎧🎶",
-      "score": 5.425
+      "score": 5.118
+    },
+    {
+      "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
+      "score": 5.087
     },
     {
       "title": "how you like that acapella but the beat drops 🗿⚡",
-      "score": 4.886
+      "score": 4.787
     },
     {
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "score": 4.807
+      "score": 4.668
     },
     {
       "title": "anime sound design edit goes insane on believer 🔥",
-      "score": 4.73
+      "score": 4.606
     },
     {
       "title": "anime sound design edit 🗿🔥",
-      "score": 4.607
+      "score": 4.447
     },
     {
       "title": "golden hour but it's anime girls ✨ #anime",
-      "score": 4.588
+      "score": 4.397
     },
     {
       "title": "anime sound design edit goes insane on antifragile 🎶🔥",
-      "score": 4.404
-    },
-    {
-      "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
-      "score": 4.215
+      "score": 4.172
     },
     {
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "score": 4.211
+      "score": 4.122
+    },
+    {
+      "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
+      "score": 4.107
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥",
@@ -224,23 +228,23 @@
     },
     {
       "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
-      "score": 4
+      "score": 3.989
     },
     {
       "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
-      "score": 3.916
-    },
-    {
-      "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
-      "score": 3.771
+      "score": 3.834
     },
     {
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
-      "score": 3.704
+      "score": 3.705
+    },
+    {
+      "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
+      "score": 3.695
     },
     {
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
-      "score": 1.316
+      "score": 1.321
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
@@ -260,7 +264,7 @@
     },
     {
       "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "score": 0.836
+      "score": 0.853
     },
     {
       "title": "clattanoia acapella but each stem makes the edit harder 🔥",
@@ -272,11 +276,15 @@
     },
     {
       "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
-      "score": 0.67
+      "score": 0.682
     },
     {
       "title": "dynamite acapella bts ✨🔥",
-      "score": 0.688
+      "score": 0.713
+    },
+    {
+      "title": "rise acapella 🥲🥲",
+      "score": 0.678
     },
     {
       "title": "god's menu acapella but the stems stack up 🎶🎧",
@@ -284,15 +292,11 @@
     },
     {
       "title": "otonoke acapella 🎧🎶 #dandadan",
-      "score": 0.655
+      "score": 0.65
     },
     {
       "title": "redo acapella but the drums kick in 🎶🎧",
       "score": 0.655
-    },
-    {
-      "title": "rise acapella 🥲🥲",
-      "score": 0.656
     },
     {
       "title": "supernova acapella stem build up aespa edit 🗿🔥",
@@ -323,6 +327,6 @@
       "score": 0.069
     }
   ],
-  "promptSummary": "Based on 36 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 8.5/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"golden hour (slowed) but every frame is an anime girl ✨ #anime\" (861 views, Global)\n  - \"soda pop acapella saja boys 🎧🎶\" (1,155 views, Global)\n  - \"how you like that acapella but the beat drops 🗿⚡\" (1,822 views, Global)\n  - \"idol acapella yoasobi 🎧🔥 #oshinoko\" (1,603 views, Global)\n  - \"anime sound design edit goes insane on believer 🔥\" (1,041 views, Global)\n  - \"anime sound design edit 🗿🔥\" (1,038 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\n  - \"super shy acapella 🗿 #newjeans\" (6 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.85)",
-  "summaryLine": "Best recent: \"golden hour (slowed) but every frame is an anime girl ✨ #anime\" (861 views, 493.1/day) — typical short 8.5/day over 36 shorts"
+  "promptSummary": "Based on 37 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 8.9/day) — small channel so far, treat these as hints not rules:\nTitles that performed BEST for us:\n  - \"yoru ni kakeru acapella but the beat drops 🎶\" (1,036 views, Global)\n  - \"soda pop acapella saja boys 🎧🎶\" (1,158 views, Global)\n  - \"golden hour (slowed) but every frame is an anime girl ✨ #anime\" (951 views, Global)\n  - \"how you like that acapella but the beat drops 🗿⚡\" (1,822 views, Global)\n  - \"idol acapella yoasobi 🎧🔥 #oshinoko\" (1,605 views, Global)\n  - \"anime sound design edit goes insane on believer 🔥\" (1,041 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\n  - \"super shy acapella 🗿 #newjeans\" (6 views)\nPatterns that UNDER-perform: short (<= 40 chars) (x0.73)",
+  "summaryLine": "Best recent: \"yoru ni kakeru acapella but the beat drops 🎶\" (1,036 views, 557.9/day) — typical short 8.9/day over 37 shorts"
 }
