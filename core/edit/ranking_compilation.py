@@ -72,6 +72,9 @@ CHAR_MIN = 0.6                   # share of character-voting frames the entry's 
 # voting frames a pass needs: 6 for the tagger and the reference bank (2026-10-25: a 4-vote bank pass called a Horimiya
 # edit "Fragrant Flower"; every true bank pass of the survey had >= 6), 4 only for the old SigLIP fallback
 MIN_VOTES = {'wd_tagger': 6, 'tagger_open+bank': 6, 'siglip_art': 4, 'tagger_open+art_margin': 4}
+OFFLIST_MIN = 0.6                # tagger prob of an off-list character that counts against the target
+OWN_RUN_S = 6.0                 # another character owning this many continuous seconds of a window rejects it
+OWN_SHARE = 1 / 3                # ... or this share of the window's frames
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 # owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
 MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
@@ -655,11 +658,13 @@ class Judge:
         if not tags:
             return None
         wins, votes, others, explicit = 0, 0, {}, 0
-        for f in frames:
+        labels, expl = [None] * len(frames), [False] * len(frames)
+        for fi, f in enumerate(frames):
             pr = tg(f)
             r = tg.rating(pr)
             if r.get('explicit', 0) >= 0.5 or r.get('questionable', 0) >= 0.6:
                 explicit += 1
+                expl[fi] = True
             ch = tg.chars(pr)
             if not ch:
                 continue
@@ -667,11 +672,13 @@ class Judge:
             best = max(ch, key=ch.get)
             if best in tags:
                 wins += 1
+                labels[fi] = 'T'
             else:
                 others[best] = others.get(best, 0) + 1
+                labels[fi] = best
         conf = wins / votes if votes else 0.0
         return conf, {'method': 'wd_tagger', 'votes': votes, 'wins': wins, 'others': others,
-                      'frames': len(frames), 'rating_flags': explicit}
+                      'frames': len(frames), 'rating_flags': explicit, 'labels': labels, 'explicit_frames': expl}
 
     def match(self, frames, target_names, other_names):
         """Share of character frames where a target character beats every other candidate.
@@ -797,17 +804,24 @@ class Judge:
             fc = L.face_crops(f, self.faces, 2) if self.faces else []
             return self.sig.images(fc) if fc else None
 
+        last = [None]
+
         def bank_pick(ce):
             """-> the index (into names) of a clear bank winner, or None (ambiguous / implausible)"""
             sc = np.array([L_max(char_refs.Bank.score(ce, r, top)) for r in refs])
             order = np.argsort(-sc)
+            last[0] = (round(float(sc[0]), 3), round(float(sc[order[0]]), 3), names[int(order[0])])
             if sc[order[0]] < BANK_MIN or (len(sc) > 1 and sc[order[0]] - sc[order[1]] < margin):
                 return None
             return int(order[0])
         others, votes, wins, arb = {}, 0, 0, 0
-        for f in frames:
+        labels = [None] * len(frames)        # per frame: 'T' (target), another character's name, or None (abstains)
+        diag = [None] * len(frames)          # per abstaining frame: why (no person / no face / bank ambiguous + scores)
+        tgt_tags = {self.tag_for(n) for n in target_names} - {None}
+        for fi, f in enumerate(frames):
             pr = tg(f)
-            ch = {k: v for k, v in tg.chars(pr).items() if k in dis}
+            allch = tg.chars(pr)
+            ch = {k: v for k, v in allch.items() if k in dis}
             boy, girl = pr[i_boy], pr[i_girl]
             if ch:
                 b = max(ch, key=ch.get)
@@ -821,12 +835,26 @@ class Judge:
                             votes += 1
                             wins += 1
                             arb += 1
+                            labels[fi] = 'T'
                             continue
                     elif ce is None and ch[b] < ARB_TAG_MIN:
                         continue                # a weak look-alike tag on a frame without a face: no vote
                 votes += 1
                 others[b] = others.get(b, 0) + 1
+                labels[fi] = b
                 continue
+            # an OFF-LIST character: the tagger names a character that is neither the target nor on the topic's list
+            # (Cha Hae-In in a Sung Jinwoo edit, 2026-10-27): it counts against the target unless the face bank clearly
+            # gives the frame to the target
+            off = {k: v for k, v in allch.items() if k not in dis and k not in tgt_tags and v >= OFFLIST_MIN}
+            if off and not v1 and nt == 1:
+                ce = crops_emb(f)
+                if ce is None or bank_pick(ce) != 0:
+                    b = 'offlist:' + max(off, key=off.get)
+                    votes += 1
+                    others[b] = others.get(b, 0) + 1
+                    labels[fi] = b
+                    continue
             other_g = (g == 'male' and girl >= 0.5 and boy < 0.35) or (g == 'female' and boy >= 0.5 and girl < 0.35)
             if other_g and not v1:
                 if comp_g & ({'female'} if g == 'male' else {'male'}):
@@ -838,14 +866,18 @@ class Judge:
                 votes += 1
                 if k is not None and k < nt:
                     wins += 1
+                    labels[fi] = 'T'
                 else:
                     others['other_gender'] = others.get('other_gender', 0) + 1
+                    labels[fi] = 'other_gender'
                 continue
             if other_g:
                 votes += 1
                 others['other_gender'] = others.get('other_gender', 0) + 1
+                labels[fi] = 'other_gender'
                 continue
             if max(boy, girl) < 0.5:
+                diag[fi] = ('noperson',)
                 continue
             # 3. face crops vs the multi-image reference bank (char_refs.Bank: AniList art + our quiz-pool pictures + the
             #    show's wiki files, one face per picture, tagger-vetoed and consistency-filtered). Per candidate the mean
@@ -853,18 +885,23 @@ class Judge:
             #    plausible absolute similarity (BANK_MIN); ambiguous frames abstain.
             ce = crops_emb(f)
             if ce is None:
+                diag[fi] = ('noface', round(float(boy), 2), round(float(girl), 2))
                 continue
+            last[0] = None
             k = bank_pick(ce)
             if k is None or names[k] in comp:
+                diag[fi] = ('ambig', last[0])
                 continue
             votes += 1
             if k < nt:
                 wins += 1
+                labels[fi] = 'T'
             else:
                 others[names[k]] = others.get(names[k], 0) + 1
+                labels[fi] = names[k]
         conf = wins / votes if votes else 0.0
         return conf, {'method': 'tagger_open+bank', 'votes': votes, 'wins': wins, 'others': others,
-                      'frames': len(frames), 'rating_flags': 0, 'arbitrated': arb}
+                      'frames': len(frames), 'rating_flags': 0, 'arbitrated': arb, 'labels': labels, 'diag': diag}
 
     def bank(self):
         if not hasattr(self, '_bank'):
@@ -1026,20 +1063,33 @@ def mark_scan(path, step=0.5, width=960, ncc_min=0.35, share_min=0.5):
     gmean = gacc / k
     gimg = 255 - np.clip(gmean / max(1e-3, np.percentile(gmean, 99.7)) * 255, 0, 255).astype(np.uint8)
     H, W_ = gimg.shape
+    # the 25th-percentile gradient: moving content (and the bright lines of a sketch / lyric text) drops out, a big flat
+    # semi-transparent mark ("@Z3NN28" tiled over the whole picture, 2026-10-27) stays as crisp outlines the mean hides
+    p25 = np.zeros((H, W_), np.float32)
+    for r0 in range(0, H, 90):
+        p25[r0:r0 + 90] = np.percentile(np.stack([g_[r0:r0 + 90] for g_ in small]), 25, axis=0)
+    pimg = 255 - np.clip(p25 / max(1e-3, np.percentile(p25, 99.5)) * 255, 0, 255).astype(np.uint8)
     hits = []
-    for img in (cv2.cvtColor(gimg, cv2.COLOR_GRAY2BGR), np.clip(macc / k, 0, 255).astype(np.uint8)):
+    for img, src in ((cv2.cvtColor(gimg, cv2.COLOR_GRAY2BGR), gmean), (np.clip(macc / k, 0, 255).astype(np.uint8), gmean),
+                     (cv2.cvtColor(pimg, cv2.COLOR_GRAY2BGR), p25)):
         for txt, b in ocr(img):
             if len(re.sub(r'[^A-Za-z0-9]', '', txt)) < 3:
                 continue
             if all(L.iou(b, h['box']) < 0.3 for h in hits):
-                hits.append({'text': txt, 'box': b})
+                hits.append({'text': txt, 'box': b, 'src': src, 'p25': src is p25})
     out = []
     for h in hits:
         x0, y0, x1, y1 = [int(round(v)) for v in (h['box'][0] * W_, h['box'][1] * H, h['box'][2] * W_, h['box'][3] * H)]
         x0, y0, x1, y1 = max(0, x0 - 2), max(0, y0 - 2), min(W_, x1 + 2), min(H, y1 + 2)
         if x1 - x0 < 8 or y1 - y0 < 6:
             continue
-        tpl = gmean[y0:y1, x0:x1]
+        if h['p25'] and len(re.sub(r'[^A-Za-z]', '', h['text'])) < 2:
+            continue                              # digits / noise
+        if h['p25']:
+            # text readable in the 25th-percentile gradient is present in >= 75 % of the frames by construction
+            out.append({'text': h['text'], 'box': [round(v, 3) for v in h['box']], 'share': 0.75, 'via': 'p25'})
+            continue
+        tpl = h['src'][y0:y1, x0:x1]
         tpl = (tpl - tpl.mean()) / (tpl.std() + 1e-6)
         pres = 0
         for gm in small:
@@ -1057,8 +1107,8 @@ def mark_scan(path, step=0.5, width=960, ncc_min=0.35, share_min=0.5):
 # editor tags / name cards / end cards (2026-10-25, the PJUNKIE miss: xlPSek4600U ends on an "OVO EDITORS" group card and the
 # editor's own logo on black at 29.5-33 s, while the 10 % end-card margin only kept out the last 3.3 s; its OCR never read
 # "PJUNKIE", and Flimzys' "10FLMZY" / maztrae's "MAZT" tags missed the exact channel-name match)
-TAG_RE = re.compile(r"edit(or)?s?|editz|amvs?|v?fx|prod|presents?|th(a|e)nk\w* *(you|u|yew|yow)? *(for|fov|4)? *w|"
-                    r"thanks? for|follow (me|my)|channel|subscri|sub|team|collab", re.I)
+TAG_RE = re.compile(r"\bedit(or)?s?\b|\beditz\b|\bamvs?\b|\bv?fx\b|\bprod\b|\bpresents?\b|th(a|e)nk\w* *(you|u|yew|yow)? *(for|fov|4)? *w|"
+                    r"thanks? for|follow (me|my)|channel|subscri|\bsub\b|\bteam\b|\bcollab", re.I)
 
 
 def _handle_keys(res):
@@ -1127,6 +1177,64 @@ def editor_tags(txt, res, ana, dur, lo, hi):
         elif tg['t'] <= 0.25 * dur:
             lo = max(lo, tg['t'] + 0.5)
     return sorted(tags, key=lambda x: x['t']), lo, hi
+
+
+STING_RE = re.compile(r"\bedit(or)?s?\b|\bamvs?\b|thanks? for|follow (me|my)|subscri", re.I)
+
+
+def sting_ratio(text, keys):
+    """Loose similarity of OCR text to the editor's name (a stylised 3D / animated name sting is OCR'd as 'PUNNE' /
+    'AKCHEI' / 'HENZUMA'): the best difflib ratio over the tokens, 0 when there is no key."""
+    import difflib
+    best = 0.0
+    for t in re.split(r'[^a-z0-9]+', text.lower()):
+        t = re.sub(r'^\d+', '', t)
+        if len(t) < 4:
+            continue
+        for k in keys:
+            best = max(best, difflib.SequenceMatcher(None, t, k).ratio(), 0.8 * (k in t and len(k) >= 5))
+    return best
+
+
+def sting_scan(path, t0, t1, res, step=0.1, cache=None):
+    """Dense full-resolution OCR of [t0, t1] (the editor's name sting lasts 0.15-0.4 s: 2 fps OCR and even 0.5 s steps miss
+    it; 2026-10-27: PJUNKIE read at 26.08-26.20 s only, HENZUMA at 21.25 s only, SANCHEZ at 20.05 / 20.35 s). -> reasons (empty =
+    clean): one clear name match (ratio >= 0.75, handle, tag word) or >= 2 loose ones (ratio >= 0.6 against the channel /
+    handle keys). `cache` {frame index: [texts]} is shared between the windows of one source."""
+    keys = _handle_keys(res)
+    cap = cv2.VideoCapture(path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    every = max(1, int(round(fps * step)))
+    i0 = int(t0 * fps)
+    i1 = min(int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0), int(t1 * fps))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, i0)
+    strong, loose = [], []
+    i = i0
+    cache = cache if cache is not None else {}
+    while i < i1:
+        ok = cap.grab()
+        if not ok:
+            break
+        if (i - i0) % every == 0:
+            if i not in cache:
+                ok, f = cap.retrieve()
+                if not ok:
+                    break
+                if f.shape[1] > 1920:
+                    f = cv2.resize(f, (1920, int(f.shape[0] * 1920 / f.shape[1])))
+                cache[i] = [tx for tx, _ in ocr(f)]
+            for tx in cache[i]:
+                if HANDLE_RE.search(tx) or STING_RE.search(tx) or (keys and fuzzy_handle(tx, keys)):
+                    strong.append((i / fps, tx))
+                elif keys and sting_ratio(tx, keys) >= 0.6:
+                    loose.append((i / fps, tx))
+        i += 1
+    cap.release()
+    if strong:
+        return [f'name / tag "{tx}" at {t:.1f}s' for t, tx in strong[:3]]
+    if len(loose) >= 2:
+        return [f'name-like "{tx}" at {t:.1f}s' for t, tx in loose[:3]]
+    return []
 
 
 def text_gate(path, info):
@@ -1229,6 +1337,30 @@ def targets_and_distractors(judge, entry, others):
     return list(dict.fromkeys(tgt)), oth
 
 
+def own_check(ts, labs, step=0.5):
+    """Window-level "main character" rule (owner 2026-10-27). labs = per-frame labels ('T' target, another character's name /
+    'offlist:...' / 'other_gender', None abstains). -> a reject reason or None:
+      * others (anything that is not the target) hold more than OWN_SHARE of the window's frames;
+      * others own a continuous stretch of >= OWN_RUN_S seconds (a stretch is broken only by a target frame; abstaining
+        frames inside it count, a long action without the face is not the target's)."""
+    n = len(labs)
+    if not n:
+        return None
+    non = sum(1 for l in labs if l not in (None, 'T'))
+    if non / n > OWN_SHARE:
+        return f'others_share_{non}_{n}'
+    first = last = None
+    for t, l in zip(ts, labs):
+        if l == 'T':
+            first = last = None
+        elif l is not None:
+            first = t if first is None else first
+            last = t
+            if last - first + step >= OWN_RUN_S:
+                return f'others_run_{last - first + step:.1f}s'
+    return None
+
+
 def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
@@ -1249,33 +1381,60 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
     seg = (seg[0], min(seg[1], MAX_SHARE * dur))
     skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags})
-    wins = RS.phrase_windows(v, a, lo, hi, seg=seg, k=8, skip=skip) if hi - lo >= seg[0] else []
-    pop, song = RS.song_popularity(res.get('_info') or {}, all_infos)
-    txt_t = np.array(sorted(txt['per_t']))
-    txt_cov = np.array([sum((b[2] - b[0]) * (b[3] - b[1]) for _, b in txt['per_t'][t]) for t in txt_t]) if len(txt_t) else np.zeros(0)
-    subs = np.array(txt['subs'])
-    for w in wins:
-        m = (txt_t >= w['s']) & (txt_t < w['e'])
-        w['text_cover'] = round(float(txt_cov[m].mean()) if m.any() else 0.0, 3)
-        w['subs'] = round(float(((subs >= w['s']) & (subs < w['e'])).sum()) / max(1, w['len'] * 2) if len(subs) else 0.0, 2)
-        w['song_pop'], w['song_name'] = pop, song
-        w['quality'] = round(quality(w, pop) - 15 * w['text_cover'], 2)
+    def mkwins(lo_, k=8):
+        ws = RS.phrase_windows(v, a, lo_, hi, seg=seg, k=k, skip=skip) if hi - lo_ >= seg[0] else []
+        pop_, song_ = RS.song_popularity(res.get('_info') or {}, all_infos)
+        txt_t = np.array(sorted(txt['per_t']))
+        txt_cov = (np.array([sum((b[2] - b[0]) * (b[3] - b[1]) for _, b in txt['per_t'][t]) for t in txt_t])
+                   if len(txt_t) else np.zeros(0))
+        subs = np.array(txt['subs'])
+        for w in ws:
+            m = (txt_t >= w['s']) & (txt_t < w['e'])
+            w['text_cover'] = round(float(txt_cov[m].mean()) if m.any() else 0.0, 3)
+            w['subs'] = round(float(((subs >= w['s']) & (subs < w['e'])).sum()) / max(1, w['len'] * 2) if len(subs) else 0.0, 2)
+            w['song_pop'], w['song_name'] = pop_, song_
+            w['quality'] = round(quality(w, pop_) - 15 * w['text_cover'], 2)
+        return ws
+    wins = mkwins(lo)
     wins.sort(key=lambda w: -w['quality'])
     tgt, oth = targets_and_distractors(judge, entry, others)
     fr_t = sorted(ana['frames'])
+    other_tags = [t for o in others for t in o.get('tags', [])]
+    lab_cache, expl_cache, diag_cache, meth = {}, {}, {}, ['']
+
+    def labels_for(ts):
+        """Per-frame character labels (cached per source): 'T' target, another character, None abstains.
+        -> (labels, None), or (None, details) when the check has no per-frame labels (SigLIP fallback)."""
+        miss = [t for t in ts if t not in lab_cache]
+        if miss:
+            fr = [ana['frames'][t] for t in miss]
+            mt = judge.match_tags(fr, entry.get('tags'))
+            if mt is None:
+                mt = judge.match_open(fr, tgt, oth, other_tags, entry.get('companions', ()))
+            conf_, det = mt
+            meth[0] = det.get('method')
+            if det.get('labels') is None:
+                return None, mt
+            for t, l in zip(miss, det['labels']):
+                lab_cache[t] = l
+            for t, x in zip(miss, det.get('explicit_frames') or [False] * len(miss)):
+                expl_cache[t] = x
+            for t, x in zip(miss, det.get('diag') or [None] * len(miss)):
+                diag_cache[t] = x
+        return [lab_cache[t] for t in ts], None
+
     passed = []
-    for w in wins:
-        if len(passed) >= max_pass:
-            break
+
+    def try_window(w):
         if w['subs'] > 0.15:
             w['reject'] = 'subtitles'
-            continue
+            return False
         if w['eventful'] < EVENT_MIN[pace_kind]:
             w['reject'] = f'not_eventful_{w["eventful"]}'
-            continue
+            return False
         if w['song'] < SONG_MIN:
             w['reject'] = f'weak_song_{w["song"]}'
-            continue
+            return False
         # models are already resident here; one window adds ~0.1 GB. Waiting for the full threshold while this
         # process itself holds ~3 GB of models deadlocked on the 16 GB PC (2026-10-25), so the per-window
         # pause uses a lower floor; loading models / rendering still wait for MIN_FREE_GB
@@ -1283,49 +1442,105 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         ts = [t for t in fr_t if w['s'] <= t < w['e']]                     # 2 fps
         frames = [ana['frames'][t] for t in ts]
         if not frames:
-            continue
+            return False
         ok, why = judge.safe(frames)
         if not ok:
             w['reject'] = why
-            continue
-        mt = judge.match_tags(frames, entry.get('tags'))
-        if mt is not None:
-            conf, det = mt
-            if det['rating_flags'] > 0.1 * len(frames):
-                w['reject'] = 'rating'
-                continue
+            return False
+        labs, mt = labels_for(ts)
+        if labs is not None:
+            cnt = {}
+            for l in labs:
+                if l not in (None, 'T'):
+                    cnt[l] = cnt.get(l, 0) + 1
+            votes, wn = sum(l is not None for l in labs), sum(l == 'T' for l in labs)
+            det = {'method': meth[0], 'votes': votes, 'wins': wn, 'others': cnt, 'frames': len(frames),
+                   'rating_flags': sum(bool(expl_cache.get(t)) for t in ts)}
+            conf = wn / votes if votes else 0.0
+            if os.environ.get('RANKING_DIAG'):
+                w['diag'] = [(t, diag_cache.get(t)) for t in ts]
+            w['labels'] = ''.join('T' if l == 'T' else '.' if l is None else 'x' for l in labs)
         else:
-            conf, det = judge.match_open(frames, tgt, oth, [t for o in others for t in o.get('tags', [])],
-                                         entry.get('companions', ()))
+            conf, det = mt
+        if det.get('method') == 'wd_tagger' and det['rating_flags'] > 0.1 * len(frames):
+            w['reject'] = 'rating'
+            return False
         w['conf'], w['match'] = round(conf, 2), det
         top_other = max(det['others'].values()) if det['others'] else 0
         # the entry's character must clearly own the window: >= 60 % of the voting frames and at least twice
         # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
-        if (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN
-                and det['wins'] >= 2 * top_other):
-            # owner 2026-10-25 late: ON PAR with ALL our analysed reference edits in quality + the theme's vibe
-            # (ranking_profile: effects / camera + 3D / text / sync / rhythm / grade vs the theme's reference profile);
-            # manga-panel edits are only a fallback (flagged, ranked below anime-footage edits)
-            if theme and os.environ.get('RANKING_REF_GATE', '1') != '0':
-                import ranking_profile as RP
-                try:
-                    f = RP.measure(path, w['s'], w['e'], per_t={t: txt['per_t'][t] for t in txt['per_t']
-                                                                 if w['s'] <= t < w['e']}, audio=a)
-                    f['manga_siglip'] = RP.manga_siglip(judge.sig, frames)
-                    g = RP.gate(f, theme)
-                except Exception as ex:  # noqa: BLE001
-                    log(f'ref profile failed: {ex}')
-                    f, g = {}, {'ref_score': None, 'ref_groups': {}, 'manga': False, 'ok': True, 'why': 'error'}
-                w.update(theme=theme, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
-                         manga_share=g.get('manga_share'))
-                if not g['ok']:
-                    w['reject'] = g['why']
-                    continue
-            passed.append(w)
-            continue
-        w['reject'] = 'character'
+        if not (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det['wins'] >= 2 * top_other):
+            w['reject'] = 'character'
+            return False
+        # owner 2026-10-27: the entry's character must be the MAIN character of the section: no other character (off-list
+        # and unknown ones included) owns a long continuous stretch or more than a third of it
+        if labs is not None:
+            why = own_check(ts, labs)
+            if why:
+                w['reject'] = why
+                return False
+        # owner 2026-10-25 late: ON PAR with ALL our analysed reference edits in quality + the theme's vibe
+        # (ranking_profile: effects / camera + 3D / text / sync / rhythm / grade vs the theme's reference profile);
+        # manga-panel edits are only a fallback (flagged, ranked below anime-footage edits)
+        if theme and os.environ.get('RANKING_REF_GATE', '1') != '0':
+            import ranking_profile as RP
+            try:
+                f = RP.measure(path, w['s'], w['e'], per_t={t: txt['per_t'][t] for t in txt['per_t']
+                                                             if w['s'] <= t < w['e']}, audio=a)
+                f['manga_siglip'] = RP.manga_siglip(judge.sig, frames)
+                g = RP.gate(f, theme)
+            except Exception as ex:  # noqa: BLE001
+                log(f'ref profile failed: {ex}')
+                f, g = {}, {'ref_score': None, 'ref_groups': {}, 'manga': False, 'ok': True, 'why': 'error'}
+            w.update(theme=theme, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
+                     manga_share=g.get('manga_share'))
+            if not g['ok']:
+                w['reject'] = g['why']
+                return False
+        if os.environ.get('RANKING_STING', '1') != '0':
+            marks = sting_scan(path, w['s'], w['e'], res, cache=res.setdefault('_sting', {}))
+            if marks:
+                w['reject'] = 'name_sting'
+                w['sting'] = marks
+                return False
+        passed.append(w)
+        return True
+
+    for w in wins:
+        if len(passed) >= max_pass:
+            break
+        try_window(w)
+    # a window rejected because ANOTHER character owns part of it: the target's own section may start later. Anchor
+    # candidate windows where the target's span starts (first phrase boundary after it) so the later section can win.
+    if len(passed) < max_pass and any(w.get('reject') == 'character' or str(w.get('reject', '')).startswith('others_')
+                                     for w in wins):
+        ts_all = [t for t in fr_t if lo <= t < hi]
+        labs_all, _ = labels_for(ts_all) if ts_all else (None, None)
+        if labs_all is not None:
+            T = [t for t, l in zip(ts_all, labs_all) if l == 'T']
+            starts = []
+            for t in T:
+                ahead = sum(1 for x in T if t <= x < t + 6.0)
+                behind = sum(1 for x in T if t - 3.0 <= x < t)
+                if ahead >= 4 and behind <= 1 and all(abs(t - s_) > 3.0 for s_ in starts):
+                    starts.append(t)
+            seen = {(w['s'], w['e']) for w in wins}
+            extra = []
+            for s0 in starts[:3]:
+                for w in mkwins(max(lo, s0 - 1.0), k=3):
+                    if (w['s'], w['e']) not in seen and w['s'] >= s0 - 1.01:
+                        seen.add((w['s'], w['e']))
+                        w['anchored'] = round(s0, 1)
+                        extra.append(w)
+            extra.sort(key=lambda w: -w['quality'])
+            for w in extra:
+                if len(passed) >= max_pass:
+                    break
+                try_window(w)
+            wins += extra
     res['windows'] = wins
     res.pop('_ana', None)
+    res.pop('_sting', None)
     if passed:
         passed.sort(key=lambda w: (bool(w.get('manga')), -w['quality']))      # anime footage first
         best = passed[0]
