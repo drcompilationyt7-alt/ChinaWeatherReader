@@ -1523,7 +1523,8 @@
    "songSection": [
     167.345,
     199.182
-   ]
+   ],
+   "musicPerf": 4.312
   },
   {
    "videoId": "J91EYGAeUTI",
@@ -1876,6 +1877,53 @@
    "why": "thompson + insights (bonus +0)",
    "whyMode": "insight-driven",
    "bpm": 94.99,
+   "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "Oxy-eUSZu4w",
+   "url": "https://www.youtube.com/watch?v=Oxy-eUSZu4w",
+   "postedAt": "2026-10-28T09:39:10.520Z",
+   "publishAt": "2026-10-28T12:00:00.000Z",
+   "song": "show",
+   "theme": "japanese",
+   "emoji": "🔥,🔥",
+   "title": "show acapella but the beat drops 🔥",
+   "clipIds": [
+    "KBqRYKdWkWQ",
+    "0Z_YqhYHhpg",
+    "UHJwIG--Hk4",
+    "TZYqDl19qLQ",
+    "Igr6jQJEoNs",
+    "4PqyLAJOOS8",
+    "HmkbBdD8044"
+   ],
+   "clipChannels": [
+    "Ado",
+    "Fit Dance Workout",
+    "MK"
+   ],
+   "clipSource": "Ado",
+   "settings": {
+    "drop": 14,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-stack-drop"
+   },
+   "onVideoTitle": "wait for the full drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "edit-community",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-milestone",
+    "descHook": "op-desc-stack-drop",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 131.97,
    "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]

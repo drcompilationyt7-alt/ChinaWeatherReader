@@ -1,17 +1,17 @@
 {
- "at": "2026-10-27T21:40:20.299Z",
- "type": "slowmo",
+ "at": "2026-10-28T09:27:09.168Z",
+ "type": "sound",
  "ok": false,
- "reason": "pool too small: pool_too_small: 9 fresh clips (< 22) for <= 0% reuse of the last 3 slowmo videos",
- "dryRun": true,
+ "reason": "pool too small: pool_too_small: pool_low: 12 usable scenes (12 with a crisp hit) for 23 hits (23 audible) over 20.6 s (reuse cap 30%)",
+ "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "the_weeknd_die_for_you@v1",
-   "seed": 37205,
+   "song": "camila_cabello_havana",
+   "seed": 78205,
    "input": "first",
-   "work": "work-slowmo-1793137205050",
-   "min": 0.3,
+   "work": "work-sound-1793178205858",
+   "min": 23.7,
    "result": "pool too small"
   }
  ]
