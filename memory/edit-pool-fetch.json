@@ -460,7 +460,7 @@
   "d43QGM5ctBk": "lowres: no 1080p video format",
   "kBAC5gvybzM": "ok",
   "wgpfWzOGyEg": "ok",
-  "0gMwKfBI-Io": "unclean: burned-in text (0.10 top / 0.00 bottom)",
+  "0gMwKfBI-Io": "ok",
   "KtofPyFE418": "unclean: burned-in text (0.10 top / 0.00 bottom); burned-in text (0.10 top / 0.13 bottom)",
   "2DruQc5xqcQ": "download failed",
   "9qywGZZL0IA": "unclean: borders (0.25); borders (0.40)",
@@ -472,12 +472,12 @@
   "z_zqpUr7UIA": "unclean: borders (0.24); borders (0.25)",
   "1vEeQ-vGrgY": "unclean: borders (0.04); borders (0.08)",
   "-6nmTundSn4": "ok",
-  "havZiN8gpM8": "unclean: burned-in text (0.00 top / 0.12 bottom)",
+  "havZiN8gpM8": "ok",
   "nFGxk2aUBFQ": "ok",
   "CCsSSL4kRM0": "ok",
   "gEHGgKOycKk": "ok",
   "T5V4cplayd0": "unclean: burned-in text (0.00 top / 0.09 bottom); burned-in text (0.22 top / 0.00 bottom)",
-  "MFriLc-kufk": "unclean: burned-in text (0.00 top / 0.22 bottom)",
+  "MFriLc-kufk": "lowres: no 1080p video format",
   "RGppwE4lrlo": "unclean: borders (0.25); burned-in text (0.00 top / 0.16 bottom); burned-in text (0.40 to",
   "Y83dmIBMRp4": "download failed",
   "94gGChbw7Lk": "ok",
@@ -1167,7 +1167,9 @@
   "xLOKBZhBw7Y": "lowres: no 1080p video format",
   "Aj1j36Lc22Y": "ok",
   "3v7H1HNaOdU": "lowres: no 1080p video format",
-  "wwH_fqOHuXo": "ok"
+  "wwH_fqOHuXo": "ok",
+  "J8W4Lm1nTWk": "ok",
+  "9V1yuaoNB7Y": "ok"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1679,6 +1681,7 @@
   "Castlevania best fight scenes": 14,
   "Ninja Scroll best fight scenes": 14,
   "Afro Samurai best fight scenes": 14,
-  "Golden Kamuy best fight scenes": 14
+  "Golden Kamuy best fight scenes": 14,
+  "Dr. Stone best fight scenes": 14
  }
 }
