@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=aqIJfCd0aIk",
-      "title": "Only Real Otakus Get 3/3 🎶",
-      "country": "Global",
-      "postedAt": "2026-09-27T08:24:46.635Z",
-      "videoId": "aqIJfCd0aIk",
-      "category": "quiz-song",
-      "titleSource": "song-anime-otaku",
-      "quizFormat": "song",
-      "quizTheme": "anime"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=mHpF6_z6UoA",
-      "title": "guess the kpop song from emojis 🎶",
-      "country": "Global",
-      "postedAt": "2026-09-28T08:52:53.001Z",
-      "videoId": "mHpF6_z6UoA",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-kpop-casual",
-      "quizFormat": "emoji",
-      "quizTheme": "kpop song"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=Sw0Nb60i-1Y",
       "title": "Guess the Anime Character by Voice: Can You Get 3/3 #anime",
       "country": "Global",
@@ -417,6 +395,28 @@
       "titleSource": "emoji-llm",
       "quizFormat": "emoji",
       "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=5-1dfJeWH0s",
+      "title": "Guess the Song in 3 Seconds 🔥 #kpop",
+      "country": "Global",
+      "postedAt": "2026-10-28T08:48:38.853Z",
+      "videoId": "5-1dfJeWH0s",
+      "category": "quiz-song",
+      "titleSource": "song-3sec",
+      "quizFormat": "song",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=tHRevFmjmCQ",
+      "title": "Guess the Chinese City From the Map #china",
+      "country": "Global",
+      "postedAt": "2026-10-28T08:54:34.493Z",
+      "videoId": "tHRevFmjmCQ",
+      "category": "quiz-city",
+      "titleSource": "city-guess",
+      "quizFormat": "city",
+      "quizTheme": "CN"
     }
   ]
 }

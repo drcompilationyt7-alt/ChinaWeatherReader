@@ -1466,6 +1466,101 @@
     "titleStyle": "op-exact-search",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "5-1dfJeWH0s",
+   "url": "https://www.youtube.com/watch?v=5-1dfJeWH0s",
+   "postedAt": "2026-10-28T08:48:38.655Z",
+   "publishAt": "2026-10-28T12:00:00.000Z",
+   "format": "song",
+   "theme": "kpop",
+   "seed": 429095276,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your total score in the comments below!",
+     "template": "Drop your total score in the comments below!",
+     "sec": 2.25
+    }
+   ],
+   "followUpOf": "QKjJqfS91jE",
+   "titleTemplate": "song-3sec",
+   "title": "Guess the Song in 3 Seconds 🔥 #kpop",
+   "answers": [
+    "song:boombayah|blackpink",
+    "song:idol|bts",
+    "song:flower|jisoo"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "speed",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "tHRevFmjmCQ",
+   "url": "https://www.youtube.com/watch?v=tHRevFmjmCQ",
+   "postedAt": "2026-10-28T08:54:34.302Z",
+   "publishAt": "2026-10-28T21:00:00.000Z",
+   "format": "city",
+   "theme": "CN",
+   "seed": 466596934,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Spot the Chinese city on the map!",
+     "template": "Spot the Chinese city on the map!",
+     "sec": 1.74
+    },
+    {
+     "slot": "outro",
+     "used": "ai-short",
+     "line": "Comment your score below!",
+     "template": "Comment your score below!",
+     "sec": 1.37
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Shanghai.",
+     "template": null,
+     "sec": 1.06
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Guangzhou!",
+     "template": null,
+     "sec": 0.5
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Hangzhou. Did you get it?",
+     "template": null,
+     "sec": 1.59
+    }
+   ],
+   "titleTemplate": "city-guess",
+   "title": "Guess the Chinese City From the Map #china",
+   "answers": [
+    "city:CN:shanghai",
+    "city:CN:guangzhou",
+    "city:CN:hangzhou"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-target-comment"
+   }
   }
  ]
 }
