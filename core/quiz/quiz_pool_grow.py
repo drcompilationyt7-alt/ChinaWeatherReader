@@ -400,7 +400,8 @@ def dish_names(dish):
 def dish_title_ok(dish, file, cats=()):
     """The file title (or one of its categories) names the dish or an alias; a title that names ANOTHER dish / a known confusable fails."""
     names = {n for n in dish_names(dish) if n}
-    t = ' ' + _norm(file) + ' '
+    # digits glued to a word are split off first (2026-10-28: "Kimchi refrigerator3.jpg" passed NON_FOOD_RE)
+    t = ' ' + re.sub(r'(?<=[a-z])(?=\d)|(?<=\d)(?=[a-z])', ' ', _norm(file)) + ' '
     named = any(f' {n} ' in t for n in names)
     # 2026-10-25 review: "Kimchi refrigerator", a satay-beef macaroni breakfast, "Erik Ko" (a person), "1952 - Tonkatsu taisho"
     # (a restaurant / film): not photos of the dish
