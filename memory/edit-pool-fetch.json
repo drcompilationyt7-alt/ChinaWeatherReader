@@ -455,9 +455,9 @@
   "NUrQ9c6y2SQ": "ok",
   "ciBt1M3gj70": "download failed",
   "DtoOnMgNd7k": "ok",
-  "LlrFlcOdeQA": "unclean: burned-in text (0.00 top / 0.20 bottom)",
-  "4TJNIquRzAc": "unclean: burned-in text (0.00 top / 0.23 bottom)",
-  "d43QGM5ctBk": "unclean: burned-in text (0.00 top / 0.41 bottom)",
+  "LlrFlcOdeQA": "ok",
+  "4TJNIquRzAc": "ok",
+  "d43QGM5ctBk": "lowres: no 1080p video format",
   "kBAC5gvybzM": "ok",
   "wgpfWzOGyEg": "ok",
   "0gMwKfBI-Io": "unclean: burned-in text (0.10 top / 0.00 bottom)",
@@ -1162,7 +1162,12 @@
   "n-cSIpi3D80": "lowres: no 1080p video format",
   "iWHAko58EO8": "lowres: no 1080p video format",
   "eACYUYeXbks": "lowres: no 1080p video format",
-  "5rs6BWAAWS8": "ok"
+  "5rs6BWAAWS8": "ok",
+  "5y5s2UmPctI": "lowres: no 1080p video format",
+  "xLOKBZhBw7Y": "lowres: no 1080p video format",
+  "Aj1j36Lc22Y": "ok",
+  "3v7H1HNaOdU": "lowres: no 1080p video format",
+  "wwH_fqOHuXo": "ok"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1673,6 +1678,7 @@
   "Devilman Crybaby best fight scenes": 14,
   "Castlevania best fight scenes": 14,
   "Ninja Scroll best fight scenes": 14,
-  "Afro Samurai best fight scenes": 14
+  "Afro Samurai best fight scenes": 14,
+  "Golden Kamuy best fight scenes": 14
  }
 }
