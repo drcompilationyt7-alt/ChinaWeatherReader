@@ -1435,3 +1435,25 @@ safety -> quality check dropped 10 (7 soft, 3 dark) -> 3 staged -> 1 approved.
   70434 Megalobox hand ejects a module (no hit) + black box on the last frames; 30539 Vinland Saga archers releasing (no contact,
   weak read); 134042 "SENPAI KUN" watermark, dark crowd; 106364 Tokyo Ghoul kagune stomp tiny in the distance, cut at the start.
   CI import 40514758107 (20c8ef9): 2 added, **pins 77**, tar deleted.
+
+### 2026-10-28 slow-mo review (review agent)
+- slowmo-cand-20261027-spc-sg2-db0 (PC miner) + slowmo-cand-20261028-s0-sg2-db0 (pool-mine-nightly 40599188184): 4 summer_glow
+  candidates. By eye (12-frame strips, face crops, per-frame diff / held-frame count; live pool held share is 0-0.1 for 36/41):
+  **1 approved** c_zec5TRzrHyA_49300 (Sakura, I Want to Eat Your Pancreas: slow look-back smile, close-up, sharp, warm light);
+  **3 rejected**: c_dsILYUuwzx4_20500 real K-pop idol MV footage (Dahyun, not anime) + 62 % held frames; c_vokdCjpl3gM_7200 Itsuki
+  frame-doubled (58 % held, stutter) + a male shoulder intruding left; c_JozrBsoHH_I_52300 Hinagiku running toward camera,
+  shouting / talking mouth shapes through ~3 of 4 s (same rule as the 10-23 Marin / Fern rejects). Imported --delete-remote,
+  push-manifests done (sources_seen 1679). Pool **summer_glow 42 / dreamy_bloom 13**.
+- Fresh for slow-mo (not in the last 3 slow-mo videos = 3j + 3g, 20 distinct clips): **summer_glow 22 / 22 needed, dreamy_bloom 13**.
+  The CI pool (edit-pools pool-slowmo-*.tar) was still the 10-20 upload (sg 29 -> 9 fresh = the 10-27 pool_too_small); re-pushed
+  with `edit-pools-store.js push --preset slowmo` so CI sees the 13 clips approved since then.
+- Yield diagnosis (no gate change): CI 144 sources -> 67 imported (+39 import skips: talk 22, colour 14, moment_used 3) -> **65
+  cine_vibe.gate rejects (97 %)**, prefilter 0 -> 2 staged; PC 16 sources -> 5 imported (+11 skips) -> 3 cine rejects -> 2.
+  The cine gate is the last and biggest per-clip killer, but its reasons are NOT persisted (candidates.json keeps only
+  cine_rejected_ids, media deleted), so tonight's 65 cannot be audited. On the 155 older rejects that kept reasons the top ones
+  are soft 45, fierce 43, talking/lipflap 41, face_small 30, frozen 32, villain 26, oversat 22, eye_macro 22; only ~1/3 have a
+  single reason, so loosening one gate recovers little. The bigger upstream loss: anime_title() passes any "twixtor"/"scenepack"
+  title, so ~70 % of the 144 sources were off-target (K-pop fancams, Hollywood / sports / stock video, MLP, male anime leads);
+  known_names() also matches stray words ("Fruits" -> Fruits Basket). Survivors are ~40 % good by eye (1/4 tonight, 3/7 10-23),
+  so the gate is not clearly over-strict; source targeting is. Next step: persist the cine reasons per candidate and tighten
+  the source filter (female-anime names / show list required), then re-measure.
