@@ -9,6 +9,9 @@
         (dedupe vs the pool, the ledger, the blocklists; slow-mo talk gate = strong signals only) -> cine_vibe.gate (the planner's
         hard rejects incl. the 2026-10-18 talking-mouth fix: mouth motion AND openness) -> core/pools/clip_prefilter.py (2026-10-21:
         stutter / talking / hidden face / garish, calibrated on the by-eye labels) -> rejects dropped, sources deleted.
+        2026-10-28: source titles must name a female anime character / female-led show (core/pools/slowmo_titles.py) and
+        CHAR_SHARE of the queries are female character packs; every reject keeps its reasons (candidates.json cine_rejected
+        {vibe: {id: {reasons, source_id, source_title}}}, reject_counts, title_rejects; publish uploads slowmo-rejects-<day>.json).
         Output W/out/: <vibe>/clips/<id>.mp4 (+ the QA sidecars), candidates.json {vibe: [manifest items]}, sheets/*.jpg,
         state.json (queries done / sources seen, merged by the workflow and kept on the staging release).
     python core/pools/slowmo_grow.py need [--target 60]        prints go / stop: is any slow-mo vibe under target (live reviewed clean
@@ -62,7 +65,23 @@ CHARS = ['Marin Kitagawa', 'Mai Sakurajima', 'Zero Two', 'Kaoruko Waguri', 'Frie
          'Yumeko Jabami', 'Power Chainsaw Man', 'Nami One Piece', 'Robin One Piece', 'Boa Hancock', 'Lucy Edgerunners',
          'Rebecca Edgerunners', 'Makise Kurisu', 'Holo', 'Saber Fate', 'Rin Tohsaka', 'Elaina Wandering Witch',
          'Hitagi Senjougahara', 'Mai Sakurajima bunny', 'Erina Nakiri', 'Ruka Sarashina', 'Sumi Sakurasawa',
-         'Kaori Miyazono violin', 'Nanami Aoyama', 'Mahiru Shiina', 'Ui Shigure', 'Kitagawa Marin cosplay']
+         'Kaori Miyazono violin', 'Nanami Aoyama', 'Mahiru Shiina', 'Ui Shigure', 'Kitagawa Marin']
+# 2026-10-28 female-first steering: the night's search time goes mostly to female character packs (CHAR_SHARE), with dreamy
+# looks for the thinnest vibe; extra female characters: AniList adults (core/quiz/assets/anime-characters.json, not nsfw)
+CHARS_DREAMY = ['Violet Evergarden', 'Frieren', 'Fern Frieren', 'Kaori Miyazono', 'Shouko Nishimiya', 'Mitsuha Your Name',
+                'Hina Weathering With You', 'Suzume', 'Elaina Wandering Witch', 'Kaoruko Waguri', 'Tohru Honda', 'Mahiru Shiina',
+                'Shirayuki Snow White with the Red Hair', 'Sawako Kuronuma', 'Holo Spice and Wolf', 'Maomao', 'Yuki Kurenai',
+                'Kumiko Oumae', 'Reina Kousaka', 'Mio Akiyama', 'Mai Sakurajima', 'Emilia Re Zero', 'Rem Re Zero', 'Yor Forger',
+                'Chisato Nishikigi', 'Hitori Gotoh', 'Kita Ikuyo', 'Sakura Haruno', 'Hinata Hyuga', 'Kurumi Tokisaki']
+DREAMY_LOOKS = ['soft aesthetic twixtor', 'sakura twixtor 4k', 'spring twixtor clips', 'pastel twixtor 4k', 'dreamy twixtor clips',
+                'night twixtor 4k', 'rain twixtor clips', 'flowers twixtor 4k']
+CHAR_TYPES = ['twixtor 4k', 'twixtor clips for edits 4k', 'twixtor 60fps', 'raw scenepack 4k', 'scenepack 4k']
+MOODS_DREAMY = ['anime girl sakura petals twixtor 4k', 'anime girl pastel aesthetic twixtor clips', 'soft anime girl twixtor clips 4k',
+                'anime girl spring twixtor 4k', 'dreamy anime girl scenes twixtor', 'anime girl moonlight twixtor 4k',
+                'anime girl flower field twixtor clips', 'anime girl lanterns night twixtor', 'beautiful anime girl twixtor clips soft',
+                'aesthetic anime girl scenepack 4k', 'anime girl umbrella rain twixtor', 'anime girl snow night twixtor clips']
+CHAR_SHARE = 0.8
+EXTRA_FEMALE_N = 60
 SUFFIXES = ['twixtor clips for edits 4k', '4k twixtor', 'scenepack 4k raw', 'twixtor 60fps clips']
 MOODS = ['anime girl cherry blossom twixtor 4k', 'anime girl summer beach twixtor 4k', 'anime girl snow twixtor 4k',
          'anime girl hair wind twixtor clips', 'makoto shinkai scenes 4k twixtor',
@@ -80,36 +99,20 @@ GOOD = re.compile(r'twixtor|twixter|scene ?pack|raw|clips|4k|60 ?fps|clean|textl
 # 2026-10-20 yield fix: OP / ED sources hold drawings, live action / music videos are not anime
 REJECT = re.compile(r'creditless|\bopening\b|\bending\b|\bop ?\d*\b|\bed ?\d*\b|\bncop|\bnced|movie ?trailer|live[- ]?action|'
                     r'\bdrone\b|fireworks|music video|\bmv\b', re.I)
-ANIME_WORD = re.compile(r'anime|アニメ|\bepisodes?\b|\bep\.? ?\d+|\bseason\b|\bs\d\b|scene ?pack|twixtor|twixter', re.I)
-_GENERIC = {'zero', 're', 'one', 'piece', 'anime', 'girl', 'bunny', 'violin', 'cosplay', 'with', 'you', 'your', 'name', 'the', 'and',
-            'love', 'free', 'orange', 'given', 'aria', 'wave', 'clips', 'sailor', 'moon', 'power', 'saber', 'fate', 'holo', 'kyoto'}
 
 
-_NAMES = []
-
-
-def known_names():
-    """lower-case show / character names (full names + single name words >= 5 letters) from the query generator's lists"""
-    if not _NAMES:
-        full = set()
-        for lst in (CHARS, SHOWS_ED, ANIME_DREAMY, ANIME_SUMMER):
-            for x in lst:
-                x = x.lower()
-                full.add(x)
-                full.update(w for w in re.split(r'[^a-z0-9]+', x) if len(w) >= 5 and w not in _GENERIC)
-        _NAMES.extend(sorted(full))
-    return _NAMES
+def anime_title_check(t):
+    """title filter -> (ok, reasons): none of the REJECT words (OP / ED / trailer / live action / MV) and a female anime character
+    or female-led show by whole-word / phrase match, no K-pop / western / stock / sports / male-lead-only (core/pools/slowmo_titles.py)"""
+    import slowmo_titles
+    m = REJECT.search(str(t or ''))
+    if m:
+        return False, [f'reject: {m.group(0).strip().lower()}']
+    return slowmo_titles.title_check(t, shows=tuple(SHOWS_ED + ANIME_DREAMY + ANIME_SUMMER), females=tuple(CHARS + CHARS_DREAMY))
 
 
 def anime_title(t):
-    """title filter: an anime signal (word, or a known show / character) and none of the REJECT words"""
-    t = str(t or '')
-    if REJECT.search(t):
-        return False
-    if ANIME_WORD.search(t):
-        return True
-    tl = t.lower()
-    return any(n in tl for n in known_names())
+    return anime_title_check(t)[0]
 
 
 def vid_shard(vid, n):
@@ -158,16 +161,17 @@ def wait_ram():
 ANIME_DREAMY = ['Your Name', 'Weathering With You', 'Suzume', 'Garden of Words', '5 Centimeters per Second', 'A Silent Voice',
                 'Violet Evergarden', 'Your Lie in April', 'Anohana', 'Clannad', 'Hyouka', 'Tamako Market', 'Kimi ni Todoke',
                 'Fruits Basket', 'The Fragrant Flower Blooms with Dignity', 'Frieren', 'Horimiya', 'Sound Euphonium', 'Liz and the Blue Bird',
-                'Free Kyoto Animation', 'Nichijou', 'K-On', 'Lucky Star', 'Tsurune', 'Love Live', 'Bocchi the Rock',
-                'Wotakoi', 'Ao Haru Ride', 'Maquia', 'Josee the Tiger and the Fish', 'Orange anime', 'Given anime', 'Akebi-chan Sailor Uniform',
-                'Cardcaptor Sakura', 'Sailor Moon', 'Princess Tutu', 'Ouran High School Host Club', 'Snow White with the Red Hair', 'Mushishi']
+                'Nichijou', 'K-On', 'Lucky Star', 'Love Live', 'Bocchi the Rock',
+                'Wotakoi', 'Ao Haru Ride', 'Maquia', 'Josee the Tiger and the Fish', 'Akebi-chan Sailor Uniform',
+                'Cardcaptor Sakura', 'Sailor Moon', 'Princess Tutu', 'Snow White with the Red Hair', 'Mushishi']
+# 2026-10-28: Free! / Tsurune / Given / Ouran / Orange / Hello World / 'Kyoto Animation' out (male leads or generic words)
 ANIME_SUMMER = ['Mai Sakurajima Bunny Girl Senpai', 'My Dress-Up Darling', 'Rent-a-Girlfriend', 'Quintessential Quintuplets', 'Toradora',
                 'Kaguya-sama Love is War', 'Oshi no Ko', 'Spy x Family', 'Darling in the Franxx', 'Komi Cant Communicate', 'Lycoris Recoil',
                 'Tonikawa', 'Shikimori', 'The Dangers in My Heart', 'Alya Roshidere', 'Blue Box', 'Nagatoro', 'Monogatari Series',
-                'Date A Live', 'Love is Like a Cocktail', 'Kobayashi Dragon Maid', 'Hello World', 'Summer Time Rendering', 'Birdie Wing',
-                'Yamada-kun and the Seven Witches', 'Idolmaster', 'Love Live Sunshine', 'Wave Listen to Me', 'Aharen-san',
-                'Weathering With You', 'Your Name', 'Tamako Love Story', 'Hanasaku Iroha', 'Free Iwatobi Swim Club', 'Non Non Biyori',
-                'Yuru Camp', 'Amanchu', 'Aria', 'Gochiusa', 'Kyoto Animation']
+                'Date A Live', 'Love is Like a Cocktail', 'Kobayashi Dragon Maid', 'Summer Time Rendering', 'Birdie Wing',
+                'Yamada-kun and the Seven Witches', 'Idolmaster', 'Love Live Sunshine', 'Aharen-san',
+                'Weathering With You', 'Your Name', 'Tamako Love Story', 'Hanasaku Iroha', 'Non Non Biyori',
+                'Yuru Camp', 'Amanchu', 'Gochiusa']
 TERMS_DREAMY = ['cherry blossoms', 'soft rain', 'flower field', 'pastel sky', 'looking back', 'hair in the wind', 'smile', 'petals falling',
                 'lanterns night', 'dreamy bokeh', 'spring', 'umbrella rain', 'pastel soft light', 'night rain', 'moonlight', 'flowers',
                 'sakura petals', 'dreamy', 'ethereal glow', 'soft pastel night', 'moonlight flowers', 'rain window night']
@@ -187,9 +191,52 @@ def _legacy_queries():
     return qs
 
 
+_EXTRA_F = []
+
+
+def extra_female_chars():
+    """the EXTRA_FEMALE_N most-favourited adult female AniList characters (not nsfw) that CHARS does not name yet"""
+    if not _EXTRA_F:
+        try:
+            with open(os.path.join(ROOT, 'core', 'quiz', 'assets', 'anime-characters.json'), encoding='utf-8') as f:
+                cs = json.load(f).get('characters') or []
+        except (OSError, ValueError):
+            cs = []
+        have = ' '.join(CHARS + CHARS_DREAMY).lower()
+        cs = sorted((c for c in cs if c.get('gender') == 'Female' and c.get('age_class') == 'adult' and not c.get('nsfw')),
+                    key=lambda c: -(c.get('favourites') or 0))
+        for c in cs:
+            nm = str(c['name']).strip()
+            if nm.lower() in have or not re.fullmatch(r"[A-Za-z .'-]+", nm):
+                continue
+            show = re.split(r':\s|\s\(|\s[-–]', str(c.get('anime') or ''))[0].strip().rstrip(',')
+            _EXTRA_F.append(nm if ' ' in nm else f'{nm} {show}')
+            if len(_EXTRA_F) >= EXTRA_FEMALE_N:
+                break
+    return _EXTRA_F
+
+
+def char_queries():
+    """[(query, vibe)] female character packs: every character x CHAR_TYPES (summer_glow tag = vibe-neutral packs) and the
+    dreamy characters x DREAMY_LOOKS + the dreamy mood packs (dreamy_bloom)"""
+    out = []
+    names = list(dict.fromkeys([c for c in CHARS if c not in CHARS_DREAMY] + extra_female_chars()))
+    for c in names:
+        out += [(f'{c} {ty}', 'summer_glow') for ty in CHAR_TYPES]
+    for c in CHARS_DREAMY:
+        out += [(f'{c} {ty}', 'dreamy_bloom') for ty in CHAR_TYPES + DREAMY_LOOKS]
+    out += [(q, 'dreamy_bloom') for q in MOODS_DREAMY]
+    return out
+
+
 def query_table():
-    """[(query, vibe)] - every candidate query once; the old fixed list is kept (tagged summer_glow, its pack style is vibe-neutral)"""
+    """[(query, vibe)] - every candidate query once: the female character packs first (char_queries), the old fixed list
+    (tagged summer_glow, its pack style is vibe-neutral), then show x look x source type"""
     tab, seen = [], set()
+    for q, v in char_queries():
+        if q not in seen:
+            seen.add(q)
+            tab.append((q, v))
     for q in _legacy_queries():
         if q not in seen:
             seen.add(q)
@@ -225,6 +272,7 @@ def nightly_queries(st, today=None, seed=None):
     used = used_dates(st)
     cutoff = time.strftime('%Y-%m-%d', time.gmtime(time.mktime(time.strptime(today, '%Y-%m-%d')) - KEEP_DAYS * 86400))
     tab = query_table()
+    charq = set(q for q, _ in char_queries()) | set(_legacy_queries()) - set(MOODS)
     pools = {}
     for vibe in ('dreamy_bloom', 'summer_glow'):
         qs = sorted(q for q, v in tab if v == vibe)
@@ -233,7 +281,15 @@ def nightly_queries(st, today=None, seed=None):
             old = sorted((q for q in qs if q in used and used[q] > cutoff), key=lambda q: (used[q], q))
             fresh += old[:NIGHT_MIN[vibe] - len(fresh)]
         rng.shuffle(fresh)
-        pools[vibe] = fresh
+        # 2026-10-28: CHAR_SHARE of the slots go to female character queries (show x look queries found mostly off-target packs)
+        ch, ot = [q for q in fresh if q in charq], [q for q in fresh if q not in charq]
+        mixed, j = [], 0
+        while ch or ot:
+            take_c = int((j + 1) * CHAR_SHARE) > int(j * CHAR_SHARE)
+            src = ch if (take_c and ch) or not ot else ot
+            mixed.append(src.pop(0))
+            j += 1
+        pools[vibe] = mixed
     out, i = [], 0
     d, s = pools['dreamy_bloom'], pools['summer_glow']
     while d or s:
@@ -246,10 +302,20 @@ def nightly_queries(st, today=None, seed=None):
 
 def title_selftest():
     ok = ['Frieren Beyond Journey End twixtor 4k', 'Mai Sakurajima scenepack 4k', 'Anime girl summer 60fps clips', 'Kaguya-sama Episode 5 4K raw',
-          'アニメ 4K scenes', 'Zero Two Darling in the Franxx 4k clips', 'Your Name Mitsuha scenes 4k', 'Marin Kitagawa edit clips 4k']
+          'アニメ 美少女 4K scenes', 'Zero Two Darling in the Franxx 4k clips', 'Your Name Mitsuha scenes 4k', 'Marin Kitagawa edit clips 4k',
+          # 2026-10-28 (10-27 CI titles + approved pool sources)
+          'Kanna Kamui Twixtor V2 - Kobayashi-san Chi no Maid Dragon', 'Taki x Mitsuha Scenes Twixtor', 'Haruno Sakura twixtor clips for editing 4K',
+          'waguri kaoruko /kaoru hana wa rin to saku /raw clips', 'Reze Twixtor 4K | Chainsaw Man clips', 'Rio Futaba Scenes |Rascal',
+          '𝓒𝓱𝓲𝔃𝓾𝓻𝓾 twixtor 4k', 'Blue Box Ep 24 Hina Chono | Twixtor Clips', 'Beautiful Anime Clips Twixtor + CC Clips for Editing']
     bad = ['Frieren Opening Creditless 4K', 'Clannad ED NCED 60fps', 'Toradora OP 1 NCOP anime', 'Avengers movie trailer 4k clips',
            'Tokyo city drone 4k clips', 'New Year fireworks 4k anime', 'Official Music Video 4k 60fps', 'Taylor Swift MV 4k',
-           'Live action Spy x Family 4k clips', 'Ocean sunset 4k raw clips', 'Movieclips beach scenes 4k']
+           'Live action Spy x Family 4k clips', 'Ocean sunset 4k raw clips', 'Movieclips beach scenes 4k',
+           # 2026-10-28 off-target sources of the 10-27 CI night
+           'Fruits 4K Copyright Free Stock Video', 'Yeonjun & Huening Kai  Mix & Max - Twixtor Clips', 'Twilight Sparkle (Mlp) | twixtor [4k]',
+           'TWIXTOR CLIPS 4K JISOO FACECAM "FLOWER" SCENEPACK', 'TWIXTOR CLIPS 4K MINA SOLO', 'Tanjiro Kamado Twixtor | 4K Quality | Demon Slayer',
+           'Hancock (2008) - Call Me A**hole One More Time Scene (4/10)', 'Sakuta Free Twixtor Scene', 'Zen Wistaria Twixtor [credit]',
+           'Sukura most popular clips for edit 4K HD (Twixtor Wind Breaker', 'Makima manga scenepack *4K no CC*',
+           'Lamine Yamal • 4k Free Clips • Clips for edits', 'TITAN TV MAN 4K TWIXTOR', 'Jungkook calvin klein spring 2026 twixtor 4k clips']
     for t in ok:
         assert anime_title(t), f'should pass: {t}'
     for t in bad:
@@ -319,6 +385,19 @@ def search(q, n=24):
         return []
 
 
+TITLE_REJ = {'counts': {}, 'sample': []}        # 2026-10-28 audit: why search results were not downloaded (candidates.json)
+
+
+def reason_key(r):
+    """'talking (talk_mouth 0.4, ...)' -> 'talking'; 'male lead: denji' -> 'male lead'; 'prefilter: stutter (...)' -> 'prefilter: stutter'"""
+    r = str(r).strip()
+    if r.startswith('prefilter:'):
+        return 'prefilter: ' + reason_key(r.split(':', 1)[1])
+    r = re.sub(r'\s*\(.*$', '', r)
+    r = re.sub(r'\s*[:=].*$', '', r)
+    return re.sub(r'[\s\d.,%-]+$', '', r) or 'other'
+
+
 def pick(entries, seen, k=0, n=1):
     out = []
     for e in entries:
@@ -326,7 +405,12 @@ def pick(entries, seen, k=0, n=1):
         d = e.get('duration') or 0
         if not vid or vid in seen or vid_shard(vid, n) != k:
             continue
-        if not anime_title(t):
+        ok, why = anime_title_check(t)
+        if not ok:
+            rk = reason_key(why[0]) if why else 'other'
+            TITLE_REJ['counts'][rk] = TITLE_REJ['counts'].get(rk, 0) + 1
+            if len(TITLE_REJ['sample']) < 300:
+                TITLE_REJ['sample'].append([vid, t[:100], why[0] if why else ''])
             continue
         if not (60 <= d <= 1200) or BAD.search(t) or (EDIT_RE.search(t) and not re.search(r'for edit', t, re.I)):
             continue
@@ -432,6 +516,7 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
         vd = VP.vibe_dir('slowmo', v, pool)
         g = gate_child([dict(it, path=os.path.join(vd, it['file']), pool_id=it['id']) for it in new], work) if new else {}
         ok = pf = 0
+        rejects = {}
         if g is None:
             log(f'{v}: gate failed - {len(new)} new clips dropped from staging (media kept out, rows marked)')
         for it in new:
@@ -450,6 +535,7 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
             if rs:
                 it['status'] = 'cine_reject'
                 it['cine_reject'] = rs
+                rejects[it['id']] = {'reasons': rs, 'source_id': it.get('source_id'), 'source_title': str(it.get('source_title') or '')[:120]}
                 for f in glob.glob(os.path.join(vd, it['file']) + '*'):
                     os.remove(f)
             else:
@@ -457,9 +543,21 @@ def import_and_gate(VP, shots_json, pool, srcmap, work, counts, target):
                 ok += 1
         VP.save_manifest('slowmo', v, man, root=pool)
         counts[v] = counts.get(v, 0) + ok
-        res[v] = dict(added=added, clean=ok, prefilter_rejects=pf, skip=skip)
+        rc = reason_counts(rejects)
+        res[v] = dict(added=added, clean=ok, prefilter_rejects=pf, skip=skip, rejects=rejects, reject_counts=rc)
         log(f'{v}: +{added} imported, {ok} clean ({pf} dropped by the pre-filters), skip {skip}')
+        if rc:
+            log(f'{v} reject reasons: ' + ', '.join(f'{k} {n}' for k, n in rc.items()))
     return res
+
+
+def reason_counts(rejects):
+    """{id: {'reasons': [...]}} -> {reason: clips} (a clip counts once per distinct reason), most frequent first"""
+    c = {}
+    for r in rejects.values():
+        for k in {reason_key(x) for x in (r.get('reasons') if isinstance(r, dict) else r) or []}:
+            c[k] = c.get(k, 0) + 1
+    return dict(sorted(c.items(), key=lambda x: (-x[1], x[0])))
 
 
 def sheet(paths_labels, out, cols=3):
@@ -530,7 +628,9 @@ def cmd_mine(a):
             break
         sj = run_library(src, os.path.join(work, f'lib{bi:02d}'), len(srcmap), os.path.join(work, 'cache'))
         res = import_and_gate(VP, sj, pool, srcmap, work, counts, 10 ** 6) if os.path.exists(sj) else {}
-        batches.append({'i': bi, 'sources': list(srcmap), 'res': res})
+        batches.append({'i': bi, 'sources': list(srcmap), 'titles': {k2: v2['title'] for k2, v2 in srcmap.items()}, 'res': res,
+                        'reject_counts': reason_counts({i: r for v in res.values() for i, r in (v.get('rejects') or {}).items()})})
+        log(f"batch {bi} reject reasons: {batches[-1]['reject_counts']}")
         shutil.rmtree(src, ignore_errors=True)                       # sources deleted after cutting
         shutil.rmtree(os.path.join(work, 'cache', 'src'), ignore_errors=True)
         shutil.rmtree(os.path.join(work, f'lib{bi:02d}'), ignore_errors=True)
@@ -551,10 +651,18 @@ def cmd_mine(a):
         for i in range(0, len(new), 24):
             sheet([(os.path.join(od, os.path.basename(it['file'])), f"{it['id']} {str(it.get('source_title'))[:40]}") for it in new[i:i + 24]],
                   os.path.join(out, 'sheets', f'{v}_s{k}_{i // 24:02d}.jpg'))
-    rejected = {v: [it['id'] for it in VP.load_manifest('slowmo', v, root=pool)['items'] if it['id'] not in live_ids[v]
-                    and it.get('status') == 'cine_reject'] for v in VIBES}
+    rej_items = {v: [it for it in VP.load_manifest('slowmo', v, root=pool)['items'] if it['id'] not in live_ids[v]
+                     and it.get('status') == 'cine_reject'] for v in VIBES}
+    rejected = {v: [it['id'] for it in its] for v, its in rej_items.items()}
+    # 2026-10-28 audit: every gate / pre-filter reject with its reasons (id -> reasons) + the per-reason counts
+    reasons = {v: {it['id']: {'reasons': it.get('cine_reject') or [], 'source_id': it.get('source_id'),
+                              'source_title': str(it.get('source_title') or '')[:120]} for it in its} for v, its in rej_items.items()}
+    rc = reason_counts({i: r for v in reasons.values() for i, r in v.items()})
     wj(os.path.join(out, 'candidates.json'), {'shard': a.shard, 'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-                                              'candidates': cands, 'cine_rejected_ids': rejected, 'batches': batches, 'bot_checks': BOT['n']})
+                                              'candidates': cands, 'cine_rejected_ids': rejected, 'cine_rejected': reasons,
+                                              'reject_counts': rc, 'title_rejects': TITLE_REJ, 'batches': batches, 'bot_checks': BOT['n']})
+    log('reject reasons (night): ' + (', '.join(f'{k} {n}' for k, n in rc.items()) or 'none'))
+    log('title filter skips: ' + (', '.join(f'{k} {n}' for k, n in sorted(TITLE_REJ['counts'].items(), key=lambda x: -x[1])) or 'none'))
     wj(os.path.join(out, 'state.json'), st)
     log(f'staged: ' + ', '.join(f'{v} {len(c)}' for v, c in cands.items()))
     if BOT['n'] >= BOT_MAX:
@@ -659,10 +767,20 @@ def cmd_publish(a):
     seen, tars, total = set(), [], {v: 0 for v in VIBES}
     os.makedirs(a.out, exist_ok=True)
     day = time.strftime('%Y%m%d', time.gmtime())
+    report = {'day': day, 'shards': {}, 'reject_counts': {}, 'title_rejects': {}}
     for cj in arts:
         base = os.path.dirname(cj)
         states.append(rj(os.path.join(base, 'state.json'), {}))
         c = rj(cj, {})
+        # the night's audit, also for shards that staged nothing (their tars are skipped below)
+        report['shards'][str(c.get('shard', '?'))] = {
+            'cine_rejected': c.get('cine_rejected') or {}, 'reject_counts': c.get('reject_counts') or {},
+            'title_rejects': c.get('title_rejects') or {},
+            'batches': [{k2: b.get(k2) for k2 in ('i', 'titles', 'reject_counts')} for b in c.get('batches') or []]}
+        for k2, n2 in (c.get('reject_counts') or {}).items():
+            report['reject_counts'][k2] = report['reject_counts'].get(k2, 0) + n2
+        for k2, n2 in ((c.get('title_rejects') or {}).get('counts') or {}).items():
+            report['title_rejects'][k2] = report['title_rejects'].get(k2, 0) + n2
         cnt = {}
         for v in VIBES:
             keep = []
@@ -686,8 +804,11 @@ def cmd_publish(a):
                 t.add(os.path.join(base, f), arcname=f.replace(os.sep, '/'))
         tars.append(os.path.join(a.out, name))
     wj(os.path.join(a.out, STATE_ASSET), merge_states(states))
+    rep_p = os.path.join(a.out, f'slowmo-rejects-{day}.json')     # audit of the night: gate / pre-filter / title reasons
+    wj(rep_p, report)
+    log('night reject reasons: ' + json.dumps(report['reject_counts']) + ' | title skips: ' + json.dumps(report['title_rejects']))
     if not a.dry:
-        _gh(['release', 'upload', RELEASE] + tars + [os.path.join(a.out, STATE_ASSET), '--clobber'])
+        _gh(['release', 'upload', RELEASE] + tars + [os.path.join(a.out, STATE_ASSET), rep_p, '--clobber'])
     print(json.dumps({'ok': True, 'tars': [os.path.basename(x) for x in tars], 'staged': total, 'dry': bool(a.dry)}))
 
 
@@ -773,10 +894,11 @@ def cmd_import(a):
                     added += 1
                 man['items'].append(it)
                 have.add(it['id'])
+            why = (cj.get('cine_rejected') or {}).get(v) or {}
             for rid in (cj.get('cine_rejected_ids') or {}).get(v, []):
                 if rid not in have:                      # remembered so it is never mined again (no media)
                     man['items'].append({'id': rid, 'status': 'cine_reject', 'file': f'clips/{rid}.mp4', 'source_id': rid[2:13],
-                                         'start': 0, 'end': 0, 'moment': rid})
+                                         'start': 0, 'end': 0, 'moment': rid, 'cine_reject': (why.get(rid) or {}).get('reasons') or []})
                     have.add(rid)
             VP.save_manifest('slowmo', v, man)
         open(os.path.join(base, 'IMPORTED'), 'w').close()
