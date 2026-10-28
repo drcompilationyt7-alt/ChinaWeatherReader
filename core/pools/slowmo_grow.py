@@ -18,9 +18,10 @@
         review sheets (DIR/review/<vibe>_NN.jpg + index.json) for the BY-EYE review
     python core/pools/slowmo_grow.py push-manifests      owner PC: live slow-mo manifests (no media) + the PC grow state -> staging release
     python core/pools/slowmo_grow.py publish --artifacts DIR --out DIR [--state S] [--dry]   CI: shard outputs -> tars -> release
-    python core/pools/slowmo_grow.py import-staged [--reject ID,ID or N,N] [--dir ...] [--delete-remote]
-        imports every pulled candidate into the live pool (output/edit-pools/slowmo/<vibe>) with a 'reviewed' stamp; rejected ones
-        are listed with status 'rejected' (never mined again); --delete-remote removes the imported tars from the release.
+    python core/pools/slowmo_grow.py import-staged [--reject ID,ID or N,N] [--dir ...] [--delete-remote] [--no-sync]
+        pulls the live slow-mo pool from the edit-pools release, imports every pulled candidate into it with a 'reviewed' stamp
+        (rejected ones are listed with status 'rejected', never mined again), pushes it back (verified) and deletes the local
+        media + the imported staging dirs; --delete-remote removes the imported tars from the staging release.
 
 Load: IDLE priority, 4 threads, one library run at a time, RAM gate (SLOWMO_GROW_MIN_GB, default 4 on the PC, 0 on CI).
 """
@@ -561,8 +562,26 @@ def cmd_mine(a):
     print(json.dumps({'ok': True, 'staged': {v: len(c) for v, c in cands.items()}, 'batches': len(batches), 'bot_checks': BOT['n']}))
 
 
+def _gh_env():
+    """owner PC: the active gh login may be an account without write access to the releases (2026-10-28: deletes and
+    pushes failed as drcompilationyt1-debug); without a GH_TOKEN use the repo owner's token"""
+    env = dict(os.environ)
+    if not env.get('GH_TOKEN') and not env.get('GITHUB_ACTIONS'):
+        r = subprocess.run(['gh', 'auth', 'token', '--user', os.environ.get('GH_POOL_USER', 'drcompilationyt7-alt')],
+                           capture_output=True, text=True)
+        if r.returncode == 0 and r.stdout.strip():
+            env['GH_TOKEN'] = r.stdout.strip()
+    return env
+
+
 def _gh(args, check=True):
-    return subprocess.run(['gh'] + args, capture_output=True, text=True, check=check)
+    return subprocess.run(['gh'] + args, capture_output=True, text=True, check=check, env=_gh_env())
+
+
+def _store(*args):
+    """scripts/edit-pools-store.js on the live slow-mo pool (pull / push)"""
+    subprocess.run(['node', os.path.join(ROOT, 'scripts', 'edit-pools-store.js'), *args, '--preset', 'slowmo', '--dir', LIVE],
+                   cwd=ROOT, env=_gh_env(), check=True)
 
 
 def staged_assets():
@@ -720,13 +739,19 @@ def cmd_pull(a):
 
 def cmd_import(a):
     import vibe_pool as VP
+    # 2026-10-28: imports only reached the PC copy, so CI kept planning on the 10-20 pool (9 fresh instead of 22). Now the live
+    # pool is pulled from the release first (a pruned PC copy has manifests but no media: pushing it would drop clips), the
+    # import is pushed and verified, and the local media + the imported staging dirs are deleted (no large local pools).
+    sync = not a.no_sync
+    if sync:
+        _store('pull')
     d = os.path.abspath(a.dir)
     rows = rj(os.path.join(d, 'review', 'index.json'), [])
     rej = {x.strip() for x in (a.reject or '').split(',') if x.strip()}
     rej_ids = {r['id'] for r in rows if r['id'] in rej or str(r['n']) in rej}
     stamp = time.strftime('%Y-%m-%d') + ' eye pull-staged'
     added, rejected = 0, 0
-    dirs = sorted({r['dir'] for r in rows})
+    dirs = sorted({r['dir'] for r in rows if os.path.isdir(r['dir'])})     # a cleaned-up batch dir is skipped
     for base in dirs:
         cj = rj(os.path.join(base, 'candidates.json'), {})
         for v, items in (cj.get('candidates') or {}).items():
@@ -758,8 +783,12 @@ def cmd_import(a):
         if a.delete_remote:
             _gh(['release', 'delete-asset', RELEASE, os.path.basename(base) + '.tar', '-y'], check=False)
     VP.write_index()
-    print(json.dumps({'ok': True, 'imported': added, 'rejected': rejected,
-                      'clean_now': {v: len(VP.fresh_clips('slowmo', v, rotation=False)) for v in VIBES}}))
+    clean = {v: len(VP.fresh_clips('slowmo', v, rotation=False)) for v in VIBES}
+    if sync:
+        _store('push', '--prune-local')
+        for base in dirs:
+            shutil.rmtree(base, ignore_errors=True)
+    print(json.dumps({'ok': True, 'imported': added, 'rejected': rejected, 'clean_now': clean, 'pushed': sync}))
 
 
 def main():
@@ -780,6 +809,7 @@ def main():
     i.add_argument('--dir', default=os.path.join(LIVE, '_staged'))
     i.add_argument('--reject', default='')
     i.add_argument('--delete-remote', action='store_true')
+    i.add_argument('--no-sync', action='store_true', help='no pull before / push + local cleanup after (tests only)')
     pm = sp.add_parser('push-manifests')
     pb = sp.add_parser('publish')
     pb.add_argument('--artifacts', required=True)
