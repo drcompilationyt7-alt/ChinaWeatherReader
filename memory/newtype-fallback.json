@@ -1,17 +1,17 @@
 {
- "at": "2026-10-28T09:27:09.168Z",
+ "at": "2026-10-29T09:50:36.690Z",
  "type": "sound",
  "ok": false,
- "reason": "pool too small: pool_too_small: pool_low: 12 usable scenes (12 with a crisp hit) for 23 hits (23 audible) over 20.6 s (reuse cap 30%)",
+ "reason": "pool too small: pool_too_small: pool_low: 12 usable scenes (12 with a crisp hit) for 22 hits (15 audible) over 19.5 s (reuse cap 30%)",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "camila_cabello_havana",
-   "seed": 78205,
+   "song": "ac_dc_thunderstruck",
+   "seed": 65897,
    "input": "first",
-   "work": "work-sound-1793178205858",
-   "min": 23.7,
+   "work": "work-sound-1793265897102",
+   "min": 25.7,
    "result": "pool too small"
   }
  ]

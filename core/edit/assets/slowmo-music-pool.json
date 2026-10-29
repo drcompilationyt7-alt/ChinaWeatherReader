@@ -1,6 +1,6 @@
 {
  "version": 1,
- "note": "Music pool for the cinematic SLOW-MO edit (a WOMEN BEAUTY edit: romantic / dreamy / pretty songs only) (core/edit/slowmo_music.py). No lyrics, ever (fetched and aligned at render time only). Audio fetched at render time. section = original-song seconds: start (words-on-black intro), hero (the picture starts), end; played slowed by speed.",
+ "note": "Music pool for the cinematic SLOW-MO edit (core/edit/slowmo_music.py). No lyrics, ever (fetched and aligned at render time only). Audio fetched at render time. section = original-song seconds: start (words-on-black intro), hero (the picture starts), end; played slowed by speed.",
  "songs": [
   {
    "id": "yung_kai_blue",
@@ -120,8 +120,8 @@
    "last_used": "2026-10-24T12:00:00Z",
    "uses": 0,
    "perf": {
-    "n": 0,
-    "sum": 0.0
+    "n": 1,
+    "sum": 4.109
    },
    "version_last_used": {
     "0.85": "2026-10-24T12:00:00Z",

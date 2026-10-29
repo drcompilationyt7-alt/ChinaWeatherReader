@@ -1563,7 +1563,8 @@
     "prebuilt": true
    },
    "vibe": "summer_glow",
-   "musicPoolId": "jvke_golden_hour@v1"
+   "musicPoolId": "jvke_golden_hour@v1",
+   "musicPerf": 4.109
   },
   {
    "videoId": "hrdvNehinLY",
@@ -1924,6 +1925,58 @@
    "why": "thompson (explore)",
    "whyMode": "explore",
    "bpm": 131.97,
+   "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "MkEoMr9xikc",
+   "url": "https://www.youtube.com/watch?v=MkEoMr9xikc",
+   "postedAt": "2026-10-29T10:02:19.900Z",
+   "publishAt": "2026-10-29T12:00:00.000Z",
+   "song": "odoriko",
+   "theme": "japanese",
+   "emoji": "🗿,🔥",
+   "title": "odoriko acapella but the beat drops 🗿",
+   "clipIds": [
+    "qfXC5M_wUm0",
+    "cTGuZ5NEMnw",
+    "nrLZ-vTiQa4",
+    "hNfPsAt3bMg",
+    "9ninWlkEthY",
+    "zqwk1ionxcA",
+    "C0C6wvNl14w",
+    "uK4_f_0zphw"
+   ],
+   "clipChannels": [
+    "Vaundy",
+    "Y2 drums",
+    "jABBKLAB",
+    "nozo",
+    "オオカミには騙されないシリーズ@ABEMA 【公式】",
+    "곰무원김민지",
+    "팜후드"
+   ],
+   "clipSource": "Vaundy",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-layer-build"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-drop",
+    "descHook": "op-desc-layer-build",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "explore"
+   },
+   "why": "thompson + insights (bonus +1.19)",
+   "whyMode": "insight-driven",
+   "bpm": 157.02,
    "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]

@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=AQ7-2LyD16w",
-      "title": "dynamite acapella bts ✨🔥",
-      "country": "Global",
-      "postedAt": "2026-09-29T09:19:46.280Z",
-      "videoId": "AQ7-2LyD16w",
-      "category": "meme-kpop",
-      "titleSource": "dynamite"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=h469omNRzVE",
       "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "Oxy-eUSZu4w",
       "category": "meme-japanese",
       "titleSource": "show"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=MkEoMr9xikc",
+      "title": "odoriko acapella but the beat drops 🗿",
+      "country": "Global",
+      "postedAt": "2026-10-29T10:02:19.904Z",
+      "videoId": "MkEoMr9xikc",
+      "category": "meme-japanese",
+      "titleSource": "odoriko"
     }
   ]
 }
