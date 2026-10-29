@@ -1561,6 +1561,114 @@
     "titleStyle": "keyword",
     "descHook": "op-target-comment"
    }
+  },
+  {
+   "videoId": "f6ClJowhN2Y",
+   "url": "https://www.youtube.com/watch?v=f6ClJowhN2Y",
+   "postedAt": "2026-10-29T08:47:31.319Z",
+   "publishAt": "2026-10-29T12:00:00.000Z",
+   "format": "eyes",
+   "theme": "anime",
+   "seed": 797769175,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character right now?",
+     "template": "Can you guess the anime character right now?",
+     "sec": 2.22
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai",
+     "line": "That is right, it is Mob!",
+     "template": "That is right, it is {a}!",
+     "sec": 1.56
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "It's Tengen Uzui!",
+     "template": null,
+     "sec": 2.03
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai",
+     "line": "There it is! Say hello to Kikyo!",
+     "template": "There it is! Say hello to {a}!",
+     "sec": 1.23
+    }
+   ],
+   "titleTemplate": "eyes-llm",
+   "title": "guess the anime character by eyes 👁️ #anime",
+   "answers": [
+    "eyes:mob#di12lt",
+    "eyes:tengen uzui#p40bio",
+    "eyes:kikyo#15pg323"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "61gFSmcYfMA",
+   "url": "https://www.youtube.com/watch?v=61gFSmcYfMA",
+   "postedAt": "2026-10-29T08:52:48.688Z",
+   "publishAt": "2026-10-29T21:00:00.000Z",
+   "format": "voice",
+   "theme": "anime",
+   "seed": 816473591,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "pool",
+     "line": "Who is talking? Name them!",
+     "template": null,
+     "sec": 1.96
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Eren Yeager!",
+     "template": null,
+     "sec": 1.08
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "It's Nico Robin!",
+     "template": null,
+     "sec": 1.16
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Shoyo Hinata. Did you get it?",
+     "template": null,
+     "sec": 1.83
+    }
+   ],
+   "titleTemplate": "voice-casual",
+   "title": "guess the anime character by voice 🎧",
+   "answers": [
+    "voice:eren yeager",
+    "voice:nico robin",
+    "voice:shoyo hinata"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "format3",
+    "titleStyle": "casual",
+    "descHook": "op-target-comment"
+   }
   }
  ]
 }
