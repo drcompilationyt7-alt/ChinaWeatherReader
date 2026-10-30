@@ -1669,6 +1669,79 @@
     "titleStyle": "casual",
     "descHook": "op-target-comment"
    }
+  },
+  {
+   "videoId": "GhkRuBc4ydM",
+   "url": "https://www.youtube.com/watch?v=GhkRuBc4ydM",
+   "postedAt": "2026-10-30T08:53:18.416Z",
+   "publishAt": "2026-10-30T12:00:00.000Z",
+   "format": "duel",
+   "theme": "anime",
+   "seed": 638149214,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Which anime character do you prefer?",
+     "template": "Which anime character do you prefer?",
+     "sec": 1.83
+    }
+   ],
+   "titleTemplate": "duel-fans",
+   "title": "Anime Fans Picked... Do You Agree? ⚡ #anime",
+   "answers": [
+    "duel:13020-45627",
+    "duel:88575-120649",
+    "duel:36765-36828"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "7Ie5ZVe8wGo",
+   "url": "https://www.youtube.com/watch?v=7Ie5ZVe8wGo",
+   "postedAt": "2026-10-30T08:59:21.985Z",
+   "publishAt": "2026-10-30T21:00:00.000Z",
+   "format": "trivia",
+   "theme": "food",
+   "seed": 631651363,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Test your knowledge on Asian dish trivia right now!",
+     "template": "Test your knowledge on Asian dish trivia right now!",
+     "sec": 2.49
+    },
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Drop your score in the comments!",
+     "template": null,
+     "sec": 1.51
+    }
+   ],
+   "titleTemplate": "trivia-howwell",
+   "title": "How Well Do You Know Asian Food? 👀 #asianfood",
+   "answers": [
+    "trivia:what japanese dish features deep-fried battered food?",
+    "trivia:matcha is a powder made from...",
+    "trivia:which popular thai dish consists of stir-fried rice noodles?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }

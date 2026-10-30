@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Tyg2ooEtzho",
-      "title": "Anime Character Quiz: Easy to IMPOSSIBLE 🔥 #anime",
-      "country": "Global",
-      "postedAt": "2026-09-30T08:44:30.428Z",
-      "videoId": "Tyg2ooEtzho",
-      "category": "quiz-character",
-      "titleSource": "char-ramp",
-      "quizFormat": "character",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=RCsOZI0JRLI",
       "title": "guess the anime from emojis 🔥 #anime",
       "country": "Global",
@@ -428,6 +417,28 @@
       "titleSource": "voice-casual",
       "quizFormat": "voice",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=GhkRuBc4ydM",
+      "title": "Anime Fans Picked... Do You Agree? ⚡ #anime",
+      "country": "Global",
+      "postedAt": "2026-10-30T08:53:18.673Z",
+      "videoId": "GhkRuBc4ydM",
+      "category": "quiz-duel",
+      "titleSource": "duel-fans",
+      "quizFormat": "duel",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=7Ie5ZVe8wGo",
+      "title": "How Well Do You Know Asian Food? 👀 #asianfood",
+      "country": "Global",
+      "postedAt": "2026-10-30T08:59:22.242Z",
+      "videoId": "7Ie5ZVe8wGo",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-howwell",
+      "quizFormat": "trivia",
+      "quizTheme": "food"
     }
   ]
 }
