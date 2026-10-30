@@ -1631,7 +1631,8 @@
    "songSection": [
     9.155,
     36.571
-   ]
+   ],
+   "musicPerf": 3.703
   },
   {
    "videoId": "jQNeOZ20gD8",
@@ -1978,6 +1979,59 @@
    "whyMode": "insight-driven",
    "bpm": 157.02,
    "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "tCxxeIhDZJU",
+   "url": "https://www.youtube.com/watch?v=tCxxeIhDZJU",
+   "postedAt": "2026-10-30T09:52:23.109Z",
+   "publishAt": "2026-10-30T12:00:00.000Z",
+   "song": "fatal",
+   "theme": "anime",
+   "emoji": "🎧,🔥",
+   "title": "fatal acapella gemn edit 🎧",
+   "clipIds": [
+    "YhSG3B3p86k",
+    "arVRzAcPTIw",
+    "7gSzgP9U6tA",
+    "kxnzvfYsHj4",
+    "3eCm13L9O34",
+    "BnAt1swlxD8",
+    "91PTqpBbaOA",
+    "GYpMWcOVOmM"
+   ],
+   "clipChannels": [
+    "Animeke Channel",
+    "AniverseFX",
+    "Kupnoodls",
+    "Priyanshu Sharma",
+    "Shiba Wolf",
+    "Syndornx",
+    "konadeshi",
+    "violet"
+   ],
+   "clipSource": "Oshi no Ko Season 2",
+   "settings": {
+    "drop": 18,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-stack-drop"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "title-source",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "op-desc-stack-drop",
+    "titlePattern": "{song} acapella {artist} edit {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson + insights (bonus -0.03)",
+   "whyMode": "insight-driven",
+   "bpm": 103.98,
+   "titlePattern": "{song} acapella {artist} edit {e}"
   }
  ]
 }

@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=h469omNRzVE",
-      "title": "kiss of death acapella amv build up ⚡⚡ #darlinginthefranxx",
-      "country": "Global",
-      "postedAt": "2026-09-30T09:13:20.807Z",
-      "videoId": "h469omNRzVE",
-      "category": "meme-anime",
-      "titleSource": "kiss of death"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=g3-PyhfIecA",
       "title": "kick back acapella ⚡🔥",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "MkEoMr9xikc",
       "category": "meme-japanese",
       "titleSource": "odoriko"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=tCxxeIhDZJU",
+      "title": "fatal acapella gemn edit 🎧",
+      "country": "Global",
+      "postedAt": "2026-10-30T09:52:23.112Z",
+      "videoId": "tCxxeIhDZJU",
+      "category": "meme-anime",
+      "titleSource": "fatal"
     }
   ]
 }

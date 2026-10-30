@@ -1,18 +1,26 @@
 {
- "at": "2026-10-29T09:50:36.690Z",
- "type": "sound",
+ "at": "2026-10-30T09:42:29.266Z",
+ "type": "slowmo",
  "ok": false,
- "reason": "pool too small: pool_too_small: pool_low: 12 usable scenes (12 with a crisp hit) for 22 hits (15 audible) over 19.5 s (reuse cap 30%)",
+ "reason": "time budget",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "ac_dc_thunderstruck",
-   "seed": 65897,
+   "song": "ed_sheeran_photograph@v0.9",
+   "seed": 52322,
    "input": "first",
-   "work": "work-sound-1793265897102",
-   "min": 25.7,
-   "result": "pool too small"
+   "work": "work-slowmo-1793352322786",
+   "min": 17.1,
+   "overall": 8.01,
+   "failed": {
+    "3_lyrics": 6.4,
+    "9_no_sfx": 6,
+    "11_waves": 4,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
   }
  ]
 }
