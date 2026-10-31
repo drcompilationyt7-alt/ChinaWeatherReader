@@ -60,7 +60,10 @@ env:
   QUIZ_NEW_POOL_MIN: ${{ vars.QUIZ_NEW_POOL_MIN || '15' }}   # set the repo variable to 999 to keep nightcity / cuisine off
   QUIZ_REUSE_GAP: ${{ vars.QUIZ_REUSE_GAP || '8' }}         # uploads before an item may come back
   WATERMARK: ${{ vars.QUIZ_WATERMARK || '@asianpopquiz' }}
-  QUIZ_SPACING_HOURS: "9"
+  # owner 2026-10-31: 2 a day at 8 am + 8 pm New York (EST from 11-01: 13:00 + 01:00 UTC); both are uploaded in the morning run
+  # as scheduled (private + publishAt), never public right away
+  QUIZ_SPACING_HOURS: ${{ vars.QUIZ_SPACING_HOURS || '12' }}
+  QUIZ_FIRST_HOUR_UTC: ${{ vars.QUIZ_FIRST_HOUR_UTC || '13' }}
   QUIZ_PER_DAY: ${{ vars.QUIZ_PER_DAY || '2' }}
   # 2026-10-11 (owner approved): new formats (silhouette / eyes / outfit), themed editions (Halloween in its window 10-15..10-31 first,
   # beach / festival ~1 in 4, winter and valentine in their windows), animated looping backgrounds, AI narrator lines (fixed pools as
@@ -110,7 +113,7 @@ jobs:
         id: today
         if: steps.gate.outputs.ready == 'true' && github.event_name == 'schedule'
         run: |
-          # QUIZ_PER_DAY shorts a day (08:00 + 17:00 New York = 12:00 + 21:00 UTC); a backup run makes only the missing ones
+          # QUIZ_PER_DAY shorts a day (08:00 + 20:00 New York = 13:00 + 01:00 UTC); a backup run makes only the missing ones
           N=$(node -e "const h=require('./memory/quiz-channel/quiz-history.json'); const d=new Date().toISOString().slice(0,10); console.log((h.uploads||[]).filter(u=>String(u.postedAt||'').startsWith(d)).length)" 2>/dev/null || echo 0)
           echo "uploaded_today=$N" >> $GITHUB_OUTPUT
           if [ "$N" -ge "$QUIZ_PER_DAY" ]; then
@@ -173,12 +176,12 @@ jobs:
       - name: Make and upload quiz shorts
         if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         run: |
-          # QUIZ_PER_DAY shorts, the first at 12:00 UTC, the next QUIZ_SPACING_HOURS later; a backup run fills only the
+          # QUIZ_PER_DAY shorts, the first at QUIZ_FIRST_HOUR_UTC, the next QUIZ_SPACING_HOURS later; a backup run fills only the
           # missing slots (a slot whose time has passed goes out right away)
           DONE="${{ steps.today.outputs.uploaded_today }}"; DONE=${DONE:-0}
           COUNT=$(( QUIZ_PER_DAY - DONE )); [ "$COUNT" -lt 1 ] && COUNT=1
           if [ -n "${{ github.event.inputs.count }}" ]; then COUNT="${{ github.event.inputs.count }}"; DONE=0; fi
-          export PUBLISH_AT=$(node -e "const d=new Date(); d.setUTCHours(12,0,0,0); d.setTime(d.getTime()+$DONE*$QUIZ_SPACING_HOURS*3600e3); console.log(d.toISOString().replace(/\.000Z$/,'Z'))")
+          export PUBLISH_AT=$(node -e "const d=new Date(); d.setUTCHours(Number(process.env.QUIZ_FIRST_HOUR_UTC||13),0,0,0); d.setTime(d.getTime()+$DONE*$QUIZ_SPACING_HOURS*3600e3); console.log(d.toISOString().replace(/\.000Z$/,'Z'))")
           node core/github-action-runner.js --mode quiz --count "$COUNT" --private --publish-at "$PUBLISH_AT"
 
       - name: Keep renders (every short, uploaded or not, for review)
