@@ -1,19 +1,35 @@
 {
- "at": "2026-10-31T09:25:55.019Z",
- "type": "slowmo",
+ "at": "2026-10-31T22:28:32.718Z",
+ "type": "sound",
  "ok": false,
- "reason": "time budget",
- "dryRun": false,
+ "reason": "pool too small: pool_too_small: 23.7 s (< 10.0 s) / hold 0.468 s (> 0.15 s) with 15 fresh clips",
+ "dryRun": true,
  "attempts": [
   {
    "n": 1,
-   "song": "hikaru_utada_first_love@v0.95",
-   "seed": 38577,
+   "song": "michael_jackson_smooth_criminal",
+   "seed": 83928,
    "input": "first",
-   "work": "work-slowmo-1793438577098",
-   "min": 3,
-   "result": "render failed: no_lyrics: LRCLIB gave no lyrics for this song (no lyric-less slow-mo)",
+   "work": "work-sound-1793483928842",
+   "min": 20.5,
+   "overall": 9.17,
+   "failed": {
+    "5_density_no_dead": 6,
+    "6_vertical_framing_quality": 7.8,
+    "16_drum_onsets_recreated": 5.2,
+    "9_overall_vs_ref": 7.7
+   },
+   "result": "NOT PASS",
    "next": "new_song"
+  },
+  {
+   "n": 2,
+   "song": "dua_lipa_levitating",
+   "seed": 84139,
+   "input": "new_song",
+   "work": "work-sound-1793485161088",
+   "min": 9.2,
+   "result": "pool too small"
   }
  ]
 }
