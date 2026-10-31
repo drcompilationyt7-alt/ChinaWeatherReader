@@ -55,8 +55,10 @@ const isPop = f => POP_FORMATS.includes(f);
 // exploration weights; on the pop channel the geography formats are only a side dish. The new formats
 // (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
-  ? { emoji: 0.3, trivia: 0.2, wyr: 0.3, city: 0.08, character: 0.25, idol: 0.35, opening: 0.3, flag: 0.05, shape: 0.04,
-    cityphoto: 0.15, nightcity: 0.2, cuisine: 0.25, vtuber: 0.18, duel: 0.22, scene: 0.28, voice: 0.3, song: 0.4, silhouette: 0.25, eyes: 0.25, outfit: 0.2 }   // new formats: owner 2026-10-12 asked for higher odds
+  // re-weighted 2026-10-31 from the views of 10-01..10-30 (owner: views down): ~1000-1800 for idol / song / shape / outfit /
+  // scene / kpop wyr, ~200-500 for opening / character / voice / duel / text trivia / city map
+  ? { emoji: 0.2, trivia: 0.08, wyr: 0.3, city: 0.05, character: 0.1, idol: 0.45, opening: 0.1, flag: 0.05, shape: 0.3,
+    cityphoto: 0.15, nightcity: 0.2, cuisine: 0.25, vtuber: 0.12, duel: 0.08, scene: 0.35, voice: 0.08, song: 0.45, silhouette: 0.25, eyes: 0.25, outfit: 0.35 }
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 // owner 2026-10-15: no format repeats within NO_REPEAT_DAYS uploads, geography at most 1 in GEO_EVERY uploads,

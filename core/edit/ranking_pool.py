@@ -48,6 +48,7 @@ import ranking_topics as RT  # noqa: E402
 
 MARGIN = 1.5                 # s kept on each side of the chosen window (re-cut room), the rest of the edit is never stored
 SEG = (18.0, 24.0)           # phrase-aligned window per entry (3 revealed entries ~ 60 s)
+SECTIONS = 4                 # good non-overlapping sections staged per edit (owner 2026-10-28)
 REUSE_GAP = 8                # an edit (source) is not reused within the next 8 ranking uploads
 TOPIC_GAP = 4                # a topic is not repeated within the next 4 ranking uploads (when another is eligible)
 PER_ENTRY_TARGET = 2         # reviewed + staged items wanted per entry (variety under the reuse gap)
@@ -290,10 +291,11 @@ def sheet(clip, out_png, label):
 
 
 def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, offline=False, entries=None, prefer=(),
-         first=()):
+         first=(), retry=()):
     """Mining step (one job). Entries in plan() order (topic blockers first); per entry: candidate list, rights /
     info gates (old + idle editors first, vetoed / blocklisted skipped), download <= max_dl, every gate, the best
-    phrase window -> staged clip (+ margin), review sheet, proof. Stops at the time budget."""
+    phrase window -> staged clip (+ margin), review sheet, proof. Stops at the time budget. `retry`: source ids decided
+    before (a bad window, not a bad edit) that are evaluated again (searched first, like --prefer)."""
     import ranking_compilation as RC
     t0 = time.time()
     work = work or os.path.join(ROOT, 'output', 'ranking-mine')
@@ -301,6 +303,7 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
     RC.OFFLINE[0] = offline
     _KEEP[0] = offline
     RC.PREFER.update(prefer)
+    RC.PREFER.update(retry)
     sd = staged_dir()
     RC.PROOF_DIR[0] = os.path.join(sd, 'proofs')
     RC.idle()
@@ -345,7 +348,8 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
         except Exception as ex:  # noqa: BLE001
             log(f'search failed: {ex}')
             continue
-        done = {sid for sid, v in st['sources'].items() if v.get('status') in ('staged', 'reviewed', 'rejected', 'gate_reject')}
+        done = {sid for sid, v in st['sources'].items()
+                if v.get('status') in ('staged', 'reviewed', 'rejected', 'gate_reject') and sid not in retry}
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
         # an entry that alone blocks a whole topic (Yuta for jjk_strongest) gets twice the downloads
         try:
@@ -369,8 +373,8 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
             if (time.time() - t0) / 60 > budget_min + 20:
                 break
             try:
-                res = RC.evaluate(res, e, others, judge(), SEG, e.get('pace', 'action'), all_infos=RC.cached_infos(),
-                                  theme=entry_theme(p['topics'], topics))
+                res = RC.evaluate(res, e, others, judge(), SEG, e.get('pace', 'action'), max_pass=SECTIONS,
+                                  all_infos=RC.cached_infos(), theme=entry_theme(p['topics'], topics), distinct=True)
             except Exception as ex:  # noqa: BLE001  (one bad candidate never kills the run)
                 log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')
                 res.update(verdict='reject', why=f'eval_error_{type(ex).__name__}', windows=[])
@@ -380,21 +384,29 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
                                             'at': time.strftime('%Y-%m-%d'),
                                             'windows': [w.get('reject') for w in (res.get('windows') or [])[:4]]}
                 continue
-            try:
-                it = stage_item(res, e, key, sd, RC)
-            except Exception as ex:  # noqa: BLE001
-                log(f'{res.get("id")}: staging failed: {type(ex).__name__}: {ex}')
-                _rm(res.get('path'))
+            # owner 2026-10-28: the whole edit is downloaded, then EVERY good section of it is staged (each its own
+            # item, reviewed on its own, usable in different videos)
+            staged, marks = [], []
+            for w in sorted(res.get('passed') or [res['window']], key=lambda w: w['s']):
+                try:
+                    it = stage_item(res, e, key, sd, RC, w)
+                except Exception as ex:  # noqa: BLE001
+                    log(f'{res.get("id")}: staging {w["s"]:.1f}s failed: {type(ex).__name__}: {ex}')
+                    continue
+                if it.get('window_marks'):        # full-resolution tag / logo check of the cut window
+                    marks += it['window_marks'][:3]
+                    continue
+                man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
+                staged.append(it['id'])
+            _rm(res.get('path'))                   # only the cut sections are kept, the full download goes now
+            if not staged:
+                st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark' if marks else 'staging',
+                                            'marks': marks[:3], 'entry': key, 'at': time.strftime('%Y-%m-%d')}
                 continue
-            _rm(res.get('path'))                   # only the cut window is kept, the full download goes now
-            if it.get('window_marks'):            # full-resolution tag / logo check of the cut window
-                st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark', 'marks': it['window_marks'][:3],
-                                            'entry': key, 'at': time.strftime('%Y-%m-%d')}
-                continue
-            man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
-            st['sources'][res['id']] = {'status': 'staged', 'entry': key, 'item': it['id'], 'at': time.strftime('%Y-%m-%d')}
-            row['staged'].append(it['id'])
-            summary['staged'] += 1
+            st['sources'][res['id']] = {'status': 'staged', 'entry': key, 'item': staged[0], 'items': staged,
+                                        'at': time.strftime('%Y-%m-%d')}
+            row['staged'] += staged
+            summary['staged'] += len(staged)
             save_manifest(sd, man)
             wj(sp, st)
         try:                                   # the source edits are never kept: only the staged window
@@ -424,8 +436,8 @@ def _rm(p):
             pass
 
 
-def stage_item(res, e, key, sd, RC):
-    w = res['window']
+def stage_item(res, e, key, sd, RC, w=None):
+    w = w or res['window']
     dur = res.get('dur') or w['e'] + MARGIN
     s0, e0 = max(0.0, w['s'] - MARGIN), min(float(dur), w['e'] + MARGIN)
     iid = f'r_{res["id"]}_{int(w["s"] * 1000)}'
@@ -445,8 +457,9 @@ def stage_item(res, e, key, sd, RC):
           'source_id': res['id'], 'source_title': res.get('title'), 'source_channel': res.get('channel'),
           'editor_handle': res.get('handle'), 'upload_date': info.get('upload_date'), 'age_days': rt.get('age_days'),
           'channel_idle_days': rt.get('channel_idle_days'), 'views': res.get('views'), 'source_dur': res.get('dur'),
-          'char_conf': res.get('conf'), 'char_method': (res.get('match') or {}).get('method'),
-          'char_votes': (res.get('match') or {}).get('votes'), 'char_others': (res.get('match') or {}).get('others'),
+          'char_conf': w.get('conf', res.get('conf')), 'char_method': (w.get('match') or res.get('match') or {}).get('method'),
+          'char_votes': (w.get('match') or res.get('match') or {}).get('votes'),
+          'char_others': (w.get('match') or res.get('match') or {}).get('others'),
           'eventful': w.get('eventful'), 'song': w.get('song'), 'song_name': w.get('song_name'), 'quality': w.get('quality'),
           'theme': w.get('theme'), 'ref_score': w.get('ref_score'), 'ref_groups': w.get('ref_groups'),
           'manga': bool(w.get('manga')), 'manga_share': w.get('manga_share'),
@@ -551,12 +564,15 @@ def import_items(ids, reject=(), by='owner'):
     sd, ld = staged_dir(), live_dir()
     sm, lm = manifest(sd), manifest(ld)
     st = rj(state_path(), {'candidates': {}, 'sources': {}})
+    keep_src = {it['source_id'] for it in sm['items'] if it['id'] in ids}
     n = 0
     for it in sm['items']:
         if it['id'] in reject:
             it['status'] = 'rejected'
             it['reviewed_by'] = by
-            st['sources'][it['source_id']] = {'status': 'rejected', 'entry': it['entry_key'], 'by': by, 'at': time.strftime('%Y-%m-%d')}
+            # one rejected section never blocks the edit's other (approved) sections
+            if not (keep_src & {it['source_id']}) and (st['sources'].get(it['source_id']) or {}).get('status') != 'reviewed':
+                st['sources'][it['source_id']] = {'status': 'rejected', 'entry': it['entry_key'], 'by': by, 'at': time.strftime('%Y-%m-%d')}
         elif it['id'] in ids and it['status'] == 'staged':
             os.makedirs(os.path.join(ld, 'clips'), exist_ok=True)
             shutil.copy2(os.path.join(sd, it['file']), os.path.join(ld, it['file']))
@@ -787,6 +803,7 @@ def main():
     ap.add_argument('--offline', action='store_true')
     ap.add_argument('--prefer', default='', help='mine: source ids searched first + rank bonus (owner-approved edits)')
     ap.add_argument('--first', default='', help='mine: these entry keys / names lead, in this order (then the plan)')
+    ap.add_argument('--retry', default='', help='mine: source ids evaluated again although decided (a bad window, not a bad edit)')
     ap.add_argument('--merge-remote', action='store_true', help='publish: merge the release state in first')
     ap.add_argument('--dest')
     ap.add_argument('--label', default='ci')
@@ -806,7 +823,7 @@ def main():
     elif a.cmd == 'mine':
         print(json.dumps(mine(a.budget_min, a.work, a.state, a.max_entries, a.max_dl, a.offline,
                               set(filter(None, a.entries.split(','))) or None, set(filter(None, a.prefer.split(','))),
-                              [x.strip() for x in a.first.split(',') if x.strip()]),
+                              [x.strip() for x in a.first.split(',') if x.strip()], set(filter(None, a.retry.split(','))) or ()),
                          ensure_ascii=False, indent=1, default=str))
     elif a.cmd == 'publish':
         print(json.dumps(publish(a.dest, a.label, a.merge_remote)))

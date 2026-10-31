@@ -79,7 +79,7 @@ MAX_SHARE = 0.85                 # never the whole edit (its intro / end card st
 # owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
 MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
 MIN_AGE_DAYS = 180
-MAX_SRC_DUR = 150                # longer uploads are full-fight AMVs / compilations, not edits
+MAX_SRC_DUR = 420                # owner 2026-10-28: long edits too; every section is checked on its own (character, gates)
 COOKIES = os.environ.get('YT_SPARE_COOKIES', os.path.join(os.path.expanduser('~'), 'yt-cookies.txt'))
 PACE_S = 20                      # between YouTube requests (shared spare account)
 
@@ -1146,6 +1146,26 @@ def card_frame(f):
     return abs(cx - 0.5) < 0.2 and abs(cy - 0.5) < 0.25 and (xs.max() - xs.min()) < 0.6 * w
 
 
+def dead_frame(f):
+    """Near-black (a title card / lyric word on black) or near-white (a white-out / washed blank) picture."""
+    g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+    return float((g < 35).mean()) > 0.85 or float((g > 225).mean()) > 0.80
+
+
+def dead_runs(ana, min_run=1.5, step=0.5):
+    """Times of the frames in runs of >= min_run s of dead frames; single flash frames (an edit effect) stay usable."""
+    ts = sorted((ana or {}).get('frames', {}))
+    out, run = [], []
+    for t in ts + [None]:
+        if t is not None and dead_frame(ana['frames'][t]) and (not run or t - run[-1] <= step + 0.01):
+            run.append(t)
+            continue
+        if run and run[-1] - run[0] + step >= min_run:
+            out += run
+        run = [t] if t is not None and dead_frame(ana['frames'][t]) else []
+    return [float(t) for t in out]
+
+
 def editor_tags(txt, res, ana, dur, lo, hi):
     """-> (tags [{t, why, text}], lo, hi): seconds that show an editor / group tag, a thanks-for-watching card or a logo
     card on black never enter a window; such a mark in the last 40 % of the edit ends the usable part there (an end
@@ -1361,10 +1381,11 @@ def own_check(ts, labs, step=0.5):
     return None
 
 
-def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None):
+def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None, distinct=False):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
-    builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max)."""
+    builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max).
+    distinct=True (the pool miner): the passing windows do not overlap, each is its own section of the edit."""
     import ranking_score as RS
     txt, path = res['_txt'], res['path']
     ana = res.get('_ana')
@@ -1380,6 +1401,10 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return res
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
     seg = (seg[0], min(seg[1], MAX_SHARE * dur))
+    # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
+    # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
+    dead = np.array(dead_runs(ana))
+    res['dead_t'] = dead.tolist()
     skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags})
     def mkwins(lo_, k=8):
         ws = RS.phrase_windows(v, a, lo_, hi, seg=seg, k=k, skip=skip) if hi - lo_ >= seg[0] else []
@@ -1393,7 +1418,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             w['text_cover'] = round(float(txt_cov[m].mean()) if m.any() else 0.0, 3)
             w['subs'] = round(float(((subs >= w['s']) & (subs < w['e'])).sum()) / max(1, w['len'] * 2) if len(subs) else 0.0, 2)
             w['song_pop'], w['song_name'] = pop_, song_
-            w['quality'] = round(quality(w, pop_) - 15 * w['text_cover'], 2)
+            w['dead_s'] = round(0.5 * float(((dead >= w['s']) & (dead < w['e'])).sum()), 1) if len(dead) else 0.0
+            w['quality'] = round(quality(w, pop_) - 15 * w['text_cover'] - 0.6 * w['dead_s'], 2)
         return ws
     wins = mkwins(lo)
     wins.sort(key=lambda w: -w['quality'])
@@ -1426,6 +1452,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     passed = []
 
     def try_window(w):
+        if distinct and any(min(w['e'], p['e']) - max(w['s'], p['s']) > 2.0 for p in passed):
+            w['reject'] = 'overlaps_a_section'          # owner 2026-10-28: several sections of one edit, never the same twice
+            return False
         if w['subs'] > 0.15:
             w['reject'] = 'subtitles'
             return False
