@@ -166,6 +166,7 @@ def pace():
 
 
 YT_CACHE = [None]          # dir for cached search / info JSON (set by build), 7-day reuse
+AVOID = {}                 # mine --avoid: source id -> [(a, b)] seconds a review flagged (a name sting, credits, another lead)
 PREFER = set()             # --prefer: source ids the owner approved in an earlier review (rank bonus)
 OFFLINE = [False]          # --offline: only cached searches / infos / downloads (no YouTube requests)
 
@@ -278,13 +279,41 @@ def queries(entry):
     return q
 
 
+COMMON_WORDS = {'another', 'world', 'flower', 'voice', 'silent', 'tokyo', 'grand', 'dreaming', 'fighting', 'basketball', 'starting',
+                'ultra', 'romantic', 'blessing', 'wonderful', 'jobless', 'reincarnation', 'promised', 'fragrant', 'blooms', 'dignity',
+                'entertainment', 'district', 'april', 'maxim', 'crybaby', 'ghoul', 'season', 'attack', 'demon', 'slayer', 'hunter',
+                'piece', 'slime', 'solo', 'level', 'leveling', 'darling', 'kaisen', 'saga', 'neverland', 'tensei'}
+SHORT_FORMS = {'jujutsu kaisen': ['jjk'], 'demon slayer': ['kimetsu no yaiba'], 'attack on titan': ['aot', 'shingeki'],
+               'hunter x hunter': ['hxh'], 'that time i got reincarnated as a slime': ['tensura'], 're:zero': ['rezero', 're zero'],
+               'kaguya-sama': ['kaguya'], 'darling in the franxx': ['franxx'], "kuroko's basketball": ['kuroko'],
+               'mushoku tensei': ['mushoku'], 'tokyo ghoul': ['tokyo ghoul'], 'one piece': ['one piece']}
+
+
+def anime_words(entry):
+    """Ways a title names the entry's anime: its main title as a phrase ('Jujutsu Kaisen', 'Blue Lock', 'Your lie in April'),
+    a distinctive first word ('jujutsu', 'kimetsu', 'gintama'; never a common word like 'world' / 'another') and known
+    short forms ('jjk', 'aot', 'franxx')."""
+    a = (entry.get('anime') or '').lower()
+    main = re.split(r'\s*(?::|\s-|\s(?:season|part)\b|\s\d)', a)[0].strip()
+    main = re.sub(r'^the\s+', '', main)
+    out = [main] if len(main) >= 5 and main not in COMMON_WORDS else []
+    first = re.findall(r"[a-z0-9']+", main)[:1]
+    if first and len(first[0]) >= 5 and first[0] not in COMMON_WORDS | {'daily', 'dragon', 'violet', 'rascal', 'misfit', 'steins'}:
+        out.append(first[0])
+    out += [x for k, v in SHORT_FORMS.items() if k in a for x in v]
+    return list(dict.fromkeys(out))
+
+
 def prefilter(e, entry, min_views=None):
     """Flat search entry -> (ok, reason)."""
     t = (e.get('title') or '')
     if L.EXPLICIT_RE.search(t):
         return False, 'explicit'
     if not any(re.search(a, t, re.I) for a in entry['alias']):
-        return False, 'title_no_name'
+        # owner 2026-10-31 ("search anime edit, there are lots of sources"): a title that names the anime is enough; every
+        # section is checked for the entry's character, and titles naming the character are downloaded first
+        if not any(re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in anime_words(entry)):
+            return False, 'title_no_name'
     d = e.get('duration') or 0
     if not 12 <= d <= entry.get('max_dur', MAX_SRC_DUR):
         return False, f'dur_{d}'
@@ -422,7 +451,7 @@ def text_scan(ana, cbox):
                   or (len(g['shots']) >= 3 and len(g['texts']) <= 2 and g['n'] >= 4))]
     return {'per_t': per_t, 'persistent': [{'box': [round(v, 3) for v in g['box']], 'n': g['n'],
                                             'shots': len(g['shots']), 'text': sorted(g['texts'])[:3]} for g in persistent],
-            'handles': handles[:10], 'subs': subs}
+            'handles': handles[:10], 'handle_t': sorted({t for t, _ in handles}), 'subs': subs}
 
 
 def logo_scan(ana, cbox):
@@ -973,7 +1002,9 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                 report['reject'][why] = report['reject'].get(why, 0) + 1
                 continue
             cands.append(e)
-    cands.sort(key=lambda e: (e.get('id') not in PREFER, -(e.get('view_count') or 0)))   # owner-approved first, then popularity
+    named = lambda e: any(re.search(a, e.get('title') or '', re.I) for a in entry['alias'])
+    # owner-approved first, then edits naming the character, then popularity
+    cands.sort(key=lambda e: (e.get('id') not in PREFER, not named(e), -(e.get('view_count') or 0)))
     # rights + priority on the infos first (old edits / inactive editors / permitted first; vetoed and
     # blocklisted editors skipped), then download in that order
     ranked = []
@@ -1189,7 +1220,9 @@ def editor_tags(txt, res, ana, dur, lo, hi):
     # a SMALL name (< 1 % of the picture) mid-edit is a faint corner tag that OCR caught once: the edit carries a watermark
     mid = sorted(t['t'] for t in tags if t['why'] == 'editor_name' and 0.12 * dur < t['t'] < 0.85 * dur)
     small = [t for t in tags if t['why'] == 'editor_name' and 0.12 * dur < t['t'] < 0.85 * dur and (t.get('area') or 1) < 0.01]
-    if (mid and mid[-1] - mid[0] >= 5.0) or small:
+    # owner 2026-10-31: a name sting at a few moments is cut around (tags are skip seconds); only a faint SMALL name mid-edit
+    # (a low-contrast corner watermark OCR caught once) or a name on most of the edit drops it
+    if small or (len(mid) > max(8, 0.25 * dur / 0.5)):
         return sorted(tags, key=lambda x: x['t']), lo, lo          # nothing usable
     for tg in tags:
         if tg['t'] >= 0.6 * dur:
@@ -1261,7 +1294,7 @@ def text_gate(path, info):
     """Watermark / handle / logo / persistent overlay gate (no models). The OCR results are cached per
     source (cache/tg/<id>.json next to src/): a rejected edit is not decoded again; a clean one is only
     re-decoded for its frames."""
-    cp = os.path.join(os.path.dirname(os.path.dirname(path)), 'cache', 'tg', info['id'] + '.json')
+    cp = os.path.join(os.path.dirname(os.path.dirname(path)), 'cache', 'tg2', info['id'] + '.json')   # tg2: 2026-10-31 one-off handles / name stings = skip seconds
     if os.path.exists(cp):
         c = json.load(open(cp, encoding='utf-8'))
         c['_txt']['per_t'] = {float(k): [(t, b) for t, b in v] for k, v in c['_txt']['per_t'].items()}
@@ -1300,13 +1333,16 @@ def _text_gate(path, info):
             norm = re.sub(r'[^a-z0-9]', '', tx.lower())
             if any(k in norm for k in keys):
                 brand.append(t)
-    txt['brand_t'] = sorted(set(brand))
+    txt['brand_t'] = sorted(set(brand) | set(txt.get('handle_t') or []))
     res['brand_n'] = len(txt['brand_t'])
     res.update(persistent=txt['persistent'], logos=logos, handles=txt['handles'], subs_n=len(txt['subs']), cbox=cbox,
                _ana=ana, _txt=txt)
     marks = mark_scan(path)
     res['marks'] = marks
-    if txt['handles']:
+    # owner 2026-10-31: a one-off @handle / "edit by" is cut around (its seconds never enter a section); only a handle on
+    # many frames (a burned-in tag) drops the edit
+    ht = txt.get('handle_t') or [t for t, _ in txt['handles']]
+    if txt['handles'] and len(ht) > max(6, 0.15 * len(ana['frames'])):
         res.update(verdict='reject', why='handle')
     elif marks:
         res.update(verdict='reject', why='watermark_mean')
@@ -1405,8 +1441,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))
     res['dead_t'] = dead.tolist()
-    skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags})
-    def mkwins(lo_, k=8):
+    avoid = [float(x) for a_, b_ in AVOID.get(res.get('id'), ()) for x in np.arange(a_, b_ + 0.01, 0.5)]
+    skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags} | set(avoid))
+    def mkwins(lo_, k=24):
         ws = RS.phrase_windows(v, a, lo_, hi, seg=seg, k=k, skip=skip) if hi - lo_ >= seg[0] else []
         pop_, song_ = RS.song_popularity(res.get('_info') or {}, all_infos)
         txt_t = np.array(sorted(txt['per_t']))

@@ -322,9 +322,11 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
         return jh['j']
     todo = plan()
     if entries:
-        todo = [p for p in todo if p['key'] in entries or p['name'] in entries] or \
-            [{'key': k, 'name': v[0]['name'], 'entry': v[0], 'topics': v[1], 'score': 1, 'have': 0}
-             for k, v in all_entries().items() if k in entries or v[0]['name'] in entries]
+        # named entries always run (also one the plan no longer needs, e.g. a --retry of an already-stocked character)
+        planned = [p for p in todo if p['key'] in entries or p['name'] in entries]
+        keys = {p['key'] for p in planned}
+        todo = planned + [{'key': k, 'name': v[0]['name'], 'entry': v[0], 'topics': v[1], 'score': 1, 'have': 0}
+                          for k, v in all_entries().items() if (k in entries or v[0]['name'] in entries) and k not in keys]
     summary = {'entries': [], 'staged': 0}
     topics = RT.load()
     if first:                                  # --first: these entries lead (in that order), then the plan order
@@ -803,6 +805,7 @@ def main():
     ap.add_argument('--offline', action='store_true')
     ap.add_argument('--prefer', default='', help='mine: source ids searched first + rank bonus (owner-approved edits)')
     ap.add_argument('--first', default='', help='mine: these entry keys / names lead, in this order (then the plan)')
+    ap.add_argument('--avoid', default='', help='mine: SRC:a-b[;SRC:a-b] source seconds no window may touch (review flags)')
     ap.add_argument('--retry', default='', help='mine: source ids evaluated again although decided (a bad window, not a bad edit)')
     ap.add_argument('--merge-remote', action='store_true', help='publish: merge the release state in first')
     ap.add_argument('--dest')
@@ -821,6 +824,11 @@ def main():
         for p in plan():
             print(f'{p["score"]:5.2f}  {p["name"]:<22} have {p["have"]}  blocks {",".join(p["topics"])}')
     elif a.cmd == 'mine':
+        import ranking_compilation as RC
+        for part in filter(None, a.avoid.split(';')):
+            sid, rng = part.rsplit(':', 1)
+            lo_, hi_ = map(float, rng.split('-'))
+            RC.AVOID.setdefault(sid, []).append((lo_, hi_))
         print(json.dumps(mine(a.budget_min, a.work, a.state, a.max_entries, a.max_dl, a.offline,
                               set(filter(None, a.entries.split(','))) or None, set(filter(None, a.prefer.split(','))),
                               [x.strip() for x in a.first.split(',') if x.strip()], set(filter(None, a.retry.split(','))) or ()),
