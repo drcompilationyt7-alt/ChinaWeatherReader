@@ -439,6 +439,28 @@
       "titleSource": "trivia-howwell",
       "quizFormat": "trivia",
       "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=oMkWqD4FR4k",
+      "title": "would you rather (kpop edition) 👀",
+      "country": "Global",
+      "postedAt": "2026-10-31T08:41:16.028Z",
+      "videoId": "oMkWqD4FR4k",
+      "category": "quiz-wyr",
+      "titleSource": "wyr-casual",
+      "quizFormat": "wyr",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aXK_mABHRXE",
+      "title": "Name the Anime Character From Their Shadow ⚡",
+      "country": "Global",
+      "postedAt": "2026-10-31T08:53:00.294Z",
+      "videoId": "aXK_mABHRXE",
+      "category": "quiz-silhouette",
+      "titleSource": "sil-shadow",
+      "quizFormat": "silhouette",
+      "quizTheme": "anime"
     }
   ]
 }

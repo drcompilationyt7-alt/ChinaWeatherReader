@@ -1742,6 +1742,100 @@
     "titleStyle": "challenge",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "oMkWqD4FR4k",
+   "url": "https://www.youtube.com/watch?v=oMkWqD4FR4k",
+   "postedAt": "2026-10-31T08:41:15.746Z",
+   "publishAt": "2026-10-31T12:00:00.000Z",
+   "format": "wyr",
+   "theme": "kpop",
+   "seed": 100904375,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Time to choose your favourite K-pop vibe right now.",
+     "template": "Time to choose your favourite K-pop vibe right now.",
+     "sec": 2.44
+    }
+   ],
+   "titleTemplate": "wyr-casual",
+   "title": "would you rather (kpop edition) 👀",
+   "answers": [
+    "wyr:perform a dark fantasy concept|perform a bright summer concept",
+    "wyr:sit in front row at a stadium|get backstage tour final access",
+    "wyr:perform a sold-out show in london|perform a sold-out show in la"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "format3",
+    "titleStyle": "casual",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "aXK_mABHRXE",
+   "url": "https://www.youtube.com/watch?v=aXK_mABHRXE",
+   "postedAt": "2026-10-31T08:53:00.030Z",
+   "publishAt": "2026-10-31T21:00:00.000Z",
+   "format": "silhouette",
+   "theme": "anime",
+   "seed": 594451144,
+   "length": "quick",
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "pool",
+     "line": "Name the character from the shadow!",
+     "template": null,
+     "sec": 1.7
+    },
+    {
+     "slot": "outro",
+     "used": "ai-short",
+     "line": "Comment your score down below!",
+     "template": "Comment your score down below!",
+     "sec": 1.46
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Kurisu Makise. Did you get it?",
+     "template": null,
+     "sec": 1.68
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Yor Forger. Did you get it?",
+     "template": null,
+     "sec": 1.47
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Here is Marcille Donato!",
+     "template": "Here is {a}!",
+     "sec": 1.66
+    }
+   ],
+   "titleTemplate": "sil-shadow",
+   "title": "Name the Anime Character From Their Shadow ⚡",
+   "answers": [
+    "silhouette:kurisu makise#yi0vti",
+    "silhouette:yor forger#1ley34e",
+    "silhouette:marcille donato#17dvz3b"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "two",
+    "titleStyle": "speed",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
