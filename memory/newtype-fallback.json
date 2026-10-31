@@ -1,5 +1,5 @@
 {
- "at": "2026-10-30T09:42:29.266Z",
+ "at": "2026-10-31T09:25:55.019Z",
  "type": "slowmo",
  "ok": false,
  "reason": "time budget",
@@ -7,19 +7,12 @@
  "attempts": [
   {
    "n": 1,
-   "song": "ed_sheeran_photograph@v0.9",
-   "seed": 52322,
+   "song": "hikaru_utada_first_love@v0.95",
+   "seed": 38577,
    "input": "first",
-   "work": "work-slowmo-1793352322786",
-   "min": 17.1,
-   "overall": 8.01,
-   "failed": {
-    "3_lyrics": 6.4,
-    "9_no_sfx": 6,
-    "11_waves": 4,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
+   "work": "work-slowmo-1793438577098",
+   "min": 3,
+   "result": "render failed: no_lyrics: LRCLIB gave no lyrics for this song (no lyric-less slow-mo)",
    "next": "new_song"
   }
  ]
