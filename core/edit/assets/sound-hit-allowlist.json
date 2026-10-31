@@ -617,6 +617,70 @@
     "word": "impact",
     "note": "auto (vision model) 2026-10-27 (Akame Vs Esdeath Fight Scene - DUB HD 1080P)"
    }
+  ],
+  "c_4TJNIquRzAc_80322": [
+   {
+    "t": 1.389,
+    "action": "sword",
+    "word": "pierce",
+    "note": "auto (vision model) 2026-10-28 (Garou vs. Orochi Fight | Part 1 | One Punch Man: S)"
+   }
+  ],
+  "c_4TJNIquRzAc_29530": [
+   {
+    "t": 0.865,
+    "action": "impact",
+    "word": "smash",
+    "note": "auto (vision model) 2026-10-28 (Garou vs. Orochi Fight | Part 1 | One Punch Man: S)"
+   }
+  ],
+  "c_4TJNIquRzAc_132863": [
+   {
+    "t": 0.547,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "auto (vision model) 2026-10-28 (Garou vs. Orochi Fight | Part 1 | One Punch Man: S)"
+   }
+  ],
+  "c_fqXR5TiMYV0_53097": [
+   {
+    "t": 1.4,
+    "action": "kick",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-28 (Ohma's Water and Heaven Form | KENGEN ASHURA SEASO)"
+   }
+  ],
+  "c_65HNSERQEjQ_14563": [
+   {
+    "t": 0.716,
+    "action": "fist",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-30 (EVERY Time Todo Claps In Jujutsu Kaisen)"
+   }
+  ],
+  "c_upIsOnCMthw_152245": [
+   {
+    "t": 1.4,
+    "action": "fist",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-30 (Joe vs Mac | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_upIsOnCMthw_132454": [
+   {
+    "t": 0.341,
+    "action": "fist",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-30 (Joe vs Mac | MEGALOBOX 2: NOMAD)"
+   }
+  ],
+  "c_ZcPIoGELylA_18966": [
+   {
+    "t": 1.073,
+    "action": "fist",
+    "word": "punch",
+    "note": "auto (vision model) 2026-10-30 (MEGALOBOX 2: NOMAD | Episode 7 Highlight | \"Gearle)"
+   }
   ]
  }
 }
