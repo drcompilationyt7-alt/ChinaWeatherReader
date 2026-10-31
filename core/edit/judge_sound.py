@@ -780,9 +780,12 @@ def scorecard(C, R, plan_len=None):
                        f"(ref {rv['shot_s_p10_50_90']}), cv {cv['shot_cv']} (ref {rv['shot_cv']}), cuts/s {cv['cuts_per_s']} (ref {rv['cuts_per_s']})")
     # (8) length
     L = ca['duration_s']
-    s8 = 10.0 if 30 <= L <= 50 else max(0.0, 10 - 0.6 * (30 - L if L < 30 else L - 50))
+    # owner 2026-10-31: the references are 8.5-11.3 s; any length the pool fills from SOUND_MIN_SHORT_S (10 s) to 50 s is on target
+    # (the key keeps its old name: pipeline/newtype-pipeline.js reads it)
+    lmin = float(os.environ.get('SOUND_MIN_SHORT_S', '10'))
+    s8 = 10.0 if lmin <= L <= 50 else max(0.0, 10 - 0.6 * (lmin - L if L < lmin else L - 50))
     sc['8_length_30_50s'] = s8
-    ev['8_length_30_50s'] = f"{L} s (target 30-50 s; ref {ra['duration_s']} s is a loop)"
+    ev['8_length_30_50s'] = f"{L} s (target {lmin:.0f}-50 s, as long as the pool fills; refs 8.5-11.3 s)"
     # (10) lead-in, (11) whole action on screen, (12) cut rate (owner 2026-10-13, frame by frame against FB15: every ref hit shot opens on the INTACT
     # object 2-4 frames before the event, the whole object / action is in the frame, and the cut rate is the ref's, not faster)
     def share(X, f):

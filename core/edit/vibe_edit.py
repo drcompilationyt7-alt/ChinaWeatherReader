@@ -32,7 +32,7 @@ os.environ.setdefault('EDIT_GPU', '0')
 import vibe_pool as VP  # noqa: E402
 import watermark as WM  # noqa: E402
 
-SHORT_LEN = (30.0, 50.0)
+SHORT_LEN = (30.0, 50.0)   # sound: core/edit/sound_edit.py falls back to SOUND_MIN_SHORT_S (10 s) when the pool is small
 LONG_LEN = (90.0, 180.0)
 
 

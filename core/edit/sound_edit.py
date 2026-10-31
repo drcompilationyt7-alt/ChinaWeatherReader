@@ -4215,7 +4215,9 @@ def compile_long(songs, shots, out, mode='accent', seed=0, workdir=None, aspect=
 
 SHORT_TARGET_S, LONG_TARGET_S = 36.0, 110.0     # aimed for inside the caller's range (whole bars; pool permitting)
 RATE_SHORT, RATE_LONG = float(os.environ.get('SOUND_RATE_SHORT', '2.2')), 1.9
-MIN_SHORT_S, MIN_LONG_S = 19.5, 45.0
+# owner 2026-10-31: the sound references are 8.5-11.3 s; a Short is as long as the pool can fill (target 36 s), down to
+# SOUND_MIN_SHORT_S (10 s), so it grows by itself with the pool
+MIN_SHORT_S, MIN_LONG_S = float(os.environ.get('SOUND_MIN_SHORT_S', '10')), 45.0
 # Loudness (measured 2026-10-12, Shape of You, 83 shots): the references are -5.8..-9.9 LUFS but clip (+1.5..+4.8 dBTP).
 # With true peak <= -1 dBTP and a limiter, louder masters crush the hits and pump the song: hit over music / song
 # gain change at the cuts = +6.0 / 0.76 dB at -14 LUFS (mix target +10), +4.2 / 1.4 dB at a -12 target (reached
@@ -4660,8 +4662,8 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                 return fail(f'pool_too_small: {last} (reuse cap {REUSE_CAP:.0%})', detail=str(last), slots=getattr(last, 'have', None))
             return fail('pool_low', detail=str(last), slots=getattr(last, 'have', None))
         # beat remake: the edit may end early at the last shot's clean end (no freeze allowed); a Short under SOUND_MIN_SHORT_S
-        # (26.8 s = judge criterion 8 >= 8) is re-planned with other seeds (another clip order / last shot; ~2.5 min each on CI)
-        min_s = float(os.environ.get('SOUND_MIN_SHORT_S', '26.8'))
+        # (10 s default, judge criterion 8) is re-planned with other seeds (another clip order / last shot; ~2.5 min each on CI)
+        min_s = MIN_SHORT_S
         max_hold = float(os.environ.get('SOUND_MAX_HOLD_S', '0.15'))     # judge 17: no still run > 0.2 s
 
         def _ok(pl):
