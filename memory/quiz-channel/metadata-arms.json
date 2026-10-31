@@ -211,6 +211,16 @@
        "fallback": "keyword"
       },
       "why": "Casual lowercase search titles are the top performer (+0.43), whereas LLM-styled titles underperformed (-0.63). Aligning strictly with actual YouTube autocomplete phrases boosts both initial feed seed"
+     },
+     "fans": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "review 2026-10-31 (owner: titles / hashtags off): mean 254 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos"
+     },
+     "llm": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "review 2026-10-31 (owner: titles / hashtags off): mean 398 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos"
      }
     },
     "descHook": {
@@ -248,7 +258,7 @@
       "why": "no-peek is the top performing description hook (+0.62) and comment engagement prompts scored +0.43. Joining the retention warning with a clear score-commenting call-to-action drives both watch time an"
      },
      "op-target-comment": {
-      "status": "active",
+      "status": "retired",
       "source": "opro-2026-W43",
       "added": "2026-W43",
       "mu0": 0.47,
@@ -259,7 +269,20 @@
        "example": "Can you get 3/3? {hook} No peeking 👀 Comment your final score!",
        "fallback": "challenge"
       },
-      "why": "Builds on top-performing desc hooks 'op-comment-score' (+0.65) and 'no-peek' (+0.56) by combining target difficulty goal with strict retention and comment prompts."
+      "why": "review 2026-10-31 (owner: titles / hashtags off): mean 196 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos",
+      "retiredAt": "2026-W44"
+     }
+    },
+    "hashtagSet": {
+     "two": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "review 2026-10-31 (owner: titles / hashtags off): mean 365 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos"
+     },
+     "format3": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "review 2026-10-31 (owner: titles / hashtags off): mean 427 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos"
      }
     }
    },
