@@ -288,8 +288,40 @@ function themeFits(tid, th, fmt) {
  * The themed edition for this video, or null. Seasonal themes inside their date window first (seasonal_rate, default 1 in 2),
  * otherwise a non-seasonal theme at `rate` (default 1 in 4; POP_THEME_RATE overrides); never the previous video's theme.
  */
+function enabledThemes() {
+  const list = String(process.env.POP_THEMES || '').split(',').map(x => x.trim()).filter(Boolean);
+  const spec = loadThemes();
+  return { spec, ids: Object.keys(spec.themes).filter(t => list.includes('all') || list.includes(t)) };
+}
+
+/** owner 2026-10-31: a seasonal theme runs its whole month and every other video is its edition (strict alternation, was a
+ * 1-in-3 draw: 1 Halloween video in 28). -> the seasonal themes due for THIS video ([] = none in season, or the previous
+ * video already was one) */
+function seasonalDue(lastEdition, now = new Date()) {
+  if (!NEW_FORMATS_ON) return [];
+  const { spec, ids } = enabledThemes();
+  const seasonal = ids.filter(t => inWindow(spec.themes[t], now));
+  if (!seasonal.length || (lastEdition && seasonal.includes(lastEdition))) return [];
+  return seasonal;
+}
+
+/** Formats a due seasonal theme has material for (the format picker prefers them when a seasonal video is due). */
+function seasonalFormats(due) {
+  const { spec } = enabledThemes();
+  return new Set(due.flatMap(t => (spec.themes[t].formats || []).filter(f => themeFits(t, spec.themes[t], f))));
+}
+
 function pickEdition(fmt, lastEdition, now = new Date()) {
   if (!NEW_FORMATS_ON) return null;
+  {
+    const { spec, ids } = enabledThemes();
+    const inSeason = ids.filter(t => inWindow(spec.themes[t], now));
+    if (inSeason.length) {
+      const due = seasonalDue(lastEdition, now).filter(t => themeFits(t, spec.themes[t], fmt));
+      if (due.length) return due[Math.floor(Math.random() * due.length)];
+      if (inSeason.includes(lastEdition)) return null;      // the off video of the alternation stays plain
+    }
+  }
   const list = String(process.env.POP_THEMES || '').split(',').map(x => x.trim()).filter(Boolean);
   if (!list.length) return null;
   const spec = loadThemes();
@@ -685,4 +717,4 @@ function markUsed(keys) {
 /** The nightly mining runs many LLM jobs: one failed call must not switch the LLM off for the rest of the run. */
 function resetLLM() { llmDown = false; }
 
-module.exports = { resetLLM, REUSE_GAP, isFresh, imageId, baseKey, propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };
+module.exports = { seasonalDue, seasonalFormats, resetLLM, REUSE_GAP, isFresh, imageId, baseKey, propose, validItem, hasRevealImage, triviaFresh, topicFresh, TOPIC_WEIGHTS, llmJSON, NEW_FORMATS, NEW_FORMATS_ON, freshCount, topUpEdition, MIN_REUSE_DAYS, pickEdition, loadThemes, themePool, buildPopPlan, markUsed, loadBank, TOPICS, generate, key, franchise, duelRounds };

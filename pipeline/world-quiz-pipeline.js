@@ -28,7 +28,7 @@ const { execFile } = require('child_process');
 const { Logger } = require('../core/logger');
 const learn = require('../core/learning-models');
 const { loadStats } = require('../core/performance-tracker');
-const { buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, topUpEdition, llmJSON, topicFresh, loadBank } = require('./pop-quiz-content');
+const { seasonalDue, seasonalFormats, buildPopPlan, markUsed, key: popKey, pickEdition, freshCount, topUpEdition, llmJSON, topicFresh, loadBank } = require('./pop-quiz-content');
 const balancer = require('./quiz-balancer');
 const guard = require('./quiz-guard');
 const { aiNarratorLines, recordAiLines } = require('./pop-narrator-ai');
@@ -310,6 +310,14 @@ function pickBalanced(stats, history, { available = poolAvailability(), rng = Ma
   const uploads = (history.uploads || []).filter(u => !u.excluded);
   const b = balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
   if (!b.candidates.length) return null;
+  // a seasonal edition is due (every other video in its month): only formats the theme has material for
+  const lastEd = (uploads[uploads.length - 1] || {}).edition || null;
+  const due = seasonalDue(lastEd, new Date(now));
+  if (due.length) {
+    const fits = seasonalFormats(due);
+    const seasonal = b.candidates.filter(c => fits.has(c.format));
+    if (seasonal.length) { b.candidates = seasonal; b.why = `${b.why}; seasonal ${due.join('/')} due`; }
+  }
   const scored = percentileRewards(scoredQuizUploads(stats, history));
   const meanReward = f => { const r = scored.filter(u => u.format === f); return r.length ? r.reduce((a, u) => a + u.reward, 0) / r.length : 0.5; };
   const lastAt = f => { const u = [...uploads].reverse().find(x => x.format === f); return u ? new Date(u.publishAt || u.postedAt).getTime() : 0; };

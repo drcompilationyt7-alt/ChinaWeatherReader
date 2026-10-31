@@ -214,7 +214,7 @@
    ],
    "age_rule": "any",
    "window": [
-    "10-15",
+    "10-01",
     "10-31"
    ],
    "art": {
@@ -278,7 +278,7 @@
   },
   "winter": {
    "name": "Christmas / Winter",
-   "label": "WINTER EDITION",
+   "label": "CHRISTMAS EDITION",
    "emoji": "🎄",
    "hashtags": [
     "#christmas",
@@ -535,7 +535,7 @@
    "age_rule": "any",
    "window": [
     "02-01",
-    "02-14"
+    "02-29"
    ],
    "art": {
     "danbooru": [
