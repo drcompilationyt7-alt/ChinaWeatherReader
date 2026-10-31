@@ -308,15 +308,21 @@ function pickFormat(stats, history, forced, opts = {}) {
  * explore with FALLBACK_WEIGHTS x a staleness boost (a format with a strong past reward that has not aired lately). */
 function pickBalanced(stats, history, { available = poolAvailability(), rng = Math.random, now = Date.now() } = {}) {
   const uploads = (history.uploads || []).filter(u => !u.excluded);
-  const b = balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
+  const planB = () => balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
+  let b = planB();
   if (!b.candidates.length) return null;
-  // a seasonal edition is due (every other video in its month): only formats the theme has material for
+  // a seasonal edition is due (every other video in its month, anime themes only: owner 2026-10-31): only formats the
+  // theme has material for; the balancer is re-drawn (up to 12 times) until its family / topic can carry the edition
   const lastEd = (uploads[uploads.length - 1] || {}).edition || null;
   const due = seasonalDue(lastEd, new Date(now));
   if (due.length) {
     const fits = seasonalFormats(due);
-    const seasonal = b.candidates.filter(c => fits.has(c.format));
-    if (seasonal.length) { b.candidates = seasonal; b.why = `${b.why}; seasonal ${due.join('/')} due`; }
+    for (let i = 0; i < 12; i++) {
+      const seasonal = b.candidates.filter(c => fits.has(c.format) && (!c.topic || c.topic === 'anime' || c.format === 'duel'));
+      if (seasonal.length) { b.candidates = seasonal; b.why = `${b.why}; seasonal ${due.join('/')} due`; break; }
+      const nb = planB();
+      if (nb.candidates.length) b = nb;
+    }
   }
   const scored = percentileRewards(scoredQuizUploads(stats, history));
   const meanReward = f => { const r = scored.filter(u => u.format === f); return r.length ? r.reduce((a, u) => a + u.reward, 0) / r.length : 0.5; };
