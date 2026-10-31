@@ -645,14 +645,14 @@
   "CVfCMVzVwHs": "unclean: borders (0.08); borders (0.10)",
   "VIC3qruk2yY": "unclean: borders (0.09)",
   "D7Z8tLpnPj8": "ok",
-  "rTNAHZ9BxI4": "unclean: burned-in text (0.05 top / 0.00 bottom)",
+  "rTNAHZ9BxI4": "ok",
   "mfrrwZ8U8t0": "ok",
   "YdCqNzrt2Pw": "download failed",
   "782UIwFdCVE": "ok",
   "K-rfJsUMEW4": "unclean: borders (0.11); borders (0.16); burned-in text (0.34 top / 0.44 bottom); burned-",
   "NW0yu4Lyzh8": "unclean: burned-in text (0.00 top / 0.45 bottom); burned-in text (0.40 top / 0.00 bottom)",
-  "2u3Sq5Nu07Y": "unclean: burned-in text (0.00 top / 0.14 bottom)",
-  "QTSfk0AOzBQ": "unclean: burned-in text (0.00 top / 0.15 bottom)",
+  "2u3Sq5Nu07Y": "ok",
+  "QTSfk0AOzBQ": "ok",
   "XyloqbvCDlw": "unclean: borders (0.25); burned-in text (0.00 top / 0.21 bottom)",
   "paratdt3kCg": "download failed",
   "C6Evj8N2STk": "ok",
@@ -1291,7 +1291,8 @@
   "pHJI-t3tzHw": "unclean: borders (0.25); borders (0.26)",
   "CEiY4dxNRJQ": "ok",
   "Kr0AVoG8ZEQ": "lowres: no 1080p video format",
-  "sySkQ6kGbew": "lowres: no 1080p video format"
+  "sySkQ6kGbew": "lowres: no 1080p video format",
+  "G1UugvPcPPc": "ok"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1844,6 +1845,7 @@
   "Hellsing Ultimate gunfight scene": 14,
   "Cyberpunk Edgerunners gunfight scene": 14,
   "Lazarus gunfight scene": 14,
-  "Solo Leveling gunfight scene": 14
+  "Solo Leveling gunfight scene": 14,
+  "Dandadan gunfight scene": 14
  }
 }
