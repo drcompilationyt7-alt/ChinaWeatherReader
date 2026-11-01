@@ -270,10 +270,23 @@ def ensure_decodable(p):
     return False
 
 
+def no_amv(qs):
+    """Owner 2026-11-01: never SEARCH for AMVs ('edits are more edit-heavy'); an AMV an edit search finds is still taken.
+    'x amv edit' / 'x amv' -> 'x edit' (dropped when that query is already there)."""
+    out = []
+    for q in qs:
+        if re.search(r'\bamvs?\b', q, re.I):
+            q = re.sub(r'\bamvs?\b', 'edit', q, flags=re.I)
+            q = re.sub(r'\s+', ' ', re.sub(r'\b(edit)(\s+edit)+\b', r'\1', q, flags=re.I)).strip()
+        if q not in out:
+            out.append(q)
+    return out
+
+
 def queries(entry):
     """the entry's own queries + the plain "<character> edit" / "<anime> edit" searches (owner 2026-10-27);
-    an anime search still needs the character's name in the title (prefilter)"""
-    q = list(entry['q'])
+    an anime search still needs the character's name in the title (prefilter). No AMV searches (no_amv)."""
+    q = no_amv(entry['q'])
     for x in (entry.get('search') or entry['name'], entry.get('anime')):
         if x and f'{x.lower()} edit' not in q:
             q.append(f'{x.lower()} edit')

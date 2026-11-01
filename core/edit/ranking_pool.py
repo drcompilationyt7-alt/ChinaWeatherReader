@@ -165,7 +165,7 @@ def shows(topics=None):
         if g['show'] is None:              # no genre list names this show yet: its sections still serve its characters
             c0 = g['cast'][0]
             g['show'] = {'name': sk.upper(), 'kind': 'anime', 'anime': c0.get('anime'), 'search': sk, 'wiki': c0.get('wiki'),
-                         'q': [f'{sk} edit 4k', f'{sk} amv edit'], 'alias': [re.escape(sk)], 'pace': 'action',
+                         'q': [f'{sk} edit 4k'], 'alias': [re.escape(sk)], 'pace': 'action',
                          'chars': list(dict.fromkeys(c for e in g['cast'] for c in e.get('chars', []))), 'synthetic': True}
     return out
 
@@ -578,8 +578,8 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         skey = entry_key(show)
         # one broad search entry: the show's searches + "<character> edit" per cast member; a title naming the show OR
         # any of its characters passes; vs / mixed edits are welcome (solo False)
-        q = list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
-                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast]))
+        q = RC.no_amv(list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
+                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast])))
         se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
                                                       + show_cast_alias(sk))),
                   solo=False, search=show.get('search') or sk)

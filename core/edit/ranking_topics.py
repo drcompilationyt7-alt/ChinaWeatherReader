@@ -50,7 +50,7 @@ def normalise(raw):
             e = dict(e)
             e['rank'] = i + 1
             e.setdefault('search', e['name'].lower())
-            e.setdefault('q', [f'{e["search"]} edit 4k', f'{e["search"]} amv edit'])
+            e.setdefault('q', [f'{e["search"]} edit 4k', f'{e["search"]} edit'])   # no AMV searches (owner 2026-11-01)
             e['alias'] = _alias(e)
             e.setdefault('wiki', T.get('wiki'))
             e.setdefault('pace', T['pace'])
