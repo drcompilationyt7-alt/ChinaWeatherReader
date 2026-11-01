@@ -56,6 +56,27 @@ Q_TIME = {'single': 3.0, 'pair': 3.3}
 REVEAL_MIN = {'single': 1.45, 'pair': 2.2}
 OUTRO = 2.7
 
+# ── POP_HOOK_V2=1 (default off): retention cut ──
+# No outro card: the hook line is on screen from frame 0 and the narrator starts at once; the "comment your score" line plays
+# over the last reveal; the last V2_LOOP seconds crossfade (picture and sound) toward frame 0, so a replay flows on
+# seamlessly. Each video draws one of V2_VARIANTS header / CTA styles (no single identical template).
+V2_START = 0.02     # the first narrator line starts here (was 0.15)
+V2_LOOP = 0.5       # crossfade toward frame 0 over the last half second
+V2_TAIL = 0.55      # after the CTA line ends, before the video ends (the crossfade runs inside it)
+V2_CTA_MIN = 1.0    # the last answer is on screen alone at least this long before the CTA
+V2_VARIANTS = 3
+V2_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY TRUE FANS GET {N}/{N}', 'NO CHEATING. GO!']
+V2_GEO_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY MAP NERDS GET {N}/{N}', 'NO CHEATING. GO!']
+V2_PLAIN_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'NO CHEATING. GO!']
+V2_OUTRO_POOL = ['Comment your score!', 'How many did you get? Comment below!', 'Drop your score in the comments!']
+V2_GOLD = (255, 214, 0)
+
+
+def hook_v2():
+    """The retention cut (POP_HOOK_V2=1); read at call time so a test can flip it."""
+    return os.environ.get('POP_HOOK_V2') == '1'
+
+
 _fonts = {}
 
 
@@ -309,19 +330,105 @@ class QuizRenderer:
         self.voice_name = voice_name
         self.workdir = workdir or tempfile.mkdtemp(prefix='quiz-')
         self.pop_offset = 0.0
+        self.v2 = hook_v2()
+        self.v2_cta_at = float('inf')
+        self._v2_first = None
+        # own RNG (seeded from the plan): the variant draw never shifts the narrator-line picks of the plain cut
+        self.v2_rng = random.Random(f"hook-v2-{plan.get('seed')}")
+        self.v2_variant = self.v2_rng.randrange(V2_VARIANTS)
+
+    # ── POP_HOOK_V2 helpers (shared with render_pop.PopRenderer) ──
+    def v2_hook_text(self, pool=None):
+        n = len(self.plan['rounds'])
+        return self.v2_rng.choice(pool or V2_HOOKS).replace('{N}', str(n))
+
+    def v2_head(self, title, sub, title_size=112, edition=False):
+        """(title layer, subtitle layer) in this video's variant: 0 plain title + hook pill, 1 plain title + gold hook text,
+        2 title in a dark pill + hook text in the accent. An edition label (HALLOWEEN EDITION ...) keeps the plain style."""
+        v = self.v2_variant
+        if v == 2:
+            t = with_shadow(pill(title, int(title_size * 0.78), NAVY, fg=WHITE, max_w=980, pad_y=14), blur=8, offset=(0, 6))
+        else:
+            t = text_layer(title, title_size, stroke=10, max_w=980)
+        if edition:
+            s = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
+        elif v == 0:
+            s = pill(sub, 50, self.accent, max_w=900, pad_y=8)
+        elif v == 1:
+            s = text_layer(sub, 60, fill=V2_GOLD, stroke=8, max_w=900)
+        else:
+            s = text_layer(sub, 60, fill=self.accent, stroke=8, max_w=900)
+        return t, s
+
+    def v2_prepare_cta(self, l1='HOW MANY DID YOU GET?', cta=None):
+        n = len(self.plan['rounds'])
+        col = V2_GOLD if self.v2_variant == 1 else self.accent
+        arrow = None
+        try:
+            import quiz_emoji
+            arrow = quiz_emoji.image('\U0001F447', 92)
+        except Exception:  # noqa: BLE001  (no emoji picture: the pill alone)
+            arrow = None
+        self.v2_cta = {'l1': text_layer(l1, 74, stroke=8, max_w=980),
+                       'pill': with_shadow(pill(cta or f'COMMENT YOUR SCORE  ?/{n}', 56, col, max_w=860, pad_y=14), blur=8, offset=(0, 6)),
+                       'arrow': arrow}
+
+    def v2_title_alpha(self, t):
+        """The title / hook fade out just BEFORE the CTA takes the top band (they never overlap)."""
+        return 1.0 if not self.v2 else 1 - clamp((t - (self.v2_cta_at - 0.25)) / 0.22)
+
+    def v2_draw_cta(self, frame, ct):
+        c = self.v2_cta
+        put(frame, c['l1'], W / 2, 238, s=max(0.01, ease_out_back(ct / 0.3)))
+        bob = 6 * math.sin(ct * 2 * math.pi * 1.5)
+        put(frame, c['pill'], W / 2, 336, s=max(0.01, ease_out_back((ct - 0.08) / 0.3)))
+        if c['arrow'] is not None:
+            px = W / 2 + c['pill'].size[0] / 2 + c['arrow'].size[0] / 2 - 6
+            put(frame, c['arrow'], min(W - c['arrow'].size[0] / 2 - 6, px), 344 + bob, s=max(0.01, ease_out_back((ct - 0.2) / 0.3)))
+
+    def v2_finish_audio(self, audio):
+        """Fade the last V2_LOOP seconds down so the replay's first narrator line starts on a clean bed."""
+        k = min(len(audio), int(V2_LOOP * sound.SR))
+        if k > 0:
+            audio = np.array(audio, dtype=np.float64, copy=True)
+            audio[-k:] *= np.linspace(1.0, 0.0, k) ** 1.5
+        return audio
+
+    def final_frame(self, t):
+        """frame_at plus the V2 overlays: the CTA over the last reveal, then the crossfade toward frame 0 (the loop)."""
+        frame = self.frame_at(t)
+        if not self.v2:
+            return frame
+        if t >= self.v2_cta_at:
+            self.v2_draw_cta(frame, t - self.v2_cta_at)
+        lt = t - (self.duration - V2_LOOP)
+        if lt > 0:
+            if self._v2_first is None:
+                self._v2_first = self.frame_at(0.0).convert('RGBA')
+            a = clamp(lt / V2_LOOP)
+            frame = Image.blend(frame.convert('RGBA'), self._v2_first, a * a * (3 - 2 * a))
+        return frame
 
     # ── timeline ──
-    def build_timeline(self, answer_durs):
+    def build_timeline(self, answer_durs, intro_d=0.0, outro_d=0.0):
         t = 0.0
         segs = []
         for i, r in enumerate(self.plan['rounds']):
             q = Q_TIME[self.kind]
+            if self.v2 and i == 0:   # the intro line ends before round 1's reveal
+                q = max(q, V2_START + intro_d + 0.4)
             rev = max(REVEAL_MIN[self.kind], (answer_durs[i] or 0) + 0.45)
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
             t += q + rev
         self.segs = segs
         self.outro_start = segs[-1]['end'] if segs else t  # exactly the last round's end (float sums differ)
         self.duration = self.outro_start + OUTRO
+        if self.v2 and segs:   # no outro card: the CTA line plays over the last reveal, then the loop crossfade
+            last = segs[-1]
+            self.v2_cta_at = last['reveal'] + max(V2_CTA_MIN, 0.08 + (answer_durs[-1] or 0) + 0.15)
+            last['end'] = max(last['end'], self.v2_cta_at + (outro_d or 1.6) + V2_TAIL)
+            self.duration = last['end']
+            self.outro_start = float('inf')
 
     # ── static layers ──
     def prepare(self):
@@ -331,6 +438,9 @@ class QuizRenderer:
             sub = THEME_TAG[self.plan['theme']]
         self.title = text_layer(title, 116, stroke=10, max_w=980)
         self.subtitle = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
+        if self.v2:   # the hook on screen from frame 0, under the instruction (GUESS THE COUNTRY / CAN YOU GET 5/5?)
+            self.title, self.subtitle = self.v2_head(title, self.v2_hook_text(V2_GEO_HOOKS), title_size=104)
+            self.v2_prepare_cta()
         self.levels = []
         for i, r in enumerate(rounds):
             if self.kind == 'single':
@@ -440,21 +550,22 @@ class QuizRenderer:
             else:
                 lines.append(pick(['{a}!', "It's {a}!", 'That was {a}.', 'Easy. {a}!']).format(a=r['answer']))
         lines.append(pick(['Last one!', 'Last one. This one is evil.', 'Final round. Good luck.']))
-        lines.append(pick(['How many did you get? Comment your score!', 'Be honest. How many did you get?', 'Drop your score in the comments!']))
+        lines.append(pick(V2_OUTRO_POOL if self.v2 else
+                          ['How many did you get? Comment your score!', 'Be honest. How many did you get?', 'Drop your score in the comments!']))
         return lines
 
     def make_audio(self, clips):
         n_r = len(self.plan['rounds'])
         voice = []
         if clips[0] is not None:
-            voice.append((0.15, clips[0]))
+            voice.append((V2_START if self.v2 else 0.15, clips[0]))
         for i, s in enumerate(self.segs):
             if clips[1 + i] is not None:
                 voice.append((s['reveal'] + 0.08, clips[1 + i]))
         if clips[1 + n_r] is not None and n_r >= 3:
             voice.append((self.segs[-1]['start'] + 0.05, clips[1 + n_r]))
         if clips[2 + n_r] is not None:
-            voice.append((self.outro_start + 0.2, clips[2 + n_r]))
+            voice.append((self.v2_cta_at if self.v2 else self.outro_start + 0.2, clips[2 + n_r]))
         fx = []
         wh = sound.whoosh()
         tk, tkh = sound.tick(), sound.tick(high=True)
@@ -469,20 +580,25 @@ class QuizRenderer:
                 k += 0.5 if not last else 0.25
             fx.append((s['reveal'], sound.ding(), 0.6))
             fx.append((s['reveal'] + 0.02, sound.pop(), 0.35))
-        fx.append((self.outro_start, wh, 0.4))
-        fx.append((self.outro_start + 0.1, sound.chime(), 0.5))
+        if self.v2:
+            fx.append((self.v2_cta_at, sound.pop(), 0.35))
+        else:
+            fx.append((self.outro_start, wh, 0.4))
+            fx.append((self.outro_start + 0.1, sound.chime(), 0.5))
         m = sound.music(self.duration, seed=self.plan.get('seed') or 0,
                         bpm=self.rng.choice([104, 108, 112, 116, 120])) if self.use_music else None
-        return sound.mix(self.duration, fx, voice, m)
+        out = sound.mix(self.duration, fx, voice, m)
+        return self.v2_finish_audio(out) if self.v2 else out
 
     # ── frames ──
     def draw_header(self, frame, i, t_local, t):
         # title + subtitle stay; the level pill pops on every new round
-        put(frame, self.title, W / 2, 262)
-        put(frame, self.subtitle, W / 2, 352)
+        ta = self.v2_title_alpha(t)
+        put(frame, self.title, W / 2, 262, a=ta)
+        put(frame, self.subtitle, W / 2, 352, a=ta)
         if i is not None:
             s = ease_out_back((t_local + self.pop_offset) / 0.3)
-            put(frame, self.levels[i], W / 2, 436, s=0.6 + 0.4 * s)
+            put(frame, self.levels[i], W / 2, 436, s=0.6 + 0.4 * s, a=ta)
             self.draw_progress(frame, i)
 
     def draw_progress(self, frame, i):
@@ -599,7 +715,8 @@ class QuizRenderer:
                                 workdir=self.workdir) if self.use_voice else [None] * len(lines)
         n_r = len(self.plan['rounds'])
         answer_durs = [(len(c) / sound.SR) if c is not None else 0 for c in clips[1:1 + n_r]]
-        self.build_timeline(answer_durs)
+        sec = lambda c: (len(c) / sound.SR) if c is not None else 0.0  # noqa: E731
+        self.build_timeline(answer_durs, intro_d=sec(clips[0]), outro_d=sec(clips[2 + n_r]))
         self.prepare()
         self.bg, self.map_w = build_background(self.fmt, self.rng)
         audio = self.make_audio(clips)
@@ -612,7 +729,7 @@ class QuizRenderer:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         n = int(round(self.duration * FPS))
         for k in range(n):
-            proc.stdin.write(self.frame_at(k / FPS).convert('RGB').tobytes())
+            proc.stdin.write(self.final_frame(k / FPS).convert('RGB').tobytes())
         proc.stdin.close()
         if proc.wait() != 0:
             raise RuntimeError('ffmpeg failed')
@@ -725,7 +842,7 @@ def main():
             r.build_pop_timeline([0.0] * n, [1.0] * n, intro_d=1.5 if r.fmt in ('opening', 'scene', 'voice', 'song') else 0.0)
             r.prepare_pop()
             r.bg = gradient_bg(*r.pal, split=r.fmt == 'wyr')
-            r.frame_at(args.frame).convert('RGB').save(args.out)
+            r.final_frame(args.frame).convert('RGB').save(args.out)
             print(json.dumps({'ok': True, 'path': args.out}, ensure_ascii=False))
             return
         info = r.render(args.out)
@@ -746,7 +863,7 @@ def main():
         r.build_timeline([1.0] * len(p['rounds']))
         r.prepare()
         r.bg, r.map_w = build_background(r.fmt, r.rng)
-        r.frame_at(args.frame).convert('RGB').save(args.out)
+        r.final_frame(args.frame).convert('RGB').save(args.out)
         print(json.dumps({'ok': True, 'path': args.out, 'plan': p}))
         return
     info = r.render(args.out)

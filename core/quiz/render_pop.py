@@ -48,7 +48,10 @@ import media
 import sound
 from PIL import ImageFilter
 from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_back, ease_out_cubic, font, pill,
-                         put, ring, text_layer, with_shadow, flag_card, fmt_num, draw_watermark, faded)
+                         put, ring, text_layer, with_shadow, flag_card, fmt_num, draw_watermark, faded,
+                         V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS)
+V2_SPOKEN_Q = ('trivia', 'wyr', 'duel')   # POP_HOOK_V2: the question itself is the hook (no intro line before it)
+V2_NO_FANS = ('city', 'cityphoto', 'nightcity', 'cuisine')   # hooks without "fans" for places / food
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BANK = os.path.join(HERE, 'assets', 'pop-bank.json')
@@ -466,7 +469,7 @@ class PopRenderer(QuizRenderer):
                 name = (r.get('answer') or r.get('name')).split(' (')[0]
                 ans.append(self.rng.choice(reveal_pool(r)).format(a=speakable(name)))
         outro = ('Which would you pick? Comment below!' if self.fmt == 'wyr' else self.rng.choice(DUEL_OUTRO) if self.fmt == 'duel'
-                 else self.rng.choice(OUTRO_POOL))
+                 else self.rng.choice(V2_OUTRO_POOL if self.v2 else OUTRO_POOL))
         ans = [line_check.tidy(a) for a in ans]   # 'Toradora!. Did you get it?'
         if self.edition:   # themed intro / outro lines (the theme's own lines are about characters: art formats only)
             if self.fmt in EDITION_LINE_FORMATS:
@@ -530,6 +533,10 @@ class PopRenderer(QuizRenderer):
                 continue
             safe = self.safe_line(m['slot'], m.get('i'))
             lines[k] = safe if safe and not self._line_problems(safe, m, None) else None
+        if self.v2 and self.fmt in V2_SPOKEN_Q:   # the spoken question starts at frame 0
+            lines[0] = None
+            self.ai_slots.pop(0, None)
+            self.ai_tmpl.pop(0, None)
         self.spoken_meta = meta
         return lines[0], lines[1:1 + n], lines[1 + n:1 + 2 * n], lines[1 + 2 * n]
 
@@ -592,6 +599,8 @@ class PopRenderer(QuizRenderer):
     def ai_budget(self, k, n, text, dur):
         """Longest the line in slot k may be so the timing is exactly as tight as with the fixed lines."""
         if k == 0:   # the intro runs under round 1's countdown (clip formats: before the clip, so no longer than a fixed intro)
+            if self.v2:   # retention cut: a short line, round 1's clip / reveal waits for it
+                return 2.0 if self.fmt in CLIP_FORMATS else self.v2_q(self.fmt) - 0.8
             return 2.4 if self.fmt in CLIP_FORMATS else Q_MIN[self.fmt] - 0.6
         if k == 1 + 2 * n:   # the outro card lasts 2.8 s, the line starts at +0.2
             return 2.5
@@ -612,7 +621,13 @@ class PopRenderer(QuizRenderer):
             return max(3.6, len(r['_audio']) / sound.SR + 0.9) if r.get('_audio') is not None else 4.0
         return CLIP_WINDOW.get(self.fmt, 3.5)
 
-    def build_pop_timeline(self, ask_d, ans_d, intro_d=0.0):
+    def v2_q(self, fmt):
+        """POP_HOOK_V2 think time: picture formats 0.6 s shorter (never under 3.4 s, or the format's own if lower);
+        spoken questions (trivia / wyr / duel) keep theirs, the question has to be read."""
+        q = Q_MIN[fmt]
+        return q if fmt in V2_SPOKEN_Q else max(min(q, 3.4), q - 0.6)
+
+    def build_pop_timeline(self, ask_d, ans_d, intro_d=0.0, outro_d=0.0):
         """
         Segments per round: start, reveal, end. In clip formats the narrator's lines for a round come
         first (round 1: the intro), then after CLIP_GAP the clip starts; the countdown runs from the
@@ -621,20 +636,31 @@ class PopRenderer(QuizRenderer):
         t = 0.0
         segs = []
         clip = self.fmt in CLIP_FORMATS
+        v2 = self.v2
+        gap, clip_at, start0 = (0.15, 0.25, V2_START) if v2 else (CLIP_GAP, CLIP_AT, 0.15)
         for i, r in enumerate(self.plan['rounds']):
             if clip:
-                lead = 0.15 + intro_d + CLIP_GAP if (i == 0 and intro_d) else CLIP_AT
+                lead = start0 + intro_d + gap if (i == 0 and intro_d) else clip_at
                 if ask_d[i]:
-                    lead += ask_d[i] + CLIP_GAP
+                    lead += ask_d[i] + gap
                 self.clip_at[i] = lead
                 q = lead + self.clip_window(r)
             else:
-                q = max(Q_MIN[self.fmt], (ask_d[i] or 0) + {'trivia': 2.3, 'wyr': 2.3, 'duel': 2.0}.get(self.fmt, 0))
-            rev = max(R_MIN[self.fmt], (ans_d[i] or 0) + 0.5)
+                q = max(self.v2_q(self.fmt) if v2 else Q_MIN[self.fmt],
+                        (ask_d[i] or 0) + {'trivia': 2.3, 'wyr': 2.3, 'duel': 2.0}.get(self.fmt, 0))
+                if v2 and i == 0 and intro_d:   # the intro line (under round 1's countdown) ends before the reveal
+                    q = max(q, start0 + intro_d + 0.5)
+            if v2:   # the answer stays readable: >= 1.6 s (song 2.4 s, the music plays on), the line + 0.4 s
+                rev = max(2.4 if self.fmt == 'song' else max(1.6, R_MIN[self.fmt] - 0.3), (ans_d[i] or 0) + 0.4)
+            else:
+                rev = max(R_MIN[self.fmt], (ans_d[i] or 0) + 0.5)
             if self.fmt in ('opening', 'scene'):  # the opening plays on (quietly) under the line, then a beat of it
-                rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 0.7)
+                rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + (0.5 if v2 else 0.7))
             if self.fmt == 'song' or (self.fmt == 'emoji' and r.get('_media')):
-                rev = max(rev, REVEAL_MEDIA, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.8)  # then the song at full volume
+                if v2:
+                    rev = max(rev, 2.6, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.0)
+                else:
+                    rev = max(rev, REVEAL_MEDIA, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.8)  # then the song at full volume
             if self.fmt == 'trivia' and r.get('_photo') is not None:   # green answer, then the picture of it
                 rev = max(rev, TRIVIA_PIC_AT + 2.3, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.4)
             if self.fmt == 'wyr' and wyr_side(r):
@@ -644,6 +670,13 @@ class PopRenderer(QuizRenderer):
         self.segs = segs
         self.outro_start = segs[-1]['end'] if segs else t  # exactly the last round's end (float sums differ)
         self.duration = self.outro_start + 2.8
+        if v2 and segs:   # no outro card: the CTA line over the last reveal (after its answer line), then the loop crossfade
+            last = segs[-1]
+            say_at = REVEAL_SAY_AT if (clip or self.fmt in ('emoji', 'wyr')) else 0.08
+            self.v2_cta_at = last['reveal'] + max(V2_CTA_MIN, say_at + (ans_d[-1] or 0) + 0.15)
+            last['end'] = max(last['end'], self.v2_cta_at + (outro_d or 1.6) + V2_TAIL)
+            self.duration = last['end']
+            self.outro_start = float('inf')
 
     def _timer(self, frame, i, tl, q, y=1345):
         """Countdown that starts with the round's clip (a full ring while the narrator talks first)."""
@@ -661,6 +694,8 @@ class PopRenderer(QuizRenderer):
         else:
             opts = TOPIC_TITLE[fmt]
             title, sub = opts.get(self.topic) or opts.get('mixed') or next(iter(opts.values()))
+        if self.v2 and not self.edition:   # the hook line under the instruction, on screen from frame 0
+            sub = self.v2_hook_text(V2_PLAIN_HOOKS if fmt in V2_NO_FANS else None)
         if self.edition:
             sub = self.edition['label']
         sub = sub.replace('5/5', f'{len(rounds)}/{len(rounds)}')   # a 3-round quick cut said 'GET 5/5'
@@ -679,6 +714,14 @@ class PopRenderer(QuizRenderer):
         title, sub = self.screen = self.screen_text()
         self.title = text_layer(title, 112, stroke=10, max_w=980)
         self.subtitle = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
+        if self.v2:
+            self.title, self.subtitle = self.v2_head(title, sub, 112, edition=bool(self.edition))
+            if fmt == 'wyr':
+                self.v2_prepare_cta('WHICH WOULD YOU PICK?', 'COMMENT A OR B')
+            elif fmt == 'duel':
+                self.v2_prepare_cta('DID YOU AGREE WITH THE FANS?', 'COMMENT YOUR PICKS')
+            else:
+                self.v2_prepare_cta()
         self.levels = []
         for i, r in enumerate(rounds):
             if fmt == 'wyr':
@@ -1729,13 +1772,14 @@ class PopRenderer(QuizRenderer):
         tl = t - seg['start']
         self.pop_offset = 0.35 if i == 0 else 0.0
         top = 250 if self.fmt != 'wyr' else 230
-        put(frame, self.title, W / 2, top)
-        put(frame, self.subtitle, W / 2, top + 90)
+        ta = self.v2_title_alpha(t)
+        put(frame, self.title, W / 2, top, a=ta)
+        put(frame, self.subtitle, W / 2, top + 90, a=ta)
         if self.fmt != 'wyr':
-            put(frame, self.levels[i], W / 2, top + 174, s=0.6 + 0.4 * ease_out_back((tl + self.pop_offset) / 0.3))
+            put(frame, self.levels[i], W / 2, top + 174, s=0.6 + 0.4 * ease_out_back((tl + self.pop_offset) / 0.3), a=ta)
             self.draw_progress(frame, i)
         else:
-            put(frame, self.levels[i], W / 2, top + 170)
+            put(frame, self.levels[i], W / 2, top + 170, a=ta)
         self.draw_round(frame, i, tl, seg)
         return frame
 
@@ -1835,17 +1879,19 @@ class PopRenderer(QuizRenderer):
             lines.append({'what': what, 'start': round(t, 3), 'end': round(t + len(a) / SR, 3)})
 
         clip_fmt = self.fmt in CLIP_FORMATS
-        intro_end = 0.15 + len(intro) / SR if intro is not None else 0.0
+        start0 = V2_START if self.v2 else 0.15
+        intro_end = start0 + len(intro) / SR if intro is not None else 0.0
         if intro is not None:
-            say(0.15, intro, 'intro')
+            say(start0, intro, 'intro')
         for i, s in enumerate(self.segs):
             if asks[i] is not None:
-                at = (intro_end + (CLIP_GAP if clip_fmt else 0.2)) if (i == 0 and intro is not None) else 0.15
+                gap = (0.15 if self.v2 else CLIP_GAP) if clip_fmt else 0.2
+                at = (intro_end + gap) if (i == 0 and intro is not None) else (start0 if i == 0 else 0.15)
                 say(s['start'] + at, asks[i], f'ask {i + 1}')
             if anss[i] is not None:
                 say(s['reveal'] + (REVEAL_SAY_AT if (clip_fmt or self.fmt in ('emoji', 'wyr')) else 0.08), anss[i], f'reveal {i + 1}')
         if outro is not None:
-            say(self.outro_start + 0.2, outro, 'outro')
+            say(self.v2_cta_at if self.v2 else self.outro_start + 0.2, outro, 'outro')
 
         # the clip bus, levelled against the narrator (active RMS: pauses would drag a plain RMS down)
         N = int(self.duration * SR)
@@ -1898,14 +1944,18 @@ class PopRenderer(QuizRenderer):
                 k += 0.25 if last else 0.5
             fx.append((s['reveal'], sound.ding(), 0.6))
             fx.append((s['reveal'] + 0.02, sound.pop(), 0.35))
-        fx.append((self.outro_start, wh, 0.4))
-        fx.append((self.outro_start + 0.1, sound.chime(), 0.5))
+        if self.v2:
+            fx.append((self.v2_cta_at, sound.pop(), 0.35))
+        else:
+            fx.append((self.outro_start, wh, 0.4))
+            fx.append((self.outro_start + 0.1, sound.chime(), 0.5))
         m = sound.music(self.duration, seed=self.plan.get('seed') or 0, bpm=self.rng.choice([100, 108, 116, 124]),
                         mood=(self.edition or {}).get('music')) \
             if self.use_music and self.fmt not in ('opening', 'scene', 'song') else None
         self.audio_log = self._check_overlap(lines, spans, bus, clip_env)
-        return sound.mix(self.duration, fx, voice, m, music_gain=0.4 if self.fmt == 'voice' else 0.55, target_lufs=-14.0,
-                         clip_track=bus, clip_env=clip_env, music_env=music_env)
+        out = sound.mix(self.duration, fx, voice, m, music_gain=0.4 if self.fmt == 'voice' else 0.55, target_lufs=-14.0,
+                        clip_track=bus, clip_env=clip_env, music_env=music_env)
+        return self.v2_finish_audio(out) if self.v2 else out
 
     def _check_overlap(self, lines, spans, bus, clip_env):
         """Seconds where a narrator line and clip audio sound together with the clip less than 12 dB down
@@ -1977,7 +2027,8 @@ class PopRenderer(QuizRenderer):
                                   'sec': round(len(clips[k]) / sound.SR, 2) if clips[k] is not None else None}
         dur = [(len(c) / sound.SR) if c is not None else 0 for c in clips]
         # clip formats: round 1's clip waits for the intro (build_pop_timeline puts it after the line)
-        self.build_pop_timeline(dur[1:1 + n], dur[1 + n:1 + 2 * n], intro_d=dur[0] if self.fmt in CLIP_FORMATS else 0.0)
+        self.build_pop_timeline(dur[1:1 + n], dur[1 + n:1 + 2 * n], intro_d=dur[0] if (self.fmt in CLIP_FORMATS or self.v2) else 0.0,
+                                outro_d=dur[1 + 2 * n])
         # the first question also has to fit the intro line before it
         if clips[0] is not None and self.fmt in ('trivia', 'wyr', 'duel'):
             extra = dur[0] + 0.2
@@ -1986,6 +2037,7 @@ class PopRenderer(QuizRenderer):
                 s['reveal'] += extra
                 s['end'] += extra
             self.outro_start += extra
+            self.v2_cta_at += extra
             self.duration += extra
         self.prepare_pop()
         top, bot, acc = self.pal
@@ -2016,7 +2068,7 @@ class PopRenderer(QuizRenderer):
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
         nf = int(round(self.duration * FPS))
         for k in range(nf):
-            proc.stdin.write(self.frame_at(k / FPS).convert('RGB').tobytes())
+            proc.stdin.write(self.final_frame(k / FPS).convert('RGB').tobytes())
         proc.stdin.close()
         if proc.wait() != 0:
             raise RuntimeError('ffmpeg failed')

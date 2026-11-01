@@ -181,6 +181,7 @@ function recordUpload(result, upload) {
     videoId: upload.videoId, url: upload.url, postedAt: new Date().toISOString(), publishAt: upload.publishAt || null,
     format: result.quiz.format, theme: result.quiz.theme, seed: result.quiz.seed, length: result.quiz.length,
     edition: result.quiz.edition || undefined,
+    hookV2: process.env.POP_HOOK_V2 === '1' || undefined,   // retention cut (core/quiz/render_quiz.py V2_*): compare views with / without
     aiLines: result.quiz.aiLines || undefined,
     followUpOf: result.quiz.followUpOf || undefined,
     titleTemplate: result.quiz.titleTemplate, title: result.title, answers: result.quiz.iso2s,
