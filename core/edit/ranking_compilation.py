@@ -77,6 +77,7 @@ OFFLIST_MIN = 0.6                # tagger prob of an off-list character that cou
 OWN_RUN_S = 6.0                 # another character owning this many continuous seconds of a window rejects it
 OWN_SHARE = 1 / 3                # ... or this share of the window's frames
 SHORT_EDIT_S = 32.0              # owner 2026-11-01: an edit this short is used nearly whole (0.5 s off each end)
+SHORT_SEC_MIN = 12.0             # ... and may give a section this short (the 18 s minimum is for cuts of longer edits)
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 # owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
 MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
@@ -1008,7 +1009,8 @@ class Judge:
 
 # ---------------------------------------------------------------- source finding per entry
 
-STYLE_RE = re.compile(r'edit\s*/\s*amv|amv\s*/\s*edit|\[\s*edit\s*\]', re.I)
+# '[Edit/AMV]', '「AMV/Edit」', '[ AMV | EDIT ]', '[Edit]', '[AMV]' (the 30 owner refs, refs/ranking-style-refs.json)
+STYLE_RE = re.compile(r'edit\s*[/|]\s*amv|amv\s*[/|]\s*edit|[\[「(]\s*(edit|amv)\s*[\]」)]', re.I)
 
 
 def style_match(e):
@@ -1533,6 +1535,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return res
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
     seg = (seg[0], min(seg[1], (dur - 1.0) if dur <= SHORT_EDIT_S else MAX_SHARE * dur))
+    if dur <= SHORT_EDIT_S:   # owner refs are 9-60 s: a short edit gives one section of 12 s .. the whole edit (- 1 s)
+        seg = (SHORT_SEC_MIN, max(SHORT_SEC_MIN, min(RS.SEG_MAX, dur - 1.0)))   # under 13 s: nothing fits (too short)
     # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))

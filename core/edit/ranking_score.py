@@ -267,7 +267,7 @@ def phrase_windows(v, a, lo, hi, seg=(SEG_MIN, SEG_MAX), target=SEG_TARGET, k=8,
                 continue
             mx = window_metrics(v, a, s, e)
             ev, so = scores(mx)
-            dev = abs(L - target) / (seg[1] - seg[0])
+            dev = abs(L - min(max(target, seg[0]), seg[1])) / max(1.0, seg[1] - seg[0])   # short edits: seg may be 12-12 s
             # owner 2026-11-01: the build-up INTO the drop is the ideal section (buildup, the strongest term); a drop right at
             # the start counts less than before
             tot = 0.5 * ev + 0.3 * so + 1.0 * es + 0.4 * min(1.0, mx['drop_db'] / 8) + 2.0 * mx['buildup'] - 1.2 * dev
