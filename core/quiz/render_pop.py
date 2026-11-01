@@ -52,6 +52,7 @@ from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_b
                          V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS)
 V2_SPOKEN_Q = ('trivia', 'wyr', 'duel')   # POP_HOOK_V2: the question itself is the hook (no intro line before it)
 V2_NO_FANS = ('city', 'cityphoto', 'nightcity', 'cuisine')   # hooks without "fans" for places / food
+V2_WYR_HOOKS = ['YOU CAN ONLY PICK ONE', 'NO SKIPPING. PICK ONE.', 'THE HARDEST CHOICES EVER']   # wyr is a choice, not a score
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BANK = os.path.join(HERE, 'assets', 'pop-bank.json')
@@ -695,7 +696,7 @@ class PopRenderer(QuizRenderer):
             opts = TOPIC_TITLE[fmt]
             title, sub = opts.get(self.topic) or opts.get('mixed') or next(iter(opts.values()))
         if self.v2 and not self.edition:   # the hook line under the instruction, on screen from frame 0
-            sub = self.v2_hook_text(V2_PLAIN_HOOKS if fmt in V2_NO_FANS else None)
+            sub = self.v2_hook_text(V2_WYR_HOOKS if fmt == 'wyr' else V2_PLAIN_HOOKS if fmt in V2_NO_FANS else None)
         if self.edition:
             sub = self.edition['label']
         sub = sub.replace('5/5', f'{len(rounds)}/{len(rounds)}')   # a 3-round quick cut said 'GET 5/5'
