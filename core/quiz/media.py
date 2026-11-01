@@ -428,10 +428,10 @@ def _qclip_tokens(query):
     return [w for w in _fold(query).split() if w not in QCLIP_STOP and (len(w) >= 3 or w.isdigit())]
 
 
-def pick_query_video(entries, query):
+def pick_query_video(entries, query, rank=0):
     """The search result that shows the thing: 20 s - 10 min (the whole upload is downloaded at <= 720p), its title names the
     query's first distinctive word (the place / thing) and at least a third of the others, nothing in QCLIP_BAD and no
-    starred-out words; the most viewed of those."""
+    starred-out words; the most viewed of those (rank 1, 2 ...: the next ones, when the first failed the reveal gate)."""
     toks = _qclip_tokens(query)
     need = max(1, (len(toks) + 2) // 3)
     ok = []
@@ -441,25 +441,25 @@ def pick_query_video(entries, query):
         if not (20 <= d <= 600) or QCLIP_BAD.search(t) or '*' in str(e.get('title') or '') or (toks and f' {toks[0]} ' not in t)                 or sum(f' {w} ' in t for w in toks) < need:
             continue
         ok.append(e)
-    return max(ok, key=lambda e: (e.get('view_count') or 0) * (1.5 if re.search(r' (4k|hd|1080p|official) ', _fold(e.get('title'))) else 1.0)) \
-        if ok else None
+    ok.sort(key=lambda e: -(e.get('view_count') or 0) * (1.5 if re.search(r' (4k|hd|1080p|official) ', _fold(e.get('title'))) else 1.0))
+    return ok[rank] if rank < len(ok) else None
 
 
-def fetch_query_clip(query, seconds=10.0):
+def fetch_query_clip(query, seconds=10.0, rank=0):
     """
     ({'path', 'audio'}, info) for a would-you-rather choice: `seconds` of the upload's most replayed (else loudest) moment
     of the best search result for `query` ('London concert crowd singing'), as a silent <= 720p clip plus the same
     moment's audio, or (None, reason). Same downloader and cache as the scene / song clips; a search that found
     uploads but none passed pick_query_video() is remembered for a week.
     """
-    key = f'qclip:{_fold(query).strip()}'
+    key = f'qclip:{_fold(query).strip()}' + (f'#{rank}' if rank else '')
     meta_p = _cache_path(key, '.json')
     meta = json.load(open(meta_p, encoding='utf-8')) if os.path.exists(meta_p) else None
     if meta and meta.get('fail') and time.time() - meta.get('at', 0) < 7 * 86400:
         return None, meta['fail']
     if not meta or meta.get('fail'):
         entries = _search(query, n=8)
-        v = pick_query_video(entries, query)
+        v = pick_query_video(entries, query, rank)
         if not v:
             if entries:
                 _write_json(meta_p, {'fail': 'no upload passed the clip rules', 'at': time.time()})

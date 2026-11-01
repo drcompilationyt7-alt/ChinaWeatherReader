@@ -1075,6 +1075,11 @@ class PopRenderer(QuizRenderer):
             screen, (vx, vy, vw, vh) = self._wyr_reveal_screen(src, x['live'], rt)
             put(frame, screen, W / 2, H / 2, s=0.94 + 0.06 * g, a=clamp(rt / 0.25))
         put(frame, L['label'], W / 2, vy + vh / 2 + 100, s=max(0.01, ease_out_back((rt - 0.25) / 0.3)))
+        # the one mid-video action line (QuizRenderer.mid_cta) sits under the label (and the vote bar), never on them
+        m = self.mid_cta()
+        if m:
+            below = vy + vh / 2 + (210 + L['bar'].size[1] / 2 if L.get('votes') else 100 + L['label'].size[1] / 2)
+            self.mid_cta_y = below + 18 + m['layer'].size[1] / 2
         put(frame, L['badge'], 40 + L['badge'].size[0] / 2, vy - vh / 2 + 150, s=max(0.01, ease_out_back((rt - 0.35) / 0.3)))   # clear of the v2 CTA pill
         if L.get('votes'):
             put(frame, L['bar'], W / 2, vy + vh / 2 + 210, s=max(0.01, ease_out_back((rt - 0.5) / 0.35)))
@@ -1978,13 +1983,20 @@ class PopRenderer(QuizRenderer):
         ta = self.v2_title_alpha(t)
         if self.wyr_clips:   # the round's pictures go under the title (POP_WYR_CLIPS: they fill the screen)
             self.draw_round(frame, i, tl, seg)
-        put(frame, self.title, W / 2, top, a=ta)
-        put(frame, self.subtitle, W / 2, top + (68 if self.wyr_clips else 90), a=ta)
-        if self.fmt != 'wyr':
+        if self.fmt == 'wyr':
+            # owner 2026-11-01: title / edition line / round pill stacked by their real heights with a gap, never touching,
+            # all centred on the same axis (the fixed offsets let them overlap)
+            gap = 14
+            y_sub = top + self.title.size[1] / 2 + gap + self.subtitle.size[1] / 2
+            y_lvl = y_sub + self.subtitle.size[1] / 2 + gap + self.levels[i].size[1] / 2
+            put(frame, self.title, W / 2, top, a=ta)
+            put(frame, self.subtitle, W / 2, y_sub, a=ta)
+            put(frame, self.levels[i], W / 2, y_lvl, a=ta)
+        else:
+            put(frame, self.title, W / 2, top, a=ta)
+            put(frame, self.subtitle, W / 2, top + 90, a=ta)
             put(frame, self.levels[i], W / 2, top + 174, s=0.6 + 0.4 * ease_out_back((tl + self.pop_offset) / 0.3), a=ta)
             self.draw_progress(frame, i)
-        else:
-            put(frame, self.levels[i], W / 2, top + (124 if self.wyr_clips else 170), a=ta)
         if not self.wyr_clips:
             self.draw_round(frame, i, tl, seg)
         return frame
@@ -2070,14 +2082,14 @@ class PopRenderer(QuizRenderer):
         self.fetch_log.update({'photos': f'{ok}/{len(todo)}'})
 
     def _load_wyr_media(self):
-        """POP_WYR_CLIPS: per choice a clip or a picture, in parallel (240 s at most). The pick tries its clip first (it plays
+        """POP_WYR_CLIPS: per choice a clip or a picture, in parallel (WYR_MEDIA_BUDGET 480 s at most). The pick tries its clip first (it plays
         at the reveal), then a photo; the other choice a photo first (it is only shown still), then a clip's first frame.
         A choice with neither keeps its emoji on the side's colour. Logged in fetch_log + each round's wyrMedia."""
         rounds = self.plan['rounds']
         tasks = [(r, s) for r in rounds for s in ('a', 'b')]
-        # owner 2026-11-01: no reveal clips for K-pop yet (fan-filmed concerts with the song audible = Content ID claims);
-        # those rounds keep the photos. POP_WYR_NO_CLIP_TOPICS (comma list) overrides.
-        no_clip = {x.strip() for x in os.environ.get('POP_WYR_NO_CLIP_TOPICS', 'kpop').split(',') if x.strip()}
+        # owner 2026-11-01: every topic gets reveal clips, K-pop concerts too ("copyright claims are fine for now while the
+        # channel grows"); POP_WYR_NO_CLIP_TOPICS (comma list, e.g. 'kpop') keeps the photos for those topics
+        no_clip = {x.strip() for x in os.environ.get('POP_WYR_NO_CLIP_TOPICS', '').split(',') if x.strip()}
         clips_ok = str(self.topic or self.plan.get('topic') or '') not in no_clip
 
         def one(t):
@@ -2087,12 +2099,21 @@ class PopRenderer(QuizRenderer):
             for kind in kinds:
                 try:
                     if kind == 'clip':
-                        got, info = wyr_clip(r, s)
-                        if got is not None:   # the gate: lit, detailed frames that show the choice, else the photo
-                            k0, gi = wyr_clip_window(got['path'], info['width'], info['height'], info.get('crop'), wyr_clip_text(r, s))
-                            if k0 is None:
-                                print(f"wyr {s.upper()} clip not shown ({gi}): {info.get('videoTitle')}", file=sys.stderr)
-                                got, info = None, gi
+                        # the pick tries its candidate clips in turn (wyr_clip_candidates); the other choice only its first
+                        cands = wyr_clip_candidates(r, s) if s == wyr_side(r) else wyr_clip_candidates(r, s)[:1]
+                        got, info = None, 'no clip query'
+                        for spec, rank in cands:
+                            got, info = wyr_clip(r, s, spec, rank)
+                            if got is None:
+                                continue
+                            # the gate: lit, detailed frames that show the choice; else the next candidate, then the photo
+                            # a backup search ('London 4k') is judged by its own words, not the item's ('London concert crowd')
+                            gate_text = wyr_gate_words(spec[1]) if spec and spec[0] == 'query' else wyr_clip_text(r, s)
+                            k0, gi = wyr_clip_window(got['path'], info['width'], info['height'], info.get('crop'), gate_text)
+                            if k0 is not None:
+                                break
+                            print(f"wyr {s.upper()} clip not shown ({gi}): {info.get('videoTitle')}", file=sys.stderr)
+                            got, info = None, gi
                         if got is not None:
                             out = {'clip': got, 'info': {**info, **gi}}
                             if str(r.get('imageQueryA' if s == 'a' else 'imageQueryB') or '').startswith('character:'):
@@ -2110,7 +2131,7 @@ class PopRenderer(QuizRenderer):
                 why.append(f'{kind}: {str(info)[:90]}')
             raise RuntimeError('; '.join(why))
 
-        res = media.run_parallel(one, tasks, workers=4, budget=240.0)
+        res = media.run_parallel(one, tasks, workers=4, budget=float(os.environ.get("WYR_MEDIA_BUDGET", "480")))   # up to 6 clips a pick
         n_clip = n_photo = 0
         for k, (r, s) in enumerate(tasks):
             got, err = res.get(k, (None, 'time budget used up'))
@@ -2226,6 +2247,8 @@ class PopRenderer(QuizRenderer):
                 k += 0.25 if last else 0.5
             fx.append((s['reveal'], sound.ding(), 0.6))
             fx.append((s['reveal'] + 0.02, sound.pop(), 0.35))
+        if self.mid_cta():   # the one action line slides in with a soft pop
+            fx.append((self.mid_cta()['t'], sound.pop(), 0.22))
         if self.v2:
             fx.append((self.v2_cta_at, sound.pop(), 0.35))
         else:
@@ -2605,7 +2628,9 @@ WYR_MIN_DETAIL = 6.0                     # frame_ok: mean neighbour difference b
 WYR_HINT = {'food': 'cooking close up', 'cities': 'city 4k drone', 'kpop': 'kpop stage', 'anime': 'anime'}
 # SigLIP relevance: the choice's own words must beat every one of these on most sampled frames
 WYR_DISTRACT = ['a person talking to the camera', 'a person painting or drawing', 'text, a title card or subtitles on a screen',
-                'a dark blurry frame', 'a video game screenshot', 'a logo on a plain background', 'hands holding a phone']
+                'a dark blurry frame', 'a video game screenshot', 'a logo on a plain background', 'hands holding a phone',
+                # 2026-11-01: a London concert search opened on a 'subscribe / comment & like' animation
+                'a subscribe and like button graphic', 'a YouTube end screen with video thumbnails', 'a cartoon graphic with arrows']
 
 
 def wyr_clips_on():
@@ -2638,9 +2663,39 @@ def wyr_clip_spec(r, side):
     return ('query', f'{lab} {hint}'.strip()) if lab and hint != 'anime' else None
 
 
-def wyr_clip(r, side):
-    """({'path', 'audio'}, info) of a choice's clip, or (None, reason)."""
+WYR_CLIP_TRIES = int(os.environ.get('WYR_CLIP_TRIES', '8'))   # clips the pick tries (gate each) before its photo
+
+
+def wyr_clip_candidates(r, side):
+    """Owner 2026-11-01: 'clips after clicking, an image only in the worst case: try to find a clip'. The pick's clips in
+    the order they are tried: the item's own search (its best 3 uploads; an anime: its opening), then the choice's label in
+    4K and with the topic hint (2 uploads each). Each one still has to pass the reveal gate (wyr_clip_window)."""
+    out, seen = [], set()
+
+    def add(spec, ranks):
+        for k in ranks:
+            if spec and (spec, k) not in seen:
+                seen.add((spec, k))
+                out.append((spec, k))
     spec = wyr_clip_spec(r, side)
+    add(spec, (0,) if spec and spec[0] == 'anime' else (0, 1, 2))
+    lab = wyr_label(r, side)
+    hint = WYR_HINT.get(str(r.get('topic') or ''), '')
+    if lab:
+        if spec and spec[0] == 'anime':
+            add(('query', f'{spec[1]} anime 4k'), (0, 1))
+        else:
+            # 'cinematic' uploads are 1-5 min (a city 'walk' is hours long: over the 10 min the downloader takes)
+            add(('query', f'{lab} cinematic 4k'), (0, 1))
+            add(('query', f'{lab} 4k'), (0, 1))
+            if hint and hint != 'anime':
+                add(('query', f'{lab} {hint}'), (0, 1))
+    return out[:WYR_CLIP_TRIES]
+
+
+def wyr_clip(r, side, spec=None, rank=0):
+    """({'path', 'audio'}, info) of a choice's clip, or (None, reason)."""
+    spec = spec or wyr_clip_spec(r, side)
     if spec is None:
         return None, 'no clip query'
     kind, val = spec
@@ -2650,8 +2705,8 @@ def wyr_clip(r, side):
             return None, f'no safe AniList entry for {val}'
         got, info = media.fetch_scene(a['title'], a.get('romaji'), seconds=WYR_CLIP_SEC, audio_seconds=WYR_CLIP_SEC)
     else:
-        got, info = media.fetch_query_clip(val, seconds=WYR_CLIP_SEC)
-    return (got, {**info, 'query': f'{kind}:{val}'}) if got is not None else (None, info)
+        got, info = media.fetch_query_clip(val, seconds=WYR_CLIP_SEC, rank=rank)
+    return (got, {**info, 'query': f'{kind}:{val}#{rank}'}) if got is not None else (None, info)
 
 
 def _frame_stats(img):
@@ -2742,7 +2797,12 @@ def wyr_clip_text(r, side):
         return None
     if spec[0] == 'anime':   # an opening is the right show, but an upload can end on a card (Frieren: "THANKS FOR WATCHING")
         return 'an anime scene'
-    t = re.sub(r'\b(4k|8k|hd|uhd|1080p|60fps|drone|walk|walking|tour|close up|official)\b', ' ', spec[1], flags=re.I)
+    return wyr_gate_words(spec[1])
+
+
+def wyr_gate_words(q):
+    """A search query without the search-only words (4k, drone, walk ...): what its frames must show."""
+    t = re.sub(r'\b(4k|8k|hd|uhd|1080p|60fps|drone|walk|walking|tour|close up|official|cinematic)\b', ' ', q or '', flags=re.I)
     return re.sub(r'\s+', ' ', t).strip() or None
 
 

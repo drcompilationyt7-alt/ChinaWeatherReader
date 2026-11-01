@@ -68,6 +68,10 @@ V2_VARIANTS = 3
 V2_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY TRUE FANS GET {N}/{N}', 'NO CHEATING. GO!']
 V2_GEO_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY MAP NERDS GET {N}/{N}', 'NO CHEATING. GO!']
 V2_PLAIN_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'NO CHEATING. GO!']
+# one action line per video, after round 2's answer (QuizRenderer.mid_cta); 'comment' is the end CTA's job
+MID_CTA_QUIZ = ['DOUBLE TAP IF YOU GOT IT', 'LIKE IF YOU GOT 2/2 SO FAR', 'SUBSCRIBE FOR A NEW QUIZ DAILY']
+MID_CTA_PICK = ['LIKE IF YOU AGREE', "DOUBLE TAP IF YOU'D PICK IT TOO", 'SUBSCRIBE FOR A NEW ONE DAILY']
+MID_CTA_LEN, MID_CTA_Y = 2.2, 1530   # s on screen; above the Shorts title overlay, under the answer line (1440)
 V2_OUTRO_POOL = ['Comment your score!', 'How many did you get? Comment below!', 'Drop your score in the comments!']
 V2_GOLD = (255, 214, 0)
 
@@ -394,9 +398,32 @@ class QuizRenderer:
             audio[-k:] *= np.linspace(1.0, 0.0, k) ** 1.5
         return audio
 
+    def mid_cta(self):
+        """Owner 2026-11-01: ONE action line per video ('double tap', 'like', 'subscribe'; 'comment' stays the end CTA), not
+        spam: it slides in once ~0.8 s after round 2's answer, ~2 s, with a soft pop, and may run into round 3's question
+        (it sits low, clear of the picture / timer; the hook v2 reveals are under 2 s). None for a video under 3 rounds.
+        QUIZ_MID_CTA=0 turns it off."""
+        if not hasattr(self, '_mid_cta'):
+            self._mid_cta = None
+            segs = getattr(self, 'segs', None) or []
+            if os.environ.get('QUIZ_MID_CTA', '1') != '0' and len(segs) >= 3:
+                fmt = getattr(self, 'fmt', None) or self.kind
+                pool = MID_CTA_PICK if fmt in ('wyr', 'duel') else MID_CTA_QUIZ
+                text = random.Random(f"{self.plan.get('seed')}-cta-{fmt}").choice(pool)
+                self._mid_cta = {'t': segs[1]['reveal'] + 0.8, 'text': text,
+                                 'layer': with_shadow(pill(text, 44, WHITE, fg=NAVY, max_w=900), blur=8, offset=(0, 5))}
+        return self._mid_cta
+
     def final_frame(self, t):
-        """frame_at plus the V2 overlays: the CTA over the last reveal, then the crossfade toward frame 0 (the loop)."""
+        """frame_at plus the overlays: the one mid-video action line; under V2 the CTA over the last reveal, then the
+        crossfade toward frame 0 (the loop)."""
         frame = self.frame_at(t)
+        m = self.mid_cta()
+        if m and 0 <= t - m['t'] < MID_CTA_LEN:
+            ct = t - m['t']
+            a = min(clamp(ct / 0.25), clamp((MID_CTA_LEN - ct) / 0.3))          # fade in, hold, fade out
+            put(frame, m['layer'], W / 2, getattr(self, 'mid_cta_y', MID_CTA_Y) + 36 * (1 - ease_out_cubic(clamp(ct / 0.35))), a=a,
+                s=1.0 + 0.035 * math.sin(clamp((ct - 0.35) / 0.5) * math.pi))  # one gentle pulse after it lands
         if not self.v2:
             return frame
         if t >= self.v2_cta_at:
@@ -580,6 +607,8 @@ class QuizRenderer:
                 k += 0.5 if not last else 0.25
             fx.append((s['reveal'], sound.ding(), 0.6))
             fx.append((s['reveal'] + 0.02, sound.pop(), 0.35))
+        if self.mid_cta():   # the one action line slides in with a soft pop
+            fx.append((self.mid_cta()['t'], sound.pop(), 0.22))
         if self.v2:
             fx.append((self.v2_cta_at, sound.pop(), 0.35))
         else:
