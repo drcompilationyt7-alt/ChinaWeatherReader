@@ -2096,7 +2096,7 @@ class PopRenderer(QuizRenderer):
 
         def one(t):
             r, s = t
-            why = []
+            why, miss = [], []   # miss: why each clip candidate failed (in the run's fetch log: the CI log shows no stderr)
             kinds = (('clip', 'photo') if s == wyr_side(r) else ('photo', 'clip')) if clips_ok else ('photo',)
             for kind in kinds:
                 try:
@@ -2107,6 +2107,7 @@ class PopRenderer(QuizRenderer):
                         for spec, rank in cands:
                             got, info = wyr_clip(r, s, spec, rank)
                             if got is None:
+                                miss.append(f'{spec[1] if spec else "-"}#{rank}: {str(info)[:60]}')
                                 continue
                             # the gate: lit, detailed frames that show the choice; else the next candidate, then the photo
                             # a backup search ('London 4k') is judged by its own words, not the item's ('London concert crowd')
@@ -2115,6 +2116,7 @@ class PopRenderer(QuizRenderer):
                             if k0 is not None:
                                 break
                             print(f"wyr {s.upper()} clip not shown ({gi}): {info.get('videoTitle')}", file=sys.stderr)
+                            miss.append(f'{spec[1] if spec else "-"}#{rank}: gate {str(gi)[:60]}')
                             got, info = None, gi
                         if got is not None:
                             out = {'clip': got, 'info': {**info, **gi}}
@@ -2126,7 +2128,7 @@ class PopRenderer(QuizRenderer):
                     else:
                         img, info = wyr_photo(r, s)
                         if img is not None and picture_ok(img):
-                            return {'photo': img, 'info': info or {}}
+                            return {'photo': img, 'info': info or {}, 'clipMiss': miss}
                         info = info if img is None else 'blank / tiny picture'
                 except Exception as e:  # noqa: BLE001  (a failed fetch is a fallback, never a failed render)
                     info = e
@@ -2157,6 +2159,11 @@ class PopRenderer(QuizRenderer):
                 rec[s] = {'kind': 'photo', 'credit': info.get('credit'), 'page': info.get('page')}
         live = sum(bool(r.get('_wclip_' + wyr_side(r))) for r in rounds if wyr_side(r))
         self.fetch_log.update({'wyrClips': n_clip, 'wyrPhotos': n_photo, 'wyrLiveReveals': f'{live}/{len(rounds)}'})
+        miss = {wyr_label(r, wyr_side(r)): (res.get(k) or (None,))[0].get('clipMiss')[:4]
+                for k, (r, s) in enumerate(tasks) if s == wyr_side(r) and isinstance((res.get(k) or (None,))[0], dict)
+                and (res.get(k) or (None,))[0].get('clipMiss')}
+        if miss:   # the picks that fell back to a photo, and why (2026-11-01: 1/3 live reveals on CI, reasons unknown)
+            self.fetch_log['wyrClipMiss'] = miss
 
     def make_pop_audio(self, clips, n):
         """
