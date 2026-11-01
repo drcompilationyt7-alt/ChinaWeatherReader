@@ -1836,6 +1836,130 @@
     "titleStyle": "speed",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "Fb4_pUo3H1Q",
+   "url": "https://www.youtube.com/watch?v=Fb4_pUo3H1Q",
+   "postedAt": "2026-11-01T09:27:54.014Z",
+   "publishAt": "2026-11-01T13:00:00.000Z",
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 72996634,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the K-pop idol before time runs out?",
+     "template": "Can you guess the K-pop idol before time runs out?",
+     "sec": 2.7
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How did you do? Drop your score below!",
+     "template": "How did you do? Drop your score below!",
+     "sec": 1.99
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai",
+     "line": "Of course, it is V!",
+     "template": "Of course, it is {a}!",
+     "sec": 1.16
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "BoA!",
+     "template": null,
+     "sec": 0.48
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Kim Se-jeong!",
+     "template": null,
+     "sec": 1.22
+    }
+   ],
+   "titleTemplate": "idol-blur",
+   "title": "Name the K-Pop Idol Before It Unblurs ⚡ #kpop",
+   "answers": [
+    "idol:v#19jd90v",
+    "idol:boa#xgq4o4",
+    "idol:kim se-jeong#95o96e"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "speed",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "eiUCabdMpqM",
+   "url": "https://www.youtube.com/watch?v=eiUCabdMpqM",
+   "postedAt": "2026-11-01T09:34:27.490Z",
+   "publishAt": "2026-11-02T01:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 44935609,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "pool",
+     "line": "Guess the character by their outfit!",
+     "template": null,
+     "sec": 1.81
+    },
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Comment your score!",
+     "template": null,
+     "sec": 0.84
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Kurisu Makise!",
+     "template": null,
+     "sec": 1.33
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Cee Cee!",
+     "template": null,
+     "sec": 2.87
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Mitsuri Kanroji!",
+     "template": null,
+     "sec": 1.69
+    }
+   ],
+   "titleTemplate": "outfit-design",
+   "title": "Can You Name These Anime Outfits? 🎧 #anime",
+   "answers": [
+    "outfit:kurisu makise#yi0vti",
+    "outfit:c.c.#wdrm4l",
+    "outfit:mitsuri kanroji#14v7hpg"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }

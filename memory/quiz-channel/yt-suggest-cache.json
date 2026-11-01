@@ -1,4 +1,10 @@
 {
+ "guess the anime character by outfit": {
+  "at": "2026-11-01T09:34:19.977Z",
+  "s": [
+   "guess the anime character by their clothes"
+  ]
+ },
  "kpop quiz": {
   "at": "2026-11-01T08:25:20.647Z",
   "s": [
@@ -187,10 +193,6 @@
    "asian country capital quiz",
    "asian capitals"
   ]
- },
- "guess the anime character by outfit": {
-  "at": "2026-10-25T07:46:24.123Z",
-  "s": []
  },
  "guess the city": {
   "at": "2026-10-24T07:31:16.792Z",
