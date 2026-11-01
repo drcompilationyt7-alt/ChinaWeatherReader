@@ -161,7 +161,8 @@ def _ytdlp(cookies=True):
 
 
 # a throttled or flagged login session gets these for videos that play fine without it
-_SESSION_BLOCK = re.compile(r"video unavailable|not a bot|sign in to confirm|rate.?limit|content isn.t available|http error 429", re.I)
+_SESSION_BLOCK = re.compile(r"video unavailable|not a bot|sign in to confirm|rate.?limit|content isn.t available|http error 429|"
+                            r"page needs to be reloaded", re.I)   # 2026-10-31: a cookie session got this for public videos
 
 
 def _yt(args, timeout=300):
@@ -409,6 +410,79 @@ def fetch_scene(title, romaji=None, seconds=4.0, audio_seconds=None):
     if p is None:
         return None, v
     return {'path': p, 'audio': audio}, {**info, **v}
+
+
+# ─── would you rather: a clip of each choice from a plain search (POP_WYR_CLIPS, owner 2026-10-31) ───
+
+# a search result whose title says it is not a plain video of the thing (or not one to show)
+QCLIP_BAD = re.compile(r' (reaction|reacts?|reacting|lyric|lyrics|sub|subs|subbed|subtitles|karaoke|tutorial|how to|podcast|interview|'
+                       r'review|reviews|explained|ranking|ranked|tier list|top \d+|vs|versus|compilation|meme|memes|parody|prank|'
+                       r'asmr|mukbang|nude|naked|nsfw|sexy|erotic|bikini|lingerie|gore|blood|war|accident|crash|fight|riot|protest|'
+                       r'police|news|breaking|documentary|trailer|teaser|ad|advert|commercial|livestream|live stream|stream|'
+                       r'ai|ai generated|minecraft|roblox|gta|fortnite|game|gameplay|animation meme|edit|amv|mmd) ')
+QCLIP_STOP = {'the', 'and', 'of', 'a', 'an', 'in', 'on', 'at', 'to', 'with', 'for', 'video', 'clip', 'close', 'up', 'shot', 'hd', '4k',
+              'footage', 'scene', 'view', 'real', 'best', 'beautiful'}
+
+
+def _qclip_tokens(query):
+    return [w for w in _fold(query).split() if w not in QCLIP_STOP and (len(w) >= 3 or w.isdigit())]
+
+
+def pick_query_video(entries, query):
+    """The search result that shows the thing: 20 s - 10 min (the whole upload is downloaded at <= 720p), its title names the
+    query's first distinctive word (the place / thing) and at least a third of the others, nothing in QCLIP_BAD and no
+    starred-out words; the most viewed of those."""
+    toks = _qclip_tokens(query)
+    need = max(1, (len(toks) + 2) // 3)
+    ok = []
+    for e in entries:
+        t = _fold(e.get('title'))
+        d = e.get('duration') or 0
+        if not (20 <= d <= 600) or QCLIP_BAD.search(t) or '*' in str(e.get('title') or '') or (toks and f' {toks[0]} ' not in t)                 or sum(f' {w} ' in t for w in toks) < need:
+            continue
+        ok.append(e)
+    return max(ok, key=lambda e: (e.get('view_count') or 0) * (1.5 if re.search(r' (4k|hd|1080p|official) ', _fold(e.get('title'))) else 1.0)) \
+        if ok else None
+
+
+def fetch_query_clip(query, seconds=10.0):
+    """
+    ({'path', 'audio'}, info) for a would-you-rather choice: `seconds` of the upload's most replayed (else loudest) moment
+    of the best search result for `query` ('London concert crowd singing'), as a silent <= 720p clip plus the same
+    moment's audio, or (None, reason). Same downloader and cache as the scene / song clips; a search that found
+    uploads but none passed pick_query_video() is remembered for a week.
+    """
+    key = f'qclip:{_fold(query).strip()}'
+    meta_p = _cache_path(key, '.json')
+    meta = json.load(open(meta_p, encoding='utf-8')) if os.path.exists(meta_p) else None
+    if meta and meta.get('fail') and time.time() - meta.get('at', 0) < 7 * 86400:
+        return None, meta['fail']
+    if not meta or meta.get('fail'):
+        entries = _search(query, n=8)
+        v = pick_query_video(entries, query)
+        if not v:
+            if entries:
+                _write_json(meta_p, {'fail': 'no upload passed the clip rules', 'at': time.time()})
+            return None, 'no upload passed the clip rules' if entries else 'search failed'
+        heat = _video_info(v['id']).get('heatmap') or []
+        audio_p = _cache_path(f"qclipaudio:{v['id']}", '.m4a')
+        err = _download_audio(f"https://www.youtube.com/watch?v={v['id']}", audio_p, v.get('duration'), 240)
+        if err:
+            return None, 'download failed: ' + err
+        meta = {'id': v['id'], 'title': v.get('title'), 'channel': v.get('channel'), 'duration': v.get('duration'), 'heatmap': heat}
+        _write_json(meta_p, meta)
+    a = _decode(_cache_path(f"qclipaudio:{meta['id']}", '.m4a'))
+    dur = len(a) / SR
+    start = _best_window(a, meta.get('heatmap'), seconds, lo=min(5.0, max(0.0, dur - seconds - 1)), hi=200.0, skip_end=2.0)
+    seg = a[int(start * SR):int(start * SR) + int(seconds * SR)].copy()
+    if len(seg) < int(seconds * SR) * 0.8:
+        return None, 'clip too short'
+    seg = seg * (0.85 / (np.abs(seg).max() or 1)) if np.abs(seg).max() >= 0.01 else seg   # a quiet street scene stays quiet
+    p, vi = cut_video(meta['id'], start, seconds)
+    if p is None:
+        return None, vi
+    return {'path': p, 'audio': seg}, {'video': meta['id'], 'videoTitle': meta.get('title'), 'channel': meta.get('channel'),
+                                       'start': round(start, 2), **vi}
 
 
 def pillarbox(path, w, h):

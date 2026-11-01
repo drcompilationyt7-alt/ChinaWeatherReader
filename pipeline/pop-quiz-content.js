@@ -536,10 +536,21 @@ function genPrompt(fmt, topic, n, avoid, edition = null) {
     + 'otherwise 2-4 plain words to search Wikimedia Commons for a real photo of the thing, e.g. "tonkotsu ramen bowl", '
     + '"Shibuya crossing night"; never a photo of a private person), "pick" ("a" or "b": the one YOU, the narrator, would pick), '
     + '"reason" (why, max 8 words, first person and playful, e.g. "The food alone." Never a statistic, percentage or claim '
-    + 'about what other people or fans picked). ' + avoidLine
+    + 'about what other people or fans picked). ' + (WYR_CLIPS ? WYR_CLIP_SPEC : '') + avoidLine
     + '\nReturn JSON: {"items": [{"a": "", "b": "", "emojiA": "", "emojiB": "", "twistA": "", "twistB": "", "labelA": "", '
-    + '"labelB": "", "imageQueryA": "", "imageQueryB": "", "pick": "a", "reason": ""}]}'];
+    + '"labelB": "", "imageQueryA": "", "imageQueryB": "", ' + (WYR_CLIPS ? '"clipQueryA": "", "clipQueryB": "", "hype": "", ' : '')
+    + '"pick": "a", "reason": ""}]}'];
 }
+
+// POP_WYR_CLIPS=1 (owner 2026-10-31, core/quiz/render_pop.py WYR_*): the reveal plays a real clip of the pick with its sound
+// under the narrator's line ("London! Just look at this!"). Unset: the prompt and the items are exactly as before.
+const WYR_CLIPS = process.env.POP_WYR_CLIPS === '1';
+const WYR_CLIP_SPEC = '"clipQueryA", "clipQueryB" (a YouTube search for a few seconds of real video of that choice, 3-6 plain '
+  + 'words, the place / thing FIRST, then what happens, e.g. "London concert crowd singing", "tonkotsu ramen cooking close up", '
+  + '"Shibuya crossing night"; for an anime show or one of its characters write "anime:<official English title>" (its '
+  + 'opening plays); never a private person, never a fight, accident or news footage), "hype" (what the narrator shouts '
+  + 'while the pick\'s clip plays, max 6 words, excited, about what is on screen, e.g. "Just look at this energy!"; never a '
+  + 'statistic or a claim about what fans picked). ';
 
 /** Trivia: the reveal shows a picture of the answer (owner 2026-10-21), so an item needs an image query the renderer knows. */
 const IMAGE_KINDS = ['city', 'anime', 'character', 'idol', 'group', 'vtuber', 'file', 'commons'];
@@ -564,7 +575,8 @@ function validItem(fmt, it) {
   return s(it.a) && s(it.b) && it.a.length <= 40 && it.b.length <= 40 && s(it.emojiA) && s(it.emojiB)
     && String(it.twistA || '').length <= 40 && String(it.twistB || '').length <= 40
     && ['a', 'b'].includes(it.pick) && s(it.reason) && it.reason.trim().split(/\s+/).length <= 8 && it.reason.length <= 60
-    && !FAKE_STAT.test(it.reason) && opt(it.labelA, 24) && opt(it.labelB, 24) && opt(it.imageQueryA, 60) && opt(it.imageQueryB, 60);
+    && !FAKE_STAT.test(it.reason) && opt(it.labelA, 24) && opt(it.labelB, 24) && opt(it.imageQueryA, 60) && opt(it.imageQueryB, 60)
+    && opt(it.clipQueryA, 70) && opt(it.clipQueryB, 70) && opt(it.hype, 40) && !FAKE_STAT.test(String(it.hype || ''));
 }
 
 /** Second opinion: keep only items the checker confirms. */

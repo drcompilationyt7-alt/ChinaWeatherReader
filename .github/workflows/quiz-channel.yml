@@ -79,6 +79,9 @@ env:
   # retention cut (hook from frame 0, tighter rounds, CTA over the last reveal, seamless loop, 3 layout variants): repo variable
   # POP_HOOK_V2 = 1 always, 0 never, mix = 50/50 per short (owner 2026-10-31; history hookV2 true / false compares views)
   POP_HOOK_V2: ${{ vars.POP_HOOK_V2 || '0' }}
+  # would you rather: a picture fills each half, the pick's real clip plays at the reveal (owner 2026-10-31); repo variable
+  # POP_WYR_CLIPS = 1 on, unset / 0 the classic emoji split (render_pop.py WYR_*, pop-quiz-content.js WYR_CLIP_SPEC)
+  POP_WYR_CLIPS: ${{ vars.POP_WYR_CLIPS || '0' }}
   # narrator: Chatterbox, calm and cool (falls back to Kokoro am_onyx, then edge-tts)
   TTS_ENGINE: chatterbox
   CHATTERBOX_EXAGGERATION: "0.3"
@@ -145,20 +148,22 @@ jobs:
           python3 -m pip install pillow edge-tts yt-dlp yt-dlp-ejs kokoro-onnx soundfile scipy --break-system-packages
           # speech check for the voice quiz (Whisper tiny on CPU; the model is cached with the voice models)
           python3 -m pip install faster-whisper --break-system-packages
+          # would-you-rather reveal clips: the SigLIP relevance gate (core/quiz/render_pop.py wyr_clip_window) needs sentencepiece
+          python3 -m pip install sentencepiece --break-system-packages
           curl -fsSL https://deno.land/install.sh | sh
           echo "$HOME/.deno/bin" >> $GITHUB_PATH
           npm ci || npm install
           mkdir -p output/quiz "$MEMORY_DIR" "$QUIZ_MEDIA_CACHE"
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > "$YT_COOKIES"; fi
 
-      - name: Cache voice models (Chatterbox, Kokoro, faster-whisper tiny)
+      - name: Cache voice models (Chatterbox, Kokoro, faster-whisper tiny) + the SigLIP of the wyr clip gate
         if: steps.gate.outputs.ready == 'true' && steps.today.outputs.done != 'true'
         uses: actions/cache@v4
         with:
           path: |
             /home/runner/.cache/huggingface
             /home/runner/.cache/kokoro
-          key: voice-models-chatterbox-whisper-v2
+          key: voice-models-chatterbox-whisper-siglip-v3
           restore-keys: voice-models-chatterbox-
 
       - name: Cache animated background loops (rendered once, ~1-2 min each on CPU)

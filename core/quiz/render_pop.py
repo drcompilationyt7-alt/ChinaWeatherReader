@@ -52,7 +52,6 @@ from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_b
                          V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS)
 V2_SPOKEN_Q = ('trivia', 'wyr', 'duel')   # POP_HOOK_V2: the question itself is the hook (no intro line before it)
 V2_NO_FANS = ('city', 'cityphoto', 'nightcity', 'cuisine')   # hooks without "fans" for places / food
-V2_WYR_HOOKS = ['YOU CAN ONLY PICK ONE', 'NO SKIPPING. PICK ONE.', 'THE HARDEST CHOICES EVER']   # wyr is a choice, not a score
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BANK = os.path.join(HERE, 'assets', 'pop-bank.json')
@@ -414,6 +413,9 @@ class PopRenderer(QuizRenderer):
         self.audio_log = None
         self.clip_at = {}  # round -> seconds into the round when its clip starts
         self._frames = (None, None)  # scene: (round, decoded frames), one round in memory at a time
+        self.wyr_clips = self.fmt == 'wyr' and wyr_clips_on()   # POP_WYR_CLIPS: picture split + live-clip reveal
+        self.wyr_b_at = {}   # round -> seconds into the round when option B pops in (when the narrator says it)
+        self._wstream = (None, None)   # (round, ClipStream) of the pick's clip, one round open at a time
         self._order_rounds()
 
     def _order_rounds(self):
@@ -440,7 +442,10 @@ class PopRenderer(QuizRenderer):
             elif self.fmt == 'wyr':
                 ask.append(f"Would you rather {r['a'][0].lower() + r['a'][1:]}, or {r['b'][0].lower() + r['b'][1:]}?")
                 side = wyr_side(r)
-                if side and wyr_votes(r):  # real counts: say them, nothing made up
+                if side and r.get('_wclip_' + side):   # POP_WYR_CLIPS: the pick's clip plays under the line
+                    hype = str(r.get('hype') or '').strip() or self.rng.choice(WYR_LOOK_POOL)
+                    ans.append(f"{wyr_label(r, side)}! {hype[0].upper() + hype[1:]}")
+                elif side and wyr_votes(r):  # real counts: say them, nothing made up
                     pa = wyr_votes(r)[0 if side == 'a' else 1]
                     ans.append(f"{pa} percent of you picked {wyr_label(r, side)}.")
                 elif side:  # the narrator's own pick, framed as his opinion
@@ -666,6 +671,8 @@ class PopRenderer(QuizRenderer):
                 rev = max(rev, TRIVIA_PIC_AT + 2.3, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.4)
             if self.fmt == 'wyr' and wyr_side(r):
                 rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 0.6, 2.6)
+                if r.get('_wclip_' + wyr_side(r)):   # then the clip on its own, at full level, a beat
+                    rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.3, 3.4)
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
             t += q + rev
         self.segs = segs
@@ -696,7 +703,8 @@ class PopRenderer(QuizRenderer):
             opts = TOPIC_TITLE[fmt]
             title, sub = opts.get(self.topic) or opts.get('mixed') or next(iter(opts.values()))
         if self.v2 and not self.edition:   # the hook line under the instruction, on screen from frame 0
-            sub = self.v2_hook_text(V2_WYR_HOOKS if fmt == 'wyr' else V2_PLAIN_HOOKS if fmt in V2_NO_FANS else None)
+            # POP_WYR_CLIPS: a choice hook (the quiz hooks say 'CAN YOU GET 4/4?', which is not a would-you-rather question)
+            sub = self.v2_hook_text(WYR_HOOKS if fmt == 'wyr' else V2_PLAIN_HOOKS if fmt in V2_NO_FANS else None)
         if self.edition:
             sub = self.edition['label']
         sub = sub.replace('5/5', f'{len(rounds)}/{len(rounds)}')   # a 3-round quick cut said 'GET 5/5'
@@ -715,8 +723,11 @@ class PopRenderer(QuizRenderer):
         title, sub = self.screen = self.screen_text()
         self.title = text_layer(title, 112, stroke=10, max_w=980)
         self.subtitle = text_layer(sub, 46, fill=self.accent, stroke=6, max_w=900)
+        if self.wyr_clips:   # POP_WYR_CLIPS: the title small on top, the pictures take the screen
+            self.title = text_layer(title, 84, stroke=9, max_w=980)
+            self.subtitle = text_layer(sub, 42, fill=self.accent, stroke=6, max_w=900)
         if self.v2:
-            self.title, self.subtitle = self.v2_head(title, sub, 112, edition=bool(self.edition))
+            self.title, self.subtitle = self.v2_head(title, sub, 84 if self.wyr_clips else 112, edition=bool(self.edition))
             if fmt == 'wyr':
                 self.v2_prepare_cta('WHICH WOULD YOU PICK?', 'COMMENT A OR B')
             elif fmt == 'duel':
@@ -739,7 +750,7 @@ class PopRenderer(QuizRenderer):
                 else:
                     word, col = {1: ('EASY', (61, 220, 132)), 2: ('MEDIUM', (255, 197, 61)), 3: ('HARD', (255, 128, 64))}[d]
                 label = f"LEVEL {i + 1}  ·  {word}"
-            self.levels.append(pill(label, 44, col, max_w=700))
+            self.levels.append(pill(label, 36 if self.wyr_clips else 44, col, max_w=700))
         self.layers = [getattr(self, f'_prep_{fmt}')(r) for r in rounds]
         self.ring_size = 190
         self.outro_layers = {
@@ -838,6 +849,8 @@ class PopRenderer(QuizRenderer):
         return L
 
     def _prep_wyr(self, r):
+        if self.wyr_clips:
+            return self._prep_wyr_clips(r)
         L = {
             'ea': emoji_img(r['emojiA'], 230), 'eb': emoji_img(r['emojiB'], 230),
             'ta': text_block(r['a'].upper(), 72, max_w=940, max_lines=2), 'tb': text_block(r['b'].upper(), 72, max_w=940, max_lines=2),
@@ -879,6 +892,192 @@ class PopRenderer(QuizRenderer):
             if L['votes']:
                 L['bar'] = self._vote_bar(*L['votes'])
         return L
+
+    # ── would you rather, POP_WYR_CLIPS: A fills the top half, B the bottom half; the pick's clip takes the screen ──
+    WYR_SIDE_COL = {'a': (225, 40, 64), 'b': (20, 110, 220)}
+
+    def _prep_wyr_clips(self, r):
+        side = wyr_side(r)
+        L = {'clips': True, 'side': side, 'votes': wyr_votes(r), 'or': self._or_badge()}
+        for s in ('a', 'b'):
+            x = {'live': False, 'src': None}
+            if r.get('_wclip_' + s):   # the gated window's first frame (the reveal plays on from exactly this frame)
+                st = ClipStream(r['_wclip_' + s], *r['_wsize_' + s], crop=r.get('_wcrop_' + s))
+                x['src'] = st.frame(r.get('_wk0_' + s, 0))
+                st.close()
+                x['live'] = s == side and x['src'] is not None
+            x['clipsrc'] = x['src']
+            if r.get('_wphoto_' + s) is not None and (x['src'] is None or x['live']):
+                # a character choice keeps its portrait in the question (an opening's first frame rarely shows that
+                # character, 2026-11-01 sample: "Train with Gojo" showed a cursed spirit); the clip plays at the reveal
+                x['src'] = on_backdrop(r['_wphoto_' + s]).convert('RGB')
+                if x['src'].size[0] / x['src'].size[1] < 1.2:   # portrait art: the whole picture on a blurred fill of itself
+                    fill = cover_crop(x['src'], 1600, 900).filter(ImageFilter.GaussianBlur(22))
+                    fill = Image.blend(fill, Image.new('RGB', fill.size, (0, 0, 0)), 0.35)
+                    fg = fit_contain(x['src'], 1600, 900)
+                    fill.paste(fg, ((1600 - fg.size[0]) // 2, (900 - fg.size[1]) // 2))
+                    x['src'] = fill
+            x['emoji'] = emoji_img(r['emojiA' if s == 'a' else 'emojiB'], 260)
+            x['half'] = self._wyr_half(x, s)
+            x['text'] = text_block(r[s].upper(), 76, stroke=10, max_w=940, max_lines=2)
+            tw = r.get('twistA' if s == 'a' else 'twistB')
+            x['twist'] = text_block(tw.upper(), 54, fill=GOLD, stroke=8, max_w=940, max_lines=2) if tw else None
+            x['chip'] = with_shadow(pill(s.upper(), 60, self.WYR_SIDE_COL[s], fg=WHITE, pad_x=28, pad_y=6), blur=6, offset=(0, 4))
+            cred = r.get('_wcredit_' + s)
+            if cred and x['src'] is not None and not x['live']:   # a Commons photo carries its licence credit
+                author, _, lic = str(cred).rpartition(', ')
+                author = author if len(author) <= 34 else author[:32].rstrip(' ,(') + '…'
+                x['credit'] = text_layer(f'PHOTO: {author}, {lic}' if author else f'PHOTO: {lic}', 22, fill=(255, 255, 255, 225),
+                                         stroke=3, stroke_fill=(0, 0, 0, 170), max_w=560, min_size=14)
+            L[s] = x
+        if side:
+            L['label'] = with_shadow(pill(wyr_label(r, side).upper(), 92, WHITE, fg=NAVY, max_w=900, pad_y=18), blur=10, offset=(0, 8))
+            badge = pill('TOP PICK' if L['votes'] else 'MY PICK', 56, GOLD, fg=NAVY, pad_x=30, pad_y=12)
+            L['badge'] = with_shadow(badge.rotate(6, resample=Image.BICUBIC, expand=True), blur=8, offset=(0, 5))
+            if L['votes']:
+                L['bar'] = self._vote_bar(*L['votes'])
+        return L
+
+    def _wyr_half(self, x, s, src=None, zoom=1.0):
+        """One choice's half of the screen, edge to edge: its picture cut to the half's shape, darker toward the seam (the
+        words sit there) and, on A, at the top (the title); a band of the side's colour on the seam. Without a picture the
+        emoji on the side's colour (never an empty half)."""
+        y0, y1 = WYR_HALF[s]
+        w, h = W, y1 - y0
+        src = src if src is not None else x['src']
+        if src is not None:
+            box = box_crop(src, w / h, ybias=0.45)
+            if zoom > 1.0:
+                bw, bh = box.size
+                dw, dh = bw * (1 - 1 / zoom) / 2, bh * (1 - 1 / zoom) / 2
+                box = box.crop((int(dw), int(dh), int(bw - dw), int(bh - dh)))
+            img = box.resize((w, h), Image.BILINEAR).convert('RGBA')
+            yy = np.arange(h, dtype=np.float32)
+            if s == 'a':   # dark toward the seam (bottom) and under the title (top)
+                al = np.clip((yy - h * 0.55) / (h * 0.45), 0, 1) ** 1.3 * 175 + np.clip(1 - yy / (h * 0.42), 0, 1) ** 1.5 * 150
+            else:          # dark toward the seam (top); the bottom sits under the Shorts overlay anyway
+                al = np.clip(1 - yy / (h * 0.42), 0, 1) ** 1.3 * 175
+            shade = np.zeros((h, w, 4), np.uint8)
+            shade[:, :, 3] = np.clip(al, 0, 255).astype(np.uint8)[:, None]
+            img.alpha_composite(Image.fromarray(shade, 'RGBA'))
+        else:
+            top = self.WYR_SIDE_COL[s]
+            g = np.linspace(0, 1, h)[:, None, None]
+            arr = (np.array(top) * (1 - 0.45 * g)).astype(np.uint8)
+            img = Image.fromarray(np.repeat(arr, w, axis=1), 'RGB').convert('RGBA')
+            e = x['emoji']
+            cy = h * 0.42 if s == 'a' else h * 0.5   # A: between the title and the words; B: above the overlay
+            img.alpha_composite(e, ((w - e.size[0]) // 2, int(cy - e.size[1] / 2)))
+        band = Image.new('RGBA', (w, 10), self.WYR_SIDE_COL[s] + (255,))
+        img.alpha_composite(band, (0, h - 10 if s == 'a' else 0))
+        return img
+
+    @staticmethod
+    def _wyr_label_y(x, s):
+        """Centre of a choice's words: A's end just above the OR badge, B's start just below it (1 or 2 lines)."""
+        h = x['text'].size[1]
+        return WYR_LABEL_EDGE[s] - h / 2 if s == 'a' else WYR_LABEL_EDGE[s] + h / 2
+
+    def _wyr_dim(self, s, alpha):
+        """A dark veil over one half (option B before the narrator gets to it)."""
+        y0, y1 = WYR_HALF[s]
+        alpha = max(0, min(255, alpha))
+        if alpha != 165:   # the short fade: made per frame (caching every level would hold ~165 full-width layers)
+            return Image.new('RGBA', (W, y1 - y0), (0, 0, 0, alpha))
+        key = ('wdim', s)
+        if key not in self._cards:
+            self._cards[key] = Image.new('RGBA', (W, y1 - y0), (0, 0, 0, alpha))
+        return self._cards[key]
+
+    def _wyr_stream(self, i, side):
+        """The pick's clip of round i, opened once (the previous round's decoder is closed first)."""
+        if self._wstream[0] != i:
+            if self._wstream[1] is not None:
+                self._wstream[1].close()
+            r = self.plan['rounds'][i]
+            self._wstream = (i, ClipStream(r['_wclip_' + side], *r['_wsize_' + side], crop=r.get('_wcrop_' + side)))
+        return self._wstream[1]
+
+    def _wyr_reveal_screen(self, src, live, rt):
+        """The reveal: the pick over the whole screen (round 2, 2026-11-01): a full-width square of its picture (clip or
+        photo) over a blurred, darkened fill of itself. Returns (screen, (cx, cy, w, h) of the picture)."""
+        zoom = 1.0 if live else 1.0 + 0.06 * clamp(rt / 4.0)   # a still picture drifts in slowly
+        if zoom > 1.0:
+            bw, bh = src.size
+            dw, dh = bw * (1 - 1 / zoom) / 2, bh * (1 - 1 / zoom) / 2
+            src = src.crop((int(dw), int(dh), int(bw - dw), int(bh - dh)))
+        small = box_crop(src, W / H).resize((54, 96), Image.BILINEAR).filter(ImageFilter.GaussianBlur(3))
+        bg = Image.blend(small.convert('RGB'), Image.new('RGB', small.size, (0, 0, 0)), 0.45).resize((W, H), Image.BILINEAR)
+        vw = vh = W   # full width, square: fills the screen's middle (a 16:9 clip keeps its central 56%)
+        vid = box_crop(src, 1.0, ybias=0.45).resize((vw, vh), Image.BILINEAR).convert('RGB')
+        bg.paste(vid, ((W - vw) // 2, int(WYR_VID_Y - vh / 2)))
+        d = ImageDraw.Draw(bg)
+        for y in (int(WYR_VID_Y - vh / 2), int(WYR_VID_Y + vh / 2) - 6):   # a white rim above and below the picture
+            d.rectangle([0, y, W, y + 5], fill=WHITE)
+        return bg.convert('RGBA'), (W / 2, WYR_VID_Y, vw, vh)
+
+    def _draw_wyr_clips(self, frame, i, tl, q, pop, L):
+        rt = tl - q
+        side = L['side'] if rt >= 0 else None
+        b_at = self.wyr_b_at.get(i, 0.9)
+        twist_at = min(q - 0.6, max(b_at + 1.1, q - 1.9))   # the "but..." lands while the clock runs out
+        g = ease_out_cubic(rt / 0.35) if side else 0.0
+        for s in ('a', 'b'):
+            x = L[s]
+            y0, y1 = WYR_HALF[s]
+            if s == 'a':
+                a = 1.0 if i == 0 else clamp((tl + 0.05) / 0.2)   # round 1: on screen from frame 0 (the hook)
+                sc = 1.0
+            else:   # B lights up when the narrator says it (the split-screen Shorts reveal option B on its line); until then
+                tb = tl - b_at   # its picture waits dimmed, words hidden (round 2: an empty bottom half read as unfinished)
+                if tb < 0 and rt < 0:
+                    put(frame, x['half'], W / 2, (y0 + y1) / 2, a=1.0 if i == 0 else clamp((tl + 0.05) / 0.2))
+                    frame.alpha_composite(self._wyr_dim(s, 165), (0, y0))
+                    put(frame, x['chip'], 30 + x['chip'].size[0] / 2, WYR_SEAM + 62)
+                    continue
+                a, sc = (1.0, 1.0 + 0.04 * (1 - ease_out_cubic(tb / 0.3))) if rt < 0 else (1.0, 1.0)
+                if rt < 0 and tb < 0.25:   # the dim lifts
+                    put(frame, x['half'], W / 2, (y0 + y1) / 2, s=sc)
+                    frame.alpha_composite(self._wyr_dim(s, int(165 * (1 - tb / 0.25))), (0, y0))
+                    a = clamp(tb / 0.15)
+                    put(frame, x['text'], W / 2, self._wyr_label_y(x, s), a=a)
+                    put(frame, x['chip'], 30 + x['chip'].size[0] / 2, WYR_SEAM + 62)
+                    continue
+            put(frame, x['half'], W / 2, (y0 + y1) / 2, s=sc, a=a)
+            ly = self._wyr_label_y(x, s)
+            put(frame, x['text'], W / 2, ly, a=a)
+            if x['twist'] is not None and tl >= twist_at and rt < 0:
+                ty = ly - (x['text'].size[1] + x['twist'].size[1]) / 2 - 8 if s == 'a' else ly + (x['text'].size[1] + x['twist'].size[1]) / 2 + 8
+                put(frame, x['twist'], W / 2, ty, s=max(0.01, ease_out_back((tl - twist_at) / 0.3)))
+            put(frame, x['chip'], 30 + x['chip'].size[0] / 2, WYR_SEAM + (-62 if s == 'a' else 62), a=a)
+            if 'credit' in x:
+                put(frame, x['credit'], W - 24 - x['credit'].size[0] / 2, WYR_SEAM + (-26 if s == 'a' else 26), a=a)
+        if rt < 0:
+            put(frame, L['or'], W / 2, WYR_SEAM, s=0.85 + 0.15 * pop)
+            frac = clamp((q - tl) / q)
+            half = int(420 * frac)
+            if half > 16:
+                d = ImageDraw.Draw(frame)
+                col = (255, 72, 96) if (q - tl) <= 1.0 else WHITE
+                bar(d, int(W / 2 - 92 - half), WYR_SEAM - 8, int(W / 2 - 92), WYR_SEAM + 8, col + (240,))
+                bar(d, int(W / 2 + 92), WYR_SEAM - 8, int(W / 2 + 92 + half), WYR_SEAM + 8, col + (240,))
+            return
+        if not side:   # no pick: the halves stay
+            return
+        x = L[side]
+        r = self.plan['rounds'][i]
+        src = self._wyr_stream(i, side).frame(r.get('_wk0_' + side, 0) + int(rt * FPS)) if x['live'] else None
+        src = src or x['clipsrc'] or x['src']
+        if src is None:   # emoji only: the half grows instead
+            put(frame, x['half'], W / 2, sum(WYR_HALF[side]) / 2 + (H / 2 - sum(WYR_HALF[side]) / 2) * g, s=1 + 0.9 * g)
+            vy, vh = H / 2, 600
+        else:
+            screen, (vx, vy, vw, vh) = self._wyr_reveal_screen(src, x['live'], rt)
+            put(frame, screen, W / 2, H / 2, s=0.94 + 0.06 * g, a=clamp(rt / 0.25))
+        put(frame, L['label'], W / 2, vy + vh / 2 + 100, s=max(0.01, ease_out_back((rt - 0.25) / 0.3)))
+        put(frame, L['badge'], 40 + L['badge'].size[0] / 2, vy - vh / 2 + 150, s=max(0.01, ease_out_back((rt - 0.35) / 0.3)))   # clear of the v2 CTA pill
+        if L.get('votes'):
+            put(frame, L['bar'], W / 2, vy + vh / 2 + 210, s=max(0.01, ease_out_back((rt - 0.5) / 0.35)))
 
     def _vote_bar(self, pa, pb):
         """Real vote split (only drawn when the item carries real counts): A's colour left, B's right."""
@@ -1694,6 +1893,8 @@ class PopRenderer(QuizRenderer):
             bar(d, 140, y - 9, 140 + int(800 * frac), y + 9, col + (255,))
 
     def _draw_wyr(self, frame, i, tl, q, pop, L):
+        if L.get('clips'):
+            return self._draw_wyr_clips(frame, i, tl, q, pop, L)
         rt = tl - q
         side = L['side'] if rt >= 0 else None
         g = ease_out_cubic(rt / 0.3) if side else 0.0
@@ -1773,16 +1974,19 @@ class PopRenderer(QuizRenderer):
         i = seg['i']
         tl = t - seg['start']
         self.pop_offset = 0.35 if i == 0 else 0.0
-        top = 250 if self.fmt != 'wyr' else 230
+        top = 250 if self.fmt != 'wyr' else 150 if self.wyr_clips else 230
         ta = self.v2_title_alpha(t)
+        if self.wyr_clips:   # the round's pictures go under the title (POP_WYR_CLIPS: they fill the screen)
+            self.draw_round(frame, i, tl, seg)
         put(frame, self.title, W / 2, top, a=ta)
-        put(frame, self.subtitle, W / 2, top + 90, a=ta)
+        put(frame, self.subtitle, W / 2, top + (68 if self.wyr_clips else 90), a=ta)
         if self.fmt != 'wyr':
             put(frame, self.levels[i], W / 2, top + 174, s=0.6 + 0.4 * ease_out_back((tl + self.pop_offset) / 0.3), a=ta)
             self.draw_progress(frame, i)
         else:
-            put(frame, self.levels[i], W / 2, top + 170, a=ta)
-        self.draw_round(frame, i, tl, seg)
+            put(frame, self.levels[i], W / 2, top + (124 if self.wyr_clips else 170), a=ta)
+        if not self.wyr_clips:
+            self.draw_round(frame, i, tl, seg)
         return frame
 
     def _load_clips(self):
@@ -1865,6 +2069,72 @@ class PopRenderer(QuizRenderer):
             r['photoCredit'] = {'option': r[side], 'credit': info.get('credit'), 'page': info.get('page')}
         self.fetch_log.update({'photos': f'{ok}/{len(todo)}'})
 
+    def _load_wyr_media(self):
+        """POP_WYR_CLIPS: per choice a clip or a picture, in parallel (240 s at most). The pick tries its clip first (it plays
+        at the reveal), then a photo; the other choice a photo first (it is only shown still), then a clip's first frame.
+        A choice with neither keeps its emoji on the side's colour. Logged in fetch_log + each round's wyrMedia."""
+        rounds = self.plan['rounds']
+        tasks = [(r, s) for r in rounds for s in ('a', 'b')]
+        # owner 2026-11-01: no reveal clips for K-pop yet (fan-filmed concerts with the song audible = Content ID claims);
+        # those rounds keep the photos. POP_WYR_NO_CLIP_TOPICS (comma list) overrides.
+        no_clip = {x.strip() for x in os.environ.get('POP_WYR_NO_CLIP_TOPICS', 'kpop').split(',') if x.strip()}
+        clips_ok = str(self.topic or self.plan.get('topic') or '') not in no_clip
+
+        def one(t):
+            r, s = t
+            why = []
+            kinds = (('clip', 'photo') if s == wyr_side(r) else ('photo', 'clip')) if clips_ok else ('photo',)
+            for kind in kinds:
+                try:
+                    if kind == 'clip':
+                        got, info = wyr_clip(r, s)
+                        if got is not None:   # the gate: lit, detailed frames that show the choice, else the photo
+                            k0, gi = wyr_clip_window(got['path'], info['width'], info['height'], info.get('crop'), wyr_clip_text(r, s))
+                            if k0 is None:
+                                print(f"wyr {s.upper()} clip not shown ({gi}): {info.get('videoTitle')}", file=sys.stderr)
+                                got, info = None, gi
+                        if got is not None:
+                            out = {'clip': got, 'info': {**info, **gi}}
+                            if str(r.get('imageQueryA' if s == 'a' else 'imageQueryB') or '').startswith('character:'):
+                                img, pinfo = wyr_photo(r, s)   # the portrait for the question card (see _prep_wyr_clips)
+                                if img is not None and picture_ok(img):
+                                    out.update({'photo': img, 'photoInfo': pinfo or {}})
+                            return out
+                    else:
+                        img, info = wyr_photo(r, s)
+                        if img is not None and picture_ok(img):
+                            return {'photo': img, 'info': info or {}}
+                        info = info if img is None else 'blank / tiny picture'
+                except Exception as e:  # noqa: BLE001  (a failed fetch is a fallback, never a failed render)
+                    info = e
+                why.append(f'{kind}: {str(info)[:90]}')
+            raise RuntimeError('; '.join(why))
+
+        res = media.run_parallel(one, tasks, workers=4, budget=240.0)
+        n_clip = n_photo = 0
+        for k, (r, s) in enumerate(tasks):
+            got, err = res.get(k, (None, 'time budget used up'))
+            rec = r.setdefault('wyrMedia', {})
+            if not got:
+                print(f"wyr {s.upper()} keeps its emoji: {r.get(s)}: {str(err)[:200]}", file=sys.stderr)
+                rec[s] = {'kind': 'emoji'}
+                continue
+            info = got['info'] if isinstance(got['info'], dict) else {}
+            if 'clip' in got:
+                n_clip += 1
+                r['_wclip_' + s], r['_wsize_' + s], r['_wcrop_' + s] = got['clip']['path'], (info['width'], info['height']), info.get('crop')
+                r['_wcaudio_' + s], r['_wk0_' + s] = got['clip']['audio'], int(info.get('k0') or 0)
+                rec[s] = {'kind': 'clip', **{k2: info.get(k2) for k2 in ('query', 'video', 'videoTitle', 'channel', 'start', 'gate', 'relevance')}}
+                if got.get('photo') is not None:   # a character's portrait for the question card
+                    r['_wphoto_' + s] = got['photo']
+                    rec[s]['photoCredit'] = (got.get('photoInfo') or {}).get('credit')
+            else:
+                n_photo += 1
+                r['_wphoto_' + s], r['_wcredit_' + s] = got['photo'], info.get('credit')
+                rec[s] = {'kind': 'photo', 'credit': info.get('credit'), 'page': info.get('page')}
+        live = sum(bool(r.get('_wclip_' + wyr_side(r))) for r in rounds if wyr_side(r))
+        self.fetch_log.update({'wyrClips': n_clip, 'wyrPhotos': n_photo, 'wyrLiveReveals': f'{live}/{len(rounds)}'})
+
     def make_pop_audio(self, clips, n):
         """
         Narrator lines, the clip bus (openings, songs, character voices, emoji-reveal songs), SFX and
@@ -1890,6 +2160,10 @@ class PopRenderer(QuizRenderer):
                 gap = (0.15 if self.v2 else CLIP_GAP) if clip_fmt else 0.2
                 at = (intro_end + gap) if (i == 0 and intro is not None) else (start0 if i == 0 else 0.15)
                 say(s['start'] + at, asks[i], f'ask {i + 1}')
+                if self.wyr_clips:   # option B pops in about when the narrator gets to it ("..., or <B>?")
+                    r = self.plan['rounds'][i]
+                    pre, full = len(f"Would you rather {r['a']}, or "), len(f"Would you rather {r['a']}, or {r['b']}?")
+                    self.wyr_b_at[i] = at + len(asks[i]) / SR * pre / full - 0.1
             if anss[i] is not None:
                 say(s['reveal'] + (REVEAL_SAY_AT if (clip_fmt or self.fmt in ('emoji', 'wyr')) else 0.08), anss[i], f'reveal {i + 1}')
         if outro is not None:
@@ -1925,8 +2199,14 @@ class PopRenderer(QuizRenderer):
                     place(r['_audio'], t0, s['end'] - 0.04, 0.95, 0.5, f'clip {i + 1}')
             elif self.fmt == 'emoji' and r.get('_media') and r.get('_reveal_audio') is not None:
                 place(r['_reveal_audio'], s['reveal'], s['end'] - 0.04, 0.95, 0.5, f'song {i + 1}')
+            elif self.wyr_clips and wyr_side(r) and r.get('_wcaudio_' + wyr_side(r)) is not None:
+                # the pick's clip sound from the frame the card comes alive on (a short fade in: it starts mid-video)
+                a = np.array(r['_wcaudio_' + wyr_side(r)], dtype=np.float64, copy=True)[int(r.get('_wk0_' + wyr_side(r), 0) / FPS * SR):]
+                f = min(len(a), int(0.08 * SR))
+                a[:f] *= np.linspace(0, 1, f)
+                place(a, s['reveal'], s['end'] - 0.04, 0.95, 0.4, f'pick clip {i + 1}')
 
-        narr = [(l['start'], l['end'], DUCK) for l in lines]
+        narr = [(l['start'], l['end'], WYR_CLIP_DUCK if self.wyr_clips else DUCK) for l in lines]
         clip_env = sound.span_gain(N, narr, attack=0.12, release=0.35)
         music_env = None
         if spans:  # the synth music makes room for the real one (and stays a quiet bed under a character's voice)
@@ -1971,7 +2251,7 @@ class PopRenderer(QuizRenderer):
         for l in lines:
             narr[int(l['start'] * SR):int(l['end'] * SR)] = True
         both = narr & audible
-        loud = both & (clip_env > 10 ** (-12 / 20))
+        loud = both & (clip_env > (WYR_CLIP_DUCK * 1.05 if self.wyr_clips else 10 ** (-12 / 20)))   # wyr clips: ducked 10 dB by design
         worst = float(20 * np.log10(clip_env[both].max())) if both.any() else None
         log = {'lines': lines, 'clips': spans, 'overlapSec': round(float(both.sum()) / SR, 2),
                'overlapUnduckedSec': round(float(loud.sum()) / SR, 3), 'clipGainUnderVoiceDb': round(worst, 1) if worst is not None else None}
@@ -1991,7 +2271,7 @@ class PopRenderer(QuizRenderer):
         elif self.fmt == 'emoji':
             self._load_emoji_media()
         elif self.fmt == 'wyr':
-            self._load_wyr_photos()
+            self._load_wyr_media() if self.wyr_clips else self._load_wyr_photos()
         elif self.fmt == 'trivia':
             self._load_trivia_visuals()
         elif self.fmt in EXTRA_FORMATS:
@@ -2072,6 +2352,8 @@ class PopRenderer(QuizRenderer):
         for k in range(nf):
             proc.stdin.write(self.final_frame(k / FPS).convert('RGB').tobytes())
         proc.stdin.close()
+        if self._wstream[1] is not None:   # POP_WYR_CLIPS: the last round's clip decoder
+            self._wstream[1].close()
         if proc.wait() != 0:
             raise RuntimeError('ffmpeg failed')
         # AAC can push a sharp transient back over -1 dBTP: measure the upload and, if so, lower the audio a touch
@@ -2299,6 +2581,226 @@ def emoji_media(r, topic, seconds=6.0):
 # ── would you rather: the pick and its photo ──
 
 WYR_CARD = {'a': (W / 2, 648, 940, 400), 'b': (W / 2, 1178, 940, 440)}  # centre x, centre y, width, height
+
+# ── POP_WYR_CLIPS=1 (default off; owner 2026-10-31 "the emoji is not as captivating as showing a video") ──
+# What the top #wouldyourather Shorts do (2026-10-31 study: 12M / 1.8M split-screen quizzes, 17M / 13M animated ones):
+# option A FILLS the top half and B the bottom half, edge to edge, a big label on each picture at the seam, the OR on
+# the seam, the title small on top (round 2, 2026-11-01: the first cut's cards left 40% of the screen empty); option B
+# pops in when it is said, a "but..." twist lands mid-question, then the payoff. Here the payoff is the owner's idea:
+# the pick takes the whole screen and its real clip plays (the whole 16:9 picture over a blurred fill of itself) with
+# its own sound, ducked 10 dB under the narrator's line ("London! Just look at this!"), then up. A clip only plays when
+# it passes the gate (wyr_clip_window: lit + detailed frames, and SigLIP says they show the choice): a good photo
+# (slow zoom) beats a wrong clip (2026-11-01: Kyoto played an old man painting, Gojo a dark blur). Without a picture
+# the emoji on the side's colour; never an empty half. Percent bars stay real-votes-only (wyr_votes): nothing invented.
+WYR_CLIP_SEC = 10.0                      # seconds fetched per clip (the gate picks the best 4 s window in it)
+WYR_SHOW_SEC = 4.0                       # what the reveal plays (and the gate checks)
+WYR_CLIP_DUCK = 10 ** (-10 / 20)         # the pick's clip under the narrator: -10 dB ("slightly lower, you still hear it")
+WYR_SEAM = 905                           # A: 0..905, B: 905..1920 (the bottom ~18% sits under the Shorts overlay)
+WYR_HALF = {'a': (0, WYR_SEAM), 'b': (WYR_SEAM, H)}
+WYR_LABEL_EDGE = {'a': 812, 'b': 998}    # the options' words end / start here: at the seam, clear of the OR badge
+WYR_VID_Y = 830                          # reveal: centre of the pick's square picture (290..1370: title above, label below)
+WYR_LOOK_POOL = ['Just look at this!', 'Look at that!', 'Come on, just look at it!', 'Tell me that is not amazing!']
+WYR_HOOKS = ['YOU CAN ONLY PICK ONE', 'NO SKIPPING. PICK ONE.', 'THE HARDEST CHOICES EVER']   # the top Shorts' titles / opener
+WYR_MIN_DETAIL = 6.0                     # frame_ok: mean neighbour difference below this = a blur
+WYR_HINT = {'food': 'cooking close up', 'cities': 'city 4k drone', 'kpop': 'kpop stage', 'anime': 'anime'}
+# SigLIP relevance: the choice's own words must beat every one of these on most sampled frames
+WYR_DISTRACT = ['a person talking to the camera', 'a person painting or drawing', 'text, a title card or subtitles on a screen',
+                'a dark blurry frame', 'a video game screenshot', 'a logo on a plain background', 'hands holding a phone']
+
+
+def wyr_clips_on():
+    """POP_WYR_CLIPS=1: the picture split + live-clip reveal; read at call time so a test can flip it."""
+    return os.environ.get('POP_WYR_CLIPS') == '1'
+
+
+def wyr_clip_spec(r, side):
+    """(kind, value) of what to fetch for a choice's clip: ('anime', show) plays the show's creditless opening (the scene
+    quiz's fetch: safe-listed shows only), ('query', words) a plain YouTube search. clipQueryA / clipQueryB from the item
+    first (the generator writes them under POP_WYR_CLIPS), else derived from its image query; None when nothing fits."""
+    q = str(r.get('clipQueryA' if side == 'a' else 'clipQueryB') or '').strip()
+    img = str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip()
+    for src in (q, img):
+        kind, _, val = src.partition(':')
+        val = val.strip()
+        if kind == 'anime' and val:
+            return 'anime', val
+        if kind == 'character' and val:
+            c = next((c for c in _asset('anime-characters.json', 'characters') if media._fold(c['name']) == media._fold(val)), None)
+            if c and c.get('anime') and not c.get('nsfw'):
+                return 'anime', c['anime']
+            continue
+        if src is q and src:
+            return 'query', src
+        if kind == 'city' and val:
+            return 'query', f'{val} city 4k drone'
+    lab = wyr_label(r, side)
+    hint = WYR_HINT.get(str(r.get('topic') or ''), '')
+    return ('query', f'{lab} {hint}'.strip()) if lab and hint != 'anime' else None
+
+
+def wyr_clip(r, side):
+    """({'path', 'audio'}, info) of a choice's clip, or (None, reason)."""
+    spec = wyr_clip_spec(r, side)
+    if spec is None:
+        return None, 'no clip query'
+    kind, val = spec
+    if kind == 'anime':
+        a = anime_entry(val)
+        if a is None or not media_safe(a):
+            return None, f'no safe AniList entry for {val}'
+        got, info = media.fetch_scene(a['title'], a.get('romaji'), seconds=WYR_CLIP_SEC, audio_seconds=WYR_CLIP_SEC)
+    else:
+        got, info = media.fetch_query_clip(val, seconds=WYR_CLIP_SEC)
+    return (got, {**info, 'query': f'{kind}:{val}'}) if got is not None else (None, info)
+
+
+def _frame_stats(img):
+    """(mean, contrast, detail) of a frame: brightness, spread, and the mean neighbour difference (a blur scores low)."""
+    g = np.asarray(img.convert('L').resize((160, 90), Image.BILINEAR), dtype=np.float32)
+    return float(g.mean()), float(g.std()), float(np.abs(np.diff(g, axis=1)).mean() + np.abs(np.diff(g, axis=0)).mean())
+
+
+def frame_ok(img):
+    """A frame worth showing big: lit, not flat, not a blur (2026-11-01: the Gojo reveal opened on a dark blur)."""
+    m, sd, det = _frame_stats(img)
+    return m > 45 and sd > 18 and det > WYR_MIN_DETAIL
+
+
+_sig_lock = __import__('threading').Lock()
+
+
+def wyr_siglip(frames, text):
+    """Per frame True when SigLIP (pop_onmodel's model, the same cache) matches the choice's words better than every
+    WYR_DISTRACT line; None when SigLIP is not installed (then only frame_ok gates) or WYR_CLIP_SIGLIP=0."""
+    if os.environ.get('WYR_CLIP_SIGLIP', '1') == '0' or not frames:
+        return None
+    try:
+        import torch
+        import pop_onmodel
+        with _sig_lock:
+            p, m = pop_onmodel._load()
+            dev = pop_onmodel._m['dev']
+            with torch.no_grad():
+                tx = p(text=[f'a photo of {text}'] + WYR_DISTRACT, padding='max_length', return_tensors='pt')
+                t = m.get_text_features(**{k: v.to(dev) for k, v in tx.items()})
+                t = t if hasattr(t, 'shape') else t.pooler_output
+                im = p(images=[f.convert('RGB') for f in frames], return_tensors='pt')
+                v = m.get_image_features(**{k: x.to(dev) for k, x in im.items()})
+                v = v if hasattr(v, 'shape') else v.pooler_output
+                t, v = t / t.norm(dim=-1, keepdim=True), v / v.norm(dim=-1, keepdim=True)
+                sim = (v @ t.T).cpu().numpy()
+        return [bool(row.argmax() == 0) for row in sim]
+    except Exception as e:  # noqa: BLE001  (no SigLIP here: the frame checks alone)
+        print(f'wyr clip relevance skipped (SigLIP unavailable: {str(e)[:90]})', file=sys.stderr)
+        return None
+
+
+def wyr_clip_window(path, w, h, crop, text=None):
+    """
+    (first frame index, info) of the first WYR_SHOW_SEC window of a fetched clip that may play big at the reveal, or
+    (None, reason). Frames every 0.5 s: every one in the window passes frame_ok, and with `text` (the choice's words;
+    None for an anime opening, which is the right show by construction) SigLIP matches it on >= 80% of them, the first two included. A clip
+    that fails is not shown: the photo with the slow zoom takes its place.
+    """
+    st = ClipStream(path, w, h, crop, cover=(320, 180))
+    step = FPS // 2
+    frames, k = [], 0
+    while True:
+        f = st.frame(k)
+        if f is None or st.k < k:
+            break
+        frames.append(f.copy())
+        k += step
+    st.close()
+    n = int(WYR_SHOW_SEC * 2) + 1
+    if len(frames) < n:
+        return None, f'clip too short ({len(frames) / 2:.1f} s)'
+    ok = [frame_ok(f) for f in frames]
+    rel = wyr_siglip(frames, text) if text else None
+    best, why = None, 'dark / blurry / flat frames'
+    for j in range(0, len(frames) - n + 1):
+        if not all(ok[j:j + n]):
+            continue
+        if rel is not None:
+            hit = sum(rel[j:j + n]) / n
+            if hit < 0.8 or not (rel[j] and rel[j + 1]):   # the window opens on the thing itself (Kyoto opened on a painter)
+                why = f'frames do not show "{text}" (SigLIP {hit:.0%} at best)' if best is None else why
+                continue
+        best = j
+        break
+    if best is None:
+        return None, why
+    info = {'k0': best * step, 'gate': 'frames' + ('' if rel is None else ' + SigLIP'),
+            'relevance': None if rel is None else round(sum(rel[best:best + n]) / n, 2)}
+    return best * step, info
+
+
+def wyr_clip_text(r, side):
+    """The words the reveal clip must show (SigLIP): the clip query without the search words (4k, drone, ...); any anime scene for an opening."""
+    spec = wyr_clip_spec(r, side)
+    if spec is None:
+        return None
+    if spec[0] == 'anime':   # an opening is the right show, but an upload can end on a card (Frieren: "THANKS FOR WATCHING")
+        return 'an anime scene'
+    t = re.sub(r'\b(4k|8k|hd|uhd|1080p|60fps|drone|walk|walking|tour|close up|official)\b', ' ', spec[1], flags=re.I)
+    return re.sub(r'\s+', ' ', t).strip() or None
+
+
+def box_crop(img, aspect, ybias=0.4):
+    """The largest box of `aspect` (w / h) inside img, centred (slightly high, like cover_crop)."""
+    iw, ih = img.size
+    if iw / ih > aspect:
+        w, h = ih * aspect, ih
+    else:
+        w, h = iw, iw / aspect
+    x0, y0 = (iw - w) / 2, (ih - h) * ybias
+    return img.crop((int(x0), int(y0), int(x0 + w), int(y0 + h)))
+
+
+class ClipStream:
+    """Frames of one clip in order, decoded on demand at a size that covers the reveal card (aspect kept, nothing cropped:
+    the question card and the growing card cut their own box from it, so the still and the playing clip line up): one
+    frame in memory, a request for an earlier frame restarts the decoder."""
+
+    def __init__(self, path, src_w, src_h, crop=None, cover=(W, H - WYR_SEAM)):
+        s = max(cover[0] / max(1, src_w), cover[1] / max(1, src_h))
+        self.size = (int(src_w * s + 1) // 2 * 2, int(src_h * s + 1) // 2 * 2)
+        self.path, self.crop = path, crop
+        self.proc, self.k, self.cur = None, -1, None
+
+    def _open(self):
+        import subprocess
+        self.close()
+        w, h = self.size
+        vf = (f'crop={self.crop[0]}:{self.crop[1]}:{self.crop[2]}:{self.crop[3]},' if self.crop else '') + \
+             f'fps={FPS},scale={w}:{h}:flags=bicubic,setsar=1'
+        self.proc = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', self.path, '-vf', vf, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
+                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        self.k = -1
+
+    def frame(self, k):
+        if self.proc is None or k < self.k:
+            self._open()
+        w, h = self.size
+        while self.k < k:
+            buf = self.proc.stdout.read(w * h * 3) if self.proc else b''
+            if len(buf) < w * h * 3:   # the clip ended: hold its last frame
+                break
+            self.cur = buf
+            self.k += 1
+        if self.cur is None:
+            return None
+        return Image.frombuffer('RGB', (w, h), self.cur, 'raw', 'RGB', 0, 1)
+
+    def close(self):
+        if self.proc is not None:
+            try:
+                self.proc.stdout.close()
+                self.proc.kill()
+                self.proc.wait(timeout=5)
+            except Exception:  # noqa: BLE001
+                pass
+        self.proc = None
 
 
 def wyr_votes(r):

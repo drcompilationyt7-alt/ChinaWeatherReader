@@ -835,7 +835,7 @@ def main():
             elif r.fmt == 'emoji':
                 r._load_emoji_media()
             elif r.fmt == 'wyr':
-                r._load_wyr_photos()
+                r._load_wyr_media() if r.wyr_clips else r._load_wyr_photos()
             elif r.fmt == 'trivia':
                 r._load_trivia_visuals()
             n = len(r.plan['rounds'])
