@@ -1341,12 +1341,13 @@ class PopRenderer(QuizRenderer):
             x += bw + gap
 
     def _draw_song(self, frame, i, tl, q, pop, L):
-        cx, cy = W / 2, 880
+        cx, cy = W / 2, 900
         lead = self.clip_at.get(i, CLIP_AT)
         if tl < q:
-            put(frame, L['chip'], W / 2, 600, s=max(0.01, ease_out_back((tl + self.pop_offset) / 0.3)))
+            # the chip sits between the progress bars and the record (top edge cy - 260 = 640; owner 2026-10-31: they overlapped)
+            put(frame, L['chip'], W / 2, 575, s=max(0.01, ease_out_back((tl + self.pop_offset) / 0.3)))
             put(frame, self._vinyl(520, max(0.0, tl - lead) * 200), cx, cy, s=0.9 + 0.1 * pop)
-            self._draw_bars(frame, L, int((tl - lead) * 30), base=1235)
+            self._draw_bars(frame, L, int((tl - lead) * 30), base=1250)
             self._timer(frame, i, tl, q, y=1360)
         else:
             rt = tl - q
