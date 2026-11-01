@@ -76,7 +76,7 @@ MIN_VOTES = {'wd_tagger': 6, 'tagger_open+bank': 6, 'siglip_art': 4, 'tagger_ope
 OFFLIST_MIN = 0.6                # tagger prob of an off-list character that counts against the target
 OWN_RUN_S = 6.0                 # another character owning this many continuous seconds of a window rejects it
 OWN_SHARE = 1 / 3                # ... or this share of the window's frames
-SHORT_EDIT_S = 32.0              # owner 2026-11-01: an edit this short is used nearly whole (0.5 s off each end)
+SHORT_EDIT_S = 45.0              # owner 2026-11-01: an edit this short is used nearly whole (0.5 s off each end; refs 9-60 s)
 SHORT_SEC_MIN = 12.0             # ... and may give a section this short (the 18 s minimum is for cuts of longer edits)
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 # owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
@@ -1590,6 +1590,7 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     # owner 2026-11-01: 'if the title names the character, trust the edit is about that person' (a character entry: the
     # who-owns-the-window gates are skipped; safety, rating, quality and the reference gate still apply)
     trusted = entry.get('kind') != 'anime' and bool(title_names(res.get('title'), [entry]))
+    style = style_match({'title': res.get('title'), 'duration': dur})   # the owner's reference style (short '[Edit/AMV]')
 
     def try_window(w):
         if distinct and any(min(w['e'], p['e']) - max(w['s'], p['s']) > 2.0 for p in passed):
@@ -1598,7 +1599,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         if w['subs'] > 0.15:
             w['reject'] = 'subtitles'
             return False
-        if w['eventful'] < EVENT_MIN[pace_kind]:
+        # the owner's reference style includes calm edits ('Gojo Eyes - Fluxxwave「AMV」' 2.8): a short '[Edit/AMV]' edit
+        # gets 1 point of slack (2026-11-01)
+        if w['eventful'] < EVENT_MIN[pace_kind] - (1.0 if style else 0.0):
             w['reject'] = f'not_eventful_{w["eventful"]}'
             return False
         if w['song'] < SONG_MIN:
