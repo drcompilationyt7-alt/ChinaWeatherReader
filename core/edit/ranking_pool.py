@@ -12,7 +12,9 @@ scripts/edit-pools-store.js, preset "ranking"):
   _staged/ranking/clips.json       staged items (status staged / rejected), clips/, sheets/<id>.jpg, proofs/<source>.json
   _staged/ranking/state.json       candidate URL lists per entry (metadata only) + every checked source's verdict
                                    (CI: the asset ranking-state.json on the release edit-pools-staging)
-Entries are pooled by ENTRY KEY (name + show), so a Gojo segment serves every list that has Gojo.
+Entries are pooled by ENTRY KEY (name + show), so a Gojo segment serves every list that has Gojo. Library mining (default,
+owner 2026-10-31): per SHOW, whole edits, every good section tagged: serves = the characters that OWN it + the show's genre
+entry, themes = every theme it is on par with (action / beauty / romance); a list picks by key + its theme (usable).
 
 Item: {id, entry_key, entry_name, kind, anime, file, start, end (in the source), clip_in, clip_out (the window inside the
 clip), source_id, source_title, source_channel, editor_handle, upload_date, age_days, views, char_conf, char_method,
@@ -20,6 +22,7 @@ char_votes, eventful, song, song_name, quality, rank_score, safety, watermark, e
 reviewed_by}
 
     python core/edit/ranking_pool.py plan                         # which entries block which topics (mining order)
+    python core/edit/ranking_pool.py plan-shows                   # library mining order (shows whose sections unblock most)
     python core/edit/ranking_pool.py mine --budget-min 60         # search + gates + stage (YouTube, spare cookies, paced)
     python core/edit/ranking_pool.py publish --dest DIR --label ci   # staged batch -> ranking-cand-<date>-<label>-n<N>.tar
     python core/edit/ranking_pool.py pull-staged                  # PC: the release's cand tars -> _staged/ranking
@@ -49,6 +52,7 @@ import ranking_topics as RT  # noqa: E402
 MARGIN = 1.5                 # s kept on each side of the chosen window (re-cut room), the rest of the edit is never stored
 SEG = (18.0, 24.0)           # phrase-aligned window per entry (3 revealed entries ~ 60 s)
 SECTIONS = 4                 # good non-overlapping sections staged per edit (owner 2026-10-28)
+LIB_SECTIONS = 6             # library mining: every good section of a whole edit (owner 2026-10-31)
 REUSE_GAP = 8                # an edit (source) is not reused within the next 8 ranking uploads
 TOPIC_GAP = 4                # a topic is not repeated within the next 4 ranking uploads (when another is eligible)
 PER_ENTRY_TARGET = 2         # reviewed + staged items wanted per entry (variety under the reuse gap)
@@ -132,14 +136,72 @@ def all_entries(topics=None):
 
 # ------------------------------------------------------------------ eligibility / planning
 
-def usable(items, key, led, exclude_sources=()):
-    """Reviewed items of an entry that may be used now: not within the reuse gap, editor not blocklisted, character
-    check passed. Best first (rank score)."""
+def lib_show(anime):
+    """One key per show for the library ('ATTACK ON TITAN Season 3' = 'Attack on Titan', 'Re:ZERO -Starting Life...-' =
+    're:zero'; a subtitle after ':' goes unless the part before it is a short title like 'Re')."""
+    a, prev = (anime or '').lower().strip(), None
+    a = re.sub(r'\s+-\S.*$', '', a)                                   # "konosuba -god's blessing ...!"
+    while a != prev:                                                  # "attack on titan season 3 part 2"
+        prev = a
+        a = re.sub(r'\s*(\(.*\)|season \d+|\d+(st|nd|rd|th) season|final season.*|part \d+|the movie.*)\s*$', '', a)
+    if ':' in a and len(a.split(':')[0].strip()) >= 4:
+        a = a.split(':')[0]
+    return re.sub(r'\s+\d+$', '', a).strip()
+
+
+def shows(topics=None):
+    """The library's mining unit (owner 2026-10-31: download whole edits of a show, then classify every good section):
+    show key -> {'show': its genre entry (from a genre topic, else built from the cast), 'cast': its character entries}."""
+    topics = topics or RT.load()
+    out = {}
+    for k, (e, tks) in all_entries(topics).items():
+        g = out.setdefault(lib_show(e.get('anime')), {'show': None, 'cast': [], 'topics': set()})
+        g['topics'].update(tks)
+        if e.get('kind') == 'anime':
+            g['show'] = g['show'] or e
+        else:
+            g['cast'].append(e)
+    for sk, g in out.items():
+        if g['show'] is None:              # no genre list names this show yet: its sections still serve its characters
+            c0 = g['cast'][0]
+            g['show'] = {'name': sk.upper(), 'kind': 'anime', 'anime': c0.get('anime'), 'search': sk, 'wiki': c0.get('wiki'),
+                         'q': [f'{sk} edit 4k', f'{sk} amv edit'], 'alias': [re.escape(sk)], 'pace': 'action',
+                         'chars': list(dict.fromkeys(c for e in g['cast'] for c in e.get('chars', []))), 'synthetic': True}
+    return out
+
+
+def item_themes(it):
+    return it.get('themes') or ([it['theme']] if it.get('theme') else None)
+
+
+def serve_keys(it, smap=None):
+    """The entry keys an item can fill: library items carry 'serves' (the characters that OWN the section + the show's
+    genre entry); an older per-entry item serves its entry and, being that show's footage, the show's genre entry."""
+    if it.get('serves'):
+        return list(it['serves'])
+    keys = [it['entry_key']] if (it.get('char_conf') or 0) >= CHAR_MIN else []
+    g = (smap or {}).get(lib_show(it.get('anime')))
+    if keys and g and not g['show'].get('synthetic') and entry_key(g['show']) not in keys:
+        keys.append(entry_key(g['show']))
+    return keys
+
+
+def topic_theme(T):
+    try:
+        import ranking_profile as RP
+        return RP.theme_of(T.get('key'), T)
+    except Exception:  # noqa: BLE001  (no analysis deps: no theme filter)
+        return None
+
+
+def usable(items, key, led, exclude_sources=(), theme=None, smap=None):
+    """Reviewed items that may fill an entry now: they serve its key, fit the topic's theme (a library section records
+    every theme it is on par with), are not within the reuse gap, editor not blocklisted. Best first (rank score)."""
     recent = set((led.get('ranking_recent') or [])[-REUSE_GAP:]) | set(exclude_sources)
     bl = blocklist()
-    out = [it for it in items if it.get('entry_key') == key and it.get('status') == 'reviewed'
-           and it['source_id'] not in recent and (it.get('editor_handle') or '').lower().lstrip('@') not in bl
-           and (it.get('char_conf') or 0) >= CHAR_MIN]
+    out = [it for it in items if it.get('status') == 'reviewed' and key in serve_keys(it, smap)
+           and (theme is None or item_themes(it) is None or theme in item_themes(it))
+           and it['source_id'] not in recent and (it.get('editor_handle') or '').lower().lstrip('@') not in bl]
     # anime-footage edits first (owner 2026-10-25: a manga-panel edit is only a fallback), then the rank score
     return sorted(out, key=lambda it: (bool(it.get('manga')), -(it.get('rank_score') or it.get('quality') or 0)))
 
@@ -148,9 +210,10 @@ def pick_items(T, items, led):
     """One item per revealed rank, distinct sources AND distinct editors (never two excerpts of one editor in a video).
     -> {rank: item} or None."""
     picks, used_src, used_ed = {}, set(), set()
+    th, smap = topic_theme(T), shows()
     for rank in RT.revealed_ranks(T):
         e = T['entries'][rank - 1]
-        cands = [it for it in usable(items, entry_key(e), led, used_src)
+        cands = [it for it in usable(items, entry_key(e), led, used_src, th, smap)
                  if (it.get('editor_handle') or it.get('source_channel') or '').lower() not in used_ed]
         if not cands:
             return None
@@ -199,11 +262,13 @@ def plan(topics=None):
     have, anime = {}, {}
     merged = {it['id']: it for it in st}
     merged.update({it['id']: it for it in live})          # the live record (rescreened: manga flag) wins
+    smap = shows(topics)
     for it in merged.values():
         if it.get('status') in ('reviewed', 'staged'):
-            have[it['entry_key']] = have.get(it['entry_key'], 0) + 1
-            if not it.get('manga'):
-                anime[it['entry_key']] = anime.get(it['entry_key'], 0) + 1
+            for k in serve_keys(it, smap) or [it['entry_key']]:     # a library section counts for every entry it serves
+                have[k] = have.get(k, 0) + 1
+                if not it.get('manga'):
+                    anime[k] = anime.get(k, 0) + 1
     score, info = {}, {}
     for tk, T in topics.items():
         ranks = RT.revealed_ranks(T)
@@ -221,6 +286,20 @@ def plan(topics=None):
     order = sorted(score, key=lambda k: -score[k])
     return [{'key': k, 'name': info[k]['entry']['name'], 'score': round(score[k], 2), 'have': have.get(k, 0),
              'topics': info[k]['topics'], 'entry': info[k]['entry']} for k in order]
+
+
+def plan_shows(topics=None):
+    """Library mining order (owner 2026-10-31): a show scores the plan scores of its entries (its characters + its genre
+    entry), so the show whose sections unblock the most topics is mined first; every other show follows (variety)."""
+    topics = topics or RT.load()
+    smap = shows(topics)
+    sc = {k: 0.0 for k in smap}
+    for p in plan(topics):
+        k = lib_show(p['entry'].get('anime'))
+        if k in sc:
+            sc[k] += p['score']
+    return [{'show': k, 'name': smap[k]['show']['name'], 'score': round(sc[k], 2), 'cast': [c['name'] for c in smap[k]['cast']],
+             'topics': sorted(smap[k]['topics'])} for k in sorted(sc, key=lambda k: -sc[k])]
 
 
 # ------------------------------------------------------------------ mining
@@ -426,6 +505,163 @@ def mine(budget_min=60, work=None, state_file=None, max_entries=12, max_dl=3, of
     return summary
 
 
+# 2026-10-31 owner: "download a lot, then classify what character it is; it does not have to be the specific character, it
+# can be mixed; if it is not fully Gojo but still good, add it to JJK and use it for best action; themes are not disjoint".
+# The library mines per SHOW: broad searches (the show + its characters), whole edits downloaded, every good section staged
+# with its tags (the characters that own it, the show, every theme it is on par with); ranking videos pick by tag (usable).
+LIB_RETRY_WHY = ('no_window', 'character', 'eval_error', 'handle', 'editor_tag')   # per-entry rejects (the old whole-edit
+# handle / tag rules included) a show-level look can still use; once the library judged a source ('lib') it stays decided
+
+
+def show_cast_alias(sk):
+    """Full names (either order) of every quiz-pool character of the show: a 'Todo Aoi edit' is a Jujutsu Kaisen edit too."""
+    try:
+        chars = rj(os.path.join(ROOT, 'core', 'quiz', 'assets', 'anime-characters.json'), {}).get('characters') or []
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for c in chars:
+        ws = re.findall(r"[a-z]+", (c.get('name') or '').lower())
+        if lib_show(c.get('anime')) == sk and len(ws) >= 2 and min(len(w) for w in ws[:2]) >= 3:
+            # AniList romanizes long vowels ('Aoi Toudou', 'Satoru Gojou'); titles mostly do not ('Todo Aoi')
+            ws = [w.replace('ou', 'o').replace('uu', 'u') for w in ws[:2]]
+            out += [r'\b' + r'\s*'.join(ws) + r'\b', r'\b' + r'\s*'.join(ws[::-1]) + r'\b']
+    return list(dict.fromkeys(out))
+
+
+def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=4, offline=False, first=(), only=None):
+    import ranking_compilation as RC
+    t0 = time.time()
+    work = work or os.path.join(ROOT, 'output', 'ranking-mine')
+    RC.YT_CACHE[0] = os.path.join(work, 'cache', 'yt')
+    RC.OFFLINE[0] = offline
+    _KEEP[0] = offline
+    sd = staged_dir()
+    RC.PROOF_DIR[0] = os.path.join(sd, 'proofs')
+    RC.idle()
+    sp = state_path(state_file)
+    st = merge_state({'candidates': {}, 'sources': {}}, rj(sp, {}))
+    man = manifest(sd)
+    for it in manifest(live_dir())['items'] + man['items']:
+        st['sources'].setdefault(it['source_id'], {'status': it.get('status', 'staged'), 'entry': it.get('entry_key')})
+    jh = {}
+
+    def judge():
+        if 'j' not in jh:
+            RC.wait_ram('the SigLIP / analysis models')
+            jh['j'] = RC.Judge(os.path.join(work, 'cache'))
+        return jh['j']
+    topics = RT.load()
+    smap = shows(topics)
+    order = [r['show'] for r in plan_shows(topics)]
+    if only:
+        ol = {x.lower() for x in only}
+        order = [k for k in order if k in ol or smap[k]['show']['name'].lower() in ol
+                 or any(c['name'].lower() in ol for c in smap[k]['cast'])]
+    if first:                                  # --first: shows of these entries / shows lead (in that order)
+        fl = [x.lower() for x in first]
+
+        def pos(k):
+            names = [k, smap[k]['show']['name'].lower()] + [c['name'].lower() for c in smap[k]['cast']]
+            return min([i for i, x in enumerate(fl) if x in names] or [len(fl)])
+        order = sorted(order, key=pos)
+    summary = {'mode': 'library', 'entries': [], 'staged': 0, 'downloaded': 0}
+    tried = 0
+    for sk in order:
+        if tried >= max_shows:
+            break
+        if (time.time() - t0) / 60 > budget_min:
+            log('time budget used up')
+            break
+        G = smap[sk]
+        show, cast = G['show'], G['cast']
+        skey = entry_key(show)
+        # one broad search entry: the show's searches + "<character> edit" per cast member; a title naming the show OR
+        # any of its characters passes; vs / mixed edits are welcome (solo False)
+        q = list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
+                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast]))
+        se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
+                                                      + show_cast_alias(sk))),
+                  solo=False, search=show.get('search') or sk)
+        others = [smap[o]['show'] for o in order if o != sk][:4]           # distractor shows for the show-level check
+        done = {sid for sid, v in st['sources'].items()
+                if v.get('status') in ('staged', 'reviewed', 'rejected')
+                or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY)))}
+        report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
+        log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, {len(q)} searches')
+        try:
+            pre = RC.find_source(se, None, None, work, 0, done, report, max_dl=max_dl)
+        except Exception as ex:  # noqa: BLE001  (one bad show never kills the run)
+            log(f'{sk}: search / download failed: {type(ex).__name__}: {ex}')
+            summary['entries'].append({'entry': show['name'], 'key': skey, 'error': f'{type(ex).__name__}: {ex}'[:300]})
+            continue
+        if report['downloaded'] or report['_dl']:
+            tried += 1
+        summary['downloaded'] += report['downloaded']
+        row = {'entry': show['name'], 'key': skey, 'show': sk, 'downloaded': report['downloaded'], 'clean': len(pre),
+               'reject': report['reject'], 'staged': [], 'serves': {}}
+        for r in report['evaluated']:
+            if r.get('verdict') == 'reject':
+                _rm(os.path.join(work, 'src', f"{r.get('id')}.mp4"))
+                st['sources'][r['id']] = {'status': 'gate_reject', 'why': r.get('why'), 'entry': skey, 'lib': True,
+                                          'at': time.strftime('%Y-%m-%d')}
+        for res, _ in pre:
+            if (time.time() - t0) / 60 > budget_min + 20:
+                break
+            try:
+                # 'calm' pace: the lower eventful bar; the theme gate (on par with the references) decides action vs
+                # beauty / romance per section
+                res = RC.evaluate(res, show, others, judge(), SEG, 'calm', max_pass=LIB_SECTIONS,
+                                  all_infos=RC.cached_infos(), theme='any', distinct=True, cast=cast)
+            except Exception as ex:  # noqa: BLE001
+                log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')
+                res.update(verdict='reject', why=f'eval_error_{type(ex).__name__}', windows=[])
+            if res['verdict'] != 'ok':
+                _rm(res.get('path'))
+                st['sources'][res['id']] = {'status': 'gate_reject', 'why': res.get('why') or 'no_window', 'entry': skey,
+                                            'lib': True, 'at': time.strftime('%Y-%m-%d'),
+                                            'windows': [w.get('reject') for w in (res.get('windows') or [])[:6]]}
+                continue
+            staged, marks = [], []
+            for w in sorted(res.get('passed') or [res['window']], key=lambda w: w['s']):
+                mains = [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
+                e = mains[0] if mains else show
+                extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {},
+                         'serves': [entry_key(c) for c in mains] + [skey]}
+                try:
+                    it = stage_item(res, e, entry_key(e), sd, RC, w, extra)
+                except Exception as ex:  # noqa: BLE001
+                    log(f'{res.get("id")}: staging {w["s"]:.1f}s failed: {type(ex).__name__}: {ex}')
+                    continue
+                if it.get('window_marks'):
+                    marks += it['window_marks'][:3]
+                    continue
+                man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
+                staged.append(it['id'])
+                for k in extra['serves']:
+                    row['serves'][k] = row['serves'].get(k, 0) + 1
+            _rm(res.get('path'))
+            if not staged:
+                st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark' if marks else 'staging', 'lib': True,
+                                            'marks': marks[:3], 'entry': skey, 'at': time.strftime('%Y-%m-%d')}
+                continue
+            st['sources'][res['id']] = {'status': 'staged', 'entry': skey, 'item': staged[0], 'items': staged, 'lib': True,
+                                        'at': time.strftime('%Y-%m-%d')}
+            row['staged'] += staged
+            summary['staged'] += len(staged)
+            save_manifest(sd, man)
+            wj(sp, st)
+        for res, _ in pre:
+            _rm(res.get('path'))
+        summary['entries'].append(row)
+        wj(sp, st)
+        log(f'{sk}: {row}')
+    save_manifest(sd, man)
+    wj(sp, st)
+    summary['minutes'] = round((time.time() - t0) / 60, 1)
+    return summary
+
+
 _KEEP = [False]        # an --offline run re-uses the cached downloads
 
 
@@ -438,7 +674,7 @@ def _rm(p):
             pass
 
 
-def stage_item(res, e, key, sd, RC, w=None):
+def stage_item(res, e, key, sd, RC, w=None, extra=None):
     w = w or res['window']
     dur = res.get('dur') or w['e'] + MARGIN
     s0, e0 = max(0.0, w['s'] - MARGIN), min(float(dur), w['e'] + MARGIN)
@@ -476,6 +712,9 @@ def stage_item(res, e, key, sd, RC, w=None):
           'status': 'staged', 'added': time.strftime('%Y-%m-%d')}
     lab = (f'{e["name"]} | {it["editor_handle"]} | {res["id"]} {w["s"]:.1f}-{w["e"]:.1f}s | char {it["char_conf"]} '
            f'({it["char_method"]}) | ev {it["eventful"]} song {it["song"]} | {it["age_days"]} d old')
+    if extra:                                  # library: what the section serves + its themes, on the sheet too
+        it.update(extra)
+        lab += f' | serves {",".join(x.split("__")[0] for x in extra.get("serves") or [])} | {"/".join(extra.get("themes") or [])}'
     it['sheet'] = os.path.relpath(sheet(clip, os.path.join(sd, 'sheets', iid + '.jpg'), lab) or '', sd).replace('\\', '/')
     return it
 
@@ -648,6 +887,12 @@ def rescreen(apply=False):
         cap.release()
         f['manga_siglip'] = RP.manga_siglip(sig, frames)
         g = RP.gate(f, th)
+        if it.get('lib'):                      # a library section keeps every theme it is still on par with
+            gs = {t_: RP.gate(f, t_) for t_ in ('action', 'beauty', 'romance')}
+            ok_th = [t_ for t_ in gs if gs[t_]['ok']]
+            th = max(ok_th or list(gs), key=lambda k: gs[k]['ref_score'] or 0)
+            g = dict(gs[th], ok=bool(ok_th))
+            it['themes'] = ok_th
         it.update(theme=th, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
                   manga_share=g.get('manga_share'), rescreened=time.strftime('%Y-%m-%d'))
         rows.append({'id': it['id'], 'entry': it['entry_name'], 'theme': th, 'ref_score': g['ref_score'],
@@ -793,7 +1038,7 @@ def library_report(md=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['plan', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
+    ap.add_argument('cmd', choices=['plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
                                     'assemble', 'status', 'mark', 'remove', 'rescreen'])
     ap.add_argument('--result')
     ap.add_argument('--budget-min', type=float, default=60)
@@ -807,6 +1052,9 @@ def main():
     ap.add_argument('--first', default='', help='mine: these entry keys / names lead, in this order (then the plan)')
     ap.add_argument('--avoid', default='', help='mine: SRC:a-b[;SRC:a-b] source seconds no window may touch (review flags)')
     ap.add_argument('--retry', default='', help='mine: source ids evaluated again although decided (a bad window, not a bad edit)')
+    ap.add_argument('--per-entry', action='store_true', help='mine: the old per-entry miner (default: the library, per show;'
+                    ' --entries / --retry also use the per-entry miner)')
+    ap.add_argument('--shows', default='', help='mine (library): only these shows / their characters (comma-separated)')
     ap.add_argument('--merge-remote', action='store_true', help='publish: merge the release state in first')
     ap.add_argument('--dest')
     ap.add_argument('--label', default='ci')
@@ -820,7 +1068,10 @@ def main():
     ap.add_argument('--why', default='rejected')
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     a = ap.parse_args()
-    if a.cmd == 'plan':
+    if a.cmd == 'plan-shows':
+        for p in plan_shows():
+            print(f'{p["score"]:5.2f}  {p["name"]:<28} cast {",".join(p["cast"])}  topics {",".join(p["topics"])}')
+    elif a.cmd == 'plan':
         for p in plan():
             print(f'{p["score"]:5.2f}  {p["name"]:<22} have {p["have"]}  blocks {",".join(p["topics"])}')
     elif a.cmd == 'mine':
@@ -829,6 +1080,12 @@ def main():
             sid, rng = part.rsplit(':', 1)
             lo_, hi_ = map(float, rng.split('-'))
             RC.AVOID.setdefault(sid, []).append((lo_, hi_))
+        if not (a.per_entry or a.entries.strip() or a.retry.strip()):
+            print(json.dumps(mine_library(a.budget_min, a.work, a.state, a.max_entries, max(a.max_dl, 4), a.offline,
+                                          [x.strip() for x in a.first.split(',') if x.strip()],
+                                          [x.strip() for x in a.shows.split(',') if x.strip()] or None),
+                             ensure_ascii=False, indent=1, default=str))
+            return
         print(json.dumps(mine(a.budget_min, a.work, a.state, a.max_entries, a.max_dl, a.offline,
                               set(filter(None, a.entries.split(','))) or None, set(filter(None, a.prefer.split(','))),
                               [x.strip() for x in a.first.split(',') if x.strip()], set(filter(None, a.retry.split(','))) or ()),
@@ -842,7 +1099,9 @@ def main():
             if it['status'] == 'staged':
                 print(f'{it["id"]}  {it["entry_name"]:<20} {it.get("editor_handle")}  char {it.get("char_conf")} '
                       f'ev {it.get("eventful")} song {it.get("song")}  {it.get("age_days")} d  '
-                      f'{os.path.join(staged_dir(), it.get("sheet") or "")}')
+                      + (f'serves {",".join(it.get("serves") or [])} themes {"/".join(it.get("themes") or [])}  '
+                         if it.get('lib') else '')
+                      + f'{os.path.join(staged_dir(), it.get("sheet") or "")}')
     elif a.cmd == 'import':
         print(import_items(set(filter(None, a.ids.split(','))), set(filter(None, a.reject.split(','))), a.by), 'imported')
     elif a.cmd == 'push-state':

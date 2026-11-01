@@ -28,6 +28,7 @@ import json
 import os
 import random
 import re
+import unicodedata
 import subprocess
 import sys
 import tempfile
@@ -306,7 +307,8 @@ def anime_words(entry):
 
 def prefilter(e, entry, min_views=None):
     """Flat search entry -> (ok, reason)."""
-    t = (e.get('title') or '')
+    # NFKC: edit titles in styled letters ('𝐆𝐎𝐉𝐎 𝐒𝐀𝐓𝐎𝐑𝐔', '𝙅𝙐𝙅𝙐𝙏𝙎𝙐 𝙆𝘼𝙄𝙎𝙀𝙉') read as plain text (2026-11-01)
+    t = unicodedata.normalize('NFKC', e.get('title') or '')
     if L.EXPLICIT_RE.search(t):
         return False, 'explicit'
     if not any(re.search(a, t, re.I) for a in entry['alias']):
@@ -321,8 +323,10 @@ def prefilter(e, entry, min_views=None):
         return False, 'views'
     if re.search(r'twixtor clips|clips for edit|scene ?pack|raw clips|free clips', t, re.I):
         return False, 'clip_pack'          # raw clip packs for editors, not an edit
-    if re.search(r'\b(vs\.?|versus|full fight|compilation|ranking|tier ?list|top \d+)\b', t, re.I) and entry.get('solo', True):
-        return False, 'not_solo_edit'      # a vs-fight edit or another list: not "an edit of X"
+    if re.search(r'\b(full fight|compilation|ranking|tier ?list|top \d+)\b', t, re.I):
+        return False, 'not_an_edit'        # raw fight footage or another list
+    if re.search(r'\b(vs\.?|versus)\b', t, re.I) and entry.get('solo', True):
+        return False, 'not_solo_edit'      # a vs-fight edit: not "an edit of X" (the library takes it, owner 2026-10-31)
     return True, ''
 
 
@@ -613,6 +617,15 @@ class Tagger:
         return tag in self.names
 
     def __call__(self, img):
+        memo = self.__dict__.setdefault('_memo', {})
+        k = (img.shape, hash(img[::23, ::29].tobytes()))     # one tagger pass per frame (library cast attribution)
+        if k not in memo:
+            if len(memo) > 6000:
+                memo.clear()
+            memo[k] = self._run(img)
+        return memo[k]
+
+    def _run(self, img):
         h, w = img.shape[:2]
         m = max(h, w)
         sq = np.full((m, m, 3), 255, np.uint8)
@@ -840,6 +853,16 @@ class Judge:
             sc = np.array([L_max(char_refs.Bank.score(ce, r, top)) for r in refs])
             order = np.argsort(-sc)
             last[0] = (round(float(sc[0]), 3), round(float(sc[order[0]]), 3), names[int(order[0])])
+            if nt > 1 and not v1:
+                # a genre / show check (2026-11-01): the margin is target GROUP vs the rest; Gojo vs Geto is no ambiguity
+                # for "is this a Jujutsu Kaisen frame" (the per-pair margin made 95 % of a 34M-view JJK AMV abstain)
+                bt = int(np.argmax(sc[:nt]))
+                bo = float(np.max(sc[nt:])) if len(sc) > nt else -1.0
+                if sc[bt] >= BANK_MIN and sc[bt] - bo >= margin:
+                    return bt
+                if len(sc) > nt and bo >= BANK_MIN and bo - sc[bt] >= margin:
+                    return nt + int(np.argmax(sc[nt:]))
+                return None
             if sc[order[0]] < BANK_MIN or (len(sc) > 1 and sc[order[0]] - sc[order[1]] < margin):
                 return None
             return int(order[0])
@@ -852,6 +875,15 @@ class Judge:
             allch = tg.chars(pr)
             ch = {k: v for k, v in allch.items() if k in dis}
             boy, girl = pr[i_boy], pr[i_girl]
+            if nt > 1 and not v1 and tgt_tags:
+                # genre / show check: the tagger NAMING one of the show's characters (and no distractor stronger) is a target
+                # vote by itself (2026-11-01: those frames went to the face bank and mostly abstained)
+                tt = {k: v for k, v in allch.items() if k in tgt_tags and v >= ARB_TAG_MIN}
+                if tt and max(tt.values()) >= max(ch.values(), default=0.0):
+                    votes += 1
+                    wins += 1
+                    labels[fi] = 'T'
+                    continue
             if ch:
                 b = max(ch, key=ch.get)
                 if not v1 and nt == 1:
@@ -1002,7 +1034,7 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                 report['reject'][why] = report['reject'].get(why, 0) + 1
                 continue
             cands.append(e)
-    named = lambda e: any(re.search(a, e.get('title') or '', re.I) for a in entry['alias'])
+    named = lambda e: any(re.search(a, unicodedata.normalize('NFKC', e.get('title') or ''), re.I) for a in entry['alias'])
     # owner-approved first, then edits naming the character, then popularity
     cands.sort(key=lambda e: (e.get('id') not in PREFER, not named(e), -(e.get('view_count') or 0)))
     # rights + priority on the infos first (old edits / inactive editors / permitted first; vetoed and
@@ -1417,11 +1449,38 @@ def own_check(ts, labs, step=0.5):
     return None
 
 
-def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None, distinct=False):
+THEMES = ('action', 'beauty', 'romance')
+
+
+def attribute(judge, cast, frames, ts):
+    """Library mining (owner 2026-10-31): which of the show's ranking characters OWN this section, by the character-entry
+    rule (>= CHAR_MIN of the voting frames, >= 2x any other character, MIN_VOTES, no long stretch of another one).
+    -> ({name: share}, [owner names]); a section nobody owns still serves the show's genre lists."""
+    shares, mains = {}, []
+    for c in cast:
+        rest = [o for o in cast if o is not c]
+        mt = judge.match_tags(frames, c.get('tags'))
+        if mt is None:
+            tgt, oth = targets_and_distractors(judge, c, rest)
+            mt = judge.match_open(frames, tgt, oth, [t for o in rest for t in o.get('tags', [])], c.get('companions', ()))
+        conf, det = mt
+        shares[c['name']] = round(conf, 2)
+        top = max(det['others'].values()) if det.get('others') else 0
+        if (det.get('votes', 0) >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det.get('wins', 0) >= 2 * top
+                and (det.get('labels') is None or not own_check(ts, det['labels']))):
+            mains.append(c['name'])
+    return shares, sorted(mains, key=lambda n: -shares[n])
+
+
+def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None, distinct=False,
+             cast=None):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
     builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max).
-    distinct=True (the pool miner): the passing windows do not overlap, each is its own section of the edit."""
+    distinct=True (the pool miner): the passing windows do not overlap, each is its own section of the edit.
+    Library mode (owner 2026-10-31): entry = the SHOW (kind anime: any of its characters owns the window), theme 'any'
+    (every theme the section passes is recorded), cast = the show's ranking characters: each passed window records
+    which of them own it (attribute)."""
     import ranking_score as RS
     txt, path = res['_txt'], res['path']
     ana = res.get('_ana')
@@ -1554,13 +1613,19 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 f = RP.measure(path, w['s'], w['e'], per_t={t: txt['per_t'][t] for t in txt['per_t']
                                                              if w['s'] <= t < w['e']}, audio=a)
                 f['manga_siglip'] = RP.manga_siglip(judge.sig, frames)
-                g = RP.gate(f, theme)
+                # theme 'any' (the library, owner 2026-10-31): every theme the section is on par with (one section can
+                # serve strongest lists AND waifu / romance lists); the best-scoring passing theme is its own
+                gs = {th: RP.gate(f, th) for th in (THEMES if theme == 'any' else (theme,))}
             except Exception as ex:  # noqa: BLE001
                 log(f'ref profile failed: {ex}')
-                f, g = {}, {'ref_score': None, 'ref_groups': {}, 'manga': False, 'ok': True, 'why': 'error'}
-            w.update(theme=theme, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
+                gs = {th: {'ref_score': None, 'ref_groups': {}, 'manga': False, 'ok': True, 'why': 'error'}
+                      for th in (THEMES if theme == 'any' else (theme,))}
+            ok_th = [th for th in gs if gs[th]['ok']]
+            th = max(ok_th or list(gs), key=lambda k: gs[k]['ref_score'] or 0)
+            g = gs[th]
+            w.update(theme=th, themes=ok_th, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
                      manga_share=g.get('manga_share'))
-            if not g['ok']:
+            if not ok_th:
                 w['reject'] = g['why']
                 return False
         if os.environ.get('RANKING_STING', '1') != '0':
@@ -1569,6 +1634,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 w['reject'] = 'name_sting'
                 w['sting'] = marks
                 return False
+        if cast:
+            w['cast'], w['mains'] = attribute(judge, cast, frames, ts)
         passed.append(w)
         return True
 
