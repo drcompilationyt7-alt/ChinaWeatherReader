@@ -550,7 +550,9 @@ const WYR_CLIP_SPEC = '"clipQueryA", "clipQueryB" (a YouTube search for a few se
   + '"Shibuya crossing night"; for an anime show or one of its characters write "anime:<official English title>" (its '
   + 'opening plays); never a private person, never a fight, accident or news footage), "hype" (what the narrator shouts '
   + 'while the pick\'s clip plays, max 6 words, excited, about what is on screen, e.g. "Just look at this energy!"; never a '
-  + 'statistic or a claim about what fans picked). ';
+  + 'statistic or a claim about what fans picked). BOTH choices must be something real video exists of (a place, a dish, '
+  + 'an event, a show, a character in their show): never an abstract idea like "design a pastel uniform" (owner 2026-11-01: '
+  + 'a reveal with no clip falls back to a still). ';
 
 /** Trivia: the reveal shows a picture of the answer (owner 2026-10-21), so an item needs an image query the renderer knows. */
 const IMAGE_KINDS = ['city', 'anime', 'character', 'idol', 'group', 'vtuber', 'file', 'commons'];

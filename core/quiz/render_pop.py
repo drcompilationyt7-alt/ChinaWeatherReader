@@ -2086,6 +2086,8 @@ class PopRenderer(QuizRenderer):
         at the reveal), then a photo; the other choice a photo first (it is only shown still), then a clip's first frame.
         A choice with neither keeps its emoji on the side's colour. Logged in fetch_log + each round's wyrMedia."""
         rounds = self.plan['rounds']
+        for r in rounds:   # the round's topic decides the clip hints (wyr_clip_candidates)
+            r.setdefault('topic', self.topic)
         tasks = [(r, s) for r in rounds for s in ('a', 'b')]
         # owner 2026-11-01: every topic gets reveal clips, K-pop concerts too ("copyright claims are fine for now while the
         # channel grows"); POP_WYR_NO_CLIP_TOPICS (comma list, e.g. 'kpop') keeps the photos for those topics
@@ -2679,6 +2681,9 @@ def wyr_clip_candidates(r, side):
                 out.append((spec, k))
     spec = wyr_clip_spec(r, side)
     add(spec, (0,) if spec and spec[0] == 'anime' else (0, 1, 2))
+    if not spec or spec[0] != 'anime':
+        if str(r.get('topic') or '') == 'anime':
+            add(wyr_named_show(r.get(side)), (0,))   # 'Help Bocchi survive her maid shift': that show's opening
     lab = wyr_label(r, side)
     hint = WYR_HINT.get(str(r.get('topic') or ''), '')
     if lab:
@@ -2691,6 +2696,30 @@ def wyr_clip_candidates(r, side):
             if hint and hint != 'anime':
                 add(('query', f'{lab} {hint}'), (0, 1))
     return out[:WYR_CLIP_TRIES]
+
+
+_SHOW_STOP = {'attack', 'demon', 'dragon', 'violet', 'world', 'another', 'summer', 'golden', 'little', 'black', 'great', 'super',
+              'tokyo', 'kyoto', 'osaka', 'colorful', 'blue', 'mobile', 'sword', 'fruits', 'spirited', 'silent', 'your', 'grand',
+              'hunter', 'death', 'fire', 'magic', 'love', 'school', 'girls', 'monster', 'beast', 'heaven', 'devil', 'spice'}
+
+
+def wyr_named_show(text):
+    """('anime', show) when a choice names an anime character ('Kaguya', "Gojo's") or a show by its distinctive first word
+    ('Bocchi'), from the quiz pool's anime-characters.json; else None. Long-vowel spellings are folded (Gotou = Goto).
+    Only for anime-topic Shorts (a cities 'Live in Tokyo' is not Tokyo Ghoul)."""
+    fold = lambda s: media._fold(s).replace('ou', 'o').replace('uu', 'u')
+    words_of = lambda s: re.findall(r'[a-z0-9]+', fold(re.sub(r"['’]", ' ', s or '')))   # "Gojo's" -> gojo s
+    t = f" {' '.join(words_of(text))} "
+    if len(t.strip()) < 3:
+        return None
+    for c in _asset('anime-characters.json', 'characters'):
+        if c.get('nsfw') or not c.get('anime'):
+            continue
+        names = [w for w in words_of(c.get('name')) if len(w) >= 4 and w not in _SHOW_STOP]
+        first = (words_of(re.split(r'[:!(]', c['anime'])[0]) or [''])[0]
+        if any(f' {w} ' in t for w in names) or (len(first) >= 5 and first not in _SHOW_STOP and f' {first} ' in t):
+            return 'anime', c['anime']
+    return None
 
 
 def wyr_clip(r, side, spec=None, rank=0):
