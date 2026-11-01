@@ -150,6 +150,59 @@
    "added": [],
    "rejected": [],
    "note": "2 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W44",
+   "pool": "meme/stem-edit",
+   "at": "2026-11-01T08:25:09.852Z",
+   "n": 35,
+   "retired": [
+    {
+     "dim": "hashtagSet",
+     "id": "niche3",
+     "uses": 10,
+     "mean": -0.71,
+     "best": "minimal",
+     "z": 2.49
+    },
+    {
+     "dim": "descHook",
+     "id": "stems",
+     "uses": 5,
+     "mean": -0.68,
+     "best": "op-desc-stack-drop",
+     "z": 2.18
+    }
+   ],
+   "added": [
+    {
+     "dim": "ovStyle",
+     "id": "op-vocals-start",
+     "mu0": 0.47
+    },
+    {
+     "dim": "descHook",
+     "id": "op-desc-beat-drop",
+     "mu0": 0.43
+    }
+   ],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "op-beat-drops",
+     "why": "fails on 1/12 recent videos: no keyword"
+    }
+   ]
+  },
+  {
+   "week": "2026-W44",
+   "pool": "meme/sound-edit",
+   "at": "2026-11-01T08:25:09.855Z",
+   "n": 3,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "3 scored uploads: proposals start at 5"
   }
  ],
  "pools": {
@@ -237,6 +290,20 @@
        "fallback": "ov-kw"
       },
       "why": "On-screen overlays featuring 'vocals only first' were present in two of the top uploads (+1.84 and +1.34 scores). It creates instant visual and acoustic contrast, lowering swipe-away rates in the firs"
+     },
+     "op-vocals-start": {
+      "status": "active",
+      "source": "opro-2026-W44",
+      "added": "2026-W44",
+      "mu0": 0.47,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "short on-screen text under 20 characters telling the viewer that the audio begins with isolated vocals before the instruments enter",
+       "example": "vocals only first",
+       "fallback": "ov-kw"
+      },
+      "why": "The highest scoring upload (+1.58, 1830 views) used 'vocals only first'. Explicitly signaling the starting audio stem hooks viewers in the first second and reduces early swipe-away."
      }
     },
     "emojiSet": {
@@ -295,22 +362,48 @@
        "fallback": "layers"
       },
       "why": "The 'layers' descHook is currently the highest performing description arm (+1.03 score). Doubling down on combining the acapella keyword with explicit 'stem by stem' build terminology reinforces searc"
+     },
+     "stems": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "mean -0.68 after 5 uses vs op-desc-stack-drop (z 2.18)"
+     },
+     "op-desc-beat-drop": {
+      "status": "active",
+      "source": "opro-2026-W44",
+      "added": "2026-W44",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "llm": true,
+       "guide": "one plain sentence starting with '{song} acapella', describing the stem accumulation building up to the final beat drop edit",
+       "example": "{song} acapella layer by layer until the beat drops {e1}[[ ({Source} edit)]]",
+       "fallback": "layers"
+      },
+      "why": "Combines the strong performance of 'layers' (+0.85) and 'op-desc-stack-drop' (+0.86) while aligning description search context with the proven 'beat drops' hook."
+     }
+    },
+    "hashtagSet": {
+     "niche3": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "mean -0.71 after 10 uses vs minimal (z 2.49)"
      }
     }
    },
    "posterior": {
-    "week": "2026-W43",
-    "n": 29,
+    "week": "2026-W44",
+    "n": 35,
     "dims": {
      "titleStyle": {
       "op-stem-action": {
        "uses": 1,
-       "mean": 0.77,
-       "sd": 0.74
+       "mean": 0.64,
+       "sd": 0.76
       },
       "kw-suggest": {
        "uses": 5,
-       "mean": 0.75,
+       "mean": 0.59,
        "sd": 0.46
       },
       "op-stem-stack": {
@@ -320,151 +413,161 @@
       },
       "llm-free": {
        "uses": 9,
-       "mean": 0.16,
-       "sd": 0.36
+       "mean": 0,
+       "sd": 0.38
+      },
+      "llm-hook": {
+       "uses": 5,
+       "mean": -0.17,
+       "sd": 0.5
       },
       "kw-source": {
        "uses": 3,
-       "mean": -0.04,
-       "sd": 0.54
-      },
-      "llm-hook": {
-       "uses": 4,
-       "mean": -0.3,
-       "sd": 0.53
+       "mean": -0.2,
+       "sd": 0.56
       },
       "kw-emoji": {
        "uses": 7,
-       "mean": -0.54,
-       "sd": 0.41
+       "mean": -0.72,
+       "sd": 0.43
       }
      },
      "ovStyle": {
       "op-ov-stem-event": {
-       "uses": 5,
-       "mean": 1.21,
-       "sd": 0.45
+       "uses": 6,
+       "mean": 1.02,
+       "sd": 0.42
       },
       "op-ov-milestone": {
-       "uses": 0,
-       "mean": 0.47,
-       "sd": 1
+       "uses": 3,
+       "mean": 0.89,
+       "sd": 0.55
       },
       "op-ov-layer-stage": {
+       "uses": 1,
+       "mean": 0.6,
+       "sd": 0.77
+      },
+      "op-vocals-start": {
        "uses": 0,
        "mean": 0.47,
        "sd": 1
       },
       "ov-drop": {
-       "uses": 8,
-       "mean": 0,
-       "sd": 0.39
+       "uses": 9,
+       "mean": -0.04,
+       "sd": 0.38
       },
       "ov-kw": {
        "uses": 4,
-       "mean": -0.06,
-       "sd": 0.5
+       "mean": -0.21,
+       "sd": 0.52
       },
       "ov-llm": {
        "uses": 5,
-       "mean": -0.1,
-       "sd": 0.46
+       "mean": -0.21,
+       "sd": 0.49
       },
       "ov-question": {
        "uses": 4,
-       "mean": -0.5,
-       "sd": 0.51
+       "mean": -0.65,
+       "sd": 0.53
       },
       "ov-layers": {
        "uses": 3,
-       "mean": -0.51,
-       "sd": 0.57
+       "mean": -0.69,
+       "sd": 0.59
       }
      },
      "hashtagSet": {
       "minimal": {
-       "uses": 8,
-       "mean": 0.63,
-       "sd": 0.37
+       "uses": 11,
+       "mean": 0.54,
+       "sd": 0.34
       },
       "title-source": {
-       "uses": 10,
-       "mean": 0.26,
-       "sd": 0.35
+       "uses": 12,
+       "mean": 0.27,
+       "sd": 0.32
       },
       "edit-community": {
-       "uses": 1,
-       "mean": -0.55,
-       "sd": 0.77
+       "uses": 2,
+       "mean": -0.02,
+       "sd": 0.66
       },
       "niche3": {
        "uses": 10,
-       "mean": -0.55,
-       "sd": 0.35
+       "mean": -0.71,
+       "sd": 0.37
       }
      },
      "emojiSet": {
       "op-fire-moai": {
-       "uses": 6,
-       "mean": 1.21,
-       "sd": 0.41
+       "uses": 8,
+       "mean": 0.96,
+       "sd": 0.37
       },
       "fire": {
-       "uses": 7,
-       "mean": 0.12,
-       "sd": 0.4
+       "uses": 9,
+       "mean": 0.17,
+       "sd": 0.38
       },
       "music": {
-       "uses": 3,
-       "mean": -0.24,
-       "sd": 0.57
+       "uses": 5,
+       "mean": 0.16,
+       "sd": 0.48
       },
       "moai": {
        "uses": 8,
-       "mean": -0.37,
-       "sd": 0.39
+       "mean": -0.54,
+       "sd": 0.41
       },
       "spark": {
        "uses": 5,
-       "mean": -0.6,
-       "sd": 0.46
+       "mean": -0.71,
+       "sd": 0.49
       }
      },
      "descHook": {
+      "op-desc-stack-drop": {
+       "uses": 4,
+       "mean": 0.86,
+       "sd": 0.5
+      },
       "layers": {
        "uses": 6,
-       "mean": 1.03,
-       "sd": 0.42
-      },
-      "op-desc-stack-drop": {
-       "uses": 0,
-       "mean": 0.43,
-       "sd": 1
+       "mean": 0.85,
+       "sd": 0.43
       },
       "op-desc-layer-build": {
+       "uses": 2,
+       "mean": 0.77,
+       "sd": 0.65
+      },
+      "op-desc-beat-drop": {
        "uses": 0,
        "mean": 0.43,
        "sd": 1
       },
       "drop": {
        "uses": 11,
-       "mean": 0.14,
-       "sd": 0.33
+       "mean": -0.04,
+       "sd": 0.35
       },
       "question": {
        "uses": 5,
-       "mean": -0.44,
-       "sd": 0.46
-      },
-      "stems": {
-       "uses": 5,
-       "mean": -0.53,
+       "mean": -0.61,
        "sd": 0.48
       },
       "llm-line": {
        "uses": 2,
-       "mean": -0.59,
-       "sd": 0.66
+       "mean": -0.62,
+       "sd": 0.68
+      },
+      "stems": {
+       "uses": 5,
+       "mean": -0.68,
+       "sd": 0.5
       }
      }
     }
@@ -473,14 +576,19 @@
   "meme/sound-edit": {
    "arms": {},
    "posterior": {
-    "week": "2026-W43",
-    "n": 2,
+    "week": "2026-W44",
+    "n": 3,
     "dims": {
      "titleStyle": {
       "llm-hook": {
        "uses": 1,
-       "mean": 0.01,
-       "sd": 0.77
+       "mean": 0.27,
+       "sd": 0.74
+      },
+      "kw-emoji": {
+       "uses": 1,
+       "mean": 0.25,
+       "sd": 0.74
       },
       "kw-song": {
        "uses": 0,
@@ -501,28 +609,23 @@
        "uses": 0,
        "mean": 0,
        "sd": 1
-      },
-      "kw-emoji": {
-       "uses": 1,
-       "mean": -0.01,
-       "sd": 0.76
       }
      },
      "ovStyle": {
-      "ov-kw": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+      "ov-llm": {
+       "uses": 2,
+       "mean": 0.36,
+       "sd": 0.61
       },
       "ov-song": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
-      "ov-llm": {
-       "uses": 2,
-       "mean": 0,
-       "sd": 0.65
+      "ov-kw": {
+       "uses": 1,
+       "mean": -0.54,
+       "sd": 0.73
       }
      },
      "hashtagSet": {
@@ -537,16 +640,16 @@
        "sd": 1
       },
       "minimal": {
-       "uses": 2,
-       "mean": 0,
-       "sd": 0.65
+       "uses": 3,
+       "mean": -0.01,
+       "sd": 0.53
       }
      },
      "emojiSet": {
-      "fire": {
+      "moai": {
        "uses": 1,
-       "mean": 0.01,
-       "sd": 0.77
+       "mean": 0.25,
+       "sd": 0.74
       },
       "music": {
        "uses": 0,
@@ -558,32 +661,32 @@
        "mean": 0,
        "sd": 1
       },
-      "moai": {
-       "uses": 1,
-       "mean": -0.01,
-       "sd": 0.76
+      "fire": {
+       "uses": 2,
+       "mean": -0.19,
+       "sd": 0.61
       }
      },
      "descHook": {
       "kw-line": {
        "uses": 1,
-       "mean": 0.01,
-       "sd": 0.77
-      },
-      "llm-line": {
-       "uses": 0,
-       "mean": 0,
-       "sd": 1
+       "mean": 0.27,
+       "sd": 0.74
       },
       "rate": {
        "uses": 1,
-       "mean": -0.01,
-       "sd": 0.76
+       "mean": 0.25,
+       "sd": 0.74
+      },
+      "llm-line": {
+       "uses": 1,
+       "mean": -0.54,
+       "sd": 0.73
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-25T07:06:53.677Z"
+ "updatedAt": "2026-11-01T08:25:09.855Z"
 }

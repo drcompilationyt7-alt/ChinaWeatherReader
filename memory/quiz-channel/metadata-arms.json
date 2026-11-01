@@ -140,6 +140,25 @@
      "why": "titleStyle already has 8 active arms"
     }
    ]
+  },
+  {
+   "week": "2026-W44",
+   "pool": "quiz/quiz",
+   "at": "2026-11-01T08:27:03.449Z",
+   "n": 46,
+   "retired": [
+    {
+     "dim": "descHook",
+     "id": "challenge",
+     "uses": 9,
+     "mean": -0.55,
+     "best": "op-comment-score",
+     "z": 2.24
+    }
+   ],
+   "added": [],
+   "rejected": [],
+   "note": "LLM call failed: no proposals this week"
   }
  ],
  "pools": {
@@ -271,6 +290,11 @@
       },
       "why": "review 2026-10-31 (owner: titles / hashtags off): mean 196 views vs 759 for title-tag; no hashtag in the title = 389 avg over 13 videos",
       "retiredAt": "2026-W44"
+     },
+     "challenge": {
+      "status": "retired",
+      "retiredAt": "2026-W44",
+      "why": "mean -0.55 after 9 uses vs op-comment-score (z 2.24)"
      }
     },
     "hashtagSet": {
@@ -287,140 +311,140 @@
     }
    },
    "posterior": {
-    "week": "2026-W43",
-    "n": 31,
+    "week": "2026-W44",
+    "n": 46,
     "dims": {
      "titleStyle": {
+      "op-exact-search": {
+       "uses": 7,
+       "mean": 0.4,
+       "sd": 0.4
+      },
       "ramp": {
        "uses": 7,
-       "mean": 0.41,
-       "sd": 0.39
-      },
-      "keyword": {
-       "uses": 4,
-       "mean": 0.33,
-       "sd": 0.51
-      },
-      "challenge": {
-       "uses": 2,
-       "mean": 0.22,
-       "sd": 0.64
-      },
-      "casual": {
-       "uses": 7,
-       "mean": 0.18,
+       "mean": 0.31,
        "sd": 0.41
       },
-      "op-exact-search": {
-       "uses": 2,
-       "mean": 0.06,
-       "sd": 0.62
+      "challenge": {
+       "uses": 3,
+       "mean": 0.24,
+       "sd": 0.55
       },
       "speed": {
-       "uses": 1,
-       "mean": 0.01,
-       "sd": 0.75
+       "uses": 3,
+       "mean": 0.23,
+       "sd": 0.55
+      },
+      "casual": {
+       "uses": 10,
+       "mean": 0.14,
+       "sd": 0.36
+      },
+      "keyword": {
+       "uses": 7,
+       "mean": -0.18,
+       "sd": 0.41
+      },
+      "llm": {
+       "uses": 5,
+       "mean": -0.38,
+       "sd": 0.49
       },
       "fans": {
        "uses": 4,
-       "mean": -0.42,
-       "sd": 0.51
-      },
-      "llm": {
-       "uses": 4,
-       "mean": -0.6,
+       "mean": -0.48,
        "sd": 0.52
       }
      },
      "hashtagSet": {
       "title-tag": {
-       "uses": 20,
-       "mean": 0.36,
-       "sd": 0.25
+       "uses": 33,
+       "mean": 0.25,
+       "sd": 0.2
+      },
+      "format3": {
+       "uses": 5,
+       "mean": -0.36,
+       "sd": 0.46
       },
       "two": {
        "uses": 8,
-       "mean": -0.46,
-       "sd": 0.4
-      },
-      "format3": {
-       "uses": 3,
-       "mean": -0.46,
-       "sd": 0.55
+       "mean": -0.41,
+       "sd": 0.42
       }
      },
      "emojiSet": {
       "op-hype-eyes": {
-       "uses": 0,
-       "mean": 0.43,
-       "sd": 1
-      },
-      "fire": {
-       "uses": 12,
-       "mean": 0.42,
-       "sd": 0.32
+       "uses": 1,
+       "mean": 0.56,
+       "sd": 0.77
       },
       "op-quiz-pop": {
-       "uses": 4,
-       "mean": 0.41,
-       "sd": 0.48
+       "uses": 7,
+       "mean": 0.28,
+       "sd": 0.4
       },
       "topic": {
-       "uses": 7,
+       "uses": 9,
+       "mean": 0.21,
+       "sd": 0.38
+      },
+      "fire": {
+       "uses": 14,
        "mean": 0.14,
-       "sd": 0.41
+       "sd": 0.31
       },
       "op-fire-brain": {
-       "uses": 2,
-       "mean": -0.21,
-       "sd": 0.64
+       "uses": 6,
+       "mean": 0.13,
+       "sd": 0.41
       },
       "none": {
-       "uses": 2,
-       "mean": -0.23,
-       "sd": 0.64
+       "uses": 5,
+       "mean": 0.04,
+       "sd": 0.46
       },
       "template": {
        "uses": 4,
-       "mean": -1.03,
-       "sd": 0.53
+       "mean": -1.02,
+       "sd": 0.55
       }
      },
      "descHook": {
       "op-comment-score": {
-       "uses": 3,
-       "mean": 0.65,
-       "sd": 0.54
+       "uses": 8,
+       "mean": 0.63,
+       "sd": 0.37
+      },
+      "op-score-challenge": {
+       "uses": 5,
+       "mean": 0.49,
+       "sd": 0.45
       },
       "no-peek": {
        "uses": 12,
-       "mean": 0.56,
-       "sd": 0.31
-      },
-      "op-target-comment": {
-       "uses": 0,
-       "mean": 0.47,
-       "sd": 1
-      },
-      "op-score-challenge": {
-       "uses": 1,
-       "mean": 0.28,
-       "sd": 0.77
+       "mean": 0.45,
+       "sd": 0.32
       },
       "keyword": {
        "uses": 9,
-       "mean": -0.37,
-       "sd": 0.38
+       "mean": -0.4,
+       "sd": 0.4
+      },
+      "op-target-comment": {
+       "uses": 3,
+       "mean": -0.46,
+       "sd": 0.56
       },
       "challenge": {
-       "uses": 6,
-       "mean": -0.72,
-       "sd": 0.44
+       "uses": 9,
+       "mean": -0.55,
+       "sd": 0.37
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-10-25T07:07:43.934Z"
+ "updatedAt": "2026-11-01T08:27:03.450Z"
 }
