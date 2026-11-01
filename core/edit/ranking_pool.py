@@ -179,7 +179,7 @@ def serve_keys(it, smap=None):
     genre entry); an older per-entry item serves its entry and, being that show's footage, the show's genre entry."""
     if it.get('serves'):
         return list(it['serves'])
-    keys = [it['entry_key']] if (it.get('char_conf') or 0) >= CHAR_MIN else []
+    keys = [it['entry_key']] if (it.get('char_conf') or 0) >= CHAR_MIN or it.get('title_trusted') else []
     g = (smap or {}).get(lib_show(it.get('anime')))
     if keys and g and not g['show'].get('synthetic') and entry_key(g['show']) not in keys:
         keys.append(entry_key(g['show']))
@@ -513,6 +513,31 @@ LIB_RETRY_WHY = ('no_window', 'character', 'eval_error', 'handle', 'editor_tag')
 # handle / tag rules included) a show-level look can still use; once the library judged a source ('lib') it stays decided
 
 
+STYLE_REFS = os.path.join(HERE, 'refs', 'ranking-style-refs.json')
+_STYLE = []
+
+
+def style_uploads(RC):
+    """Owner 2026-11-01 ('these are the type of edits I want'): the uploads of the editors of the owner's reference edits
+    (refs/ranking-style-refs.json channels; flat channel lists, cached 7 days, one paced request per channel and week) are
+    candidates for every show; the prefilter keeps the ones whose title names the show / its characters."""
+    if _STYLE:
+        return _STYLE[0]
+    out = []
+    for cid in (rj(STYLE_REFS, {}).get('channels') or {}):
+        try:
+            lst = RC._cached(f'chan_{cid}', lambda: RC.pace() or json.loads(RC.ytdlp(['--flat-playlist', '-J', '--playlist-end', '150',
+                                                                          f'https://www.youtube.com/channel/{cid}/videos']) or '{}'))
+        except Exception as ex:  # noqa: BLE001  (one channel never stops a run)
+            log(f'style channel {cid}: {ex}')
+            continue
+        out += [{k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')}
+                for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
+    _STYLE.append(out)
+    log(f'style refs: {len(out)} uploads of {len(rj(STYLE_REFS, {}).get("channels") or {})} reference editors')
+    return out
+
+
 def show_cast_alias(sk):
     """Full names (either order) of every quiz-pool character of the show: a 'Todo Aoi edit' is a Jujutsu Kaisen edit too."""
     try:
@@ -582,7 +607,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                                + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast])))
         se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
                                                       + show_cast_alias(sk))),
-                  solo=False, search=show.get('search') or sk)
+                  solo=False, search=show.get('search') or sk, extra=style_uploads(RC))
         others = [smap[o]['show'] for o in order if o != sk][:4]           # distractor shows for the show-level check
         done = {sid for sid, v in st['sources'].items()
                 if v.get('status') in ('staged', 'reviewed', 'rejected')
@@ -624,7 +649,9 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 continue
             staged, marks = [], []
             for w in sorted(res.get('passed') or [res['window']], key=lambda w: w['s']):
-                mains = [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
+                # owner 2026-11-01: a title that names a character is trusted (the others in the edit back that person up);
+                # otherwise the characters that own the section (attribute)
+                mains = RC.title_names(res.get('title'), cast) or [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
                 e = mains[0] if mains else show
                 extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {},
                          'serves': [entry_key(c) for c in mains] + [skey]}
@@ -700,7 +727,7 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None):
           'char_others': (w.get('match') or res.get('match') or {}).get('others'),
           'eventful': w.get('eventful'), 'song': w.get('song'), 'song_name': w.get('song_name'), 'quality': w.get('quality'),
           'theme': w.get('theme'), 'ref_score': w.get('ref_score'), 'ref_groups': w.get('ref_groups'),
-          'manga': bool(w.get('manga')), 'manga_share': w.get('manga_share'),
+          'manga': bool(w.get('manga')), 'manga_share': w.get('manga_share'), 'title_trusted': bool(w.get('title_trusted')),
           # owner 2026-10-25 late: the free-to-use bonus is dropped; old (>= 1 y) + idle editors, the reference-profile
           # closeness, and anime footage over manga panels
           'rank_score': round((w.get('quality') or 0) + 1.0 * bool((rt.get('age_days') or 0) >= 365)

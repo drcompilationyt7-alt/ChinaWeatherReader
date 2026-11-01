@@ -76,6 +76,7 @@ MIN_VOTES = {'wd_tagger': 6, 'tagger_open+bank': 6, 'siglip_art': 4, 'tagger_ope
 OFFLIST_MIN = 0.6                # tagger prob of an off-list character that counts against the target
 OWN_RUN_S = 6.0                 # another character owning this many continuous seconds of a window rejects it
 OWN_SHARE = 1 / 3                # ... or this share of the window's frames
+SHORT_EDIT_S = 32.0              # owner 2026-11-01: an edit this short is used nearly whole (0.5 s off each end)
 MAX_SHARE = 0.85                 # never the whole edit (its intro / end card stay out), see the study's risk part
 # owner 2026-10-27: high-view edits only, >= 6 months old (quality is proven by the audience)
 MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
@@ -334,8 +335,9 @@ def prefilter(e, entry, min_views=None):
         return False, f'dur_{d}'
     if (e.get('view_count') or 0) < (MIN_VIEWS if min_views is None else min_views):
         return False, 'views'
-    if re.search(r'twixtor clips|clips for edit|scene ?pack|raw clips|free clips', t, re.I):
-        return False, 'clip_pack'          # raw clip packs for editors, not an edit
+    if re.search(r'twixtor clips|clips for edit|scene ?pack|raw clips', t, re.I) or (
+            re.search(r'free clips', t, re.I) and not re.search(r'\bamv\b|\[\s*edit|\bedit\s*[/\]|]', t, re.I)):
+        return False, 'clip_pack'          # raw clip packs for editors; an "[Edit/AMV] [+Free Clips]" title is an edit
     if re.search(r'\b(full fight|compilation|ranking|tier ?list|top \d+)\b', t, re.I):
         return False, 'not_an_edit'        # raw fight footage or another list
     if re.search(r'\b(vs\.?|versus)\b', t, re.I) and entry.get('solo', True):
@@ -1006,6 +1008,22 @@ class Judge:
 
 # ---------------------------------------------------------------- source finding per entry
 
+STYLE_RE = re.compile(r'edit\s*/\s*amv|amv\s*/\s*edit|\[\s*edit\s*\]', re.I)
+
+
+def style_match(e):
+    """The owner's reference style (2026-11-01: 'Gojo - Starboy [Edit/AMV]!', 'Alisa - ESPRESSO [Edit/AMV] 4K!', 19-60 s):
+    an '[Edit/AMV]'-tagged edit of at most 65 s."""
+    return bool(STYLE_RE.search(unicodedata.normalize('NFKC', e.get('title') or ''))) and 12 <= (e.get('duration') or 0) <= 65
+
+
+def title_names(title, entries):
+    """The entries a title names (owner 2026-11-01: 'if the title names a character, trust the edit is about that person;
+    the others in it just back them up')."""
+    t = unicodedata.normalize('NFKC', title or '')
+    return [e for e in entries if any(re.search(a, t, re.I) for a in e.get('alias') or [])]
+
+
 def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6, pre=None):
     """Best source edit + window for one entry, or None. Downloads up to `max_dl` candidates (most
     viewed first), runs the cheap watermark / text gates on all of them (that is the measured
@@ -1036,8 +1054,9 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                     best = (res['rank_score'], res)
         return best[1] if best else None
     seen, cands = set(), []
-    for q in queries(entry):
-        for e in (search(q) or []):
+    # the reference editors' own uploads (entry['extra'], ranking_pool.style_uploads) are candidates like search results
+    for q in queries(entry) + ['__extra__']:
+        for e in ((entry.get('extra') or []) if q == '__extra__' else (search(q) or [])):
             if e.get('id') in seen or e.get('id') in used:
                 continue
             seen.add(e.get('id'))
@@ -1048,8 +1067,9 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                 continue
             cands.append(e)
     named = lambda e: any(re.search(a, unicodedata.normalize('NFKC', e.get('title') or ''), re.I) for a in entry['alias'])
-    # owner-approved first, then edits naming the character, then popularity
-    cands.sort(key=lambda e: (e.get('id') not in PREFER, not named(e), -(e.get('view_count') or 0)))
+    # owner-approved first, then the owner's reference style (owner 2026-11-01: short 4K '[Edit/AMV]' edits, 19-60 s, used
+    # nearly whole), then edits naming the character, then popularity
+    cands.sort(key=lambda e: (e.get('id') not in PREFER, not style_match(e), not named(e), -(e.get('view_count') or 0)))
     # rights + priority on the infos first (old edits / inactive editors / permitted first; vetoed and
     # blocklisted editors skipped), then download in that order
     ranked = []
@@ -1406,8 +1426,9 @@ SONG_MIN = 4.0
 
 
 def quality(w, pop):
-    """One number per window: 0.6 eventful + 0.25 song (audio) + 0.15 song popularity (0-10 scale)."""
-    return round(0.6 * w['eventful'] + 0.25 * w['song'] + 1.5 * pop, 2)
+    """One number per window: 0.6 eventful + 0.25 song (audio) + 0.15 song popularity (0-10 scale) + the build-up into the
+    drop (owner 2026-11-01: the ideal section; ranking_score.window_metrics 'buildup' 0-1, worth up to 2.5 points)."""
+    return round(0.6 * w['eventful'] + 0.25 * w['song'] + 1.5 * pop + 2.5 * (w.get('buildup') or 0.0), 2)
 
 
 def targets_and_distractors(judge, entry, others):
@@ -1500,6 +1521,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     v, a = RS.curves(path, os.path.join(os.path.dirname(os.path.dirname(path)), 'cache', 'ev'))
     dur = a['dur']
     lo, hi = min(1.5, 0.08 * dur), dur - max(2.0, 0.1 * dur)           # skip the editor's intro / end card
+    if dur <= SHORT_EDIT_S:
+        # owner 2026-11-01 (a 26 s 'Alisa - ESPRESSO [Edit/AMV]'): a short edit is used straight out of the box, nearly whole
+        lo, hi = 0.5, dur - 0.5
     ana = ana if ana is not None else decode(path)
     tags, lo, hi = editor_tags(txt, res, ana, dur, lo, hi)
     res['editor_tags'] = tags
@@ -1508,7 +1532,7 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         res.pop('_ana', None)
         return res
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
-    seg = (seg[0], min(seg[1], MAX_SHARE * dur))
+    seg = (seg[0], min(seg[1], (dur - 1.0) if dur <= SHORT_EDIT_S else MAX_SHARE * dur))
     # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))
@@ -1559,6 +1583,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return [lab_cache[t] for t in ts], None
 
     passed = []
+    # owner 2026-11-01: 'if the title names the character, trust the edit is about that person' (a character entry: the
+    # who-owns-the-window gates are skipped; safety, rating, quality and the reference gate still apply)
+    trusted = entry.get('kind') != 'anime' and bool(title_names(res.get('title'), [entry]))
 
     def try_window(w):
         if distinct and any(min(w['e'], p['e']) - max(w['s'], p['s']) > 2.0 for p in passed):
@@ -1607,12 +1634,14 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         top_other = max(det['others'].values()) if det['others'] else 0
         # the entry's character must clearly own the window: >= 60 % of the voting frames and at least twice
         # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
-        if not (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det['wins'] >= 2 * top_other):
+        if trusted:
+            w['title_trusted'] = True
+        elif not (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det['wins'] >= 2 * top_other):
             w['reject'] = 'character'
             return False
         # owner 2026-10-27: the entry's character must be the MAIN character of the section: no other character (off-list
         # and unknown ones included) owns a long continuous stretch or more than a third of it
-        if labs is not None:
+        if labs is not None and not trusted:
             why = own_check(ts, labs)
             if why:
                 w['reject'] = why

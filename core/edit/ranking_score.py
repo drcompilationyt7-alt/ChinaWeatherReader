@@ -219,11 +219,28 @@ def window_metrics(v, a, s, e):
         pulse = float(r[lo:hi].max()) if hi < len(r) else 0.0
     else:
         pulse = 0.0
+    # owner 2026-11-01: 'the ideal section is the build-up to the drop': the strongest drop 25-70 % into the window (the
+    # build-up plays first, then the drop lands), weighted by how much the energy rises over the 8 s before it
+    best_d, best_b = 0.0, None
+    for b in a['beats']:
+        if s + 0.25 * L <= b <= s + 0.7 * L:
+            after, before = db[(a['t'] >= b) & (a['t'] < b + 3)], db[(a['t'] >= b - 3) & (a['t'] < b)]
+            if len(after) and len(before) and after.mean() - before.mean() > best_d:
+                best_d, best_b = float(after.mean() - before.mean()), float(b)
+    rise = 0.0
+    if best_b is not None:
+        pre = (a['t'] >= max(s, best_b - 8.0)) & (a['t'] < best_b - 0.3)
+        if pre.sum() > 20:
+            rise = float(np.clip(np.polyfit(a['t'][pre], a['onset'][pre], 1)[0] / (np.median(a['onset']) + 1e-6) / 0.15, 0, 1))
+    # a drop near the middle keeps more of the build-up (a drop 27 % in left ~5 s of it)
+    mid = 1 - min(1.0, abs((best_b - s) / L - 0.45) / 0.25) if best_b is not None else 0.0
+    buildup = min(1.0, best_d / 8) * (0.6 + 0.4 * rise) * (0.75 + 0.25 * mid)
     return {'cuts_per_s': len(cuts) / L, 'beat_sync': sync, 'motion': float(v['diff'][m].mean()) if m.any() else 0.0,
             'flashes_per_s': fl / L, 'shakes_per_s': sh / L, 'zooms_per_s': zo / L,
             'drop_db': float(max(drops + [0.0])), 'energy_db': float(np.mean(db[am])) if am.any() else -60.0,
             'punch': float(np.mean(ac) / (np.median(a['onset']) + 1e-6)) if am.any() else 0.0,
-            'bass': float(np.mean(a['bass'][am])) if am.any() else 0.0, 'pulse': pulse}
+            'bass': float(np.mean(a['bass'][am])) if am.any() else 0.0, 'pulse': pulse,
+            'buildup': buildup, 'drop_at': round((best_b - s) / L, 2) if best_b is not None else None}
 
 
 def scores(mx):
@@ -251,10 +268,12 @@ def phrase_windows(v, a, lo, hi, seg=(SEG_MIN, SEG_MAX), target=SEG_TARGET, k=8,
             mx = window_metrics(v, a, s, e)
             ev, so = scores(mx)
             dev = abs(L - target) / (seg[1] - seg[0])
-            tot = 0.5 * ev + 0.3 * so + 1.0 * es + 1.0 * min(1.0, mx['drop_db'] / 8) - 1.2 * dev
+            # owner 2026-11-01: the build-up INTO the drop is the ideal section (buildup, the strongest term); a drop right at
+            # the start counts less than before
+            tot = 0.5 * ev + 0.3 * so + 1.0 * es + 0.4 * min(1.0, mx['drop_db'] / 8) + 2.0 * mx['buildup'] - 1.2 * dev
             cands.append({'s': round(s, 2), 'e': round(e, 2), 'len': round(L, 2), 'eventful': ev, 'song': so,
                           'phrase_end': es, 'phrase_start': ss, 'total': round(tot, 2),
-                          **{kk: round(vv, 3) for kk, vv in mx.items()}})
+                          **{kk: (round(vv, 3) if isinstance(vv, float) else vv) for kk, vv in mx.items()}})
     cands.sort(key=lambda c: -c['total'])
     out = []
     for c in cands:
