@@ -782,7 +782,7 @@ def scorecard(C, R, plan_len=None):
     L = ca['duration_s']
     # owner 2026-10-31: the references are 8.5-11.3 s; any length the pool fills from SOUND_MIN_SHORT_S (10 s) to 50 s is on target
     # (the key keeps its old name: pipeline/newtype-pipeline.js reads it)
-    lmin = float(os.environ.get('SOUND_MIN_SHORT_S', '10'))
+    lmin = float(os.environ.get('SOUND_MIN_SHORT_S', '8.5'))
     s8 = 10.0 if lmin <= L <= 50 else max(0.0, 10 - 0.6 * (lmin - L if L < lmin else L - 50))
     sc['8_length_30_50s'] = s8
     ev['8_length_30_50s'] = f"{L} s (target {lmin:.0f}-50 s, as long as the pool fills; refs 8.5-11.3 s)"

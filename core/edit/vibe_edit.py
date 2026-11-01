@@ -32,7 +32,8 @@ os.environ.setdefault('EDIT_GPU', '0')
 import vibe_pool as VP  # noqa: E402
 import watermark as WM  # noqa: E402
 
-SHORT_LEN = (30.0, 50.0)   # sound: core/edit/sound_edit.py falls back to SOUND_MIN_SHORT_S (10 s) when the pool is small
+SHORT_LEN = (30.0, 50.0)
+SOUND_SHORT_LEN = (8.5, 50.0)   # sound: ~10 s (sound_edit SOUND_SHORT_TARGET_S, owner 2026-10-31), longer as the pool grows
 LONG_LEN = (90.0, 180.0)
 
 
@@ -367,7 +368,7 @@ def main():
         if not a.long_only:
             raw = os.path.join(work, 'short_raw.mp4')
             t0 = time.time()
-            r = render(kind, song, shots, raw, '9:16', SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
+            r = render(kind, song, shots, raw, '9:16', SOUND_SHORT_LEN if kind == 'sound' else SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
             while not r.get('ok') and (r.get('reason') == 'pool_low' or (kind == 'slowmo' and str(r.get('reason') or '').startswith('pool_low'))) and len(cooldowns) > 1:
                 cooldowns.pop(0)
                 os.environ[VP.COOLDOWN_ENV[kind][0]] = str(cooldowns[0])
@@ -376,7 +377,7 @@ def main():
                 shots = get_shots()
                 res['cooldown_videos'] = cooldowns[0]
                 log(f'pool_low: retry with clip cooldown {cooldowns[0]} ({len(shots)} clips)')
-                r = render(kind, song, shots, raw, '9:16', SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
+                r = render(kind, song, shots, raw, '9:16', SOUND_SHORT_LEN if kind == 'sound' else SHORT_LEN, seed, os.path.join(work, 'short'), vdef)
             res['render_s']['short'] = round(time.time() - t0, 1)
             if not r.get('ok'):
                 res.update(reason=r.get('reason') or 'short_failed', short_report=r)

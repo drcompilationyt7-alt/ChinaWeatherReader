@@ -4213,11 +4213,11 @@ def compile_long(songs, shots, out, mode='accent', seed=0, workdir=None, aspect=
 
 # ---------------------------------------------------------------- vibe pools (production entry, core/edit/vibe_edit.py)
 
-SHORT_TARGET_S, LONG_TARGET_S = 36.0, 110.0     # aimed for inside the caller's range (whole bars; pool permitting)
+# owner 2026-10-31 late: sound Shorts are ~10 s like the references (8.5-11.3 s); raise SOUND_SHORT_TARGET_S as the pool grows
+SHORT_TARGET_S, LONG_TARGET_S = float(os.environ.get('SOUND_SHORT_TARGET_S') or 10.0), 110.0   # aimed for in the caller's range
 RATE_SHORT, RATE_LONG = float(os.environ.get('SOUND_RATE_SHORT', '2.2')), 1.9
-# owner 2026-10-31: the sound references are 8.5-11.3 s; a Short is as long as the pool can fill (target 36 s), down to
-# SOUND_MIN_SHORT_S (10 s), so it grows by itself with the pool
-MIN_SHORT_S, MIN_LONG_S = float(os.environ.get('SOUND_MIN_SHORT_S', '10')), 45.0
+# SOUND_MIN_SHORT_S: the floor (8.5 s = the shortest reference); the judge's length criterion reads the same variable
+MIN_SHORT_S, MIN_LONG_S = float(os.environ.get('SOUND_MIN_SHORT_S', '8.5')), 45.0
 # Loudness (measured 2026-10-12, Shape of You, 83 shots): the references are -5.8..-9.9 LUFS but clip (+1.5..+4.8 dBTP).
 # With true peak <= -1 dBTP and a limiter, louder masters crush the hits and pump the song: hit over music / song
 # gain change at the cuts = +6.0 / 0.76 dB at -14 LUFS (mix target +10), +4.2 / 1.4 dB at a -12 target (reached

@@ -123,7 +123,8 @@ function runCli(args, timeoutMin, extraEnv = {}) {
  * (empty = ok). Every new type: the file, its length, the shot count of the plan, sampled frames not blank / static
  * (core/quiz/qa_guard.py). The quality judges (judge_slowmo / judge_sound) run in judgeRender, inside the repair loop.
  */
-const GUARD = { sound: { len: [15, 75], shots: 15 }, slowmo: { len: [25, 50], shots: 12 } };
+// sound ~10 s Shorts (owner 2026-10-31: the references are 8.5-11.3 s), 12+ shots at the 1.2-1.6 cuts / s floor
+const GUARD = { sound: { len: [8, 75], shots: 12 }, slowmo: { len: [25, 50], shots: 12 } };
 function guardRender(type, rep, videoPath, work) {
   const g = GUARD[type] || { len: [10, 90], shots: 5 };
   const bad = [];
