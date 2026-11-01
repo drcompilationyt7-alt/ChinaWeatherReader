@@ -1448,8 +1448,10 @@ def targets_and_distractors(judge, entry, others):
                 if show_key(c.get('anime')) in keys and c['name'] not in tgt][:6]
         for o in others:
             ok = {show_key(o.get('anime'))} | {show_key((judge.char(c) or {}).get('anime')) for c in o['chars']}
+            # a show the source's title names ('Demon Slayer x Jujutsu Kaisen') brings its whole popular cast (distract_n,
+            # ranking_pool.mine_library): with only its top 2, Tengen / Daki frames passed as JJK (2026-11-01)
             oth += [c['name'] for c in sorted(judge.chars, key=lambda c: -(c.get('favourites') or 0))
-                    if show_key(c.get('anime')) in ok and c['name'] not in oth and c['name'] not in tgt][:2]
+                    if show_key(c.get('anime')) in ok and c['name'] not in oth and c['name'] not in tgt][:o.get('distract_n', 2)]
     elif show:
         same = sorted([c for c in judge.chars if show_key(c.get('anime')) == show and c['name'] not in tgt],
                       key=lambda c: -(c.get('favourites') or 0))[:10]
