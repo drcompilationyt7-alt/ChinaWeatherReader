@@ -634,7 +634,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             if (time.time() - t0) / 60 > budget_min + 20:
                 break
             try:
-                # 'calm' pace: the lower eventful bar; the theme gate (on par with the references) decides action vs
+                # 'lib' pace: calm edits are fine (owner 2026-11-01), only near-static footage out; the theme gate decides action vs
                 # beauty / romance per section
                 # a crossover title ('Demon Slayer x Jujutsu Kaisen') names other shows: their whole popular cast are
                 # distractors, so their frames never pass as this show's (2026-11-01: a Tengen / Daki section passed as JJK)
@@ -642,7 +642,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                       and RC.title_names(res.get('title'), [dict(smap[o]['show'], alias=list(smap[o]['show'].get('alias') or [])
                                                                  + [re.escape(w) for w in RC.anime_words(smap[o]['show'])])])]
                 res = RC.evaluate(res, show, xo + [o for o in others if o['name'] not in {x['name'] for x in xo}], judge(),
-                                  SEG, 'calm', max_pass=LIB_SECTIONS,
+                                  SEG, 'lib', max_pass=LIB_SECTIONS,
                                   all_infos=RC.cached_infos(), theme='any', distinct=True, cast=cast)
             except Exception as ex:  # noqa: BLE001
                 log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')

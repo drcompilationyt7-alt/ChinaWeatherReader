@@ -1423,7 +1423,7 @@ def _text_gate(path, info):
 # eventful / song gates (ranking_score.py, calibrated 2026-10-25 on the refs + PREVIEW2: Toji 8.1 / Gojo 9.7
 # eventful = owner "good", Yuji 2.8 = owner "not eventful enough"). Romance / beauty edits are calmer by
 # nature (the romance refs' segments score 2.6-8.2, median ~4), so the gate depends on the topic's pace.
-EVENT_MIN = {'action': 6.0, 'calm': 3.5}
+EVENT_MIN = {'action': 6.0, 'calm': 3.5, 'lib': 2.0}   # lib: owner 2026-11-01 'calm edits are fine' (only near-static footage out)
 SONG_MIN = 4.0
 
 
