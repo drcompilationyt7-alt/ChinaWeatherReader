@@ -24,8 +24,8 @@ const ART_FORMATS = ['character', 'silhouette', 'eyes', 'outfit'];
 const LLM_FORMATS = ['wyr', 'trivia', 'emoji'];
 const MIN_ROUNDS = 3;            // the renderer's own floor (clip formats keep >= 3 of their candidates)
 const MIN_ROUND_SEC = 3.5;       // shortest question + reveal in core/quiz/render_pop.py (Q_MIN >= 3 s, plus the reveal)
-// POP_HOOK_V2=1 has no outro card (the CTA plays over the last reveal, which runs >= 1.5 s longer)
-const OUTRO_SEC = process.env.POP_HOOK_V2 === '1' ? 1.5 : 2.8;
+// POP_HOOK_V2=1 has no outro card (the CTA plays over the last reveal, which runs >= 1.5 s longer); read per video (mix mode)
+const outroSec = () => (process.env.POP_HOOK_V2 === '1' ? 1.5 : 2.8);
 const MAX_SEC = 180;
 
 /** Rounds a short must have: 3 for the quick cut, else the format's default (4 for pairs, 5 otherwise). */
@@ -129,7 +129,7 @@ async function checkRender(res, need) {
   const qa = await runQA(['--video', res.path]);
   const v = qa && qa.video;
   if (!v || !v.duration) { out.push('video check could not run'); return out; }
-  const minSec = OUTRO_SEC + MIN_ROUND_SEC * Math.max(floor, rounds.length);
+  const minSec = outroSec() + MIN_ROUND_SEC * Math.max(floor, rounds.length);
   if (v.duration < minSec) out.push(`video is ${v.duration}s, expected >= ${minSec.toFixed(1)}s for ${rounds.length} rounds`);
   if (v.duration > MAX_SEC) out.push(`video is ${v.duration}s (> ${MAX_SEC}s)`);
   if (!v.sampled) out.push('no frames could be read');

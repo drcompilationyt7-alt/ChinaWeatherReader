@@ -181,7 +181,7 @@ function recordUpload(result, upload) {
     videoId: upload.videoId, url: upload.url, postedAt: new Date().toISOString(), publishAt: upload.publishAt || null,
     format: result.quiz.format, theme: result.quiz.theme, seed: result.quiz.seed, length: result.quiz.length,
     edition: result.quiz.edition || undefined,
-    hookV2: process.env.POP_HOOK_V2 === '1' || undefined,   // retention cut (core/quiz/render_quiz.py V2_*): compare views with / without
+    hookV2: process.env.POP_HOOK_V2 === '1' ? true : process.env.POP_HOOK_V2_MODE === 'mix' ? false : undefined,   // retention cut (core/quiz/render_quiz.py V2_*): compare views with / without
     aiLines: result.quiz.aiLines || undefined,
     followUpOf: result.quiz.followUpOf || undefined,
     titleTemplate: result.quiz.titleTemplate, title: result.title, answers: result.quiz.iso2s,
@@ -601,6 +601,10 @@ function renderQuiz({ format, theme, seed, avoid, outPath, rounds, planFile }) {
 async function runWorldQuizPipeline(opts = {}) {
   const outputDir = opts.outputDir || path.join(ROOT, 'output', 'quiz');
   fs.mkdirSync(outputDir, { recursive: true });
+  // POP_HOOK_V2=mix (owner 2026-10-31: "use the new hook and old hook randomly"): each short draws the retention cut or the
+  // classic cut 50/50; the renderer, the guard and the history all read the drawn value (history hookV2 compares views)
+  if (!process.env.POP_HOOK_V2_MODE) process.env.POP_HOOK_V2_MODE = process.env.POP_HOOK_V2 || '0';
+  if (process.env.POP_HOOK_V2_MODE === 'mix') process.env.POP_HOOK_V2 = Math.random() < 0.5 ? '1' : '0';
   const stats = loadStats();
   const history = loadHistory();
 

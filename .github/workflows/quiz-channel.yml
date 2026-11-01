@@ -76,8 +76,8 @@ env:
   POP_BG_CACHE: /home/runner/.cache/pop_quiz_bg
   # watermark: moving 40 % handle on 3 safe spots + a faint second mark (sample frames checked 2026-10-11)
   POP_WATERMARK: "1"
-  # retention cut (hook from frame 0, tighter rounds, CTA over the last reveal, seamless loop, 3 layout variants); off unless the
-  # repo variable POP_HOOK_V2 is set to 1
+  # retention cut (hook from frame 0, tighter rounds, CTA over the last reveal, seamless loop, 3 layout variants): repo variable
+  # POP_HOOK_V2 = 1 always, 0 never, mix = 50/50 per short (owner 2026-10-31; history hookV2 true / false compares views)
   POP_HOOK_V2: ${{ vars.POP_HOOK_V2 || '0' }}
   # narrator: Chatterbox, calm and cool (falls back to Kokoro am_onyx, then edge-tts)
   TTS_ENGINE: chatterbox
