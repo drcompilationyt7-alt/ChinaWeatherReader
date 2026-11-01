@@ -1,24 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=g3-PyhfIecA",
-      "title": "kick back acapella ⚡🔥",
-      "country": "Global",
-      "postedAt": "2026-10-01T09:40:34.164Z",
-      "videoId": "g3-PyhfIecA",
-      "category": "meme-anime",
-      "titleSource": "kick back"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=dXj0c9t-rqY",
-      "title": "super shy acapella 🗿 #newjeans",
-      "country": "Global",
-      "postedAt": "2026-10-02T09:19:35.652Z",
-      "videoId": "dXj0c9t-rqY",
-      "category": "meme-kpop",
-      "titleSource": "super shy"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=sCoxfXm2XPA",
       "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
       "country": "Global",
@@ -278,6 +260,15 @@
       "videoId": "WCMyUokCVf4",
       "category": "meme-kpop",
       "titleSource": "pink venom"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Uz9xG1BHnz4",
+      "title": "gangnam style acapella but the beat drops 🎧",
+      "country": "Global",
+      "postedAt": "2026-11-01T10:58:23.782Z",
+      "videoId": "Uz9xG1BHnz4",
+      "category": "meme-kpop",
+      "titleSource": "gangnam style"
     }
   ]
 }

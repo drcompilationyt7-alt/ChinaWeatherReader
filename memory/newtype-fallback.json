@@ -1,33 +1,19 @@
 {
- "at": "2026-11-01T02:19:54.805Z",
+ "at": "2026-11-01T10:49:22.118Z",
  "type": "sound",
  "ok": false,
- "reason": "pool too small: pool_too_small: 8.4 s (< 8.5 s) / hold 0.739 s (> 0.15 s) with 6 fresh clips",
- "dryRun": true,
+ "reason": "time budget",
+ "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "s_bling_bang",
-   "seed": 98064,
+   "song": "michael_jackson_smooth_criminal",
+   "seed": 29066,
    "input": "first",
-   "work": "work-sound-1793498063984",
-   "min": 18.6,
-   "overall": 9.31,
-   "failed": {
-    "5_density_no_dead": 7.9,
-    "16_drum_onsets_recreated": 6.1
-   },
-   "result": "NOT PASS",
-   "next": "new_song"
-  },
-  {
-   "n": 2,
-   "song": "camila_cabello_havana",
-   "seed": 98275,
-   "input": "new_song",
-   "work": "work-sound-1793499177924",
-   "min": 6.9,
-   "result": "pool too small"
+   "work": "work-sound-1793529066902",
+   "min": 18.2,
+   "result": "guard: 11 shots (< 12)",
+   "next": "reseed"
   }
  ]
 }

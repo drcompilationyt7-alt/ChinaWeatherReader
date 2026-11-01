@@ -115,13 +115,13 @@
    },
    "total": 0.856,
    "lyrics": "render-time only",
-   "status": "probation",
+   "status": "active",
    "added": "2026-10-18T21:00:50Z",
    "last_used": "2026-10-24T12:00:00Z",
    "uses": 0,
    "perf": {
-    "n": 1,
-    "sum": 4.109
+    "n": 2,
+    "sum": 8.366
    },
    "version_last_used": {
     "0.85": "2026-10-24T12:00:00Z",
