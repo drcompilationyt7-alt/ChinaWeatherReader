@@ -1,19 +1,86 @@
 {
- "at": "2026-11-01T10:49:22.118Z",
- "type": "sound",
+ "at": "2026-11-02T12:33:17.573Z",
+ "type": "slowmo",
  "ok": false,
- "reason": "time budget",
+ "reason": "attempts used up",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "michael_jackson_smooth_criminal",
-   "seed": 29066,
+   "song": "cigarettes_after_sex_apocalypse@v1",
+   "seed": 15323,
    "input": "first",
-   "work": "work-sound-1793529066902",
-   "min": 18.2,
-   "result": "guard: 11 shots (< 12)",
+   "work": "work-slowmo-1793615323270",
+   "min": 25.9,
+   "overall": 8.1,
+   "failed": {
+    "3_lyrics": 4,
+    "11_waves": 2,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
    "next": "reseed"
+  },
+  {
+   "n": 2,
+   "song": "cigarettes_after_sex_apocalypse@v1",
+   "seed": 15424,
+   "input": "reseed",
+   "work": "work-slowmo-1793616878457",
+   "min": 21.7,
+   "overall": 9.53,
+   "failed": {
+    "3_lyrics": 4.6
+   },
+   "result": "NOT PASS",
+   "next": "reseed"
+  },
+  {
+   "n": 3,
+   "song": "cigarettes_after_sex_apocalypse@v1",
+   "seed": 15525,
+   "input": "reseed",
+   "work": "work-slowmo-1793618178939",
+   "min": 25.5,
+   "overall": 8.18,
+   "failed": {
+    "3_lyrics": 4,
+    "11_waves": 2,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
+  },
+  {
+   "n": 4,
+   "song": "billie_eilish_birds_of_a_feather@v0.9",
+   "seed": 15736,
+   "input": "new_song",
+   "work": "work-slowmo-1793619711143",
+   "min": 29.5,
+   "overall": 8.5,
+   "failed": {
+    "9_no_sfx": 2,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
+  },
+  {
+   "n": 5,
+   "song": "ed_sheeran_photograph@v1",
+   "seed": 15947,
+   "input": "new_song",
+   "work": "work-slowmo-1793621480753",
+   "min": 21.9,
+   "overall": 7.7,
+   "failed": {
+    "3_lyrics": 2.4,
+    "11_waves": 1,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "recut"
   }
  ]
 }
