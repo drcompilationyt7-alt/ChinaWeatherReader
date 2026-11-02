@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Fbg3jG9oNts",
-      "title": "How Well Do You Know Chinese Movies?",
-      "country": "Global",
-      "postedAt": "2026-10-03T08:19:17.391Z",
-      "videoId": "Fbg3jG9oNts",
-      "category": "quiz-trivia",
-      "titleSource": "trivia-howwell",
-      "quizFormat": "trivia",
-      "quizTheme": "cdrama"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=QaF4Ova1vq4",
       "title": "Guess the Country by Its Shape 🗺️ #geography",
       "country": "Global",
@@ -461,6 +450,28 @@
       "titleSource": "outfit-design",
       "quizFormat": "outfit",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=FhtfLQot5QQ",
+      "title": "guess the city photo quiz asia #asia",
+      "country": "Global",
+      "postedAt": "2026-11-02T09:42:59.214Z",
+      "videoId": "FhtfLQot5QQ",
+      "category": "quiz-cityphoto",
+      "titleSource": "cityphoto-llm",
+      "quizFormat": "cityphoto",
+      "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=cJXqFgIs5qQ",
+      "title": "Name the Country From Its Outline 🤯 #geography",
+      "country": "Global",
+      "postedAt": "2026-11-02T09:44:50.540Z",
+      "videoId": "cJXqFgIs5qQ",
+      "category": "quiz-shape",
+      "titleSource": "shape-outline",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }

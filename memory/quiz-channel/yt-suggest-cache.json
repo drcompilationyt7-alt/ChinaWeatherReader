@@ -1,4 +1,34 @@
 {
+ "guess the country": {
+  "at": "2026-11-02T09:44:31.054Z",
+  "s": [
+   "guess the country",
+   "guess the country song",
+   "guess the country beta squad",
+   "guess the country by emoji",
+   "guess the country flag",
+   "guess the country chunkz",
+   "guess the country challenge",
+   "guess the country ndl",
+   "guess the country boy",
+   "guess the country by language"
+  ]
+ },
+ "guess the city": {
+  "at": "2026-11-02T09:42:38.485Z",
+  "s": [
+   "guess the city",
+   "guess the city by skyline",
+   "guess the city by emoji",
+   "guess the city from above",
+   "guess the city sounds",
+   "guess the city by picture",
+   "guess the city by aerial view",
+   "guess the city boy",
+   "guess the city name",
+   "guess the city asmr"
+  ]
+ },
  "guess the anime character by outfit": {
   "at": "2026-11-01T09:34:19.977Z",
   "s": [
@@ -194,36 +224,6 @@
    "asian capitals"
   ]
  },
- "guess the city": {
-  "at": "2026-10-24T07:31:16.792Z",
-  "s": [
-   "guess the city",
-   "guess the city by skyline",
-   "guess the city by emoji",
-   "guess the city from above",
-   "guess the city sounds",
-   "guess the city by picture",
-   "guess the city by aerial view",
-   "guess the city boy",
-   "guess the city name",
-   "guess the city asmr"
-  ]
- },
- "guess the country": {
-  "at": "2026-10-24T07:28:04.741Z",
-  "s": [
-   "guess the country",
-   "guess the country song",
-   "guess the country beta squad",
-   "guess the country flag",
-   "guess the country by emoji",
-   "guess the country chunkz",
-   "guess the country challenge",
-   "guess the country ndl",
-   "guess the country boy",
-   "guess the country by language"
-  ]
- },
  "guess the anime character": {
   "at": "2026-10-21T07:57:47.237Z",
   "s": [
@@ -268,18 +268,6 @@
   "s": [
    "guess the anime from emojis",
    "guess the anime character from emoji"
-  ]
- },
- "guess the anime song": {
-  "at": "2026-10-12T09:29:47.129Z",
-  "s": [
-   "guess the anime song",
-   "guess the anime song piano",
-   "guess the anime song easy",
-   "guess the anime song the anime man",
-   "guess the anime song japanese show",
-   "guess the anime song by lyrics",
-   "guess the anime song 90s"
   ]
  }
 }

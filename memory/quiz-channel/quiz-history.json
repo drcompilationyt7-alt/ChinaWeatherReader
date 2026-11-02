@@ -1960,6 +1960,86 @@
     "titleStyle": "challenge",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "FhtfLQot5QQ",
+   "url": "https://www.youtube.com/watch?v=FhtfLQot5QQ",
+   "postedAt": "2026-11-02T09:42:59.044Z",
+   "publishAt": "2026-11-02T13:00:00.000Z",
+   "format": "cityphoto",
+   "theme": "asia",
+   "seed": 396355534,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the Asian city from a photo?",
+     "template": "Can you guess the Asian city from a photo?",
+     "sec": 2.16
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Kyoto.",
+     "template": null,
+     "sec": 1
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Yokohama.",
+     "template": null,
+     "sec": 1.11
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Jeonju!",
+     "template": null,
+     "sec": 1.1
+    }
+   ],
+   "titleTemplate": "cityphoto-llm",
+   "title": "guess the city photo quiz asia #asia",
+   "answers": [
+    "cityphoto:JP:kyoto#1ou90k9",
+    "cityphoto:JP:yokohama#18qx3rd",
+    "cityphoto:KR:jeonju#1on6kry"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "cJXqFgIs5qQ",
+   "url": "https://www.youtube.com/watch?v=cJXqFgIs5qQ",
+   "postedAt": "2026-11-02T09:44:50.539Z",
+   "publishAt": "2026-11-03T01:00:00.000Z",
+   "format": "shape",
+   "theme": "asia",
+   "seed": 85496787,
+   "length": "quick",
+   "hookV2": false,
+   "titleTemplate": "shape-outline",
+   "title": "Name the Country From Its Outline 🤯 #geography",
+   "answers": [
+    "KP",
+    "UZ",
+    "IN"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
