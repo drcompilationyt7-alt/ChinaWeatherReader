@@ -154,6 +154,207 @@
    "officialId": "Y1Lah0BM0KQ",
    "probation": true,
    "approvedAt": "2026-10-16"
+  },
+  {
+   "name": "gunjo",
+   "query": "YOASOBI Gunjo official audio",
+   "artist": "YOASOBI",
+   "theme": "jpop",
+   "source": "YOASOBI",
+   "kind": "group",
+   "aliases": [
+    "gunjo",
+    "gunjou",
+    "群青",
+    "blue",
+    "ikura",
+    "ayase"
+   ],
+   "officialId": "Y4nEEZwckuU",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"yoru ni kakeru\" (artist yoasobi)"
+  },
+  {
+   "name": "shin jidai",
+   "query": "Ado Shin Jidai official audio",
+   "artist": "Ado",
+   "theme": "anime",
+   "source": "One Piece Film: Red",
+   "kind": "anime",
+   "aliases": [
+    "shin jidai",
+    "新時代",
+    "new genesis",
+    "uta",
+    "one piece"
+   ],
+   "officialId": "1FliVTcX8bQ",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"yoru ni kakeru\" (artist yoasobi)"
+  },
+  {
+   "name": "sangenshoku",
+   "query": "YOASOBI Sangenshoku official audio",
+   "artist": "YOASOBI",
+   "theme": "jpop",
+   "source": "YOASOBI",
+   "kind": "group",
+   "aliases": [
+    "sangenshoku",
+    "三原色",
+    "rgb",
+    "ikura",
+    "ayase"
+   ],
+   "officialId": "nhOhFOoURnE",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"yoru ni kakeru\" (artist yoasobi)"
+  },
+  {
+   "name": "ddu-du ddu-du",
+   "query": "BLACKPINK DDU-DU DDU-DU official audio",
+   "artist": "BLACKPINK",
+   "theme": "kpop",
+   "source": "BLACKPINK",
+   "kind": "group",
+   "aliases": [
+    "jisoo",
+    "jennie",
+    "rosé",
+    "lisa",
+    "ddudu ddudu",
+    "뚜두뚜두"
+   ],
+   "officialId": "IHNzOHi8sJs",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "boombayah",
+   "query": "BLACKPINK Boombayah official audio",
+   "artist": "BLACKPINK",
+   "theme": "kpop",
+   "source": "BLACKPINK",
+   "kind": "group",
+   "aliases": [
+    "jisoo",
+    "jennie",
+    "rosé",
+    "lisa",
+    "붐바야"
+   ],
+   "officialId": "bwmSjveL3Lc",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "dun dun",
+   "query": "EVERGLOW DUN DUN official audio",
+   "artist": "EVERGLOW",
+   "theme": "kpop",
+   "source": "EVERGLOW",
+   "kind": "group",
+   "aliases": [
+    "e:u",
+    "sihyeon",
+    "mia",
+    "onda",
+    "yiren",
+    "aisha",
+    "던던"
+   ],
+   "officialId": "NoYKBAajoyo",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "batter up",
+   "query": "BABYMONSTER BATTER UP official audio",
+   "artist": "BABYMONSTER",
+   "theme": "kpop",
+   "source": "BABYMONSTER",
+   "kind": "group",
+   "aliases": [
+    "ruka",
+    "pharita",
+    "asa",
+    "ahyeon",
+    "rami",
+    "rora",
+    "chiquita",
+    "배터 업"
+   ],
+   "officialId": "olDWm2veCrM",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "i am the best",
+   "query": "2NE1 I Am The Best official audio",
+   "artist": "2NE1",
+   "theme": "kpop",
+   "source": "2NE1",
+   "kind": "group",
+   "aliases": [
+    "cl",
+    "dara",
+    "bom",
+    "minzy",
+    "naega jeil jal naga",
+    "내가 제일 잘 나가"
+   ],
+   "officialId": "j7_lSP8Vc3o",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "tomboy",
+   "query": "(G)I-DLE TOMBOY official audio",
+   "artist": "(G)I-DLE",
+   "theme": "kpop",
+   "source": "(G)I-DLE",
+   "kind": "group",
+   "aliases": [
+    "soyeon",
+    "miyeon",
+    "minnie",
+    "yuqi",
+    "shuhua",
+    "gidle",
+    "톰보이"
+   ],
+   "officialId": "Jh4QFaPmdss",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
+  },
+  {
+   "name": "loco",
+   "query": "ITZY LOCO official audio",
+   "artist": "ITZY",
+   "theme": "kpop",
+   "source": "ITZY",
+   "kind": "group",
+   "aliases": [
+    "yeji",
+    "lia",
+    "ryujin",
+    "chaeryeong",
+    "yuna",
+    "로꼬"
+   ],
+   "officialId": "MjCZfZfucEc",
+   "probation": true,
+   "approvedAt": "2026-11-03",
+   "similarTo": "similar to hit \"pink venom\" (artist blackpink)"
   }
  ],
  "retired": [],
@@ -267,6 +468,36 @@
    "name": "love like fire",
    "at": "2026-10-15",
    "why": "official upload has 12239 views < 1000000"
+  },
+  {
+   "name": "shukufuku",
+   "at": "2026-11-03",
+   "why": "sample check: 1/3 clean previews (ApO5gTjtfcQ: burned-in text (0.10 top / 0.00 bottom); _a6GUbXKfJw: clean; maWaJEYO-xM: burned-in text (0.10 top / 0.00 bottom))"
+  },
+  {
+   "name": "tada kimi ni hare",
+   "at": "2026-11-03",
+   "why": "official upload has 812 views < 1000000"
+  },
+  {
+   "name": "byoushin wo kamu",
+   "at": "2026-11-03",
+   "why": "sample check: 0/3 clean previews (ihZLtVsXEHs: borders (0.21); OcUSB26yN9k: borders (0.16); vQDA4fUzNEk: borders (0.06))"
+  },
+  {
+   "name": "kawaki wo ameku",
+   "at": "2026-11-03",
+   "why": "\"Domestic Girlfriend\" is NSFW / skip-listed"
+  },
+  {
+   "name": "dakara boku wa ongaku wo yameta",
+   "at": "2026-11-03",
+   "why": "official upload has 1862 views < 1000000"
+  },
+  {
+   "name": "kill this love",
+   "at": "2026-11-03",
+   "why": "sample check: 1/3 clean previews (_7TMluHVx4Y: burned-in text (0.14 top / 0.00 bottom); VLpUsmBafMQ: clean; PrYqSFbcdfc: burned-in text (0.12 top / 0.00 bottom))"
   }
  ]
 }

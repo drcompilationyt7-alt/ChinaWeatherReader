@@ -1,0 +1,1417 @@
+{
+ "month": "2026-11",
+ "at": "2026-11-03T12:56:28.115Z",
+ "limits": {
+  "minViews": 1000000,
+  "evergreenViews": 100000000,
+  "minTrend": 1,
+  "trendDays": 90,
+  "popularViews": 20000000,
+  "minClips": 12,
+  "maxPerMonth": 10,
+  "retireAfter": 4,
+  "retireMargin": 0.5,
+  "minSustained": 6,
+  "sustainDays": 180,
+  "newDays": 120,
+  "llmAsk": 25
+ },
+ "candidates": 40,
+ "approved": [
+  "gunjo",
+  "shin jidai",
+  "sangenshoku",
+  "ddu-du ddu-du",
+  "boombayah",
+  "dun dun",
+  "batter up",
+  "i am the best",
+  "tomboy",
+  "loco"
+ ],
+ "retired": [],
+ "approvedThisMonthBefore": 0,
+ "report": [
+  {
+   "name": "shukufuku",
+   "artist": "YOASOBI",
+   "theme": "anime",
+   "source": "Mobile Suit Gundam: The Witch from Mercury",
+   "query": "YOASOBI Shukufuku official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"Mobile Suit Gundam: The Witch from Mercury\" found live on AniList, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 188480155 views (3eytpBOkOFA); evergreen hit (188M official views, popularity alone)",
+     "official": {
+      "id": "3eytpBOkOFA",
+      "title": "YOASOBI「祝福」Official Music Video (『機動戦士ガンダム 水星の魔女』オープニングテーマ)",
+      "channel": "YOASOBI",
+      "views": 188480155,
+      "duration": 198,
+      "uploadDate": "20221002",
+      "height": 1080,
+      "description": "ストリーミング＆ダウンロード配信中！\nhttps://orcd.co/shukufuku\n\n『機動戦士ガンダム 水星の魔女』\n毎週日曜午後5時～MBS/TBS系全国28局ネットにて放送\nhttps://g-witch.net/\n\n○原作小説 「ゆりかごの星」\n原作:矢立 肇 富野由悠季\n著:大河内一楼\nhttps://g-witch.net/music/novel/\n\n--\nMusic : Ayase (https://twitter.com/ayase_0404)\nVocal : ikura (https://twitter.com/ikutalilas)\n\nGuitar : Takeruru (https://twitter.com/Takeruru_rururu)\nBass : やまもとひかる (https://x.com/Yamahika_da)\n\n○インスト音源\nhttps://",
+      "tags": [],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": false,
+     "why": "sample check: 1/3 clean previews (ApO5gTjtfcQ: burned-in text (0.10 top / 0.00 bottom); _a6GUbXKfJw: clean; maWaJEYO-xM: burned-in text (0.10 top / 0.00 bottom))",
+     "probes": [
+      {
+       "sharp": 1414.3,
+       "text_top": 0.102,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.10 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 891.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1402,
+       "text_top": 0.102,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.10 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "rejected",
+   "why": "sample check: 1/3 clean previews (ApO5gTjtfcQ: burned-in text (0.10 top / 0.00 bottom); _a6GUbXKfJw: clean; maWaJEYO-xM: burned-in text (0.10 top / 0.00 bottom))"
+  },
+  {
+   "name": "gunjo",
+   "artist": "YOASOBI",
+   "theme": "jpop",
+   "source": "YOASOBI",
+   "query": "YOASOBI Gunjo official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"YOASOBI\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 242747732 views (Y4nEEZwckuU); 1 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "Y4nEEZwckuU",
+      "title": "YOASOBI「群青」Official Music Video",
+      "channel": "YOASOBI",
+      "views": 242747732,
+      "duration": 262,
+      "uploadDate": "20201201",
+      "height": 1080,
+      "description": "ダウンロード＆ストリーミング配信中：https://orcd.co/gunjo\n==\nブルボン「アルフォートミニチョコレート」CMソング\n人気マンガ『ブルーピリオド』（作・山口つばさ）にインスパイアされて生まれた一曲。\n『アルフォート×YOASOBI Special Movie inspired by ブルーピリオド』公開中！\nhttps://www.youtube.com/watch?v=vELh3Q6BBx4\n==\nTwitter：https://twitter.com/YOASOBI_staff\nMusic : Ayase (https://twitter.com/ayase_0404)\nVocal : ikura (https://twitter.com/ikutalilas)\nGt.：AssH (https://twitter.com/AssH_Guitarist)\nChorus",
+      "tags": [
+       "YOASOBI",
+       "Ayase",
+       "ikura",
+       "幾田りら",
+       "群青",
+       "たぶん",
+       "ハルジオン",
+       "あの夢をなぞって",
+       "夜に駆ける",
+       "アルフォート",
+       "ブルーピリオド",
+       "山口つばさ",
+       "牧野惇"
+      ],
+      "verified": false
+     },
+     "trend": 1,
+     "trend180": 1,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 30.3 (27 at 1080p+), audio Y4nEEZwckuU (262s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 351.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1168.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.005,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 275,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "tada kimi ni hare",
+   "artist": "Yorushika",
+   "theme": "jpop",
+   "source": "Yorushika",
+   "query": "Yorushika Tada Kimi ni Hare official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"Yorushika\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "official upload has 812 views < 1000000",
+     "official": {
+      "id": "7vX923Vjmfs",
+      "title": "Yorushika[ヨルシカ] - Tada Kimi ni Hare[ただ君に晴れ]",
+      "channel": "Ak4 Music",
+      "views": 812,
+      "duration": 200,
+      "uploadDate": "20230407",
+      "height": 720,
+      "description": "#specterr #song  #audio  #music  #soundcloud  #officialmusic      #ai #novelai  #waifu #anime    #yorushika #ヨルシカ   #school \n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬ ▬\n Recommended Use Earphones🎧🎧\n ▬ ▬▬▬▬▬▬▬▬▬▬▬▬▬▬\nTrack: Yorushika[ヨルシカ] - Tada Kimi ni Hare[ただ君に晴れ] \n  \nProvided By: Yorushika[ヨルシカ] \n\nListen To The Original: https://youtu.be/-VKIqrvVOpo\n\n ◯ Yorushika[ヨルシカ]  \n▶Youtube                     : https://m.yout",
+      "tags": [],
+      "verified": false
+     }
+    }
+   },
+   "verdict": "rejected",
+   "why": "official upload has 812 views < 1000000"
+  },
+  {
+   "name": "byoushin wo kamu",
+   "artist": "ZUTOMAYO",
+   "theme": "jpop",
+   "source": "ZUTOMAYO",
+   "query": "ZUTOMAYO Byoushin wo Kamu official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"ZUTOMAYO\" not in the known list (decided by the popularity gate); official channel + 156542099 views accepted"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 156542099 views (GJI4Gv7NbmE); evergreen hit (157M official views, popularity alone)",
+     "official": {
+      "id": "GJI4Gv7NbmE",
+      "title": "ずっと真夜中でいいのに。『秒針を噛む』MV (ZUTOMAYO – Byoushinwo Kamu)",
+      "channel": "ずっと真夜中でいいのに。 ZUTOMAYO",
+      "views": 156542099,
+      "duration": 272,
+      "uploadDate": "20180604",
+      "height": 1080,
+      "description": "はじめまして。”ずっと真夜中でいいのに。”のACAね です。\nTwitter：https://twitter.com/zutomayo  作りました。フォロー喜びます。\nこれから動画アップしていきたいと思います。\nアレンジは ぬゆりさん、映像はWabokuさんです。\n2020.08.05 mini ALBUM『朗らかな皮膚とて不服』でました:)\nCD https://lnk.to/ZTMY_HHTH\nStreaming/DL https://lnk.to/HHTH_DL\n*For people who live outside of Japan, you can buy at CDJapan.\n\nずっと真夜中でいいのに。\n『秒針を噛む』\nLyrics & Vocal : ACAね\nMusic :  ACAね×ぬゆり\nArrangement : ぬゆり\nAnimation  : Waboku",
+      "tags": [
+       "ずっと真夜中でいいのに。",
+       "ずとまよ",
+       "ACAね",
+       "ぬゆり",
+       "Waboku",
+       "ZUTOMAYO",
+       "あかね",
+       "MAD",
+       "約ネバ",
+       "約束のネバーランド"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": false,
+     "why": "sample check: 0/3 clean previews (ihZLtVsXEHs: borders (0.21); OcUSB26yN9k: borders (0.16); vQDA4fUzNEk: borders (0.06))",
+     "probes": [
+      {
+       "sharp": 240.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.208,
+       "reasons": [
+        "borders (0.21)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 1904.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.163,
+       "reasons": [
+        "borders (0.16)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 243.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.065,
+       "reasons": [
+        "borders (0.06)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "rejected",
+   "why": "sample check: 0/3 clean previews (ihZLtVsXEHs: borders (0.21); OcUSB26yN9k: borders (0.16); vQDA4fUzNEk: borders (0.06))"
+  },
+  {
+   "name": "kawaki wo ameku",
+   "artist": "Minami",
+   "theme": "anime",
+   "source": "Domestic Girlfriend",
+   "query": "Minami Kawaki wo Ameku official audio",
+   "gates": {
+    "niche": {
+     "pass": false,
+     "why": "\"Domestic Girlfriend\" is NSFW / skip-listed"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    }
+   },
+   "verdict": "rejected",
+   "why": "\"Domestic Girlfriend\" is NSFW / skip-listed"
+  },
+  {
+   "name": "shin jidai",
+   "artist": "Ado",
+   "theme": "anime",
+   "source": "One Piece Film: Red",
+   "query": "Ado Shin Jidai official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "anime source \"One Piece Film: Red\" known, not NSFW"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 201576154 views (1FliVTcX8bQ); evergreen hit (202M official views, popularity alone)",
+     "official": {
+      "id": "1FliVTcX8bQ",
+      "title": "【Ado】新時代 (ウタ from ONE PIECE FILM RED)",
+      "channel": "Ado",
+      "views": 201576154,
+      "duration": 237,
+      "uploadDate": "20220615",
+      "height": 1080,
+      "description": "「ボクを信じて」\n\n▼新時代 Streaming & Download\nhttps://ado.lnk.to/newgenesisID\n\n~ウタ from ONE PIECE FILM RED~\n\n---------------------\n■2022.8.10 CD＆Digital Release\n【ウタ】Ado Full Album 『ウタの歌 ONE PIECE FILM RED』\nhttps://ado.lnk.to/utanoutaID\nhttps://sp.universal-music.co.jp/ado/uta-no-uta/\n------------------------\n\n▼Ado meets #op_filmred \nhttps://www.onepiece-film.jp/uta/\n\n▼ abt “ウタ & 新時代” ウタ日記 #1\nhttps://youtu.b",
+      "tags": [],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 22.5 (19 at 1080p+), audio 1FliVTcX8bQ (237s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 474.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 310.2,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1052.5,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "sangenshoku",
+   "artist": "YOASOBI",
+   "theme": "jpop",
+   "source": "YOASOBI",
+   "query": "YOASOBI Sangenshoku official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"YOASOBI\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 108253605 views (nhOhFOoURnE); evergreen hit (108M official views, popularity alone)",
+     "official": {
+      "id": "nhOhFOoURnE",
+      "title": "YOASOBI「三原色」Official Music Video",
+      "channel": "YOASOBI",
+      "views": 108253605,
+      "duration": 226,
+      "uploadDate": "20210703",
+      "height": 1080,
+      "description": "ahamo CMソング「三原色」Download & Streaming配信中\nhttps://orcd.co/sangenshoku\n--\nMusic : Ayase (https://twitter.com/ayase_0404)\nVocal : ikura (https://twitter.com/ikutalilas)\nGt.：AssH (https://twitter.com/AssH_Guitarist)\n\nインスト音源はこちら！\nhttps://piapro.jp/t/oq8X\n\n原作小説：「RGB」(小御門優一郎 著)\nhttps://ahamo.com/special/yoasobi/\n\nahamo×YOASOBI 特設ページ\nhttps://www.ahamo.com/special/yoasobi\n\nYOASOBI Twitter：https://twitter.co",
+      "tags": [],
+      "verified": false
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 31.3 (28 at 1080p+), audio nhOhFOoURnE (226s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 351.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1168.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.005,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1256,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.164,
+       "reasons": [
+        "borders (0.16)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "dakara boku wa ongaku wo yameta",
+   "artist": "Yorushika",
+   "theme": "jpop",
+   "source": "Yorushika",
+   "query": "Yorushika Dakara Boku wa Ongaku wo Yameta official audio",
+   "gates": {
+    "niche": {
+     "pass": null,
+     "why": "group \"Yorushika\" not in the known list (decided by the popularity gate)"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": false,
+     "why": "official upload has 1862 views < 1000000",
+     "official": {
+      "id": "prmfMEd0do4",
+      "title": "Yorushika │ Dakara Boku wa Ongaku wo Yameta │ Legendado BR [ Full ]",
+      "channel": "Animes Opening",
+      "views": 1862,
+      "duration": 244,
+      "uploadDate": "20230312",
+      "height": 1080,
+      "description": "Yorushika │ Dakara Boku wa Ongaku wo Yameta │ Legendado BR [ Completa ]\n\nInscreva-se no canal e deixe seu like e ativa esse sininho  se não o YouTube não manda as notificações de todos os videos ;/\n\nMeu Outro Canal:   \n\n / @sawamurasan4686  \n\nApoia.se:https://apoia.se/animesopenings\n\nArtista: Yorushika / Música: Dakara Boku wa Ongaku wo Yameta\n\nhttps://www.cdjapan.co.jp/product/NEO...\nhttps://musi",
+      "tags": [],
+      "verified": false
+     }
+    }
+   },
+   "verdict": "rejected",
+   "why": "official upload has 1862 views < 1000000"
+  },
+  {
+   "name": "kill this love",
+   "artist": "BLACKPINK",
+   "theme": "kpop",
+   "source": "BLACKPINK",
+   "query": "BLACKPINK Kill This Love official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"BLACKPINK\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 2250260593 views (2S24-y0Ij3Y); evergreen hit (2250M official views, popularity alone)",
+     "official": {
+      "id": "2S24-y0Ij3Y",
+      "title": "BLACKPINK - 'Kill This Love' M/V",
+      "channel": "BLACKPINK",
+      "views": 2250260593,
+      "duration": 194,
+      "uploadDate": "20190404",
+      "height": 1080,
+      "description": "BLACKPINK - Kill This Love\n\n천사 같은 Hi 끝엔 악마 같은 Bye\n매번 미칠듯한 High 뒤엔 뱉어야\n하는 Price\n이건 답이 없는 Test\n매번 속더라도 Yes\n딱한 감정의 노예\n얼어 죽을 사랑해\nHere I come kick in the door\n가장 독한 걸로 줘\n뻔하디 뻔한 그 love\n더 내놔봐 give me some more\n알아서 매달려 벼랑 끝에\n한마디면 또 like 헤벌레 해\n그 따뜻한 떨림이 새빨간 설렘이\n마치 heaven 같겠지만\nyou might not get in it\nLook at me Look at you\n누가 더 아플까\nYou smart 누가 You are\n두 눈에 피눈물 흐르게 된다면\nSo sorry 누가 You are\n나 어떡해 나약한 날 견딜 수 없",
+      "tags": [
+       "YG Entertainment",
+       "YG",
+       "와이지",
+       "K-pop",
+       "BLACKPINK",
+       "블랙핑크",
+       "블핑",
+       "제니",
+       "로제",
+       "리사",
+       "지수",
+       "Lisa",
+       "Jisoo",
+       "Jennie",
+       "Rosé"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": false,
+     "why": "sample check: 1/3 clean previews (_7TMluHVx4Y: burned-in text (0.14 top / 0.00 bottom); VLpUsmBafMQ: clean; PrYqSFbcdfc: burned-in text (0.12 top / 0.00 bottom))",
+     "probes": [
+      {
+       "sharp": 2883.8,
+       "text_top": 0.136,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.14 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 377.9,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 2074,
+       "text_top": 0.124,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.003,
+       "reasons": [
+        "burned-in text (0.12 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "rejected",
+   "why": "sample check: 1/3 clean previews (_7TMluHVx4Y: burned-in text (0.14 top / 0.00 bottom); VLpUsmBafMQ: clean; PrYqSFbcdfc: burned-in text (0.12 top / 0.00 bottom))"
+  },
+  {
+   "name": "ddu-du ddu-du",
+   "artist": "BLACKPINK",
+   "theme": "kpop",
+   "source": "BLACKPINK",
+   "query": "BLACKPINK DDU-DU DDU-DU official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"BLACKPINK\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 2417842108 views (IHNzOHi8sJs); evergreen hit (2418M official views, popularity alone)",
+     "official": {
+      "id": "IHNzOHi8sJs",
+      "title": "BLACKPINK - ‘뚜두뚜두 (DDU-DU DDU-DU)’ M/V",
+      "channel": "BLACKPINK",
+      "views": 2417842108,
+      "duration": 215,
+      "uploadDate": "20180615",
+      "height": 1080,
+      "description": "BLACKPINK - 뚜두뚜두 (DDU-DU DDU-DU)\n\n착한 얼굴에 그렇지 못한 태도\n가녀린 몸매 속\n가려진 volume은 두 배로\n거침없이 직진\n굳이 보진 않지 눈치\nBlack 하면 Pink\n우린 예쁘장한 Savage\n원할 땐 대놓고 뺏지\n넌 뭘 해도 칼로 물 베기\n두 손엔 가득한 fat check\n궁금하면 해봐 fact check\n눈 높인 꼭대기\n물 만난 물고기\n좀 독해 난 Toxic\nYou 혹해 I`m Foxy\n두 번 생각해\n흔한 남들처럼 착한 척은 못 하니까\n착각하지 마\n쉽게 웃어주는 건 날 위한 거야\n아직은 잘 모르겠지\n굳이 원하면 test me\n넌 불 보듯이 뻔해\n만만한 걸 원했다면\nOh wait til’ I do what I do\nHit you with that\nddu-du ddu-du d",
+      "tags": [
+       "블랙핑크",
+       "BLACKPINK",
+       "YG",
+       "SQUAREUP",
+       "SQUARE",
+       "UP",
+       "스퀘어업",
+       "뚜두뚜두",
+       "DDU_DU_DDU_DU"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 40.1 (32 at 1080p+), audio IHNzOHi8sJs (215s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 2074,
+       "text_top": 0.124,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.003,
+       "reasons": [
+        "burned-in text (0.12 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 959.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 377.9,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "boombayah",
+   "artist": "BLACKPINK",
+   "theme": "kpop",
+   "source": "BLACKPINK",
+   "query": "BLACKPINK Boombayah official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"BLACKPINK\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 1905289623 views (bwmSjveL3Lc); 1 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "bwmSjveL3Lc",
+      "title": "BLACKPINK - '붐바야 (BOOMBAYAH)' M/V",
+      "channel": "BLACKPINK",
+      "views": 1905289623,
+      "duration": 244,
+      "uploadDate": "20160808",
+      "height": 1080,
+      "description": "BLACKPINK - 붐바야 (BOOMBAYAH)\n\nBLACKPINK in your area\nBLACKPINK in your area\nBeen a bad girl I know I am\nAnd I'm so hot I need a fan\nI don't want a boy I need a man\nClick-Clack\nBadda bing badda booom\n문을 박차면 모두 날 바라봄\n굳이 애써 노력 안 해도\n모든 남자들은 코피가 팡팡팡\n팡팡 파라파라 팡팡팡\n지금 날 위한 축배를 짠짠짠\nHands up\n내 손엔\nbottle full o' henny\n네가 말로만 듣던 걔가 나야\nJennie\n춤추는 불빛은 날 감싸고 도네\nBlack to the pink\n어디서든 특별해 Oh yes\n쳐다 보든 말든\nI wanna da",
+      "tags": [
+       "BLACKPINK",
+       "붐바야",
+       "‎BOOMBAYAH",
+       "‎SQUAREONE"
+      ],
+      "verified": true
+     },
+     "trend": 1,
+     "trend180": 1,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 41.4 (33 at 1080p+), audio bwmSjveL3Lc (244s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 959.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 2074,
+       "text_top": 0.124,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0.003,
+       "reasons": [
+        "burned-in text (0.12 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 377.9,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "dun dun",
+   "artist": "EVERGLOW",
+   "theme": "kpop",
+   "source": "EVERGLOW",
+   "query": "EVERGLOW DUN DUN official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"EVERGLOW\" not in the known list (decided by the popularity gate); official channel + 312081499 views accepted"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 312081499 views (NoYKBAajoyo); evergreen hit (312M official views, popularity alone)",
+     "official": {
+      "id": "NoYKBAajoyo",
+      "title": "EVERGLOW (에버글로우) - DUN DUN MV",
+      "channel": "STONE MUSIC",
+      "views": 312081499,
+      "duration": 209,
+      "uploadDate": "20200203",
+      "height": 2160,
+      "description": "♬ Available on iTunes, Apple Music : https://apple.co/393nAUt\n     Listen on Spotify :https://spoti.fi/2GQSW4w\n\n\nEVERGLOW (에버글로우) - DUN DUN MV 입니다.\n\n‘강렬+파격’ 가요계 퍼포먼스 끝판왕 ‘에버글로우’, [reminiscence]로 전격 컴백!!\n‘단 한번도 본 적 없는 독보적 퍼포먼스!! You are so DONE’\n- 에버글로우, ‘수퍼 루키’-＞대세 글로벌 걸그룹’으로 성장!! 2020년 거침 없는 ‘직진’ 대세 행보\n- 타이틀곡 ‘DUN DUN’, 에버글로우 ‘넘사벽 비주얼+고품격 퍼포먼스’로 화려한 귀환!!\n\n2020년 가요계 퍼포먼스 끝판왕 에버글로우의 귀환!! ‘You are s",
+      "tags": [
+       "K-CULTURE korean Music MV Music Video K-Pop Kpop 뮤비 뮤직비디오",
+       "Stone Music Entertainment",
+       "EVERGLOW",
+       "에버글로우",
+       "DUN DUN",
+       "에버글로우 뮤비",
+       "EVERGLOW MV",
+       "DUN DUN MV",
+       "reminiscence",
+       "이유",
+       "시현",
+       "미아",
+       "온다",
+       "아샤",
+       "이런"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 47.4 (39 at 1080p+), audio NoYKBAajoyo (209s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 176.6,
+       "text_top": 0.091,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.09 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 817.1,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1072.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "batter up",
+   "artist": "BABYMONSTER",
+   "theme": "kpop",
+   "source": "BABYMONSTER",
+   "query": "BABYMONSTER BATTER UP official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"BABYMONSTER\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 353642653 views (olDWm2veCrM); evergreen hit (354M official views, popularity alone)",
+     "official": {
+      "id": "olDWm2veCrM",
+      "title": "BABYMONSTER - 'BATTER UP' M/V",
+      "channel": "BABYMONSTER",
+      "views": 353642653,
+      "duration": 198,
+      "uploadDate": "20231126",
+      "height": 2160,
+      "description": "BATTER UP\n\nI’m on a mission\nDon’t need permission\nNo matter what I’m gonna make my own decisions\n\nI’m talking you\nYou want it too\n예쁘고 착한 내가 어떻게 변할지 monster\n\nRemember Me\nSting like a bee\n굶주린 사자 같은 personality\n\n네 맘 빼고 다른 것은 원하지 않아\nI would never do you wrong\nYou’ll regret it when I’m gone\n\nYou\n좀 더 강하게\n더 빠르게\n날려 버릴게\n\nYou\nGot a lot to say\nWhat a big mistake\n\nBatter Batter Batter Up\nBatter Up Batter Up B",
+      "tags": [
+       "BABYMONSTER",
+       "베이비몬스터",
+       "베몬",
+       "BABYMON",
+       "BAEMON",
+       "하람",
+       "아현",
+       "루카",
+       "치키타",
+       "파리타",
+       "로라",
+       "아사",
+       "HARAM",
+       "AHYEON",
+       "RUKA"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 36.8 (30 at 1080p+), audio olDWm2veCrM (198s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 957.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1171.8,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 276.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "i am the best",
+   "artist": "2NE1",
+   "theme": "kpop",
+   "source": "2NE1",
+   "query": "2NE1 I Am The Best official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"2NE1\" not in the known list (decided by the popularity gate); official channel + 439784881 views accepted"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 439784881 views (j7_lSP8Vc3o); 1 edit / acapella uploads in 90 days",
+     "official": {
+      "id": "j7_lSP8Vc3o",
+      "title": "2NE1 - 내가 제일 잘 나가(I AM THE BEST) M/V",
+      "channel": "2NE1",
+      "views": 439784881,
+      "duration": 215,
+      "uploadDate": "20110628",
+      "height": 1080,
+      "description": "DIGITAL SINGLE [I AM THE BEST]\n\nAvailable on iTunes @ https://itunes.apple.com/us/album/i-am-the-best/id950442421?i=950442426\n\n#2NE1 #IAMTHEBEST #내가제일잘나가\n\nMore about 2NE1 @\nhttp://www.yg-2ne1.com/\nhttp://www.facebook.com/2ne1\nhttp://www.youtube.com/2ne1\nhttp://iTunes.com/2NE1\nhttp://weibo.com/2ne1asia\nhttp://twitter.com/ygent_official",
+      "tags": [
+       "2NE1",
+       "내가제일잘나가",
+       "I AM THE BEST",
+       "CL",
+       "민지",
+       "다라",
+       "봄",
+       "Minzy",
+       "Dara",
+       "Bom",
+       "Asian Pop",
+       "KPop",
+       "k-pop",
+       "asian music",
+       "asian girl group"
+      ],
+      "verified": true
+     },
+     "trend": 1,
+     "trend180": 1,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 29.4 (23 at 1080p+), audio j7_lSP8Vc3o (215s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 466.7,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1567.9,
+       "text_top": 0.141,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.14 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      },
+      {
+       "sharp": 1379.3,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "tomboy",
+   "artist": "(G)I-DLE",
+   "theme": "kpop",
+   "source": "(G)I-DLE",
+   "query": "(G)I-DLE TOMBOY official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"(G)I-DLE\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 406179587 views (Jh4QFaPmdss); evergreen hit (406M official views, popularity alone)",
+     "official": {
+      "id": "Jh4QFaPmdss",
+      "title": "(여자)아이들((G)I-DLE) - 'TOMBOY' Official Music Video",
+      "channel": "i-dle (아이들)",
+      "views": 406179587,
+      "duration": 197,
+      "uploadDate": "20220314",
+      "height": 2160,
+      "description": "(여자)아이들((G)I-DLE) - 'TOMBOY' Official Music Video\n\nComposed by 소연, Pop Time, JENCI\nLyrics by 소연\nArranged by Pop Time, JENCI, 소연\n\nLook at you 넌 못 감당해 날\nYa took off hook\n기분은 Coke like brrr\nLook at my toe 나의 Ex 이름 Tattoo\nI got to drink up now 네가 싫다 해도 좋아\n\nWhy are you cranky, boy?\n뭘 그리 찡그려 너\nDo you want a blond barbie doll?\nIt’s not here, I’m not a doll\n\n미친 연이라 말해 What’s the loss to me ya\n사정없이 까보라고 Yo",
+      "tags": [
+       "kpop",
+       "gidle",
+       "(여자)아이들",
+       "(G)I-DLE",
+       "IDLE",
+       "여자아이들",
+       "아이들",
+       "미연",
+       "민니",
+       "수진",
+       "소연",
+       "우기",
+       "슈화",
+       "MIYEON",
+       "MINNIE"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 42.0 (34 at 1080p+), audio Jh4QFaPmdss (197s), 2/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 800.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1225.1,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 4581.7,
+       "text_top": 0.408,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [
+        "burned-in text (0.41 top / 0.00 bottom)"
+       ],
+       "clean": false,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "loco",
+   "artist": "ITZY",
+   "theme": "kpop",
+   "source": "ITZY",
+   "query": "ITZY LOCO official audio",
+   "gates": {
+    "niche": {
+     "pass": true,
+     "why": "group \"ITZY\" is in the known list"
+    },
+    "duplicate": {
+     "pass": true,
+     "why": "new"
+    },
+    "popular": {
+     "pass": true,
+     "why": "official 275126483 views (MjCZfZfucEc); evergreen hit (275M official views, popularity alone)",
+     "official": {
+      "id": "MjCZfZfucEc",
+      "title": "ITZY “LOCO” M/V @ITZY",
+      "channel": "JYP Entertainment",
+      "views": 275126483,
+      "duration": 232,
+      "uploadDate": "20210924",
+      "height": 2160,
+      "description": "👑 𝐈𝐓𝐙𝐘 \"𝐂𝐇𝐄𝐂𝐊𝐌𝐀𝐓𝐄\" 𝐏𝐑𝐄-𝐒𝐀𝐕𝐄 & 𝐏𝐑𝐄-𝐎𝐑𝐃𝐄𝐑\nhttps://itzy.lnk.to/CHECKMATE\n\n👑 ALBUM RELEASE\n2022.7.15 FRI 1PM(KST) | 0AM(EST)\n\nITZY \"LOCO\" M/V\n\nITZY The 1st Album \"CRAZY IN LOVE\"\n📌 https://orcd.co/crazyinlove\n\nITZY \"LOCO\" Listen here:\n🎬 YouTube https://youtu.be/MjCZfZfucEc\n🎧 Spotify https://spoti.fi/2XMtUzT\n🎧 Apple Music https://apple.co/3APw0gk\n🎧 MelOn https://kko.to",
+      "tags": [
+       "JYP Entertainment",
+       "JYP",
+       "ITZY",
+       "있지",
+       "ITZY Video",
+       "ITZY Yeji",
+       "ITZY Lia",
+       "ITZY Ryujin",
+       "ITZY Chaeryeong",
+       "ITZY Yuna",
+       "있지 예지",
+       "있지 리아",
+       "있지 류진",
+       "있지 채령",
+       "있지 유나"
+      ],
+      "verified": true
+     },
+     "trend": 0,
+     "trend180": 0,
+     "fresh": false
+    },
+    "producible": {
+     "pass": true,
+     "why": "weighted sources 32.0 (26 at 1080p+), audio MjCZfZfucEc (232s), 3/3 sample previews clean",
+     "probes": [
+      {
+       "sharp": 2871.6,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 784.9,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      },
+      {
+       "sharp": 1542.4,
+       "text_top": 0,
+       "text_bottom": 0,
+       "watermark": false,
+       "border": 0,
+       "reasons": [],
+       "clean": true,
+       "ok": true
+      }
+     ]
+    }
+   },
+   "verdict": "approved",
+   "why": "all gates passed"
+  },
+  {
+   "name": "tot musica",
+   "source": "One Piece Film: Red",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "lalalala",
+   "source": "Stray Kids",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "deja vu",
+   "source": "TOMORROW X TOGETHER",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "impossible",
+   "source": "RIIZE",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "maestro",
+   "source": "SEVENTEEN",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "super lady",
+   "source": "(G)I-DLE",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "untouchable",
+   "source": "ITZY",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "one spark",
+   "source": "TWICE",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "feel the pop",
+   "source": "ZEROBASEONE",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "biri-biri",
+   "source": "YOASOBI",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "kaijuu no hana uta",
+   "source": "Vaundy",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "kura kura",
+   "source": "SPY x FAMILY Season 2",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "flower",
+   "source": "A Journey to Love (一念关山)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "no longer human",
+   "source": "The Legend of Shen Li (与凤行)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "moonlight",
+   "source": "The Legend of Shen Li (与凤行)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "waiting for you",
+   "source": "The Last Immortal (神隐)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "lost you forever",
+   "source": "Lost You Forever (长相思)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "drowning",
+   "source": "Love Between Fairy and Devil (苍兰诀)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "the sound of snow",
+   "source": "Story of Yanxi Palace (延禧攻略)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "my sickness",
+   "source": "The Oath of Love (余生请多指教)",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "unloveu",
+   "source": "KATSEYE",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "click",
+   "source": "JISOO",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "&team",
+   "source": "Accelerate",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  },
+  {
+   "name": "jump live",
+   "source": "Mayuka, Nina & Rima",
+   "gates": {},
+   "verdict": "deferred",
+   "why": "monthly limit (10) already filled"
+  }
+ ]
+}
