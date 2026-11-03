@@ -681,6 +681,86 @@
     "word": "punch",
     "note": "auto (vision model) 2026-10-30 (MEGALOBOX 2: NOMAD | Episode 7 Highlight | \"Gearle)"
    }
+  ],
+  "c_hkTFgxkntTI_196093": [
+   {
+    "t": 0.44,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-03 (Thors VS Askeladd (Vinland Saga))"
+   }
+  ],
+  "c_cyZQa2s7Aqc_57265": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "impact",
+    "note": "auto (vision model) 2026-11-03 (Attack On Titan Ep 86 - Mikasa, Connie and Jean Ki)"
+   }
+  ],
+  "c_IvlTzGeBmHE_115630": [
+   {
+    "t": 0.272,
+    "action": "sword",
+    "word": "kick",
+    "note": "auto (vision model) 2026-11-03 (Duel Draken vs Hanma || Tokyo Manji vs Valhalla ||)"
+   }
+  ],
+  "c_E6j5-a-vI14_158563": [
+   {
+    "t": 1.178,
+    "action": "gun",
+    "word": "shoot",
+    "note": "auto (vision model) 2026-11-03 (Devil May Cry Just The White Rabbit Scenes)"
+   }
+  ],
+  "c_cd7fEl_Bnw0_130269": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "strike",
+    "note": "auto (vision model) 2026-11-03 (Castlevania Netflix Anime TV Show: Alucard Vs Trev)"
+   }
+  ],
+  "c_E6j5-a-vI14_130338": [
+   {
+    "t": 1.4,
+    "action": "gun",
+    "word": "shoot",
+    "note": "auto (vision model) 2026-11-03 (Devil May Cry Just The White Rabbit Scenes)"
+   }
+  ],
+  "c_cd7fEl_Bnw0_108305": [
+   {
+    "t": 0.655,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-03 (Castlevania Netflix Anime TV Show: Alucard Vs Trev)"
+   }
+  ],
+  "c_J3kytewub_Y_352052": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "kick",
+    "note": "auto (vision model) 2026-11-03 (Tengen Toppa Gurren Lagann Movie: Lagann-hen. Fina)"
+   }
+  ],
+  "c_E6j5-a-vI14_495110": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "unsheathe",
+    "note": "auto (vision model) 2026-11-03 (Devil May Cry Just The White Rabbit Scenes)"
+   }
+  ],
+  "c_Z4ObaZlnrTY_117649": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "slash",
+    "note": "auto (vision model) 2026-11-03 (Frieren - STARK went CRAZY AGAINST REVOLTE (Genau )"
+   }
   ]
  }
 }
