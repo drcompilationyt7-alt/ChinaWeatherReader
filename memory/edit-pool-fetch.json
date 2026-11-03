@@ -753,13 +753,13 @@
   "Yb5EENgD_L8": "unclean: burned-in text (0.07 top / 0.00 bottom); burned-in text (0.07 top / 0.13 bottom)",
   "Hemv5WFyZHE": "download failed: ERROR: [youtube] Hemv5WFyZHE: Requested format is not available. Use --list-formats for a list of available formats",
   "ITRmryh9H7Y": "unclean: borders (0.26)",
-  "_wg7yJTiioo": "unclean: burned-in text (0.32 top / 0.00 bottom)",
-  "zJC5Lx2o6-A": "unclean: burned-in text (0.00 top / 0.11 bottom)",
+  "_wg7yJTiioo": "lowres: no 1080p video format",
+  "zJC5Lx2o6-A": "ok",
   "TbFrmN5bHug": "ok",
   "d_S9V0Hq2DQ": "ok",
   "-VE7havwyoM": "ok",
-  "CeLvx_1FBdk": "unclean: burned-in text (0.00 top / 0.11 bottom)",
-  "yznQJUJfreE": "unclean: burned-in text (0.00 top / 0.14 bottom)",
+  "CeLvx_1FBdk": "download failed: ERROR: [youtube] CeLvx_1FBdk: Video unavailable",
+  "yznQJUJfreE": "ok",
   "tun1RaoQG7E": "ok",
   "12RdhjM34iM": "unclean: borders (0.04); borders (0.11); burned-in text (0.10 top / 0.19 bottom)",
   "vGlXN-WuYbM": "ok",
@@ -1397,7 +1397,12 @@
   "u-Jg7Qqp5p8": "ok",
   "WajQwRg6aaE": "lowres: no 1080p video format",
   "XULjcWRt4xA": "lowres: no 1080p video format",
-  "A0GB1KsTtnQ": "lowres: no 1080p video format"
+  "A0GB1KsTtnQ": "lowres: no 1080p video format",
+  "HjCm4163UWo": "ok",
+  "aGnQap5yyuc": "ok",
+  "0YtlHURJkWY": "lowres: no 1080p video format",
+  "tpBUatJI3bc": "lowres: no 1080p video format",
+  "ejI0r1DuyAQ": "lowres: no 1080p video format"
  },
  "queries": {
   "Lycoris Recoil Chisato gunfight 4K": 14,
@@ -1991,6 +1996,8 @@
   "Kill la Kill gunfight scene": 14,
   "Gurren Lagann gunfight scene": 14,
   "Promare gunfight scene": 14,
-  "Sword Art Online gunfight scene": 14
+  "Sword Art Online gunfight scene": 14,
+  "Re:Zero gunfight scene": 14,
+  "Fullmetal Alchemist Brotherhood gunfight scene": 14
  }
 }
