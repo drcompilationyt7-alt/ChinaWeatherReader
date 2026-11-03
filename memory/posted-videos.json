@@ -1,24 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=sCoxfXm2XPA",
-      "title": "idol acapella yoasobi oshi no ko edit 🔥 #oshinoko",
-      "country": "Global",
-      "postedAt": "2026-10-03T12:54:28.168Z",
-      "videoId": "sCoxfXm2XPA",
-      "category": "meme-anime",
-      "titleSource": "idol"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=V4jth3Elrmk",
-      "title": "god's menu acapella but the stems stack up 🎶🎧",
-      "country": "Global",
-      "postedAt": "2026-10-04T09:03:44.060Z",
-      "videoId": "V4jth3Elrmk",
-      "category": "meme-kpop",
-      "titleSource": "god's menu"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=zoIsrTuwqzw",
       "title": "pokemon theme acapella 🗿",
       "country": "Global",
@@ -278,6 +260,15 @@
       "videoId": "nKCu_ouNdNM",
       "category": "meme-kpop",
       "titleSource": "cupid"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=6GEiZwO9BQw",
+      "title": "soda pop acapella but the beat drops ⚡",
+      "country": "Global",
+      "postedAt": "2026-11-03T11:47:45.869Z",
+      "videoId": "6GEiZwO9BQw",
+      "category": "meme-anime",
+      "titleSource": "soda pop"
     }
   ]
 }

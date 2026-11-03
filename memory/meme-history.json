@@ -2190,6 +2190,51 @@
    "whyMode": "explore",
    "bpm": 119.97,
    "titlePattern": "{song} acapella until the bass drops {e}"
+  },
+  {
+   "videoId": "6GEiZwO9BQw",
+   "url": "https://www.youtube.com/watch?v=6GEiZwO9BQw",
+   "postedAt": "2026-11-03T11:47:45.867Z",
+   "publishAt": "2026-11-03T12:00:00.000Z",
+   "song": "soda pop",
+   "theme": "anime",
+   "emoji": "⚡,🔥",
+   "title": "soda pop acapella but the beat drops ⚡",
+   "clipIds": [
+    "P4oHfZmRth8",
+    "UlShUHCkzXU",
+    "q3uxVT05yFQ",
+    "Vqy4Dz0bDr0"
+   ],
+   "clipChannels": [
+    "Animation Society",
+    "Dr Doctor",
+    "KPop Demon Hunters",
+    "Netflix"
+   ],
+   "clipSource": "KPop Demon Hunters",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "llm-line"
+   },
+   "onVideoTitle": "vocals only first",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "edit-community",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-stem-event",
+    "descHook": "llm-line",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 125.99,
+   "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
 }
