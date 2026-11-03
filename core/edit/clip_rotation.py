@@ -187,11 +187,17 @@ def choose_hard(items, hist, cfg, U, rng, key, counts):
     return lru + pas, info
 
 
-def report(used, hist, window=5):
-    """the reuse share of one rendered video vs the preset's last `window` videos (and vs the previous one)"""
+def report(used, hist, window=5, recent_days=0, now=None):
+    """the reuse share of one rendered video vs the preset's last `window` videos (and vs the previous one); with recent_days
+    a video older than that is not recent here either (same rule as usage(): 2026-11-03 the planner saw 7 % recent clips,
+    this report counted 3 videos of 12-16 days ago as recent -> 67 % and every sound edit failed the guard)"""
     used = list(dict.fromkeys(used or []))
-    last = [set(h.get('clips') or []) for h in hist[-window:]]
-    prev = last[-1] if last else set()
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    rcut = now - _dt.timedelta(days=recent_days) if recent_days else None
+    tail = hist[-window:]
+    prev = set(tail[-1].get('clips') or []) if tail else set()
+    last = [set(h.get('clips') or []) for h in tail
+            if rcut is None or _ts(h.get('at')) is None or _ts(h.get('at')) >= rcut]
     rec = set().union(*last) if last else set()
     r = sum(1 for c in used if c in rec)
     return {'shots': len(used), 'reused': r, 'reuse_share': round(r / max(1, len(used)), 3),
@@ -228,6 +234,8 @@ def selftest():
     assert len(c) == 10 and info['excluded_recent'] == 30 and not info.get('pool_too_small'), info
     c, info = choose(items2, h2, dict(hc, recent_days=14), rng, now=now + _dt.timedelta(days=20))
     assert info['fresh'] == 40, info
+    assert report(['c1', 'c35'], h2, 5, 14, now + _dt.timedelta(days=20))['reuse_share'] == 0.0
+    assert report(['c1', 'c35'], h2, 5, 14, now + _dt.timedelta(days=2))['reuse_share'] == 0.5
     print('clip_rotation selftest ok')
 
 

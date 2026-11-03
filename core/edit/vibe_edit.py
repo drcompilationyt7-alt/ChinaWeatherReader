@@ -393,7 +393,7 @@ def main():
                 # owner 2026-10-20: reuse only here and there -> the reuse share of every video is logged (result.json)
                 import clip_rotation as CR
                 rep = CR.report(used_short, CR.history(VP.load_ledger(), kind) + VP.queued_prebuilt(kind),
-                                int(CR.config(kind)['window']))
+                                int(CR.config(kind)['window']), int(CR.config(kind).get('recent_days') or 0))
                 res['clip_rotation'] = dict(rep, choice={k: v for k, v in VP.LAST_ROTATION.items()})
                 log(f"clip rotation: {rep['reused']} of {rep['shots']} shots reused from the last {rep['window']} {kind} videos "
                     f"({rep['reuse_share']:.0%}; from the previous video {rep['from_last_video']:.0%})")
