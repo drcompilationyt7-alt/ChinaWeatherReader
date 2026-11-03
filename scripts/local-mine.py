@@ -80,9 +80,10 @@ QUIZ_BUDGET = 30
 RANKING_BUDGET, RANKING_ENTRIES, RANKING_DL = 45, 3, 2   # minutes / entries (with a download) / downloads per entry (x2 blocker)
 RANKING_FIRST = os.environ.get('LOCAL_MINE_RANKING_FIRST', 'YUTA,MADARA,SUNG JINWOO')
 # YouTube jobs, in turn. 2026-11-03 owner "we need to increase pool" (sound: 85 of 230 pins, the daily sound edit runs on it):
-# sound : ranking : slow-mo = 1 : 1 : 1 (owner, same day: "ranking and slowmo too"; was ranking 2 : sound 1 : slow-mo 1);
-# LOCAL_MINE_ROTATION overrides (comma separated)
-ROTATION = tuple(j for j in (os.environ.get('LOCAL_MINE_ROTATION') or 'sound,ranking,slowmo').split(',') if j)
+# ranking : sound : slow-mo = 2 : 1 : 1. LOCAL_MINE_ROTATION overrides (comma separated; owner 2026-11-03 "just for today ... focus
+# on ranking and slow mo, don't do sound": local-mine.ps1 start -Rotation ranking,slowmo -UntilMidnight)
+ROTATION = tuple(j for j in (os.environ.get('LOCAL_MINE_ROTATION') or 'ranking,ranking,sound,slowmo').split(',') if j)
+UNTIL = os.environ.get('LOCAL_MINE_UNTIL') or ''                  # UTC ISO time: the miner stops itself then (one-day runs)
 STAGE_AT = 8                    # stage the pending sound batches once this many minis passed every gate (or at a pause / day end)
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
@@ -298,6 +299,12 @@ MON = None
 
 
 def stop_requested():
+    if UNTIL:
+        try:
+            if now_utc() >= dt.datetime.fromisoformat(UNTIL.replace('Z', '+00:00')):
+                return True
+        except ValueError:
+            pass
     return os.path.exists(STOP)
 
 
@@ -878,7 +885,8 @@ def cmd_run(a):
         psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS)
         MON = Monitor()
         ensure_worktree()
-        log(f'local miner started (pid {os.getpid()}, cap {DAILY_CAP} sources / day{", NOW mode: no owner-activity pause" if NOW else ""})')
+        log(f'local miner started (pid {os.getpid()}, cap {DAILY_CAP} sources / day{", NOW mode: no owner-activity pause" if NOW else ""}, '
+            f'jobs {",".join(ROTATION)}{", until " + UNTIL if UNTIL else ""})')
         while not stop_requested():
             st = day_state()
             wj(STATE, st)
