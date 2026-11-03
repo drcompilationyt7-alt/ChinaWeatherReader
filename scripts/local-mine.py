@@ -80,8 +80,9 @@ QUIZ_BUDGET = 30
 RANKING_BUDGET, RANKING_ENTRIES, RANKING_DL = 45, 3, 2   # minutes / entries (with a download) / downloads per entry (x2 blocker)
 RANKING_FIRST = os.environ.get('LOCAL_MINE_RANKING_FIRST', 'YUTA,MADARA,SUNG JINWOO')
 # YouTube jobs, in turn. 2026-11-03 owner "we need to increase pool" (sound: 85 of 230 pins, the daily sound edit runs on it):
-# sound : ranking : slow-mo = 2 : 1 : 1 (was ranking 2 : sound 1 : slow-mo 1); LOCAL_MINE_ROTATION overrides (comma separated)
-ROTATION = tuple(j for j in (os.environ.get('LOCAL_MINE_ROTATION') or 'sound,ranking,sound,slowmo').split(',') if j)
+# sound : ranking : slow-mo = 1 : 1 : 1 (owner, same day: "ranking and slowmo too"; was ranking 2 : sound 1 : slow-mo 1);
+# LOCAL_MINE_ROTATION overrides (comma separated)
+ROTATION = tuple(j for j in (os.environ.get('LOCAL_MINE_ROTATION') or 'sound,ranking,slowmo').split(',') if j)
 STAGE_AT = 8                    # stage the pending sound batches once this many minis passed every gate (or at a pause / day end)
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
