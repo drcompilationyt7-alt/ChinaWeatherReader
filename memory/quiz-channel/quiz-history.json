@@ -2040,6 +2040,56 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "ODjszPYcAbU",
+   "url": "https://www.youtube.com/watch?v=ODjszPYcAbU",
+   "postedAt": "2026-11-03T09:49:23.571Z",
+   "publishAt": "2026-11-03T13:00:00.000Z",
+   "format": "duel",
+   "theme": "anime",
+   "seed": 703291430,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "duel-llm",
+   "title": "who would you pick anime duel 🧠 #anime",
+   "answers": [
+    "duel:40882-71121",
+    "duel:31-58",
+    "duel:71267-71611"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-fire-brain",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "G8uG86JKTQM",
+   "url": "https://www.youtube.com/watch?v=G8uG86JKTQM",
+   "postedAt": "2026-11-03T09:54:01.365Z",
+   "publishAt": "2026-11-04T01:00:00.000Z",
+   "format": "trivia",
+   "theme": "food",
+   "seed": 269856795,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "trivia-llm",
+   "title": "asian food quiz: can you get 3/3 #asianfood",
+   "answers": [
+    "trivia:peking duck comes from which city?",
+    "trivia:which chinese dining style features a hot broth pot?",
+    "trivia:xiaolongbao are a kind of..."
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

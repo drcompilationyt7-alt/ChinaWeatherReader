@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=QaF4Ova1vq4",
-      "title": "Guess the Country by Its Shape 🗺️ #geography",
-      "country": "Global",
-      "postedAt": "2026-10-04T08:37:03.313Z",
-      "videoId": "QaF4Ova1vq4",
-      "category": "quiz-shape",
-      "titleSource": "shape-guess",
-      "quizFormat": "shape",
-      "quizTheme": "asia"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=vaJCe01FdYs",
       "title": "guess the anime from emojis 🎬 #anime",
       "country": "Global",
@@ -472,6 +461,28 @@
       "titleSource": "shape-outline",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=ODjszPYcAbU",
+      "title": "who would you pick anime duel 🧠 #anime",
+      "country": "Global",
+      "postedAt": "2026-11-03T09:49:23.829Z",
+      "videoId": "ODjszPYcAbU",
+      "category": "quiz-duel",
+      "titleSource": "duel-llm",
+      "quizFormat": "duel",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=G8uG86JKTQM",
+      "title": "asian food quiz: can you get 3/3 #asianfood",
+      "country": "Global",
+      "postedAt": "2026-11-03T09:54:01.626Z",
+      "videoId": "G8uG86JKTQM",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-llm",
+      "quizFormat": "trivia",
+      "quizTheme": "food"
     }
   ]
 }
