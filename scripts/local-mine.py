@@ -79,7 +79,9 @@ SLOWMO_BATCH, SLOWMO_BUDGET = 4, 50
 QUIZ_BUDGET = 30
 RANKING_BUDGET, RANKING_ENTRIES, RANKING_DL = 45, 3, 2   # minutes / entries (with a download) / downloads per entry (x2 blocker)
 RANKING_FIRST = os.environ.get('LOCAL_MINE_RANKING_FIRST', 'YUTA,MADARA,SUNG JINWOO')
-ROTATION = ('ranking', 'ranking', 'sound', 'slowmo')        # YouTube jobs, in turn
+# YouTube jobs, in turn. 2026-11-03 owner "we need to increase pool" (sound: 85 of 230 pins, the daily sound edit runs on it):
+# sound : ranking : slow-mo = 2 : 1 : 1 (was ranking 2 : sound 1 : slow-mo 1); LOCAL_MINE_ROTATION overrides (comma separated)
+ROTATION = tuple(j for j in (os.environ.get('LOCAL_MINE_ROTATION') or 'sound,ranking,sound,slowmo').split(',') if j)
 STAGE_AT = 8                    # stage the pending sound batches once this many minis passed every gate (or at a pause / day end)
 MAX_STAGED_SOUND = 4            # CI's own review-backlog gate: no new sound tars while this many wait
 BACKOFF_H = 8
@@ -883,7 +885,7 @@ def cmd_run(a):
             if cap_left(st) > 0:
                 yt = sum(1 for j in st['jobs'] if j in YT_POOLS)
                 rot = [j for j in ROTATION if j != 'ranking' or os.environ.get('LOCAL_MINE_RANKING', '1') != '0']
-                nxt = rot[yt % len(rot)]                             # ranking : sound : slow-mo = 2 : 1 : 1
+                nxt = rot[yt % len(rot)]                             # ROTATION order
                 if nxt == 'sound' and pending_count() >= 30:
                     nxt = 'slowmo'                                   # sound review backlog: grow slow-mo meanwhile
             quiz_ok = not st['quiz_done'] or (NOW and st.get('quiz_runs', 0) < QUIZ_NOW_MAX)
