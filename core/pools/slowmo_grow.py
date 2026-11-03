@@ -142,7 +142,11 @@ def wj(p, d):
 def low_priority():
     try:
         import psutil
-        psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS if os.name == 'nt' else 19)
+        if os.name == 'nt':   # MINE_PRIORITY (scripts/local-mine.py LOCAL_MINE_PRIORITY): idle (default) | below | normal
+            psutil.Process().nice({'below': psutil.BELOW_NORMAL_PRIORITY_CLASS, 'normal': psutil.NORMAL_PRIORITY_CLASS}.get(
+                os.environ.get('MINE_PRIORITY') or 'idle', psutil.IDLE_PRIORITY_CLASS))
+        else:
+            psutil.Process().nice(19)
     except Exception:  # noqa: BLE001
         pass
 

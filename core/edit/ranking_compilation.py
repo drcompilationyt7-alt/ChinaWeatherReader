@@ -126,7 +126,9 @@ def wait_ram(what, need=MIN_FREE_GB, max_wait=6 * 3600):
 def idle():
     try:
         import psutil
-        psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS)    # children (ffmpeg) inherit it
+        # children (ffmpeg) inherit it; MINE_PRIORITY (scripts/local-mine.py LOCAL_MINE_PRIORITY): idle (default) | below | normal
+        psutil.Process().nice({'below': psutil.BELOW_NORMAL_PRIORITY_CLASS, 'normal': psutil.NORMAL_PRIORITY_CLASS}.get(
+            os.environ.get('MINE_PRIORITY') or 'idle', psutil.IDLE_PRIORITY_CLASS))
     except Exception:
         pass
 

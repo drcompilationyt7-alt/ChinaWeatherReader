@@ -1,6 +1,7 @@
 # Local idle-time pool miner (scripts/local-mine.py): start / stop / status. Nothing persistent (no scheduled task).
 #   powershell -ExecutionPolicy Bypass -File scripts\local-mine.ps1 start|stop|status
-param([ValidateSet('start', 'stop', 'status')][string]$Action = 'status', [switch]$Now, [string]$Rotation = '', [switch]$UntilMidnight)
+param([ValidateSet('start', 'stop', 'status')][string]$Action = 'status', [switch]$Now, [string]$Rotation = '', [switch]$UntilMidnight,
+      [ValidateSet('idle', 'below', 'normal')][string]$Priority = 'idle')
 # -Rotation ranking,slowmo: only these jobs (LOCAL_MINE_ROTATION); -UntilMidnight: the miner stops itself at the next local midnight
 # -Now: NOW mode (no owner-activity pause, 3 GB start / 2.5 GB floor; see LOCAL_MINE_NOW in local-mine.py)
 $py = Join-Path $env:TEMP 'acapvenv\Scripts\python.exe'          # the PC python with cv2 / torch / yt-dlp[default]
@@ -15,8 +16,10 @@ if ($Action -eq 'start') {
     $flag += "set LOCAL_MINE_ROTATION=$Rotation&& "
     $until = if ($UntilMidnight) { (Get-Date).Date.AddDays(1).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') } else { '' }
     $flag += "set LOCAL_MINE_UNTIL=$until&& "
+    $flag += "set LOCAL_MINE_PRIORITY=$Priority&& "
+    $pc = @{ idle = 64; below = 16384; normal = 32 }[$Priority]
     $cmd = "cmd.exe /c `"$flag`"$py`" `"$script`" run 1>>`"$out`" 2>>`"$err`"`""
-    $si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ PriorityClass = [uint32]64; ShowWindow = [uint16]0 }
+    $si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ PriorityClass = [uint32]$pc; ShowWindow = [uint16]0 }
     $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd; CurrentDirectory = $home_; ProcessStartupInformation = $si }
     "local miner started (rc $($r.ReturnValue), pid $($r.ProcessId)); log: $home_\local-mine.log"
 } elseif ($Action -eq 'stop') {

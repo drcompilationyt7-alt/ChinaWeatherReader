@@ -100,7 +100,9 @@ HEAVY_NAMES = {'ffmpeg', 'blender', 'aerender', 'afterfx', 'adobe premiere pro',
                'x264', 'x265', 'melt', 'vegas', 'davinci resolve', 'photoshop', 'unity', 'unrealeditor'}
 BOT_RE = re.compile(r"bot-block|BOT-CHECK|not a bot|sign in to confirm(?! your age)|http error 429|too many requests|"
                     r"temporarily blocked", re.I)
-IDLE_PRIO = 0x40
+# owner 2026-11-03 "increase the priority to med": LOCAL_MINE_PRIORITY idle (default) | below | normal; the jobs get it as MINE_PRIORITY
+PRIO_NAME = os.environ.get('LOCAL_MINE_PRIORITY') or 'idle'
+IDLE_PRIO = {'idle': 0x40, 'below': 0x4000, 'normal': 0x20}.get(PRIO_NAME, 0x40)
 NO_WINDOW = 0x08000000
 
 _token = {}
@@ -349,6 +351,7 @@ def run_job(name, cmd, cwd, env, active_max_min, youtube=False):
     lp = os.path.join(HOME, 'logs', f"{now_utc().strftime('%Y%m%d-%H%M%S')}-{name}.log")
     os.makedirs(os.path.dirname(lp), exist_ok=True)
     with open(lp, 'w', encoding='utf-8') as lf:
+        env = dict(env or os.environ, MINE_PRIORITY=PRIO_NAME)
         proc = subprocess.Popen(cmd, cwd=cwd, env=env, stdout=lf, stderr=subprocess.STDOUT, creationflags=IDLE_PRIO | NO_WINDOW)
         pp = ps.Process(proc.pid)
         MON.job = pp
@@ -360,10 +363,10 @@ def run_job(name, cmd, cwd, env, active_max_min, youtube=False):
                 if paused_at is None:
                     active += t - last
                 last = t
-                for q in tree(pp):                       # children inherit IDLE; re-assert for any that did not
+                for q in tree(pp):                       # children inherit the class; re-assert for any that did not
                     try:
-                        if q.nice() != ps.IDLE_PRIORITY_CLASS:
-                            q.nice(ps.IDLE_PRIORITY_CLASS)
+                        if q.nice() != IDLE_PRIO:
+                            q.nice(IDLE_PRIO)
                     except ps.Error:
                         pass
                 ci = None
@@ -882,11 +885,11 @@ def cmd_run(a):
     lock()
     try:
         import psutil
-        psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS)
+        psutil.Process().nice(IDLE_PRIO)
         MON = Monitor()
         ensure_worktree()
         log(f'local miner started (pid {os.getpid()}, cap {DAILY_CAP} sources / day{", NOW mode: no owner-activity pause" if NOW else ""}, '
-            f'jobs {",".join(ROTATION)}{", until " + UNTIL if UNTIL else ""})')
+            f'priority {PRIO_NAME}, jobs {",".join(ROTATION)}{", until " + UNTIL if UNTIL else ""})')
         while not stop_requested():
             st = day_state()
             wj(STATE, st)
@@ -936,7 +939,7 @@ def cmd_once(a):
     lock()
     try:
         import psutil
-        psutil.Process().nice(psutil.IDLE_PRIORITY_CLASS)
+        psutil.Process().nice(IDLE_PRIO)
         MON = Monitor()
         ensure_worktree()
         st = day_state()
