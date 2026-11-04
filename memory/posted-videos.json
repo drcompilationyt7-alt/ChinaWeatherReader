@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=zoIsrTuwqzw",
-      "title": "pokemon theme acapella 🗿",
-      "country": "Global",
-      "postedAt": "2026-10-05T09:53:28.478Z",
-      "videoId": "zoIsrTuwqzw",
-      "category": "meme-anime",
-      "titleSource": "pokemon theme"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=aJ9WPdgjEoU",
       "title": "iro kousui acapella (horimiya edit) 🔥 #horimiya",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "6GEiZwO9BQw",
       "category": "meme-anime",
       "titleSource": "soda pop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=bX7DiNYiQxQ",
+      "title": "bling bang bang born acapella 🎧",
+      "country": "Global",
+      "postedAt": "2026-11-04T12:41:43.480Z",
+      "videoId": "bX7DiNYiQxQ",
+      "category": "meme-anime",
+      "titleSource": "bling bang bang born"
     }
   ]
 }

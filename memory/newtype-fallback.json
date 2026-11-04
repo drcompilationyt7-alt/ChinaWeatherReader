@@ -1,18 +1,89 @@
 {
- "at": "2026-11-03T11:39:36.695Z",
- "type": "sound",
+ "at": "2026-11-04T12:29:56.964Z",
+ "type": "slowmo",
  "ok": false,
- "reason": "pool too small (reuse)",
+ "reason": "attempts used up",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "s_kick_back",
-   "seed": 4944,
+   "song": "coldplay_yellow@v1",
+   "seed": 88465,
    "input": "first",
-   "work": "work-sound-1793704943968",
-   "min": 17.2,
-   "result": "pool too small: reuse 67 % > 30 %"
+   "work": "work-slowmo-1793788465453",
+   "min": 23.6,
+   "overall": 7.62,
+   "failed": {
+    "3_lyrics": 4,
+    "8_cuts": 3.48,
+    "11_waves": 6,
+    "13_hold_outro": 0,
+    "14_groove": 5
+   },
+   "result": "NOT PASS",
+   "next": "recut"
+  },
+  {
+   "n": 2,
+   "song": "coldplay_yellow@v1",
+   "seed": 88465,
+   "input": "recut",
+   "work": "work-slowmo-1793789880286",
+   "min": 23.1,
+   "overall": 8.05,
+   "failed": {
+    "8_cuts": 3.48,
+    "11_waves": 6,
+    "13_hold_outro": 0,
+    "14_groove": 5
+   },
+   "result": "NOT PASS",
+   "next": "recut"
+  },
+  {
+   "n": 3,
+   "song": "coldplay_yellow@v1",
+   "seed": 88465,
+   "input": "recut",
+   "work": "work-slowmo-1793791268725",
+   "min": 23.2,
+   "overall": 8.05,
+   "failed": {
+    "8_cuts": 3.48,
+    "11_waves": 6,
+    "13_hold_outro": 0,
+    "14_groove": 5
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
+  },
+  {
+   "n": 4,
+   "song": "newjeans_ditto@v1",
+   "seed": 88676,
+   "input": "new_song",
+   "work": "work-slowmo-1793792659717",
+   "min": 22.9,
+   "overall": 8.96,
+   "failed": {
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "recut"
+  },
+  {
+   "n": 5,
+   "song": "newjeans_ditto@v1",
+   "seed": 88676,
+   "input": "recut",
+   "work": "work-slowmo-1793794031077",
+   "min": 22.8,
+   "overall": 9.06,
+   "failed": {
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
+   "next": "recut"
   }
  ]
 }

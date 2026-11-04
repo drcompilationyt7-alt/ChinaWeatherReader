@@ -2235,6 +2235,59 @@
    "whyMode": "explore",
    "bpm": 125.99,
    "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "bX7DiNYiQxQ",
+   "url": "https://www.youtube.com/watch?v=bX7DiNYiQxQ",
+   "postedAt": "2026-11-04T12:41:43.476Z",
+   "publishAt": "2026-11-04T12:00:00.000Z",
+   "song": "bling bang bang born",
+   "theme": "anime",
+   "emoji": "🎧,🔥",
+   "title": "bling bang bang born acapella 🎧",
+   "clipIds": [
+    "mBs9huO6TyY",
+    "7VvvxNheDfI",
+    "4eQ-G69Segs",
+    "lXOVvD9m0fY",
+    "EPdv9Pnfrh8",
+    "1mjPD73BU2c",
+    "0-y8bxaDqu0",
+    "-fho0WtxNYc"
+   ],
+   "clipChannels": [
+    "Anicrad",
+    "Aniflex",
+    "FanAnimation　MOYARITSU",
+    "Nesta Recaps",
+    "Quanazer",
+    "wewzer",
+    "おきゃんチャンネル二代目",
+    "アニメ同好会"
+   ],
+   "clipSource": "Mashle",
+   "settings": {
+    "drop": 18,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "layers"
+   },
+   "onVideoTitle": "bling bang bang born",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "keyword-only",
+    "ovStyle": "ov-kw",
+    "descHook": "layers",
+    "titlePattern": "{song} acapella {e}",
+    "titleMode": "explore"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 157.02,
+   "titlePattern": "{song} acapella {e}"
   }
  ]
 }
