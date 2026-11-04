@@ -72,6 +72,9 @@ V2_PLAIN_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'NO CHEATING.
 MID_CTA_QUIZ = ['DOUBLE TAP IF YOU GOT IT', 'LIKE IF YOU GOT 2/2 SO FAR', 'SUBSCRIBE FOR A NEW QUIZ DAILY']
 MID_CTA_PICK = ['LIKE IF YOU AGREE', "DOUBLE TAP IF YOU'D PICK IT TOO", 'SUBSCRIBE FOR A NEW ONE DAILY']
 MID_CTA_LEN, MID_CTA_Y = 2.2, 1530   # s on screen; above the Shorts title overlay, under the answer line (1440)
+# 2026-11-03 owner ("the 2nd answer is bugging", food trivia G8uG86JKTQM): the line ran 0.4 s into round 3's empty build and sat
+# on the watermark -> round 2's reveal holds the whole line (build_timeline) and the watermark steps aside (cta_avoid)
+MID_CTA_DELAY, MID_CTA_TAIL = 0.6, 0.15
 V2_OUTRO_POOL = ['Comment your score!', 'How many did you get? Comment below!', 'Drop your score in the comments!']
 V2_GOLD = (255, 214, 0)
 
@@ -256,7 +259,7 @@ WM_HOLD, WM_FADE = 9.0, 0.9                           # seconds on one spot, sof
 WM_ALPHA = 0.40
 
 
-def draw_watermark(frame, t=0.0):
+def draw_watermark(frame, t=0.0, avoid=None):
     """Channel handle (env WATERMARK, e.g. @asianpopquiz), small and translucent.  POP_WATERMARK=1 (owner request, pending approval):
     always on (default text @asianpopquiz), 40 % opacity, moves between 3 safe spots every ~9 s with a soft fade, plus a very faint
     second mark (logo dot + handle initial) that sits elsewhere so cropping one corner never removes both.  Without the flag: the
@@ -281,6 +284,8 @@ def draw_watermark(frame, t=0.0):
     ph = t - k * WM_HOLD
     a = min(1.0, ph / WM_FADE, (WM_HOLD - ph) / WM_FADE)   # fade in at the start of a hold, out at its end
     x, y = WM_SPOTS[k % len(WM_SPOTS)]
+    if avoid and abs(y - avoid[0]) < 140:   # avoid = (y, alpha) of an overlay (the mid-video action line): fade out under it
+        a *= 1.0 - avoid[1]
     put(frame, _wm[('on', text)], x, y, a=WM_ALPHA * max(0.0, a))
     top = y < 800   # faint second mark on the other band, away from the main one
     put(frame, _wm['dot'], 880 if not top else 780, 150 if not top else 1600, a=0.16)
@@ -410,9 +415,20 @@ class QuizRenderer:
                 fmt = getattr(self, 'fmt', None) or self.kind
                 pool = MID_CTA_PICK if fmt in ('wyr', 'duel') else MID_CTA_QUIZ
                 text = random.Random(f"{self.plan.get('seed')}-cta-{fmt}").choice(pool)
-                self._mid_cta = {'t': segs[1]['reveal'] + 0.8, 'text': text,
+                self._mid_cta = {'t': segs[1]['reveal'] + MID_CTA_DELAY, 'text': text,
                                  'layer': with_shadow(pill(text, 44, WHITE, fg=NAVY, max_w=900), blur=8, offset=(0, 5))}
         return self._mid_cta
+
+    def cta_avoid(self, t):
+        """(y, alpha) of the mid-video action line while it is on screen (+-0.3 s), for the watermark to step aside; None
+        before the timeline exists (mid_cta() caches its answer)"""
+        m = self.mid_cta() if getattr(self, 'segs', None) else None
+        if not m:
+            return None
+        ct = t - m['t']
+        if not -0.3 <= ct < MID_CTA_LEN + 0.3:
+            return None
+        return getattr(self, 'mid_cta_y', MID_CTA_Y), min(clamp((ct + 0.3) / 0.3), clamp((MID_CTA_LEN + 0.3 - ct) / 0.3))
 
     def final_frame(self, t):
         """frame_at plus the overlays: the one mid-video action line; under V2 the CTA over the last reveal, then the
@@ -440,11 +456,14 @@ class QuizRenderer:
     def build_timeline(self, answer_durs, intro_d=0.0, outro_d=0.0):
         t = 0.0
         segs = []
+        cta = os.environ.get('QUIZ_MID_CTA', '1') != '0' and len(self.plan['rounds']) >= 3   # = mid_cta()'s condition
         for i, r in enumerate(self.plan['rounds']):
             q = Q_TIME[self.kind]
             if self.v2 and i == 0:   # the intro line ends before round 1's reveal
                 q = max(q, V2_START + intro_d + 0.4)
             rev = max(REVEAL_MIN[self.kind], (answer_durs[i] or 0) + 0.45)
+            if cta and i == 1:       # the action line fades out before round 3 starts
+                rev = max(rev, MID_CTA_DELAY + MID_CTA_LEN + MID_CTA_TAIL)
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
             t += q + rev
         self.segs = segs
@@ -720,7 +739,7 @@ class QuizRenderer:
     def frame_at(self, t):
         off = int(t * 14) % self.map_w
         frame = self.bg.crop((off, 0, off + W, H))
-        draw_watermark(frame, t)
+        draw_watermark(frame, t, self.cta_avoid(t))
         if t >= self.outro_start:
             put(frame, self.title, W / 2, 262, a=1 - clamp((t - self.outro_start) / 0.25))
             self.draw_outro(frame, t - self.outro_start)

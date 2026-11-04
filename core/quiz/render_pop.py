@@ -49,7 +49,8 @@ import sound
 from PIL import ImageFilter
 from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_back, ease_out_cubic, font, pill,
                          put, ring, text_layer, with_shadow, flag_card, fmt_num, draw_watermark, faded,
-                         V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS)
+                         V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS, MID_CTA_DELAY, MID_CTA_LEN,
+                         MID_CTA_TAIL)
 V2_SPOKEN_Q = ('trivia', 'wyr', 'duel')   # POP_HOOK_V2: the question itself is the hook (no intro line before it)
 V2_NO_FANS = ('city', 'cityphoto', 'nightcity', 'cuisine')   # hooks without "fans" for places / food
 
@@ -644,6 +645,7 @@ class PopRenderer(QuizRenderer):
         clip = self.fmt in CLIP_FORMATS
         v2 = self.v2
         gap, clip_at, start0 = (0.15, 0.25, V2_START) if v2 else (CLIP_GAP, CLIP_AT, 0.15)
+        cta = os.environ.get('QUIZ_MID_CTA', '1') != '0' and len(self.plan['rounds']) >= 3   # = mid_cta()'s condition
         for i, r in enumerate(self.plan['rounds']):
             if clip:
                 lead = start0 + intro_d + gap if (i == 0 and intro_d) else clip_at
@@ -673,6 +675,8 @@ class PopRenderer(QuizRenderer):
                 rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 0.6, 2.6)
                 if r.get('_wclip_' + wyr_side(r)):   # then the clip on its own, at full level, a beat
                     rev = max(rev, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.3, 3.4)
+            if i == 1 and cta:   # the mid-video action line fades out before round 3 starts (owner 2026-11-03)
+                rev = max(rev, MID_CTA_DELAY + MID_CTA_LEN + MID_CTA_TAIL)
             segs.append({'i': i, 'start': t, 'reveal': t + q, 'end': t + q + rev})
             t += q + rev
         self.segs = segs
@@ -1971,7 +1975,7 @@ class PopRenderer(QuizRenderer):
 
     def frame_at(self, t):
         frame = self.bg_loop.frame_at(t) if getattr(self, 'bg_loop', None) else self.bg.copy()
-        draw_watermark(frame, t)
+        draw_watermark(frame, t, self.cta_avoid(t))
         if t >= self.outro_start:
             self.draw_outro(frame, t - self.outro_start)
             return frame
