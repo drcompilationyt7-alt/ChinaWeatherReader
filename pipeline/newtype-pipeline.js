@@ -133,8 +133,10 @@ function guardRender(type, rep, videoPath, work) {
   if (size < 200 * 1024) bad.push(`video file ${size} bytes`);
   const plan = rep.plan_short ? readJson(path.isAbsolute(rep.plan_short) ? rep.plan_short : path.resolve(work, rep.plan_short), null) : null;
   const nShots = plan && Array.isArray(plan.shots) ? plan.shots.length - (type === 'slowmo' ? 1 : 0) : 0;   // slow-mo: minus the words-on-black intro
-  if (nShots < g.shots) bad.push(`${nShots} shots (< ${g.shots})`);
-  if ((rep.clips_short || []).length < Math.ceil(g.shots / 2)) bad.push(`${(rep.clips_short || []).length} distinct clips`);
+  // 'soft:' = a pacing / variety bar, not a broken video: the attempt is still judged (scored) and may be the day's must-publish
+  // best attempt (owner 2026-11-04); every other problem is hard (never posted)
+  if (nShots < g.shots) bad.push(`soft: ${nShots} shots (< ${g.shots})`);
+  if ((rep.clips_short || []).length < Math.ceil(g.shots / 2)) bad.push(`soft: ${(rep.clips_short || []).length} distinct clips`);
   if (rep.fresh_override) {
     // vibe_edit --fresh-override: a slow-mo TIMING TEST that may repeat the last videos' clips; a dry run shows it, nothing posts it
     if (process.env.DRY_RUN === 'true') logger.warn(`${type}: fresh-clip override (timing test, dry run only)`);
@@ -282,6 +284,10 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
   let sameSong = 0;
   let lastMin = 30;
   let stopReason = null;
+  // owner 2026-11-04 "if it is slow mo day must publish slow mo, if sound edit day must publish sound edit": no attempt passes
+  // the judge -> the best judged attempt without a hard guard problem posts (NEWTYPE_MUST_PUBLISH=0: the old stem fallback)
+  const mustPublish = process.env.NEWTYPE_MUST_PUBLISH !== '0';
+  let best = null;
   for (let n = 1; n <= maxAttempts; n++) {
     if (n > 1 && !timeLeft(tLoop, lastMin)) { stopReason = 'time budget'; break; }
     const t0 = Date.now();
@@ -331,7 +337,8 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     const problems = guardRender(type, rep, videoPath, work);
     if (problems.some(p => /fresh-clip override/.test(p))) { att.result = problems.join('; '); stopReason = 'fresh-clip override outside a dry run'; break; }
     if (problems.some(p => /pool too small/.test(p))) { att.result = problems.join('; '); stopReason = 'pool too small (reuse)'; break; }
-    if (problems.length) {
+    const hard = problems.filter(p => !/^soft: /.test(p));
+    if (hard.length || (problems.length && !mustPublish)) {
       att.result = `guard: ${problems.join('; ').slice(0, 160)}`;
       song = att.song; seed = nextSeed(att.seed, 101); repair = null; input = att.next = 'reseed'; sameSong++;
       lastMin = Math.max(lastMin, att.min);
@@ -339,9 +346,12 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     }
     const J = judgeRender(type, rep, videoPath, work, `${type}-a${n}`);
     att.min = Math.round((Date.now() - t0) / 6000) / 10;
-    att.overall = J.overall; att.failed = J.failed; att.result = J.pass ? 'PASS' : 'NOT PASS';
+    att.overall = J.overall; att.failed = J.failed; att.result = J.pass && !problems.length ? 'PASS' : 'NOT PASS';
+    if (problems.length) att.result += ` (guard ${problems.join('; ').slice(0, 100)})`;
     lastMin = input === 'retime' ? Math.max(10, att.min) : Math.max(15, att.min);
-    if (J.pass) {
+    const score = Number(J.overall) - (problems.length ? 1 : 0);   // a clean attempt beats a soft-guard one of the same score
+    if (!best || score > best.score) best = { score, n, rep, work, videoPath, t0 };
+    if (J.pass && !problems.length) {
       await reportAttempts(type, attempts, true);
       logger.success(`${type}: judge PASS on attempt ${n} (overall ${J.overall})`);
       return finishNewType(type, rep, work, videoPath, abs, t0, attempts);
@@ -373,6 +383,12 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
       song = null; seed = nextSeed(seed, 211); repair = null; sameSong = 0;
     }
     att.next = action; input = action;
+  }
+  if (mustPublish && best) {
+    await reportAttempts(type, attempts, false, `${stopReason || 'attempts used up'}; MUST PUBLISH: attempt ${best.n} (score ${best.score})`);
+    logger.warn(`${type}: no attempt passed the judge; the day's type must post -> attempt ${best.n} (score ${best.score})`);
+    return finishNewType(type, best.rep, best.work, best.videoPath, f => (f ? (path.isAbsolute(f) ? f : path.resolve(best.work, f)) : null),
+      best.t0, attempts);
   }
   await reportAttempts(type, attempts, false, stopReason || 'attempts used up');
   throw new Error(`${type}: no attempt passed the judge (${attempts.map(a => `${a.n}: ${a.result}`).join(' | ').slice(0, 400)})`);

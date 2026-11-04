@@ -357,6 +357,9 @@ class DailyRunner {
       // DAILY_FORCE_TYPE (workflow_dispatch input "type", for dry runs / a manual post): that type first, stem stays the fallback
       const forced = String(process.env.DAILY_FORCE_TYPE || '').trim();
       if (rotation.ALL.includes(forced)) order = forced === 'stem' ? ['stem'] : [forced, 'stem'];
+      // owner 2026-11-04: the day's type must post (no switch to another new type; stem only when that type rendered nothing
+      // postable at all, pipeline/newtype-pipeline.js NEWTYPE_MUST_PUBLISH)
+      if (process.env.NEWTYPE_MUST_PUBLISH !== '0' && order[0] !== 'stem') order = [order[0], 'stem'];
       logger.info(`Daily type order: ${order.join(' > ')} (pools ${JSON.stringify(sizes)})`);
       let result = null;
       let kind = 'stem';
