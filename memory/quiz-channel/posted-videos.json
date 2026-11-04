@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=vaJCe01FdYs",
-      "title": "guess the anime from emojis 🎬 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-05T09:18:00.348Z",
-      "videoId": "vaJCe01FdYs",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-anime-casual",
-      "quizFormat": "emoji",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=tUG5iOh0w6Y",
       "title": "Guess the Anime Opening in 3 Seconds 🎶",
       "country": "Global",
@@ -483,6 +472,28 @@
       "titleSource": "trivia-llm",
       "quizFormat": "trivia",
       "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=MMX4ObXm_YQ",
+      "title": "guess the kpop idol without pausing 💜 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-04T15:40:35.635Z",
+      "videoId": "MMX4ObXm_YQ",
+      "category": "quiz-idol",
+      "titleSource": "idol-llm",
+      "quizFormat": "idol",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=qwFjiYupFgk",
+      "title": "guess the anime character quiz 🤯 #anime",
+      "country": "Global",
+      "postedAt": "2026-11-04T15:50:14.876Z",
+      "videoId": "qwFjiYupFgk",
+      "category": "quiz-character",
+      "titleSource": "character-llm",
+      "quizFormat": "character",
+      "quizTheme": "anime"
     }
   ]
 }

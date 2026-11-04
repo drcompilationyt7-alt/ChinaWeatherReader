@@ -2090,6 +2090,123 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "MMX4ObXm_YQ",
+   "url": "https://www.youtube.com/watch?v=MMX4ObXm_YQ",
+   "postedAt": "2026-11-04T15:40:35.358Z",
+   "publishAt": null,
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 968148747,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Let us see if you can guess this K-pop idol!",
+     "template": "Let us see if you can guess this K-pop idol!",
+     "sec": 2.54
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How well did you do? Tell us your score!",
+     "template": "How well did you do? Tell us your score!",
+     "sec": 2.12
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Jisoo!",
+     "template": null,
+     "sec": 0.82
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Daesung, easy!",
+     "template": "{a}, easy!",
+     "sec": 0.82
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Jun Hyo-seong. Did you get it?",
+     "template": null,
+     "sec": 2.35
+    }
+   ],
+   "titleTemplate": "idol-llm",
+   "title": "guess the kpop idol without pausing 💜 #kpop",
+   "answers": [
+    "idol:jisoo#fwhpy3",
+    "idol:daesung#1kjb0lo",
+    "idol:jun hyo-seong#1nfkrzp"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-score-challenge"
+   }
+  },
+  {
+   "videoId": "qwFjiYupFgk",
+   "url": "https://www.youtube.com/watch?v=qwFjiYupFgk",
+   "postedAt": "2026-11-04T15:50:14.610Z",
+   "publishAt": null,
+   "format": "character",
+   "theme": "anime",
+   "seed": 344249683,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you clear the blur and guess these anime characters?",
+     "template": "Can you clear the blur and guess these anime characters?",
+     "sec": 2.65
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Chika Fujiwara.",
+     "template": null,
+     "sec": 1.11
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Reze!",
+     "template": null,
+     "sec": 0.46
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Isaac Netero!",
+     "template": null,
+     "sec": 0.75
+    }
+   ],
+   "titleTemplate": "character-llm",
+   "title": "guess the anime character quiz 🤯 #anime",
+   "answers": [
+    "character:chika fujiwara#n2mtrf",
+    "character:reze#zpwwso",
+    "character:isaac netero#1emeurr"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
