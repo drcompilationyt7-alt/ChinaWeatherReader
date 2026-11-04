@@ -1,0 +1,280 @@
+{
+ "at": "2026-11-04T13:32:43Z",
+ "added": 0,
+ "retired": 0,
+ "verdicts": [
+  {
+   "song": "Goosebumps",
+   "artist": "Travis Scott",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "DNA.",
+   "artist": "Kendrick Lamar",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Turn Down for What",
+   "artist": "DJ Snake & Lil Jon",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Bodak Yellow",
+   "artist": "Cardi B",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Faded",
+   "artist": "Alan Walker",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "The Hills",
+   "artist": "The Weeknd",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Wow.",
+   "artist": "Post Malone",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "New Rules",
+   "artist": "Dua Lipa",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Happier",
+   "artist": "Marshmello & Bastille",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Truth Hurts",
+   "artist": "Lizzo",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "MONEY",
+   "artist": "Lisa",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "INDUSTRY BABY",
+   "artist": "Lil Nas X, Jack Harlow",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Paint The Town Red",
+   "artist": "Doja Cat",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Seven",
+   "artist": "Jung Kook",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Standing Next to You",
+   "artist": "Jung Kook",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "LALALALA",
+   "artist": "Stray Kids",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Super",
+   "artist": "SEVENTEEN",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "DDU-DU DDU-DU",
+   "artist": "BLACKPINK",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "UNFORGIVEN",
+   "artist": "LE SSERAFIM",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Queencard",
+   "artist": "(G)I-DLE",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Back in Black",
+   "artist": "AC/DC",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Smells Like Teen Spirit",
+   "artist": "Nirvana",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Stayin' Alive",
+   "artist": "Bee Gees",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "September",
+   "artist": "Earth, Wind & Fire",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Play That Funky Music",
+   "artist": "Wild Cherry",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Walk This Way",
+   "artist": "Aerosmith",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Le Freak",
+   "artist": "Chic",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Enter Sandman",
+   "artist": "Metallica",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Brick House",
+   "artist": "Commodores",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Sweet Child o' Mine",
+   "artist": "Guns N' Roses",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Beggin'",
+   "artist": "Måneskin",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Animals",
+   "artist": "Martin Garrix",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Whatever It Takes",
+   "artist": "Imagine Dragons",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Darkside",
+   "artist": "Alan Walker",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Judas",
+   "artist": "Lady Gaga",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Middle of the Night",
+   "artist": "Elley Duhé",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Enemy",
+   "artist": "Imagine Dragons & JID",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Dhating Nach",
+   "artist": "Nakash Aziz, Neha Kakkar",
+   "source": "trending",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "Safari",
+   "artist": "J Balvin",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
+  }
+ ]
+}
