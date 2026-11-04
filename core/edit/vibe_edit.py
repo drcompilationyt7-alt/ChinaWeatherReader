@@ -353,7 +353,7 @@ def main():
         res['clip_rotation'] = {'choice': rot}
         if rc.get('hard') and rot and all(v.get('mode') == 'hard_cap' for v in rot.values())                 and not any(v.get('fresh_override') for v in rot.values()):
             # owner 2026-10-22 (sound): variety AND good matches; too few fresh clips for <= cap reuse -> no sound video today
-            fresh = sum(int(v.get('fresh') or 0) for v in rot.values())
+            fresh = sum(int(v.get('fresh') or 0) + int(v.get('reuse_fill') or 0) for v in rot.values())   # + slow-mo's filled gap
             if fresh < int(rc.get('min_fresh') or 0):
                 res.update(reason=f'pool_too_small: {fresh} fresh clips (< {int(rc["min_fresh"])}) for <= {float(rc["cap"]):.0%} reuse '
                                   f'of the last {int(rc["window"])} {kind} videos')

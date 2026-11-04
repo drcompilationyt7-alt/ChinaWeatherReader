@@ -28,8 +28,10 @@ CONFIG = {
     # slow-mo: 18-27 shots (the wave cuts follow the song), each clip once (the wave DP caps the shots at the clean clips, 2026-10-21)
     # 2026-10-22 owner (blue dry run: "the clips are the exact same"): slow-mo shows NO clip of the last 3 slow-mo videos, the
     # queued prebuilt ones (3j / 3g) included (cap 0 = hard exclusion); fewer than min_fresh clips left -> no slow-mo that day
+    # 2026-11-03 owner "enable slow-mo allow reuse of clips" (minimal, as sound): a video older than 14 days is not recent, and
+    # when fewer than min_fresh fresh clips are left the longest-unused recent ones fill the gap (reuse_fill), no lost day
     'slowmo': dict(target=22, want=30, min_need=24, window=3, cap=0.0, per_clip=3, days=30, hard=1, min_fresh=22,
-                   recent_days=0),
+                   recent_days=14, reuse_fill=1),
     # sound: ~39 pinned hit clips per video, the beat remake needs ~45 pinned candidates (SOUND_RELAX_MIN_PINS)
     # 2026-10-22 owner "no variety and good match need both": HARD reuse cap. The planner gets every allowed clip, each stamped
     # rot_recent / rot_age (choose(..., hard=True)); core/edit/sound_edit.py keeps the recent clips <= CAP of the shots and picks the
@@ -170,9 +172,15 @@ def choose_hard(items, hist, cfg, U, rng, key, counts):
     fresh = sum(1 for it in lru if not it['rot_recent'])
     excluded = 0
     override = float(cfg['cap']) <= 0 and os.environ.get('CLIP_ROTATION_FRESH_OVERRIDE') == '1'
+    filled = 0
     if float(cfg['cap']) <= 0 and not override:            # slow-mo: the recent videos' clips are not offered at all
-        excluded = len(lru) - fresh
+        rec = [it for it in lru if it['rot_recent']]       # LRU order: the longest-unused first
         lru = [it for it in lru if not it['rot_recent']]
+        if cfg.get('reuse_fill') and fresh < int(cfg.get('min_need') or cfg.get('min_fresh') or 0):
+            # ... unless too few fresh ones are left: then only the gap is filled, with the longest-unused recent clips
+            filled = min(len(rec), int(cfg.get('min_need') or cfg.get('min_fresh')) - fresh)
+            lru += rec[:filled]
+        excluded = len(rec) - filled
     elif override:
         # TIMING TEST ONLY (vibe_edit --fresh-override): the recent clips come back after the fresh ones; the result is
         # labelled fresh_override and the pre-upload guard never lets it post
@@ -180,9 +188,11 @@ def choose_hard(items, hist, cfg, U, rng, key, counts):
     info = {'pool': len(pool), 'mode': 'hard_cap', 'cap': float(cfg['cap']), 'per_clip_cap': cap_n, 'fresh': fresh,
             'recent': len(lru) - fresh + excluded, 'excluded_recent': excluded, 'given': len(lru),
             'skipped_per_clip': len(pool) - len(allowed)}
+    if filled:
+        info['reuse_fill'] = filled
     if override:
         info['fresh_override'] = True
-    elif fresh < int(cfg.get('min_fresh') or 0):
+    elif fresh + filled < int(cfg.get('min_fresh') or 0):
         info['pool_too_small'] = f'{fresh} fresh clips (< {int(cfg["min_fresh"])}) for <= {float(cfg["cap"]):.0%} reuse'
     return lru + pas, info
 
@@ -236,6 +246,9 @@ def selftest():
     assert info['fresh'] == 40, info
     assert report(['c1', 'c35'], h2, 5, 14, now + _dt.timedelta(days=20))['reuse_share'] == 0.0
     assert report(['c1', 'c35'], h2, 5, 14, now + _dt.timedelta(days=2))['reuse_share'] == 0.5
+    # slow-mo reuse_fill: 10 fresh < min_need 24 -> the 14 longest-unused recent clips fill the gap, no pool_too_small
+    c, info = choose(items2, h2, dict(hc, cap=0.0, min_need=24, min_fresh=22, reuse_fill=1), rng, now=now)
+    assert len(c) == 24 and info['reuse_fill'] == 14 and not info.get('pool_too_small'), info
     print('clip_rotation selftest ok')
 
 
