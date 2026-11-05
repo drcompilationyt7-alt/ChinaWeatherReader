@@ -2288,6 +2288,56 @@
    "whyMode": "explore",
    "bpm": 157.02,
    "titlePattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "Bw95121fb80",
+   "url": "https://www.youtube.com/watch?v=Bw95121fb80",
+   "postedAt": "2026-11-05T10:27:11.490Z",
+   "publishAt": "2026-11-05T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Montero",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "montero anime edit sound design 🗿",
+   "clipIds": [
+    "c_1MSkCTOWdWs_101975",
+    "c_4TJNIquRzAc_132863",
+    "c_94gGChbw7Lk_4368",
+    "c_BTNEyBRynJQ_84746",
+    "c_E6j5-a-vI14_158563",
+    "c_J3kytewub_Y_352052",
+    "c_RTDeuS24k2s_771",
+    "c_VeIXoZwoy4Y_16463",
+    "c_Z4ObaZlnrTY_117649"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 9.8,
+    "pool": "sound",
+    "render_s": {
+     "short": 108,
+     "watermark_short": 20.1,
+     "total": 128.1
+    },
+    "attempts": 4
+   },
+   "onVideoTitle": "anime x montero",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-song",
+    "descHook": "rate",
+    "titlePattern": "{song} anime edit sound design {e}"
+   },
+   "vibe": "impact",
+   "musicPoolId": "lil_nas_x_montero",
+   "songSection": [
+    108.984,
+    138.477
+   ]
   }
  ]
 }
