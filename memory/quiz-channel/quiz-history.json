@@ -2207,6 +2207,95 @@
     "titleStyle": "op-exact-search",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "djmmFZkC-0E",
+   "url": "https://www.youtube.com/watch?v=djmmFZkC-0E",
+   "postedAt": "2026-11-05T09:44:53.304Z",
+   "publishAt": "2026-11-05T13:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 743201510,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Drop your score below!",
+     "template": "Drop your score below!",
+     "sec": 1.15
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Love Dive!",
+     "template": null,
+     "sec": 1.18
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Super Shy.",
+     "template": null,
+     "sec": 1.49
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Miroh!",
+     "template": null,
+     "sec": 0.56
+    }
+   ],
+   "titleTemplate": "emoji-kpop-casual",
+   "title": "guess the kpop song from emojis ⚡ #kpop",
+   "answers": [
+    "emoji:love dive (ive)",
+    "emoji:super shy (newjeans)",
+    "emoji:miroh (stray kids)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "W5tL1nR15Es",
+   "url": "https://www.youtube.com/watch?v=W5tL1nR15Es",
+   "postedAt": "2026-11-05T09:52:19.277Z",
+   "publishAt": "2026-11-06T01:00:00.000Z",
+   "format": "song",
+   "theme": "kpop",
+   "seed": 655985097,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Drop your score in the comments!",
+     "template": null,
+     "sec": 1.39
+    }
+   ],
+   "titleTemplate": "song-llm",
+   "title": "guess the kpop song 3 tracks no skips 👀 #kpop",
+   "answers": [
+    "song:gangnam style|psy",
+    "song:omg|newjeans",
+    "song:pink venom|blackpink"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
