@@ -24,6 +24,12 @@ on:
       entries:
         type: string
         default: ''
+      shows:
+        type: string
+        default: ''
+      max_dl:
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       called:
@@ -36,6 +42,14 @@ on:
         default: ''
       entries:
         description: 'Only these entries (names / keys, comma-separated); empty = the plan order'
+        required: false
+        default: ''
+      shows:
+        description: 'Library mining: only these shows (comma-separated, e.g. "kaguya-sama,my dress-up darling"); empty = the plan order'
+        required: false
+        default: ''
+      max_dl:
+        description: 'Library mining: downloads per show (empty: 4)'
         required: false
         default: ''
 
@@ -97,9 +111,11 @@ jobs:
       - name: Mine (one job, paced)
         env:
           ENTRIES: ${{ inputs.entries }}
+          SHOWS: ${{ inputs.shows }}
+          MAX_DL: ${{ inputs.max_dl || '4' }}
         run: |
           set -o pipefail
-          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES" | tail -c 4000
+          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES"             --shows "$SHOWS" --max-dl "$MAX_DL" --max-entries 12 | tail -c 4000
           rm -f /tmp/yt_cookies.txt
       - name: Publish to edit-pools-staging
         if: always()
