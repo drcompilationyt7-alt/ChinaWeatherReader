@@ -3047,6 +3047,353 @@
      ]
     }
    ]
+  },
+  "cutest_couples": {
+   "title": [
+    "CUTEST",
+    "ANIME COUPLES"
+   ],
+   "kind": "couple",
+   "order": "fans",
+   "order_locked": true,
+   "pace": "calm",
+   "reveal": "countdown",
+   "keyword": "cutest anime couples ranked by fans",
+   "hashtag": "animecouple",
+   "basis": "owner 2026-11-07: a sub-romance list of COUPLES (an 'A x B' edit of both of them; the show need not be a romance, e.g. Solo Leveling). Fan-favourite pairs, order set by hand (order_locked). A section serves a couple when BOTH members hold a real share of its frames (ranking_pool.COUPLE_*).",
+   "entries": [
+    {
+     "name": "HIRO X ZERO TWO",
+     "kind": "couple",
+     "anime": "DARLING in the FRANXX",
+     "wiki": "darling-in-the-franxx",
+     "chars": [
+      "Hiro",
+      "Zero Two"
+     ],
+     "members": [
+      {
+       "name": "HIRO",
+       "chars": [
+        "Hiro"
+       ],
+       "tags": [
+        "hiro_(darling_in_the_franxx)"
+       ],
+       "search": "hiro"
+      },
+      {
+       "name": "ZERO TWO",
+       "chars": [
+        "Zero Two"
+       ],
+       "tags": [
+        "zero_two_(darling_in_the_franxx)"
+       ]
+      }
+     ],
+     "search": "zero two x hiro",
+     "q": [
+      "zero two x hiro edit",
+      "hiro x zero two edit 4k",
+      "darling in the franxx couple edit"
+     ],
+     "alias": [
+      "zero two",
+      "hiro",
+      "franxx"
+     ]
+    },
+    {
+     "name": "LOID X YOR",
+     "kind": "couple",
+     "anime": "SPY x FAMILY",
+     "wiki": "spy-x-family",
+     "chars": [
+      "Loid Forger",
+      "Yor Forger"
+     ],
+     "members": [
+      {
+       "name": "LOID",
+       "chars": [
+        "Loid Forger"
+       ],
+       "tags": [
+        "loid_forger"
+       ],
+       "search": "loid forger"
+      },
+      {
+       "name": "YOR",
+       "chars": [
+        "Yor Forger"
+       ],
+       "tags": [
+        "yor_briar"
+       ]
+      }
+     ],
+     "search": "loid x yor",
+     "q": [
+      "loid x yor edit",
+      "yor x loid edit 4k",
+      "loid and yor edit"
+     ],
+     "alias": [
+      "loid",
+      "yor",
+      "twilight"
+     ]
+    },
+    {
+     "name": "WAKANA X MARIN",
+     "kind": "couple",
+     "anime": "My Dress-Up Darling",
+     "wiki": "my-dress-up-darling",
+     "chars": [
+      "Wakana Gojou",
+      "Marin Kitagawa"
+     ],
+     "members": [
+      {
+       "name": "WAKANA GOJO",
+       "chars": [
+        "Wakana Gojou"
+       ],
+       "tags": [
+        "gojou_wakana"
+       ],
+       "search": "wakana gojo"
+      },
+      {
+       "name": "MARIN",
+       "chars": [
+        "Marin Kitagawa"
+       ],
+       "tags": [
+        "kitagawa_marin"
+       ]
+      }
+     ],
+     "search": "marin x gojo",
+     "q": [
+      "marin x gojo edit",
+      "marin and gojo edit 4k",
+      "my dress up darling couple edit"
+     ],
+     "alias": [
+      "marin",
+      "wakana",
+      "dress-up darling",
+      "dress up darling"
+     ]
+    },
+    {
+     "name": "SHIROGANE X KAGUYA",
+     "kind": "couple",
+     "anime": "Kaguya-sama: Love is War",
+     "wiki": "kaguyasama-wa-kokurasetai",
+     "chars": [
+      "Miyuki Shirogane",
+      "Kaguya Shinomiya"
+     ],
+     "members": [
+      {
+       "name": "SHIROGANE",
+       "chars": [
+        "Miyuki Shirogane"
+       ],
+       "tags": [
+        "shirogane_miyuki"
+       ],
+       "search": "shirogane"
+      },
+      {
+       "name": "KAGUYA",
+       "chars": [
+        "Kaguya Shinomiya"
+       ],
+       "tags": [
+        "shinomiya_kaguya"
+       ],
+       "search": "kaguya"
+      }
+     ],
+     "search": "kaguya x shirogane",
+     "q": [
+      "kaguya x shirogane edit",
+      "kaguya and shirogane edit 4k",
+      "kaguya sama couple edit"
+     ],
+     "alias": [
+      "kaguya",
+      "shirogane"
+     ]
+    },
+    {
+     "name": "JINWOO X CHA HAE-IN",
+     "kind": "couple",
+     "anime": "Solo Leveling",
+     "wiki": "solo-leveling",
+     "chars": [
+      "Sung Jinwoo",
+      "Hae-In Cha"
+     ],
+     "members": [
+      {
+       "name": "SUNG JINWOO",
+       "chars": [
+        "Sung Jinwoo"
+       ]
+      },
+      {
+       "name": "CHA HAE-IN",
+       "chars": [
+        "Hae-In Cha"
+       ]
+      }
+     ],
+     "search": "jinwoo x cha hae in",
+     "q": [
+      "jinwoo x cha hae in edit",
+      "sung jinwoo x cha hae in edit 4k",
+      "solo leveling couple edit"
+     ],
+     "alias": [
+      "cha hae",
+      "hae-in",
+      "hae in",
+      "jinwoo"
+     ]
+    },
+    {
+     "name": "MIYAMURA X HORI",
+     "kind": "couple",
+     "anime": "Horimiya",
+     "wiki": "horimiya",
+     "chars": [
+      "Izumi Miyamura",
+      "Kyouko Hori"
+     ],
+     "members": [
+      {
+       "name": "MIYAMURA",
+       "chars": [
+        "Izumi Miyamura"
+       ],
+       "tags": [
+        "miyamura_izumi"
+       ],
+       "search": "miyamura"
+      },
+      {
+       "name": "HORI",
+       "chars": [
+        "Kyouko Hori"
+       ],
+       "tags": [
+        "hori_kyouko"
+       ],
+       "search": "hori"
+      }
+     ],
+     "search": "horimiya couple",
+     "q": [
+      "horimiya couple edit",
+      "hori x miyamura edit 4k",
+      "miyamura x hori edit"
+     ],
+     "alias": [
+      "horimiya",
+      "hori",
+      "miyamura"
+     ]
+    },
+    {
+     "name": "HIMMEL X FRIEREN",
+     "kind": "couple",
+     "anime": "Frieren",
+     "wiki": "frieren",
+     "chars": [
+      "Himmel",
+      "Frieren"
+     ],
+     "members": [
+      {
+       "name": "HIMMEL",
+       "chars": [
+        "Himmel"
+       ],
+       "tags": [
+        "himmel_(sousou_no_frieren)"
+       ],
+       "search": "himmel"
+      },
+      {
+       "name": "FRIEREN",
+       "chars": [
+        "Frieren"
+       ],
+       "tags": [
+        "frieren"
+       ]
+      }
+     ],
+     "search": "himmel x frieren",
+     "q": [
+      "himmel x frieren edit",
+      "frieren and himmel edit 4k"
+     ],
+     "alias": [
+      "himmel",
+      "frieren"
+     ]
+    },
+    {
+     "name": "TAKI X MITSUHA",
+     "kind": "couple",
+     "anime": "Your Name.",
+     "wiki": "kiminonawa",
+     "chars": [
+      "Taki Tachibana",
+      "Mitsuha Miyamizu"
+     ],
+     "members": [
+      {
+       "name": "TAKI",
+       "chars": [
+        "Taki Tachibana"
+       ],
+       "tags": [
+        "tachibana_taki"
+       ],
+       "search": "taki"
+      },
+      {
+       "name": "MITSUHA",
+       "chars": [
+        "Mitsuha Miyamizu"
+       ],
+       "tags": [
+        "miyamizu_mitsuha"
+       ],
+       "search": "mitsuha"
+      }
+     ],
+     "search": "your name taki x mitsuha",
+     "q": [
+      "your name taki x mitsuha edit",
+      "kimi no na wa edit 4k"
+     ],
+     "alias": [
+      "your name",
+      "kimi no na wa",
+      "mitsuha",
+      "taki"
+     ]
+    }
+   ]
   }
  },
  "refreshed": "2026-10-25"

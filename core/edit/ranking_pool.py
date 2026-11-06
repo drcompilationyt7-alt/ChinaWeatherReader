@@ -58,6 +58,8 @@ TOPIC_GAP = 4                # a topic is not repeated within the next 4 ranking
 PER_ENTRY_TARGET = 2         # reviewed + staged items wanted per entry (variety under the reuse gap)
 CHAR_MIN = 0.6
 CAST_MIN_STRONG = float(os.environ.get('RANKING_CAST_MIN_STRONG', '0.5'))   # strongest lists: the entry's screen share
+COUPLE_MEMBER_MIN = float(os.environ.get('RANKING_COUPLE_MEMBER_MIN', '0.1'))   # couples: each member's screen share
+COUPLE_SUM_MIN = float(os.environ.get('RANKING_COUPLE_SUM_MIN', '0.45'))        # ... and both together
 RUN_MAX_STRONG = float(os.environ.get('RANKING_RUN_MAX_STRONG', '2.5'))    # ... and no other character's run longer than this (s)
 STATUS_RANK = {'gate_reject': 0, 'candidate': 0, 'staged': 1, 'rejected': 2, 'reviewed': 3}
 
@@ -157,12 +159,25 @@ def shows(topics=None):
     topics = topics or RT.load()
     out = {}
     for k, (e, tks) in all_entries(topics).items():
-        g = out.setdefault(lib_show(e.get('anime')), {'show': None, 'cast': [], 'topics': set()})
+        g = out.setdefault(lib_show(e.get('anime')), {'show': None, 'cast': [], 'topics': set(), 'couples': []})
         g['topics'].update(tks)
         if e.get('kind') == 'anime':
             g['show'] = g['show'] or e
+        elif e.get('kind') == 'couple':
+            g['couples'].append(e)          # owner 2026-11-07: 'A x B' entries; both members are measured as cast below
         else:
             g['cast'].append(e)
+    for sk, g in out.items():
+        # a couple member no list names yet joins the show's cast (synthetic): the miner then measures its screen share
+        for cp in g['couples']:
+            for m in cp.get('members') or []:
+                if not any(c['name'] == m['name'] for c in g['cast']):
+                    me = dict(m, kind='character', anime=cp.get('anime'), wiki=cp.get('wiki'), pace=cp.get('pace', 'calm'),
+                              rank=0, synthetic_member=True)
+                    me.setdefault('search', m['name'].lower())
+                    me.setdefault('q', [f"{me['search']} edit 4k", f"{me['search']} edit"])
+                    me['alias'] = RT._alias(me)
+                    g['cast'].append(me)
     for sk, g in out.items():
         if g['show'] is None:              # no genre list names this show yet: its sections still serve its characters
             c0 = g['cast'][0]
@@ -178,13 +193,21 @@ def item_themes(it):
 
 def serve_keys(it, smap=None):
     """The entry keys an item can fill: library items carry 'serves' (the characters that OWN the section + the show's
-    genre entry); an older per-entry item serves its entry and, being that show's footage, the show's genre entry."""
-    if it.get('serves'):
-        return list(it['serves'])
-    keys = [it['entry_key']] if (it.get('char_conf') or 0) >= CHAR_MIN or it.get('title_trusted') else []
+    genre entry); an older per-entry item serves its entry and, being that show's footage, the show's genre entry.
+    Couples (owner 2026-11-07): a section serves 'A x B' when BOTH members hold >= COUPLE_MEMBER_MIN of its frames and
+    together >= COUPLE_SUM_MIN (measured 'cast' shares; an edit of both of them, not one with a cameo)."""
     g = (smap or {}).get(lib_show(it.get('anime')))
-    if keys and g and not g['show'].get('synthetic') and entry_key(g['show']) not in keys:
-        keys.append(entry_key(g['show']))
+    if it.get('serves'):
+        keys = list(it['serves'])
+    else:
+        keys = [it['entry_key']] if (it.get('char_conf') or 0) >= CHAR_MIN or it.get('title_trusted') else []
+        if keys and g and not g['show'].get('synthetic') and entry_key(g['show']) not in keys:
+            keys.append(entry_key(g['show']))
+    cast = it.get('cast') or {}
+    for cp in (g or {}).get('couples') or []:
+        sh = [float(cast.get(m['name']) or 0.0) for m in cp.get('members') or []]
+        if len(sh) == 2 and min(sh) >= COUPLE_MEMBER_MIN and sum(sh) >= COUPLE_SUM_MIN and entry_key(cp) not in keys:
+            keys.append(entry_key(cp))
     return keys
 
 
@@ -617,8 +640,10 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         # one broad search entry: the show's searches + "<character> edit" per cast member; a title naming the show OR
         # any of its characters passes; vs / mixed edits are welcome (solo False)
         q = RC.no_amv(list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
-                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast])))
+                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast]
+                               + [q_ for cp in G.get('couples') or [] for q_ in cp.get('q') or []])))
         se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
+                                                      + [a for cp in G.get('couples') or [] for a in cp.get('alias') or []]
                                                       + show_cast_alias(sk))),
                   solo=False, search=show.get('search') or sk, extra=style_uploads(RC))
         others = [smap[o]['show'] for o in order if o != sk][:4]           # distractor shows for the show-level check
