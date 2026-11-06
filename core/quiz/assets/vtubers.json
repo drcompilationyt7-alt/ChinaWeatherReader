@@ -603,6 +603,17 @@
    "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/6/63/Kson_-_Portrait.png/revision/latest?cb=20211017015524",
    "file": "Kson - Portrait.png",
    "page": "https://virtualyoutuber.fandom.com/wiki/Kson"
+  },
+  {
+   "name": "Kiryu Coco",
+   "agency": "hololive JP",
+   "graduated": true,
+   "difficulty": 2,
+   "image": "https://static.wikia.nocookie.net/virtualyoutuber/images/0/09/Kiryu_Coco_-_Portrait.png/revision/latest?cb=20191228224253",
+   "file": "Kiryu Coco - Portrait.png",
+   "page": "https://virtualyoutuber.fandom.com/wiki/Kiryu_Coco",
+   "mined": "2026-11-04",
+   "reviewed": "2026-11-06"
   }
  ]
 }
