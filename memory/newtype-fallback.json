@@ -1,71 +1,80 @@
 {
- "at": "2026-11-05T10:26:59.639Z",
+ "at": "2026-11-06T01:02:06.572Z",
  "type": "sound",
  "ok": false,
- "reason": "pool too small: pool_too_small: 7.6 s (< 8.5 s) / hold 0.0 s (> 0.15 s) with 6 fresh clips; MUST PUBLISH: attempt 3 (score 8.06)",
- "dryRun": false,
+ "posted": true,
+ "reason": "attempts used up; MUST PUBLISH: attempt 4 (score 9.54)",
+ "dryRun": true,
  "attempts": [
   {
    "n": 1,
-   "song": "dua_lipa_levitating",
-   "seed": 72512,
+   "song": "lil_nas_x_montero",
+   "seed": 72934,
    "input": "first",
-   "work": "work-sound-1793872512675",
-   "min": 19.1,
-   "overall": 8.69,
+   "work": "work-sound-1793924476120",
+   "min": 22.5,
+   "overall": 9.5,
    "failed": {
-    "5_density_no_dead": 5.2,
-    "6_vertical_framing_quality": 7.8,
-    "15_transients_on_onsets": 7.6,
-    "16_drum_onsets_recreated": 0.5,
-    "9_overall_vs_ref": 3
+    "6_vertical_framing_quality": 7.3
    },
-   "result": "NOT PASS (guard soft: 8 shots (< 12))",
+   "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 2,
-   "song": "michael_jackson_billie_jean",
-   "seed": 72723,
+   "song": "lil_nas_x_montero",
+   "seed": 73145,
    "input": "new_song",
-   "work": "work-sound-1793873656924",
-   "min": 7.2,
-   "overall": 8.78,
+   "work": "work-sound-1793925826538",
+   "min": 8.6,
+   "overall": 9.47,
    "failed": {
-    "2_clip_sound_audible_punchy": 7.9,
-    "5_density_no_dead": 7,
-    "19_clip_hits_noticeable": 4.8,
-    "20_song_level_constant": 1.8,
-    "9_overall_vs_ref": 4.3
+    "6_vertical_framing_quality": 7.3
    },
-   "result": "NOT PASS (guard soft: 11 shots (< 12))",
+   "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 3,
    "song": "lil_nas_x_montero",
-   "seed": 72934,
+   "seed": 73356,
    "input": "new_song",
-   "work": "work-sound-1793874091347",
-   "min": 2.6,
-   "overall": 9.06,
+   "work": "work-sound-1793926343739",
+   "min": 3.2,
+   "overall": 9.52,
    "failed": {
-    "5_density_no_dead": 4.6,
-    "6_vertical_framing_quality": 7.7,
-    "16_drum_onsets_recreated": 5.3,
-    "9_overall_vs_ref": 7.1
+    "6_vertical_framing_quality": 7.3
    },
-   "result": "NOT PASS (guard soft: 9 shots (< 12))",
+   "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 4,
-   "song": "camila_cabello_havana",
-   "seed": 73145,
+   "song": "lil_nas_x_montero",
+   "seed": 73567,
    "input": "new_song",
-   "work": "work-sound-1793874245734",
-   "min": 2.9,
-   "result": "pool too small"
+   "work": "work-sound-1793926538079",
+   "min": 3.2,
+   "overall": 9.54,
+   "failed": {
+    "6_vertical_framing_quality": 7.3
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
+  },
+  {
+   "n": 5,
+   "song": "lil_nas_x_montero",
+   "seed": 73778,
+   "input": "new_song",
+   "work": "work-sound-1793926732665",
+   "min": 3.2,
+   "overall": 9.52,
+   "failed": {
+    "6_vertical_framing_quality": 7.3
+   },
+   "result": "NOT PASS",
+   "next": "new_song"
   }
  ]
 }
