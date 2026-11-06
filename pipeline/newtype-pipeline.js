@@ -368,7 +368,11 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     song = att.song; seed = att.seed;
     let action = J.action || 'reseed';
     sameSong++;
-    if ((action === 'retime' || action === 'recut') && (sameSong >= 3 || type !== 'slowmo')) action = 'reseed';
+    // 2026-11-06 CI (those eyes 7.81 -> 8.81 -> 9.03, then a new song scored 7.89): a repair that keeps improving the same
+    // song + seed gets up to 5 tries; a repair that stalls goes on to another clip order / song after 3
+    const prevS = attempts.length > 1 ? attempts[attempts.length - 2] : null;
+    const improving = prevS && prevS.song === att.song && prevS.overall != null && Number(J.overall) > Number(prevS.overall) + 0.05;
+    if ((action === 'retime' || action === 'recut') && (sameSong >= (improving ? 5 : 3) || type !== 'slowmo')) action = 'reseed';
     if (action === 'reseed' && sameSong >= 3) action = 'new_song';
     // dry run 40019693642 (sound): two reseeds of one song gave the same scores to 0.03 - the sound planner takes the best
     // matches whatever the seed, so a sound 'reseed' is another song; any type: a repeat of the previous verdict = another song

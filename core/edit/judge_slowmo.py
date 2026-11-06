@@ -1386,7 +1386,10 @@ def line_sync(E, cuts, dur, lrc_id, m_start, speed, body_from, end_guard=1.0):
             continue
         att = [a for a in E['attacks'] if t - 0.25 <= a[0] <= t + 0.40]
         a = min(att, key=lambda a_: a_[0]) if att else None
-        lo, hi = (a[4] - JW_HIT[1], a[0] - JW_HIT[0]) if a else (t - 0.25, t + 0.15)
+        # no sung attack found: the LRC time itself is ~0.1-0.3 s loose (see above), so the switch may sit anywhere in the
+        # same [t - 0.25, t + 0.40] the attack search uses (2026-11-06 CI: a 12.43 switch on a 12.05 LRC line, attack None,
+        # failed 12_sync of a 9.03 attempt by 0.23 s)
+        lo, hi = (a[4] - JW_HIT[1], a[0] - JW_HIT[0]) if a else (t - 0.25, t + 0.40)
         near = [c_ for c_ in cuts if abs(c_ - t) <= 1.0]
         if near:
             cut = min(near, key=lambda c_: 0.0 if lo <= c_ <= hi else min(abs(c_ - lo), abs(c_ - hi)))
