@@ -4718,7 +4718,10 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             if REMAKE and not _ok(plan):
                 why.append(f'{plan["duration"]:.1f} s (< {min_s} s) / hold {plan["sound_edit"].get("hold_s_max")} s (> {max_hold} s)')
             if why and os.environ.get('SOUND_REUSE_SOFT') != '1':
-                return fail('pool_too_small: ' + '; '.join(why) + f' with {len(ids) - len(rec_ids)} fresh clips',
+                # 2026-11-05 run 42005808915: a 0 %-reuse plan this SONG cannot fill (7.6 s) is not a small pool -> 'too_short'
+                # (the daily loop tries another song), only a reuse-cap failure is pool_too_small (stops the loop)
+                tag = 'pool_too_small' if share > REUSE_CAP + 1e-6 else 'too_short'
+                return fail(f'{tag}: ' + '; '.join(why) + f' with {len(ids) - len(rec_ids)} fresh clips',
                             reuse=plan['sound_edit']['reuse'])
         if plan['duration'] < lo - 0.5:
             res['reason'] = (f'pool_low_shortened: {plan["duration"]:.1f} s instead of >= {lo:.0f} s '

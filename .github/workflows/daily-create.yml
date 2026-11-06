@@ -35,6 +35,10 @@ on:
         description: 'Extra vibe_edit.py args for a sound / slowmo test (e.g. "--song s_kick_back --seed 41")'
         required: false
         default: ''
+      newtype_env:
+        description: 'Render settings for a sound / slowmo test, "K=V K=V" (SOUND_* / SLOWMO_* / CINE_* / EDIT_* / LYRICS_*)'
+        required: false
+        default: ''
       ranking_topic:
         description: 'type=ranking: the topic key (core/edit/refs/ranking-topics.json); empty = the weekly rotation'
         required: false
@@ -93,6 +97,7 @@ env:
   RANKING_TOPIC: ${{ github.event.inputs.ranking_topic || '' }}
   DAILY_FORCE_TYPE: ${{ github.event.inputs.type || '' }}
   NEWTYPE_CLI_ARGS: ${{ github.event.inputs.newtype_args || '' }}
+  NEWTYPE_ENV: ${{ github.event.inputs.newtype_env || '' }}
   # sound short: ~5-15 min on the 4-core runner (CPU, libx264); the cap leaves room for a cold model cache
   NEWTYPE_TIMEOUT_MIN: ${{ vars.NEWTYPE_TIMEOUT_MIN || '60' }}
   # 2026-10-23 (owner: "if the github when creating the slow mo edit is not good we have to fix it, we must publish a video every

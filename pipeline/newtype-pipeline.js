@@ -105,6 +105,11 @@ const typeEnv = type => {
   const base = type === 'sound' ? SOUND_ENV : (type === 'slowmo' ? SLOWMO_ENV : { EDIT_NO_SHAKE: '1', EDIT_GPU: '0' });
   const out = {};
   for (const [k, v] of Object.entries(base)) out[k] = process.env[k] !== undefined && process.env[k] !== '' ? process.env[k] : v;
+  // NEWTYPE_ENV="K=V K=V" (workflow input newtype_env): a test run's render settings (dry runs; wins over the defaults above)
+  for (const kv of String(process.env.NEWTYPE_ENV || '').split(/\s+/).filter(Boolean)) {
+    const i = kv.indexOf('=');
+    if (i > 0 && /^(SOUND|SLOWMO|CINE|EDIT|LYRICS)_[A-Z0-9_]+$/.test(kv.slice(0, i))) out[kv.slice(0, i)] = kv.slice(i + 1);
+  }
   return out;
 };
 
@@ -213,8 +218,9 @@ function timeLeft(t0, lastMin) {
 
 /** the attempts of a new-type day: job summary (always), memory/newtype-repairs.jsonl (always), and on the last-resort stem
  * fallback memory/newtype-fallback.json + a GitHub issue with the failing judge verdicts (the coordinator fixes the cause) */
-async function reportAttempts(type, attempts, ok, reason) {
-  const lines = [`### ${type}: ${ok ? 'PASS' : 'FAILED -> stem fallback'} after ${attempts.length} attempt(s)${reason ? ` (${reason})` : ''}`, '',
+async function reportAttempts(type, attempts, ok, reason, posted = false) {
+  // posted = the must-publish rule posts the best attempt (no stem fallback): the summary + issue say so
+  const lines = [`### ${type}: ${ok ? 'PASS' : posted ? 'NO JUDGE PASS -> best attempt posted' : 'FAILED -> stem fallback'} after ${attempts.length} attempt(s)${reason ? ` (${reason})` : ''}`, '',
     '| # | song | seed | input | minutes | result | overall | failed criteria | next |', '|---|---|---|---|---|---|---|---|---|'];
   for (const a of attempts) {
     const failed = Object.entries(a.failed || {}).map(([k, v]) => `${k} ${v}`).join(', ') || '-';
@@ -223,7 +229,7 @@ async function reportAttempts(type, attempts, ok, reason) {
   const md = lines.join('\n') + '\n';
   if (process.env.GITHUB_STEP_SUMMARY) { try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n'); } catch {} }
   logger.info(md);
-  const rec = { at: new Date().toISOString(), type, ok, reason: reason || null, dryRun: process.env.DRY_RUN === 'true', attempts };
+  const rec = { at: new Date().toISOString(), type, ok, posted, reason: reason || null, dryRun: process.env.DRY_RUN === 'true', attempts };
   try { fs.mkdirSync(MEM(), { recursive: true }); fs.appendFileSync(path.join(MEM(), 'newtype-repairs.jsonl'), JSON.stringify(rec) + '\n'); } catch {}
   if (ok) return;
   try { fs.writeFileSync(path.join(MEM(), 'newtype-fallback.json'), JSON.stringify(rec, null, 1)); } catch {}
@@ -234,8 +240,10 @@ async function reportAttempts(type, attempts, ok, reason) {
   try {
     const r = await fetch(`https://api.github.com/repos/${repo}/issues`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `${type} edit fell back to stem on ${rec.at.slice(0, 10)}`,
-        body: `The daily ${type} edit failed the judge after ${attempts.length} attempt(s); the day posted a stem edit.\n\nRun: ${run}\n\n${md}\n`
+      body: JSON.stringify({ title: posted ? `${type} edit posted without a judge pass on ${rec.at.slice(0, 10)}`
+        : `${type} edit fell back to stem on ${rec.at.slice(0, 10)}`,
+        body: `The daily ${type} edit failed the judge after ${attempts.length} attempt(s); `
+          + (posted ? 'the best attempt was posted (must-publish rule).' : 'the day posted a stem edit.') + `\n\nRun: ${run}\n\n${md}\n`
           + 'Judge reports: the run artifact "renders" (output/meme/work-*/judge). Fix the root cause next session.' }),
     });
     logger.info(`fallback issue: HTTP ${r.status}`);
@@ -323,7 +331,7 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
       lastMin = Math.max(lastMin, att.min);
       if (/^pool_low/.test(why) || (/^no_song/.test(why) && !att.song)) { stopReason = why.slice(0, 160); break; }
       // a song-level failure (no lyrics / no audio / no layout for its waves) -> another song; anything else -> another seed
-      if (/no_lyrics|no audio|no_song|no wave|bad plan|pool_low|only \d+ usable/.test(why) && att.song) {
+      if (/no_lyrics|no audio|no_song|no wave|bad plan|pool_low|too_short|only \d+ usable/.test(why) && att.song) {
         excluded.push(String(att.song).split('@')[0]); song = null; sameSong = 0; seed = nextSeed(att.seed, 211); att.next = 'new_song';
       } else { song = att.song || song; seed = nextSeed(att.seed, 101); sameSong++; att.next = 'reseed'; }
       repair = null; input = att.next;
@@ -385,7 +393,7 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     att.next = action; input = action;
   }
   if (mustPublish && best) {
-    await reportAttempts(type, attempts, false, `${stopReason || 'attempts used up'}; MUST PUBLISH: attempt ${best.n} (score ${best.score})`);
+    await reportAttempts(type, attempts, false, `${stopReason || 'attempts used up'}; MUST PUBLISH: attempt ${best.n} (score ${best.score})`, true);
     logger.warn(`${type}: no attempt passed the judge; the day's type must post -> attempt ${best.n} (score ${best.score})`);
     return finishNewType(type, best.rep, best.work, best.videoPath, f => (f ? (path.isAbsolute(f) ? f : path.resolve(best.work, f)) : null),
       best.t0, attempts);
