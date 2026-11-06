@@ -54,6 +54,32 @@ function dailyOrder({ history = { uploads: [] }, weights = parseWeights(), poolS
   if (!eligible.length) return ['stem'];
   let cand = eligible.filter(t => t !== last);
   if (!cand.length) cand = eligible;  // only one type left: a repeat is better than no short
+  // owner 2026-11-05 "i need to diversify": the type that has gone the longest without a post goes first (a cycle
+  // stem -> sound -> slow-mo), weighted random only between types tied on that (DAILY_ROTATION_BALANCE=0: plain weighted)
+  if (process.env.DAILY_ROTATION_BALANCE !== '0' && cand.length > 1) {
+    const ups = ((history && history.uploads) || []).filter(u => !u.long);
+    const age = t => { for (let i = ups.length - 1; i >= 0; i--) if (typeOf(ups[i]) === t) return ups.length - 1 - i; return Infinity; };
+    const oldest = Math.max(...cand.map(age));
+    const first = cand.filter(t => age(t) === oldest);
+    cand = [...first, ...cand.filter(t => !first.includes(t)).sort((a, b) => age(b) - age(a))];
+    if (first.length === 1) cand = [first[0], ...cand.slice(1)];
+    else {
+      // weighted draw among the tied ones, the rest keep their oldest-first order
+      const rest = cand.slice(first.length);
+      const left = [...first], drawn = [];
+      while (left.length) {
+        const total = left.reduce((a, t) => a + weights[t], 0);
+        let r = rng() * total, i = 0;
+        for (; i < left.length - 1; i++) { r -= weights[left[i]]; if (r < 0) break; }
+        drawn.push(left.splice(i, 1)[0]);
+      }
+      cand = [...drawn, ...rest];
+    }
+    const pick = [...cand];
+    for (const t of eligible) if (!pick.includes(t)) pick.push(t);
+    const f = pick[0];
+    return [f, ...pick.slice(1).filter(t => t !== 'stem'), ...(f === 'stem' ? [] : ['stem'])];
+  }
   const pick = [];
   const left = [...cand];
   while (left.length) {

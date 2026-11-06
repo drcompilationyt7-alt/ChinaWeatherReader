@@ -39,6 +39,17 @@ const ALL1 = { stem: 1, sound: 1, slowmo: 1 };
   const c2 = { sound: 0, slowmo: 0 };
   for (let i = 0; i < 2000; i++) { const o = rot.dailyOrder({ weights: w, poolSizes: { sound: 9, slowmo: 9 }, history: { uploads: [] }, enabled: true }); c2[o[0]]++; }
   check(c2.sound > c2.slowmo * 2 && c2.sound + c2.slowmo === 2000, `rotation: weights respected ${JSON.stringify(c2)}`);
+  // owner 2026-11-05 diversify: the longest-unposted type goes first -> an even cycle on the real history
+  const H = ['stem', 'sound', 'slowmo', 'stem', 'sound'].map(t => ({ contentType: `${t}-edit` }));
+  check(rot.dailyOrder({ history: { uploads: H }, poolSizes: { sound: 40, slowmo: 40 }, enabled: true, weights: ALL1 })[0] === 'slowmo',
+    'rotation: the longest-unposted type first (stem, sound, slowmo, stem, sound -> slowmo)');
+  const ups = [{ contentType: 'stem-edit' }, { contentType: 'stem-edit' }];
+  const c3 = { stem: 0, sound: 0, slowmo: 0 };
+  for (let i = 0; i < 30; i++) {
+    const o = rot.dailyOrder({ history: { uploads: ups }, poolSizes: { sound: 40, slowmo: 40 }, enabled: true, weights: ALL1 });
+    c3[o[0]]++; ups.push({ contentType: `${o[0]}-edit` });
+  }
+  check(c3.stem === 10 && c3.sound === 10 && c3.slowmo === 10, `rotation: 30 days = 10 / 10 / 10 ${JSON.stringify(c3)}`);
 }
 
 // 2. cadence simulation
