@@ -2299,6 +2299,7 @@ REMAKE_XF = int(os.environ.get('SOUND_REMAKE_XF', '4'))                    # sof
 REMAKE_STRETCH = (0.9, 1.1)
 REMAKE_CAP_MARGIN = float(os.environ.get('SOUND_REMAKE_CAP_MARGIN', '1.12'))   # clean picture needed per second of edit (packing slack)
 REMAKE_POOL_MARGIN = float(os.environ.get('SOUND_REMAKE_POOL_MARGIN', '1.0'))  # every eye-approved scene may play (the hit count IS the pool)
+REMAKE_RATE = float(os.environ.get('SOUND_REMAKE_RATE', '1.6'))            # most hits (= cuts) per second of the remake
 REMAKE_TOL = float(os.environ.get('SOUND_REMAKE_TOL', '0.025'))             # a kept second hit within this of a song onset
 REMAKE_DRUM_GAP = float(os.environ.get('SOUND_REMAKE_DRUM_GAP', '1.3'))     # the section's longest pause between drum onsets
 REMAKE_DRUM_W = float(os.environ.get('SOUND_REMAKE_DRUM_W', '4.0'))        # hit on a drum onset (kick / snare / hat) vs another song onset
@@ -3018,7 +3019,7 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
     the song (s) or None (picked from percussive clarity + heatmap); duration: target length (8.5-11.5).
     opts (planners.py): optional keys sound_mode / mode ('accent'|'build'), deliver, music_start / start,
     theme, loop_end, song_title."""
-    global _REMAKE_ON
+    global _REMAKE_ON, _REMAKE_CANDS
     _s0_on = None
     _REUSE_INFO.clear()
     t_start = time.time()
@@ -3144,7 +3145,20 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
                 L = n_bars * 4 * P
             log(f'beat remake: clean picture capacity {cap_s:.1f} s -> {n_bars} bars = {L:.2f} s (was {nb0})')
             n_t = int(math.floor(REMAKE_POOL_MARGIN * avail_slots(aud_ev, max(1.0, L / CAP_SCALE_S))))
-            hits = select_hits_remake(song, d, L, n_t, P)
+            # 2026-11-05 (CI 42005808915, every ~10 s Short since 10-31): 40 slots asked 40 hits of a 9.3 s window, the DP
+            # (gaps >= 0.42 s) found none and returned None SILENTLY; retime_hits then spread the clips over the 27 s
+            # section-search grid left in _REMAKE_CANDS (~1.3 s a cut) and the Short kept its first 9 s: 8-11 slow shots.
+            # The hit count is capped at SOUND_REMAKE_RATE cuts / s (owner 2026-10-13: 1.2-1.6 for the ~10 s sound edit),
+            # stepped down until the grid exists, and a stale grid is never reused.
+            n_t = min(n_t, max(8, int(math.ceil(REMAKE_RATE * L))))
+            _REMAKE_CANDS = None
+            hits = None
+            for n_try in range(n_t, 5, -2):
+                hits = select_hits_remake(song, d, L, n_try, P)
+                if hits:
+                    break
+            if not hits:
+                log(f'beat remake: no even-gap hit grid for {L:.2f} s (asked {n_t} hits): beat-grid fallback')
             if hits:
                 _s0_on = hits[0]['t'] - 0.3
                 _REMAKE_ON = remake_window_on(music, _s0_on, L)
