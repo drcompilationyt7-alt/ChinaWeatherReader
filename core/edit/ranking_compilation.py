@@ -1489,10 +1489,25 @@ def own_check(ts, labs, step=0.5):
     return None
 
 
+def others_run(ts, labs, step=0.5):
+    """the longest continuous stretch other characters own in a window (own_check's stretch rule: broken only by a target
+    frame) in seconds; 0.0 when the target is never off screen that long. owner 2026-11-07: a main-character edit may cut to
+    an opponent for a second ("they don't stand a chance"); a sustained sub-edit of another character is a shared edit."""
+    best, first, last = 0.0, None, None
+    for t, l in zip(ts, labs or []):
+        if l == 'T':
+            first = last = None
+        elif l is not None:
+            first = t if first is None else first
+            last = t
+            best = max(best, last - first + step)
+    return round(best, 2)
+
+
 THEMES = ('action', 'beauty', 'romance')
 
 
-def attribute(judge, cast, frames, ts):
+def attribute(judge, cast, frames, ts, runs=None):
     """Library mining (owner 2026-10-31): which of the show's ranking characters OWN this section, by the character-entry
     rule (>= CHAR_MIN of the voting frames, >= 2x any other character, MIN_VOTES, no long stretch of another one).
     -> ({name: share}, [owner names]); a section nobody owns still serves the show's genre lists."""
@@ -1505,6 +1520,8 @@ def attribute(judge, cast, frames, ts):
             mt = judge.match_open(frames, tgt, oth, [t for o in rest for t in o.get('tags', [])], c.get('companions', ()))
         conf, det = mt
         shares[c['name']] = round(conf, 2)
+        if runs is not None and det.get('labels') is not None:
+            runs[c['name']] = others_run(ts, det['labels'])
         top = max(det['others'].values()) if det.get('others') else 0
         if (det.get('votes', 0) >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det.get('wins', 0) >= 2 * top
                 and (det.get('labels') is None or not own_check(ts, det['labels']))):
@@ -1688,7 +1705,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 w['sting'] = marks
                 return False
         if cast:
-            w['cast'], w['mains'] = attribute(judge, cast, frames, ts)
+            w['cast_runs'] = {}
+            w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'])
         passed.append(w)
         return True
 

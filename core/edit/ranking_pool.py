@@ -57,6 +57,8 @@ REUSE_GAP = 8                # an edit (source) is not reused within the next 8 
 TOPIC_GAP = 4                # a topic is not repeated within the next 4 ranking uploads (when another is eligible)
 PER_ENTRY_TARGET = 2         # reviewed + staged items wanted per entry (variety under the reuse gap)
 CHAR_MIN = 0.6
+CAST_MIN_STRONG = float(os.environ.get('RANKING_CAST_MIN_STRONG', '0.5'))   # strongest lists: the entry's screen share
+RUN_MAX_STRONG = float(os.environ.get('RANKING_RUN_MAX_STRONG', '2.5'))    # ... and no other character's run longer than this (s)
 STATUS_RANK = {'gate_reject': 0, 'candidate': 0, 'staged': 1, 'rejected': 2, 'reviewed': 3}
 
 
@@ -215,6 +217,17 @@ def pick_items(T, items, led):
         e = T['entries'][rank - 1]
         cands = [it for it in usable(items, entry_key(e), led, used_src, th, smap)
                  if (it.get('editor_handle') or it.get('source_channel') or '').lower() not in used_ed]
+        if th == 'action' and e.get('kind') != 'anime':
+            # owner 2026-11-07 (first 'strongest' sample): a strongest-character entry must be THAT character's edit - he
+            # holds the majority of the frames (the Madara section, 0.55, "is a good example despite other characters");
+            # a mixed couple / ensemble section (Sung Jinwoo 0.40 + Cha Hae-in) belongs to a couple / romance list instead.
+            # Older per-entry items have no cast measure (mined for that character): kept.
+            # owner 2026-11-07 (2nd note): short cutaways to another character are fine, a sustained stretch of another one
+            # (a complementary sub-edit: Cha Hae-in in the Jinwoo section, other JJK cast in the Gojo one) is not:
+            # the longest continuous run owned by others <= RUN_MAX_STRONG s
+            cands = [it for it in cands if ((it.get('cast') or {}).get(e['name']) is None
+                     or float((it.get('cast') or {}).get(e['name']) or 0.0) >= CAST_MIN_STRONG)
+                     and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG]
         if not cands:
             return None
         it = cands[0]
@@ -659,7 +672,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 # otherwise the characters that own the section (attribute)
                 mains = RC.title_names(res.get('title'), cast) or [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
                 e = mains[0] if mains else show
-                extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {},
+                extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {}, 'cast_runs': w.get('cast_runs') or {},
                          'serves': [entry_key(c) for c in mains] + [skey]}
                 try:
                     it = stage_item(res, e, entry_key(e), sd, RC, w, extra)
@@ -892,6 +905,48 @@ def remove_items(ids, by='owner', why='rejected'):
     return [x['id'] for x in gone]
 
 
+def recast(ids=None):
+    """Backfill (owner 2026-11-07): every live item's per-character screen share ('cast') and the longest stretch other
+    characters own ('cast_runs'), measured on its CURRENT window (clip_in..clip_out, 2 fps) with the show's ranking cast -
+    what pick_items' strongest rule reads. Rewrites the live manifest; push the pool afterwards."""
+    import cv2
+    import ranking_compilation as RC
+    topics = RT.load()
+    smap = shows(topics)
+    ld = live_dir()
+    lm = manifest(ld)
+    work = os.path.join(ROOT, 'output', 'ranking-mine')
+    judge = RC.Judge(os.path.join(work, 'cache'))
+    rows = []
+    for it in lm['items']:
+        if it.get('status') != 'reviewed' or (ids and it['id'] not in ids):
+            continue
+        g = smap.get(lib_show(it.get('anime')))
+        if not g or not g['cast']:
+            continue
+        clip = os.path.join(ld, it['file'])
+        cap, frames, ts = cv2.VideoCapture(clip), [], []
+        t = float(it['clip_in'])
+        while t < float(it['clip_out']):
+            cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+            ok, fr = cap.read()
+            if ok:
+                frames.append(cv2.resize(fr, (448, int(fr.shape[0] * 448 / fr.shape[1]))))   # the miner's decode() size
+                ts.append(round(t, 3))
+            t += 0.5
+        cap.release()
+        if not frames:
+            continue
+        runs = {}
+        shares, mains = RC.attribute(judge, g['cast'], frames, ts, runs=runs)
+        it.update(cast=shares, cast_runs=runs, recast=time.strftime('%Y-%m-%d'))
+        rows.append({'id': it['id'], 'entry': it['entry_name'], 'share': shares.get(it['entry_name']),
+                     'others_run': runs.get(it['entry_name']), 'mains': mains})
+        log(f"recast {it['id']} {it['entry_name']}: share {shares.get(it['entry_name'])} others run {runs.get(it['entry_name'])} s")
+    save_manifest(ld, lm)
+    return rows
+
+
 def rescreen(apply=False):
     """Re-run the reference-profile gate + the manga detector on every live item's window (owner 2026-10-25 late:
     on par with ALL our analysed references, anime footage over manga). Writes ref_score / manga into the live
@@ -1072,7 +1127,7 @@ def library_report(md=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
-                                    'assemble', 'status', 'mark', 'remove', 'rescreen'])
+                                    'assemble', 'status', 'mark', 'remove', 'rescreen', 'recast'])
     ap.add_argument('--result')
     ap.add_argument('--budget-min', type=float, default=60)
     ap.add_argument('--work')
@@ -1155,6 +1210,8 @@ def main():
         print(remove_items(set(filter(None, a.ids.split(','))), a.by, a.why), 'removed')
     elif a.cmd == 'rescreen':
         print(json.dumps(rescreen(a.apply), ensure_ascii=False, indent=1))
+    elif a.cmd == 'recast':
+        print(json.dumps(recast(set(filter(None, (a.ids or '').split(','))) or None), ensure_ascii=False, indent=1))
 
 
 if __name__ == '__main__':
