@@ -219,7 +219,7 @@ jobs:
           python3 -m pip install "librosa==0.11.0" scipy onnxruntime psutil soundfile --break-system-packages
           # slow-mo (2026-10-20 go-live): lyric alignment + judge_slowmo words (faster-whisper base / medium), its evidence plots
           # (matplotlib); demucs (vocal stem for the wave cuts + the judge) is installed above
-          python3 -m pip install faster-whisper matplotlib --break-system-packages
+          python3 -m pip install faster-whisper matplotlib rapidocr-onnxruntime --break-system-packages
           python3 -c "import librosa, scipy, cv2, torch, torchaudio, transformers, onnxruntime, psutil, soundfile, demucs, faster_whisper, matplotlib; print('sound / slow-mo deps ok', librosa.__version__, torch.__version__)"
 
       - name: Cache meme models (Demucs, SigLIP, anime face / nudity filters)

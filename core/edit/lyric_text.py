@@ -292,6 +292,8 @@ def sung_words(plan, song, artist, song_audio=None, rate=1.0, threads=2, offline
         except Exception as e:  # noqa: BLE001
             if stats is not None:
                 stats['ensemble'] = f'skipped: {type(e).__name__}: {str(e)[:160]}'
+    if RULES.get(pid, {}).get('ensemble') and ws and not offline and os.environ.get('LYRICS_VERIFY', '1') != '0':
+        ws = verify_intro(ws, plan, ms, rate, threads, stats)
     out = []
     for w in ws:
         a, b = (float(w['t_start']) - ms) / rate, (float(w['t_end']) - ms) / rate
@@ -299,6 +301,48 @@ def sung_words(plan, song, artist, song_audio=None, rate=1.0, threads=2, offline
             continue
         out.append(dict(w, t_start=round(a, 4), t_end=round(b, 4)))
     return out
+
+
+VERIFY_WIN = 0.5          # an intro word must be HEARD (whisper medium, vocal stem) within this many song seconds
+VERIFY_MIN = 0.6          # share of intro words heard; below it the window's lyrics are not trusted at all
+
+
+def verify_intro(ws, plan, ms, rate, threads=2, stats=None):
+    """Owner 2026-11-06 ('those eyes', JjEsAsCTu38): "the start the lyrics were super off" - the window began mid-line, the
+    aligner showed the previous line's tail (not sung in the window) first and pushed the real line seconds late; the
+    cross-check / ensemble only re-time words they can pair. Last gate: every words-on-black word must be heard by whisper
+    medium within VERIFY_WIN s of its time; unheard words are dropped, and with < VERIFY_MIN of them heard the window's
+    lyrics are dropped entirely (-> no_lyrics: the daily loop takes another song). Text never logged (indices only)."""
+    import hashlib
+    import lyrics as LY
+    import lyric_check as LC
+    drop = float(plan.get('drop') or 6.0)
+    a0, b0 = max(0.0, ms - 1.0), ms + (drop + 0.5) * rate
+    intro = [i for i, w in enumerate(ws) if ms - 0.05 <= float(w['t_start']) < ms + drop * rate]
+    if not intro:
+        return ws
+    try:
+        v = LY.vocal_stem(plan['music'], a0, b0, threads)
+        st = os.stat(plan['music'])
+        key = hashlib.sha1(f"{os.path.abspath(plan['music'])}|{st.st_size}|{a0:.3f}|{b0:.3f}|verify".encode()).hexdigest()[:20]
+        heard = [dict(h, t0=h['t0'] + a0) for h in LC._whisper(v, LY.SR, key, 'medium', max(2, threads)) if h.get('text')]
+    except Exception as e:  # noqa: BLE001
+        if stats is not None:
+            stats['verify'] = f'skipped: {type(e).__name__}: {str(e)[:120]}'
+        return ws
+    if not heard:
+        if stats is not None:
+            stats['verify'] = 'skipped: nothing heard'
+        return ws
+    bad = [i for i in intro if not any(LC._sim(ws[i]['text'], h['text']) >= 0.75 and abs(h['t0'] - float(ws[i]['t_start'])) <= VERIFY_WIN
+                                        for h in heard)]
+    ok_share = 1.0 - len(bad) / len(intro)
+    if stats is not None:
+        stats['verify'] = dict(intro=len(intro), unheard=[round((float(ws[i]['t_start']) - ms) / rate, 3) for i in bad],
+                               share=round(ok_share, 2), action='drop all' if ok_share < VERIFY_MIN else ('drop unheard' if bad else 'ok'))
+    if ok_share < VERIFY_MIN:
+        return [w for i, w in enumerate(ws) if i not in set(intro)]
+    return [w for i, w in enumerate(ws) if i not in set(bad)]
 
 
 def _norm(s):

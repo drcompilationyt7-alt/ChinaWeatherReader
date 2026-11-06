@@ -358,8 +358,10 @@ async function runNewType({ type, outputDir, wantLong = false } = {}) {
     if (problems.length) att.result += ` (guard ${problems.join('; ').slice(0, 100)})`;
     lastMin = input === 'retime' ? Math.max(10, att.min) : Math.max(15, att.min);
     const score = Number(J.overall) - (problems.length ? 1 : 0);   // a clean attempt beats a soft-guard one of the same score
-    if (!best || score > best.score) best = { score, n, rep, work, videoPath, t0 };
-    if (J.pass && !problems.length) {
+    // a HARD judge verdict (2026-11-06: the words on screen are not the sung words) is a broken video: never the must-publish pick
+    if (J.hard) att.result += ` (HARD: ${J.hard})`;
+    else if (!best || score > best.score) best = { score, n, rep, work, videoPath, t0 };
+    if (J.pass && !problems.length && !J.hard) {
       await reportAttempts(type, attempts, true);
       logger.success(`${type}: judge PASS on attempt ${n} (overall ${J.overall})`);
       return finishNewType(type, rep, work, videoPath, abs, t0, attempts);

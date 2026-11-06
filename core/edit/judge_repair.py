@@ -60,7 +60,15 @@ def slowmo(rep, bar=8.0):
             out['moves'].append([float(r['cut']), round(float(r['attack']) - LEAD, 3)])
     lyr_fixable = '3_lyrics' in failed and bool(out['lyric_t0']) and not (lw.get('dropped'))
     cut_fixable = any(k in failed for k in CUT_KEYS) and bool(out['moves'] or out['avoid'] or out['need'])
-    if not failed and out['pass_']:
+    li = c.get('lyric_identity') or {}
+    if li.get('bad'):
+        # 2026-11-06: the words on screen are not the words sung there (OCR vs whisper) - a broken video, never posted;
+        # the aligner failed on this song's window, so another song
+        out['hard'] = 'lyrics_wrong'
+        out['why'].append(f"word check: entries {li.get('wrong')} of {li.get('checked')} not sung near their frame")
+    if li.get('bad'):
+        action = 'new_song'
+    elif not failed and out['pass_']:
         action = 'none'
     elif any(k in failed for k in SONG_KEYS):
         action = 'new_song'

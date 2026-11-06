@@ -739,13 +739,17 @@ def scorecard(C, R, P, items):
         # the frame detector's entry count (it splits a smear-in / merges a short word); with the per-word check (plan item
         # starts + which word) the count is that check's business
         ent_bad = bool(P) and P.get('n_items') and abs(len(W_) - int(P['n_items'])) > 0 and not LWc.get('rows')
-        S['3_lyrics'] = round(0.0 if (not_lyric or ph_bad) else (0.6 * s_time + 0.4 * s_leg) - (2.0 if ent_bad else 0.0), 2)
+        LI = C.get('lyric_identity') or {}
+        S['3_lyrics'] = round(0.0 if (not_lyric or ph_bad or LI.get('bad')) else (0.6 * s_time + 0.4 * s_leg) - (2.0 if ent_bad else 0.0), 2)
         E['3_lyrics'] = (f"{len(W_)} words at {[w['t'] for w in W_]}; {terr} -> {s_time:.1f}; letter height {lh:.3f} W "
                          f"(ref {np.median(rh):.3f}), shorter than 0.25 s {short}, smear > {smear_max:.2f} s {smear}, dim {dim} -> {s_leg:.1f}"
                          + ('; NON-LYRIC words on screen' if not_lyric else '')
                          + (f"; lyric sequence: {ph.get('why')} ({ph.get('shown_items')} items / {ph.get('lyric_words')} sung words)" if ph else
                             '; lyric sequence: not recorded (render before 2026-10-18)')
-                         + (f"; {len(W_)} word entries on screen vs {P.get('n_items')} planned" if ent_bad else ''))
+                         + (f"; {len(W_)} word entries on screen vs {P.get('n_items')} planned" if ent_bad else '')
+                         + (f"; WORD CHECK (OCR vs whisper): entries {LI.get('wrong')} of {LI.get('checked')} read are not sung "
+                            f"within {LI_WIN} s -> the shown words are wrong / mistimed" if LI.get('bad') else
+                            (f"; word check: {LI.get('checked')} read, {len(LI.get('wrong') or [])} not heard near" if LI else '')))
     # 4 mix
     A, RA = C['audio'], R['audio']
     s_lufs = band(A['lufs'], RA['lufs'] - 2.6, RA['lufs'] + 1.0, RA['lufs'] - 7.0, RA['lufs'] + 3.5)
@@ -1749,6 +1753,74 @@ def word_swaps(path, t1, thr=6.0):
     return sw, last
 
 
+LI_WIN = 0.7              # an on-screen word must be HEARD (whisper) within this of the frame it appears on
+
+
+def _ocr_word(frame_rgb, ocr):
+    """the intro word on one frame (the 90-degree layout: try both rotations), upper-case letters / apostrophes, or None"""
+    import re
+    best = None
+    H_, W_ = frame_rgb.shape[:2]
+    # the lyric word sits in the centre band; the watermark (left edge, vertical) and the rotate-phone hint (bottom-left)
+    # would otherwise be read instead (first test: '@zeroyenotaku' / 'rotate phone' won on confidence)
+    frame_rgb = frame_rgb[int(0.15 * H_):int(0.88 * H_), int(0.30 * W_):int(0.80 * W_)]
+    for k in (1, 3):
+        img = np.ascontiguousarray(np.rot90(frame_rgb, k)[:, :, ::-1])
+        r, _ = ocr(img)
+        for box, txt, conf in r or []:
+            t = re.sub(r"[^A-Z' ]", '', str(txt).upper()).strip()
+            if len(t.replace(' ', '')) >= 2 and float(conf) >= 0.6 and (best is None or float(conf) > best[1]):
+                best = (t, float(conf))
+    return best[0] if best else None
+
+
+def lyric_identity(path, words, intro_end):
+    """INDEPENDENT word check (owner 2026-11-06 on 'those eyes': "the start the lyrics were super off" while 3_lyrics scored
+    10: the timing checks only matched each on-screen entry to the NEAREST sung onset, never WHICH word was shown). Each intro
+    word on screen is read by OCR on its legible frame and must be heard by whisper medium (rendered vocals) within LI_WIN s
+    of that frame. Words are compared in memory only and never stored or printed (indices only).
+    -> dict(checked, wrong [entry idx], heard_n, bad) or None (no OCR / nothing heard)"""
+    import difflib
+    import re
+    import lyrics as LY
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+    except Exception as e:  # noqa: BLE001
+        print('[judge_slowmo] lyric identity: no OCR:', repr(e)[:120], file=sys.stderr)
+        return None
+    if not words:
+        return None
+    v16 = LY.vocal_stem(path, 0.0, float(intro_end) + 0.8, threads=2)
+    heard = [(a_, re.sub(r"[^A-Z']", '', LY.romanise(w_).upper())) for a_, _, w_ in _jw_words(v16)]
+    heard = [x for x in heard if x[1]]
+    if not heard:
+        return None
+    ocr = RapidOCR()
+    _, _, fps, _ = ffprobe(path)
+    wrong, checked = [], 0
+    for k, w in enumerate(words):
+        t = float(w.get('t_legible', w['t'])) + 0.05
+        nxt = float(words[k + 1]['t']) if k + 1 < len(words) else t + 0.4
+        t = min(t, max(float(w['t']), nxt - 1.5 / max(1.0, fps)))
+        r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{t:.3f}', '-i', path, '-frames:v', '1', '-f', 'rawvideo',
+                            '-pix_fmt', 'rgb24', '-'], capture_output=True)
+        W_, H_, _, _ = ffprobe(path)
+        if len(r.stdout) < W_ * H_ * 3:
+            continue
+        txt = _ocr_word(np.frombuffer(r.stdout[:W_ * H_ * 3], np.uint8).reshape(H_, W_, 3), ocr)
+        if not txt:
+            continue
+        toks = [x.replace("'", '') for x in txt.split() if len(x.replace("'", '')) >= 2]
+        if not toks:
+            continue
+        checked += 1
+        near = [h.replace("'", '') for a_, h in heard if abs(a_ - float(w['t'])) <= LI_WIN]
+        if not any(difflib.SequenceMatcher(None, tk, h).ratio() >= 0.75 for tk in toks for h in near):
+            wrong.append(k)
+    bad = checked >= 2 and (len(wrong) >= 2 or len(wrong) / checked >= 0.5)
+    return dict(checked=checked, wrong=wrong, heard_n=len(heard), bad=bool(bad))
+
+
 def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
     """-> dict(rows=[{entry, ink, word, onset, err}], dropped=[word idx], ...) or None (no synced lyrics / no words)"""
     import difflib
@@ -1925,6 +1997,11 @@ def measure(path, plan=None, vocals=True):
                                                  entries=plan.get('item_t0'))
         except Exception as e:  # noqa: BLE001
             print('[judge_slowmo] lyric word timing failed:', repr(e)[:200], file=sys.stderr)
+    if vocals and words and os.environ.get('JUDGE_LYRIC_IDENTITY', '1') != '0':
+        try:
+            C['lyric_identity'] = lyric_identity(path, words, intro_end or (max(w['t'] for w in words) + 1.0))
+        except Exception as e:  # noqa: BLE001
+            print('[judge_slowmo] lyric identity failed:', repr(e)[:200], file=sys.stderr)
     for w in C['words']:
         w.pop('frame', None)
     return C
