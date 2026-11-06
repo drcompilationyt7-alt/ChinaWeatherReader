@@ -1,80 +1,87 @@
 {
- "at": "2026-11-06T01:02:06.572Z",
- "type": "sound",
+ "at": "2026-11-06T12:32:07.532Z",
+ "type": "slowmo",
  "ok": false,
  "posted": true,
- "reason": "attempts used up; MUST PUBLISH: attempt 4 (score 9.54)",
- "dryRun": true,
+ "reason": "attempts used up; MUST PUBLISH: attempt 3 (score 9.03)",
+ "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "lil_nas_x_montero",
-   "seed": 72934,
+   "song": "new_west_those_eyes@v1",
+   "seed": 59281,
    "input": "first",
-   "work": "work-sound-1793924476120",
-   "min": 22.5,
-   "overall": 9.5,
+   "work": "work-slowmo-1793959281658",
+   "min": 27.8,
+   "overall": 7.81,
    "failed": {
-    "6_vertical_framing_quality": 7.3
+    "3_lyrics": 4,
+    "11_waves": 0,
+    "12_sync": 0
    },
    "result": "NOT PASS",
-   "next": "new_song"
+   "next": "recut"
   },
   {
    "n": 2,
-   "song": "lil_nas_x_montero",
-   "seed": 73145,
-   "input": "new_song",
-   "work": "work-sound-1793925826538",
-   "min": 8.6,
-   "overall": 9.47,
+   "song": "new_west_those_eyes@v1",
+   "seed": 59281,
+   "input": "recut",
+   "work": "work-slowmo-1793960950097",
+   "min": 27.1,
+   "overall": 8.81,
    "failed": {
-    "6_vertical_framing_quality": 7.3
+    "11_waves": 7,
+    "12_sync": 0
    },
    "result": "NOT PASS",
-   "next": "new_song"
+   "next": "recut"
   },
   {
    "n": 3,
-   "song": "lil_nas_x_montero",
-   "seed": 73356,
-   "input": "new_song",
-   "work": "work-sound-1793926343739",
-   "min": 3.2,
-   "overall": 9.52,
+   "song": "new_west_those_eyes@v1",
+   "seed": 59281,
+   "input": "recut",
+   "work": "work-slowmo-1793962574495",
+   "min": 27.5,
+   "overall": 9.03,
    "failed": {
-    "6_vertical_framing_quality": 7.3
+    "12_sync": 0
    },
    "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 4,
-   "song": "lil_nas_x_montero",
-   "seed": 73567,
+   "song": "fifty_fifty_cupid@v1",
+   "seed": 59492,
    "input": "new_song",
-   "work": "work-sound-1793926538079",
-   "min": 3.2,
-   "overall": 9.54,
+   "work": "work-slowmo-1793964223201",
+   "min": 33.5,
+   "overall": 7.89,
    "failed": {
-    "6_vertical_framing_quality": 7.3
+    "1_smooth": 6.3,
+    "3_lyrics": 4,
+    "11_waves": 2,
+    "12_sync": 0
    },
    "result": "NOT PASS",
-   "next": "new_song"
+   "next": "reseed"
   },
   {
    "n": 5,
-   "song": "lil_nas_x_montero",
-   "seed": 73778,
-   "input": "new_song",
-   "work": "work-sound-1793926732665",
-   "min": 3.2,
-   "overall": 9.52,
+   "song": "fifty_fifty_cupid@v1",
+   "seed": 59593,
+   "input": "reseed",
+   "work": "work-slowmo-1793966232368",
+   "min": 34.9,
+   "overall": 8.41,
    "failed": {
-    "6_vertical_framing_quality": 7.3
+    "11_waves": 2,
+    "12_sync": 0
    },
    "result": "NOT PASS",
-   "next": "new_song"
+   "next": "recut"
   }
  ]
 }

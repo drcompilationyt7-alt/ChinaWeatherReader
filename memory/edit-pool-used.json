@@ -250,6 +250,11 @@
    "used_at": "2026-11-05T10:27:11Z",
    "video": "sound-impact-short.mp4",
    "role": "short"
+  },
+  "slowmo/summer_glow/sound/new_west_those_eyes@v1": {
+   "used_at": "2026-11-06T12:32:19Z",
+   "video": "slowmo-summer_glow-short.mp4",
+   "role": "short"
   }
  },
  "moments": {},
@@ -445,6 +450,40 @@
      "c_UZUoCqfeh8U_112750",
      "c_c4I2rbIWhU8_45100",
      "c_56jgd7Nxq1g_111000"
+    ]
+   },
+   {
+    "at": "2026-11-06T12:32:19Z",
+    "video": "slowmo-summer_glow-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_EJM5UTY_qjE_119300",
+     "c_JJ_0CYf70Rk_34400",
+     "c_I7Mr9br2dRU_28100",
+     "c_vkqPXIygBnw_49100",
+     "c_pWVnaH2a6HI_33000",
+     "c_Uy-tbO1dA6I_81700",
+     "c_tFaZymQbp84_25700",
+     "c__v12N8Gw5Sg_51900",
+     "c_Hw3j0cStHmk_120100",
+     "c_p7gOOAop8gY_43900",
+     "c_zec5TRzrHyA_49300",
+     "c_ZPyt5_6dzUU_33900",
+     "c_x1_t1_5fTwk_116000",
+     "c_zvolzAxb5Kw_16900",
+     "c_LQUqqOIKJIU_18700",
+     "c_d0ikyQsUX8E_14800",
+     "c_DmY-7RD8wKw_1000",
+     "c_DyX4tduQRU4_5300",
+     "c_C6ZWhqGB_hg_59700",
+     "c_4i1wh2PH_sg_8000",
+     "c_G2zSBZnKS-M_87400",
+     "c_vkqPXIygBnw_33100",
+     "c_rPVnnMhoF1Y_87700",
+     "c_UmEgtnzjRts_78600",
+     "c_zkIp0_aWmR0_21900",
+     "c_P5T4BvAopWk_17900",
+     "c_hoswnzkvhdI_208800"
     ]
    }
   ]

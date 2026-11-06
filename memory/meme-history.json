@@ -2338,6 +2338,74 @@
     108.984,
     138.477
    ]
+  },
+  {
+   "videoId": "JjEsAsCTu38",
+   "url": "https://www.youtube.com/watch?v=JjEsAsCTu38",
+   "postedAt": "2026-11-06T12:32:19.086Z",
+   "publishAt": "2026-11-06T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Those Eyes",
+   "theme": "anime",
+   "emoji": "🔥,🎧",
+   "title": "those eyes anime edit hits different 🔥",
+   "clipIds": [
+    "c_4i1wh2PH_sg_8000",
+    "c_C6ZWhqGB_hg_59700",
+    "c_DmY-7RD8wKw_1000",
+    "c_DyX4tduQRU4_5300",
+    "c_EJM5UTY_qjE_119300",
+    "c_G2zSBZnKS-M_87400",
+    "c_Hw3j0cStHmk_120100",
+    "c_I7Mr9br2dRU_28100",
+    "c_JJ_0CYf70Rk_34400",
+    "c_LQUqqOIKJIU_18700",
+    "c_P5T4BvAopWk_17900",
+    "c_UmEgtnzjRts_78600",
+    "c_Uy-tbO1dA6I_81700",
+    "c_ZPyt5_6dzUU_33900",
+    "c__v12N8Gw5Sg_51900",
+    "c_d0ikyQsUX8E_14800",
+    "c_hoswnzkvhdI_208800",
+    "c_p7gOOAop8gY_43900",
+    "c_pWVnaH2a6HI_33000",
+    "c_rPVnnMhoF1Y_87700",
+    "c_tFaZymQbp84_25700",
+    "c_vkqPXIygBnw_33100",
+    "c_vkqPXIygBnw_49100",
+    "c_x1_t1_5fTwk_116000",
+    "c_zec5TRzrHyA_49300",
+    "c_zkIp0_aWmR0_21900",
+    "c_zvolzAxb5Kw_16900"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 41.567,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 1082.3,
+     "watermark_short": 87.8,
+     "total": 1170.1
+    },
+    "attempts": 5
+   },
+   "onVideoTitle": "anime x those eyes",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "minimal",
+    "titleStyle": "llm-hook",
+    "ovStyle": "ov-song",
+    "descHook": "llm-line",
+    "titlePattern": "{song} anime edit hits different {e}"
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "new_west_those_eyes@v1",
+   "songSection": [
+    102.58,
+    143.53
+   ]
   }
  ]
 }
