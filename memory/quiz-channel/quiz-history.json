@@ -2296,6 +2296,86 @@
     "titleStyle": "op-exact-search",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "nYaMctfbvGM",
+   "url": "https://www.youtube.com/watch?v=nYaMctfbvGM",
+   "postedAt": "2026-11-06T09:39:45.998Z",
+   "publishAt": "2026-11-06T13:00:00.000Z",
+   "format": "wyr",
+   "theme": "food",
+   "seed": 708627771,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "wyr-hard",
+   "title": "The Hardest Would You Rather #asianfood",
+   "answers": [
+    "wyr:eat max-spice tteokbokki|eat max-spice sichuan hotpot",
+    "wyr:only eat ramen forever|only eat sushi forever",
+    "wyr:enjoy hearty korean bibimbap|slurp authentic taiwanese beef noodle"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "challenge"
+   }
+  },
+  {
+   "videoId": "5MDmLKcyyto",
+   "url": "https://www.youtube.com/watch?v=5MDmLKcyyto",
+   "postedAt": "2026-11-06T09:44:22.108Z",
+   "publishAt": "2026-11-07T01:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 179188449,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character just from their outfit?",
+     "template": "Can you guess the anime character just from their outfit?",
+     "sec": 2.74
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "Comment your final score down below!",
+     "template": "Comment your final score down below!",
+     "sec": 1.65
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai",
+     "line": "Yes! That is Frieren!",
+     "template": "Yes! That is {a}!",
+     "sec": 1.52
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Shinobu Kocho. Did you get it?",
+     "template": null,
+     "sec": 1.64
+    }
+   ],
+   "titleTemplate": "outfit-guess",
+   "title": "Guess the Anime Character by Their Outfit #anime",
+   "answers": [
+    "outfit:frieren#16h4jrv",
+    "outfit:shinobu kocho#lauu2",
+    "outfit:beatrix amerhauser#4kjz2x"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

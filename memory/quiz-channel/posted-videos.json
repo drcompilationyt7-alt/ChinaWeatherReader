@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=1ppVYRgxwNA",
-      "title": "guess the kpop idol 🔥 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-07T08:53:03.493Z",
-      "videoId": "1ppVYRgxwNA",
-      "category": "quiz-idol",
-      "titleSource": "idol-casual",
-      "quizFormat": "idol",
-      "quizTheme": "kpop"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=WjE7g5LMDnQ",
       "title": "Only Real Otakus Get 3/3 🎶 #anime",
       "country": "Global",
@@ -505,6 +494,28 @@
       "titleSource": "song-llm",
       "quizFormat": "song",
       "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=nYaMctfbvGM",
+      "title": "The Hardest Would You Rather #asianfood",
+      "country": "Global",
+      "postedAt": "2026-11-06T09:39:46.275Z",
+      "videoId": "nYaMctfbvGM",
+      "category": "quiz-wyr",
+      "titleSource": "wyr-hard",
+      "quizFormat": "wyr",
+      "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=5MDmLKcyyto",
+      "title": "Guess the Anime Character by Their Outfit #anime",
+      "country": "Global",
+      "postedAt": "2026-11-06T09:44:22.361Z",
+      "videoId": "5MDmLKcyyto",
+      "category": "quiz-outfit",
+      "titleSource": "outfit-guess",
+      "quizFormat": "outfit",
+      "quizTheme": "anime"
     }
   ]
 }
