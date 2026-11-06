@@ -898,7 +898,7 @@ def scorecard(C, R, P, items):
                         + (f"; worst {w_['start']:.2f} s ({w_['word'] or '?'}) switch {w_['cut']:.2f} err {w_['err']:+.2f} s" if w_ else '')
                         + f" (tempo scale {(C.get('waves') or {}).get('tscale')}); render vs plan: audio lag max "
                         f"{SY.get('av_lag_max_s')} s over {len((SY.get('av') or {}).get('lags_ms') or [])} windows, cut drift max "
-                        f"{SY.get('av_cut_max_s')} s"
+                        f"{SY.get('av_cut_max_s')} s, plan cuts not detected {(SY.get('av') or {}).get('cut_missed') or []}"
                         + (f"; lyric line starts {len(LS.get('rows') or [])}, off-sync {LS.get('off')}"
                            + ''.join(f" [{r_['line'][:18]!r} {r_['t']:.2f} attack {r_['attack']} switch {r_['cut']} err {r_['err']}]"
                                      for r_ in LS.get('rows') or [] if r_['t'] in LS.get('off'))
@@ -1345,12 +1345,18 @@ def av_drift(path, music, m_start, dur, plan_cuts=None, cuts=None, win=2.0):
         k = int(np.argmax(cc))
         nrm = float(np.linalg.norm(seg) * np.linalg.norm(rs[k:k + len(seg)]) + 1e-9)
         lags.append((round(float(t), 1), round((k - sr) / sr * 1000.0, 1), round(float(cc[k]) / nrm, 3)))
-    ce = []
+    ce, missed = [], []
     if plan_cuts and cuts:
         for pc in plan_cuts:
             f = min(cuts, key=lambda c: abs(c - pc))
+            # one-to-one: a detected cut that sits closer to ANOTHER plan cut is that cut's match, so this plan cut was not
+            # detected (a soft switch between similar shots), not drifted. 2026-11-04 CI newjeans_ditto: plan 38.50 matched
+            # the 37.80 cut (-0.70 s) while every other cut was exact -> 12_sync 0 on a 9.06 attempt.
+            if min(plan_cuts, key=lambda p: abs(f - p)) != pc:
+                missed.append(round(pc, 3))
+                continue
             ce.append((round(pc, 3), round(f, 3), round(f - pc, 3)))
-    return dict(lags_ms=lags, cut_err=ce)
+    return dict(lags_ms=lags, cut_err=ce, cut_missed=missed)
 
 
 def line_sync(E, cuts, dur, lrc_id, m_start, speed, body_from, end_guard=1.0):
