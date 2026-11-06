@@ -49,6 +49,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import ranking_topics as RT  # noqa: E402
 
+PUB_MAX_MB = 1800             # one staging tar stays under the release's 2 GiB per-file limit
 MARGIN = 1.5                 # s kept on each side of the chosen window (re-cut room), the rest of the edit is never stored
 SEG = (18.0, 24.0)           # phrase-aligned window per entry (3 revealed entries ~ 60 s)
 SECTIONS = 4                 # good non-overlapping sections staged per edit (owner 2026-10-28)
@@ -720,6 +721,13 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                                         'at': time.strftime('%Y-%m-%d')}
             row['staged'] += staged
             summary['staged'] += len(staged)
+            if os.environ.get('RANKING_STAGE_SOURCE', '1') != '0':
+                try:
+                    srec = stage_source(res, sd, [x for x in man['items'] if x['id'] in staged])
+                    if srec:
+                        man['sources'] = [x for x in man.get('sources') or [] if x['source_id'] != srec['source_id']] + [srec]
+                except Exception as ex:  # noqa: BLE001  (the sections stay staged without the whole edit)
+                    log(f'{res.get("id")}: staging the whole edit failed: {type(ex).__name__}: {ex}')
             save_manifest(sd, man)
             wj(sp, st)
         for res, _ in pre:
@@ -790,6 +798,186 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None):
     return it
 
 
+# ------------------------------------------------------------------ whole-edit review (owner 2026-11-07)
+# "GitHub downloads, then you view the whole video and do the clipping / sectioning / tagging": every edit that gives a
+# section is staged WHOLE (sources/<id>.mp4) with timeline sheets (a frame every TL_STEP s, its time, the proposed sections
+# outlined). Review: recut (move a section's start / end, snapped to a scene cut; set serves / themes) and add-section
+# (another stretch of the same edit). The full edits leave the PC once every section of theirs is decided.
+TL_STEP = 0.5
+TL_COLS, TL_ROWS = 10, 12
+SRC_MAX_MB = 150             # a bigger download is re-encoded (CRF 19, <= 1080p) before it is staged
+
+
+def _rel(p, base):
+    return os.path.relpath(p, base).replace(os.sep, '/')
+
+
+def stage_source(res, sd, items):
+    """copy the whole edit into staging + its timeline sheets -> the source record (or None)"""
+    src = res.get('path')
+    if not src or not os.path.exists(src):
+        return None
+    sid = res['id']
+    rel = f'sources/{sid}.mp4'
+    dst = os.path.join(sd, rel)
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if os.path.getsize(src) > SRC_MAX_MB * 1048576:
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-vf', "scale='min(1920,iw)':-2", '-c:v', 'libx264', '-crf', '19',
+                        '-preset', 'medium', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', dst], check=True)
+    else:
+        shutil.copy2(src, dst)
+    props = [(float(it['start']) + float(it['clip_in']), float(it['start']) + float(it['clip_out']), it['id']) for it in items]
+    lab = f"{sid} | {res.get('handle')} | {(res.get('title') or '')[:70]}"
+    sheets = timeline_sheets(dst, os.path.join(sd, 'timelines', sid), props, lab)
+    return {'source_id': sid, 'file': rel, 'timelines': [_rel(x, sd) for x in sheets],
+            'dur': res.get('dur'), 'title': res.get('title'), 'handle': res.get('handle'), 'items': [it['id'] for it in items],
+            'show': (items[0].get('show') if items else None), 'status': 'staged'}
+
+
+def timeline_sheets(video, out_prefix, props=(), label=''):
+    """frames every TL_STEP s of the whole edit, TL_COLS x TL_ROWS per sheet; each tile shows its time; a tile inside a
+    proposed section gets a coloured frame + the section's number (S1 = the first proposal)"""
+    import cv2
+    import numpy as np
+    cap = cv2.VideoCapture(video)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    dur = (cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0) / fps
+    cols = [(0, 200, 255), (80, 255, 80), (255, 120, 60), (255, 80, 255), (60, 255, 255), (200, 200, 200)]
+    tiles, t = [], 0.0
+    while t < dur - 0.05:
+        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+        ok, f = cap.read()
+        if ok:
+            f = cv2.resize(f, (240, 135))
+            for k, (a, b, _) in enumerate(props):
+                if a <= t < b:
+                    cv2.rectangle(f, (0, 0), (239, 134), cols[k % len(cols)], 4)
+                    cv2.putText(f, f'S{k + 1}', (196, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, cols[k % len(cols)], 2)
+            cv2.putText(f, f'{t:.1f}', (6, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 4)
+            cv2.putText(f, f'{t:.1f}', (6, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+            tiles.append(f)
+        t += TL_STEP
+    cap.release()
+    out, per = [], TL_COLS * TL_ROWS
+    os.makedirs(os.path.dirname(out_prefix), exist_ok=True)
+    for n, i in enumerate(range(0, len(tiles), per)):
+        part = tiles[i:i + per]
+        while len(part) % TL_COLS:
+            part.append(np.zeros((135, 240, 3), np.uint8))
+        grid = np.vstack([np.hstack(part[r:r + TL_COLS]) for r in range(0, len(part), TL_COLS)])
+        bar = np.zeros((40, grid.shape[1], 3), np.uint8)
+        txt = f'{label[:120]} | sheet {n + 1} | ' + ' '.join(f'S{k + 1} {a:.1f}-{b:.1f}' for k, (a, b, _) in enumerate(props))
+        cv2.putText(bar, txt[:200], (8, 27), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        p_ = f'{out_prefix}_{n:02d}.jpg'
+        cv2.imwrite(p_, np.vstack([bar, grid]), [cv2.IMWRITE_JPEG_QUALITY, 78])
+        out.append(p_)
+    return out
+
+
+_SCD_RE = re.compile(r'lavfi[.]scd[.]time: ([0-9.]+)')
+
+
+def _snap(video, t, win=0.4):
+    """the scene cut nearest t within +-win s (ffmpeg scdet), else t"""
+    a = max(0.0, t - win)
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-ss', f'{a:.3f}', '-t', f'{2 * win:.3f}', '-i', video, '-vf', 'scdet=threshold=8',
+                        '-f', 'null', '-'], capture_output=True, text=True)
+    cuts = [a + float(x) for x in _SCD_RE.findall(r.stderr)]
+    return round(min(cuts, key=lambda c: abs(c - t)), 3) if cuts else round(t, 3)
+
+
+def _src_record(man, sid):
+    return next((x for x in man.get('sources') or [] if x['source_id'] == sid), None)
+
+
+def _apply_window(it, sd, src, s, e, label_extra=''):
+    import ranking_compilation as RC
+    dur = float(it.get('source_dur') or 0) or None
+    s0, e0 = max(0.0, s - MARGIN), (min(dur, e + MARGIN) if dur else e + MARGIN)
+    clip = os.path.join(sd, it['file'])
+    RC.cut_clip(os.path.join(sd, src['file']), s0, e0, clip)
+    it.update(start=round(s0, 3), end=round(e0, 3), clip_in=round(s - s0, 3), clip_out=round(e - s0, 3), win_len=round(e - s, 2),
+              recut=time.strftime('%Y-%m-%d'))
+    lab = (f"{it['entry_name']} | {it.get('editor_handle')} | {it['source_id']} {s:.1f}-{e:.1f}s | RECUT | serves "
+           f"{','.join(x.split('__')[0] for x in it.get('serves') or [])} | {'/'.join(it.get('themes') or [])}{label_extra}")
+    it['sheet'] = _rel(sheet(clip, os.path.join(sd, 'sheets', it['id'] + '.jpg'), lab) or '', sd)
+
+
+def _set_tags(it, serves=None, themes=None, entry=None):
+    if entry:
+        e, _ = all_entries().get(entry) or (None, None)
+        if not e:
+            raise SystemExit(f'unknown entry key {entry}')
+        it.update(entry_key=entry, entry_name=e['name'], kind=e.get('kind', 'character'), chars=e.get('chars'))
+    if serves is not None:
+        it['serves'] = list(serves)
+        it['serves_by'] = 'review'
+    if themes is not None:
+        it['themes'] = list(themes)
+        it['theme'] = themes[0] if themes else it.get('theme')
+
+
+def recut(iid, s=None, e=None, serves=None, themes=None, snap=True, entry=None):
+    """Review: move a staged section to [s, e] of its source (source seconds, snapped to scene cuts), optionally set what it
+    serves (entry keys) / its themes / the entry it is filed under."""
+    sd = staged_dir()
+    man = manifest(sd)
+    it = next(x for x in man['items'] if x['id'] == iid)
+    src = _src_record(man, it['source_id'])
+    if s is not None and e is not None:
+        if not src or not os.path.exists(os.path.join(sd, src['file'])):
+            raise SystemExit(f'{iid}: the whole edit is not staged (older batch): only serves / themes can change')
+        vid = os.path.join(sd, src['file'])
+        if snap:
+            s, e = _snap(vid, s), _snap(vid, e)
+        _apply_window(it, sd, src, float(s), float(e))
+    _set_tags(it, serves, themes, entry)
+    save_manifest(sd, man)
+    return {k: it.get(k) for k in ('id', 'start', 'clip_in', 'clip_out', 'win_len', 'serves', 'themes', 'entry_key', 'sheet')}
+
+
+def add_section(sid, s, e, like, serves=None, themes=None, snap=True, entry=None):
+    """Review: a new section [s, e] of a staged whole edit; metadata cloned from `like` (a section of the same edit)."""
+    sd = staged_dir()
+    man = manifest(sd)
+    src = _src_record(man, sid)
+    if not src:
+        raise SystemExit(f'{sid}: no staged whole edit')
+    base = next(x for x in man['items'] if x['id'] == like)
+    vid = os.path.join(sd, src['file'])
+    if snap:
+        s, e = _snap(vid, s), _snap(vid, e)
+    iid = f'r_{sid}_{int(float(s) * 1000)}'
+    it = {k: v for k, v in base.items() if k not in ('published_in', 'sheet', 'recut')}
+    it.update(id=iid, file=f'clips/{iid}.mp4', status='staged', added=time.strftime('%Y-%m-%d'), added_by='review')
+    _apply_window(it, sd, src, float(s), float(e), ' | NEW')
+    _set_tags(it, serves, themes, entry)
+    man['items'] = [x for x in man['items'] if x['id'] != iid] + [it]
+    src['items'] = list(dict.fromkeys((src.get('items') or []) + [iid]))
+    save_manifest(sd, man)
+    return {k: it.get(k) for k in ('id', 'start', 'clip_in', 'clip_out', 'win_len', 'serves', 'themes', 'entry_key', 'sheet')}
+
+
+def clean_sources():
+    """delete the staged whole edits whose sections are all decided (reviewed / rejected): no large files kept on the PC"""
+    sd = staged_dir()
+    man = manifest(sd)
+    st = {x['id']: x.get('status') for x in man['items']}
+    n = 0
+    for src in man.get('sources') or []:
+        if src.get('status') == 'done':
+            continue
+        if all(st.get(i) in ('reviewed', 'rejected') for i in src.get('items') or []):
+            for rel in [src['file']] + list(src.get('timelines') or []):
+                p_ = os.path.join(sd, rel)
+                if os.path.exists(p_):
+                    os.remove(p_)
+            src['status'] = 'done'
+            n += 1
+    save_manifest(sd, man)
+    return n
+
+
 # ------------------------------------------------------------------ staging transport (CI / PC miner <-> owner PC)
 
 def publish(dest, label='ci', merge_remote=False, release='edit-pools-staging'):
@@ -807,23 +995,48 @@ def publish(dest, label='ci', merge_remote=False, release='edit-pools-staging'):
     man = manifest(sd)
     new = [it for it in man['items'] if it.get('status') == 'staged' and not it.get('published_in')]
     os.makedirs(dest, exist_ok=True)
-    out = {'tar': None, 'items': len(new)}
+    out = {'tar': None, 'tars': [], 'items': len(new)}
     if new:
-        name = f'ranking-cand-{time.strftime("%Y%m%d-%H%M", time.gmtime())}-{label}-n{len(new)}.tar'
-        tp = os.path.join(dest, name)
-        with tarfile.open(tp, 'w') as t:
-            for it in new:
-                for rel in (it['file'], it.get('sheet'), (it.get('proof') or {}).get('snapshot_file')):
-                    if rel and os.path.exists(os.path.join(sd, rel)):
-                        t.add(os.path.join(sd, rel), arcname=rel)
-            tmp = os.path.join(dest, 'clips.batch.json')
-            wj(tmp, {'version': 2, 'items': new, 'batch': name})
-            t.add(tmp, arcname='clips.json')
-            os.remove(tmp)
+        # owner 2026-11-07 whole-edit review: each edit's whole file + timelines travel with its sections; batches are split
+        # by source so one tar stays under the release's per-file limit (PUB_MAX_MB)
+        srcs = {x['source_id']: x for x in man.get('sources') or []}
+        groups = {}
         for it in new:
-            it['published_in'] = name
+            groups.setdefault(it['source_id'], []).append(it)
+
+        def files_of(sid, its):
+            fs = [rel for it in its for rel in (it['file'], it.get('sheet'), (it.get('proof') or {}).get('snapshot_file'))]
+            if sid in srcs:
+                fs += [srcs[sid]['file']] + list(srcs[sid].get('timelines') or [])
+            return [rel for rel in dict.fromkeys(fs) if rel and os.path.exists(os.path.join(sd, rel))]
+        batches, cur, size = [], [], 0
+        for sid, its in groups.items():
+            sz = sum(os.path.getsize(os.path.join(sd, r)) for r in files_of(sid, its))
+            if cur and size + sz > PUB_MAX_MB * 1048576:
+                batches.append(cur)
+                cur, size = [], 0
+            cur.append(sid)
+            size += sz
+        if cur:
+            batches.append(cur)
+        stamp = time.strftime("%Y%m%d-%H%M", time.gmtime())
+        for bi, sids in enumerate(batches):
+            its = [it for sid in sids for it in groups[sid]]
+            name = f'ranking-cand-{stamp}-{label}{"" if len(batches) == 1 else chr(97 + bi)}-n{len(its)}.tar'
+            tp = os.path.join(dest, name)
+            with tarfile.open(tp, 'w') as t:
+                for sid in sids:
+                    for rel in files_of(sid, groups[sid]):
+                        t.add(os.path.join(sd, rel), arcname=rel)
+                tmp = os.path.join(dest, 'clips.batch.json')
+                wj(tmp, {'version': 3, 'items': its, 'sources': [srcs[sid] for sid in sids if sid in srcs], 'batch': name})
+                t.add(tmp, arcname='clips.json')
+                os.remove(tmp)
+            for it in its:
+                it['published_in'] = name
+            out['tars'].append(tp)
         save_manifest(sd, man)
-        out['tar'] = tp
+        out['tar'] = out['tars'][0]
     if os.path.exists(state_path()):
         shutil.copy2(state_path(), os.path.join(dest, 'ranking-state.json'))
     return out
@@ -866,6 +1079,8 @@ def pull_staged(release='edit-pools-staging'):
             if it['id'] not in ids:
                 man['items'].append(it)
                 n += 1
+        have_src = {x['source_id'] for x in man.get('sources') or []}
+        man['sources'] = (man.get('sources') or []) + [x for x in batch.get('sources') or [] if x['source_id'] not in have_src]
         shutil.rmtree(tmp, ignore_errors=True)
     save_manifest(sd, man)
     return n
@@ -1152,7 +1367,8 @@ def library_report(md=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
-                                    'assemble', 'status', 'mark', 'remove', 'rescreen', 'recast'])
+                                    'assemble', 'status', 'mark', 'remove', 'rescreen', 'recast', 'recut', 'add-section',
+                                    'timeline', 'clean-sources'])
     ap.add_argument('--result')
     ap.add_argument('--budget-min', type=float, default=60)
     ap.add_argument('--work')
@@ -1179,6 +1395,15 @@ def main():
     ap.add_argument('--mark-used', action='store_true')
     ap.add_argument('--json', action='store_true')
     ap.add_argument('--why', default='rejected')
+    # whole-edit review (owner 2026-11-07): recut / add-section / timeline
+    ap.add_argument('--id', default='', help='recut: the staged item; add-section: the source id')
+    ap.add_argument('--s', type=float, default=None, help='recut / add-section: section start (source seconds)')
+    ap.add_argument('--e', type=float, default=None, help='recut / add-section: section end (source seconds)')
+    ap.add_argument('--like', default='', help='add-section: copy the metadata of this staged item (same edit)')
+    ap.add_argument('--serves', default=None, help='recut / add-section: entry keys this section serves (comma-separated)')
+    ap.add_argument('--themes', default=None, help='recut / add-section: action,beauty,romance (comma-separated)')
+    ap.add_argument('--entry', default=None, help='recut / add-section: file the section under this entry key')
+    ap.add_argument('--no-snap', action='store_true', help='recut / add-section: keep the exact times (no scene-cut snap)')
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     a = ap.parse_args()
     if a.cmd == 'plan-shows':
@@ -1217,6 +1442,22 @@ def main():
                       + f'{os.path.join(staged_dir(), it.get("sheet") or "")}')
     elif a.cmd == 'import':
         print(import_items(set(filter(None, a.ids.split(','))), set(filter(None, a.reject.split(','))), a.by), 'imported')
+        print(clean_sources(), 'whole edits deleted (all their sections decided)')
+    elif a.cmd in ('recut', 'add-section'):
+        lst = lambda x: None if x is None else [y.strip() for y in x.split(',') if y.strip()]
+        if a.cmd == 'recut':
+            r = recut(a.id, a.s, a.e, lst(a.serves), lst(a.themes), not a.no_snap, a.entry)
+        else:
+            r = add_section(a.id, a.s, a.e, a.like, lst(a.serves), lst(a.themes), not a.no_snap, a.entry)
+        print(json.dumps(r, ensure_ascii=False, indent=1))
+    elif a.cmd == 'timeline':
+        man = manifest(staged_dir())
+        for src in man.get('sources') or []:
+            if src.get('status') != 'done':
+                print(src['source_id'], src.get('handle'), (src.get('title') or '')[:60], 'items', src.get('items'),
+                      [os.path.join(staged_dir(), x) for x in src.get('timelines') or []])
+    elif a.cmd == 'clean-sources':
+        print(clean_sources(), 'whole edits deleted')
     elif a.cmd == 'push-state':
         print(push_state())
     elif a.cmd == 'eligible':
