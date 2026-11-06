@@ -44,8 +44,10 @@ const repo = repoSlug ? ['--repo', repoSlug] : [];
 const env = { ...process.env, GH_TOKEN: process.env.GH_PAT || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '' };
 if (!env.GH_TOKEN) delete env.GH_TOKEN;   // local: the gh login
 const gh = (a, o = {}) => execFileSync('gh', a, { cwd: ROOT, env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], ...o });
-// upload with retries: --clobber deletes the old asset first, so a one-off GitHub 5xx (2026-10-26) would leave the pool missing
-function upload(file) {
+// upload with retries. 2026-11-04: --clobber deleted the live asset BEFORE the upload, and a 408 timeout left
+// pool-ranking-pool.tar missing from the live release. Now the file goes up as '<name>.new' first; only after that
+// upload succeeded is the old asset deleted and the new one renamed (REST PATCH) - a failed upload leaves the live pool intact.
+function uploadRaw(file) {
   for (let k = 1; ; k++) {
     try { return gh(['release', 'upload', TAG, file, ...repo, '--clobber']); } catch (e) {
       if (k >= 4) throw e;
@@ -53,6 +55,20 @@ function upload(file) {
       execFileSync(process.execPath, ['-e', `setTimeout(() => {}, ${20000 * k})`]);
     }
   }
+}
+function upload(file) {
+  const base = path.basename(file);
+  if (!repoSlug) return uploadRaw(file);        // no slug for the REST rename: the old clobber upload
+  const staged = path.join(path.dirname(file), `${base}.new`);
+  fs.renameSync(file, staged);
+  try { uploadRaw(staged); } finally { fs.renameSync(staged, file); }
+  const list = assets() || [];
+  const neu = list.find(a => a.name === `${base}.new`);
+  if (!neu) throw new Error(`upload ${base}: '${base}.new' not on the release after the upload`);
+  if (list.some(a => a.name === base)) gh(['release', 'delete-asset', TAG, base, ...repo, '--yes']);
+  const id = neu.apiUrl ? String(neu.apiUrl).split('/').pop() : neu.id;
+  gh(['api', '-X', 'PATCH', `repos/${repoSlug}/releases/assets/${id}`, '-f', `name=${base}`]);
+  console.log(`uploaded ${base} (as ${base}.new, then swapped)`);
 }
 const STAMP = path.join(dir, '.store-stamp.json');
 const manifestsOnly = args.includes('--manifests-only');
