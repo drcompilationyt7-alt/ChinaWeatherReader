@@ -1,87 +1,60 @@
 {
- "at": "2026-11-06T12:32:07.532Z",
+ "at": "2026-11-06T23:05:34.161Z",
  "type": "slowmo",
  "ok": false,
- "posted": true,
- "reason": "attempts used up; MUST PUBLISH: attempt 3 (score 9.03)",
- "dryRun": false,
+ "posted": false,
+ "reason": "attempts used up",
+ "dryRun": true,
  "attempts": [
   {
    "n": 1,
-   "song": "new_west_those_eyes@v1",
+   "song": "new_west_those_eyes@v0.9",
    "seed": 59281,
    "input": "first",
-   "work": "work-slowmo-1793959281658",
-   "min": 27.8,
-   "overall": 7.81,
-   "failed": {
-    "3_lyrics": 4,
-    "11_waves": 0,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "recut"
+   "work": "work-slowmo-1794004145447",
+   "min": 7.9,
+   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "next": "new_song"
   },
   {
    "n": 2,
-   "song": "new_west_those_eyes@v1",
-   "seed": 59281,
-   "input": "recut",
-   "work": "work-slowmo-1793960950097",
-   "min": 27.1,
-   "overall": 8.81,
-   "failed": {
-    "11_waves": 7,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "recut"
+   "song": "new_west_those_eyes@v0.9",
+   "seed": 59492,
+   "input": "new_song",
+   "work": "work-slowmo-1794004617738",
+   "min": 7.3,
+   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "next": "new_song"
   },
   {
    "n": 3,
-   "song": "new_west_those_eyes@v1",
-   "seed": 59281,
-   "input": "recut",
-   "work": "work-slowmo-1793962574495",
-   "min": 27.5,
-   "overall": 9.03,
-   "failed": {
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
+   "song": "new_west_those_eyes@v0.9",
+   "seed": 59703,
+   "input": "new_song",
+   "work": "work-slowmo-1794005053621",
+   "min": 7.1,
+   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
    "next": "new_song"
   },
   {
    "n": 4,
-   "song": "fifty_fifty_cupid@v1",
-   "seed": 59492,
+   "song": "new_west_those_eyes@v0.9",
+   "seed": 59914,
    "input": "new_song",
-   "work": "work-slowmo-1793964223201",
-   "min": 33.5,
-   "overall": 7.89,
-   "failed": {
-    "1_smooth": 6.3,
-    "3_lyrics": 4,
-    "11_waves": 2,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "reseed"
+   "work": "work-slowmo-1794005477932",
+   "min": 7.3,
+   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "next": "new_song"
   },
   {
    "n": 5,
-   "song": "fifty_fifty_cupid@v1",
-   "seed": 59593,
-   "input": "reseed",
-   "work": "work-slowmo-1793966232368",
-   "min": 34.9,
-   "overall": 8.41,
-   "failed": {
-    "11_waves": 2,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "recut"
+   "song": "new_west_those_eyes@v0.9",
+   "seed": 60125,
+   "input": "new_song",
+   "work": "work-slowmo-1794005913858",
+   "min": 7,
+   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "next": "new_song"
   }
  ]
 }
