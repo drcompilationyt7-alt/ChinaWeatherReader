@@ -52669,6 +52669,65 @@
      "gate_class": "minor"
     },
     {
+     "id": 125298,
+     "name": "Silence Suzuka",
+     "anime": "Umamusume: Pretty Derby",
+     "favourites": 782,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125298-MyaIqv1U5mcg.jpg",
+     "edition": "maid",
+     "full": null,
+     "gate": {
+      "rating": {
+       "general": 0.89,
+       "sensitive": 0.12,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6172112",
+      "file": "https://cdn.donmai.us/sample/1d/c8/sample-1dc8ca6b067c72e9cd4668b9ab233713.jpg",
+      "artist": "pandoa_(mikage0495)",
+      "origin": "https://i.pximg.net/img-original/img/2023/03/26/18/58/35/106581766_p0.jpg",
+      "rating": "g",
+      "score": 20,
+      "res": "4100x6600",
+      "tag": "silence_suzuka_(umamusume)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by pandoa_(mikage0495) (credited, post https://danbooru.donmai.us/posts/6172112); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.892,
+       "margin": 0.074,
+       "hair": 0.38,
+       "face": true,
+       "eye": 0.351
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
+     ],
+     "dir": "theme/maid/character",
+     "gate_class": "unknown"
+    },
+    {
      "id": 138102,
      "name": "Yor Forger",
      "anime": "SPY x FAMILY",
@@ -54431,6 +54490,75 @@
       "maid",
       "maid_headdress",
       "maid_apron"
+     ],
+     "dir": "theme/maid/silhouette",
+     "gate_class": "unknown"
+    },
+    {
+     "id": 125298,
+     "name": "Silence Suzuka",
+     "anime": "Umamusume: Pretty Derby",
+     "favourites": 782,
+     "difficulty": 3,
+     "gender": "Female",
+     "age": null,
+     "age_class": "unknown",
+     "age_evidence": "no age",
+     "image": "https://s4.anilist.co/file/anilistcdn/character/large/b125298-MyaIqv1U5mcg.jpg",
+     "edition": "maid",
+     "col": null,
+     "mask": null,
+     "size": [
+      323,
+      520
+     ],
+     "stats": {
+      "fill": 0.49,
+      "solidity": 0.73,
+      "mask": "isnet"
+     },
+     "gate": {
+      "rating": {
+       "general": 0.88,
+       "sensitive": 0.13,
+       "questionable": 0.0,
+       "explicit": 0.0
+      },
+      "why": "strict ok",
+      "class": "unknown",
+      "swimwear": []
+     },
+     "source": {
+      "kind": "danbooru",
+      "post": "https://danbooru.donmai.us/posts/6172112",
+      "file": "https://cdn.donmai.us/sample/1d/c8/sample-1dc8ca6b067c72e9cd4668b9ab233713.jpg",
+      "artist": "pandoa_(mikage0495)",
+      "origin": "https://i.pximg.net/img-original/img/2023/03/26/18/58/35/106581766_p0.jpg",
+      "rating": "g",
+      "score": 20,
+      "res": "4100x6600",
+      "tag": "silence_suzuka_(umamusume)",
+      "theme_tags": [
+       "enmaided",
+       "maid",
+       "maid_apron",
+       "maid_headdress"
+      ],
+      "srctype": "FAN ART",
+      "licence": "Fan art by pandoa_(mikage0495) (credited, post https://danbooru.donmai.us/posts/6172112); character (c) its rights holders",
+      "onmodel": {
+       "sim": 0.892,
+       "margin": 0.074,
+       "hair": 0.38,
+       "face": true,
+       "eye": 0.351
+      }
+     },
+     "theme_hit": [
+      "maid",
+      "maid_headdress",
+      "maid_apron",
+      "enmaided"
      ],
      "dir": "theme/maid/silhouette",
      "gate_class": "unknown"
