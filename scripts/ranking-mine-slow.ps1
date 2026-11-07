@@ -1,13 +1,18 @@
 # Slow, continuous ranking-pool mining on the owner PC (owner 2026-11-07: "work slow but consistently so it won't stop,
-# just slowly, not too much resources").
-#   * Idle CPU priority (inherited by python / yt-dlp / ffmpeg): it only gets CPU nobody else wants
+# just slowly, not too much resources" + "if my pc is always running something heavy that thing may not run").
+#   * NOT idle priority (that starves under constant load): normal priority inside a Windows job with a HARD CPU cap
+#     (-CpuPercent, default 10 % of the machine = ~1.6 of 16 cores) - python / yt-dlp / ffmpeg all inherit the job, so
+#     it always progresses and never takes more than that slice
 #   * 2 threads, one YouTube request per minute, 2 downloads per cycle, 2 shows per cycle (rotating through the plan)
-#   * a pause between cycles; the RAM rule stays (ranking_compilation.wait_ram: waits for 5.2 GB available)
+#   * a pause between cycles; RAM: the models load once -MinRamGB (3.5) is available (the 5.2 GB rule would stall it
+#     on a busy PC; the models need ~2.5-3 GB)
 #   * waits while output/ranking-mine/PAUSE exists (a Claude session doing heavy local work creates it), stops when
 #     output/ranking-mine/STOP exists; waits when C: has < 25 GB free
 #   * results go to the local staging (output/edit-pools/_staged/ranking): reviewed + imported in a Claude session
-# Start (hidden, survives closing the terminal):
-#   Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','scripts\ranking-mine-slow.ps1'
+# Start (hidden, outside the editor's / terminal's process tree so closing them never kills it):
+#   Invoke-CimMethod Win32_Process -MethodName Create -Arguments @{CommandLine='powershell -NoProfile -ExecutionPolicy Bypass
+#     -WindowStyle Hidden -File C:\Users\Home\Desktop\ChinaWeatherReader\scripts\ranking-mine-slow.ps1';
+#     CurrentDirectory='C:\Users\Home\Desktop\ChinaWeatherReader'}
 param(
   [int]$Threads = 2,
   [int]$PaceS = 60,
@@ -15,10 +20,34 @@ param(
   [int]$ShowsPerCycle = 2,
   [int]$CycleBudgetMin = 60,
   [int]$PauseMin = 15,
-  [double]$MinFreeDiskGB = 25
+  [double]$MinFreeDiskGB = 25,
+  [int]$CpuPercent = 10,
+  [double]$MinRamGB = 3.5
 )
 $ErrorActionPreference = 'Continue'
-(Get-Process -Id $PID).PriorityClass = 'Idle'          # children inherit the Idle class
+# a job object with a hard CPU-rate cap; every process this script starts afterwards is in the job too
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class CwrSlowJob {
+  [StructLayout(LayoutKind.Sequential)] struct CpuRate { public uint Flags; public uint Rate; }
+  [DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)] static extern IntPtr CreateJobObject(IntPtr a, string n);
+  [DllImport("kernel32.dll", SetLastError=true)] static extern bool SetInformationJobObject(IntPtr j, int c, ref CpuRate i, uint l);
+  [DllImport("kernel32.dll", SetLastError=true)] static extern bool AssignProcessToJobObject(IntPtr j, IntPtr p);
+  [DllImport("kernel32.dll")] static extern IntPtr GetCurrentProcess();
+  public static IntPtr Job;
+  public static string Cap(int percent) {
+    Job = CreateJobObject(IntPtr.Zero, null);
+    if (Job == IntPtr.Zero) return "CreateJobObject failed " + Marshal.GetLastWin32Error();
+    CpuRate r = new CpuRate(); r.Flags = 0x1 | 0x4; r.Rate = (uint)(percent * 100);   // ENABLE | HARD_CAP, 1/100 %
+    if (!SetInformationJobObject(Job, 15, ref r, (uint)Marshal.SizeOf(r))) return "SetInformationJobObject failed " + Marshal.GetLastWin32Error();
+    if (!AssignProcessToJobObject(Job, GetCurrentProcess())) return "AssignProcessToJobObject failed " + Marshal.GetLastWin32Error();
+    return "ok";
+  }
+}
+"@
+$capResult = [CwrSlowJob]::Cap($CpuPercent)
+if ($capResult -ne 'ok') { (Get-Process -Id $PID).PriorityClass = 'BelowNormal' }   # no cap possible: at least yield
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 $Py = Join-Path $env:LOCALAPPDATA 'Temp\acapvenv\Scripts\python.exe'
@@ -38,8 +67,11 @@ $env:OMP_NUM_THREADS = "$Threads"
 $env:MKL_NUM_THREADS = "$Threads"
 $env:RANKING_PACE_S = "$PaceS"
 $env:EDIT_GPU = '0'
+$env:RANKING_MIN_FREE_GB = "$MinRamGB"
+# ranking_compilation.idle() would drop the miner to Idle (starves on a busy PC); the job's CPU cap keeps it small instead
+$env:MINE_PRIORITY = if ($capResult -eq 'ok') { 'normal' } else { 'below' }
 
-Say "slow loop started (pid $PID, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min)"
+Say "slow loop started (pid $PID, CPU cap $CpuPercent %: $capResult, RAM >= $MinRamGB GB, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min)"
 $k = 0
 if (Test-Path $StateF) { try { $k = [int](Get-Content $StateF -TotalCount 1) } catch { $k = 0 } }
 while ($true) {
