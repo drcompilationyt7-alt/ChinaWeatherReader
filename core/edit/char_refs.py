@@ -35,7 +35,7 @@ ASSETS = os.path.join(ROOT, 'core', 'quiz', 'assets')
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
 MAX_REFS = 24
 WIKI_FILES = 60            # wiki files looked at per character
-BANK_V = 3                 # bank format / source version (3: + the wiki file index by name prefix + file search, 60 files, 2026-10-26)
+BANK_V = 4                 # 4: the entry's own danbooru tag in the veto (2026-11-07); bank format / source version (3: + the wiki file index by name prefix + file search, 60 files, 2026-10-26)
 BAD_FILE = re.compile(r'icon|logo|signature|map|banner|chibi|sprite|emoji|avatar|thumb|cosplay|figure|merch|plush|voice|seiyuu|'
                       r'\.gif|\.svg|\.webm|sticker|stamp|nendoroid|card|volume|cover|vs\.?[ _]|[ _]and[ _]|[ _]&[ _]|group|team|family|clan', re.I)
 
@@ -308,6 +308,7 @@ class Bank:
         seen, crops, srcs = set(), [], []
         tg = self.j.tagger()
         own_tag = self.j.tag_for(name) if tg else None
+        own_words = set(re.sub(r'[^a-z ]', ' ', name.lower()).split())
         n_raw = 0
         for url, src in cands:
             if url in seen:
@@ -322,7 +323,10 @@ class Bank:
                 continue
             if tg is not None and src != 'anilist':
                 ch = tg.chars(tg(im), 0.6)
-                if ch and (own_tag not in ch):
+                # no tag for this name: a tag whose base words are all this character's name words is this character
+                # (zero_two_(darling_in_the_franxx)); a relative's tag never is (shirogane_miyuki for Kei Shirogane)
+                if ch and (own_tag not in ch) and not (own_tag is None and any(
+                        set(re.sub(r'_\(.*\)$', '', t).split('_')) <= own_words for t in ch)):
                     continue                      # the tagger sees someone else (and not this character)
             crops.append(cr)
             srcs.append(src)

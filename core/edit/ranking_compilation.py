@@ -96,6 +96,20 @@ import ranking_topics as RT  # noqa: E402
 TOPICS = RT.load()
 
 
+def entry_tags(topics=None):
+    """AniList character name -> the danbooru tag its topic entry names (single-character entries + couple members)."""
+    out = {}
+    try:
+        for T in (topics or TOPICS).values():
+            for e in T.get('entries') or []:
+                for m in [e] + list(e.get('members') or []):
+                    if len(m.get('chars') or []) == 1 and m.get('tags'):
+                        out.setdefault(m['chars'][0], m['tags'][0])
+    except Exception:  # noqa: BLE001  (no topics: the name-built tags only)
+        pass
+    return out
+
+
 def register_wikis(judge, entry, others=()):
     """Tell the judge which Fandom wiki holds each character's reference pictures (char_refs.Bank)."""
     for e in [entry, *others]:
@@ -104,6 +118,8 @@ def register_wikis(judge, entry, others=()):
                 judge.wiki.setdefault(c, e['wiki'])
             if e.get('kind', 'character') != 'anime' and len(e.get('chars') or []) == 1:
                 judge.alias.setdefault(c, e.get('search'))
+            if len(e.get('chars') or []) == 1 and e.get('tags'):
+                judge.tags.setdefault(c, e['tags'][0])
 
 # ---------------------------------------------------------------- helpers
 
@@ -663,6 +679,10 @@ class Judge:
         self.cache_dir = cache_dir
         self.wiki = {}                  # character name -> Fandom wiki slug (from the topic entry), for the reference bank
         self.alias = {}                 # character name -> the entry's own spelling ("Touji Fushiguro" -> "toji fushiguro")
+        # character name -> the topic entry's danbooru tag (2026-11-07): tag_for() built tags from the AniList name only, so
+        # 'Yor Forger' (yor_briar), 'Rem' (rem_(re:zero)), 'Zero Two' (zero_two_(darling_in_the_franxx)) came back None and
+        # the reference bank vetoed every correct picture as 'someone else' (Yor / Zero Two / Rem banks: 1 picture)
+        self.tags = entry_tags()
         self.cache = L.Cache(cache_dir, 2000)
         self.sig = L.Siglip(self.cache)
         cf.load_models()
@@ -789,6 +809,9 @@ class Judge:
         tg = self.tagger()
         if not tg:
             return None
+        t = (getattr(self, 'tags', None) or {}).get(name)
+        if t and tg.has(t):
+            return t
         ws = re.sub(r'[^a-z ]', '', name.lower()).split()
         if not ws:
             return None
@@ -797,11 +820,26 @@ class Judge:
             out = {w, w + 'u' if w.endswith('o') else w, re.sub(r'o(?!u)', 'ou', w, count=1), re.sub(r'u(?!u)', 'uu', w, count=1)}
             return out
         import itertools
+        bases = []
         for order in (ws[::-1], ws):
             for combo in itertools.product(*[var(w) for w in order]):
                 t = '_'.join(combo)
                 if tg.has(t):
                     return t
+                bases.append(t)
+        # a series-qualified tag ('rem_(re:zero)'): only when the qualifier is the character's own show
+        anime = re.sub(r'[^a-z0-9]', '', str((self.char(name) or {}).get('anime') or '').lower())
+        if anime:
+            if not hasattr(tg, '_qual'):
+                tg._qual = {}
+                for n in tg.names:
+                    m_ = re.match(r'^(.+?)_\((.+)\)$', n)
+                    if m_:
+                        tg._qual.setdefault(m_.group(1), []).append((n, re.sub(r'[^a-z0-9]', '', m_.group(2))))
+            for b in dict.fromkeys(bases + [w for w in ws if len(w) >= 3]):     # + one name word: anya_(spy_x_family)
+                hit = [n for n, q in tg._qual.get(b, []) if q and (q in anime or anime in q)]
+                if len(hit) == 1:
+                    return hit[0]
         return None
 
     def match_open(self, frames, target_names, other_names, extra_tags=(), companions=()):
