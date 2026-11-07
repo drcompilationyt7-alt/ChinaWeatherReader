@@ -681,7 +681,8 @@ def build(preset, words, plan, rng=None):
         if not rule.get('phrases') and end - t < (h0 if rule['where'] == 'body' else 0.15):
             continue
         dur_out = 0.0 if (rule.get('abut') and exit_kind == 'cut') else float(rule['dur_out'])
-        it = dict(text=text, sung=round(float(g[0]['t_start']), 4), t0=round(t, 4),
+        import lyrics as LY
+        it = dict(text=text, sung=round(float(g[0]['t_start']), 4), t0=round(t, 4), wk=[LY.word_key(x['text']) for x in g],
                   x=round(0.5 + rng.uniform(-rule['x_jit'], rule['x_jit']), 4),
                   y=round(rule['y'] + rng.uniform(-rule['y_jit'], rule['y_jit']), 4),
                   box=round(rng.uniform(*rule['box']), 5),

@@ -379,6 +379,13 @@ def romanise(s):
     return ' '.join(s.split())
 
 
+def word_key(s):
+    """A short one-way key of a lyric word (its romanised letters): plans store it instead of the word (lyrics are never
+    stored) so the judge can tell WHICH sung word an on-screen item shows (2026-11-07: matching by time alone paired every
+    intro word with the word before it, and the CI repair moved all five words one word early)."""
+    return hashlib.sha1(re.sub(r"[^A-Z']", '', romanise(str(s or ''))).encode()).hexdigest()[:6]
+
+
 def _unromanisable(s):
     for ch in s:
         if ch.isalpha() and not ('\u0000' <= ch <= 'ɏ' or 0xAC00 <= ord(ch) <= 0xD7A3):
