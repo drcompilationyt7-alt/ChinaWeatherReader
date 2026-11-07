@@ -2376,6 +2376,79 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "yyi_aMJfurI",
+   "url": "https://www.youtube.com/watch?v=yyi_aMJfurI",
+   "postedAt": "2026-11-07T09:00:13.630Z",
+   "publishAt": "2026-11-07T13:00:00.000Z",
+   "format": "duel",
+   "theme": "anime",
+   "seed": 393419781,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "duel-llm",
+   "title": "who would you pick anime quiz ⚔️ #anime",
+   "answers": [
+    "duel:121101-121102",
+    "duel:13-85",
+    "duel:46496-71121"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "challenge"
+   }
+  },
+  {
+   "videoId": "YjXtoaZtDfE",
+   "url": "https://www.youtube.com/watch?v=YjXtoaZtDfE",
+   "postedAt": "2026-11-07T09:07:15.633Z",
+   "publishAt": "2026-11-08T01:00:00.000Z",
+   "format": "eyes",
+   "theme": "anime",
+   "seed": 238019121,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Guess the anime character from one eye!",
+     "template": "Guess the anime character from one eye!",
+     "sec": 1.84
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "There it is, Kenzo Tenma!",
+     "template": "There it is, {a}!",
+     "sec": 1.75
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Misaki Takasaki!",
+     "template": null,
+     "sec": 1.23
+    }
+   ],
+   "titleTemplate": "eyes-casual",
+   "title": "guess the anime character by their eyes 👁️ #anime",
+   "answers": [
+    "eyes:kiyotaka ayanokoji#1a56p6i",
+    "eyes:kenzo tenma#1xusb70",
+    "eyes:misaki takasaki#1dccwyt"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }
