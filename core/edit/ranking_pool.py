@@ -61,6 +61,7 @@ CHAR_MIN = 0.6
 CAST_MIN_STRONG = float(os.environ.get('RANKING_CAST_MIN_STRONG', '0.5'))   # strongest lists: the entry's screen share
 COUPLE_MEMBER_MIN = float(os.environ.get('RANKING_COUPLE_MEMBER_MIN', '0.1'))   # couples: each member's screen share
 COUPLE_SUM_MIN = float(os.environ.get('RANKING_COUPLE_SUM_MIN', '0.45'))        # ... and both together
+GAP_MAX_STRONG = float(os.environ.get('RANKING_GAP_MAX_STRONG', '4.0'))    # ... nor a stretch of people the tagger cannot name
 RUN_MAX_STRONG = float(os.environ.get('RANKING_RUN_MAX_STRONG', '2.5'))    # ... and no other character's run longer than this (s)
 STATUS_RANK = {'gate_reject': 0, 'candidate': 0, 'staged': 1, 'rejected': 2, 'reviewed': 3}
 
@@ -261,7 +262,10 @@ def pick_items(T, items, led):
             # the longest continuous run owned by others <= RUN_MAX_STRONG s
             cands = [it for it in cands if ((it.get('cast') or {}).get(e['name']) is None
                      or float((it.get('cast') or {}).get(e['name']) or 0.0) >= CAST_MIN_STRONG)
-                     and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG]
+                     and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG
+                     # owner 2026-11-07 (2nd sample: the Gojo section "started becoming a Yuta edit"): the tagger does not know
+                     # Yuta, so his frames were no one's; a tagger-known target's stretch without him <= GAP_MAX_STRONG s
+                     and float((it.get('cast_gaps') or {}).get(e['name']) or 0.0) <= GAP_MAX_STRONG]
         if not cands:
             return None
         it = cands[0]
@@ -710,6 +714,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 mains = RC.title_names(res.get('title'), cast) or [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
                 e = mains[0] if mains else show
                 extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {}, 'cast_runs': w.get('cast_runs') or {},
+                         'cast_gaps': w.get('cast_gaps') or {},
                          'serves': [entry_key(c) for c in mains] + [skey]}
                 try:
                     it = stage_item(res, e, entry_key(e), sd, RC, w, extra)
@@ -1188,12 +1193,13 @@ def recast(ids=None):
         cap.release()
         if not frames:
             continue
-        runs = {}
-        shares, mains = RC.attribute(judge, g['cast'], frames, ts, runs=runs)
-        it.update(cast=shares, cast_runs=runs, recast=time.strftime('%Y-%m-%d'))
+        runs, gaps = {}, {}
+        shares, mains = RC.attribute(judge, g['cast'], frames, ts, runs=runs, gaps=gaps)
+        it.update(cast=shares, cast_runs=runs, cast_gaps=gaps, recast=time.strftime('%Y-%m-%d'))
         rows.append({'id': it['id'], 'entry': it['entry_name'], 'share': shares.get(it['entry_name']),
-                     'others_run': runs.get(it['entry_name']), 'mains': mains})
-        log(f"recast {it['id']} {it['entry_name']}: share {shares.get(it['entry_name'])} others run {runs.get(it['entry_name'])} s")
+                     'others_run': runs.get(it['entry_name']), 'gap': gaps.get(it['entry_name']), 'mains': mains})
+        log(f"recast {it['id']} {it['entry_name']}: share {shares.get(it['entry_name'])} others run {runs.get(it['entry_name'])} s"
+            f" gap {gaps.get(it['entry_name'])} s")
     save_manifest(ld, lm)
     return rows
 

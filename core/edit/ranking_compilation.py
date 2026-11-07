@@ -739,6 +739,10 @@ class Judge:
             return None
         wins, votes, others, explicit = 0, 0, {}, 0
         labels, expl = [None] * len(frames), [False] * len(frames)
+        # owner 2026-11-07 (Gojo x Yuta edit): a person the tagger cannot name (Yuta, Toji, Rika ...) cast no vote, so ~8 s
+        # of Yuta at the end of a 'Gojo' section was invisible to the run rule. Recorded per frame (no vote): gap_run
+        unknown = [False] * len(frames)
+        i_boy, i_girl = tg.names.index('1boy'), tg.names.index('1girl')
         for fi, f in enumerate(frames):
             pr = tg(f)
             r = tg.rating(pr)
@@ -747,6 +751,7 @@ class Judge:
                 expl[fi] = True
             ch = tg.chars(pr)
             if not ch:
+                unknown[fi] = bool(max(pr[i_boy], pr[i_girl]) >= 0.5)
                 continue
             votes += 1
             best = max(ch, key=ch.get)
@@ -758,7 +763,8 @@ class Judge:
                 labels[fi] = best
         conf = wins / votes if votes else 0.0
         return conf, {'method': 'wd_tagger', 'votes': votes, 'wins': wins, 'others': others,
-                      'frames': len(frames), 'rating_flags': explicit, 'labels': labels, 'explicit_frames': expl}
+                      'frames': len(frames), 'rating_flags': explicit, 'labels': labels, 'explicit_frames': expl,
+                      'unknown': unknown}
 
     def match(self, frames, target_names, other_names):
         """Share of character frames where a target character beats every other candidate.
@@ -1542,10 +1548,16 @@ def others_run(ts, labs, step=0.5):
     return round(best, 2)
 
 
+def gap_run(ts, labs, unknown, step=0.5):
+    """others_run with the unnamed-person frames counted as not-the-target (tagger-known targets only: the tagger names
+    Gojo on nearly every Gojo frame, so a long stretch of people it cannot name and no Gojo is someone else's sub-edit)."""
+    return others_run(ts, [l if l is not None else ('?' if u else None) for l, u in zip(labs, unknown)], step)
+
+
 THEMES = ('action', 'beauty', 'romance')
 
 
-def attribute(judge, cast, frames, ts, runs=None):
+def attribute(judge, cast, frames, ts, runs=None, gaps=None):
     """Library mining (owner 2026-10-31): which of the show's ranking characters OWN this section, by the character-entry
     rule (>= CHAR_MIN of the voting frames, >= 2x any other character, MIN_VOTES, no long stretch of another one).
     -> ({name: share}, [owner names]); a section nobody owns still serves the show's genre lists."""
@@ -1560,6 +1572,8 @@ def attribute(judge, cast, frames, ts, runs=None):
         shares[c['name']] = round(conf, 2)
         if runs is not None and det.get('labels') is not None:
             runs[c['name']] = others_run(ts, det['labels'])
+        if gaps is not None and det.get('unknown') is not None:
+            gaps[c['name']] = gap_run(ts, det['labels'], det['unknown'])
         top = max(det['others'].values()) if det.get('others') else 0
         if (det.get('votes', 0) >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det.get('wins', 0) >= 2 * top
                 and (det.get('labels') is None or not own_check(ts, det['labels']))):
@@ -1743,8 +1757,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 w['sting'] = marks
                 return False
         if cast:
-            w['cast_runs'] = {}
-            w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'])
+            w['cast_runs'], w['cast_gaps'] = {}, {}
+            w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'], gaps=w['cast_gaps'])
         passed.append(w)
         return True
 
