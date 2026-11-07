@@ -84,7 +84,7 @@ MIN_VIEWS, MIN_LIKE_RATIO = 100_000, 0.015
 MIN_AGE_DAYS = 180
 MAX_SRC_DUR = 420                # owner 2026-10-28: long edits too; every section is checked on its own (character, gates)
 COOKIES = os.environ.get('YT_SPARE_COOKIES', os.path.join(os.path.expanduser('~'), 'yt-cookies.txt'))
-PACE_S = 20                      # between YouTube requests (shared spare account)
+PACE_S = float(os.environ.get('RANKING_PACE_S') or 20)   # between YouTube requests (shared spare account); slow local loop: 60
 
 # ---------------------------------------------------------------- topics
 # The topic library lives in core/edit/refs/ranking-topics.json (owner-editable; rank 1 = best / strongest), loaded and
@@ -637,7 +637,7 @@ class Tagger:
             if not os.path.exists(os.path.join(d, f)):
                 urllib.request.urlretrieve(self.URL + f, os.path.join(d, f))
         so = ort.SessionOptions()
-        so.intra_op_num_threads = 4
+        so.intra_op_num_threads = int(os.environ.get('EDIT_THREADS') or 4)
         self.sess = ort.InferenceSession(os.path.join(d, 'model.onnx'), so, providers=['CPUExecutionProvider'])
         self.inp = self.sess.get_inputs()[0]
         self.size = self.inp.shape[1] if isinstance(self.inp.shape[1], int) else 448
