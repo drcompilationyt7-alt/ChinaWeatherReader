@@ -332,7 +332,7 @@ def anime_words(entry):
     main = re.sub(r'^the\s+', '', main)
     out = [main] if len(main) >= 5 and main not in COMMON_WORDS else []
     first = re.findall(r"[a-z0-9']+", main)[:1]
-    if first and len(first[0]) >= 5 and first[0] not in COMMON_WORDS | {'daily', 'dragon', 'violet', 'rascal', 'misfit', 'steins'}:
+    if first and len(first[0]) >= 5 and first[0] not in COMMON_WORDS | {'daily', 'dragon', 'violet', 'rascal', 'misfit', 'steins', 'hajime'}:
         out.append(first[0])
     out += [x for k, v in SHORT_FORMS.items() if k in a for x in v]
     return list(dict.fromkeys(out))
@@ -349,6 +349,8 @@ def prefilter(e, entry, min_views=None):
         # section is checked for the entry's character, and titles naming the character are downloaded first
         if not any(re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in anime_words(entry)):
             return False, 'title_no_name'
+    if any(re.search(p, t, re.I) for p in entry.get('cross') or []):
+        return False, 'crossover'          # names another library show (ranking_pool.mine_library sets 'cross')
     d = e.get('duration') or 0
     if not 12 <= d <= entry.get('max_dur', MAX_SRC_DUR):
         return False, f'dur_{d}'

@@ -630,6 +630,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
     topics = RT.load()
     smap = shows(topics)
     order = [r['show'] for r in plan_shows(topics)]
+    full_order = list(order)                   # distractor shows come from the whole plan, also with --shows
     if only:
         ol = {x.lower() for x in only}
         order = [k for k in order if k in ol or smap[k]['show']['name'].lower() in ol
@@ -661,7 +662,14 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                                                       + [a for cp in G.get('couples') or [] for a in cp.get('alias') or []]
                                                       + show_cast_alias(sk))),
                   solo=False, search=show.get('search') or sk, extra=style_uploads(RC))
-        others = [smap[o]['show'] for o in order if o != sk][:4]           # distractor shows for the show-level check
+        # a title naming another library show is a crossover ('Solo Leveling x Attack On Titan'): every one reviewed so far
+        # had no clean section of this show (2026-11-07: a titans-only section passed as Sung Jinwoo) -> skipped before the
+        # download. Strict title words only (anime_words, whole words); same-franchise shows ('dragon ball' / 'dragon ball
+        # super') and words this show's own names contain never count.
+        own = ' | '.join([sk, show['name'], show.get('anime') or ''] + [c['name'] for c in cast]).lower()
+        se['cross'] = [rf'(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])' for o in smap if o != sk and o not in sk and sk not in o
+                       for w in RC.anime_words(smap[o]['show']) if w not in own]
+        others = [smap[o]['show'] for o in full_order if o != sk][:4]      # distractor shows for the show-level check
         done = {sid for sid, v in st['sources'].items()
                 if v.get('status') in ('staged', 'reviewed', 'rejected')
                 or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))

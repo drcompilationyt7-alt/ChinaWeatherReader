@@ -103,7 +103,11 @@ while ($true) {
   $code = $LASTEXITCODE
   Remove-Item $cookie -Force -ErrorAction SilentlyContinue
   try {
-    $r = Get-Content $out -Raw | ConvertFrom-Json
+    # stdout = the miner's RAM-wait lines, then the JSON summary (it starts at the first line that is "{")
+    $lines = @(Get-Content $out)
+    $j0 = 0
+    while ($j0 -lt $lines.Count -and $lines[$j0] -notmatch '^\{') { $j0++ }
+    $r = ($lines[$j0..($lines.Count - 1)] -join "`n") | ConvertFrom-Json
     Say ("cycle {0} done (exit {1}): downloaded {2}, staged {3}, {4} min" -f $k, $code, $r.downloaded, $r.staged, $r.minutes)
   } catch { Say "cycle $k done (exit $code): no summary" }
   Start-Sleep -Seconds ($PauseMin * 60)
