@@ -2406,6 +2406,59 @@
     102.58,
     143.53
    ]
+  },
+  {
+   "videoId": "WDg_abgiHHI",
+   "url": "https://www.youtube.com/watch?v=WDg_abgiHHI",
+   "postedAt": "2026-11-07T09:30:02.495Z",
+   "publishAt": "2026-11-07T12:00:00.000Z",
+   "song": "idol",
+   "theme": "anime",
+   "emoji": "🗿,⚡",
+   "title": "idol acapella yoasobi 🗿",
+   "clipIds": [
+    "X7RotIysnpo",
+    "PpuOVvozYKQ",
+    "08mXubBYqSc",
+    "G91pfbeJdFc",
+    "y11qgJVKK0A",
+    "PAcf55v6zqQ",
+    "Dnf7GC52LG8",
+    "T26xIPzfHYQ"
+   ],
+   "clipChannels": [
+    "Akiko Animes",
+    "Anime　【OSHI NO KO】　Official Channel",
+    "Lindea",
+    "NurarihyonMaou",
+    "Rykko",
+    "misasin",
+    "ほいてちゃんねる",
+    "速報"
+   ],
+   "clipSource": "Oshi no Ko",
+   "settings": {
+    "drop": 10,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "layers"
+   },
+   "onVideoTitle": "wait for the full drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "kw-suggest",
+    "ovStyle": "op-ov-milestone",
+    "descHook": "layers",
+    "titlePattern": "{song} acapella {artist} {e}",
+    "titleMode": "explore"
+   },
+   "why": "thompson + insights (bonus +1.5)",
+   "whyMode": "insight-driven",
+   "bpm": 165.98,
+   "titlePattern": "{song} acapella {artist} {e}"
   }
  ]
 }
