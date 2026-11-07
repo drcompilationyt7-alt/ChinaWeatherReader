@@ -154,6 +154,16 @@ def lib_show(anime):
     return re.sub(r'\s+\d+$', '', a).strip()
 
 
+CHARFIX_DAY = '2026-11-08'
+
+
+def charfix_retry(v):
+    """A library edit the character gate rejected before the tag fix (2a46cac, 2026-11-07: Yor / Zero Two / Rem / Sukuna ...
+    had 1-picture banks): evaluated once more when a search finds it again; the new verdict carries a later date."""
+    return (v.get('status') == 'gate_reject' and v.get('lib') and str(v.get('at') or '') < CHARFIX_DAY
+            and 'character' in (v.get('windows') or []))
+
+
 def shows(topics=None):
     """The library's mining unit (owner 2026-10-31: download whole edits of a show, then classify every good section):
     show key -> {'show': its genre entry (from a genre topic, else built from the cast), 'cast': its character entries}."""
@@ -650,7 +660,8 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         others = [smap[o]['show'] for o in order if o != sk][:4]           # distractor shows for the show-level check
         done = {sid for sid, v in st['sources'].items()
                 if v.get('status') in ('staged', 'reviewed', 'rejected')
-                or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY)))}
+                or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))
+                    and not charfix_retry(v))}
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
         log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, {len(q)} searches')
         try:
