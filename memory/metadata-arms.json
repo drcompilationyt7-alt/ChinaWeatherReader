@@ -203,6 +203,60 @@
    "added": [],
    "rejected": [],
    "note": "3 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W45",
+   "pool": "meme/stem-edit",
+   "at": "2026-11-08T08:18:42.854Z",
+   "n": 41,
+   "retired": [
+    {
+     "dim": "descHook",
+     "id": "question",
+     "uses": 5,
+     "mean": -0.73,
+     "best": "layers",
+     "z": 2.4
+    }
+   ],
+   "added": [],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "op-title-beat-drop",
+     "why": "fails on 1/12 recent videos: no keyword"
+    },
+    {
+     "dim": "ovStyle",
+     "id": "op-ov-vocals-hook",
+     "why": "ovStyle already has 8 active arms"
+    },
+    {
+     "dim": "hashtagSet",
+     "id": "op-artist-edit",
+     "why": "1-3 hashtags, at most 1 in the title"
+    }
+   ]
+  },
+  {
+   "week": "2026-W45",
+   "pool": "meme/sound-edit",
+   "at": "2026-11-08T08:18:42.857Z",
+   "n": 4,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "4 scored uploads: proposals start at 5"
+  },
+  {
+   "week": "2026-W45",
+   "pool": "meme/slowmo-edit",
+   "at": "2026-11-08T08:18:42.858Z",
+   "n": 0,
+   "retired": [],
+   "added": [],
+   "rejected": [],
+   "note": "0 scored uploads: proposals start at 5"
   }
  ],
  "pools": {
@@ -381,6 +435,11 @@
        "fallback": "layers"
       },
       "why": "Combines the strong performance of 'layers' (+0.85) and 'op-desc-stack-drop' (+0.86) while aligning description search context with the proven 'beat drops' hook."
+     },
+     "question": {
+      "status": "retired",
+      "retiredAt": "2026-W45",
+      "why": "mean -0.73 after 5 uses vs layers (z 2.4)"
      }
     },
     "hashtagSet": {
@@ -392,61 +451,61 @@
     }
    },
    "posterior": {
-    "week": "2026-W44",
-    "n": 35,
+    "week": "2026-W45",
+    "n": 41,
     "dims": {
      "titleStyle": {
       "op-stem-action": {
-       "uses": 1,
-       "mean": 0.64,
-       "sd": 0.76
-      },
-      "kw-suggest": {
-       "uses": 5,
-       "mean": 0.59,
-       "sd": 0.46
+       "uses": 2,
+       "mean": 0.68,
+       "sd": 0.65
       },
       "op-stem-stack": {
        "uses": 0,
        "mean": 0.47,
        "sd": 1
       },
+      "kw-suggest": {
+       "uses": 5,
+       "mean": 0.43,
+       "sd": 0.48
+      },
       "llm-free": {
        "uses": 9,
-       "mean": 0,
-       "sd": 0.38
+       "mean": -0.15,
+       "sd": 0.4
       },
       "llm-hook": {
        "uses": 5,
-       "mean": -0.17,
+       "mean": -0.2,
        "sd": 0.5
       },
       "kw-source": {
        "uses": 3,
-       "mean": -0.2,
-       "sd": 0.56
+       "mean": -0.33,
+       "sd": 0.58
       },
       "kw-emoji": {
        "uses": 7,
-       "mean": -0.72,
-       "sd": 0.43
+       "mean": -0.82,
+       "sd": 0.45
       }
      },
      "ovStyle": {
       "op-ov-stem-event": {
-       "uses": 6,
-       "mean": 1.02,
-       "sd": 0.42
+       "uses": 10,
+       "mean": 0.85,
+       "sd": 0.34
       },
       "op-ov-milestone": {
        "uses": 3,
-       "mean": 0.89,
-       "sd": 0.55
+       "mean": 0.74,
+       "sd": 0.54
       },
       "op-ov-layer-stage": {
        "uses": 1,
-       "mean": 0.6,
-       "sd": 0.77
+       "mean": 0.54,
+       "sd": 0.74
       },
       "op-vocals-start": {
        "uses": 0,
@@ -454,120 +513,120 @@
        "sd": 1
       },
       "ov-drop": {
-       "uses": 9,
+       "uses": 10,
        "mean": -0.04,
        "sd": 0.38
       },
       "ov-kw": {
-       "uses": 4,
-       "mean": -0.21,
-       "sd": 0.52
+       "uses": 5,
+       "mean": -0.06,
+       "sd": 0.49
       },
       "ov-llm": {
        "uses": 5,
-       "mean": -0.21,
-       "sd": 0.49
-      },
-      "ov-question": {
-       "uses": 4,
-       "mean": -0.65,
-       "sd": 0.53
+       "mean": -0.32,
+       "sd": 0.51
       },
       "ov-layers": {
        "uses": 3,
-       "mean": -0.69,
-       "sd": 0.59
+       "mean": -0.73,
+       "sd": 0.61
+      },
+      "ov-question": {
+       "uses": 4,
+       "mean": -0.74,
+       "sd": 0.55
       }
      },
      "hashtagSet": {
-      "minimal": {
-       "uses": 11,
-       "mean": 0.54,
-       "sd": 0.34
+      "edit-community": {
+       "uses": 5,
+       "mean": 0.55,
+       "sd": 0.46
       },
-      "title-source": {
-       "uses": 12,
-       "mean": 0.27,
+      "minimal": {
+       "uses": 13,
+       "mean": 0.51,
        "sd": 0.32
       },
-      "edit-community": {
-       "uses": 2,
-       "mean": -0.02,
-       "sd": 0.66
+      "title-source": {
+       "uses": 13,
+       "mean": 0.12,
+       "sd": 0.32
       },
       "niche3": {
        "uses": 10,
-       "mean": -0.71,
-       "sd": 0.37
+       "mean": -0.84,
+       "sd": 0.39
       }
      },
      "emojiSet": {
       "op-fire-moai": {
-       "uses": 8,
-       "mean": 0.96,
-       "sd": 0.37
+       "uses": 13,
+       "mean": 0.81,
+       "sd": 0.3
       },
       "fire": {
-       "uses": 9,
-       "mean": 0.17,
-       "sd": 0.38
+       "uses": 10,
+       "mean": 0.16,
+       "sd": 0.36
       },
       "music": {
        "uses": 5,
-       "mean": 0.16,
+       "mean": 0.1,
        "sd": 0.48
       },
       "moai": {
        "uses": 8,
-       "mean": -0.54,
-       "sd": 0.41
+       "mean": -0.63,
+       "sd": 0.43
       },
       "spark": {
        "uses": 5,
-       "mean": -0.71,
-       "sd": 0.49
+       "mean": -0.81,
+       "sd": 0.5
       }
      },
      "descHook": {
-      "op-desc-stack-drop": {
-       "uses": 4,
-       "mean": 0.86,
-       "sd": 0.5
-      },
       "layers": {
-       "uses": 6,
-       "mean": 0.85,
-       "sd": 0.43
+       "uses": 8,
+       "mean": 0.8,
+       "sd": 0.39
       },
       "op-desc-layer-build": {
        "uses": 2,
-       "mean": 0.77,
-       "sd": 0.65
+       "mean": 0.68,
+       "sd": 0.61
+      },
+      "op-desc-stack-drop": {
+       "uses": 6,
+       "mean": 0.67,
+       "sd": 0.41
       },
       "op-desc-beat-drop": {
-       "uses": 0,
-       "mean": 0.43,
-       "sd": 1
+       "uses": 1,
+       "mean": 0.65,
+       "sd": 0.77
+      },
+      "llm-line": {
+       "uses": 3,
+       "mean": -0.16,
+       "sd": 0.61
       },
       "drop": {
        "uses": 11,
-       "mean": -0.04,
-       "sd": 0.35
+       "mean": -0.19,
+       "sd": 0.36
       },
       "question": {
        "uses": 5,
-       "mean": -0.61,
-       "sd": 0.48
-      },
-      "llm-line": {
-       "uses": 2,
-       "mean": -0.62,
-       "sd": 0.68
+       "mean": -0.73,
+       "sd": 0.5
       },
       "stems": {
        "uses": 5,
-       "mean": -0.68,
-       "sd": 0.5
+       "mean": -0.76,
+       "sd": 0.52
       }
      }
     }
@@ -576,19 +635,14 @@
   "meme/sound-edit": {
    "arms": {},
    "posterior": {
-    "week": "2026-W44",
-    "n": 3,
+    "week": "2026-W45",
+    "n": 4,
     "dims": {
      "titleStyle": {
       "llm-hook": {
-       "uses": 1,
-       "mean": 0.27,
-       "sd": 0.74
-      },
-      "kw-emoji": {
-       "uses": 1,
-       "mean": 0.25,
-       "sd": 0.74
+       "uses": 2,
+       "mean": 0.43,
+       "sd": 0.64
       },
       "kw-song": {
        "uses": 0,
@@ -609,23 +663,142 @@
        "uses": 0,
        "mean": 0,
        "sd": 1
+      },
+      "kw-emoji": {
+       "uses": 1,
+       "mean": -0.04,
+       "sd": 0.75
       }
      },
      "ovStyle": {
+      "ov-song": {
+       "uses": 1,
+       "mean": 0.61,
+       "sd": 0.76
+      },
       "ov-llm": {
        "uses": 2,
-       "mean": 0.36,
-       "sd": 0.61
+       "mean": -0.03,
+       "sd": 0.63
+      },
+      "ov-kw": {
+       "uses": 1,
+       "mean": -0.6,
+       "sd": 0.75
+      }
+     },
+     "hashtagSet": {
+      "niche3": {
+       "uses": 1,
+       "mean": 0.61,
+       "sd": 0.76
+      },
+      "title-subject": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "minimal": {
+       "uses": 3,
+       "mean": -0.35,
+       "sd": 0.55
+      }
+     },
+     "emojiSet": {
+      "moai": {
+       "uses": 2,
+       "mean": 0.4,
+       "sd": 0.64
+      },
+      "music": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "spark": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "fire": {
+       "uses": 2,
+       "mean": -0.43,
+       "sd": 0.63
+      }
+     },
+     "descHook": {
+      "rate": {
+       "uses": 2,
+       "mean": 0.4,
+       "sd": 0.64
+      },
+      "kw-line": {
+       "uses": 1,
+       "mean": 0,
+       "sd": 0.76
+      },
+      "llm-line": {
+       "uses": 1,
+       "mean": -0.6,
+       "sd": 0.75
+      }
+     }
+    }
+   }
+  },
+  "meme/slowmo-edit": {
+   "arms": {},
+   "posterior": {
+    "week": "2026-W45",
+    "n": 0,
+    "dims": {
+     "titleStyle": {
+      "kw-emoji": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-song": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "song-anime": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "kw-suggest": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-hook": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      },
+      "llm-free": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
+      }
+     },
+     "ovStyle": {
+      "ov-kw": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       },
       "ov-song": {
        "uses": 0,
        "mean": 0,
        "sd": 1
       },
-      "ov-kw": {
-       "uses": 1,
-       "mean": -0.54,
-       "sd": 0.73
+      "ov-llm": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       }
      },
      "hashtagSet": {
@@ -640,16 +813,16 @@
        "sd": 1
       },
       "minimal": {
-       "uses": 3,
-       "mean": -0.01,
-       "sd": 0.53
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       }
      },
      "emojiSet": {
-      "moai": {
-       "uses": 1,
-       "mean": 0.25,
-       "sd": 0.74
+      "fire": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       },
       "music": {
        "uses": 0,
@@ -661,32 +834,32 @@
        "mean": 0,
        "sd": 1
       },
-      "fire": {
-       "uses": 2,
-       "mean": -0.19,
-       "sd": 0.61
+      "moai": {
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       }
      },
      "descHook": {
       "kw-line": {
-       "uses": 1,
-       "mean": 0.27,
-       "sd": 0.74
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       },
       "rate": {
-       "uses": 1,
-       "mean": 0.25,
-       "sd": 0.74
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       },
       "llm-line": {
-       "uses": 1,
-       "mean": -0.54,
-       "sd": 0.73
+       "uses": 0,
+       "mean": 0,
+       "sd": 1
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-11-01T08:25:09.855Z"
+ "updatedAt": "2026-11-08T08:18:42.859Z"
 }
