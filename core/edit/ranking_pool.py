@@ -382,13 +382,29 @@ def plan(topics=None):
                 if not it.get('manga'):
                     anime[k] = anime.get(k, 0) + 1
     score, info = {}, {}
+    pool = [it for it in merged.values() if it.get('status') in ('reviewed', 'staged')]
     for tk, T in topics.items():
         # owner 2026-11-07: a topic is a pool - any LIST_MIN of its entries make a video; an entry is worth more the fewer
         # the topic still needs (one missing: every entry without footage scores 1), a topic that already has its 3 still
-        # gains from more entries (fuller lists, variety)
+        # gains from more entries (fuller lists, variety). A section counts only where it may be used: the topic's theme and,
+        # in a strongest list, the main-character rule (a Sukuna section that fails it does not cover Sukuna)
+        th = topic_theme(T)
         keys = [entry_key(e) for e in T['entries']]
-        need = max(0, LIST_MIN - sum(1 for k in keys if have.get(k)))
-        missing = [k for k in keys if not have.get(k)]
+
+        def ok_for(it, e, k):
+            if k not in (serve_keys(it, smap) or [it['entry_key']]):
+                return False
+            if th is not None and item_themes(it) is not None and th not in item_themes(it):
+                return False
+            if th == 'action' and e.get('kind') != 'anime':
+                return (((it.get('cast') or {}).get(e['name']) is None
+                         or float((it.get('cast') or {}).get(e['name']) or 0.0) >= CAST_MIN_STRONG)
+                        and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG
+                        and float((it.get('cast_gaps') or {}).get(e['name']) or 0.0) <= GAP_MAX_STRONG)
+            return True
+        covered = {k for e, k in zip(T['entries'], keys) if any(ok_for(it, e, k) for it in pool)}
+        need = max(0, LIST_MIN - len(covered))
+        missing = [k for k in keys if k not in covered]
         for e, k in zip(T['entries'], keys):
             info.setdefault(k, {'entry': e, 'topics': []})['topics'].append(tk)
             if k in missing:
