@@ -99,13 +99,17 @@ while ($true) {
     if ((Test-Path $lf) -and (Get-Item $lf).Length -gt 20MB) { Move-Item $lf "$lf.1" -Force }
   }
   Say ("cycle {0}: {1}" -f $k, ($shows -join ', '))
-  & $Py core/edit/ranking_pool.py mine --budget-min $CycleBudgetMin --work output/ranking-mine --max-dl $MaxDl `
-      --max-entries $ShowsPerCycle --shows ($shows -join ',') 1> $out 2>> (Join-Path $Work 'slow-mine.log')
+  # through cmd.exe: PowerShell 5's own redirection writes UTF-16 (the log became unreadable mixed text); cmd passes the
+  # miner's UTF-8 bytes through. cmd and python stay in the CPU-capped job.
+  $mineLog = Join-Path $Work 'slow-mine.log'
+  $cmdline = "`"$Py`" core/edit/ranking_pool.py mine --budget-min $CycleBudgetMin --work output/ranking-mine --max-dl $MaxDl " +
+             "--max-entries $ShowsPerCycle --shows `"$($shows -join ',')`" 1> `"$out`" 2>> `"$mineLog`""
+  cmd /c $cmdline
   $code = $LASTEXITCODE
   Remove-Item $cookie -Force -ErrorAction SilentlyContinue
   try {
     # stdout = the miner's RAM-wait lines, then the JSON summary (it starts at the first line that is "{")
-    $lines = @(Get-Content $out)
+    $lines = @(Get-Content $out -Encoding UTF8)
     $j0 = 0
     while ($j0 -lt $lines.Count -and $lines[$j0] -notmatch '^\{') { $j0++ }
     $r = ($lines[$j0..($lines.Count - 1)] -join "`n") | ConvertFrom-Json
