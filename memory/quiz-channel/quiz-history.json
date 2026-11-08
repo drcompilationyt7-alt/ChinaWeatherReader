@@ -2449,6 +2449,116 @@
     "titleStyle": "casual",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "J8VtBABB2cU",
+   "url": "https://www.youtube.com/watch?v=J8VtBABB2cU",
+   "postedAt": "2026-11-08T14:26:29.879Z",
+   "publishAt": null,
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 864988032,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Guess the K-pop idol right now!",
+     "template": "Guess the K-pop idol right now!",
+     "sec": 1.92
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Jungkook.",
+     "template": null,
+     "sec": 0.93
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Xiumin!",
+     "template": null,
+     "sec": 0.27
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Boom! Zhou Jieqiong!",
+     "template": "Boom! {a}!",
+     "sec": 1.89
+    }
+   ],
+   "titleTemplate": "idol-llm",
+   "title": "guess the kpop idol quiz 🧠 #kpop",
+   "answers": [
+    "idol:jungkook#ltgnwo",
+    "idol:xiumin#14ff31c",
+    "idol:zhou jieqiong#16h2oux"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "vhdhMTwQkmc",
+   "url": "https://www.youtube.com/watch?v=vhdhMTwQkmc",
+   "postedAt": "2026-11-08T14:30:08.753Z",
+   "publishAt": null,
+   "format": "silhouette",
+   "theme": "anime",
+   "seed": 605363177,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character from their silhouette?",
+     "template": "Can you guess the anime character from their silhouette?",
+     "sec": 2.54
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Satoru Gojo!",
+     "template": null,
+     "sec": 1.27
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Cee Cee.",
+     "template": null,
+     "sec": 1.4
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Here comes Akiko Yosano!",
+     "template": "Here comes {a}!",
+     "sec": 1.97
+    }
+   ],
+   "titleTemplate": "silhouette-llm",
+   "title": "guess the anime character silhouette 🧠 #anime",
+   "answers": [
+    "silhouette:satoru gojo#x4g3l3",
+    "silhouette:c.c.#wdrm4l",
+    "silhouette:akiko yosano#1vymy4p"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }
