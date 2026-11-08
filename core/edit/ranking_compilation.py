@@ -155,6 +155,11 @@ def log(*a):
 
 def ytdlp(args, timeout=600):
     cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings', '-q', '--js-runtimes', 'node', '--cookies', COOKIES] + args
+    # owner 2026-11-08 "can you limit the network in downloading": the slow loop caps the download speed (yt-dlp
+    # --limit-rate, e.g. 1M = 1 MB/s); searches / metadata are tiny and unaffected
+    if os.environ.get('RANKING_DL_RATE'):
+        cmd[5:5] = ['--limit-rate', os.environ['RANKING_DL_RATE']]
+        timeout = max(timeout, 1800)
     r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=timeout)
     if r.stderr and re.search(r'confirm you.re not a bot|sign in to confirm|HTTP Error 429|rate.?limit', r.stderr, re.I):
         log('yt-dlp:', r.stderr.strip()[-300:])            # the local miner's bot check reads this (back-off)

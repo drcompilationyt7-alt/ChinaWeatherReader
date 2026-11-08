@@ -23,7 +23,8 @@ param(
   [double]$MinFreeDiskGB = 25,
   [int]$CpuPercent = 10,
   [double]$MinRamGB = 3.5,
-  [int]$Focus = 8            # each cycle: one of the top-8 shows of the plan (rotating) + one of the rest
+  [int]$Focus = 8,           # each cycle: one of the top-8 shows of the plan (rotating) + one of the rest
+  [string]$DlRate = '1M'     # download speed cap (yt-dlp --limit-rate: 1M = 1 MB/s ~ 8 Mbit/s; '' = no cap)
 )
 $ErrorActionPreference = 'Continue'
 # a job object with a hard CPU-rate cap; every process this script starts afterwards is in the job too
@@ -69,10 +70,11 @@ $env:MKL_NUM_THREADS = "$Threads"
 $env:RANKING_PACE_S = "$PaceS"
 $env:EDIT_GPU = '0'
 $env:RANKING_MIN_FREE_GB = "$MinRamGB"
+$env:RANKING_DL_RATE = $DlRate
 # ranking_compilation.idle() would drop the miner to Idle (starves on a busy PC); the job's CPU cap keeps it small instead
 $env:MINE_PRIORITY = if ($capResult -eq 'ok') { 'normal' } else { 'below' }
 
-Say "slow loop started (pid $PID, CPU cap $CpuPercent %: $capResult, RAM >= $MinRamGB GB, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min)"
+Say "slow loop started (pid $PID, CPU cap $CpuPercent %: $capResult, RAM >= $MinRamGB GB, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min, download cap $(if ($DlRate) { "$DlRate/s" } else { 'none' }))"
 $k = 0
 if (Test-Path $StateF) { try { $k = [int](Get-Content $StateF -TotalCount 1) } catch { $k = 0 } }
 while ($true) {
