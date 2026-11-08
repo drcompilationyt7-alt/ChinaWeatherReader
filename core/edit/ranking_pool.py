@@ -1404,6 +1404,7 @@ def main():
     ap.add_argument('--offline', action='store_true')
     ap.add_argument('--prefer', default='', help='mine: source ids searched first + rank bonus (owner-approved edits)')
     ap.add_argument('--first', default='', help='mine: these entry keys / names lead, in this order (then the plan)')
+    ap.add_argument('--focus', type=int, default=0, help='plan-shows: interleave the top N shows with the rest (slow loop)')
     ap.add_argument('--avoid', default='', help='mine: SRC:a-b[;SRC:a-b] source seconds no window may touch (review flags)')
     ap.add_argument('--retry', default='', help='mine: source ids evaluated again although decided (a bad window, not a bad edit)')
     ap.add_argument('--per-entry', action='store_true', help='mine: the old per-entry miner (default: the library, per show;'
@@ -1432,7 +1433,14 @@ def main():
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     a = ap.parse_args()
     if a.cmd == 'plan-shows':
-        for p in plan_shows():
+        ps = plan_shows()
+        if a.focus > 0 and len(ps) > a.focus:
+            # owner 2026-11-07 "we need to increase the ranking pool": the slow loop takes 2 shows per cycle in this order - one of
+            # the top `focus` shows (the ones that unlock lists soonest, rotating) + one of the rest, so a top show comes round
+            # every few cycles instead of once per full pass
+            top, rest = ps[:a.focus], ps[a.focus:]
+            ps = [x for i in range(len(rest)) for x in (top[i % len(top)], rest[i])]
+        for p in ps:
             print(f'{p["score"]:5.2f}  {p["name"]:<28} cast {",".join(p["cast"])}  topics {",".join(p["topics"])}')
     elif a.cmd == 'plan':
         for p in plan():

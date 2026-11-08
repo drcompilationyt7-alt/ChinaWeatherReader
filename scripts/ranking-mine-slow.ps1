@@ -22,7 +22,8 @@ param(
   [int]$PauseMin = 15,
   [double]$MinFreeDiskGB = 25,
   [int]$CpuPercent = 10,
-  [double]$MinRamGB = 3.5
+  [double]$MinRamGB = 3.5,
+  [int]$Focus = 8            # each cycle: one of the top-8 shows of the plan (rotating) + one of the rest
 )
 $ErrorActionPreference = 'Continue'
 # a job object with a hard CPU-rate cap; every process this script starts afterwards is in the job too
@@ -82,7 +83,7 @@ while ($true) {
   if (-not (Test-Path $Py)) { Say "python venv missing ($Py): exiting"; break }
 
   # the plan (shows that unlock the most lists first), rotated: every show gets its turn
-  $plan = @(& $Py core/edit/ranking_pool.py plan-shows 2>$null | ForEach-Object {
+  $plan = @(& $Py core/edit/ranking_pool.py plan-shows --focus $Focus 2>$null | ForEach-Object {
       if ($_ -match '^\s*[\d.]+\s+(.+?)\s{2,}cast') { $Matches[1].Trim().ToLower() } })
   if ($plan.Count -eq 0) { Say 'no plan (offline?): waiting 30 min'; Start-Sleep -Seconds 1800; continue }
   $shows = @(0..($ShowsPerCycle - 1) | ForEach-Object { $plan[($k * $ShowsPerCycle + $_) % $plan.Count] }) | Select-Object -Unique
