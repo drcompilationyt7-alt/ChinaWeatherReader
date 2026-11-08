@@ -1,24 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=I3Sn-81uwrE",
-      "title": "hana ni natte acapella the apothecary diaries edit ✨🔥",
-      "country": "Global",
-      "postedAt": "2026-10-08T09:40:20.210Z",
-      "videoId": "I3Sn-81uwrE",
-      "category": "meme-anime",
-      "titleSource": "hana ni natte"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=20gtifoxMCw",
-      "title": "magnetic acapella ✨⚡",
-      "country": "Global",
-      "postedAt": "2026-10-09T09:57:04.996Z",
-      "videoId": "20gtifoxMCw",
-      "category": "meme-kpop",
-      "titleSource": "magnetic"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=vRoEzBcd3rc",
       "title": "yoru ni kakeru acapella yoasobi edit 🔥",
       "country": "Global",
@@ -278,6 +260,15 @@
       "videoId": "WDg_abgiHHI",
       "category": "meme-anime",
       "titleSource": "idol"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=FxlEq_ZFMBA",
+      "title": "havana anime edit sound design 🗿",
+      "country": "Global",
+      "postedAt": "2026-11-08T15:00:32.706Z",
+      "videoId": "FxlEq_ZFMBA",
+      "category": "edit-sound",
+      "titleSource": "Havana"
     }
   ]
 }

@@ -255,6 +255,11 @@
    "used_at": "2026-11-06T12:32:19Z",
    "video": "slowmo-summer_glow-short.mp4",
    "role": "short"
+  },
+  "sound/impact/sound/camila_cabello_havana": {
+   "used_at": "2026-11-08T15:00:32Z",
+   "video": "sound-impact-short.mp4",
+   "role": "short"
   }
  },
  "moments": {},
@@ -399,6 +404,27 @@
      "c_BTNEyBRynJQ_84746",
      "c_4TJNIquRzAc_132863",
      "c_RTDeuS24k2s_771"
+    ]
+   },
+   {
+    "at": "2026-11-08T15:00:32Z",
+    "video": "sound-impact-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_A_5JOOeFi5g_326030",
+     "c_4TJNIquRzAc_132863",
+     "c_E6j5-a-vI14_130338",
+     "c_upIsOnCMthw_152245",
+     "c_O2JRxaMNK_c_80566",
+     "c_zUiJ3TahSqE_28681",
+     "c_Cw9_Kh3KSrA_50500",
+     "c_RTDeuS24k2s_771",
+     "c_A_5JOOeFi5g_225697",
+     "c_IFYCx3opUn4_17269",
+     "c_1MSkCTOWdWs_101975",
+     "c_z1In_sZL7xg_155531",
+     "c_E6j5-a-vI14_158563",
+     "c_mBpBTRnhDl0_192447"
     ]
    }
   ],

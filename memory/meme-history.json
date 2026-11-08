@@ -2459,6 +2459,62 @@
    "whyMode": "insight-driven",
    "bpm": 165.98,
    "titlePattern": "{song} acapella {artist} {e}"
+  },
+  {
+   "videoId": "FxlEq_ZFMBA",
+   "url": "https://www.youtube.com/watch?v=FxlEq_ZFMBA",
+   "postedAt": "2026-11-08T15:00:32.367Z",
+   "publishAt": null,
+   "contentType": "sound-edit",
+   "song": "Havana",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "havana anime edit sound design 🗿",
+   "clipIds": [
+    "c_1MSkCTOWdWs_101975",
+    "c_4TJNIquRzAc_132863",
+    "c_A_5JOOeFi5g_225697",
+    "c_A_5JOOeFi5g_326030",
+    "c_Cw9_Kh3KSrA_50500",
+    "c_E6j5-a-vI14_130338",
+    "c_E6j5-a-vI14_158563",
+    "c_IFYCx3opUn4_17269",
+    "c_O2JRxaMNK_c_80566",
+    "c_RTDeuS24k2s_771",
+    "c_mBpBTRnhDl0_192447",
+    "c_upIsOnCMthw_152245",
+    "c_z1In_sZL7xg_155531",
+    "c_zUiJ3TahSqE_28681"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 8.6,
+    "pool": "sound",
+    "render_s": {
+     "short": 1490.5,
+     "watermark_short": 31.6,
+     "total": 1522.1
+    },
+    "attempts": 1
+   },
+   "onVideoTitle": "anime x havana",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "mimic",
+    "ovStyle": "ov-song",
+    "descHook": "llm-line",
+    "titlePattern": "{song} anime edit sound design {e}",
+    "titleMode": "mimic"
+   },
+   "vibe": "impact",
+   "musicPoolId": "camila_cabello_havana",
+   "songSection": [
+    119.801,
+    147.217
+   ]
   }
  ]
 }
