@@ -73,7 +73,14 @@ jobs:
           curl -fsSL https://deno.land/install.sh | sh && echo "$HOME/.deno/bin" >> $GITHUB_PATH && export PATH="$HOME/.deno/bin:$PATH"
           mkdir -p ~/.config/yt-dlp && echo '--js-runtimes deno' > ~/.config/yt-dlp/config   # also covers core/pools/source_probe.py
           deno --version | head -1; yt-dlp --version
-          npm ci || npm install
+          # 2026-11-08: a transient GitHub / npm 5xx (504 on a package's binary download) failed both quiz + edit runs:
+          # retry, then fall back to npm install
+          ok=0
+          for i in 1 2 3; do
+            if npm ci --no-audit --no-fund; then ok=1; break; fi
+            echo "npm ci failed (attempt $i of 3), retrying in 30 s"; sleep 30
+          done
+          [ "$ok" = 1 ] || npm install --no-audit --no-fund
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
       - name: YouTube check (yt-dlp + JS solver + cookies)
         if: steps.gate.outputs.go == 'true'

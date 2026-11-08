@@ -682,10 +682,13 @@ class DailyRunner {
         const now = new Date();
         const publishTime = new Date(publishAt);
         if (publishTime <= now) {
-          logger.info(`Publish time (${publishAt}) already passed — uploading as public immediately`);
+          // 2026-11-08 (owner: "both quiz videos published one after another"): the backup run started after the first slot,
+          // and clearing PUBLISH_AT here made EVERY short of the run public at once. Keep it as the base: each short gets its
+          // own slot (base + k x spacing) - a passed slot publishes now, a later one is scheduled (youtube-bridge decides per
+          // video), so a run that fails half way leaves the finished shorts on their right times.
+          logger.info(`Publish time (${publishAt}) already passed — that slot publishes now, later slots stay scheduled`);
           process.env.DEFAULT_PRIVACY_STATUS = 'public';
-          // Clear PUBLISH_AT so youtube-bridge doesn't schedule it
-          delete process.env.PUBLISH_AT;
+          process.env.PUBLISH_AT = publishAt;
         } else {
           process.env.PUBLISH_AT = publishAt;
           logger.info(`Publish scheduled at: ${publishAt}`);
