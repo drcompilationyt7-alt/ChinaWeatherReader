@@ -421,11 +421,13 @@ function guardRanking(rep, videoPath) {
   try { size = fs.statSync(videoPath).size; } catch {}
   if (size < 500 * 1024) bad.push(`video file ${size} bytes`);
   const revealed = rep.revealed || [];
-  if (revealed.length < 2) bad.push(`only ${revealed.length} revealed entries`);
+  // owner 2026-11-07: a list shows 3-5 entries (all 5, #1 open, #2 and #1 open, or a top 3); open slots stay blank
+  if (revealed.length < 3) bad.push(`only ${revealed.length} entries on the list`);
   if ((rep.entries || []).length !== revealed.length) bad.push(`${(rep.entries || []).length} entries for ${revealed.length} revealed slots`);
   for (const c of rep.checks || []) {
     if (c.status !== 'reviewed') bad.push(`#${c.rank} ${c.entry}: segment not reviewed (${c.status})`);
-    if (c.entry_key !== c.item_entry_key) bad.push(`#${c.rank} ${c.entry}: the segment belongs to ${c.item_entry_key}`);
+    // a library section serves every entry it was reviewed for (a Yuji section also fills "Jujutsu Kaisen")
+    if (c.entry_key !== c.item_entry_key && c.serves !== true) bad.push(`#${c.rank} ${c.entry}: the segment belongs to ${c.item_entry_key}`);
     if (!(Number(c.char_conf) >= 0.6)) bad.push(`#${c.rank} ${c.entry}: character check ${c.char_conf}`);
   }
   if ((rep.checks || []).length !== revealed.length) bad.push('missing entry checks');
@@ -441,7 +443,7 @@ function guardRanking(rep, videoPath) {
       { timeout: 300000, encoding: 'utf8', env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
     const v = JSON.parse(out.trim().split('\n').pop()).video || {};
     const exp = Number(rep.duration_expected || 0);
-    if (!(v.duration >= 40 && v.duration <= 75)) bad.push(`length ${v.duration} s (expected 40-75)`);
+    if (!(v.duration >= 30 && v.duration <= 75)) bad.push(`length ${v.duration} s (expected 30-75)`);
     if (exp && Math.abs(v.duration - exp) > 3) bad.push(`length ${v.duration} s vs the segments ${exp} s`);
     if ((v.sampled || 0) < 12) bad.push(`only ${v.sampled || 0} frames decoded`);
     if ((v.blankShare || 0) > 0.15) bad.push(`blank frames ${v.blankShare}`);
@@ -492,7 +494,8 @@ async function runRanking({ outputDir } = {}) {
   fs.writeFileSync(path.join(work, `ranking_${rep.topic}.title.txt`), title + '\n');
   fs.writeFileSync(path.join(work, `ranking_${rep.topic}.description.txt`), rep.description + '\n');
   logger.success(`ranking: ${rep.topic} -> ${path.basename(videoPath)} "${title}" in ${Math.round((Date.now() - t0) / 1000)} s`);
-  const hook = rep.reveal === 'top' ? 'agree with the order? 👀' : 'who are #2 and #1? 👀';
+  const open = rep.open_slots || [];
+  const hook = open.length >= 2 ? 'who are #2 and #1? 👀' : open.length === 1 ? 'who is #1? 👀' : 'agree with the order? 👀';
   return {
     success: true, videoPath, longPath: null, resultJson: path.join(work, 'result.json'), title,
     description: rep.description, tags: [rep.keyword, rep.hashtag, 'anime', 'anime edit', 'anime ranking'].filter(Boolean),

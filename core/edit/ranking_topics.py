@@ -7,7 +7,7 @@
 
 Order rules (see the file's _rules):
   power  community power-scaling consensus; every 'above' pair [stronger, weaker, why] must hold; pins hold;
-         a pinned #1 needs reveal 'top' (owner 2026-10-25: Rimuru is #1 in any power list AND shown)
+         a pinned #1 shows only AS #1 (owner 2026-10-25: Rimuru is #1 in any power list; ranking_pool.plan_list)
   fans   AniList favourites high -> low (a later entry may not have more favourites than an earlier one)
   score  AniList average score high -> low (refresh re-sorts unless order_locked; the check flags a > 2 point inversion)
 Errors fail the check; warnings are printed (e.g. a character missing from the AniList pool, no wiki for references).
@@ -66,15 +66,10 @@ def load(path=PATH):
     return normalise(load_raw(path))
 
 
-def revealed_ranks(T, n_show=3):
-    """Ranks shown on screen in play order. countdown: #5, #4[, #3]; top: #3, #2, #1 (a 3-slot list)."""
-    if T.get('reveal') == 'top':
-        return [3, 2, 1]
-    return list(range(SLOTS, SLOTS - n_show, -1))
-
-
-def slots(T):
-    return 3 if T.get('reveal') == 'top' else SLOTS
+# owner 2026-11-07: no fixed / hidden ranks. A topic's entries are a POOL in consensus order (strongest / best first); each
+# video takes 3-5 entries that have footage and maps them onto a format (ranking_pool.plan_list: all 5 shown, #1 open, #2 and
+# #1 open, or a top 3; an open slot is blank, never a name). The topics' old 'reveal' field is ignored.
+LIST_MIN = 3
 
 
 # ------------------------------------------------------------------ AniList
@@ -187,9 +182,8 @@ def check(topics=None):
         es = T['entries']
         names = [e['name'] for e in es]
         rank = {e['name']: e['rank'] for e in es}
-        need = max(revealed_ranks(T)) + (0 if T.get('reveal') == 'top' else 0)
-        if len(es) < need:
-            errs.append(f'{key}: {len(es)} entries, the reveal needs {need}')
+        if len(es) < LIST_MIN:
+            errs.append(f'{key}: {len(es)} entries, a list needs at least {LIST_MIN}')
         if len(set(names)) != len(names):
             errs.append(f'{key}: duplicate entries')
         if T.get('order') not in ('power', 'fans', 'score'):
@@ -197,8 +191,6 @@ def check(topics=None):
         for e in es:
             if e.get('pin') and e['rank'] != e['pin']:
                 errs.append(f'{key}: {e["name"]} is pinned to #{e["pin"]} but sits at #{e["rank"]}')
-            if T.get('order') == 'power' and e.get('pin') == 1 and T.get('reveal') != 'top':
-                errs.append(f'{key}: {e["name"]} is pinned #1 in a power list, so the list must reveal its top (reveal: top)')
             if T.get('kind') != 'anime':
                 for c in e.get('chars') or []:
                     if c.lower() not in pool and not (e.get('anilist') or {}).get('id'):
@@ -238,10 +230,9 @@ def show(md=False):
     topics = load()
     lines = []
     for key, T in topics.items():
-        rv = revealed_ranks(T)
-        ent = ' > '.join(f'#{e["rank"]} {e["name"]}' + ('*' if e['rank'] in rv else '') for e in T['entries'][:slots(T) + 1])
-        lines.append(f'{key} [{T["order"]}, {T["reveal"]}]: {ent}')
-    print('\n'.join(lines) + '\n(* = shown on screen)')
+        ent = ' > '.join(e['name'] for e in T['entries'])
+        lines.append(f'{key} [{T["order"]}]: {ent}')
+    print('\n'.join(lines) + '\n(consensus order, strongest / best first; each video shows 3-5 of them)')
 
 
 if __name__ == '__main__':

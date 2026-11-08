@@ -243,36 +243,97 @@ def usable(items, key, led, exclude_sources=(), theme=None, smap=None):
     return sorted(out, key=lambda it: (bool(it.get('manga')), -(it.get('rank_score') or it.get('quality') or 0)))
 
 
-def pick_items(T, items, led):
-    """One item per revealed rank, distinct sources AND distinct editors (never two excerpts of one editor in a video).
-    -> {rank: item} or None."""
-    picks, used_src, used_ed = {}, set(), set()
+# ------------------------------------------------------------------ the list of one video (owner 2026-11-07)
+# "don't put anything in hidden ... the number can change; we sometimes show #2 #1, sometimes only #2, hide both - but don't just
+# show hidden; if we don't show #2 #1 the list is just a top 3 mapped differently" + "we may reuse the same list theme but the
+# actual list doesn't have to be the same, it has to be generally arguable: this time Gojo #5, next time #3, and not the same
+# clip each time". A topic's entries are a POOL in consensus order (strongest / best first); each video takes 3-5 of the
+# entries that have usable footage (fresh ones first), keeps their consensus order and maps them onto the slots of a format.
+# An open slot is blank - it never stands for a name.
+LIST_FORMATS = {                 # name: (slots on the list, the slots filled, in play order)
+    'full5': (5, [5, 4, 3, 2, 1]),
+    'open1': (5, [5, 4, 3, 2]),    # #1 left open
+    'open2': (5, [5, 4, 3]),       # #2 and #1 left open
+    'top3': (3, [3, 2, 1]),
+}
+LIST_FORMAT_W = {'full5': 0.40, 'open1': 0.20, 'open2': 0.15, 'top3': 0.25}   # mostly full lists, open slots sometimes
+LIST_MIN = 3
+LIST_MAX_S = float(os.environ.get('RANKING_LIST_MAX_S', '58'))   # the whole video; sections shorten when a list has 4-5 entries
+LIST_SEC_MIN_S = 9.0
+
+
+def entry_clips(T, e, items, led, th=None, smap=None):
+    """the reviewed sections that may show this entry now (theme, reuse gap, blocklist; strongest lists: the main-character
+    rule), least recently used first, then the best"""
+    th = th or topic_theme(T)
+    cands = usable(items, entry_key(e), led, (), th, smap)
+    if th == 'action' and e.get('kind') != 'anime':
+        cands = [it for it in cands if ((it.get('cast') or {}).get(e['name']) is None
+                 or float((it.get('cast') or {}).get(e['name']) or 0.0) >= CAST_MIN_STRONG)
+                 and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG
+                 and float((it.get('cast_gaps') or {}).get(e['name']) or 0.0) <= GAP_MAX_STRONG]
+    used = led.get('items') or {}
+    return sorted(cands, key=lambda it: str((used.get(f'ranking/clip/{it["id"]}') or {}).get('used_at') or ''))
+
+
+def plan_list(T, items, led, seed=None):
+    """-> {'format', 'slots', 'rows': [{slot, entry, item}] in play order} or None (fewer than LIST_MIN entries with footage).
+    seed None = deterministic (the first fit: the eligibility check)."""
     th, smap = topic_theme(T), shows()
-    for rank in RT.revealed_ranks(T):
-        e = T['entries'][rank - 1]
-        cands = [it for it in usable(items, entry_key(e), led, used_src, th, smap)
-                 if (it.get('editor_handle') or it.get('source_channel') or '').lower() not in used_ed]
-        if th == 'action' and e.get('kind') != 'anime':
-            # owner 2026-11-07 (first 'strongest' sample): a strongest-character entry must be THAT character's edit - he
-            # holds the majority of the frames (the Madara section, 0.55, "is a good example despite other characters");
-            # a mixed couple / ensemble section (Sung Jinwoo 0.40 + Cha Hae-in) belongs to a couple / romance list instead.
-            # Older per-entry items have no cast measure (mined for that character): kept.
-            # owner 2026-11-07 (2nd note): short cutaways to another character are fine, a sustained stretch of another one
-            # (a complementary sub-edit: Cha Hae-in in the Jinwoo section, other JJK cast in the Gojo one) is not:
-            # the longest continuous run owned by others <= RUN_MAX_STRONG s
-            cands = [it for it in cands if ((it.get('cast') or {}).get(e['name']) is None
-                     or float((it.get('cast') or {}).get(e['name']) or 0.0) >= CAST_MIN_STRONG)
-                     and float((it.get('cast_runs') or {}).get(e['name']) or 0.0) <= RUN_MAX_STRONG
-                     # owner 2026-11-07 (2nd sample: the Gojo section "started becoming a Yuta edit"): the tagger does not know
-                     # Yuta, so his frames were no one's; a tagger-known target's stretch without him <= GAP_MAX_STRONG s
-                     and float((it.get('cast_gaps') or {}).get(e['name']) or 0.0) <= GAP_MAX_STRONG]
-        if not cands:
-            return None
-        it = cands[0]
-        picks[rank] = it
-        used_src.add(it['source_id'])
-        used_ed.add((it.get('editor_handle') or it.get('source_channel') or '').lower())
-    return picks
+    avail = [(i, e, entry_clips(T, e, items, led, th, smap)) for i, e in enumerate(T['entries'])]
+    avail = [x for x in avail if x[2]]
+    if len(avail) < LIST_MIN:
+        return None
+    rng = random.Random(seed) if seed is not None else None
+    recent = [x for L in (led.get('ranking_lists') or [])[-3:] if L.get('topic') == T.get('key') for x in L.get('entries') or []]
+    pin1 = {e['name'] for _, e, _ in avail if e.get('pin') == 1}
+
+    def assign(chosen):
+        """distinct sources and editors: each entry its first clip that does not clash -> {name: item} or None"""
+        out, src, eds = {}, set(), set()
+        for _, e, clips in chosen:
+            it = next((c for c in clips if c['source_id'] not in src
+                       and (c.get('editor_handle') or c.get('source_channel') or '').lower() not in eds), None)
+            if it is None:
+                return None
+            out[e['name']] = it
+            src.add(it['source_id'])
+            eds.add((it.get('editor_handle') or it.get('source_channel') or '').lower())
+        return out
+    fmts = [f for f, (_, filled) in LIST_FORMATS.items() if len(filled) <= len(avail)]
+
+    def tries():
+        if rng:
+            for _ in range(40):
+                f = rng.choices(fmts, [LIST_FORMAT_W[x] for x in fmts])[0]
+                n = len(LIST_FORMATS[f][1])
+                # fresh entries first (not in this topic's last 3 lists), random within that
+                w = [(1.0 if e['name'] not in recent else 0.35) * rng.uniform(0.5, 1.5) for _, e, _ in avail]
+                yield f, [avail[j] for j in sorted(range(len(avail)), key=lambda j: -w[j])[:n]]
+        else:
+            import itertools
+            for combo in itertools.islice(itertools.combinations(avail, LIST_MIN), 200):
+                yield 'top3', list(combo)
+    for f, chosen in tries():
+        chosen = sorted(chosen, key=lambda x: x[0])           # consensus order: strongest / best first
+        names = [e['name'] for _, e, _ in chosen]
+        filled = sorted(LIST_FORMATS[f][1])                   # #1 (or the best filled slot) first
+        if pin1 & set(names) and (names[0] not in pin1 or filled[0] != 1):
+            continue                                          # a pinned #1 (Rimuru in a power list) shows only AS #1
+        got = assign(chosen)
+        if got is None:
+            continue
+        slot_of = dict(zip(names, filled))
+        rows = [{'slot': slot_of[e['name']], 'entry': e, 'item': got[e['name']]} for _, e, _ in chosen]
+        rows.sort(key=lambda r: -r['slot'])                   # play order: the highest number first
+        return {'format': f, 'slots': LIST_FORMATS[f][0], 'rows': rows}
+    return None
+
+
+def pick_items(T, items, led):
+    """(compat) the deterministic list plan -> {slot: item} or None"""
+    p = plan_list(T, items, led)
+    return {r['slot']: r['item'] for r in p['rows']} if p else None
 
 
 def eligible_topics(topics=None, items=None, led=None):
@@ -322,13 +383,16 @@ def plan(topics=None):
                     anime[k] = anime.get(k, 0) + 1
     score, info = {}, {}
     for tk, T in topics.items():
-        ranks = RT.revealed_ranks(T)
-        keys = [entry_key(T['entries'][r - 1]) for r in ranks]
+        # owner 2026-11-07: a topic is a pool - any LIST_MIN of its entries make a video; an entry is worth more the fewer
+        # the topic still needs (one missing: every entry without footage scores 1), a topic that already has its 3 still
+        # gains from more entries (fuller lists, variety)
+        keys = [entry_key(e) for e in T['entries']]
+        need = max(0, LIST_MIN - sum(1 for k in keys if have.get(k)))
         missing = [k for k in keys if not have.get(k)]
-        for r, k in zip(ranks, keys):
-            info.setdefault(k, {'entry': T['entries'][r - 1], 'topics': []})['topics'].append(tk)
+        for e, k in zip(T['entries'], keys):
+            info.setdefault(k, {'entry': e, 'topics': []})['topics'].append(tk)
             if k in missing:
-                score[k] = score.get(k, 0) + 1.0 / len(missing)
+                score[k] = score.get(k, 0) + (1.0 / need if need else 0.15)
             elif not anime.get(k):
                 # only a manga-panel edit so far (owner: a fallback): look for an anime-footage replacement
                 score[k] = score.get(k, 0) + 0.3
@@ -1320,40 +1384,54 @@ def assemble(topic, out, work=None, mark_used=False, seed=None):
     lp, led = ledger()
     ld = live_dir()
     items = manifest(ld)['items']
-    picks = pick_items(T, items, led)
-    if not picks:
-        return {'ok': False, 'reason': f'pool_low: topic {topic} is missing a revealed entry'}
+    # this video's list: 3-5 entries with footage in consensus order, a random format (owner 2026-11-07); the seed is the
+    # topic + the day unless given, so a re-run of the same day's job builds the same list
+    seed = seed if seed is not None else f'{topic}|{time.strftime("%Y-%m-%d")}'
+    pl = plan_list(T, items, led, seed)
+    if not pl:
+        return {'ok': False, 'reason': f'pool_low: topic {topic} has fewer than {LIST_MIN} entries with usable footage'}
     work = work or os.path.join(os.path.dirname(os.path.abspath(out)), f'work-ranking-{int(time.time())}')
     os.makedirs(work, exist_ok=True)
     RC.idle()
-    n_slots = RT.slots(T)
-    names = [e['name'] for e in T['entries'][:n_slots]]
+    smap = shows()
+    n = len(pl['rows'])
+    sec_s = max(LIST_SEC_MIN_S, LIST_MAX_S / n)              # 3 entries: ~19 s each, 5 entries: ~12 s
+    names = [''] * pl['slots']                               # an open slot stays blank: it never stands for a name
+    for r in pl['rows']:
+        names[r['slot'] - 1] = r['entry']['name']
     parts, shown, entries, checks = [], set(), [], []
-    for rank in RT.revealed_ranks(T):
-        it = picks[rank]
+    for r in pl['rows']:
+        it, e, rank = r['item'], r['entry'], r['slot']
         shown.add(rank - 1)
         clip = os.path.join(ld, it['file'])
         if not os.path.exists(clip):
             return {'ok': False, 'reason': f'missing clip {it["file"]}'}
-        win = {'s': it['clip_in'], 'e': it['clip_out']}
+        s_, e_ = float(it['clip_in']), float(it['clip_out'])
+        if e_ - s_ > sec_s + 0.5:
+            # a longer list: the section keeps its start (the character's entrance) and ends on the scene cut nearest the
+            # budget (owner rule: a section starts where the character starts)
+            e_ = min(e_, max(s_ + LIST_SEC_MIN_S, _snap(clip, s_ + sec_s, 0.6)))
+        win = {'s': s_, 'e': e_}
         png = os.path.join(work, f'ov_{rank}.png')
         RC.overlay_png(png, T['title'], names, shown, '')
         part = os.path.join(work, f'part_{rank}.mp4')
         RC.wait_ram('rendering', need=min(RC.MIN_FREE_GB, 1.0))
         RC.render_entry(clip, win, png, part)
         parts.append(part)
-        e = T['entries'][rank - 1]
         entries.append({'rank': rank, 'name': e['name'], 'source': it['source_id'], 'handle': it.get('editor_handle'),
                         'channel': it.get('source_channel'), 'item': it['id'], 'len': round(win['e'] - win['s'], 2)})
         checks.append({'rank': rank, 'entry': e['name'], 'entry_key': entry_key(e), 'item_entry_key': it['entry_key'],
+                       'serves': entry_key(e) in serve_keys(it, smap),
                        'status': it['status'], 'char_conf': it.get('char_conf'), 'char_method': it.get('char_method'),
                        'reviewed_by': it.get('reviewed_by')})
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     RC.concat(parts, out)
     desc = describe(T, entries)
+    open_slots = [k for k in range(1, pl['slots'] + 1) if not names[k - 1]]
     res = {'ok': True, 'topic': topic, 'short': out, 'title': title_for(T), 'description': desc, 'entries': entries,
-           'checks': checks, 'revealed': RT.revealed_ranks(T), 'reveal': T.get('reveal'), 'keyword': T.get('keyword'),
-           'hashtag': T.get('hashtag'), 'duration_expected': round(sum(x['len'] for x in entries), 2)}
+           'checks': checks, 'revealed': [r['slot'] for r in pl['rows']], 'reveal': pl['format'], 'slots': pl['slots'],
+           'open_slots': open_slots, 'keyword': T.get('keyword'), 'hashtag': T.get('hashtag'),
+           'duration_expected': round(sum(x['len'] for x in entries), 2)}
     if mark_used:
         mark(res)
     wj(os.path.splitext(out)[0] + '.result.json', res)
@@ -1367,25 +1445,34 @@ def mark(res):
                                                                     'video': os.path.basename(res['short'])}
         led.setdefault('ranking_recent', []).append(e['source'])
     led.setdefault('ranking_topics_recent', []).append(res['topic'])
+    # this topic's last lists: the next video of the topic prefers other entries (a different list each time)
+    led.setdefault('ranking_lists', []).append({'topic': res['topic'], 'entries': [e['name'] for e in res['entries']],
+                                                'format': res.get('reveal')})
     led['ranking_recent'] = led['ranking_recent'][-50:]
     led['ranking_topics_recent'] = led['ranking_topics_recent'][-50:]
+    led['ranking_lists'] = led['ranking_lists'][-50:]
     wj(lp, led)
 
 
 def library_report(md=False):
+    """per topic: every entry with its usable sections now (main-character rule applied) / all reviewed sections serving
+    it; ELIGIBLE = at least LIST_MIN entries can fill a list"""
     topics = RT.load()
     items = manifest(live_dir())['items']
-    staged = manifest(staged_dir())['items']
     _, led = ledger()
+    smap = shows()
     rows = []
     for k, T in topics.items():
-        rr = RT.revealed_ranks(T)
+        th = topic_theme(T)
         have = []
-        for r in rr:
-            ek = entry_key(T['entries'][r - 1])
-            have.append(f'{T["entries"][r - 1]["name"]}:{sum(1 for i in items if i["entry_key"] == ek and i["status"] == "reviewed")}'
-                        f'/{sum(1 for i in staged if i["entry_key"] == ek and i["status"] == "staged")}')
-        rows.append(f'{k}: ' + ', '.join(have) + ('  ELIGIBLE' if pick_items(T, items, led) else ''))
+        n_ok = 0
+        for e in T['entries']:
+            u = len(entry_clips(T, e, items, led, th, smap))
+            n_all = sum(1 for i in items if i.get('status') == 'reviewed' and entry_key(e) in serve_keys(i, smap))
+            n_ok += bool(u)
+            have.append(f'{e["name"]}:{u}' + (f'({n_all})' if n_all != u else ''))
+        rows.append(f'{k}: {n_ok}/{len(T["entries"])} entries | ' + ', '.join(have)
+                    + ('  ELIGIBLE' if plan_list(T, items, led) else ''))
     return '\n'.join(rows)
 
 
