@@ -343,7 +343,206 @@ def assign(cands, E, Sg, late_w=LATE_W, min_gap=ENS_MIN_GAP, far=ENS_FAR, gaps=N
     return [float(E[p_]) for p_ in pick]
 
 
+# ------------------------------------------------------------------------------------------------ evidence vote (2026-11-07)
+# Owner 2026-11-07 on the blue test ("still not right, make it exactly on time"). Measured on the rendered blue intro against
+# the stem (spectrogram syllables, pitch notes, whisper): the late-biased DP above put two legato words 0.19 s early (the
+# 'after' anchor + LATE_W pulled a word onto the previous word's held note) and one 0.64 s late (both CTC models failed on it
+# and the recogniser's time was barred from counting before the earliest model). The vote: every stem event (onset, timbre
+# change, a NEW NOTE of the sung melody) is scored by how many independent estimates sit on it (CTC base, CTC lv60k, the
+# recogniser's word, the aligner) with a Gaussian kernel, plus its own strength and a bonus for a voice onset after silence;
+# a monotone DP picks one event per word (or the word's median estimate when no event is supported).
+
+# Validated 2026-11-07 on 18 words with a known sung onset (blue intro from the stem; WGvt / pB7P study onsets; _sX2's own
+# first-ink frames): the late DP 56 % within 50 ms / 67 % within 100 ms / p90 199 ms; the vote 78 % / 83 % / p90 111 ms,
+# blue 5/5 within 35 ms. Both CTC models put a VOWEL-initial word's start ~0.1 s late (no consonant attack: blue +0.11,
+# WGvt +0.08..+0.22): their time for such a word counts VOTE_VOWEL earlier.
+VOTE_SIG = 0.06
+VOTE_W = dict(base=1.0, large=1.0, wh=1.0, al=1.0)
+VOTE_GAP = 0.5
+VOTE_FB = 0.15
+VOTE_VOWEL = 0.08
+
+
+def note_events(v, sr, hop=160):
+    """new-note starts of the sung melody [(t, semitones)]: the median pitch of the next 0.10 s differs >= 0.9 st from the
+    0.10 s before and the next part holds (std < 0.5 st, >= 70 % voiced) - a legato word starts on its own note"""
+    import librosa
+    from scipy.signal import find_peaks
+    f0, _, _ = librosa.pyin(v, fmin=70, fmax=1000, sr=sr, frame_length=1024, hop_length=hop)
+    st = 12 * np.log2(f0 / 440.0) + 69
+    k = int(0.10 * sr / hop)
+    sc = np.zeros(len(st))
+    for i in range(k, len(st) - k):
+        x, y = st[i - k:i], st[i:i + k]
+        x, y = x[~np.isnan(x)], y[~np.isnan(y)]
+        if len(x) < 0.6 * k or len(y) < 0.7 * k or np.std(y) > 0.5:
+            continue
+        sc[i] = abs(float(np.median(y)) - float(np.median(x)))
+    pk, _ = find_peaks(sc, height=0.9, distance=max(1, int(0.12 * sr / hop)))
+    return [(float(p * hop / sr), float(sc[p])) for p in pk]
+
+
+def vote_assign(est, events, gaps, notes, min_gap=ENS_MIN_GAP):
+    """est: per word {source: time or None} (sources of VOTE_W). events [(t, strength 0..1)], gaps [t], notes [(t, st)].
+    -> one time per word (monotone, >= min_gap apart) or None"""
+    E = {}
+    for t, s in events:
+        E[round(float(t), 3)] = max(E.get(round(float(t), 3), 0.0), 0.15 * float(s))
+    for t, s in notes:
+        E[round(float(t), 3)] = max(E.get(round(float(t), 3), 0.0), 0.15 * min(1.0, float(s) / 3.0))
+    G = [float(g) for g in gaps or []]
+    times = sorted(E)
+    n, m = len(est), len(times)
+    if not n:
+        return None
+    NEG = -1e9
+    score = np.full((n, m + n), NEG)
+    fbt = []
+    for k, e in enumerate(est):
+        cs = [(float(e[s]), w) for s, w in VOTE_W.items() if e.get(s) is not None]
+        for j, t in enumerate(times):
+            v = sum(w * np.exp(-((t - c) / VOTE_SIG) ** 2) for c, w in cs)
+            if v < 0.25:
+                continue
+            score[k, j] = v + E[t] + (VOTE_GAP if any(abs(t - g) <= 0.03 for g in G) else 0.0)
+        med = float(np.median([c for c, _ in cs])) if cs else None
+        fbt.append(med)
+        if med is not None:
+            score[k, m + k] = VOTE_FB
+    slots = sorted([(t, j) for j, t in enumerate(times)] + [(fbt[k], m + k) for k in range(n) if fbt[k] is not None])
+    if not slots:
+        return None
+    T = np.array([s_[0] for s_ in slots])
+    J = [s_[1] for s_ in slots]
+    S_ = len(slots)
+    D = np.full((n, S_), NEG)
+    P = np.full((n, S_), -1, int)
+    for q in range(S_):
+        D[0, q] = score[0, J[q]]
+    for k in range(1, n):
+        for q in range(S_):
+            if score[k, J[q]] <= NEG / 2:
+                continue
+            ok = (T <= T[q] - min_gap) & (D[k - 1] > NEG / 2)
+            if not ok.any():
+                continue
+            p = int(np.argmax(np.where(ok, D[k - 1], NEG)))
+            D[k, q] = D[k - 1, p] + score[k, J[q]]
+            P[k, q] = p
+    q = int(np.argmax(D[-1]))
+    if D[-1, q] <= NEG / 2:
+        return None
+    out = [0.0] * n
+    for k in range(n - 1, -1, -1):
+        out[k] = float(T[q])
+        q = int(P[k, q])
+    return out
+
+
+def whisper_starts(fw, letters):
+    """per word the start of the recogniser's word with the same letters (in-order matching blocks), else None"""
+    import difflib
+    import re
+    import lyrics as LY
+    hw = [re.sub(r"[^A-Z']", '', LY.romanise(h['text'])) for h in fw]
+    sm = difflib.SequenceMatcher(None, hw, list(letters), autojunk=False)
+    out = [None] * len(letters)
+    for bl in sm.get_matching_blocks():
+        for q in range(bl.size):
+            out[bl.b + q] = float(fw[bl.a + q]['t0'])
+    return out
+
+
+def vote_times(v, letters, aligner=None, key=None, threads=4, models=('base', 'large'), log=None, fw=None):
+    """word starts (s from the stem's start) of `letters` sung on stem v (16 kHz) by the evidence vote; aligner: per word
+    the aligner's time (or None); fw: the recogniser's words [{t0, text}] when already run. Times only in the log."""
+    import lyrics as LY
+    log = log if log is not None else {}
+    st = {}
+    for mdl in models:
+        try:
+            st[mdl] = _ctc_starts(v, letters, mdl)
+            log[mdl] = [None if x is None else round(x, 3) for x in st[mdl]]
+        except Exception as e:  # noqa: BLE001
+            log[mdl] = f'failed: {type(e).__name__}'
+    try:
+        if fw is None:
+            fw = _whisper(v, LY.SR, key or 'vote-%d' % len(v), 'medium', threads)
+        wh = whisper_starts(fw, letters)
+    except Exception as e:  # noqa: BLE001
+        wh = [None] * len(letters)
+        log['whisper'] = f'failed: {type(e).__name__}'
+    log['wh'] = [None if x is None else round(x, 3) for x in wh]
+    def _ctc(mdl, k):
+        x = (st.get(mdl) or [None] * len(letters))[k]
+        return None if x is None else max(0.0, x - (VOTE_VOWEL if letters[k][:1] in ('A', 'E', 'I', 'O', 'U') else 0.0))
+    est = [dict(base=_ctc('base', k), large=_ctc('large', k), wh=wh[k], al=(aligner or [None] * len(letters))[k])
+           for k in range(len(letters))]
+    ev = _events(v, LY.SR)
+    gaps = list(_GAPS)
+    try:
+        notes = note_events(v, LY.SR)
+    except Exception:  # noqa: BLE001
+        notes = []
+    log['events'] = len(ev)
+    log['notes'] = [round(t, 2) for t, _ in notes]
+    return vote_assign(est, ev, gaps, notes)
+
+
 def intro_ensemble(ws, audio_path, a, b, threads=4, models=('base', 'large')):
+    if os.environ.get('LYRICS_ENSEMBLE_MODE', 'vote') == 'vote':
+        return intro_vote(ws, audio_path, a, b, threads, models)
+    return intro_ensemble_late(ws, audio_path, a, b, threads, models)
+
+
+def intro_vote(ws, audio_path, a, b, threads=4, models=('base', 'large')):
+    """intro_ensemble by the evidence vote (vote_times). Returns (words, log); the log holds indices / times only."""
+    import re
+    import hashlib
+    import lyrics as LY
+    idx = [i for i, w in enumerate(ws) if a - 0.15 <= float(w['t_start']) < b and w.get('lyric', True)]
+    if not idx:
+        return ws, dict(skip='no intro words')
+    letters = [re.sub(r"[^A-Z']", '', LY.romanise(str(ws[i]['text']))) for i in idx]
+    if any(not x for x in letters):
+        return ws, dict(skip='a word the CTC model cannot spell')
+    lo = max(0.0, float(ws[idx[0]]['t_start']) - 0.6)
+    if idx[0] > 0:
+        lo = max(lo, float(ws[idx[0] - 1]['t_start']) + 0.1, float(ws[idx[0] - 1]['t_end']) - 0.05)
+    hi = float(ws[idx[-1]]['t_end']) + 0.4
+    if idx[-1] + 1 < len(ws):
+        hi = min(hi, float(ws[idx[-1] + 1]['t_start']) - 0.02)
+    hi = max(hi, float(ws[idx[-1]]['t_start']) + 0.4)
+    import torch
+    torch.set_num_threads(int(threads))
+    v = LY.vocal_stem(audio_path, lo, hi, threads)
+    st_ = os.stat(audio_path)
+    key = hashlib.sha1(f'vote|{os.path.abspath(audio_path)}|{st_.st_size}|{lo:.3f}|{hi:.3f}'.encode()).hexdigest()[:20]
+    log = dict(n=len(idx), lo=round(lo, 3), hi=round(hi, 3), mode='vote')
+    pick = vote_times(v, letters, [float(ws[i]['t_start']) - lo for i in idx], key, threads, models, log)
+    for k_ in ('base', 'large', 'wh'):
+        if isinstance(log.get(k_), list):
+            log[k_] = [None if y is None else round(y + lo, 3) for y in log[k_]]
+    if pick is None:
+        log['skip'] = 'no monotone assignment'
+        return ws, log
+    out = [dict(w) for w in ws]
+    moves = []
+    for k, i in enumerate(idx):
+        nt = round(float(pick[k]) + lo, 4)
+        moves.append(dict(i=i, was=round(float(ws[i]['t_start']), 3), now=nt))
+        out[i]['t_start'] = nt
+    for i in idx:                                       # ends: never past the next word's start
+        if i + 1 < len(out):
+            nx = float(out[i + 1]['t_start'])
+            out[i]['t_end'] = round(min(max(float(out[i]['t_end']), float(out[i]['t_start']) + 0.08), nx - 0.01), 4)
+        if i > 0 and float(out[i - 1]['t_end']) > float(out[i]['t_start']) - 0.01:
+            out[i - 1]['t_end'] = round(float(out[i]['t_start']) - 0.01, 4)
+    log['moves'] = moves
+    return out, log
+
+
+def intro_ensemble_late(ws, audio_path, a, b, threads=4, models=('base', 'large')):
     """ws: aligned words (audio_path seconds); re-time the lyric words starting in [a, b) (the words-on-black intro).
     Returns (words, log); the log holds indices / times only (no words)."""
     import re

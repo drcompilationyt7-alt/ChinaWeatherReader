@@ -623,6 +623,9 @@ def plan_info(plan_path):
                 # a deliberate punch of the held word, not a new sung word
                 phrase=((p.get('planner') or {}).get('lyric_text') or {}).get('phrase_check'),
                 n_items=len(words), item_t0=[float(it['t0']) for it in words if it.get('lyric', True)],
+                # which sung word each item shows (lyrics.word_key of its words; no text on disk)
+                item_wk=[list(it.get('wk') or []) or None for it in words if it.get('lyric', True)],
+                item_sung=[float(it['sung']) if it.get('sung') is not None else None for it in words if it.get('lyric', True)],
                 retrig=[float(it['t0']) for k, it in enumerate(words) if k and abs(float(it.get('sung', -1)) - float(words[k - 1].get('sung', -2))) < 0.02])
 
 
@@ -1821,8 +1824,80 @@ def lyric_identity(path, words, intro_end):
     return dict(checked=checked, wrong=wrong, heard_n=len(heard), bad=bool(bad))
 
 
-def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
-    """-> dict(rows=[{entry, ink, word, onset, err}], dropped=[word idx], ...) or None (no synced lyrics / no words)"""
+def _key_positions(wkeys, entry_wk, start):
+    """in-order positions of each keyed entry's first word in wkeys (search from `start`, else from 0); None if absent"""
+    firsts = [ek[0] for ek in entry_wk if ek]
+    for s0 in (max(0, start), 0):
+        pos, j = [], s0
+        for f in firsts:
+            while j < len(wkeys) and wkeys[j] != f:
+                j += 1
+            if j >= len(wkeys):
+                break
+            pos.append(j)
+            j += 1
+        if len(pos) == len(firsts):
+            return pos
+    return None
+
+
+def _keyed_rows(swaps, on, wk, entry_wk, intro_end, src, ink_end, log, unmatched=2.0):
+    """entries -> the words they SHOW (monotone; an entry pairs only with a word of its key, an unkeyed entry with any);
+    the later words of a merged item ride in it. An entry whose word is not found is reported, never repaired."""
+    n, m = len(swaps), len(on)
+    INF = 1e9
+    A = np.full((n + 1, m + 1), INF)
+    B = np.zeros((n + 1, m + 1), int)          # 0 = word j-1 unused, 1 = entry k-1 unmatched, 2 = pair
+    A[0, :] = 0.0
+    for k in range(1, n + 1):
+        ek = entry_wk[k - 1]
+        for j in range(0, m + 1):
+            best, how = A[k - 1, j] + unmatched, 1
+            if j and A[k, j - 1] < best:
+                best, how = A[k, j - 1], 0
+            if j and (not ek or ek[0] == wk[j - 1]):
+                x = A[k - 1, j - 1] + abs(swaps[k - 1] - (on[j - 1] - LW_LEAD))
+                if x < best:
+                    best, how = x, 2
+            A[k, j], B[k, j] = best, how
+    k, j, asg = n, m, [None] * n
+    while k > 0:
+        how = B[k, j]
+        if how == 2:
+            asg[k - 1] = j - 1
+            k, j = k - 1, j - 1
+        elif how == 1:
+            k -= 1
+        else:
+            j -= 1
+    rows, used = [], set()
+    for k, j in enumerate(asg):
+        if j is None:
+            rows.append(dict(entry=k, ink=round(swaps[k], 3), word=None, onset=None, err=None, ok=True, wrong_note=False,
+                             unverified=True))
+            continue
+        used.add(j)
+        for q, kk in enumerate((entry_wk[k] or [])[1:], 1):          # a merged item's later words
+            if j + q < m and wk[j + q] == kk:
+                used.add(j + q)
+        err = swaps[k] - on[j]
+        rows.append(dict(entry=k, ink=round(swaps[k], 3), word=j, onset=round(on[j], 3), err=round(err, 3),
+                         ok=abs(err + LW_LEAD) <= LW_TOL, wrong_note=abs(err + LW_LEAD) > LW_WRONG_NOTE))
+    first_used = min(used) if used else m
+    dropped = [j for j in range(first_used, m) if j not in used and 0.15 <= on[j] <= intro_end - 0.45
+               and on[j] - on[max(u for u in used if u < j)] > 0.35]
+    errs = [r_['err'] for r_ in rows if r_['err'] is not None] or [0.0]
+    return dict(rows=rows, dropped=dropped, n_words=m, onsets=[round(x, 3) for x in on], last_ink=round(ink_end, 3),
+                entries_from=src + '+keys', last_word_end_gap=None, mean=round(float(np.mean(errs)), 3),
+                max_abs=round(float(np.max(np.abs(errs))), 3), n_off=int(sum(not r_['ok'] for r_ in rows)),
+                unverified=[r_['entry'] for r_ in rows if r_.get('unverified')], log=log)
+
+
+def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None, entry_wk=None, entry_sung=None):
+    """-> dict(rows=[{entry, ink, word, onset, err}], dropped=[word idx], ...) or None (no synced lyrics / no words).
+    entry_wk: per entry the lyrics.word_key of the word(s) it shows (plan items 'wk'): an entry is paired only with THAT
+    word (2026-11-07 blue: by time alone every entry was paired with the word before it - the LRC line's first word is
+    sung at 0.0 and never shown - and the CI repair moved all five words one word early)."""
     import difflib
     import re
     import lyrics as LY
@@ -1851,6 +1926,17 @@ def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
         return dict(error='the recogniser heard none of the lyric words of the intro')
     s = max(0, blocks[0].b - blocks[0].a)
     e = blocks[-1].b + blocks[-1].size              # one past the last heard lyric word
+    wkeys = [LY.word_key(w) for w in words]
+    keyed = bool(entry_wk) and any(entry_wk) and entries is not None and len(entry_wk) == len(entries)
+    if keyed:
+        # the range also covers every word an entry shows (the recogniser may miss the first / last one)
+        kp = _key_positions(wkeys, entry_wk, s - 2)
+        if kp is None:
+            keyed = False
+        else:
+            last = max(k_ for k_, ek in enumerate(entry_wk) if ek)
+            s = min(s, kp[0])
+            e = max(e, min(len(words), kp[-1] + len(entry_wk[last])))
     ws_idx = list(range(s, max(e, s + 1)))
     cands = [[] for _ in ws_idx]
     for b in blocks:
@@ -1859,15 +1945,31 @@ def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
             if 0 <= j < len(cands):
                 cands[j].append(('weak', float(hw[b.a + q][0])))
     log = {}
-    LC.ctc_candidates(v16, [words[j] for j in ws_idx], cands, log)
+    if os.environ.get('LYRICS_ENSEMBLE_MODE', 'vote') == 'vote':
+        # 2026-11-07: the same evidence vote as the planner (lyric_check.vote_times); the recogniser's words already heard;
+        # the plan's sung time of the word an item shows stands in for the aligner (one vote of four, events decide)
+        al = [None] * len(ws_idx)
+        if keyed and entry_sung and len(entry_sung) == len(entry_wk):
+            kp_ = _key_positions(wkeys, entry_wk, s) or []
+            for pos, k_ in zip(kp_, [k_ for k_, ek in enumerate(entry_wk) if ek]):
+                if 0 <= pos - s < len(al) and entry_sung[k_] is not None:
+                    al[pos - s] = float(entry_sung[k_])
+        pick = LC.vote_times(v16, [words[j] for j in ws_idx], al, None, 2, log=log,
+                             fw=[dict(t0=float(a_), text=w_) for a_, _, w_ in heard])
+        if pick is None:
+            return dict(error='no monotone word assignment', log=log)
+        on = [float(p) for p in pick]
+    else:
+        on = None
+    LC.ctc_candidates(v16, [words[j] for j in ws_idx], cands, log) if on is None else None
     if os.environ.get("JUDGE_LW_DEBUG"):
         print("[lw] shape", [(len(words[j]), words[j][:1] in "AEIOU", words[j][-1:] in "AEIOUY") for j in ws_idx], file=sys.stderr)
-    if any(not c_ for c_ in cands):
+    if on is None and any(not c_ for c_ in cands):
         return dict(error='no candidate time for some word', log=log)
-    ev = LC._events(v16, LY.SR)
-    if os.environ.get("JUDGE_LW_DEBUG"):
+    ev = LC._events(v16, LY.SR) if on is None else None
+    if os.environ.get("JUDGE_LW_DEBUG") and on is None:
         print("[lw] cands", [[x if not isinstance(x, tuple) else ("a", round(x[1], 2)) for x in c_] for c_ in cands], "events", [(round(t, 2), round(x, 2)) for t, x in ev], file=sys.stderr)
-    pick = LC.assign(cands, [t for t, _ in ev], [x for _, x in ev], gaps=list(LC._GAPS)) if ev else None
+    pick = (LC.assign(cands, [t for t, _ in ev], [x for _, x in ev], gaps=list(LC._GAPS)) if ev else None) if on is None else on
     if pick is None:
         return dict(error='no monotone word assignment', log=log)
     on = [float(p) for p in pick]
@@ -1878,6 +1980,8 @@ def lyric_word_timing(path, intro_end, lrc_id, m_start, speed, entries=None):
         # 0.865 -> 0.867, 3.26 -> 3.267 = the frame jumps); the frame detector is the fallback without a plan
         fps_ = ffprobe(path)[2]
         swaps, src = [math.ceil(float(x) * fps_ - 1e-6) / fps_ for x in entries], 'plan'
+    if keyed and swaps:
+        return _keyed_rows(swaps, on, [wkeys[j] for j in ws_idx], entry_wk, intro_end, src, ink_end, log)
     # entries -> words: monotone, cost |ink - (onset - lead)|; a skipped word right after the previous entry's word
     # (<= 0.35 s) rides in that item (a merged pair), otherwise it is a dropped word
     n, m = len(swaps), len(on)
@@ -1994,7 +2098,8 @@ def measure(path, plan=None, vocals=True):
         try:
             C['lyric_words'] = lyric_word_timing(path, intro_end or (max(w['t'] for w in words) + 1.0), plan['lrc_id'],
                                                  float(plan['music_start']), plan.get('speed') or 1.0,
-                                                 entries=plan.get('item_t0'))
+                                                 entries=plan.get('item_t0'), entry_wk=plan.get('item_wk'),
+                                                 entry_sung=plan.get('item_sung'))
         except Exception as e:  # noqa: BLE001
             print('[judge_slowmo] lyric word timing failed:', repr(e)[:200], file=sys.stderr)
     if vocals and words and os.environ.get('JUDGE_LYRIC_IDENTITY', '1') != '0':
