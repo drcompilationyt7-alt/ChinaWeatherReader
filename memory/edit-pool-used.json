@@ -260,6 +260,11 @@
    "used_at": "2026-11-08T15:00:32Z",
    "video": "sound-impact-short.mp4",
    "role": "short"
+  },
+  "slowmo/summer_glow/sound/ruth_b_dandelions@v1": {
+   "used_at": "2026-11-09T11:54:43Z",
+   "video": "slowmo-summer_glow-short.mp4",
+   "role": "short"
   }
  },
  "moments": {},
@@ -510,6 +515,45 @@
      "c_zkIp0_aWmR0_21900",
      "c_P5T4BvAopWk_17900",
      "c_hoswnzkvhdI_208800"
+    ]
+   },
+   {
+    "at": "2026-11-09T11:54:43Z",
+    "video": "slowmo-summer_glow-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_RVDy_c27AtY_26400",
+     "c_KyVN14u4pvo_33700",
+     "c_W1uBeTXPcZA_43100",
+     "c__nAObEu6UJc_75500",
+     "c_ez6kAVRkI50_24600",
+     "c_ld1hJRg2vtw_100",
+     "c_IvK62Isjc5s_17800",
+     "c_RVDy_c27AtY_31100",
+     "c_gh8moSuawPc_86400",
+     "c_j7YiygBQHY0_36400",
+     "c_gHCaoA0bzFk_41100",
+     "c_ISOIATL26Fo_259600",
+     "c_djXtjnXDRl4_22800",
+     "c_Hv9G5ZCCfnk_383500",
+     "c_Hw3j0cStHmk_88600",
+     "c_56jgd7Nxq1g_18600",
+     "c_8oEl3n5xyAM_87300",
+     "c_c4I2rbIWhU8_45100",
+     "c_UZUoCqfeh8U_112750",
+     "c_NVBFIjU2I8E_54100",
+     "c_KyVN14u4pvo_17700",
+     "c_Sgk1qFYrd0I_10000",
+     "c_56jgd7Nxq1g_111000",
+     "c_W1uBeTXPcZA_38100",
+     "c_kHDNcNTg6Ac_77600",
+     "c_k6iLTkCGI8k_5200",
+     "c_z-sGoBx0XMY_71100",
+     "c_IHh-6W5jgXw_142000",
+     "c_lvQvbDJC4PU_13800",
+     "c_8BeEF89HTZM_61000",
+     "c_ZK9RxMzGgQk_166500",
+     "c_YEcxGMrIngQ_41100"
     ]
    }
   ]

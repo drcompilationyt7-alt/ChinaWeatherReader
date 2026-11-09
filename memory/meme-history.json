@@ -2515,6 +2515,80 @@
     119.801,
     147.217
    ]
+  },
+  {
+   "videoId": "RvdZSfTjNjQ",
+   "url": "https://www.youtube.com/watch?v=RvdZSfTjNjQ",
+   "postedAt": "2026-11-09T11:54:43.057Z",
+   "publishAt": "2026-11-09T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Dandelions",
+   "theme": "anime",
+   "emoji": "✨,⚡",
+   "title": "dandelions but it's anime ✨",
+   "clipIds": [
+    "c_56jgd7Nxq1g_111000",
+    "c_56jgd7Nxq1g_18600",
+    "c_8BeEF89HTZM_61000",
+    "c_8oEl3n5xyAM_87300",
+    "c_Hv9G5ZCCfnk_383500",
+    "c_Hw3j0cStHmk_88600",
+    "c_IHh-6W5jgXw_142000",
+    "c_ISOIATL26Fo_259600",
+    "c_IvK62Isjc5s_17800",
+    "c_KyVN14u4pvo_17700",
+    "c_KyVN14u4pvo_33700",
+    "c_NVBFIjU2I8E_54100",
+    "c_RVDy_c27AtY_26400",
+    "c_RVDy_c27AtY_31100",
+    "c_Sgk1qFYrd0I_10000",
+    "c_UZUoCqfeh8U_112750",
+    "c_W1uBeTXPcZA_38100",
+    "c_W1uBeTXPcZA_43100",
+    "c_YEcxGMrIngQ_41100",
+    "c_ZK9RxMzGgQk_166500",
+    "c__nAObEu6UJc_75500",
+    "c_c4I2rbIWhU8_45100",
+    "c_djXtjnXDRl4_22800",
+    "c_ez6kAVRkI50_24600",
+    "c_gHCaoA0bzFk_41100",
+    "c_gh8moSuawPc_86400",
+    "c_j7YiygBQHY0_36400",
+    "c_k6iLTkCGI8k_5200",
+    "c_kHDNcNTg6Ac_77600",
+    "c_ld1hJRg2vtw_100",
+    "c_lvQvbDJC4PU_13800",
+    "c_z-sGoBx0XMY_71100"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 42.333,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 1188.4,
+     "watermark_short": 93.6,
+     "total": 1282
+    },
+    "attempts": 5
+   },
+   "onVideoTitle": "dandelions anime edit",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "minimal",
+    "titleStyle": "song-anime",
+    "ovStyle": "ov-kw",
+    "descHook": "kw-line",
+    "titlePattern": "{song} but it's anime {e}",
+    "titleMode": "explore"
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "ruth_b_dandelions@v1",
+   "songSection": [
+    167.76,
+    208.71
+   ]
   }
  ]
 }
