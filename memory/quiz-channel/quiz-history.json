@@ -2559,6 +2559,79 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "gEZ-8dELOdE",
+   "url": "https://www.youtube.com/watch?v=gEZ-8dELOdE",
+   "postedAt": "2026-11-09T10:02:44.218Z",
+   "publishAt": "2026-11-09T13:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 555753892,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Seven.",
+     "template": null,
+     "sec": 0.68
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Fancy!",
+     "template": null,
+     "sec": 0.73
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Shine!",
+     "template": null,
+     "sec": 0.41
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis quiz 👀 #kpop",
+   "answers": [
+    "emoji:seven (jung kook)",
+    "emoji:fancy (twice)",
+    "emoji:shine (pentagon)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-pop",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "PkGisraTXb4",
+   "url": "https://www.youtube.com/watch?v=PkGisraTXb4",
+   "postedAt": "2026-11-09T10:07:49.012Z",
+   "publishAt": "2026-11-10T01:00:00.000Z",
+   "format": "trivia",
+   "theme": "food",
+   "seed": 48297194,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "trivia-llm",
+   "title": "asian food quiz: can you get 3/3 💜 #asianfood",
+   "answers": [
+    "trivia:which country is kimchi from?",
+    "trivia:what is a popular japanese dish of vinegared rice?",
+    "trivia:which spicy sichuan chinese dish features tofu and chili oil?"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=pcC2sSKxuYQ",
-      "title": "guess the kpop idol 🔥 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-10T08:40:14.468Z",
-      "videoId": "pcC2sSKxuYQ",
-      "category": "quiz-idol",
-      "titleSource": "idol-casual",
-      "quizFormat": "idol",
-      "quizTheme": "kpop"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=RDyjt6LO7es",
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
       "country": "Global",
@@ -538,6 +527,28 @@
       "titleSource": "silhouette-llm",
       "quizFormat": "silhouette",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=gEZ-8dELOdE",
+      "title": "guess the kpop song from emojis quiz 👀 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-09T10:02:44.491Z",
+      "videoId": "gEZ-8dELOdE",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-llm",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=PkGisraTXb4",
+      "title": "asian food quiz: can you get 3/3 💜 #asianfood",
+      "country": "Global",
+      "postedAt": "2026-11-09T10:07:49.269Z",
+      "videoId": "PkGisraTXb4",
+      "category": "quiz-trivia",
+      "titleSource": "trivia-llm",
+      "quizFormat": "trivia",
+      "quizTheme": "food"
     }
   ]
 }
