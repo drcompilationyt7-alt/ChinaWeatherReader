@@ -158,6 +158,20 @@ def lib_show(anime):
 CHARFIX_DAY = '2026-11-08'
 
 
+def window_detail(w):
+    """One line on why a candidate window failed, kept in the state so a review can say exactly why (owner 2026-11-10:
+    'u need good reason on why it doesn't allow')."""
+    r = w.get('reject')
+    span = f"{w.get('s', 0):.1f}-{w.get('e', 0):.1f}s"
+    if r == 'character':
+        m = w.get('match') or {}
+        return (f"{span} character: target won {m.get('wins')}/{m.get('votes')} voting frames (conf {w.get('conf')}, needs 0.6),"
+                f" others {m.get('others')}")[:240]
+    if r == 'name_sting':
+        return f"{span} editor name on screen: {'; '.join(map(str, (w.get('sting') or [])[:2]))}"[:240]
+    return f'{span} {r}'
+
+
 def charfix_retry(v):
     """A library edit the character gate rejected before the tag fix (2a46cac, 2026-11-07: Yor / Zero Two / Rem / Sukuna ...
     had 1-picture banks): evaluated once more when a search finds it again; the new verdict carries a later date."""
@@ -753,7 +767,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         done = {sid for sid, v in st['sources'].items()
                 if v.get('status') in ('staged', 'reviewed', 'rejected')
                 or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))
-                    and not charfix_retry(v))}
+                    and not charfix_retry(v) and not v.get('retry'))}   # 'retry': a reject a review flagged (a gate bug)
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
         log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, {len(q)} searches')
         try:
@@ -792,8 +806,9 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             if res['verdict'] != 'ok':
                 _rm(res.get('path'))
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': res.get('why') or 'no_window', 'entry': skey,
-                                            'lib': True, 'at': time.strftime('%Y-%m-%d'),
-                                            'windows': [w.get('reject') for w in (res.get('windows') or [])[:6]]}
+                                            'lib': True, 'at': time.strftime('%Y-%m-%d'), 'title': (res.get('title') or '')[:120],
+                                            'windows': [w.get('reject') for w in (res.get('windows') or [])[:6]],
+                                            'detail': [window_detail(w) for w in (res.get('windows') or [])[:6]]}
                 continue
             staged, marks = [], []
             for w in sorted(res.get('passed') or [res['window']], key=lambda w: w['s']):

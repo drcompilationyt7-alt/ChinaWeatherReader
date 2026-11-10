@@ -88,7 +88,10 @@ while ($true) {
   $plan = @(& $Py core/edit/ranking_pool.py plan-shows --focus $Focus 2>$null | ForEach-Object {
       if ($_ -match '^\s*[\d.]+\s+(.+?)\s{2,}cast') { $Matches[1].Trim().ToLower() } })
   if ($plan.Count -eq 0) { Say 'no plan (offline?): waiting 30 min'; Start-Sleep -Seconds 1800; continue }
-  $shows = @(0..($ShowsPerCycle - 1) | ForEach-Object { $plan[($k * $ShowsPerCycle + $_) % $plan.Count] }) | Select-Object -Unique
+  # the rotation advances ONE show per cycle (2026-11-10: a cycle's time budget only ever reached its first show, so with
+  # k * ShowsPerCycle every second show of the plan - eminence in shadow, dragon ball super, overlord ... - was never mined);
+  # the next show rides along in case the first one finishes early
+  $shows = @(0..($ShowsPerCycle - 1) | ForEach-Object { $plan[($k + $_) % $plan.Count] }) | Select-Object -Unique
   $k++
   Set-Content -Path $StateF -Value $k -Encoding ascii
 

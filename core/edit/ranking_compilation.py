@@ -1076,7 +1076,9 @@ def title_names(title, entries):
     """The entries a title names (owner 2026-11-01: 'if the title names a character, trust the edit is about that person;
     the others in it just back them up')."""
     t = unicodedata.normalize('NFKC', title or '')
-    return [e for e in entries if any(re.search(a, t, re.I) for a in e.get('alias') or [])]
+    # 'Sung Jin-Woo' must match the aliases 'jinwoo' / 'jin woo' (2026-11-10: a hyphenated name lost its title trust)
+    ts = {t, re.sub(r'(?<=\w)-(?=\w)', '', t), re.sub(r'(?<=\w)-(?=\w)', ' ', t)}
+    return [e for e in entries if any(re.search(a, x, re.I) for a in e.get('alias') or [] for x in ts)]
 
 
 def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6, pre=None):
