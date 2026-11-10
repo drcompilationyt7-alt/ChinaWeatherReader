@@ -1371,7 +1371,7 @@ def sting_ratio(text, keys):
     return best
 
 
-def sting_scan(path, t0, t1, res, step=0.1, cache=None):
+def sting_scan(path, t0, t1, res, step=0.1, cache=None, times=None):
     """Dense full-resolution OCR of [t0, t1] (the editor's name sting lasts 0.15-0.4 s: 2 fps OCR and even 0.5 s steps miss
     it; 2026-10-27: PJUNKIE read at 26.08-26.20 s only, HENZUMA at 21.25 s only, SANCHEZ at 20.05 / 20.35 s). -> reasons (empty =
     clean): one clear name match (ratio >= 0.75, handle, tag word) or >= 2 loose ones (ratio >= 0.6 against the channel /
@@ -1405,6 +1405,8 @@ def sting_scan(path, t0, t1, res, step=0.1, cache=None):
                     loose.append((i / fps, tx))
         i += 1
     cap.release()
+    if times is not None:   # every flash time (not just the 3 reported): the window search steps around all of them
+        times.extend(round(t, 2) for t, _ in (strong or (loose if len(loose) >= 2 else [])))
     if strong:
         return [f'name / tag "{tx}" at {t:.1f}s' for t, tx in strong[:3]]
     if len(loose) >= 2:
@@ -1760,10 +1762,11 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                 w['reject'] = g['why']
                 return False
         if os.environ.get('RANKING_STING', '1') != '0':
-            marks = sting_scan(path, w['s'], w['e'], res, cache=res.setdefault('_sting', {}))
+            st_t = []
+            marks = sting_scan(path, w['s'], w['e'], res, cache=res.setdefault('_sting', {}), times=st_t)
             if marks:
                 w['reject'] = 'name_sting'
-                w['sting'] = marks
+                w['sting'], w['sting_t'] = marks, st_t
                 return False
         if cast:
             w['cast_runs'], w['cast_gaps'] = {}, {}
@@ -1803,6 +1806,28 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
                     break
                 try_window(w)
             wins += extra
+    # a window that failed on an editor-name flash the 2 fps text gate missed (name_sting): the edit usually has a clean
+    # stretch before / after it. Owner 2026-11-10 asked to blur the name instead -> no (hiding the creator's name =
+    # DMCA 1202 + the editor's strike risk): the flash times join `skip` and the windows around them are tried (up to 3
+    # rounds: a new window may hit another flash). Short edits (<= 45 s) may give 12 s sections here too.
+    for _ in range(3):
+        if len(passed) >= max_pass:
+            break
+        new_t = {t for w in wins for t in w.get('sting_t', ())} - set(skip)
+        if not new_t:
+            break
+        skip = sorted(set(skip) | new_t)
+        seen = {(w['s'], w['e']) for w in wins}
+        extra = [w for w in mkwins(lo) if (w['s'], w['e']) not in seen]
+        if not extra:
+            break
+        extra.sort(key=lambda w: -w['quality'])
+        for w in extra:
+            if len(passed) >= max_pass:
+                break
+            w['around_sting'] = True
+            try_window(w)
+        wins += extra
     res['windows'] = wins
     res.pop('_ana', None)
     res.pop('_sting', None)

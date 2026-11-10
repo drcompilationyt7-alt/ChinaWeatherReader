@@ -172,6 +172,16 @@ def window_detail(w):
     return f'{span} {r}'
 
 
+STINGFIX_DAY = '2026-11-11'
+
+
+def stingfix_retry(v):
+    """A library edit rejected only because its windows hit an editor-name flash, before the miner learned to cut around
+    the flash (2026-11-10, ranking_compilation.evaluate): evaluated once more when a search finds it again."""
+    return (v.get('status') == 'gate_reject' and v.get('lib') and str(v.get('at') or '') < STINGFIX_DAY
+            and 'name_sting' in (v.get('windows') or []))
+
+
 def charfix_retry(v):
     """A library edit the character gate rejected before the tag fix (2a46cac, 2026-11-07: Yor / Zero Two / Rem / Sukuna ...
     had 1-picture banks): evaluated once more when a search finds it again; the new verdict carries a later date."""
@@ -767,7 +777,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         done = {sid for sid, v in st['sources'].items()
                 if v.get('status') in ('staged', 'reviewed', 'rejected')
                 or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))
-                    and not charfix_retry(v) and not v.get('retry'))}   # 'retry': a reject a review flagged (a gate bug)
+                    and not charfix_retry(v) and not stingfix_retry(v) and not v.get('retry'))}   # 'retry': a review flagged it
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
         log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, {len(q)} searches')
         try:
