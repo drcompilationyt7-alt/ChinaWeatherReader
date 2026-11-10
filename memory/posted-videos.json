@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=2ETGsUNONIc",
-      "title": "odoriko acapella but the drums kick in 🗿🔥",
-      "country": "Global",
-      "postedAt": "2026-10-11T09:33:05.170Z",
-      "videoId": "2ETGsUNONIc",
-      "category": "meme-japanese",
-      "titleSource": "odoriko"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=3T6t4OoiFK4",
       "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "RvdZSfTjNjQ",
       "category": "edit-slowmo",
       "titleSource": "Dandelions"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=HVrCvZklZ7Y",
+      "title": "yoru ni kakeru acapella but beat drops 💿",
+      "country": "Global",
+      "postedAt": "2026-11-10T10:43:49.265Z",
+      "videoId": "HVrCvZklZ7Y",
+      "category": "meme-japanese",
+      "titleSource": "yoru ni kakeru"
     }
   ]
 }

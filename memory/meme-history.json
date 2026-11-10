@@ -2589,6 +2589,59 @@
     167.76,
     208.71
    ]
+  },
+  {
+   "videoId": "HVrCvZklZ7Y",
+   "url": "https://www.youtube.com/watch?v=HVrCvZklZ7Y",
+   "postedAt": "2026-11-10T10:43:49.261Z",
+   "publishAt": "2026-11-10T12:00:00.000Z",
+   "song": "yoru ni kakeru",
+   "theme": "japanese",
+   "emoji": "💿,✨",
+   "title": "yoru ni kakeru acapella but beat drops 💿",
+   "clipIds": [
+    "9r_LWmw4gok",
+    "MWtVpwKeFRg",
+    "REfW9POtXzw",
+    "9RGCf7J6gPs",
+    "Fsypuuwt39k",
+    "i6EETGckaUo",
+    "T7b4hz3bAMY",
+    "aEiVvyojCQY"
+   ],
+   "clipChannels": [
+    "NHK",
+    "REAL AKIBA BOYZ",
+    "TATATAN",
+    "YOASOBI",
+    "hiro's",
+    "pratama putra",
+    "yoasobi fanclub YOA'S",
+    "びりんだ"
+   ],
+   "clipSource": "YOASOBI",
+   "settings": {
+    "drop": 14,
+    "edit": 6,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-beat-drop"
+   },
+   "onVideoTitle": "just yoasobi vocals",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "music",
+    "hashtagSet": "minimal",
+    "titleStyle": "op-stem-stack",
+    "ovStyle": "op-ov-layer-stage",
+    "descHook": "op-desc-beat-drop",
+    "titlePattern": "{song} acapella but beat drops {e}",
+    "titleMode": "explore"
+   },
+   "why": "thompson + insights (bonus +1.47)",
+   "whyMode": "insight-driven",
+   "bpm": 129.98,
+   "titlePattern": "{song} acapella but beat drops {e}"
   }
  ]
 }
