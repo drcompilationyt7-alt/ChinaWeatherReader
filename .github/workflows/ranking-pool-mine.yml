@@ -71,7 +71,7 @@ env:
 jobs:
   mine:
     if: vars.RANKING_MINE != 'off'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 300
     permissions:
       contents: write

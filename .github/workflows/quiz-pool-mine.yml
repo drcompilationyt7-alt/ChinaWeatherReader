@@ -63,7 +63,7 @@ env:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       shards: ${{ steps.s.outputs.shards }}
@@ -78,7 +78,7 @@ jobs:
 
   mine:
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 135     # per shard; the two run one after the other (2 x 135 + plan + stage 20 = inside 5 h)
     env:
       QUIZ_MINE_SCALE: '2'
@@ -154,7 +154,7 @@ jobs:
   publish:
     needs: [plan, mine]
     if: ${{ !cancelled() && needs.plan.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write

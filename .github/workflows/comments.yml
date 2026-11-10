@@ -19,7 +19,7 @@ permissions:
 concurrency: comments
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       YT_ZERO_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}

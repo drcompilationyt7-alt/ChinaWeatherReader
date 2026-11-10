@@ -61,7 +61,7 @@ env:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
       go: ${{ steps.need.outputs.go }}
@@ -91,7 +91,7 @@ jobs:
   mine:
     needs: plan
     if: needs.plan.outputs.go == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 270     # hard cap (plan 15 + mine 270 + publish 20 < 5 h with margin; budget 240 + install)
     strategy:
       max-parallel: 1
@@ -151,7 +151,7 @@ jobs:
   publish:
     needs: [plan, mine]
     if: ${{ !cancelled() && needs.plan.outputs.go == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write

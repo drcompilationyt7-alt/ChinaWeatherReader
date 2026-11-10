@@ -32,7 +32,7 @@ permissions:
 
 jobs:
   upload:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       YOUTUBE_CLIENT_ID: ${{ secrets.CHINA_YOUTUBE_CLIENT_ID }}

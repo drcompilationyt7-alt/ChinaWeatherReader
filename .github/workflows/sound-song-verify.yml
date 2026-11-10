@@ -29,7 +29,7 @@ env:
 
 jobs:
   list:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       songs: ${{ steps.s.outputs.songs }}
     steps:
@@ -54,7 +54,7 @@ jobs:
   render:
     needs: list
     if: needs.list.outputs.songs != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
       fail-fast: false

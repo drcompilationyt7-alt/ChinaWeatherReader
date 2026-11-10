@@ -89,7 +89,7 @@ env:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       go: ${{ steps.gate.outputs.go }}
@@ -121,7 +121,7 @@ jobs:
   calibrate:
     needs: plan
     if: inputs.calibrate == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 150
     strategy:
       fail-fast: false
@@ -153,7 +153,7 @@ jobs:
   calibrate-summary:
     needs: calibrate
     if: ${{ always() && inputs.calibrate == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -173,7 +173,7 @@ jobs:
   mine:
     needs: plan
     if: needs.plan.outputs.go == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 235     # hard cap. 2026-10-24: mine 235 + swap 60 + pick/plan ~2 = inside the 5 h nightly; mining is TIME-BASED
     strategy:
       max-parallel: 1
@@ -251,7 +251,7 @@ jobs:
   swap:
     needs: [plan, mine]
     if: ${{ !cancelled() && needs.plan.outputs.go == 'true' && (needs.mine.result == 'success' || needs.mine.result == 'failure') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60      # hard cap; sharpening is bounded to 20 min so staging always finishes (inside the 5 h nightly)
     permissions:
       contents: write
@@ -354,7 +354,7 @@ jobs:
   import:
     needs: plan
     if: inputs.import_tars != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: write
