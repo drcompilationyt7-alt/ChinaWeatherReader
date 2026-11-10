@@ -2632,6 +2632,116 @@
     "titleStyle": "op-exact-search",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "g3YGVvh7IaE",
+   "url": "https://www.youtube.com/watch?v=g3YGVvh7IaE",
+   "postedAt": "2026-11-10T19:24:19.538Z",
+   "publishAt": "2026-11-10T13:00:00.000Z",
+   "format": "city",
+   "theme": "CN",
+   "seed": 209918173,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Spot the Chinese city right now!",
+     "template": "Spot the Chinese city right now!",
+     "sec": 1.73
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Hong Kong.",
+     "template": null,
+     "sec": 0.94
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Xi'an.",
+     "template": null,
+     "sec": 0.87
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Urumqi. Did you get it?",
+     "template": null,
+     "sec": 1.54
+    }
+   ],
+   "titleTemplate": "city-llm",
+   "title": "chinese map quiz: can you name 3/3? 🎧 #china",
+   "answers": [
+    "city:CN:hong kong",
+    "city:CN:xi'an",
+    "city:CN:urumqi"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "N298j3W_ld4",
+   "url": "https://www.youtube.com/watch?v=N298j3W_ld4",
+   "postedAt": "2026-11-10T19:32:23.049Z",
+   "publishAt": "2026-11-11T01:00:00.000Z",
+   "format": "opening",
+   "theme": "anime",
+   "seed": 418528316,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Drop your score in the comments!",
+     "template": null,
+     "sec": 1.9
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Erased!",
+     "template": null,
+     "sec": 1.58
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "One Piece, of course!",
+     "template": "{a}, of course!",
+     "sec": 1.38
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Hyouka!",
+     "template": null,
+     "sec": 0.56
+    }
+   ],
+   "titleTemplate": "op-3sec",
+   "title": "Guess the Anime Opening in 3 Seconds 🗺️ #anime",
+   "answers": [
+    "opening:21234",
+    "opening:21",
+    "opening:12189"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "speed",
+    "descHook": "op-score-challenge"
+   }
   }
  ]
 }
