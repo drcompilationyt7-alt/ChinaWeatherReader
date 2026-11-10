@@ -1414,6 +1414,21 @@ def sting_scan(path, t0, t1, res, step=0.1, cache=None, times=None):
     return []
 
 
+MARK_WHYS = ('handle', 'watermark_mean', 'watermark', 'logo')
+
+
+def keep_marks(res):
+    """Owner 2026-11-10 ('either blur it or just keep it no matter' -> 'we prioritise cutting but if we can't we keep the
+    tag'; goal: more clips per download): an editor's mark that sits on the whole edit (burned-in handle, watermark, logo)
+    cannot be cut around, so the edit is kept with it (never blurred: hiding the creator's name = DMCA 1202 + strike
+    risk). The mark is recorded (kept_mark) for the review. RANKING_KEEP_MARKS=0 restores the old reject."""
+    if (res.get('verdict') == 'reject' and res.get('why') in MARK_WHYS
+            and os.environ.get('RANKING_KEEP_MARKS', '1') != '0'):
+        res = dict(res, verdict='clean', kept_mark=res['why'])
+        res.pop('why', None)
+    return res
+
+
 def text_gate(path, info):
     """Watermark / handle / logo / persistent overlay gate (no models). The OCR results are cached per
     source (cache/tg/<id>.json next to src/): a rejected edit is not decoded again; a clean one is only
@@ -1423,9 +1438,9 @@ def text_gate(path, info):
         c = json.load(open(cp, encoding='utf-8'))
         c['_txt']['per_t'] = {float(k): [(t, b) for t, b in v] for k, v in c['_txt']['per_t'].items()}
         c['path'] = path
-        return c                      # frames are decoded lazily in evaluate() (low-memory mode)
+        return keep_marks(c)          # frames are decoded lazily in evaluate() (low-memory mode)
     try:
-        res = _text_gate(path, info)
+        res = keep_marks(_text_gate(path, info))
     except Exception as ex:  # noqa: BLE001  (one bad candidate never kills the run)
         log(f'{info.get("id")}: text gate failed: {type(ex).__name__}: {ex}')
         return {'id': info['id'], 'title': info.get('title'), 'path': path, 'verdict': 'reject',
@@ -1611,16 +1626,21 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         # owner 2026-11-01 (a 26 s 'Alisa - ESPRESSO [Edit/AMV]'): a short edit is used straight out of the box, nearly whole
         lo, hi = 0.5, dur - 0.5
     ana = ana if ana is not None else decode(path)
+    lo0, hi0 = lo, hi
     tags, lo, hi = editor_tags(txt, res, ana, dur, lo, hi)
     res['editor_tags'] = tags
+    if hi <= lo and os.environ.get('RANKING_KEEP_NAMES', '1') != '0':
+        lo, hi = lo0, hi0             # the editor's tags fill the edit: keep them (owner 2026-11-10), windows still avoid them first
+        res['name_kept'] = True
     if hi <= lo:
         res.update(verdict='reject', why='editor_tag', windows=[], quality=0, conf=0, match=None)
         res.pop('_ana', None)
         return res
     seg = seg_len if isinstance(seg_len, tuple) else (RS.SEG_MIN, min(RS.SEG_MAX, seg_len or RS.SEG_MAX))
+    seg_hi = seg[1]
     seg = (seg[0], min(seg[1], (dur - 1.0) if dur <= SHORT_EDIT_S else MAX_SHARE * dur))
     if dur <= SHORT_EDIT_S:   # owner refs are 9-60 s: a short edit gives one section of 12 s .. the whole edit (- 1 s)
-        seg = (SHORT_SEC_MIN, max(SHORT_SEC_MIN, min(RS.SEG_MAX, dur - 1.0)))   # under 13 s: nothing fits (too short)
+        seg = (SHORT_SEC_MIN, max(SHORT_SEC_MIN, min(seg_hi, dur - 1.0)))   # under 13 s: nothing fits (too short)
     # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))
@@ -1628,7 +1648,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     avoid = [float(x) for a_, b_ in AVOID.get(res.get('id'), ()) for x in np.arange(a_, b_ + 0.01, 0.5)]
     skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags} | set(avoid))
     def mkwins(lo_, k=24):
-        ws = RS.phrase_windows(v, a, lo_, hi, seg=seg, k=k, skip=skip) if hi - lo_ >= seg[0] else []
+        ws = (RS.phrase_windows(v, a, lo_, hi, seg=seg, target=0.5 * (seg[0] + seg[1]), k=k, skip=skip)
+              if hi - lo_ >= seg[0] else [])
         pop_, song_ = RS.song_popularity(res.get('_info') or {}, all_infos)
         txt_t = np.array(sorted(txt['per_t']))
         txt_cov = (np.array([sum((b[2] - b[0]) * (b[3] - b[1]) for _, b in txt['per_t'][t]) for t in txt_t])
@@ -1671,6 +1692,7 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return [lab_cache[t] for t in ts], None
 
     passed = []
+    keep_names = [False]   # the last resort below: windows with an editor-name flash pass (the name stays)
     # owner 2026-11-01: 'if the title names the character, trust the edit is about that person' (a character entry: the
     # who-owns-the-window gates are skipped; safety, rating, quality and the reference gate still apply)
     trusted = entry.get('kind') != 'anime' and bool(title_names(res.get('title'), [entry]))
@@ -1765,9 +1787,11 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             st_t = []
             marks = sting_scan(path, w['s'], w['e'], res, cache=res.setdefault('_sting', {}), times=st_t)
             if marks:
-                w['reject'] = 'name_sting'
                 w['sting'], w['sting_t'] = marks, st_t
-                return False
+                if not keep_names[0]:
+                    w['reject'] = 'name_sting'
+                    return False
+                w['name_kept'] = True   # owner 2026-11-10: no clean cut fits -> the editor's name stays (never blurred)
         if cast:
             w['cast_runs'], w['cast_gaps'] = {}, {}
             w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'], gaps=w['cast_gaps'])
@@ -1828,6 +1852,21 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             w['around_sting'] = True
             try_window(w)
         wins += extra
+    # owner 2026-11-10 "we prioritise cutting but if we can't we keep the tag" (more clips per download): no clean section
+    # at all -> the windows that only failed on a name flash, and the windows the name seconds blocked, pass with the
+    # editor's name in them (flagged name_kept for the review)
+    if not passed and os.environ.get('RANKING_KEEP_NAMES', '1') != '0':
+        keep_names[0] = True
+        skip = sorted(set(avoid))            # review-flagged spans stay out; the editor-name seconds no longer do
+        seen = {(w['s'], w['e']) for w in wins}
+        fresh = sorted([w for w in mkwins(lo) if (w['s'], w['e']) not in seen], key=lambda w: -w['quality'])
+        retry = sorted([w for w in wins if w.get('reject') == 'name_sting'], key=lambda w: -w['quality'])
+        for w in retry + fresh:
+            if len(passed) >= max_pass:
+                break
+            w.pop('reject', None)
+            try_window(w)
+        wins += fresh
     res['windows'] = wins
     res.pop('_ana', None)
     res.pop('_sting', None)

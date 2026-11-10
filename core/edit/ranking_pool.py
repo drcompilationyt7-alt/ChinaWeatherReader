@@ -51,7 +51,8 @@ import ranking_topics as RT  # noqa: E402
 
 PUB_MAX_MB = 1800             # one staging tar stays under the release's 2 GiB per-file limit
 MARGIN = 1.5                 # s kept on each side of the chosen window (re-cut room), the rest of the edit is never stored
-SEG = (18.0, 24.0)           # phrase-aligned window per entry (3 revealed entries ~ 60 s)
+SEG = (12.0, 20.0)           # phrase-aligned window per entry; owner 2026-11-10 "we dont need super long ones" (was 18-24 s):
+                             # 3-5 entries per video, and a short section fits between an edit's name flashes
 SECTIONS = 4                 # good non-overlapping sections staged per edit (owner 2026-10-28)
 LIB_SECTIONS = 6             # library mining: every good section of a whole edit (owner 2026-10-31)
 REUSE_GAP = 8                # an edit (source) is not reused within the next 8 ranking uploads
@@ -176,10 +177,13 @@ STINGFIX_DAY = '2026-11-11'
 
 
 def stingfix_retry(v):
-    """A library edit rejected only because its windows hit an editor-name flash, before the miner learned to cut around
-    the flash (2026-11-10, ranking_compilation.evaluate): evaluated once more when a search finds it again."""
-    return (v.get('status') == 'gate_reject' and v.get('lib') and str(v.get('at') or '') < STINGFIX_DAY
-            and 'name_sting' in (v.get('windows') or []))
+    """A library edit rejected for an editor's mark before 2026-11-10 (owner: 'we prioritise cutting but if we can't we
+    keep the tag'): a name flash in its windows (now cut around / kept), a burned-in handle / watermark / logo on the whole
+    edit, tags filling the edit, a mark in the cut window (all kept now). Evaluated once more when a search finds it
+    again."""
+    return (v.get('status') == 'gate_reject' and str(v.get('at') or '') < STINGFIX_DAY   # per-entry era rejects too
+            and ('name_sting' in (v.get('windows') or [])
+                 or v.get('why') in ('handle', 'watermark_mean', 'watermark', 'logo', 'editor_tag', 'window_mark')))
 
 
 def charfix_retry(v):
@@ -829,14 +833,20 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {}, 'cast_runs': w.get('cast_runs') or {},
                          'cast_gaps': w.get('cast_gaps') or {},
                          'serves': [entry_key(c) for c in mains] + [skey]}
+                # owner 2026-11-10 "we prioritise cutting but if we can't we keep the tag": the review sees what was kept
+                kept = [x for x in (res.get('kept_mark'), 'name' if (w.get('name_kept') or res.get('name_kept')) else None) if x]
+                if kept:
+                    extra['kept_marks'] = kept
                 try:
                     it = stage_item(res, e, entry_key(e), sd, RC, w, extra)
                 except Exception as ex:  # noqa: BLE001
                     log(f'{res.get("id")}: staging {w["s"]:.1f}s failed: {type(ex).__name__}: {ex}')
                     continue
-                if it.get('window_marks'):
+                if it.get('window_marks') and os.environ.get('RANKING_KEEP_MARKS', '1') == '0':
                     marks += it['window_marks'][:3]
                     continue
+                if it.get('window_marks'):
+                    it['kept_marks'] = list(dict.fromkeys((it.get('kept_marks') or []) + ['window_mark']))
                 man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
                 staged.append(it['id'])
                 for k in extra['serves']:
