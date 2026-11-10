@@ -114,10 +114,27 @@ function templatesOf(f) {
   return (f.templates || []).map(t => ({ ...t, style: t.style || quizStyleOf(t.id) }));
 }
 
-function renderEmoji(arm, vars, rng) {
+// Emoji that name a genre go only on videos of that genre (2026-11-10: the W45 quiz arm op-topic-quiz drew 🎧 for a map quiz
+// and 🗺️ for an anime-opening quiz). Used for the quiz pools only (hay = the quiz's format / keyword / topic text).
+const GENRE_EMOJI = [
+  { set: ['🗺', '🌍', '🌏', '🌎', '🏙', '🏛', '✈'], re: /\bmaps?\b|flag|countr|city|cities|capital|shape|geograph|landmark|travel|province/i },
+  { set: ['🎧', '🎶', '🎵', '💿', '🎤'], re: /song|opening|ending|\bost\b|music|voice|sound|audio|lyric|singer|k-?pop|idol/i },
+  { set: ['💜'], re: /k-?pop|idol|\bbts\b/i },
+];
+function genreFit(e, hay) {
+  const g = GENRE_EMOJI.find(x => x.set.includes(String(e).replace(/️/g, '')));
+  return !g || g.re.test(hay);
+}
+
+function renderEmoji(arm, vars, rng, hay = null) {
   if (!arm) return { list: [], keep: false };
   if (arm.keep) return { list: vars.topicEmoji ? [vars.topicEmoji] : [], keep: true };
-  const opts = (arm.pool || []).map(p => fill(p, vars)).filter(x => x !== null);
+  let opts = (arm.pool || []).map(p => fill(p, vars)).filter(x => x !== null);
+  if (hay !== null) {
+    // off-genre emoji leave each option; an option left empty drops out; nothing left -> the topic's own emoji
+    const fit = opts.map(o => String(o).split(',').map(s => s.trim()).filter(e => e && genreFit(e, hay)).join(',')).filter(Boolean);
+    opts = fit.length ? fit : (vars.topicEmoji ? [vars.topicEmoji] : []);
+  }
   const pick = opts.length ? pickOne(opts, rng) : '';
   return { list: String(pick).split(',').map(s => s.trim()).filter(e => e && !hasSad(e)), keep: false };
 }
@@ -406,7 +423,8 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
   const used = {};
 
   // emoji (energetic families; drawn as images next to the on-video title)
-  const em = renderEmoji(chosen.emojiSet, ctx.vars, rng);
+  const em = renderEmoji(chosen.emojiSet, ctx.vars, rng, /^quiz\//.test(pool)
+    ? [f.format, f.keyword, f.Keyword, f.topic, f.topicLabel, f.formatTags, f.hook].filter(Boolean).join(' ') : null);
   if (chosen.emojiSet) used.emojiSet = chosen.emojiSet.id;
   ctx.emojiKeep = em.keep;
   // the title carries at most the style's emoji count (the on-video image emoji keep the whole set)
