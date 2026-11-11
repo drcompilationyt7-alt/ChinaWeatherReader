@@ -761,6 +761,102 @@
     "word": "slash",
     "note": "auto (vision model) 2026-11-03 (Frieren - STARK went CRAZY AGAINST REVOLTE (Genau )"
    }
+  ],
+  "c_T8Z-AgkwL3g_66322": [
+   {
+    "t": 1.155,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-10 (Blue Eye Samurai VS Four Fangs)"
+   }
+  ],
+  "c_DQG2Ma4sedk_867010": [
+   {
+    "t": 1.4,
+    "action": "stomp",
+    "word": "stomp",
+    "note": "auto (vision model) 2026-11-10 (Hellsing Ultimate Abridged Episode 8 - Team Four S)"
+   }
+  ],
+  "c_DQG2Ma4sedk_776389": [
+   {
+    "t": 0.476,
+    "action": "gun",
+    "word": "shoot",
+    "note": "auto (vision model) 2026-11-10 (Hellsing Ultimate Abridged Episode 8 - Team Four S)"
+   }
+  ],
+  "c_A7ZZTRzKd9c_81832": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-10 (BLEACH Ichigo Kurosaki vs Yhwach Round 2 4k)"
+   }
+  ],
+  "c_mH2wmyeiIpA_152265": [
+   {
+    "t": 0.684,
+    "action": "metal",
+    "word": "impact",
+    "note": "auto (vision model) 2026-11-10 (Cyberpunk: Edgerunners | This Fffire by Franz Ferd)"
+   }
+  ],
+  "c_DQG2Ma4sedk_357387": [
+   {
+    "t": 0.338,
+    "action": "sheath",
+    "word": "stab",
+    "note": "auto (vision model) 2026-11-10 (Hellsing Ultimate Abridged Episode 8 - Team Four S)"
+   }
+  ],
+  "c_47f-C11UNBc_13230": [
+   {
+    "t": 0.493,
+    "action": "sword",
+    "word": "unsheathe",
+    "note": "auto (vision model) 2026-11-10 (Snake Takes Down Gardar | Gardar vs Snake | Vinlan)"
+   }
+  ],
+  "c_UQvmIq570dE_34185": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "stab",
+    "note": "auto (vision model) 2026-11-10 (Vinland Saga - Thors \"The Troll of Jom\" Fight Scen)"
+   }
+  ],
+  "c_UQvmIq570dE_8631": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-10 (Vinland Saga - Thors \"The Troll of Jom\" Fight Scen)"
+   }
+  ],
+  "c_UQvmIq570dE_3348": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-10 (Vinland Saga - Thors \"The Troll of Jom\" Fight Scen)"
+   }
+  ],
+  "c_5yCCTdiI_bo_96497": [
+   {
+    "t": 1.271,
+    "action": "sword",
+    "word": "draw",
+    "note": "auto (vision model) 2026-11-10 (Sakamoto All best Fighting scenes | Sakamoto days)"
+   }
+  ],
+  "c_5yCCTdiI_bo_159497": [
+   {
+    "t": 0.662,
+    "action": "sword",
+    "word": "slash",
+    "note": "auto (vision model) 2026-11-10 (Sakamoto All best Fighting scenes | Sakamoto days)"
+   }
   ]
  }
 }
