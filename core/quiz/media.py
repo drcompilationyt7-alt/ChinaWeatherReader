@@ -419,9 +419,20 @@ QCLIP_BAD = re.compile(r' (reaction|reacts?|reacting|lyric|lyrics|sub|subs|subbe
                        r'review|reviews|explained|ranking|ranked|tier list|top \d+|vs|versus|compilation|meme|memes|parody|prank|'
                        r'asmr|mukbang|nude|naked|nsfw|sexy|erotic|bikini|lingerie|gore|blood|war|accident|crash|fight|riot|protest|'
                        r'police|news|breaking|documentary|trailer|teaser|ad|advert|commercial|livestream|live stream|stream|'
-                       r'ai|ai generated|minecraft|roblox|gta|fortnite|game|gameplay|animation meme|edit|amv|mmd) ')
+                       r'ai|ai generated|minecraft|roblox|gta|fortnite|game|gameplay|animation meme|edit|amv|mmd|'
+                       # 2026-11-11: 'Chimei Innolux 4K Demo: Peking Duck' is a TV demo reel of many dishes
+                       r'demo|demo reel|showcase|screensaver|test video) ')
 QCLIP_STOP = {'the', 'and', 'of', 'a', 'an', 'in', 'on', 'at', 'to', 'with', 'for', 'video', 'clip', 'close', 'up', 'shot', 'hd', '4k',
               'footage', 'scene', 'view', 'real', 'best', 'beautiful'}
+
+
+# stock-footage previews carry the agency's watermark over the whole clip (2026-11-11: 'videoblocks' on the Shibuya reveal)
+QCLIP_STOCK = re.compile(r' (videoblocks|storyblocks|pond5|shutterstock|istock|istockphoto|getty|gettyimages|adobe stock|adobestock|'
+                         r'dreamstime|depositphotos|artgrid|envato|videohive|motion array|stock footage|stock video|footage farm) ')
+
+
+def _stock(e):
+    return bool(QCLIP_STOCK.search(_fold(e.get('title'))) or QCLIP_STOCK.search(_fold(e.get('channel') or e.get('uploader') or '')))
 
 
 def _qclip_tokens(query):
@@ -438,7 +449,8 @@ def pick_query_video(entries, query, rank=0):
     for e in entries:
         t = _fold(e.get('title'))
         d = e.get('duration') or 0
-        if not (20 <= d <= 600) or QCLIP_BAD.search(t) or '*' in str(e.get('title') or '') or (toks and f' {toks[0]} ' not in t)                 or sum(f' {w} ' in t for w in toks) < need:
+        if not (20 <= d <= 600) or QCLIP_BAD.search(t) or _stock(e) or '*' in str(e.get('title') or '') \
+                or (toks and f' {toks[0]} ' not in t) or sum(f' {w} ' in t for w in toks) < need:
             continue
         ok.append(e)
     ok.sort(key=lambda e: -(e.get('view_count') or 0) * (1.5 if re.search(r' (4k|hd|1080p|official) ', _fold(e.get('title'))) else 1.0))
@@ -457,6 +469,8 @@ def fetch_query_clip(query, seconds=10.0, rank=0):
     meta = json.load(open(meta_p, encoding='utf-8')) if os.path.exists(meta_p) else None
     if meta and meta.get('fail') and time.time() - meta.get('at', 0) < 7 * 86400:
         return None, meta['fail']
+    if meta and not meta.get('fail') and _stock(meta):   # cached before the stock-footage rule: search again
+        meta = None
     if not meta or meta.get('fail'):
         entries = _search(query, n=8)
         v = pick_query_video(entries, query, rank)
@@ -638,6 +652,8 @@ FREE_LICENCE = re.compile(r'^(cc0|cc[ -]by([ -]sa)?([ -]\d\.\d)?|public domain|p
 PHOTO_BAD = re.compile(r'\b(nude|naked|nsfw|sex|sexy|erotic|porn|bikini|lingerie|underwear|topless|breast|swimsuit|gore|corpse|dead|'
                        r'blood|war|execution|nazi|weapon|gun|protest|riot|logo|map|diagram|chart|flag|coat of arms|drawing|'
                        r'painting|poster|screenshot|svg|president|white house|senator|minister|parliament|election|campaign|'
+                       # 2026-11-11: 'Peking duck' found an ink painting of a duck
+                       r'ink|scroll|illustration|artwork|watercolou?r|woodblock|sketch|calligraphy|engraving|lithograph|cartoon|'
                        r'rally|military|army|soldier|police|funeral|wedding|hospital|accident|damage|disaster)\b', re.I)
 
 

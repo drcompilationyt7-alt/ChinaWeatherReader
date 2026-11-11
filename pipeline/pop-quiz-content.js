@@ -534,7 +534,8 @@ function genPrompt(fmt, topic, n, avoid, edition = null) {
     + 'e.g. "Tokyo", "Gojo\'s Infinity", "ramen"), "imageQueryA", "imageQueryB" (the real photo shown for that choice: '
     + '"city:<city name>" for a city, "anime:<official English title>" for a show, "character:<full name>" for an anime character, '
     + 'otherwise 2-4 plain words to search Wikimedia Commons for a real photo of the thing, e.g. "tonkotsu ramen bowl", '
-    + '"Shibuya crossing night"; never a photo of a private person), "pick" ("a" or "b": the one YOU, the narrator, would pick), '
+    + '"Shibuya crossing night"; a dish, a street or an activity IN a city gets a photo of that thing ("Peking duck roast", '
+    + '"Dotonbori street food"), never just "city:<that city>"; never a photo of a private person), "pick" ("a" or "b": the one YOU, the narrator, would pick), '
     + '"reason" (why, max 8 words, first person and playful, e.g. "The food alone." Never a statistic, percentage or claim '
     + 'about what other people or fans picked). ' + (WYR_CLIPS ? WYR_CLIP_SPEC : '') + avoidLine
     + '\nReturn JSON: {"items": [{"a": "", "b": "", "emojiA": "", "emojiB": "", "twistA": "", "twistB": "", "labelA": "", '
@@ -547,7 +548,8 @@ function genPrompt(fmt, topic, n, avoid, edition = null) {
 const WYR_CLIPS = process.env.POP_WYR_CLIPS === '1';
 const WYR_CLIP_SPEC = '"clipQueryA", "clipQueryB" (a YouTube search for a few seconds of real video of that choice, 3-6 plain '
   + 'words, the place / thing FIRST, then what happens, e.g. "London concert crowd singing", "tonkotsu ramen cooking close up", '
-  + '"Shibuya crossing night"; for an anime show or one of its characters write "anime:<official English title>" (its '
+  + '"Shibuya crossing night"; the clip shows the CHOICE itself, not its city ("Peking duck carving close up", never "Beijing '
+  + '4k"); for an anime show or one of its characters write "anime:<official English title>" (its '
   + 'opening plays); never a private person, never a fight, accident or news footage), "hype" (what the narrator shouts '
   + 'while the pick\'s clip plays, max 6 words, excited, about what is on screen, e.g. "Just look at this energy!"; never a '
   + 'statistic or a claim about what fans picked). BOTH choices must be something real video exists of (a place, a dish, '

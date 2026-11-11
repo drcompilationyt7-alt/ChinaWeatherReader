@@ -205,13 +205,19 @@ R_MIN = {'emoji': 1.9, 'trivia': 1.6, 'wyr': 2.0, 'city': 1.8, 'character': 1.9,
          'silhouette': 2.2, 'eyes': 2.5, 'outfit': 2.5}
 CLIP_AT = 0.35      # rounds without a narrator line: the card pops in, then the clip (and the countdown) starts
 CLIP_GAP = 0.25     # after a narrator line, this much silence before the clip
-CLIP_WINDOW = {'opening': 3.5, 'scene': 4.0, 'song': 3.5}  # the countdown = how long the clip plays before the reveal
+# owner 2026-11-10 (guess the song / the opening): "when u show the correct song play the opening or music video and for guessing
+# and showing give more time compared to other since listening to a longer snippet is more satisfying than a random quick snippet"
+SONG_GUESS = float(os.environ.get('POP_SONG_GUESS_SEC', '7.0'))    # song / opening: the snippet before the reveal (was 3.5 s)
+SONG_REVEAL = float(os.environ.get('POP_SONG_REVEAL_SEC', '6.0'))  # the answer's music video / opening plays on this long
+SONG_FETCH = SONG_GUESS + SONG_REVEAL + 1.0                        # seconds fetched per song / opening round
+CLIP_WINDOW = {'opening': SONG_GUESS, 'scene': 4.0, 'song': SONG_GUESS}  # the countdown = how long the clip plays before the reveal
 CLIP_FETCH = 8.5    # seconds of audio fetched per clip: the countdown plus the music under the reveal
 REVEAL_MEDIA = 3.4  # song / emoji reveals with the real song: at least this long (the music plays on)
 REVEAL_SAY_AT = 0.12  # reveal line starts this long after the reveal hit
 DUCK = 10 ** (-15 / 20)  # music under the narrator's reveal line: -15 dB
 EMOJI_MEDIA_BUDGET = 150.0  # seconds for all emoji-reveal fetches (then: plain reveals)
-CLIP_BUDGET = 300.0  # seconds for all clip fetches of a clip quiz
+CLIP_BUDGET = float(os.environ.get('POP_CLIP_BUDGET', '420'))  # seconds for all clip fetches of a clip quiz (was 300; 2026-11-11
+#                                                               the opening rounds also cut their reveal video, songs fetch 14 s)
 CARD_W, CARD_H = 580, 640
 TRIVIA_SPARES = [2, 1, 3, 2]   # trivia: spare questions in case a reveal picture cannot be fetched
 TRIVIA_PIC_AT = 0.55   # trivia reveal: seconds of the green answer before the picture of it pops in
@@ -669,6 +675,8 @@ class PopRenderer(QuizRenderer):
                     rev = max(rev, 2.6, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.0)
                 else:
                     rev = max(rev, REVEAL_MEDIA, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.8)  # then the song at full volume
+            if self.fmt in ('song', 'opening') or (self.fmt == 'emoji' and r.get('_media')):
+                rev = max(rev, SONG_REVEAL)   # owner 2026-11-10: the answer's music video / opening plays on, a longer listen
             if self.fmt == 'trivia' and r.get('_photo') is not None:   # green answer, then the picture of it
                 rev = max(rev, TRIVIA_PIC_AT + 2.3, (ans_d[i] or 0) + REVEAL_SAY_AT + 1.4)
             if self.fmt == 'wyr' and wyr_side(r):
@@ -1528,7 +1536,7 @@ class PopRenderer(QuizRenderer):
         cover = self._fit_photo(media.fetch_image(r['cover']), 0.0) if r.get('cover') else None
         ans, _ = self._answer_pill(r['title'])
         sub = text_layer(str(r.get('year') or '').upper() or 'ANIME OPENING', 46, fill=self.accent, stroke=6, max_w=900)
-        return {'cover': cover, 'answer': ans, 'sub': sub, 'bands': self._spectrum(r['_audio'])}
+        return {'cover': cover, 'answer': ans, 'sub': sub, 'bands': self._spectrum(r['_audio']), **self._media_layers(r, 940, 540)}
 
     # ── song: the hook on a spinning record, then the music video / opening plays on ──
     def _prep_song(self, r):
@@ -1797,7 +1805,9 @@ class PopRenderer(QuizRenderer):
             self._timer(frame, i, tl, q, y=1345)
         else:
             rt = tl - q
-            if L['cover'] is not None:
+            if 'vsize' in L:   # the opening's own footage, in sync with its music (frames from the countdown's length in)
+                self._draw_media(frame, i, L, rt, cx, cy + 50, t0=q - lead)
+            elif L['cover'] is not None:
                 card = self._photo_card()
                 ph = L['cover'].convert('RGBA')
                 ph.putalpha(self._photo_mask)
@@ -2021,7 +2031,8 @@ class PopRenderer(QuizRenderer):
         A round whose media fails keeps the plain reveal."""
         import sys
         rounds = self.plan['rounds']
-        res = media.run_parallel(lambda r: emoji_media(r, self.topic), rounds, workers=4, budget=EMOJI_MEDIA_BUDGET)
+        res = media.run_parallel(lambda r: emoji_media(r, self.topic, seconds=max(6.0, SONG_REVEAL + 1.0)), rounds, workers=4,
+                                 budget=EMOJI_MEDIA_BUDGET)
         ok = 0
         for k, r in enumerate(rounds):
             got, err = res.get(k, (None, 'time budget used up'))
@@ -2116,7 +2127,9 @@ class PopRenderer(QuizRenderer):
                             # the gate: lit, detailed frames that show the choice; else the next candidate, then the photo
                             # a backup search ('London 4k') is judged by its own words, not the item's ('London concert crowd')
                             gate_text = wyr_gate_words(spec[1]) if spec and spec[0] == 'query' else wyr_clip_text(r, s)
-                            k0, gi = wyr_clip_window(got['path'], info['width'], info['height'], info.get('crop'), gate_text)
+                            other = wyr_subject(r, 'b' if s == 'a' else 'a') if spec and spec[0] == 'query' else None
+                            k0, gi = wyr_clip_window(got['path'], info['width'], info['height'], info.get('crop'), gate_text,
+                                                     neg=(other,) if other else ())
                             if k0 is not None:
                                 break
                             print(f"wyr {s.upper()} clip not shown ({gi}): {info.get('videoTitle')}", file=sys.stderr)
@@ -2439,7 +2452,7 @@ def _fetch_clip(fmt, r):
         return {**r, '_clip': got['path'], '_audio': got['audio'], '_w': info['width'], '_h': info['height'], '_crop': info.get('crop'),
                 'source': _src(info)}, None
     if fmt == 'song':
-        got, info = media.fetch_song(r, seconds=CLIP_FETCH, video=True)
+        got, info = media.fetch_song(r, seconds=SONG_FETCH, video=True)
         if got is None:
             return None, info
         out = {**r, '_audio': got['audio'], 'source': _src(info)}
@@ -2451,9 +2464,19 @@ def _fetch_clip(fmt, r):
         return out, None
     if fmt == 'voice':
         audio, info = media.fetch_voice(r['name'], r.get('anime'), pinned={k: r.get(k) for k in ('video', 'start', 'videoTitle')})
-    else:
-        audio, info = media.fetch_opening(r['title'], r.get('romaji'), seconds=CLIP_FETCH)
-    return (None, info) if audio is None else ({**r, '_audio': audio, 'source': _src(info)}, None)
+        return (None, info) if audio is None else ({**r, '_audio': audio, 'source': _src(info)}, None)
+    audio, info = media.fetch_opening(r['title'], r.get('romaji'), seconds=SONG_FETCH)
+    if audio is None:
+        return None, info
+    out = {**r, '_audio': audio, 'source': _src(info)}
+    # owner 2026-11-10: the reveal plays the opening itself (the same upload and moment as the audio); without it the cover
+    try:
+        p, v = media.cut_video(info['video'], info['start'], SONG_FETCH)
+    except Exception as e:  # noqa: BLE001
+        p, v = None, str(e)
+    if p is not None:
+        out.update({'_clip': p, '_w': v['width'], '_h': v['height'], '_crop': v.get('crop')})
+    return out, None
 
 
 def _clip_rounds(rounds, want, fmt='opening', budget=CLIP_BUDGET, log=None):
@@ -2669,11 +2692,18 @@ def wyr_clip_spec(r, side):
             continue
         if src is q and src:
             return 'query', src
-        if kind == 'city' and val:
+        # a city photo query stands for the option only when the option IS the city (owner 2026-11-11: 'Eat through Dotonbori
+        # in Osaka' with city:Osaka revealed an Osaka skyline drone shot)
+        if kind == 'city' and val and not (set(media._qclip_tokens(wyr_subject(r, side))) - set(media._qclip_tokens(val))):
             return 'query', f'{val} city 4k drone'
     lab = wyr_label(r, side)
     hint = WYR_HINT.get(str(r.get('topic') or ''), '')
-    return ('query', f'{lab} {hint}'.strip()) if lab and hint != 'anime' else None
+    if hint == 'anime':
+        return None
+    if lab and _wyr_label_ok(r, side):
+        return 'query', f'{lab} {hint}'.strip()
+    subj = wyr_subject(r, side)   # one thing in a city / a dish: search the thing ('Peking Duck 4k'), not the label
+    return ('query', f'{subj} 4k') if subj else None
 
 
 WYR_CLIP_TRIES = int(os.environ.get('WYR_CLIP_TRIES', '8'))   # clips the pick tries (gate each) before its photo
@@ -2697,16 +2727,50 @@ def wyr_clip_candidates(r, side):
             add(wyr_named_show(r.get(side)), (0,))   # 'Help Bocchi survive her maid shift': that show's opening
     lab = wyr_label(r, side)
     hint = WYR_HINT.get(str(r.get('topic') or ''), '')
-    if lab:
-        if spec and spec[0] == 'anime':
+    subj = wyr_subject(r, side)
+    if spec and spec[0] == 'anime':
+        if lab:
             add(('query', f'{spec[1]} anime 4k'), (0, 1))
-        else:
+    elif lab or subj:
+        # owner 2026-11-11 ('Devour authentic Peking Duck' revealed a steamed fish via 'Beijing Roast 4k', 'Eat through Dotonbori
+        # in Osaka' the Osaka skyline via 'Osaka 4k'): the backups search the option's own subject; the short label (often only
+        # the city) only when it names everything the option shows ('Live in Tokyo' -> 'Tokyo'). Each backup is gated by its own
+        # words, so the subject's words are what the reveal must show.
+        label_ok = _wyr_label_ok(r, side)
+        for base in dict.fromkeys(b for b in (subj, lab if label_ok else None) if b):
             # 'cinematic' uploads are 1-5 min (a city 'walk' is hours long: over the 10 min the downloader takes)
-            add(('query', f'{lab} cinematic 4k'), (0, 1))
-            add(('query', f'{lab} 4k'), (0, 1))
-            if hint and hint != 'anime':
-                add(('query', f'{lab} {hint}'), (0, 1))
+            add(('query', f'{base} cinematic 4k'), (0, 1))
+            add(('query', f'{base} 4k'), (0, 1))
+        if hint and hint != 'anime' and label_ok:
+            add(('query', f'{lab} {hint}'), (0, 1))
     return out[:WYR_CLIP_TRIES]
+
+
+# an option's leading verb (+ preposition) and filler adjectives: what is left is the thing the clip / photo must show
+_WYR_SUBJ_VERB = re.compile(
+    r"^(?:only |never |just )?(?:gaze|devour|witness|stroll|feast|wander|ride|taste|try|hike|climb|shop|cruise|relax|soak|sail|"
+    r"fly|dine|sip|savou?r|sample|admire|marvel|experience|enjoy|discover|tour|camp|surf|ski|swim|dive|snorkel|bike|cycle|walk|"
+    r"run|party|celebrate|chill|sleep|stay|order|cook|bake|binge|spend|watch|see|visit|explore|eat|drink|live|go|travel|attend|"
+    r"meet|join|have|own|get|learn|study|work|move|be|become|sing|dance|train|adopt|catch|hear|listen|play|take)"
+    r"(?:\s+(?:at|on|in|through|to|with|for|around|across|into|by|up|out|along|down|over|under))?\s+(?:a |an |the )?", re.I)
+_WYR_FILLER = re.compile(r"\b(?:authentic|famous|world[- ]famous|iconic|legendary|traditional|local|delicious|amazing|beautiful|"
+                         r"stunning|bustling|vibrant|breathtaking|incredible|epic|best)\b\s*", re.I)
+
+
+def wyr_subject(r, side):
+    """What an option itself shows, for its clip / photo searches: 'Devour authentic Peking Duck' -> 'Peking Duck', 'Eat through
+    Dotonbori in Osaka' -> 'Dotonbori in Osaka', "Gaze at Pudong's skyscrapers" -> 'Pudong skyscrapers'."""
+    text = str(r.get(side) or '').strip()
+    s = _WYR_FILLER.sub('', _WYR_SUBJ_VERB.sub('', text, count=1))
+    s = re.sub(r"\s+", ' ', re.sub(r"['’]s\b", '', s)).strip(' ,.!?')
+    return s or text
+
+
+def _wyr_label_ok(r, side):
+    """True when the short label names everything the option shows ('Live in Tokyo' / 'Tokyo'), so a search for the label is a
+    search for the option; False for one thing in a city ('Dotonbori in Osaka' / 'Osaka', 'Peking Duck' / 'Beijing Roast')."""
+    lab = wyr_label(r, side)
+    return bool(lab) and not (set(media._qclip_tokens(wyr_subject(r, side))) - set(media._qclip_tokens(lab)))
 
 
 _SHOW_STOP = {'attack', 'demon', 'dragon', 'violet', 'world', 'another', 'summer', 'golden', 'little', 'black', 'great', 'super',
@@ -2764,9 +2828,24 @@ def frame_ok(img):
 _sig_lock = __import__('threading').Lock()
 
 
-def wyr_siglip(frames, text):
+# 2026-11-11 (owner: 'Peking duck' revealed a steamed fish, 'Dotonbori' a Ferris wheel and a train in Umeda): the choice must
+# also beat what it is easily mixed up with. A look-alike that shares a word with the choice is left out ('street food' keeps
+# 'a train', a 'bullet train' choice drops it).
+WYR_LOOKALIKE = ['a fish dish', 'a bowl of noodles', 'a plate of rice', 'a dessert', 'a bowl of soup', 'a train', 'a ferris wheel']
+
+
+def wyr_negatives(text, neg=()):
+    """The look-alikes a reveal clip of `text` must also lose to: WYR_LOOKALIKE minus any sharing a word with it, plus `neg`
+    (the round's other choice, when it shares no word either)."""
+    mine = set(media._qclip_tokens(text or ''))
+    return [x for x in list(WYR_LOOKALIKE) + [str(n) for n in neg if n]
+            if not (set(media._qclip_tokens(x)) & mine) and media._qclip_tokens(x)]
+
+
+def wyr_siglip(frames, text, extra=(), margins=False):
     """Per frame True when SigLIP (pop_onmodel's model, the same cache) matches the choice's words better than every
-    WYR_DISTRACT line; None when SigLIP is not installed (then only frame_ok gates) or WYR_CLIP_SIGLIP=0."""
+    WYR_DISTRACT line and every `extra` look-alike (margins=True: the similarity margin over the best of those, > 0 = True);
+    None when SigLIP is not installed (then only frame_ok gates) or WYR_CLIP_SIGLIP=0."""
     if os.environ.get('WYR_CLIP_SIGLIP', '1') == '0' or not frames:
         return None
     try:
@@ -2776,7 +2855,8 @@ def wyr_siglip(frames, text):
             p, m = pop_onmodel._load()
             dev = pop_onmodel._m['dev']
             with torch.no_grad():
-                tx = p(text=[f'a photo of {text}'] + WYR_DISTRACT, padding='max_length', return_tensors='pt')
+                tx = p(text=[f'a photo of {text}'] + WYR_DISTRACT + [f'a photo of {x}' for x in extra], padding='max_length',
+                       return_tensors='pt')
                 t = m.get_text_features(**{k: v.to(dev) for k, v in tx.items()})
                 t = t if hasattr(t, 'shape') else t.pooler_output
                 im = p(images=[f.convert('RGB') for f in frames], return_tensors='pt')
@@ -2784,18 +2864,21 @@ def wyr_siglip(frames, text):
                 v = v if hasattr(v, 'shape') else v.pooler_output
                 t, v = t / t.norm(dim=-1, keepdim=True), v / v.norm(dim=-1, keepdim=True)
                 sim = (v @ t.T).cpu().numpy()
+        if margins:
+            return [float(row[0] - row[1:].max()) for row in sim]
         return [bool(row.argmax() == 0) for row in sim]
     except Exception as e:  # noqa: BLE001  (no SigLIP here: the frame checks alone)
         print(f'wyr clip relevance skipped (SigLIP unavailable: {str(e)[:90]})', file=sys.stderr)
         return None
 
 
-def wyr_clip_window(path, w, h, crop, text=None):
+def wyr_clip_window(path, w, h, crop, text=None, neg=()):
     """
     (first frame index, info) of the first WYR_SHOW_SEC window of a fetched clip that may play big at the reveal, or
     (None, reason). Frames every 0.5 s: every one in the window passes frame_ok, and with `text` (the choice's words;
-    None for an anime opening, which is the right show by construction) SigLIP matches it on >= 80% of them, the first two included. A clip
-    that fails is not shown: the photo with the slow zoom takes its place.
+    None for an anime opening, which is the right show by construction) SigLIP matches it on >= 80% of them, the first two included,
+    against the look-alikes too (wyr_negatives: `neg` = the round's other choice). A clip that fails is not shown: the photo with
+    the slow zoom takes its place.
     """
     st = ClipStream(path, w, h, crop, cover=(320, 180))
     step = FPS // 2
@@ -2811,8 +2894,9 @@ def wyr_clip_window(path, w, h, crop, text=None):
     if len(frames) < n:
         return None, f'clip too short ({len(frames) / 2:.1f} s)'
     ok = [frame_ok(f) for f in frames]
-    rel = wyr_siglip(frames, text) if text else None
-    best, why = None, 'dark / blurry / flat frames'
+    margin = wyr_siglip(frames, text, wyr_negatives(text, neg), margins=True) if text else None
+    rel = None if margin is None else [m > 0 for m in margin]
+    best, why, best_m = None, 'dark / blurry / flat frames', None
     for j in range(0, len(frames) - n + 1):
         if not all(ok[j:j + n]):
             continue
@@ -2821,6 +2905,12 @@ def wyr_clip_window(path, w, h, crop, text=None):
             if hit < 0.8 or not (rel[j] and rel[j + 1]):   # the window opens on the thing itself (Kyoto opened on a painter)
                 why = f'frames do not show "{text}" (SigLIP {hit:.0%} at best)' if best is None else why
                 continue
+            # 2026-11-11: the passing window that shows the choice MOST clearly, not the first (a Dotonbori travel film opened
+            # on a train in Umeda; its neon street came 4 s later)
+            m = float(np.mean(margin[j:j + n]))
+            if best_m is None or m > best_m + 1e-6:
+                best, best_m = j, m
+            continue
         best = j
         break
     if best is None:
@@ -2943,8 +3033,30 @@ def wyr_label(r, side):
 
 
 def wyr_photo(r, side):
-    """(PIL image, {'credit', 'page'}) of a would-you-rather option (see photo_for); without a query, a city named in the option."""
-    return photo_for(str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip(), str(r[side]))
+    """(PIL image, {'credit', 'page'}) of a would-you-rather option (see photo_for); without a query, a city named in the option.
+    An option about one thing in a city ('Eat through Dotonbori in Osaka', 'Feast on street food in Chengdu': both showed their
+    city's skyline, owner 2026-11-11) looks for a Commons photo of that thing first; the city photo stays the fallback."""
+    q = str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip()
+    text = str(r[side])
+    kind, _, val = q.partition(':')
+    kind = kind.strip().lower() if ':' in q else ''
+    if kind in ('city', ''):
+        f = media._fold
+        city = val.strip() if kind == 'city' else next(
+            (c['name'] for c in _asset('city-photos.json', 'cities') if f(c['name']).strip() in f(text)), '')
+        subj = wyr_subject(r, side)
+        need = set(media._qclip_tokens(subj)) - set(media._qclip_tokens(city))
+        if subj and need:
+            try:
+                img, info = media.commons_photo(subj)
+            except Exception:  # noqa: BLE001  (the city / query photo below is the fallback)
+                img, info = None, None
+            # every word of the thing must be in the file name ('street food in Chengdu' found 'Chengdu Zoo ... Bear Begging
+            # for Food': the city photo is better than that)
+            named = isinstance(info, dict) and all(f' {w} ' in f(info.get('file') or '') for w in need)
+            if img is not None and named and picture_ok(img):
+                return img, info
+    return photo_for(q, text)
 
 
 def photo_for(q, text=''):
