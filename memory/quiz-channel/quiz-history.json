@@ -2742,6 +2742,102 @@
     "titleStyle": "speed",
     "descHook": "op-score-challenge"
    }
+  },
+  {
+   "videoId": "q36sEaG3e-I",
+   "url": "https://www.youtube.com/watch?v=q36sEaG3e-I",
+   "postedAt": "2026-11-11T09:43:09.309Z",
+   "publishAt": "2026-11-11T13:00:00.000Z",
+   "format": "wyr",
+   "theme": "cities",
+   "seed": 275223527,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Get ready for would you rather Asia travel edition!",
+     "template": "Get ready for would you rather Asia travel edition!",
+     "sec": 2.74
+    }
+   ],
+   "titleTemplate": "wyr-llm",
+   "title": "would you rather asian cities edition 🤔 #asia",
+   "answers": [
+    "wyr:gaze at pudong's skyscrapers|devour authentic peking duck",
+    "wyr:witness shibuya's famous scramble|stroll seoul's ancient palaces",
+    "wyr:feast on street food in chengdu|eat through dotonbori in osaka"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "d6JyqPvq97w",
+   "url": "https://www.youtube.com/watch?v=d6JyqPvq97w",
+   "postedAt": "2026-11-11T09:51:08.669Z",
+   "publishAt": "2026-11-12T01:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 549348961,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the anime character from their outfit? Test yourself!",
+     "template": "Can you guess the anime character from their outfit? Test yourself!",
+     "sec": 3.41
+    },
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "Drop your score in the comments!",
+     "template": null,
+     "sec": 1.58
+    },
+    {
+     "slot": "reveal 1",
+     "used": "ai",
+     "line": "That's right, it's Nico Robin!",
+     "template": "That's right, it's {a}!",
+     "sec": 1.94
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "Boom! You got Yor Forger!",
+     "template": "Boom! You got {a}!",
+     "sec": 1.74
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai",
+     "line": "There it is! Brunhilde!",
+     "template": "There it is! {a}!",
+     "sec": 1.84
+    }
+   ],
+   "titleTemplate": "outfit-design",
+   "title": "Can You Name These Anime Outfits? 🧠 #anime",
+   "answers": [
+    "outfit:nico robin#ndvi58",
+    "outfit:yor forger#1ley34e",
+    "outfit:brunhilde#19xvfif"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

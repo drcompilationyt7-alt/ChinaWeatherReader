@@ -1,4 +1,25 @@
 {
+ "guess the anime character by outfit": {
+  "at": "2026-11-11T09:50:48.440Z",
+  "s": [
+   "guess the anime character by their clothes"
+  ]
+ },
+ "would you rather": {
+  "at": "2026-11-11T09:42:49.419Z",
+  "s": [
+   "would you rather",
+   "would you rather brain break",
+   "would you rather game",
+   "would you rather workout",
+   "would you rather food edition",
+   "would you rather christmas edition",
+   "would you rather kids",
+   "would you rather squishy edition",
+   "would you rather thanksgiving",
+   "would you rather food"
+  ]
+ },
  "guess the anime opening": {
   "at": "2026-11-10T19:32:04.839Z",
   "s": [
@@ -132,27 +153,6 @@
    "which seat are you picking anime"
   ]
  },
- "guess the anime character by outfit": {
-  "at": "2026-11-06T09:44:00.204Z",
-  "s": [
-   "guess the anime character by their clothes"
-  ]
- },
- "would you rather": {
-  "at": "2026-11-06T09:39:26.006Z",
-  "s": [
-   "would you rather",
-   "would you rather brain break",
-   "would you rather food edition",
-   "would you rather workout",
-   "would you rather kids",
-   "would you rather christmas edition",
-   "would you rather movie",
-   "would you rather squishy edition",
-   "would you rather thanksgiving",
-   "would you rather halloween edition"
-  ]
- },
  "guess the kpop song": {
   "at": "2026-11-05T09:49:47.918Z",
   "s": [
@@ -251,15 +251,6 @@
    "asian country capitals",
    "asian country capital quiz",
    "asian capitals"
-  ]
- },
- "asia city quiz": {
-  "at": "2026-10-21T07:52:22.894Z",
-  "s": [
-   "asia's country and capital",
-   "asian states and capitals",
-   "asian country capital quiz",
-   "asia country and capital quiz"
   ]
  }
 }
