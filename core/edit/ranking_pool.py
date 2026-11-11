@@ -743,6 +743,10 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         ol = {x.lower() for x in only}
         order = [k for k in order if k in ol or smap[k]['show']['name'].lower() in ol
                  or any(c['name'].lower() in ol for c in smap[k]['cast'])]
+        # the order given wins over the plan's score (2026-11-10: the higher-scoring ride-along show ran first and ate the budget)
+        given = [x.lower() for x in only]
+        order.sort(key=lambda k: min([i for i, x in enumerate(given) if x in [k, smap[k]['show']['name'].lower()]
+                                      + [c['name'].lower() for c in smap[k]['cast']]] or [len(given)]))
     if first:                                  # --first: shows of these entries / shows lead (in that order)
         fl = [x.lower() for x in first]
 
@@ -1527,6 +1531,26 @@ def library_report(md=False):
     return '\n'.join(rows)
 
 
+# Owner 2026-11-10: "focus on dragon ball, slime, overlord, etc, try to fill up the action / strong and then move to romance and
+# couple; some of these may have good couples like the solo leveling"
+FOCUS_SHOWS = ('dragon ball', 'dragon ball super', 'reincarnated as a slime', 'overlord', 'the eminence in shadow',
+               'the misfit of demon king academy', 'the daily life of the immortal king', 'one-punch man')
+ROMANCE_TOPICS = ('cutest_couples', 'romance_peak')
+
+
+def mining_order(ps):
+    """The slow loop's show order: the owner's focus shows twice, every other show of an action / strongest list, the shows
+    of the couple / romance lists (Solo Leveling again: Jinwoo x Cha Hae-In), then the rest. A section is tagged with every
+    theme it passes, so a show mined for action can already give romance sections."""
+    name = lambda p: p['name'].lower()
+    focus = [p for f in FOCUS_SHOWS for p in ps if name(p) == f]
+    fset = {name(p) for p in focus}
+    strong = [p for p in ps if name(p) not in fset and any(t.endswith('strongest') or t == 'action_peak' for t in p['topics'])]
+    romance = [p for p in ps if set(p['topics']) & set(ROMANCE_TOPICS)]
+    seen = fset | {name(p) for p in strong} | {name(p) for p in romance}
+    return focus + focus + strong + romance + [p for p in ps if name(p) not in seen]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
@@ -1572,14 +1596,10 @@ def main():
     a = ap.parse_args()
     if a.cmd == 'plan-shows':
         ps = plan_shows()
-        if a.focus > 0 and len(ps) > a.focus:
-            # owner 2026-11-07 "we need to increase the ranking pool": the slow loop takes 2 shows per cycle in this order - one of
-            # the top `focus` shows (the ones that unlock lists soonest, rotating) + one of the rest, so a top show comes round
-            # every few cycles instead of once per full pass
-            top, rest = ps[:a.focus], ps[a.focus:]
-            ps = [x for i in range(len(rest)) for x in (top[i % len(top)], rest[i])]
+        if a.focus > 0:                   # the slow loop's rotation (owner 2026-11-10: action / strong first, then romance + couples)
+            ps = mining_order(ps)
         for p in ps:
-            print(f'{p["score"]:5.2f}  {p["name"]:<28} cast {",".join(p["cast"])}  topics {",".join(p["topics"])}')
+            print(f'{p["score"]:5.2f}  {p["name"]:<28}  cast {",".join(p["cast"])}  topics {",".join(p["topics"])}')
     elif a.cmd == 'plan':
         for p in plan():
             print(f'{p["score"]:5.2f}  {p["name"]:<22} have {p["have"]}  blocks {",".join(p["topics"])}')

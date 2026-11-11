@@ -23,7 +23,7 @@ param(
   [double]$MinFreeDiskGB = 25,
   [int]$CpuPercent = 10,
   [double]$MinRamGB = 3.5,
-  [int]$Focus = 8,           # each cycle: one of the top-8 shows of the plan (rotating) + one of the rest
+  [int]$Focus = 8,           # > 0: plan-shows gives the owner's mining order (ranking_pool.mining_order: focus shows, action / strong, romance + couples, the rest)
   [string]$DlRate = '1M'     # download speed cap (yt-dlp --limit-rate: 1M = 1 MB/s ~ 8 Mbit/s; '' = no cap)
 )
 $ErrorActionPreference = 'Continue'
