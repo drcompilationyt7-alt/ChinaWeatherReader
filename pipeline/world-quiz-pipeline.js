@@ -56,9 +56,11 @@ const isPop = f => POP_FORMATS.includes(f);
 // (song, voice, and emoji / wyr with their song and photo reveals) get a generous share while they have no data.
 const FALLBACK_WEIGHTS = FORMATS.some(isPop)
   // re-weighted 2026-10-31 from the views of 10-01..10-30 (owner: views down): ~1000-1800 for idol / song / shape / outfit /
-  // scene / kpop wyr, ~200-500 for opening / character / voice / duel / text trivia / city map
-  ? { emoji: 0.2, trivia: 0.08, wyr: 0.3, city: 0.05, character: 0.1, idol: 0.45, opening: 0.1, flag: 0.05, shape: 0.3,
-    cityphoto: 0.15, nightcity: 0.2, cuisine: 0.25, vtuber: 0.12, duel: 0.08, scene: 0.35, voice: 0.08, song: 0.45, silhouette: 0.25, eyes: 0.25, outfit: 0.35 }
+  // scene / kpop wyr, ~200-500 for opening / character / voice / duel / text trivia / city map.
+  // 2026-11-11 from 10-28..11-11 (owner: "why so low views"): ~1-1.4K emoji (K-pop song) / idol / outfit / character /
+  // shape / city photo / eyes / silhouette; duel ~500, food trivia 200-1000, song 42-1K, opening 9 / 129, China map 3 / 14
+  ? { emoji: 0.35, trivia: 0.1, wyr: 0.25, city: 0.02, character: 0.25, idol: 0.45, opening: 0.05, flag: 0.05, shape: 0.3,
+    cityphoto: 0.25, nightcity: 0.2, cuisine: 0.25, vtuber: 0.12, duel: 0.08, scene: 0.3, voice: 0.06, song: 0.25, silhouette: 0.25, eyes: 0.25, outfit: 0.35 }
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 // owner 2026-10-15: no format repeats within NO_REPEAT_DAYS uploads, geography at most 1 in GEO_EVERY uploads,
@@ -328,7 +330,9 @@ function pickBalanced(stats, history, { available = poolAvailability(), rng = Ma
   const scored = percentileRewards(scoredQuizUploads(stats, history));
   const meanReward = f => { const r = scored.filter(u => u.format === f); return r.length ? r.reduce((a, u) => a + u.reward, 0) / r.length : 0.5; };
   const lastAt = f => { const u = [...uploads].reverse().find(x => x.format === f); return u ? new Date(u.publishAt || u.postedAt).getTime() : 0; };
-  const stale = f => 1 + Math.min(1, (now - lastAt(f)) / (10 * 86400000)) * (meanReward(f) >= 0.6 ? 1.5 : 0.5);
+  // a strong format that has not aired lately is boosted; a weak one barely (2026-11-11: the 0.5 boost kept reviving the
+  // China map quiz, 3 and 14 views)
+  const stale = f => 1 + Math.min(1, (now - lastAt(f)) / (10 * 86400000)) * (meanReward(f) >= 0.6 ? 1.5 : meanReward(f) >= 0.35 ? 0.4 : 0.1);
   const cands = b.candidates;
   let pick, mode;
   if (cands.length === 1 || scored.length < 6 || rng() < EXPLORE_SHARE) {
@@ -658,8 +662,16 @@ async function runWorldQuizPipeline(opts = {}) {
     if (edition) candidates.push({ format, edition: null });
     if (!forcedFormat) {
       const blocked = blockedFormats(history);
-      const others = FORMATS.filter(f => isPop(f) && f !== format && !blocked.has(f) && freshCount(f) >= guard.requiredRounds(f, length, LENGTHS))
-        .sort(() => Math.random() - 0.5).slice(0, 3);
+      // the fallbacks (the pick failed to render: a VTuber 403, an opening that would not download) are drawn by the
+      // formats' view weights, without replacement, not uniformly (2026-11-11: a random fallback put up the 9-view opening)
+      const pool = FORMATS.filter(f => isPop(f) && f !== format && !blocked.has(f) && freshCount(f) >= guard.requiredRounds(f, length, LENGTHS));
+      const others = [];
+      while (pool.length && others.length < 3) {
+        const w = pool.map(f => FALLBACK_WEIGHTS[f] || 0.1);
+        let x = Math.random() * w.reduce((a, b) => a + b, 0);
+        const k = Math.max(0, w.findIndex(v => (x -= v) <= 0));
+        others.push(pool.splice(k, 1)[0]);
+      }
       for (const f of others) candidates.push({ format: f, edition: null });
     }
   } else {

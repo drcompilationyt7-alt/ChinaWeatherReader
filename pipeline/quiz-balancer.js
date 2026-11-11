@@ -12,7 +12,12 @@
  * Pure functions (no I/O): the pipeline and scripts/quiz-balance-sim.js both use them.
  */
 const FAMILY_TARGET = { quiz: 0.74, wyr: 0.16, duel: 0.10 };
-const TOPIC_TARGET = { anime: 0.30, kpop: 0.22, vtuber: 0.14, geo: 0.16, culture: 0.18 };
+// 2026-11-11: VTuber renders fail on every GitHub run (the VTuber wiki blocks runners: the pictures 403), yet at 0 % share
+// the bucket won the deficit draw almost every day and the run fell back to a random format (the 9-view opening, an
+// outfit quiz). Its share goes to anime / K-pop (the best views) until the VTuber pictures are mirrored where the runners
+// can fetch them; QUIZ_VTUBER_TARGET (e.g. 0.14) turns it back on.
+const VTUBER_TARGET = Number(process.env.QUIZ_VTUBER_TARGET || 0);
+const TOPIC_TARGET = { anime: 0.37 - VTUBER_TARGET / 2, kpop: 0.29 - VTUBER_TARGET / 2, vtuber: VTUBER_TARGET, geo: 0.16, culture: 0.18 };
 const WINDOW = 14;
 const CAP = 0.4;
 
