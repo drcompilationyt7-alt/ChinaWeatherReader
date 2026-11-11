@@ -2642,6 +2642,63 @@
    "whyMode": "insight-driven",
    "bpm": 129.98,
    "titlePattern": "{song} acapella but beat drops {e}"
+  },
+  {
+   "videoId": "4y13vXVgOQE",
+   "url": "https://www.youtube.com/watch?v=4y13vXVgOQE",
+   "postedAt": "2026-11-11T10:38:41.808Z",
+   "publishAt": "2026-11-11T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Shape of You",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "shape of you anime edit sfx 🗿 #anime",
+   "clipIds": [
+    "c_1MSkCTOWdWs_101975",
+    "c_3iKoZbmQKo0_76816",
+    "c_A_5JOOeFi5g_225697",
+    "c_A_5JOOeFi5g_326030",
+    "c_FCANUP9Xo3U_73604",
+    "c_IvlTzGeBmHE_115630",
+    "c_RD4rr7JcatM_478663",
+    "c_SH9HRJFl0oM_66147",
+    "c_VeIXoZwoy4Y_6228",
+    "c_Z4ObaZlnrTY_117649",
+    "c_cd7fEl_Bnw0_108305",
+    "c_lDzXBSxAxKw_53147",
+    "c_upIsOnCMthw_132454",
+    "c_xT66YPk0Q5w_149513",
+    "c_zAYMK_djbns_4030"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 9.7,
+    "pool": "sound",
+    "render_s": {
+     "short": 415.8,
+     "watermark_short": 29.8,
+     "total": 445.5
+    },
+    "attempts": 5
+   },
+   "onVideoTitle": "anime x shape of you",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "title-subject",
+    "titleStyle": "llm-free",
+    "ovStyle": "ov-song",
+    "descHook": "rate",
+    "titlePattern": "{song} anime edit sfx {e} #{tag}",
+    "titleMode": "explore"
+   },
+   "vibe": "impact",
+   "musicPoolId": "ed_sheeran_shape_of_you",
+   "songSection": [
+    190.199,
+    220.188
+   ]
   }
  ]
 }
