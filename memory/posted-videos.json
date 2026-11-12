@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=DbIqVhDg5ho",
-      "title": "idol acapella yoasobi 🗿⚡ #oshinoko",
-      "country": "Global",
-      "postedAt": "2026-10-13T09:58:51.162Z",
-      "videoId": "DbIqVhDg5ho",
-      "category": "meme-anime",
-      "titleSource": "idol"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=CF1iIdJ02T4",
       "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "4y13vXVgOQE",
       "category": "edit-sound",
       "titleSource": "Shape of You"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=6hfsTEhT7Ts",
+      "title": "somewhere only we know but it's anime 🎧",
+      "country": "Global",
+      "postedAt": "2026-11-12T12:02:41.797Z",
+      "videoId": "6hfsTEhT7Ts",
+      "category": "edit-slowmo",
+      "titleSource": "Somewhere Only We Know"
     }
   ]
 }

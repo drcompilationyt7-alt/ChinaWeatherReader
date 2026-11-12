@@ -2699,6 +2699,72 @@
     190.199,
     220.188
    ]
+  },
+  {
+   "videoId": "6hfsTEhT7Ts",
+   "url": "https://www.youtube.com/watch?v=6hfsTEhT7Ts",
+   "postedAt": "2026-11-12T12:02:41.416Z",
+   "publishAt": "2026-11-12T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Somewhere Only We Know",
+   "theme": "anime",
+   "emoji": "🎧,✨",
+   "title": "somewhere only we know but it's anime 🎧",
+   "clipIds": [
+    "c_4i1wh2PH_sg_8000",
+    "c_5HXry0GEkL0_39500",
+    "c_5Q-69y8HA-Y_89500",
+    "c_BYBLDsL5i4I_50000",
+    "c_DyX4tduQRU4_5300",
+    "c_EwPdhJtAGnI_59400",
+    "c_Fayq32jCPyc_77900",
+    "c_Nts03Q7Jr0Y_34600",
+    "c_QWs9VLDTMsA_221200",
+    "c_QyxzVjf5Xlc_151300",
+    "c_T158RMP422c_58300",
+    "c_VTN7cYLoRKM_5500",
+    "c__nAObEu6UJc_62100",
+    "c_aU3DiMqHFxU_5600",
+    "c_djXtjnXDRl4_16100",
+    "c_pPkXWZRwIp0_32600",
+    "c_pcsff8mKn7M_47900",
+    "c_rNMDBf2oZuA_163900",
+    "c_uhVxnDxqq3A_59000",
+    "c_v-L89_X9vO0_39500",
+    "c_v-L89_X9vO0_8300",
+    "c_wDMwvB_0Tmw_5900",
+    "c_xsX9PJnjBrA_124600",
+    "c_zVf_eJbEoNk_12100"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 40.467,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 1042.2,
+     "watermark_short": 85.6,
+     "total": 1127.7
+    },
+    "attempts": 5
+   },
+   "onVideoTitle": "somewhere only we know",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "music",
+    "hashtagSet": "minimal",
+    "titleStyle": "song-anime",
+    "ovStyle": "ov-song",
+    "descHook": "rate",
+    "titlePattern": "{song} but it's anime {e}",
+    "titleMode": "explore"
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "keane_somewhere_only_we_know@v1",
+   "songSection": [
+    140.76,
+    183.98
+   ]
   }
  ]
 }
