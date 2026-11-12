@@ -19,7 +19,8 @@ voice or scene formats.
     python scripts/build-pop-media.py --characters   # widen the character snapshot (favourites pages + top characters per popular show)
     python scripts/build-pop-media.py --newformats [--limit 450] [--scan 900]   # silhouette / eyes / outfit extras + age classes
     python scripts/build-pop-media.py --newformats2 --phase light|prefetch|eyes|models|theme|finish|regate|compact [--theme beach] [--minutes 40]   # all characters, more wiki art; waits while edit renders run
-    python scripts/build-pop-media.py --vtubers
+    python scripts/build-pop-media.py --vtubers          # also refreshes the mirror below
+    python scripts/build-pop-media.py --mirror-vtubers   # copies of the portraits in assets/pop2/mirror (the wiki 403s the GitHub runners)
     python scripts/build-pop-media.py --voices    # verified voice-line clips for the voice quiz (yt-dlp + faster-whisper)
 """
 import json
@@ -486,6 +487,46 @@ def build_vtubers():
     print(f'{len(out)} VTubers with portraits')
 
 
+def mirror_vtubers():
+    """Copies of the VTuber portraits in core/quiz/assets/pop2/mirror: the wiki answers 403 to the GitHub runners
+    (2026-11-11), so the renderer (media.fetch_image) uses these first. Run on the PC, then commit the new files."""
+    import io
+    from PIL import Image
+    sys.path.insert(0, os.path.join(ROOT, 'core', 'quiz'))
+    import media
+    vts = json.load(open(os.path.join(OUT, 'vtubers.json'), encoding='utf-8'))['vtubers']
+    os.makedirs(media.MIRROR, exist_ok=True)
+    have, new, fails, total = 0, 0, [], 0
+    for v in vts:
+        url = v.get('image')
+        if not url:
+            continue
+        p = media.mirror_file(url)
+        if p:
+            have += 1
+        else:
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': UA, 'Accept': '*/*'}), timeout=30) as r:   # the builder's own name, as for the wiki API
+                    data = r.read()
+                im = Image.open(io.BytesIO(data))
+                im.load()
+                ext = {'PNG': '.png', 'JPEG': '.jpg', 'WEBP': '.webp'}.get(im.format)
+                if not ext or min(im.size) < 200:
+                    raise ValueError(f'unusable picture ({im.format} {im.size})')
+                p = os.path.join(media.MIRROR, media.mirror_key(url) + ext)
+                with open(p, 'wb') as f:
+                    f.write(data)
+                new += 1
+                time.sleep(0.3)
+            except Exception as e:
+                fails.append(f"{v['name']}: {e}")
+                continue
+        total += os.path.getsize(p)
+    print(f'VTuber mirror: {have} kept, {new} new, {len(fails)} failed, {total / 1e6:.1f} MB in {media.MIRROR}')
+    for f in fails:
+        print('  failed:', f, file=sys.stderr)
+
+
 def build_voices(limit=220):
     """
     core/quiz/assets/voice-lines.json: for each of the most popular characters (no nsfw flag, no
@@ -587,6 +628,10 @@ if __name__ == '__main__':
         sys.exit(0)
     if '--vtubers' in sys.argv:
         build_vtubers()
+        mirror_vtubers()
+        sys.exit(0)
+    if '--mirror-vtubers' in sys.argv:
+        mirror_vtubers()
         sys.exit(0)
     if '--skip-anime' not in sys.argv:
         build_anime()

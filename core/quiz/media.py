@@ -47,6 +47,26 @@ def _cache_path(key, ext):
     return os.path.join(CACHE, hashlib.sha1(key.encode()).hexdigest()[:20] + ext)
 
 
+# Committed copies of pictures whose host refuses the GitHub runners (2026-11-11: the Virtual YouTuber Wiki answers 403 to
+# every runner, so every VTuber quiz fell back to another format). fetch_image uses a copy first;
+# scripts/build-pop-media.py --mirror-vtubers fills it from the PC.
+MIRROR = os.path.join(ASSETS, 'pop2', 'mirror')
+MIRROR_EXT = ('.png', '.jpg', '.webp')
+
+
+def mirror_key(url):
+    return hashlib.sha1(url.encode()).hexdigest()[:20]
+
+
+def mirror_file(url):
+    k = mirror_key(url)
+    for e in MIRROR_EXT:
+        p = os.path.join(MIRROR, k + e)
+        if os.path.exists(p) and os.path.getsize(p) > 1000:
+            return p
+    return None
+
+
 # ─── subprocesses that a time budget can stop ────────────────────────────────
 
 _procs = set()
@@ -132,6 +152,9 @@ def run_parallel(fn, items, workers=4, budget=None, enough=None):
 
 
 def fetch_image(url, tries=5):
+    m = mirror_file(url)
+    if m:
+        return Image.open(m).convert('RGBA')
     p = _cache_path(url, '.img')
     if not (os.path.exists(p) and os.path.getsize(p) > 1000):
         # Wikimedia throttles browser-looking clients (HTTP 429): name the tool, and back off when told to
