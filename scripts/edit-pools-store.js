@@ -14,6 +14,11 @@
  *                                  (size + sha256: the API digest, else a download-back) and only then delete the local
  *                                  media of that vibe that went into the tar (except a 3-clip sample; every .json stays),
  *                                  plus DIR/_src and _lib; manifests / index.json / the blocklist stay (owner storage rule 2026-10-13)
+ *   node scripts/edit-pools-store.js push --add [--preset P] [--prune-local]   (owner rule 2026-11-11) upload ONLY the media
+ *                                  the release does not have yet (vibe/store-files.json lists what it has) as an add-on tar
+ *                                  pool-<preset>-<vibe>.add-<stamp>.tar with every json; nothing is deleted on the release;
+ *                                  --prune-local then deletes ALL local media of the vibe (no sample). A plain (full) push
+ *                                  refuses when media the release has are missing locally, and consolidates the add-ons.
  *   node scripts/edit-pools-store.js list
  *
  * DIR = $EDIT_POOL_DIR (default output/edit-pools). Release tag = $EDIT_POOLS_TAG (default "edit-pools").
@@ -78,6 +83,21 @@ const PRESETS = ['sound', 'slowmo', 'ranking'];   // ranking: one 'vibe' dir ran
 const WIN_TAR = path.join(process.env.SystemRoot || 'C:/Windows', 'System32', 'tar.exe');
 const TAR = process.platform === 'win32' && fs.existsSync(WIN_TAR) ? WIN_TAR : 'tar';
 const ASSET_RE = /^pool-([a-z0-9]+)-(.+?)\.tar(?:\.part(\d+))?$/;
+// Add-ons (owner 2026-11-11: "only push new stuff and then delete every time u upload"): push --add uploads only the media
+// the release does not have yet, as pool-<preset>-<vibe>.add-<YYYYMMDD-HHMMSS>.tar (+ every json of the vibe); pull
+// extracts the base tar, then every add-on in name order (newer manifests win). A full push consolidates: the base tar
+// then holds everything and the add-ons are deleted.
+const ADD_RE = /^pool-([a-z0-9]+)-(.+?)\.add-(\d{8}-\d{6})\.tar$/;
+function parseAsset(name) {
+  const a = ADD_RE.exec(name);
+  if (a) return { preset: a[1], vibe: a[2], add: a[3] };
+  const m = ASSET_RE.exec(name);
+  return m ? { preset: m[1], vibe: m[2], part: m[3] } : null;
+}
+// in each vibe dir: the vibe-relative media paths that are on the release (base tar + add-ons), written by every push
+const STORE_FILES = 'store-files.json';
+const addMode = args.includes('--add');
+const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return d; } };
 
 function assets() {
   try { return JSON.parse(gh(['release', 'view', TAG, ...repo, '--json', 'assets'])).assets || []; } catch { return null; }
@@ -142,7 +162,7 @@ function split(file, size) {
   return parts;
 }
 /** files of one vibe that go into its tar: every json + the media its manifests reference (no orphans, no sheets) */
-function vibeFiles(preset, vibe) {
+function vibeFiles(preset, vibe, known = new Set()) {
   const vd = path.join(dir, preset, vibe);
   const rel = f => `${preset}/${vibe}/${f}`.replace(/\\/g, '/');
   const out = new Set();
@@ -171,8 +191,11 @@ function vibeFiles(preset, vibe) {
       if (fs.existsSync(path.join(vd, f))) out.add(rel(f)); else if (it.status !== 'rejected') missing.push(f);
     }
   }
-  if (missing.length) console.warn(`${preset}/${vibe}: ${missing.length} referenced media file(s) missing locally (e.g. ${missing.slice(0, 3).join(', ')})`);
-  return [...out].sort();
+  const gone = missing.filter(f => !known.has(f));   // media already on the release (pruned locally) are expected to be missing
+  if (gone.length) console.warn(`${preset}/${vibe}: ${gone.length} referenced media file(s) missing locally (e.g. ${gone.slice(0, 3).join(', ')})`);
+  const res = [...out].sort();
+  res.missing = missing;
+  return res;
 }
 
 function pull() {
@@ -184,32 +207,45 @@ function pull() {
   const next = {};
   const groups = {};
   for (const a of list) {
-    const m = ASSET_RE.exec(a.name);
-    if (m && onlyPreset && m[1] !== onlyPreset) continue;
-    const g = m ? `pool-${m[1]}-${m[2]}.tar` : a.name;
-    (groups[g] = groups[g] || { preset: m && m[1], vibe: m && m[2], items: [] }).items.push(a);
+    const m = parseAsset(a.name);
+    if (m && onlyPreset && m.preset !== onlyPreset) continue;
+    const g = m ? `pool-${m.preset}-${m.vibe}.tar` : a.name;
+    const grp = (groups[g] = groups[g] || { preset: m && m.preset, vibe: m && m.vibe, items: [], adds: [] });
+    (m && m.add ? grp.adds : grp.items).push(a);
   }
   const tmp = path.join(dir, '.dl');
-  for (const [g, { preset, vibe, items }] of Object.entries(groups)) {
-    items.sort((x, y) => x.name.localeCompare(y.name));
-    const key = items.map(a => `${a.name}:${a.size}:${a.updatedAt}`).join('|');
-    next[g] = key;
-    const have = preset ? fs.existsSync(path.join(dir, preset, vibe)) : fs.existsSync(path.join(dir, g));
-    if (stamp[g] === key && have) continue;
-    const mb = items.reduce((s, a) => s + a.size, 0) / 1048576;
-    console.log(`pull ${g} (${mb.toFixed(0)} MB, ${items.length} file${items.length > 1 ? 's' : ''})`);
-    fs.rmSync(tmp, { recursive: true, force: true });
-    fs.mkdirSync(tmp, { recursive: true });
-    for (const a of items) gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
-    if (!preset) { fs.copyFileSync(path.join(tmp, g), path.join(dir, g)); continue; }
-    const tar = path.join(tmp, g);
-    if (!(items.length === 1 && items[0].name === g)) concat(items.map(a => path.join(tmp, a.name)), tar);
-    fs.rmSync(path.join(dir, preset, vibe), { recursive: true, force: true });   // the tar replaces the vibe dir
+  const extract = tar => {
     if (manifestsOnly) {
       const names = execFileSync(TAR, ['-tf', tar], { encoding: 'utf8', maxBuffer: 64 * 1048576 }).split(/\r?\n/)
         .filter(n => /^[^/]+\/[^/]+\/(clips|sounds|vibe)\.json$/.test(n));
       if (names.length) execFileSync(TAR, ['-xf', tar, '-C', dir, ...names]);
     } else execFileSync(TAR, ['-xf', tar, '-C', dir]);
+  };
+  for (const [g, { preset, vibe, items, adds }] of Object.entries(groups)) {
+    items.sort((x, y) => x.name.localeCompare(y.name));
+    adds.sort((x, y) => x.name.localeCompare(y.name));
+    const key = [...items, ...adds].map(a => `${a.name}:${a.size}:${a.updatedAt}`).join('|');
+    next[g] = key;
+    const have = preset ? fs.existsSync(path.join(dir, preset, vibe)) : fs.existsSync(path.join(dir, g));
+    if (stamp[g] === key && have) continue;
+    const mb = [...items, ...adds].reduce((s, a) => s + a.size, 0) / 1048576;
+    console.log(`pull ${g} (${mb.toFixed(0)} MB, ${items.length} file${items.length > 1 ? 's' : ''}${adds.length ? ` + ${adds.length} add-on(s)` : ''})`);
+    fs.rmSync(tmp, { recursive: true, force: true });
+    fs.mkdirSync(tmp, { recursive: true });
+    for (const a of items) gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
+    if (!preset) { fs.copyFileSync(path.join(tmp, g), path.join(dir, g)); continue; }
+    fs.rmSync(path.join(dir, preset, vibe), { recursive: true, force: true });   // the tars replace the vibe dir
+    if (items.length) {
+      const tar = path.join(tmp, g);
+      if (!(items.length === 1 && items[0].name === g)) concat(items.map(a => path.join(tmp, a.name)), tar);
+      extract(tar);
+      fs.rmSync(tar, { force: true });
+    }
+    for (const a of adds) {   // the add-ons, oldest first: new media + the newer manifests
+      gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
+      extract(path.join(tmp, a.name));
+      fs.rmSync(path.join(tmp, a.name), { force: true });
+    }
   }
   fs.rmSync(tmp, { recursive: true, force: true });
   if (!manifestsOnly) fs.writeFileSync(STAMP, JSON.stringify({ ...stamp, ...next }));
@@ -254,20 +290,53 @@ function push() {
   fs.rmSync(tmp, { recursive: true, force: true });
   fs.mkdirSync(tmp, { recursive: true });
   let total = 0;
+  const onRel = assets() || [];
+  const now = new Date();
+  const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);   // 20261112-213045
   for (const { preset, vibe } of vs) {
-    const name = `pool-${preset}-${vibe}.tar`;
-    const files = vibeFiles(preset, vibe);
+    const vd = path.join(dir, preset, vibe);
+    const prefix = `${preset}/${vibe}/`;
+    const sfPath = path.join(vd, STORE_FILES);
+    const sfOld = fs.existsSync(sfPath) ? fs.readFileSync(sfPath, 'utf8') : null;
+    const known = new Set((readJson(sfPath, {}).files) || []);
+    const files = vibeFiles(preset, vibe, known);
+    const media = files.filter(f => !f.endsWith('.json')).map(f => f.slice(prefix.length));
+    let name = `pool-${preset}-${vibe}.tar`;
+    let up = files;
+    if (addMode) {
+      if (!onRel.some(a => { const p = parseAsset(a.name); return p && !p.add && p.preset === preset && p.vibe === vibe; })) {
+        throw new Error(`--add: no base tar of ${preset}/${vibe} on the release: push it once without --add`);
+      }
+      if (!sfOld) throw new Error(`--add: ${prefix}${STORE_FILES} missing (which media the release already has): pull the vibe, then push once without --add`);
+      const neu = media.filter(f => !known.has(f));
+      name = `pool-${preset}-${vibe}.add-${ts}.tar`;
+      fs.writeFileSync(sfPath, JSON.stringify({ updated: now.toISOString(), files: [...new Set([...known, ...neu])].sort() }, null, 1));
+      up = [...new Set([...files.filter(f => f.endsWith('.json')), prefix + STORE_FILES, ...neu.map(f => prefix + f)])].sort();
+      console.log(`add-on ${preset}/${vibe}: ${neu.length} new media file(s)${neu.length ? ` (${neu.slice(0, 4).join(', ')}${neu.length > 4 ? ' ...' : ''})` : ''}`);
+    } else {
+      // a full push REPLACES everything on the release: refuse when media the release has are missing here (pruned locally)
+      const lost = files.missing.filter(f => known.has(f));
+      if (lost.length) throw new Error(`full push of ${preset}/${vibe} would drop ${lost.length} media file(s) that are only on the release `
+        + `(e.g. ${lost.slice(0, 3).join(', ')}): use --add, or pull the vibe first`);
+      fs.writeFileSync(sfPath, JSON.stringify({ updated: now.toISOString(), files: media.sort() }, null, 1));
+      up = [...new Set([...files, prefix + STORE_FILES])].sort();
+    }
     const listFile = path.join(tmp, `${name}.list`);
-    fs.writeFileSync(listFile, files.join('\n') + '\n');
+    fs.writeFileSync(listFile, up.join('\n') + '\n');
     const tar = path.join(tmp, name);
     execFileSync(TAR, ['-cf', tar, '-C', dir, '-T', listFile]);
     fs.rmSync(listFile);
     const bytes = fs.statSync(tar).size;
     total += bytes;
-    const parts = split(tar, PART);
+    const parts = addMode ? [tar] : split(tar, PART);
     for (const p of parts) keep.add(path.basename(p));
-    console.log(`push ${name}: ${files.length} files, ${(bytes / 1048576).toFixed(0)} MB in ${parts.length} asset(s)`);
-    for (const p of parts) upload(p);
+    console.log(`push ${name}: ${up.length} files, ${(bytes / 1048576).toFixed(0)} MB in ${parts.length} asset(s)`);
+    try {
+      for (const p of parts) (addMode ? uploadRaw : upload)(p);
+    } catch (e) {   // not on the release: the local record goes back to what it was
+      if (sfOld === null) fs.rmSync(sfPath, { force: true }); else fs.writeFileSync(sfPath, sfOld);
+      throw e;
+    }
     if (pruneLocal) {
       if (verifyUploaded(parts)) verified.push({ preset, vibe, files });
       else console.error(`prune: ${name} NOT verified on the release: local copy kept`);
@@ -277,11 +346,13 @@ function push() {
   // index.json is the sound / slow-mo vibe index: a ranking-only push never replaces it (2026-10-25)
   if (onlyPreset !== 'ranking' && fs.existsSync(path.join(dir, 'index.json'))) upload(path.join(dir, 'index.json'));
   const pushedVibes = new Set(vs.map(v => `${v.preset}/${v.vibe}`));
-  for (const a of assets() || []) {
+  // an add-on push only ADDS: nothing on the release is stale then
+  for (const a of addMode ? [] : assets() || []) {
     if (keep.has(a.name)) continue;
-    const m = ASSET_RE.exec(a.name);
-    // stale = an old part / single tar of a vibe pushed now, or a vibe of the pushed preset(s) that no longer exists locally
-    const stale = m && (pushedVibes.has(`${m[1]}/${m[2]}`) || (!onlyPreset || m[1] === onlyPreset) && !fs.existsSync(path.join(dir, m[1], m[2])));
+    const m = parseAsset(a.name);
+    // stale = an old part / single tar / add-on of a vibe pushed now (the full tar holds everything), or a vibe of the
+    // pushed preset(s) that no longer exists locally
+    const stale = m && (pushedVibes.has(`${m.preset}/${m.vibe}`) || (!onlyPreset || m.preset === onlyPreset) && !fs.existsSync(path.join(dir, m.preset, m.vibe)));
     if (stale) { console.log(`delete stale ${a.name}`); gh(['release', 'delete-asset', TAG, a.name, ...repo, '--yes']); }
   }
   fs.rmSync(tmp, { recursive: true, force: true });
@@ -295,7 +366,8 @@ function prune(verified) {
   const sizeOf = f => { try { return fs.statSync(f).size; } catch { return 0; } };
   for (const { files } of verified) {
     const media = files.filter(f => !f.endsWith('.json'));
-    const sample = new Set(media.filter(f => /\/clips\//.test(f)).slice(0, 3));
+    // add-on pushes keep nothing (owner 2026-11-11: delete every time we upload); a full push keeps a 3-clip sample
+    const sample = new Set(addMode ? [] : media.filter(f => /\/clips\//.test(f)).slice(0, 3));
     for (const f of media) {
       if (sample.has(f)) continue;
       const p = path.join(dir, f);
