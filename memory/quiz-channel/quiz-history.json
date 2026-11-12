@@ -2838,6 +2838,95 @@
     "titleStyle": "challenge",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "eWdsptVG7HA",
+   "url": "https://www.youtube.com/watch?v=eWdsptVG7HA",
+   "postedAt": "2026-11-12T10:05:42.796Z",
+   "publishAt": "2026-11-12T13:00:00.000Z",
+   "format": "song",
+   "theme": "kpop",
+   "seed": 516284040,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "outro",
+     "used": "pool",
+     "line": "How many did you get? Comment your score!",
+     "template": null,
+     "sec": 2.06
+    }
+   ],
+   "titleTemplate": "song-llm",
+   "title": "guess the kpop song quiz: 3/3 challenge 🎶 #kpop",
+   "answers": [
+    "song:super|seventeen",
+    "song:cheer up|twice",
+    "song:bad boy|red velvet"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "OljGRM8U_Ek",
+   "url": "https://www.youtube.com/watch?v=OljGRM8U_Ek",
+   "postedAt": "2026-11-12T10:10:49.067Z",
+   "publishAt": "2026-11-13T01:00:00.000Z",
+   "format": "cityphoto",
+   "theme": "asia",
+   "seed": 287046754,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Name these Asian cities!",
+     "template": "Name these Asian cities!",
+     "sec": 1.48
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Shanghai!",
+     "template": null,
+     "sec": 0.63
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "It's Sapporo!",
+     "template": null,
+     "sec": 0.79
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Nanjing! Got it?",
+     "template": "{a}! Got it?",
+     "sec": 1.11
+    }
+   ],
+   "titleTemplate": "cityphoto-llm",
+   "title": "guess the city quiz asian cities only 🤯 #asia",
+   "answers": [
+    "cityphoto:CN:shanghai#uvodxk",
+    "cityphoto:JP:sapporo#1hew0tn",
+    "cityphoto:CN:nanjing#tmhz15"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

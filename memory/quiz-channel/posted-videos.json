@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=hsfj1lXqqFI",
-      "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
-      "country": "Global",
-      "postedAt": "2026-10-13T09:37:36.605Z",
-      "videoId": "hsfj1lXqqFI",
-      "category": "quiz-shape",
-      "titleSource": "shape-ramp",
-      "quizFormat": "shape",
-      "quizTheme": "asia"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=fRR7P_ng4nA",
       "title": "Guess the Chinese City From the Map 🔥 #china",
       "country": "Global",
@@ -571,6 +560,28 @@
       "titleSource": "outfit-design",
       "quizFormat": "outfit",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=eWdsptVG7HA",
+      "title": "guess the kpop song quiz: 3/3 challenge 🎶 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-12T10:05:43.075Z",
+      "videoId": "eWdsptVG7HA",
+      "category": "quiz-song",
+      "titleSource": "song-llm",
+      "quizFormat": "song",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=OljGRM8U_Ek",
+      "title": "guess the city quiz asian cities only 🤯 #asia",
+      "country": "Global",
+      "postedAt": "2026-11-12T10:10:49.324Z",
+      "videoId": "OljGRM8U_Ek",
+      "category": "quiz-cityphoto",
+      "titleSource": "cityphoto-llm",
+      "quizFormat": "cityphoto",
+      "quizTheme": "asia"
     }
   ]
 }
