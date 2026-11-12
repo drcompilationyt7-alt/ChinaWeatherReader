@@ -11,13 +11,16 @@
  *
  * Pure functions (no I/O): the pipeline and scripts/quiz-balance-sim.js both use them.
  */
-const FAMILY_TARGET = { quiz: 0.74, wyr: 0.16, duel: 0.10 };
+// 2026-11-12 (owner: "why is my quiz short doing so bad, fix it view wise"): would-you-rather (median 167 views over 5) and
+// duel (499 over 5) vs ~1-1.4K for the guess formats, so the forced 26 % for those two families went to 10 %
+const FAMILY_TARGET = { quiz: 0.90, wyr: 0.06, duel: 0.04 };
 // 2026-11-11: VTuber renders failed on every GitHub run (the VTuber wiki answers 403 to the runners), yet at 0 % share
 // the bucket won the deficit draw almost every day and the run fell back to a random format (the 9-view opening, an
 // outfit quiz). Fixed the same night: the 68 portraits are committed copies (core/quiz/assets/pop2/mirror, used first by
 // media.fetch_image), so VTuber is back at 14 % (owner: "vtuber have a lot of fans"). QUIZ_VTUBER_TARGET=0 turns it off.
 const VTUBER_TARGET = Number(process.env.QUIZ_VTUBER_TARGET || 0.14);
-const TOPIC_TARGET = { anime: 0.37 - VTUBER_TARGET / 2, kpop: 0.29 - VTUBER_TARGET / 2, vtuber: VTUBER_TARGET, geo: 0.16, culture: 0.18 };
+// 2026-11-12: culture 0.18 -> 0.12 (its fallback is text trivia, median 298 views) to anime, the strongest topic
+const TOPIC_TARGET = { anime: 0.43 - VTUBER_TARGET / 2, kpop: 0.29 - VTUBER_TARGET / 2, vtuber: VTUBER_TARGET, geo: 0.16, culture: 0.12 };
 const WINDOW = 14;
 const CAP = 0.4;
 
@@ -96,7 +99,7 @@ function blockedFormats(uploads, { now = Date.now(), noRepeatDays = 3, geoEvery 
  *   uploads      history (oldest first; excluded uploads already removed)
  *   available    (format, popTopic) => bool
  */
-function plan({ formats, uploads, available, rng = Math.random, now = Date.now(), noRepeatDays = 3, geoEvery = 7 }) {
+function plan({ formats, uploads, available, rng = Math.random, now = Date.now(), noRepeatDays = 3, geoEvery = 7, weak = new Set() }) {
   const recent = uploads.slice(-WINDOW);
   const famShare = shares(recent.map(u => familyOf(u.format)), Object.keys(FAMILY_TARGET));
   const topShare = shares(recent.map(u => bucketOf(u.format, u.theme)), Object.keys(TOPIC_TARGET));
@@ -118,7 +121,10 @@ function plan({ formats, uploads, available, rng = Math.random, now = Date.now()
   const family = pickWeighted(deficitWeights(FAMILY_TARGET, famShare, fams).map(([k, w]) => [k, anyOpen && !openFam(k) ? 0 : w]), rng);
   const inFam = options.filter(o => o.family === family);
   const buckets = Object.keys(TOPIC_TARGET).filter(k => inFam.some(o => o.bucket === k));
-  const bucket = pickWeighted(deficitWeights(TOPIC_TARGET, topShare, buckets, CAP), rng);
+  // 2026-11-12: a topic whose only formats right now are weak ones (e.g. VTuber trivia while the VTuber quiz is on its
+  // no-repeat days) mostly yields its turn: those fallbacks were 12 % of the uploads at ~300 views
+  const allWeak = k => inFam.filter(o => o.bucket === k).every(o => weak.has(o.format));
+  const bucket = pickWeighted(deficitWeights(TOPIC_TARGET, topShare, buckets, CAP).map(([k, w]) => [k, allWeak(k) ? w * 0.15 : w]), rng);
   const candidates = inFam.filter(o => o.bucket === bucket);
   const pct = o => Object.entries(o).map(([k, v]) => `${k} ${Math.round(v * 100)}%`).join(' ');
   return { family, bucket, candidates, famShare, topShare,

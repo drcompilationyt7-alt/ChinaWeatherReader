@@ -59,8 +59,11 @@ const FALLBACK_WEIGHTS = FORMATS.some(isPop)
   // scene / kpop wyr, ~200-500 for opening / character / voice / duel / text trivia / city map.
   // 2026-11-11 from 10-28..11-11 (owner: "why so low views"): ~1-1.4K emoji (K-pop song) / idol / outfit / character /
   // shape / city photo / eyes / silhouette; duel ~500, food trivia 200-1000, song 42-1K, opening 9 / 129, China map 3 / 14
-  ? { emoji: 0.35, trivia: 0.1, wyr: 0.25, city: 0.02, character: 0.25, idol: 0.45, opening: 0.05, flag: 0.05, shape: 0.3,
-    cityphoto: 0.25, nightcity: 0.2, cuisine: 0.25, vtuber: 0.12, duel: 0.08, scene: 0.3, voice: 0.06, song: 0.25, silhouette: 0.25, eyes: 0.25, outfit: 0.35 }
+  // 2026-11-12 medians (2+ days old): scene 1200, character 1193, idol 1178, outfit 1164, shape 1082 (79 % watched, the best),
+  // cuisine 1035, city photo 991, eyes 974, silhouette 859, emoji 706, vtuber 658, voice 507, duel 499, song 474 (42 / 15
+  // lately), opening 354, trivia 298, would-you-rather 167
+  ? { emoji: 0.3, trivia: 0.08, wyr: 0.1, city: 0.02, character: 0.35, idol: 0.45, opening: 0.04, flag: 0.05, shape: 0.4,
+    cityphoto: 0.25, nightcity: 0.2, cuisine: 0.3, vtuber: 0.15, duel: 0.08, scene: 0.35, voice: 0.05, song: 0.08, silhouette: 0.25, eyes: 0.25, outfit: 0.35 }
   : { flag: 0.3, shape: 0.2, capital: 0.15, bigger: 0.2, crowd: 0.15 };
 const ROTATE_RECENT = 3;  // formats of the last 3 uploads are drawn less (and the last one never), so days rotate
 // owner 2026-10-15: no format repeats within NO_REPEAT_DAYS uploads, geography at most 1 in GEO_EVERY uploads,
@@ -311,7 +314,9 @@ function pickFormat(stats, history, forced, opts = {}) {
  * explore with FALLBACK_WEIGHTS x a staleness boost (a format with a strong past reward that has not aired lately). */
 function pickBalanced(stats, history, { available = poolAvailability(), rng = Math.random, now = Date.now() } = {}) {
   const uploads = (history.uploads || []).filter(u => !u.excluded);
-  const planB = () => balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY });
+  // weak = formats the views put below 0.1 (text trivia, 3 s song, opening, voice, map): never a topic's only option if avoidable
+  const weak = new Set(Object.keys(FALLBACK_WEIGHTS).filter(f => FALLBACK_WEIGHTS[f] < 0.1));
+  const planB = () => balancer.plan({ formats: FORMATS, uploads, available, rng, now, noRepeatDays: NO_REPEAT_DAYS, geoEvery: GEO_EVERY, weak });
   let b = planB();
   if (!b.candidates.length) return null;
   // a seasonal edition is due (every other video in its month, anime themes only: owner 2026-10-31): only formats the
