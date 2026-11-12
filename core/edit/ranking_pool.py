@@ -842,12 +842,15 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 if kept:
                     extra['kept_marks'] = kept
                 try:
-                    it = stage_item(res, e, entry_key(e), sd, RC, w, extra)
+                    # 2026-11-12: stage_item used to delete the clip and return {'window_marks'} (no 'id') even when the mark
+                    # was to be kept -> KeyError 'id' killed the GitHub ranking mine (11-12 01:36 run, l3xGSMayfgI)
+                    it = stage_item(res, e, entry_key(e), sd, RC, w, extra,
+                                    keep_marks=os.environ.get('RANKING_KEEP_MARKS', '1') != '0')
                 except Exception as ex:  # noqa: BLE001
                     log(f'{res.get("id")}: staging {w["s"]:.1f}s failed: {type(ex).__name__}: {ex}')
                     continue
-                if it.get('window_marks') and os.environ.get('RANKING_KEEP_MARKS', '1') == '0':
-                    marks += it['window_marks'][:3]
+                if 'id' not in it:                   # dropped for a mark (RANKING_KEEP_MARKS=0): never stage an id-less item
+                    marks += (it.get('window_marks') or [])[:3]
                     continue
                 if it.get('window_marks'):
                     it['kept_marks'] = list(dict.fromkeys((it.get('kept_marks') or []) + ['window_mark']))
@@ -896,7 +899,9 @@ def _rm(p):
             pass
 
 
-def stage_item(res, e, key, sd, RC, w=None, extra=None):
+def stage_item(res, e, key, sd, RC, w=None, extra=None, keep_marks=False):
+    """keep_marks (library, owner 2026-11-10 "if we can't cut it we keep the tag"): a mark found in the cut window stays in
+    the staged clip (it['window_marks'], for the review) instead of dropping it."""
     w = w or res['window']
     dur = res.get('dur') or w['e'] + MARGIN
     s0, e0 = max(0.0, w['s'] - MARGIN), min(float(dur), w['e'] + MARGIN)
@@ -904,10 +909,12 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None):
     clip = os.path.join(sd, 'clips', iid + '.mp4')
     RC.cut_clip(res['path'], s0, e0, clip)
     marks = RC.window_marks(clip, res, w['s'] - s0, w['e'] - s0)
-    if marks:
+    if marks and not keep_marks:
         os.remove(clip)
         log(f'{res["id"]}: watermark in the window {marks[:2]}')
         return {'window_marks': marks}
+    if marks:
+        log(f'{res["id"]}: watermark in the window {marks[:2]}: kept (no clean cut)')
     rt = res.get('rights') or {}
     info = res.get('_info') or {}
     proof = rj(os.path.join(RC.PROOF_DIR[0] or '', f'{res["id"]}.json'), {}) if RC.PROOF_DIR[0] else {}
@@ -932,6 +939,8 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None):
           'rights': rt, 'proof': {'reason': proof.get('reason'), 'type': proof.get('type'),
                                   'evidence': proof.get('evidence'), 'snapshot_file': f'proofs/{res["id"]}.json'},
           'status': 'staged', 'added': time.strftime('%Y-%m-%d')}
+    if marks:
+        it['window_marks'] = marks
     lab = (f'{e["name"]} | {it["editor_handle"]} | {res["id"]} {w["s"]:.1f}-{w["e"]:.1f}s | char {it["char_conf"]} '
            f'({it["char_method"]}) | ev {it["eventful"]} song {it["song"]} | {it["age_days"]} d old')
     if extra:                                  # library: what the section serves + its themes, on the sheet too
