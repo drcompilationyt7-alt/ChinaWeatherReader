@@ -115,10 +115,18 @@ def source_meta(path):
             'views': info.get('view_count'), 'tags': (info.get('tags') or [])[:12]}
 
 
+# 2026-11-12 (owner: AI-looking Demon Slayer clips): 8K / 4320p uploads of shows never made in 8K are AI upscales, and
+# 60 fps / twixtor / 'interpolated' uploads have invented frames - waxy, smeared visuals. Rejected even when the title says 'fight'.
+AI_RE = re.compile(r'\b(8k|4320p|twixtor|[56]0 ?fps|120 ?fps|interpolat\w*|upscal\w*|ai[ -]?(?:remaster|enhanc|upscal)\w*|topaz|'
+                   r'frame ?gen\w*|rife|svp)\b', re.I)
+
+
 def title_ok(meta):
     txt = f"{meta['title']} {' '.join(meta.get('tags') or [])}"
     if SUB_RE.search(meta['title']):
         return False, 'subtitled title'
+    if AI_RE.search(meta['title']):
+        return False, 'AI-processed source (upscaled / interpolated)'
     if SKIP_RE.search(meta['title']) and not re.search(r'fight|battle|gunfight|duel|clash', meta['title'], re.I):
         return False, 'not a hit source (twixtor / OP / ED / AMV ...)'
     if re.search(r'\b(hentai|nsfw|18\+|uncensored|ecchi compilation)\b', txt, re.I):

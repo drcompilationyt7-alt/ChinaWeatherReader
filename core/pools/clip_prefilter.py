@@ -52,6 +52,10 @@ SN = {
     'cut_pre': _f('PF_SN_CUT_PRE', 0.5),           # scene cut in this many seconds before the hit: REPORTED only (7 / 55
                                                    # approved minis have one: the quick cut into the action is fine)
     'cut_gate': os.environ.get('PF_SN_CUT_GATE', '0') == '1',
+    # 2026-11-12 (owner: "some of the demon slayer clips are AI ... the visuals are not good"): AI frame interpolation /
+    # twixtor invents in-between frames. Anime is drawn at <= ~24 new pictures a second; the removed Demon Slayer clips
+    # made 27-52 (60 fps "FHD 60FPS", twixtor packs), the real ones 4-24.5. Sound edits only (slow-mo uses twixtor on purpose)
+    'new_per_s_max': _f('PF_SN_NEW_PER_S', 26.0),
 }
 
 
@@ -157,8 +161,19 @@ def slowmo_check(clip, item=None):
 
 
 # ------------------------------------------------------------------ sound
+def new_pictures_per_s(path, fps=None):
+    """distinct pictures per second at the clip's own frame rate (a near-zero change = a repeated frame)"""
+    fps = fps or probe(path)[0]
+    fr = frames(path)
+    if len(fr) < 6:
+        return None
+    d = np.abs(np.diff(fr, axis=0)).mean(axis=(1, 2))
+    return round(float(fps * (1.0 - (d < 0.6).mean())), 1)
+
+
 def sound_feats(mini, hit_t):
     fps, dur = probe(mini)
+    nps = new_pictures_per_s(mini, fps)
     t0 = max(0.0, hit_t - 0.9)
     fr = frames(mini, t0, min(dur or hit_t + 0.4, hit_t + 0.4))
     if len(fr) < 6:
@@ -199,7 +214,7 @@ def sound_feats(mini, hit_t):
         spread = float(np.sqrt(((((xs / W) - cx) ** 2) * wts).sum() / wts.sum() + ((((ys / H) - cy) ** 2) * wts).sum() / wts.sum()))
     else:
         cx = cy = centre = spread = None
-    return {'n': int(len(fr)), 'fps': round(fps, 2), 'cut_before': cut_at, 'peak_rel': round(peak_rel, 3), 'area': round(area, 3),
+    return {'n': int(len(fr)), 'fps': round(fps, 2), 'new_per_s': nps, 'cut_before': cut_at, 'peak_rel': round(peak_rel, 3), 'area': round(area, 3),
             'centre': None if centre is None else round(centre, 3),
             'spread': None if spread is None else round(spread, 3), 'cx': cx and round(cx, 3), 'cy': cy and round(cy, 3),
             'energy_hit': round(float(e[min(hi - 1, len(e) - 1)]), 2), 'energy_med': round(base, 2)}
@@ -219,6 +234,8 @@ def sound_verdict(f):
         why.append(f"wide chaotic shot (spread {f['spread']})")
     if f.get('centre') is not None and f['centre'] > SN['centre_max']:
         why.append(f"off-centre (centre {f['centre']})")
+    if (f.get('new_per_s') or 0) > SN['new_per_s_max']:
+        why.append(f"AI-interpolated frames ({f['new_per_s']} new pictures/s, anime is <= 24)")
     return not why, why
 
 
@@ -263,9 +280,12 @@ def selftest():
     assert not slowmo_verdict(dict(s, red=0.3, blown=0.0))[0]
     assert not slowmo_verdict(dict(s, talk_mouth=0.9))[0]
     assert not slowmo_verdict(dict(s, face_frac=0.4))[0]
-    c = sound_feats(_synth(os.path.join(d, 'c.mp4'), 'centre_hit'), 1.0)
-    e = sound_feats(_synth(os.path.join(d, 'e.mp4'), 'edge_hit'), 1.0)
-    k = sound_feats(_synth(os.path.join(d, 'k.mp4'), 'cut'), 1.0)
+    # 24 fps like real anime (a synthetic clip that changes every frame at 30 fps now counts as interpolated)
+    c = sound_feats(_synth(os.path.join(d, 'c.mp4'), 'centre_hit', fps=24, n=48), 1.0)
+    e = sound_feats(_synth(os.path.join(d, 'e.mp4'), 'edge_hit', fps=24, n=48), 1.0)
+    k = sound_feats(_synth(os.path.join(d, 'k.mp4'), 'cut', fps=24, n=48), 1.0)
+    i60 = sound_feats(_synth(os.path.join(d, 'i.mp4'), 'centre_hit', fps=60, n=120), 1.0)
+    assert any('interpolated' in w for w in sound_verdict(i60)[1]), i60
     assert c['centre'] < 0.1, c
     assert e['centre'] > 0.30, e
     assert sound_verdict(c)[0] and not sound_verdict(e)[0]

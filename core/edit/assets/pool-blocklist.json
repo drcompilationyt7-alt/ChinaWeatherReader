@@ -1,6 +1,6 @@
 {
  "version": 2,
- "note": "moments = source moments never shown again: [start_s, end_s, reason, category]; category is one of sexual_content | minor | explicit_source | subtitles_text | wrong_show (blood / gore is NOT a category: owner 2026-10-12 allows it in the sound and slow-mo edits). released = former entries freed by that decision (kept for the record, not read by blocked()).",
+ "note": "moments = source moments never shown again: [start_s, end_s, reason, category]; category is one of sexual_content | minor | explicit_source | subtitles_text | wrong_show | ai_processed (whole AI-upscaled / interpolated sources, owner 2026-11-12) (blood / gore is NOT a category: owner 2026-10-12 allows it in the sound and slow-mo edits). released = former entries freed by that decision (kept for the record, not read by blocked()).",
  "moments": {
   "QG-lpeQC9k4": [
    [
@@ -30,6 +30,62 @@
     110.3,
     "minor character: low-angle skirt frame (strict minor framing; sound agent review",
     "minor"
+   ]
+  ],
+  "IE5H0lMLUw8": [
+   [
+    0,
+    1000000,
+    "whole source: interpolated (60 fps, 38 new pictures/s) (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "tPEicYJWyQQ": [
+   [
+    0,
+    1000000,
+    "whole source: AI upscale (\"4320p 8K\") (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "LXyhC4Oq0hc": [
+   [
+    0,
+    1000000,
+    "whole source: twixtor interpolated (60 fps pack) (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "wiTLeotrv-A": [
+   [
+    0,
+    1000000,
+    "whole source: twixtor interpolated (every frame invented) (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "c1rBk7XAlj0": [
+   [
+    0,
+    1000000,
+    "whole source: AI upscale (\"8K HDR\") (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "ag15MfZj2ss": [
+   [
+    0,
+    1000000,
+    "whole source: interpolated \"FHD 60FPS\" (52 new pictures/s) (owner 2026-11-12)",
+    "ai_processed"
+   ]
+  ],
+  "RD4rr7JcatM": [
+   [
+    0,
+    1000000,
+    "whole source: frame-blended 60 fps (ghosted doubles) (owner 2026-11-12)",
+    "ai_processed"
    ]
   ]
  },
@@ -490,5 +546,5 @@
    ]
   ]
  },
- "updated": "2026-10-13T00:58:46Z"
+ "updated": "2026-11-12"
 }
