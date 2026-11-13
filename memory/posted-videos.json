@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=CF1iIdJ02T4",
-      "title": "seishun complex acapella (bocchi the rock edit) 🎧🔥",
-      "country": "Global",
-      "postedAt": "2026-10-14T08:16:20.040Z",
-      "videoId": "CF1iIdJ02T4",
-      "category": "meme-anime",
-      "titleSource": "seishun complex"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=NyccBq4DC_E",
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "6hfsTEhT7Ts",
       "category": "edit-slowmo",
       "titleSource": "Somewhere Only We Know"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=YOgoz2FeJpg",
+      "title": "resonance acapella but the beat drops 🔥",
+      "country": "Global",
+      "postedAt": "2026-11-13T10:17:35.720Z",
+      "videoId": "YOgoz2FeJpg",
+      "category": "meme-anime",
+      "titleSource": "resonance"
     }
   ]
 }

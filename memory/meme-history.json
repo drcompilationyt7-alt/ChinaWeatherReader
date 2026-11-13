@@ -2765,6 +2765,59 @@
     140.76,
     183.98
    ]
+  },
+  {
+   "videoId": "YOgoz2FeJpg",
+   "url": "https://www.youtube.com/watch?v=YOgoz2FeJpg",
+   "postedAt": "2026-11-13T10:17:35.716Z",
+   "publishAt": "2026-11-13T12:00:00.000Z",
+   "song": "resonance",
+   "theme": "anime",
+   "emoji": "🔥,🎧",
+   "title": "resonance acapella but the beat drops 🔥",
+   "clipIds": [
+    "8-ACGUzz1cA",
+    "eqhLOGa0ACQ",
+    "nDo2ZJa9GAc",
+    "YW9jkFBqj38",
+    "kjHsIeJi_pM",
+    "r_7YLyeQ2ok",
+    "p7SY2ft0Gbg",
+    "JXjNhC6Cd5o"
+   ],
+   "clipChannels": [
+    "AniLyricsBR",
+    "MarA",
+    "Mr.Unknown (R.I.P)",
+    "Raidtastic",
+    "Roberth",
+    "Swagger",
+    "hibikikyu",
+    "風見ナガヤマ"
+   ],
+   "clipSource": "Soul Eater",
+   "settings": {
+    "drop": 10,
+    "edit": 10,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "layers"
+   },
+   "onVideoTitle": "resonance acapella",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "edit-community",
+    "titleStyle": "mimic",
+    "ovStyle": "ov-kw",
+    "descHook": "layers",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 109.98,
+   "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
 }
