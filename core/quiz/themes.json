@@ -1,6 +1,6 @@
 {
  "about": "Themed editions (owner 2026-10-09). One place per theme: title card, palette, decoration, narrator lines, music mood, art query, age rule, formats, optional date window (MM-DD, inclusive), duel questions, LLM topic. Art formats (character / silhouette / eyes / outfit) use the theme pool built by `python scripts/build-pop-media.py --newformats2 --phase theme --theme <id>` (character-extras.json -> themes.<id>); duel uses the pool's characters + the theme's questions; wyr / trivia / emoji use `topic` in the generator prompt (fact-check kept). Content rules are the same as everywhere: age_rule 'adults' = age_class adult and NO appearance override; 'any' = every age, minors / unknown / strict overrides through the strict gate. Live only with POP_NEW_FORMATS=1 and the theme in POP_THEMES (comma list or 'all'); POP_THEME_RATE (default 0.25) = share of videos that are themed outside a seasonal window.",
- "rate": 0.25,
+ "rate": 0.4,
  "seasonal_rate": 0.5,
  "themes": {
   "beach": {
