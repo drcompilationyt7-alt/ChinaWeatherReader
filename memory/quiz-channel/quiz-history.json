@@ -2927,6 +2927,87 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "rOEfsxryjLU",
+   "url": "https://www.youtube.com/watch?v=rOEfsxryjLU",
+   "postedAt": "2026-11-13T09:49:23.271Z",
+   "publishAt": "2026-11-13T13:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 724337142,
+   "length": "quick",
+   "hookV2": false,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "pool",
+     "line": "Guess the K-pop song from the emojis!",
+     "template": null,
+     "sec": 2.15
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Dalla Dalla.",
+     "template": null,
+     "sec": 1.23
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai-short",
+     "line": "You got Love Scenario!",
+     "template": "You got {a}!",
+     "sec": 1.62
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "Thunderous. Did you get it?",
+     "template": null,
+     "sec": 1.84
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis quiz 🎶 #kpop",
+   "answers": [
+    "emoji:dalla dalla (itzy)",
+    "emoji:love scenario (ikon)",
+    "emoji:thunderous (stray kids)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "topic",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
+  },
+  {
+   "videoId": "BgSU1-o7CWI",
+   "url": "https://www.youtube.com/watch?v=BgSU1-o7CWI",
+   "postedAt": "2026-11-13T09:53:37.222Z",
+   "publishAt": "2026-11-14T01:00:00.000Z",
+   "format": "trivia",
+   "theme": "food",
+   "seed": 387936957,
+   "length": "quick",
+   "hookV2": true,
+   "followUpOf": "PkGisraTXb4",
+   "titleTemplate": "trivia-howwell",
+   "title": "How Well Do You Know Asian Food? 🧠 #asianfood",
+   "answers": [
+    "trivia:pho is a noodle soup from which country?",
+    "trivia:which traditional vietnamese soup features rice noodles?",
+    "trivia:takoyaki balls are filled with..."
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
