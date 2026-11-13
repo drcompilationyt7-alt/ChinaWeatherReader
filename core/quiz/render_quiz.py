@@ -65,9 +65,22 @@ V2_LOOP = 0.5       # crossfade toward frame 0 over the last half second
 V2_TAIL = 0.55      # after the CTA line ends, before the video ends (the crossfade runs inside it)
 V2_CTA_MIN = 1.0    # the last answer is on screen alone at least this long before the CTA
 V2_VARIANTS = 3
-V2_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY TRUE FANS GET {N}/{N}', 'NO CHEATING. GO!']
-V2_GEO_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY MAP NERDS GET {N}/{N}', 'NO CHEATING. GO!']
-V2_PLAIN_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'NO CHEATING. GO!']
+# owner 2026-11-13: a CHALLENGE line from the very first frame ("ONLY TRUE FANS GET 3/3"); 'NO CHEATING. GO!' is not one
+V2_HOOKS = ['ONLY TRUE FANS GET {N}/{N}', 'CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY TRUE FANS GET {N}/{N}']
+V2_GEO_HOOKS = ['ONLY MAP NERDS GET {N}/{N}', 'CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}']
+V2_PLAIN_HOOKS = ['CAN YOU GET {N}/{N}?', 'MOST PEOPLE MISS #{N}', 'ONLY A FEW GET {N}/{N}']
+# owner 2026-11-13: a score-tier line with the end CTA ("0 = casual, 3 = true otaku"), worded for the video's topic
+TIER_TOP = {'anime': 'TRUE OTAKU', 'kpop': 'TRUE K-POP STAN', 'kpop song': 'TRUE K-POP STAN', 'mixed': 'TRUE K-POP STAN',
+            'vtubers': 'TRUE VTUBER FAN', 'food': 'TRUE FOODIE', 'cdrama': 'TRUE C-DRAMA FAN', 'geo': 'MAP GENIUS'}
+
+
+def tier_text(topic, n, fmt=''):
+    """'0 = CASUAL  ·  3/3 = TRUE OTAKU' (None for formats without a score: would you rather, duel)."""
+    if fmt in ('wyr', 'duel'):
+        return None
+    geo = fmt in ('flag', 'shape', 'capital', 'bigger', 'crowd', 'city', 'cityphoto', 'nightcity') or topic in ('cities', 'asia', 'world')
+    top = TIER_TOP['geo'] if geo else TIER_TOP['food'] if fmt == 'cuisine' else TIER_TOP.get(str(topic or '').lower(), 'TRUE FAN')
+    return f'0 = CASUAL  ·  {n}/{n} = {top}'
 # one action line per video, after round 2's answer (QuizRenderer.mid_cta); 'comment' is the end CTA's job
 MID_CTA_QUIZ = ['DOUBLE TAP IF YOU GOT IT', 'LIKE IF YOU GOT 2/2 SO FAR', 'SUBSCRIBE FOR A NEW QUIZ DAILY']
 MID_CTA_PICK = ['LIKE IF YOU AGREE', "DOUBLE TAP IF YOU'D PICK IT TOO", 'SUBSCRIBE FOR A NEW ONE DAILY']
@@ -378,7 +391,9 @@ class QuizRenderer:
             arrow = quiz_emoji.image('\U0001F447', 92)
         except Exception:  # noqa: BLE001  (no emoji picture: the pill alone)
             arrow = None
-        self.v2_cta = {'l1': text_layer(l1, 74, stroke=8, max_w=980),
+        tier = tier_text(self.plan.get('topic'), n, getattr(self, 'fmt', '')) if cta is None else None
+        self.v2_cta = {'tier': text_layer(tier, 44, fill=WHITE, stroke=6, max_w=960) if tier else None,
+                       'l1': text_layer(l1, 74, stroke=8, max_w=980),
                        'pill': with_shadow(pill(cta or f'COMMENT YOUR SCORE  ?/{n}', 56, col, max_w=860, pad_y=14), blur=8, offset=(0, 6)),
                        'arrow': arrow}
 
@@ -394,6 +409,8 @@ class QuizRenderer:
         if c['arrow'] is not None:
             px = W / 2 + c['pill'].size[0] / 2 + c['arrow'].size[0] / 2 - 6
             put(frame, c['arrow'], min(W - c['arrow'].size[0] / 2 - 6, px), 344 + bob, s=max(0.01, ease_out_back((ct - 0.2) / 0.3)))
+        if c.get('tier') is not None:
+            put(frame, c['tier'], W / 2, 426, a=clamp((ct - 0.3) / 0.3))
 
     def v2_finish_audio(self, audio):
         """Fade the last V2_LOOP seconds down so the replay's first narrator line starts on a clean bed."""

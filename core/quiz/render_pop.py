@@ -50,7 +50,7 @@ from PIL import ImageFilter
 from render_quiz import (FPS, H, NAVY, W, WHITE, QuizRenderer, clamp, ease_out_back, ease_out_cubic, font, pill,
                          put, ring, text_layer, with_shadow, flag_card, fmt_num, draw_watermark, faded,
                          V2_START, V2_TAIL, V2_CTA_MIN, V2_OUTRO_POOL, V2_PLAIN_HOOKS, MID_CTA_DELAY, MID_CTA_LEN,
-                         MID_CTA_TAIL)
+                         MID_CTA_TAIL, tier_text)
 V2_SPOKEN_Q = ('trivia', 'wyr', 'duel')   # POP_HOOK_V2: the question itself is the hook (no intro line before it)
 V2_NO_FANS = ('city', 'cityphoto', 'nightcity', 'cuisine')   # hooks without "fans" for places / food
 
@@ -773,6 +773,9 @@ class PopRenderer(QuizRenderer):
             'cta': pill('COMMENT BELOW' if fmt == 'wyr' else 'COMMENT YOUR SCORE', 64, GOLD if fmt == 'wyr' else self.accent, max_w=940),
             'follow': text_layer('NEW QUIZ EVERY DAY', 52, fill=(255, 255, 255, 230), stroke=6),
         }
+        tier = tier_text(self.topic, len(rounds), fmt)
+        if tier:   # owner 2026-11-13: the score tier replaces the follow line (same spot)
+            self.outro_layers['follow'] = text_layer(tier, 50, fill=WHITE, stroke=6, max_w=980)
         if fmt == 'duel':
             self.outro_layers.update({
                 'l1': text_layer('DID YOU AGREE', 118, stroke=10, max_w=1000),
@@ -1833,7 +1836,41 @@ class PopRenderer(QuizRenderer):
         self._city_idx += 1
         ans, sub = self._answer_pill(r['name'])
         fact = text_layer(r['fact'].upper(), 46, fill=self.accent, stroke=6, max_w=960) if r.get('fact') else None
-        return {'xy': self._city_xy[i], 'answer': ans, 'fact': fact}
+        return {'xy': self._city_xy[i], 'answer': ans, 'fact': fact, **self._city_answer_photo(r)}
+
+    def _city_answer_photo(self, r):
+        """Owner 2026-11-13 ("geo works but when you show the answer show a picture"): the map quiz's answer shows a photo of
+        the city (the city-photo pool: free-licence photos with their credit). No photo: the map answer as before."""
+        try:
+            pool = json.load(open(os.path.join(HERE, 'assets', 'city-photos.json'), encoding='utf-8')).get('cities') or []
+        except (OSError, ValueError):
+            return {}
+        name = str(r.get('name') or '').lower()
+        hits = [c for c in pool if c.get('iso2') == r.get('iso2') and str(c.get('name') or '').lower() == name and c.get('image')]
+        random.Random(name).shuffle(hits)
+        best = None
+        for c in hits[:4]:
+            try:
+                img = media.fetch_image(c['image'])
+            except Exception:  # noqa: BLE001  (a dead photo URL: try the next one)
+                continue
+            if img is None:
+                continue
+            if best is None or img.size[0] / max(1, img.size[1]) > best[1].size[0] / max(1, best[1].size[1]):
+                best = (c, img)              # the widest photo wins (a skyline, not a close-up of one tower)
+            if img.size[0] >= 1.3 * img.size[1]:
+                break
+        for c, img in ([best] if best else []):
+            photo = fit_contain(on_backdrop(img), 760, 440)
+            card, mask = self._card(*photo.size)
+            ph = photo.convert('RGBA')
+            ph.putalpha(mask)
+            author, _, lic = str(c.get('credit') or '').rpartition(', ')
+            author = author if len(author) <= 34 else author[:32].rstrip(' ,(') + '…'
+            credit = text_layer(f'PHOTO: {author}, {lic}' if author else f'PHOTO: {lic}', 22, fill=(255, 255, 255, 215), stroke=3,
+                                stroke_fill=(0, 0, 0, 160), max_w=photo.size[0] - 40, min_size=14) if c.get('credit') else None
+            return {'ans_photo': ph, 'ans_card': card, 'ans_credit': credit}
+        return {}
 
     # ── frames ──
     def draw_round(self, frame, i, tl, seg):
@@ -1979,6 +2016,15 @@ class PopRenderer(QuizRenderer):
             self.draw_timer(frame, q - tl, q, y=1350)
         else:
             rt = tl - q
+            if L.get('ans_photo') is not None:   # the city's photo pops over the map, the pin stays visible above it
+                s = max(0.01, ease_out_back((rt - 0.1) / 0.35))
+                # above or below the pin, whichever leaves it visible (the pin is the answer's location)
+                ph_h = L['ans_photo'].size[1]
+                py = cy - 330 + ph_h / 2 if y > cy else cy + 330 - ph_h / 2
+                put(frame, L['ans_card'], cx, py, s=s)
+                put(frame, L['ans_photo'], cx, py, s=s)
+                if L['ans_credit'] is not None:
+                    put(frame, L['ans_credit'], cx, py + L['ans_photo'].size[1] / 2 - 22, a=clamp((rt - 0.3) / 0.3))
             put(frame, L['answer'], W / 2, 1330, s=max(0.01, ease_out_back(rt / 0.3)))
             if L['fact'] is not None:
                 put(frame, L['fact'], W / 2, 1440, a=clamp((rt - 0.2) / 0.25))
