@@ -373,9 +373,26 @@ def prefilter(e, entry, min_views=None):
     # a source must look like an edit in the style of the owner references - every approved source so far had an edit marker
     if OFFICIAL_CH_RE.search(e.get('channel') or e.get('uploader') or '') or OFFICIAL_T_RE.search(t):
         return False, 'official_not_edit'
-    if not EDIT_MARK_RE.search(t):
-        return False, 'no_edit_marker'
+    if not EDIT_MARK_RE.search(t) and not _style_editor(e):
+        return False, 'no_edit_marker'     # the owner's reference editors only post edits: no marker needed
     return True, ''
+
+
+_STYLE_IDS = []
+
+
+def _style_editor(e):
+    """True for an upload of one of the owner's reference editors (refs/ranking-style-refs.json channels)."""
+    if not _STYLE_IDS:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'refs', 'ranking-style-refs.json'), encoding='utf-8') as f:
+                ch = json.load(f).get('channels') or {}
+        except (OSError, ValueError):
+            ch = {}
+        _STYLE_IDS.append(({k.lower() for k in ch}, {v.strip().lower() for v in ch.values()}))
+    ids, names = _STYLE_IDS[0]
+    return (str(e.get('channel_id') or e.get('uploader_id') or '').lower() in ids
+            or str(e.get('channel') or e.get('uploader') or '').strip().lower() in names)
 
 
 OFFICIAL_CH_RE = re.compile(r'crunchyroll|funimation|aniplex|muse ?(asia|indonesia)?\b|ani-?one|netflix|toho animation|'

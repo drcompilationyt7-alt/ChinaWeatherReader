@@ -2020,6 +2020,33 @@
       "favourites": 10923,
       "in_pool": true
      }
+    },
+    {
+     "name": "ALYA",
+     "chars": [
+      "Alisa Kujou"
+     ],
+     "tags": [
+      "alisa_mikhailovna_kujou"
+     ],
+     "anime": "Alya Sometimes Hides Her Feelings in Russian",
+     "wiki": "roshidere",
+     "search": "alya",
+     "q": [
+      "alya edit 4k",
+      "alisa kujou amv edit"
+     ],
+     "alias": [
+      "alya",
+      "alisa kujou",
+      "roshidere"
+     ],
+     "anilist": {
+      "id": 217334,
+      "favourites": 3716,
+      "in_pool": false
+     },
+     "added": "2026-11-12 owner (Mila 「EDIT/AMV」 example)"
     }
    ]
   },
@@ -2184,6 +2211,32 @@
       "Ryuu Sanada",
       "Chizuru Yoshida"
      ]
+    },
+    {
+     "name": "ROSHIDERE",
+     "anime": "Alya Sometimes Hides Her Feelings in Russian",
+     "wiki": "roshidere",
+     "search": "roshidere",
+     "q": [
+      "roshidere edit 4k",
+      "alya sometimes hides her feelings in russian amv edit"
+     ],
+     "alias": [
+      "roshidere",
+      "alya",
+      "alisa kujou"
+     ],
+     "anilist": {
+      "id": 162804,
+      "title": "Alya Sometimes Hides Her Feelings in Russian",
+      "score": 75,
+      "popularity": 214253
+     },
+     "chars": [
+      "Alisa Kujou",
+      "Masachika Kuze"
+     ],
+     "added": "2026-11-12 owner"
     }
    ]
   },
