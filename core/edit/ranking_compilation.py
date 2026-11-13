@@ -368,7 +368,24 @@ def prefilter(e, entry, min_views=None):
         return False, 'not_an_edit'        # raw fight footage or another list
     if re.search(r'\b(vs\.?|versus)\b', t, re.I) and entry.get('solo', True):
         return False, 'not_solo_edit'      # a vs-fight edit: not "an edit of X" (the library takes it, owner 2026-10-31)
+    # owner 2026-11-12 ("that is not even a edit ... we want edits", on "Overlord IV - Opening | HOLLOW HUNGER | Crunchyroll"):
+    # official uploads (openings / endings / trailers / episodes from the studio or streaming channels) are not fan edits, and
+    # a source must look like an edit in the style of the owner references - every approved source so far had an edit marker
+    if OFFICIAL_CH_RE.search(e.get('channel') or e.get('uploader') or '') or OFFICIAL_T_RE.search(t):
+        return False, 'official_not_edit'
+    if not EDIT_MARK_RE.search(t):
+        return False, 'no_edit_marker'
     return True, ''
+
+
+OFFICIAL_CH_RE = re.compile(r'crunchyroll|funimation|aniplex|muse ?(asia|indonesia)?\b|ani-?one|netflix|toho animation|'
+                            r'kadokawa|tv ?tokyo|bandai|toei animation|mappa|ufotable|pony ?canyon|king ?amusement|'
+                            r'avex|sony music|hidive|viz media|medialink|anime ?(times|news)|tms ?entertainment', re.I)
+OFFICIAL_T_RE = re.compile(r'\b(opening|ending|op|ed|ncop|nced)\s*\d*\s*[|\-–(\[]|\b(creditless|non-?credit|official '
+                           r'(trailer|video|clip|pv)|trailer|teaser|\bpv\s*\d*\b|episode \d+|ep\.? ?\d+ (clip|preview)|'
+                           r'(opening|ending) (theme|full|song)|full (opening|ending))\b|^\s*[^|]+-\s*(opening|ending)\b', re.I)
+EDIT_MARK_RE = re.compile(r'\b(edit|edits|editz|amv|mmv|4k|twixtor|flow|velocity|badass|aura|cc|quick ?edit)\b|「|」|\[|\]',
+                          re.I)
 
 
 def info_gate(info):

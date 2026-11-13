@@ -486,7 +486,7 @@ def candidates(e, RC, st, refresh_days=14):
     c = st['candidates'].get(k)
     qs = RC.queries(e)
     if c and time.time() - c.get('ts', 0) < refresh_days * 86400 and c.get('q', qs) == qs:   # new queries: refresh
-        return c['items']
+        return [x for x in c['items'] if RC.prefilter(x, e)[0]]   # cached lists pass today's prefilter too (2026-11-12)
     seen, out = set(), []
     for q in qs:
         for x in (RC.search(q) or []):
