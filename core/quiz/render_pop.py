@@ -218,7 +218,7 @@ CLIP_GAP = 0.25     # after a narrator line, this much silence before the clip
 # owner 2026-11-10 (guess the song / the opening): "when u show the correct song play the opening or music video and for guessing
 # and showing give more time compared to other since listening to a longer snippet is more satisfying than a random quick snippet"
 SONG_GUESS = float(os.environ.get('POP_SONG_GUESS_SEC', '5.0'))    # song / opening: the snippet before the reveal (owner 2026-11-13 after the samples: 9 s too long, 5 s)
-SONG_REVEAL = float(os.environ.get('POP_SONG_REVEAL_SEC', '8.0'))  # the answer's music video / opening plays on this long (was 6 s; owner 2026-11-13: 8 s, get the vibe)
+SONG_REVEAL = float(os.environ.get('POP_SONG_REVEAL_SEC', '10.0'))  # the answer's music video / opening plays on this long (was 6 s; owner 2026-11-13: 10 s, get the vibe)
 SONG_FETCH = SONG_GUESS + SONG_REVEAL + 1.0                        # seconds fetched per song / opening round
 CLIP_WINDOW = {'opening': SONG_GUESS, 'scene': 4.0, 'song': SONG_GUESS}  # the countdown = how long the clip plays before the reveal
 CLIP_FETCH = 8.5    # seconds of audio fetched per clip: the countdown plus the music under the reveal
