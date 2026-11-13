@@ -171,6 +171,16 @@ def reveal_pool(r):
     return REVEAL_POOL if int(r.get('difficulty', 2) or 2) <= 1 else [x for x in REVEAL_POOL if not x.startswith('Easy')]
 
 
+def bar_rect(d, box, radius, fill):
+    """A rounded bar. Pillow 9.5 raises 'y1 must be greater than or equal to y0' for heights just over 2 * radius
+    (2026-11-13: the longer song snippets hit one in a quiet moment and the render died), so then a smaller radius."""
+    for r in (radius, radius - 2, 0):
+        try:
+            return d.rounded_rectangle(box, radius=r, fill=fill) if r > 0 else d.rectangle(box, fill=fill)
+        except ValueError:
+            continue
+
+
 SONG_REVEAL_POOL = ['{t}, by {a}!', "It's {t}, by {a}!", 'That was {t}, by {a}.', '{t}! By {a}.']
 # the narrator spells out all-caps words ('BLACKPINK' came out letter by letter): names are title-cased
 # for speech, except real acronyms; a few names need their own spelling
@@ -207,8 +217,8 @@ CLIP_AT = 0.35      # rounds without a narrator line: the card pops in, then the
 CLIP_GAP = 0.25     # after a narrator line, this much silence before the clip
 # owner 2026-11-10 (guess the song / the opening): "when u show the correct song play the opening or music video and for guessing
 # and showing give more time compared to other since listening to a longer snippet is more satisfying than a random quick snippet"
-SONG_GUESS = float(os.environ.get('POP_SONG_GUESS_SEC', '7.0'))    # song / opening: the snippet before the reveal (was 3.5 s)
-SONG_REVEAL = float(os.environ.get('POP_SONG_REVEAL_SEC', '6.0'))  # the answer's music video / opening plays on this long
+SONG_GUESS = float(os.environ.get('POP_SONG_GUESS_SEC', '5.0'))    # song / opening: the snippet before the reveal (owner 2026-11-13 after the samples: 9 s too long, 5 s)
+SONG_REVEAL = float(os.environ.get('POP_SONG_REVEAL_SEC', '8.0'))  # the answer's music video / opening plays on this long (was 6 s; owner 2026-11-13: 8 s, get the vibe)
 SONG_FETCH = SONG_GUESS + SONG_REVEAL + 1.0                        # seconds fetched per song / opening round
 CLIP_WINDOW = {'opening': SONG_GUESS, 'scene': 4.0, 'song': SONG_GUESS}  # the countdown = how long the clip plays before the reveal
 CLIP_FETCH = 8.5    # seconds of audio fetched per clip: the countdown plus the music under the reveal
@@ -1557,7 +1567,7 @@ class PopRenderer(QuizRenderer):
         x = W / 2 - (28 * bw + 27 * gap) / 2
         for v in vals:
             h = 12 + 150 * float(v)
-            d.rounded_rectangle([x, base - h, x + bw, base], radius=8, fill=self.accent + (230,))
+            bar_rect(d, [x, base - h, x + bw, base], 8, self.accent + (230,))
             x += bw + gap
 
     def _draw_song(self, frame, i, tl, q, pop, L):
@@ -1779,7 +1789,7 @@ class PopRenderer(QuizRenderer):
             x = CARD_W / 2 - (24 * bw + 23 * gap) / 2
             for v in vals:
                 h = 12 + 150 * float(v)
-                d.rounded_rectangle([x, base - h / 2, x + bw, base + h / 2], radius=7, fill=self.accent + (235,))
+                bar_rect(d, [x, base - h / 2, x + bw, base + h / 2], 7, self.accent + (235,))
                 x += bw + gap
             lvl = float(np.mean(vals))
             for ring_r, alpha in ((118 + 30 * lvl, 170), (150 + 55 * lvl, 70)):
