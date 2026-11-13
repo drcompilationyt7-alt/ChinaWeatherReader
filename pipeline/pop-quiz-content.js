@@ -322,7 +322,15 @@ function pickEdition(fmt, lastEdition, now = new Date()) {
     if (inSeason.length) {
       const due = seasonalDue(lastEdition, now).filter(t => themeFits(t, spec.themes[t], fmt));
       if (due.length) return due[Math.floor(Math.random() * due.length)];
-      if (inSeason.includes(lastEdition)) return null;      // the off video of the alternation stays plain
+      // the off video of the alternation: no second seasonal one in a row, but a year-round theme (beach, maid cafe, festival ...)
+      // may still run (owner 2026-11-13: "yes it is winter but we should still put up some themes like cafe and beach")
+      if (inSeason.includes(lastEdition)) {
+        const list = String(process.env.POP_THEMES || '').split(',').map(x => x.trim()).filter(Boolean);
+        const yearRound = Object.keys(spec.themes).filter(t => (list.includes('all') || list.includes(t)) && !spec.themes[t].window
+          && themeFits(t, spec.themes[t], fmt));
+        return yearRound.length && Math.random() < Number(process.env.POP_THEME_RATE || spec.rate || 0.25)
+          ? yearRound[Math.floor(Math.random() * yearRound.length)] : null;
+      }
     }
   }
   const list = String(process.env.POP_THEMES || '').split(',').map(x => x.trim()).filter(Boolean);
