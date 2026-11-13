@@ -857,6 +857,86 @@
     "word": "slash",
     "note": "auto (vision model) 2026-11-10 (Sakamoto All best Fighting scenes | Sakamoto days)"
    }
+  ],
+  "c_8s6pu6QvkxY_106480": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "strike",
+    "note": "auto (vision model) 2026-11-13 (Alucard, Trevor & Sypha vs. Dragan | Castlevania S)"
+   }
+  ],
+  "c_8s6pu6QvkxY_77176": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "stab",
+    "note": "auto (vision model) 2026-11-13 (Alucard, Trevor & Sypha vs. Dragan | Castlevania S)"
+   }
+  ],
+  "c_MSVmw67OAu0_79603": [
+   {
+    "t": 1.4,
+    "action": "sheath",
+    "word": "draw",
+    "note": "auto (vision model) 2026-11-13 (Frieren vs Sword Demon | Frieren: Beyond Journey's)"
+   }
+  ],
+  "c_MWEQ-6iQSUM_57129": [
+   {
+    "t": 0.387,
+    "action": "sword",
+    "word": "slash",
+    "note": "auto (vision model) 2026-11-13 (Up to Un-terpertation | UNDEAD UNLUCK)"
+   }
+  ],
+  "c_4wzMiXbxIDA_343403": [
+   {
+    "t": 1.4,
+    "action": "impact",
+    "word": "shatter",
+    "note": "auto (vision model) 2026-11-13 (Sans, Gaster & Papyrus vs Bete Noire | Glitchtale )"
+   }
+  ],
+  "c_ZaJlKP4sjj0_241561": [
+   {
+    "t": 1.4,
+    "action": "stomp",
+    "word": "punch",
+    "note": "auto (vision model) 2026-11-13 (Biscuit Oliva vs Rahon Shobun Full Fight Scene | E)"
+   }
+  ],
+  "c_ZaJlKP4sjj0_48245": [
+   {
+    "t": 1.063,
+    "action": "sword",
+    "word": "kick",
+    "note": "auto (vision model) 2026-11-13 (Biscuit Oliva vs Rahon Shobun Full Fight Scene | E)"
+   }
+  ],
+  "c_BOKrwNqPoY8_39903": [
+   {
+    "t": 0.581,
+    "action": "sword",
+    "word": "clash",
+    "note": "auto (vision model) 2026-11-13 (Black Lagoon Premium Edition - Available Now - Rev)"
+   }
+  ],
+  "c_ZaJlKP4sjj0_183630": [
+   {
+    "t": 0.875,
+    "action": "impact",
+    "word": "punch",
+    "note": "auto (vision model) 2026-11-13 (Biscuit Oliva vs Rahon Shobun Full Fight Scene | E)"
+   }
+  ],
+  "c_BOKrwNqPoY8_55559": [
+   {
+    "t": 1.4,
+    "action": "sword",
+    "word": "shoot",
+    "note": "auto (vision model) 2026-11-13 (Black Lagoon Premium Edition - Available Now - Rev)"
+   }
   ]
  }
 }
