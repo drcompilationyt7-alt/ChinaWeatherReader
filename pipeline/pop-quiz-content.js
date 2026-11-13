@@ -281,7 +281,10 @@ function themeFits(tid, th, fmt) {
   if (!(th.formats || []).includes(fmt)) return false;
   if (ART_FORMATS.includes(fmt)) return themePool(tid, fmt).length >= 6;
   if (fmt === 'duel') return th.duel_base_art || themePool(tid, 'character').length >= 10;   // duel_base_art: normal character art + the theme's deco / questions
-  return LLM_FORMATS.includes(fmt);
+  // 2026-11-13 (owner: "what happened to themes"): emoji / trivia items are pre-generated only, and no year-round theme had
+  // any, so every themed emoji / trivia roll fell back to a plain video (none since 10-26). A theme fits only with items.
+  if (LLM_FORMATS.includes(fmt)) return ONDEMAND.includes(fmt) || freshCount(fmt, tid) >= 3;
+  return false;
 }
 
 /**

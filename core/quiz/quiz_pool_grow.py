@@ -777,7 +777,14 @@ def llm_spec(cats, st, seen):
     jobs, songs = [], None
     if 'emoji' in cats:
         jobs += [{'fmt': 'emoji', 'topic': 'anime', 'n': 6}, {'fmt': 'emoji', 'topic': 'kpop song', 'n': 6}]
-        for ed in season_editions()[:2]:
+        eds = season_editions()[:2]
+        # 2026-11-13: the year-round themes (maid, festival, beach, glasses, villains ...) had no emoji items, so their
+        # editions never ran; one of them per night, in rotation (day of the year)
+        year_round = [t for t, th in (rj(os.path.join(HERE, 'themes.json'), {}).get('themes') or {}).items()
+                      if not th.get('window') and 'emoji' in (th.get('formats') or [])]
+        if year_round:
+            eds.append(year_round[datetime.date.fromisoformat(today()).timetuple().tm_yday % len(year_round)])
+        for ed in eds:
             jobs.append({'fmt': 'emoji', 'topic': 'anime', 'n': 6, 'edition': ed})
     if 'trivia' in cats:
         jobs += [{'fmt': 'trivia', 'topic': t, 'n': n + 2} for t, n in TRIVIA_TOPICS.items()]
