@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=NyccBq4DC_E",
-      "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "country": "Global",
-      "postedAt": "2026-10-15T07:58:56.652Z",
-      "videoId": "NyccBq4DC_E",
-      "category": "meme-anime",
-      "titleSource": "idol"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=1_n7d7E6wO8",
       "title": "how you like that acapella but the beat drops 🗿⚡",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "YOgoz2FeJpg",
       "category": "meme-anime",
       "titleSource": "resonance"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Q0tECAlRP88",
+      "title": "love dramatic acapella but the beat drops 🗿",
+      "country": "Global",
+      "postedAt": "2026-11-14T09:52:21.229Z",
+      "videoId": "Q0tECAlRP88",
+      "category": "meme-anime",
+      "titleSource": "love dramatic"
     }
   ]
 }

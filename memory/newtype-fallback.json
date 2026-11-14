@@ -1,76 +1,19 @@
 {
- "at": "2026-11-12T12:02:37.548Z",
- "type": "slowmo",
+ "at": "2026-11-14T09:46:30.929Z",
+ "type": "sound",
  "ok": false,
- "posted": true,
- "reason": "attempts used up; MUST PUBLISH: attempt 2 (score 8.76)",
+ "posted": false,
+ "reason": "pool too small: pool_too_small: reuse 35% > 30% with 11 fresh clips",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "keane_somewhere_only_we_know@v1",
-   "seed": 79092,
+   "song": "michael_jackson_billie_jean",
+   "seed": 48624,
    "input": "first",
-   "work": "work-slowmo-1794479092632",
-   "min": 27.9,
-   "overall": 8.73,
-   "failed": {
-    "3_lyrics": 7.69,
-    "11_waves": 6,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "recut"
-  },
-  {
-   "n": 2,
-   "song": "keane_somewhere_only_we_know@v1",
-   "seed": 79092,
-   "input": "recut",
-   "work": "work-slowmo-1794480768554",
-   "min": 27,
-   "overall": 8.76,
-   "failed": {
-    "11_waves": 6,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "recut"
-  },
-  {
-   "n": 3,
-   "song": "keane_somewhere_only_we_know@v1",
-   "seed": 79092,
-   "input": "recut",
-   "work": "work-slowmo-1794482390330",
-   "min": 27.1,
-   "overall": 8.76,
-   "failed": {
-    "11_waves": 6,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "new_song"
-  },
-  {
-   "n": 4,
-   "song": "new_west_those_eyes@v0.9",
-   "seed": 79303,
-   "input": "new_song",
-   "work": "work-slowmo-1794484013841",
-   "min": 9.2,
-   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
-   "next": "new_song"
-  },
-  {
-   "n": 5,
-   "song": "stephen_sanchez_until_i_found_you@v0.9",
-   "seed": 79514,
-   "input": "new_song",
-   "work": "work-slowmo-1794484562844",
-   "min": 6.6,
-   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
-   "next": "new_song"
+   "work": "work-sound-1794648624689",
+   "min": 16.1,
+   "result": "pool too small"
   }
  ]
 }

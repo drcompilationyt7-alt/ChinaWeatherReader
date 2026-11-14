@@ -2337,7 +2337,8 @@
    "songSection": [
     108.984,
     138.477
-   ]
+   ],
+   "musicPerf": 5.286
   },
   {
    "videoId": "JjEsAsCTu38",
@@ -2817,6 +2818,57 @@
    "why": "thompson (explore)",
    "whyMode": "explore",
    "bpm": 109.98,
+   "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "Q0tECAlRP88",
+   "url": "https://www.youtube.com/watch?v=Q0tECAlRP88",
+   "postedAt": "2026-11-14T09:52:21.227Z",
+   "publishAt": "2026-11-14T12:00:00.000Z",
+   "song": "love dramatic",
+   "theme": "anime",
+   "emoji": "🗿,🔥",
+   "title": "love dramatic acapella but the beat drops 🗿",
+   "clipIds": [
+    "BiRCR7TVzgo",
+    "S_Bz0t4m7kI",
+    "4ba7YqD8Wig",
+    "00O-HEuZN_c",
+    "6vRxlXHH4H8",
+    "e1P5WxxMBmE",
+    "j3p6sXq_uUM",
+    "Jk6S15iIgxc",
+    "4NEbSnuL6GA"
+   ],
+   "clipChannels": [
+    "Ryomen Sukuna",
+    "アニプレックス チャンネル",
+    "マザコンハーサカ",
+    "ヤエノ",
+    "東宝MOVIEチャンネル"
+   ],
+   "clipSource": "Kaguya-sama",
+   "settings": {
+    "drop": 10,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "llm-line"
+   },
+   "onVideoTitle": "vocals only first",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "mimic",
+    "ovStyle": "op-vocals-start",
+    "descHook": "llm-line",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 129.01,
    "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
