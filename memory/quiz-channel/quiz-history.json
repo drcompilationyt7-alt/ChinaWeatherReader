@@ -3008,6 +3008,123 @@
     "titleStyle": "challenge",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "cweN0o4RoXg",
+   "url": "https://www.youtube.com/watch?v=cweN0o4RoXg",
+   "postedAt": "2026-11-14T09:12:50.801Z",
+   "publishAt": "2026-11-14T13:00:00.000Z",
+   "format": "idol",
+   "theme": "kpop",
+   "seed": 450225048,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Guess the K-pop idol!",
+     "template": "Guess the K-pop idol!",
+     "sec": 1.37
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How did you do? Comment your final score!",
+     "template": "How did you do? Comment your final score!",
+     "sec": 2.13
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "That was Jennie.",
+     "template": null,
+     "sec": 0.76
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai-short",
+     "line": "Dahyun, nailed it!",
+     "template": "{a}, nailed it!",
+     "sec": 1.1
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Lee Sungyeol, absolutely!",
+     "template": "{a}, absolutely!",
+     "sec": 1.52
+    }
+   ],
+   "titleTemplate": "idol-blur",
+   "title": "Name the K-Pop Idol Before It Unblurs 🔥 #kpop",
+   "answers": [
+    "idol:jennie#109yalz",
+    "idol:dahyun#1f9rsdy",
+    "idol:lee sungyeol#w4ol1q"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "speed",
+    "descHook": "op-comment-score"
+   }
+  },
+  {
+   "videoId": "zl2L0THYWl4",
+   "url": "https://www.youtube.com/watch?v=zl2L0THYWl4",
+   "postedAt": "2026-11-14T09:20:00.131Z",
+   "publishAt": "2026-11-15T01:00:00.000Z",
+   "format": "scene",
+   "theme": "anime",
+   "seed": 602915714,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Name the anime from one scene!",
+     "template": "Name the anime from one scene!",
+     "sec": 1.81
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Jujutsu Kaisen!",
+     "template": null,
+     "sec": 1.37
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai-short",
+     "line": "Seraph of the End: Vampire Reign, naturally!",
+     "template": "{a}, naturally!",
+     "sec": 2.67
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai",
+     "line": "Yes, it is The Apothecary Diaries!",
+     "template": "Yes, it is {a}!",
+     "sec": 2.57
+    }
+   ],
+   "titleTemplate": "scene-4sec",
+   "title": "Guess the Anime From One Scene 🎬 #anime",
+   "answers": [
+    "scene:113415",
+    "scene:20829",
+    "scene:161645"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }

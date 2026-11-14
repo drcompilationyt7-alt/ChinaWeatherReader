@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=LKgGgjz7D88",
-      "title": "guess the country by its shape asia quiz 👀 #geography",
-      "country": "Global",
-      "postedAt": "2026-10-15T07:38:18.344Z",
-      "videoId": "LKgGgjz7D88",
-      "category": "quiz-shape",
-      "titleSource": "shape-llm",
-      "quizFormat": "shape",
-      "quizTheme": "asia"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=MT7z0qewSPs",
       "title": "GLASSES EDITION 👓 Anime Eyes Quiz: Easy to IMPOSSIBLE 🎧",
       "country": "Global",
@@ -593,6 +582,28 @@
       "titleSource": "trivia-howwell",
       "quizFormat": "trivia",
       "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=cweN0o4RoXg",
+      "title": "Name the K-Pop Idol Before It Unblurs 🔥 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-14T09:12:51.069Z",
+      "videoId": "cweN0o4RoXg",
+      "category": "quiz-idol",
+      "titleSource": "idol-blur",
+      "quizFormat": "idol",
+      "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=zl2L0THYWl4",
+      "title": "Guess the Anime From One Scene 🎬 #anime",
+      "country": "Global",
+      "postedAt": "2026-11-14T09:20:00.411Z",
+      "videoId": "zl2L0THYWl4",
+      "category": "quiz-scene",
+      "titleSource": "scene-4sec",
+      "quizFormat": "scene",
+      "quizTheme": "anime"
     }
   ]
 }
