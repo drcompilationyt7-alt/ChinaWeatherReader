@@ -155,6 +155,11 @@ async function enqueue(result, upload) {
   const shortPublishAt = upload.publishAt || new Date().toISOString();
   // metadata of the long: its own pool (sound-long / slowmo-long), the link to the short in the description
   const meta = await optimizeMetadata({ channel: 'meme', contentType: `${type}-long`, facts: { ...(result.facts || {}), shortUrl } });
+  // sound (owner 2026-11-15): the short's "Artist - Song (Anime Remix)" title, marked as the full version
+  if (type === 'sound' && / \(Anime Remix\)$/.test(result.title || '')) {
+    meta.title = result.title.replace(/ \(Anime Remix\)$/, ' (Anime Remix, Full Version)');
+    if (meta.choice) meta.choice = { ...meta.choice, title: meta.title, titleSource: 'fixed', arms: { ...(meta.choice.arms || {}), titleStyle: 'artist-remix' } };
+  }
   const name = `${type}-${(upload.videoId || Date.now())}.mp4`;
   const st = store();
   await st.put(result.longPath, name);

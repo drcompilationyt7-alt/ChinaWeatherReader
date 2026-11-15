@@ -137,6 +137,10 @@ jobs:
           gh release download edit-pools-staging --repo "$GITHUB_REPOSITORY" --pattern quiz-grow-state.json --dir /tmp/st \
             || echo '{}' > /tmp/st/quiz-grow-state.json
       - name: Mine (${{ matrix.shard }})
+        # the step stops before the job's 135 min, so 'Upload the shard' still gets the checkpointed candidates
+        # (2026-11-14: the light shard hit the job timeout and its 56 candidates were lost)
+        timeout-minutes: 127
+        continue-on-error: true   # a timed-out shard must not fail-fast the other shard
         run: |
           python core/quiz/quiz_pool_grow.py selftest
           python core/quiz/quiz_pool_grow.py mine --shard ${{ matrix.shard }} --work work --state /tmp/st/quiz-grow-state.json \

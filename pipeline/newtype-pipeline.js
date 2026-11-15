@@ -509,13 +509,35 @@ async function runRanking({ outputDir } = {}) {
   };
 }
 
+/** "Dua Lipa - Don't Start Now (Anime Remix)"; the song's own casing, a version tag ("- Remastered", "(Official Audio)") dropped,
+ * a lowercase pool name title-cased; artist missing -> "Song (Anime Remix)"; <= 100 characters (YouTube's limit) */
+function soundTitle(artist, song) {
+  const tidy = s => String(s || '').replace(/\s*[([](?:official|lyrics?|audio|video|mv|remaster|hd|4k)[^)\]]*[)\]]/gi, '')
+    .replace(/\s+-\s+(?:remaster\w*|\d{4} remaster\w*|radio edit|single version).*$/i, '').replace(/\s+/g, ' ').trim();
+  const cap = s => (s === s.toLowerCase() ? s.replace(/(^|[\s(-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : s);
+  const name = cap(tidy(song));
+  const by = artist ? cap(tidy(artist)) : '';
+  const tail = ' (Anime Remix)';
+  let t = by && !name.toLowerCase().includes(by.toLowerCase()) ? `${by} - ${name}${tail}` : `${name}${tail}`;
+  if (t.length > 100) t = `${name.slice(0, 100 - tail.length).trim()}${tail}`;
+  return t;
+}
+
 async function finishNewType(type, rep, work, videoPath, abs, t0, attempts) {
   let longPath = abs(rep.long);
   if (longPath && !fs.existsSync(longPath)) longPath = null;
   logger.success(`${type}: rendered ${path.basename(videoPath)}${longPath ? ' + long' : ''} in ${Math.round((Date.now() - t0) / 1000)} s (vibe ${rep.vibe})`);
   const song = rep.song_title ? String(rep.song_title) : (rep.song && !/^s_/.test(String(rep.song)) ? String(rep.song) : null);
-  const facts = { keyword: VIBE_KEYWORD[rep.vibe] || null, vibe: rep.vibe || null, song, source: null, theme: 'anime' };
+  const artist = rep.song_artist ? String(rep.song_artist).trim() : null;
+  const facts = { keyword: VIBE_KEYWORD[rep.vibe] || null, vibe: rep.vibe || null, song, artist, source: null, theme: 'anime' };
   const meta = await optimizeMetadata({ channel: 'meme', contentType: CT[type], facts });
+  // sound edits (owner 2026-11-15: "make the title the artist and name of song (anime remix), this will get attention"):
+  // a fixed "Artist - Song (Anime Remix)" title instead of the learned meme-voice one; the learner records it as its own arm
+  if (type === 'sound' && song) {
+    meta.title = soundTitle(artist, song);
+    if (meta.choice) meta.choice = { ...meta.choice, title: meta.title, titleSource: 'fixed', arms: { ...(meta.choice.arms || {}), titleStyle: 'artist-remix' } };
+    if (meta.arms) meta.arms = { ...meta.arms, titleStyle: 'artist-remix' };
+  }
   logger.info(`Metadata: "${meta.title}"`);
   return {
     success: true, videoPath, longPath, resultJson: path.join(work, 'result.json'), title: meta.title,
@@ -598,4 +620,4 @@ function recordUpload(result, upload) {
   if (m.metaChoice) recordMetadataChoice(m.metaChoice, { videoId: upload.videoId });
 }
 
-module.exports = { guardRender, guardRanking, rankingTitle, runRanking, rankingTopics, runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, SLOWMO_ENV, CT };
+module.exports = { guardRender, guardRanking, rankingTitle, soundTitle, runRanking, rankingTopics, runNewType, recordUpload, readyVibes, poolSizes, poolMin, poolRoot, markUsed, musicPoolFeedback, typeEnv, SOUND_ENV, SLOWMO_ENV, CT };

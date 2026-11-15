@@ -974,23 +974,48 @@ def cmd_mine(a):
     deadline = time.time() + a.budget_min * 60
     res = {}
     t0 = time.time()
+    st0 = dict(st)
     staged_h = [int(x, 16) for x in (st.get('dhash') or [])]
-    for c in [c for c in cats if c in ('geo', 'nightcity', 'cuisine')]:
+
+    def checkpoint():
+        # 2026-11-14: the light shard ran past the job timeout and was cancelled before the final write: only the
+        # thumbs reached the artifact and 56 candidates were lost. Now candidates.json + state.json are rewritten
+        # after every category, so a killed job still hands publish everything mined so far.
+        out = {c: [dict(it, _thumb=os.path.relpath(it['_thumb'], out_dir).replace(os.sep, '/'))
+                   if it.get('_thumb') and os.path.isabs(it['_thumb']) else dict(it) for it in items] for c, items in res.items()}
+        s2 = dict(st0)
+        s2['staged'] = sorted(set(st0.get('staged') or []) | {cand_key(c, it) for c, items in res.items() for it in items})
+        s2['dhash'] = sorted(set(st0.get('dhash') or []) | {it['dhash'] for items in res.values() for it in items if it.get('dhash')})
+        for k, v in st.items():          # the miners' own state (cursors, seen ids) as of now
+            if k not in ('staged', 'dhash'):
+                s2[k] = v
+        wj(os.path.join(out_dir, 'candidates.json'), {'shard': a.shard, 'date': today(), 'items': out})
+        wj(os.path.join(out_dir, 'state.json'), s2)
+        return out, s2
+
+    # the Commons photo categories share at most 60 % of the budget (11-13 night: they used all of it, so the idol /
+    # VTuber / LLM categories got nothing and the shard overran)
+    commons = [c for c in cats if c in ('geo', 'nightcity', 'cuisine')]
+    commons_end = min(deadline, t0 + a.budget_min * 60 * (0.6 if len(commons) < len(cats) else 1.0))
+    for c in commons:
         try:
-            res[c] = mine_commons(c, st, QUOTA[c], seen, out_dir, deadline, live_hashes(c) + staged_h)
+            res[c] = mine_commons(c, st, QUOTA[c], seen, out_dir, commons_end, live_hashes(c) + staged_h)
         except Exception as e:  # noqa: BLE001
             log(f'{c} failed: {e}')
             res[c] = []
+        checkpoint()
     if 'kpop_idol' in cats:
         try:
             res['kpop_idol'] = mine_idols(st, QUOTA['kpop_idol'], seen, out_dir, deadline, live_hashes('kpop_idol') + staged_h)
         except Exception as e:  # noqa: BLE001
             log(f'kpop_idol failed: {e}')
+        checkpoint()
     if 'vtuber' in cats:
         try:
             res['vtuber'] = mine_vtubers(st, QUOTA['vtuber'], seen, out_dir, deadline)
         except Exception as e:  # noqa: BLE001
             log(f'vtuber failed: {e}')
+        checkpoint()
     llm_cats = [c for c in cats if c in ('emoji', 'trivia', 'wyr_food', 'wyr_travel', 'kpop_song')]
     if llm_cats:
         try:
@@ -998,6 +1023,7 @@ def cmd_mine(a):
             res.update(got)
         except Exception as e:  # noqa: BLE001
             log(f'llm categories failed: {e}')
+        checkpoint()
     if 'theme_art' in cats:
         try:
             slot = int(a.shard[3:]) if a.shard.startswith('art') and a.shard[3:].isdigit() else 0
@@ -1009,14 +1035,7 @@ def cmd_mine(a):
         rows = [(it.get('_thumb'), [f'{k}. ' + label_lines(c, it)[0]] + label_lines(c, it)[1:]) for k, it in enumerate(items)]
         if rows:
             sheet(rows, os.path.join(out_dir, 'sheets', f'{c}.jpg'), cols=3 if c.startswith('wyr') else 4)
-    for c, items in res.items():
-        for it in items:
-            if it.get('_thumb'):
-                it['_thumb'] = os.path.relpath(it['_thumb'], out_dir).replace(os.sep, '/')
-    st['staged'] = sorted(set(st.get('staged') or []) | {cand_key(c, it) for c, items in res.items() for it in items})
-    st['dhash'] = sorted(set(st.get('dhash') or []) | {it['dhash'] for items in res.values() for it in items if it.get('dhash')})
-    wj(os.path.join(out_dir, 'candidates.json'), {'shard': a.shard, 'date': today(), 'items': res})
-    wj(os.path.join(out_dir, 'state.json'), st)
+    checkpoint()
     print(json.dumps({'ok': True, 'shard': a.shard, 'counts': {c: len(v) for c, v in res.items()}, 'sec': round(time.time() - t0)}))
 
 
