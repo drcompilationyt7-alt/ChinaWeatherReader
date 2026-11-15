@@ -869,7 +869,9 @@ def cmd_import(a):
     # import is pushed and verified, and the local media + the imported staging dirs are deleted (no large local pools).
     sync = not a.no_sync
     if sync:
-        _store('pull')
+        # 2026-11-15 (owner rule 2026-11-11: push only the new clips): only the manifests + store-files.json are pulled
+        # (not the ~495 MB of media), and the push below is an add-on with just the new clips
+        _store('pull', '--manifests-only')
     d = os.path.abspath(a.dir)
     rows = rj(os.path.join(d, 'review', 'index.json'), [])
     rej = {x.strip() for x in (a.reject or '').split(',') if x.strip()}
@@ -911,7 +913,7 @@ def cmd_import(a):
     VP.write_index()
     clean = {v: len(VP.fresh_clips('slowmo', v, rotation=False)) for v in VIBES}
     if sync:
-        _store('push', '--prune-local')
+        _store('push', '--add', '--prune-local')
         for base in dirs:
             shutil.rmtree(base, ignore_errors=True)
     print(json.dumps({'ok': True, 'imported': added, 'rejected': rejected, 'clean_now': clean, 'pushed': sync}))

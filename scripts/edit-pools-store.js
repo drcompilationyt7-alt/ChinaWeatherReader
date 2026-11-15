@@ -214,10 +214,12 @@ function pull() {
     (m && m.add ? grp.adds : grp.items).push(a);
   }
   const tmp = path.join(dir, '.dl');
+  let listed = [];   // every entry of the tars of the current vibe (store-files.json bootstrap below)
   const extract = tar => {
+    const all = execFileSync(TAR, ['-tf', tar], { encoding: 'utf8', maxBuffer: 64 * 1048576 }).split(/\r?\n/).filter(Boolean);
+    listed.push(...all);
     if (manifestsOnly) {
-      const names = execFileSync(TAR, ['-tf', tar], { encoding: 'utf8', maxBuffer: 64 * 1048576 }).split(/\r?\n/)
-        .filter(n => /^[^/]+\/[^/]+\/(clips|sounds|vibe)\.json$/.test(n));
+      const names = all.filter(n => /^[^/]+\/[^/]+\/(clips|sounds|vibe)\.json$/.test(n) || n.endsWith(`/${STORE_FILES}`));
       if (names.length) execFileSync(TAR, ['-xf', tar, '-C', dir, ...names]);
     } else execFileSync(TAR, ['-xf', tar, '-C', dir]);
   };
@@ -226,7 +228,7 @@ function pull() {
     adds.sort((x, y) => x.name.localeCompare(y.name));
     const key = [...items, ...adds].map(a => `${a.name}:${a.size}:${a.updatedAt}`).join('|');
     next[g] = key;
-    const have = preset ? fs.existsSync(path.join(dir, preset, vibe)) : fs.existsSync(path.join(dir, g));
+    const have = preset ? fs.existsSync(path.join(dir, preset, vibe, STORE_FILES)) : fs.existsSync(path.join(dir, g));   // no store-files.json yet: pull again (bootstrap)
     if (stamp[g] === key && have) continue;
     const mb = [...items, ...adds].reduce((s, a) => s + a.size, 0) / 1048576;
     console.log(`pull ${g} (${mb.toFixed(0)} MB, ${items.length} file${items.length > 1 ? 's' : ''}${adds.length ? ` + ${adds.length} add-on(s)` : ''})`);
@@ -235,6 +237,7 @@ function pull() {
     for (const a of items) gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
     if (!preset) { fs.copyFileSync(path.join(tmp, g), path.join(dir, g)); continue; }
     fs.rmSync(path.join(dir, preset, vibe), { recursive: true, force: true });   // the tars replace the vibe dir
+    listed = [];
     if (items.length) {
       const tar = path.join(tmp, g);
       if (!(items.length === 1 && items[0].name === g)) concat(items.map(a => path.join(tmp, a.name)), tar);
@@ -245,6 +248,16 @@ function pull() {
       gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
       extract(path.join(tmp, a.name));
       fs.rmSync(path.join(tmp, a.name), { force: true });
+    }
+    // 2026-11-15: a vibe pushed before the add-on scheme (sound / slow-mo) has no store-files.json, so `push --add` refused and
+    // every import re-uploaded the whole pool (slow-mo ~495 MB = ~18 min). The pulled tars list exactly the media the release
+    // has: write it, so the next push can be an add-on (owner rule 2026-11-11: push only the new clips).
+    const sf = path.join(dir, preset, vibe, STORE_FILES);
+    const pre = `${preset}/${vibe}/`;
+    if (!fs.existsSync(sf) && fs.existsSync(path.join(dir, preset, vibe))) {
+      const media = [...new Set(listed.filter(n => n.startsWith(pre) && !n.endsWith('/') && !n.endsWith('.json')).map(n => n.slice(pre.length)))].sort();
+      fs.writeFileSync(sf, JSON.stringify({ updated: new Date().toISOString(), bootstrap: 'pull', files: media }, null, 1));
+      console.log(`${pre}${STORE_FILES}: bootstrapped from the release tars (${media.length} media file(s))`);
     }
   }
   fs.rmSync(tmp, { recursive: true, force: true });
