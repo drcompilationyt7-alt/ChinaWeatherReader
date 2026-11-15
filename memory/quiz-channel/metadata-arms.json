@@ -185,6 +185,32 @@
      "why": "fails on 4/12 recent videos: no keyword"
     }
    ]
+  },
+  {
+   "week": "2026-W46",
+   "pool": "quiz/quiz",
+   "at": "2026-11-15T08:40:04.727Z",
+   "n": 71,
+   "retired": [],
+   "added": [
+    {
+     "dim": "emojiSet",
+     "id": "op-quiz-sparks",
+     "mu0": 0.43
+    }
+   ],
+   "rejected": [
+    {
+     "dim": "titleStyle",
+     "id": "op-direct-search-clue",
+     "why": "fails on 7/12 recent videos: no keyword"
+    },
+    {
+     "dim": "descHook",
+     "id": "op-drop-score-prompt",
+     "why": "fails on 1/12 recent videos: no keyword"
+    }
+   ]
   }
  ],
  "pools": {
@@ -256,6 +282,22 @@
        ]
       },
       "why": "Topic emojis (+0.31) and quiz-pop emojis (+0.21) both outperform generic fire/hype emojis; this set merges core quiz indicators (🧠, ⚡) with high-performing genre markers (🗺️, 💜, 🎧)."
+     },
+     "op-quiz-sparks": {
+      "status": "active",
+      "source": "opro-2026-W46",
+      "added": "2026-W46",
+      "mu0": 0.43,
+      "n0": 1,
+      "def": {
+       "pool": [
+        "🎧",
+        "🧠",
+        "🎶",
+        "⚡"
+       ]
+      },
+      "why": "High-performing sets (topic +0.32, op-quiz-pop +0.24) succeed by pairing cognitive quiz icons (🧠, ⚡) with audio icons (🎧, 🎶) that match K-pop and anime audio/emoji formats."
      }
     },
     "titleStyle": {
@@ -353,145 +395,150 @@
     }
    },
    "posterior": {
-    "week": "2026-W45",
-    "n": 58,
+    "week": "2026-W46",
+    "n": 71,
     "dims": {
      "titleStyle": {
       "op-exact-search": {
-       "uses": 12,
-       "mean": 0.41,
-       "sd": 0.31
-      },
-      "speed": {
-       "uses": 5,
-       "mean": 0.25,
-       "sd": 0.46
+       "uses": 19,
+       "mean": 0.23,
+       "sd": 0.25
       },
       "ramp": {
        "uses": 7,
-       "mean": 0.23,
+       "mean": 0.16,
+       "sd": 0.45
+      },
+      "casual": {
+       "uses": 13,
+       "mean": 0.13,
+       "sd": 0.33
+      },
+      "speed": {
+       "uses": 6,
+       "mean": 0.13,
        "sd": 0.43
       },
       "challenge": {
-       "uses": 6,
-       "mean": -0.01,
-       "sd": 0.42
-      },
-      "casual": {
-       "uses": 11,
-       "mean": -0.02,
-       "sd": 0.35
+       "uses": 8,
+       "mean": 0.03,
+       "sd": 0.38
       },
       "keyword": {
-       "uses": 8,
-       "mean": -0.18,
-       "sd": 0.38
+       "uses": 9,
+       "mean": -0.1,
+       "sd": 0.37
       },
       "llm": {
        "uses": 5,
-       "mean": -0.39,
-       "sd": 0.5
+       "mean": -0.37,
+       "sd": 0.52
       },
       "fans": {
        "uses": 4,
-       "mean": -0.52,
-       "sd": 0.54
+       "mean": -0.56,
+       "sd": 0.56
       }
      },
      "hashtagSet": {
       "title-tag": {
-       "uses": 43,
-       "mean": 0.21,
-       "sd": 0.18
+       "uses": 56,
+       "mean": 0.17,
+       "sd": 0.16
       },
       "two": {
        "uses": 9,
-       "mean": -0.4,
-       "sd": 0.41
+       "mean": -0.33,
+       "sd": 0.42
       },
       "format3": {
        "uses": 6,
-       "mean": -0.55,
-       "sd": 0.44
+       "mean": -0.58,
+       "sd": 0.45
       }
      },
      "emojiSet": {
-      "op-topic-quiz": {
+      "op-quiz-sparks": {
        "uses": 0,
        "mean": 0.43,
        "sd": 1
       },
       "topic": {
-       "uses": 10,
-       "mean": 0.31,
-       "sd": 0.36
+       "uses": 12,
+       "mean": 0.32,
+       "sd": 0.34
       },
       "op-quiz-pop": {
-       "uses": 11,
-       "mean": 0.21,
-       "sd": 0.33
+       "uses": 14,
+       "mean": 0.24,
+       "sd": 0.29
       },
       "op-hype-eyes": {
        "uses": 5,
-       "mean": 0.15,
-       "sd": 0.45
+       "mean": 0.2,
+       "sd": 0.44
       },
       "op-fire-brain": {
        "uses": 7,
-       "mean": 0.07,
-       "sd": 0.39
+       "mean": 0.08,
+       "sd": 0.4
+      },
+      "none": {
+       "uses": 9,
+       "mean": 0.08,
+       "sd": 0.36
       },
       "fire": {
        "uses": 14,
-       "mean": 0.05,
-       "sd": 0.31
+       "mean": -0.01,
+       "sd": 0.33
       },
-      "none": {
-       "uses": 7,
-       "mean": -0.02,
-       "sd": 0.41
+      "op-topic-quiz": {
+       "uses": 6,
+       "mean": -0.16,
+       "sd": 0.44
       },
       "template": {
        "uses": 4,
-       "mean": -1.06,
-       "sd": 0.57
+       "mean": -1.04,
+       "sd": 0.59
       }
      },
      "descHook": {
-      "no-peek": {
-       "uses": 15,
-       "mean": 0.4,
-       "sd": 0.3
-      },
       "op-comment-score": {
-       "uses": 12,
-       "mean": 0.37,
-       "sd": 0.31
+       "uses": 14,
+       "mean": 0.32,
+       "sd": 0.29
       },
       "op-score-challenge": {
-       "uses": 10,
-       "mean": 0.37,
-       "sd": 0.34
+       "uses": 13,
+       "mean": 0.32,
+       "sd": 0.3
+      },
+      "no-peek": {
+       "uses": 21,
+       "mean": 0.27,
+       "sd": 0.26
       },
       "keyword": {
        "uses": 9,
+       "mean": -0.4,
+       "sd": 0.43
+      },
+      "challenge": {
+       "uses": 11,
        "mean": -0.45,
-       "sd": 0.41
+       "sd": 0.35
       },
       "op-target-comment": {
        "uses": 3,
-       "mean": -0.56,
-       "sd": 0.53
-      },
-      "challenge": {
-       "uses": 9,
-       "mean": -0.61,
-       "sd": 0.38
+       "mean": -0.65,
+       "sd": 0.55
       }
      }
     }
    }
   }
  },
- "updatedAt": "2026-11-08T08:19:05.178Z"
+ "updatedAt": "2026-11-15T08:40:04.727Z"
 }
