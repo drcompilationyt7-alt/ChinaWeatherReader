@@ -2870,6 +2870,62 @@
    "whyMode": "explore",
    "bpm": 129.01,
    "titlePattern": "{song} acapella but the beat drops {e}"
+  },
+  {
+   "videoId": "CJpY8wli60c",
+   "url": "https://www.youtube.com/watch?v=CJpY8wli60c",
+   "postedAt": "2026-11-15T10:41:22.860Z",
+   "publishAt": "2026-11-15T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Don't Start Now",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "don't start now anime edit sfx 🗿 #anime",
+   "clipIds": [
+    "c_47f-C11UNBc_13230",
+    "c_8s6pu6QvkxY_106480",
+    "c_A_5JOOeFi5g_225697",
+    "c_BOKrwNqPoY8_39903",
+    "c_BOKrwNqPoY8_55559",
+    "c_E6j5-a-vI14_130338",
+    "c_E6j5-a-vI14_158563",
+    "c_IEXTLOJKKcM_33196",
+    "c_UQvmIq570dE_3348",
+    "c_UQvmIq570dE_8631",
+    "c_Z4ObaZlnrTY_117649",
+    "c_ZaJlKP4sjj0_48245",
+    "c_bZdd8k6wKsI_676873",
+    "c_hkTFgxkntTI_196093"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 9.017,
+    "pool": "sound",
+    "render_s": {
+     "short": 525.1,
+     "watermark_short": 32.1,
+     "total": 557.3
+    },
+    "attempts": 4
+   },
+   "onVideoTitle": "anime x don't start now",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "minimal",
+    "titleStyle": "mimic",
+    "ovStyle": "ov-song",
+    "descHook": "kw-line",
+    "titlePattern": "{song} anime edit sfx {e} #{tag}",
+    "titleMode": "mimic"
+   },
+   "vibe": "impact",
+   "musicPoolId": "dua_lipa_don_t_start_now",
+   "songSection": [
+    147.906,
+    178.864
+   ]
   }
  ]
 }

@@ -275,6 +275,11 @@
    "used_at": "2026-11-12T12:02:41Z",
    "video": "slowmo-summer_glow-short.mp4",
    "role": "short"
+  },
+  "sound/impact/sound/dua_lipa_don_t_start_now": {
+   "used_at": "2026-11-15T10:41:22Z",
+   "video": "sound-impact-short.mp4",
+   "role": "short"
   }
  },
  "moments": {},
@@ -462,6 +467,27 @@
      "c_lDzXBSxAxKw_53147",
      "c_A_5JOOeFi5g_326030",
      "c_IvlTzGeBmHE_115630"
+    ]
+   },
+   {
+    "at": "2026-11-15T10:41:22Z",
+    "video": "sound-impact-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_bZdd8k6wKsI_676873",
+     "c_BOKrwNqPoY8_55559",
+     "c_ZaJlKP4sjj0_48245",
+     "c_47f-C11UNBc_13230",
+     "c_BOKrwNqPoY8_39903",
+     "c_E6j5-a-vI14_158563",
+     "c_8s6pu6QvkxY_106480",
+     "c_IEXTLOJKKcM_33196",
+     "c_hkTFgxkntTI_196093",
+     "c_Z4ObaZlnrTY_117649",
+     "c_UQvmIq570dE_3348",
+     "c_A_5JOOeFi5g_225697",
+     "c_E6j5-a-vI14_130338",
+     "c_UQvmIq570dE_8631"
     ]
    }
   ],
