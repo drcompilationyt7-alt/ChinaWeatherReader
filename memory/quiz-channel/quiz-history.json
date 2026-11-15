@@ -3125,6 +3125,31 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "rIwslaMsFiI",
+   "url": "https://www.youtube.com/watch?v=rIwslaMsFiI",
+   "postedAt": "2026-11-15T09:40:33.582Z",
+   "publishAt": "2026-11-15T13:00:00.000Z",
+   "format": "shape",
+   "theme": "asia",
+   "seed": 305652871,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "shape-all5",
+   "title": "Can You Recognize These 3 Countries? 🔥 #geography",
+   "answers": [
+    "CN",
+    "PH",
+    "SA"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
