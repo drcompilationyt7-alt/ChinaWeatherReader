@@ -2406,7 +2406,8 @@
    "songSection": [
     102.58,
     143.53
-   ]
+   ],
+   "musicPerf": 3.602
   },
   {
    "videoId": "WDg_abgiHHI",
@@ -2925,6 +2926,72 @@
    "songSection": [
     147.906,
     178.864
+   ]
+  },
+  {
+   "videoId": "ThtpGwsMOH4",
+   "url": "https://www.youtube.com/watch?v=ThtpGwsMOH4",
+   "postedAt": "2026-11-16T11:10:10.612Z",
+   "publishAt": "2026-11-16T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "First Love",
+   "theme": "anime",
+   "emoji": "✨,⚡",
+   "title": "first love but it's anime ✨",
+   "clipIds": [
+    "c_3K7w-o3Sm28_112300",
+    "c_3K7w-o3Sm28_39500",
+    "c_DmY-7RD8wKw_1000",
+    "c_EJM5UTY_qjE_119300",
+    "c_G2zSBZnKS-M_87400",
+    "c_Hw3j0cStHmk_120100",
+    "c_I7Mr9br2dRU_28100",
+    "c_P5T4BvAopWk_17900",
+    "c_UmEgtnzjRts_78600",
+    "c_ZPyt5_6dzUU_33900",
+    "c__v12N8Gw5Sg_51900",
+    "c_d0ikyQsUX8E_14800",
+    "c_frJCjpnpBAk_120400",
+    "c_hZpSkwgnIiE_25400",
+    "c_hoswnzkvhdI_208800",
+    "c_i1pJFCpSXV0_86100",
+    "c_jFwF2SknQEk_60500",
+    "c_jyRu-7DgXLE_61800",
+    "c_p7gOOAop8gY_43900",
+    "c_pWVnaH2a6HI_33000",
+    "c_rPVnnMhoF1Y_87700",
+    "c_tFaZymQbp84_25700",
+    "c_x1_t1_5fTwk_116000",
+    "c_zec5TRzrHyA_49300"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 30.8,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 643.3,
+     "watermark_short": 51.9,
+     "total": 695.2
+    },
+    "attempts": 5
+   },
+   "onVideoTitle": "first love anime edit",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "niche3",
+    "titleStyle": "song-anime",
+    "ovStyle": "ov-kw",
+    "descHook": "llm-line",
+    "titlePattern": "{song} but it's anime {e}",
+    "titleMode": "explore"
+   },
+   "vibe": "summer_glow",
+   "musicPoolId": "hikaru_utada_first_love@v1",
+   "songSection": [
+    149.79,
+    193.02
    ]
   }
  ]

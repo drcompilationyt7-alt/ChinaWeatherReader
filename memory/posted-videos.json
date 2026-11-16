@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=QZvICmvLzfI",
-      "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
-      "country": "Global",
-      "postedAt": "2026-10-17T07:22:49.290Z",
-      "videoId": "QZvICmvLzfI",
-      "category": "meme-anime",
-      "titleSource": "idol"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=2qzyPb-Mv28",
       "title": "anime sound design edit goes insane on believer 🔥",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "CJpY8wli60c",
       "category": "edit-sound",
       "titleSource": "Don't Start Now"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=ThtpGwsMOH4",
+      "title": "first love but it's anime ✨",
+      "country": "Global",
+      "postedAt": "2026-11-16T11:10:10.868Z",
+      "videoId": "ThtpGwsMOH4",
+      "category": "edit-slowmo",
+      "titleSource": "First Love"
     }
   ]
 }

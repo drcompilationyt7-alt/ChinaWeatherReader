@@ -1040,8 +1040,8 @@
    "last_used": "2026-11-06T12:32:19Z",
    "uses": 1,
    "perf": {
-    "n": 0,
-    "sum": 0.0
+    "n": 1,
+    "sum": 3.602
    },
    "version_last_used": {
     "1": "2026-11-06T12:32:19Z"
@@ -1162,11 +1162,14 @@
    "lyrics": "render-time only",
    "status": "probation",
    "added": "2026-10-18T21:24:57Z",
-   "last_used": null,
-   "uses": 0,
+   "last_used": "2026-11-16T11:10:10Z",
+   "uses": 1,
    "perf": {
     "n": 0,
     "sum": 0.0
+   },
+   "version_last_used": {
+    "1": "2026-11-16T11:10:10Z"
    }
   },
   {
