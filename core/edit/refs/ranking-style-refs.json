@@ -24,7 +24,9 @@
   "UCKQ62wQ4OqAGza3qhyWOIlw": "Zyper",
   "UCcg-vbIijpf5YBDRATxMaDQ": "godproamv",
   "UCxKYkY9dQEphPyanndv0YlA": "XENOZ",
-  "UC8wAEj6bTJVAQ0V4ZDN38pA": "Mila"
+  "UC8wAEj6bTJVAQ0V4ZDN38pA": "Mila",
+  "UCt3S_q9SK_wslTJpSrbantw": "Kimyo",
+  "UCQzYYHOCqbs1zPmoeyXsuIw": "Xyuno"
  },
  "refs": [
   {
@@ -276,5 +278,28 @@
    "views": 276261,
    "added": "2026-11-12 owner example (\"we want edits\")"
   }
- ]
+ ],
+ "_trusted_about": "Owner 2026-11-15: \"just download from the youtubers I tell you, nothing else\" - \"they are the best sources I found\", \"we should be keeping all\", \"you should not be rejecting any of them except if the edits are not on anime\". The slow loop mines ONLY these channels (ranking_pool.py mine-trusted): every anime upload is downloaded and kept (only safety stays a gate); the 'End' / 'Outro' chapter (the editor's tag) is cut off. Add a channel here when the owner names one.",
+ "trusted": {
+  "UC8wAEj6bTJVAQ0V4ZDN38pA": {
+   "name": "Mila",
+   "handle": "@Mila.edit243",
+   "added": "2026-11-12"
+  },
+  "UCK3JvjP5TwtetNSRwur-Reg": {
+   "name": "Purgify",
+   "handle": "@purgify.mp4",
+   "added": "2026-11-13"
+  },
+  "UCt3S_q9SK_wslTJpSrbantw": {
+   "name": "Kimyo",
+   "handle": "@Kimyo_ae",
+   "added": "2026-11-15"
+  },
+  "UCQzYYHOCqbs1zPmoeyXsuIw": {
+   "name": "Xyuno",
+   "handle": "@xyunovfx",
+   "added": "2026-11-15"
+  }
+ }
 }

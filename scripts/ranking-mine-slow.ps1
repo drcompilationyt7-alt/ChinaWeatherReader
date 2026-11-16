@@ -24,7 +24,14 @@ param(
   [int]$CpuPercent = 10,
   [double]$MinRamGB = 3.5,
   [int]$Focus = 8,           # > 0: plan-shows gives the owner's mining order (ranking_pool.mining_order: focus shows, action / strong, romance + couples, the rest)
-  [string]$DlRate = '1M'     # download speed cap (yt-dlp --limit-rate: 1M = 1 MB/s ~ 8 Mbit/s; '' = no cap)
+  [string]$DlRate = '1M',    # download speed cap (yt-dlp --limit-rate: 1M = 1 MB/s ~ 8 Mbit/s; '' = no cap)
+  # owner 2026-11-15: "just download from the youtubers I tell you, nothing else" / "keep all, they are the best sources":
+  #   trusted  = only the editors the owner named (refs/ranking-style-refs.json 'trusted': Mila, Purgify, Kimyo, Xyuno ...),
+  #              every anime upload kept, the 'End' chapter (the tag) cut off (ranking_pool.py mine-trusted)
+  #   approved = the 26 reference editors' untried uploads, relaxed gates (mine --approved-only)
+  #   plan     = the old plan rotation with YouTube searches
+  [string]$Mode = 'trusted',
+  [int]$TrustedDl = 6        # named-editor edits per cycle (short ~25 s edits)
 )
 $ErrorActionPreference = 'Continue'
 # a job object with a hard CPU-rate cap; every process this script starts afterwards is in the job too
@@ -74,7 +81,7 @@ $env:RANKING_DL_RATE = $DlRate
 # ranking_compilation.idle() would drop the miner to Idle (starves on a busy PC); the job's CPU cap keeps it small instead
 $env:MINE_PRIORITY = if ($capResult -eq 'ok') { 'normal' } else { 'below' }
 
-Say "slow loop started (pid $PID, CPU cap $CpuPercent %: $capResult, RAM >= $MinRamGB GB, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min, download cap $(if ($DlRate) { "$DlRate/s" } else { 'none' }))"
+Say "slow loop started (pid $PID, CPU cap $CpuPercent %: $capResult, RAM >= $MinRamGB GB, threads $Threads, pace $PaceS s, $MaxDl downloads x $ShowsPerCycle shows per cycle, pause $PauseMin min, mode $Mode, download cap $(if ($DlRate) { "$DlRate/s" } else { 'none' }))"
 $k = 0
 if (Test-Path $StateF) { try { $k = [int](Get-Content $StateF -TotalCount 1) } catch { $k = 0 } }
 while ($true) {
@@ -83,6 +90,50 @@ while ($true) {
   $free = (Get-PSDrive C).Free / 1GB
   if ($free -lt $MinFreeDiskGB) { Say ("C: has {0:N1} GB free (< $MinFreeDiskGB): waiting 1 h" -f $free); Start-Sleep -Seconds 3600; continue }
   if (-not (Test-Path $Py)) { Say "python venv missing ($Py): exiting"; break }
+
+  if ($Mode -eq 'trusted' -or $Mode -eq 'approved') {
+    New-Item -ItemType Directory -Force $CookieDir | Out-Null
+    $cookie = Join-Path $CookieDir 'cookies.txt'
+    Copy-Item $CookieSrc $cookie -Force
+    $env:YT_SPARE_COOKIES = $cookie
+    $out = Join-Path $Work 'slow-last.json'
+    foreach ($lf in @((Join-Path $Work 'slow-mine.log'), $Log)) {
+      if ((Test-Path $lf) -and (Get-Item $lf).Length -gt 20MB) { Move-Item $lf "$lf.1" -Force }
+    }
+    $k++
+    Set-Content -Path $StateF -Value $k -Encoding ascii
+    $mineLog = Join-Path $Work 'slow-mine.log'
+    if ($Mode -eq 'trusted') {
+      Say ("cycle {0}: the owner's named editors only (refs 'trusted'), every anime edit kept" -f $k)
+      $cmdline = "`"$Py`" core/edit/ranking_pool.py mine-trusted --budget-min $CycleBudgetMin --work output/ranking-mine " +
+                 "--max-dl $TrustedDl 1> `"$out`" 2>> `"$mineLog`""
+    } else {
+      Say ("cycle {0}: approved editors only (the shows with the most untried uploads first)" -f $k)
+      $cmdline = "`"$Py`" core/edit/ranking_pool.py mine --approved-only --budget-min $CycleBudgetMin --work output/ranking-mine " +
+                 "--max-dl $MaxDl --max-entries $ShowsPerCycle 1> `"$out`" 2>> `"$mineLog`""
+    }
+    cmd /c $cmdline
+    $code = $LASTEXITCODE
+    Remove-Item $cookie -Force -ErrorAction SilentlyContinue
+    $left = $null
+    try {
+      $lines = @(Get-Content $out -Encoding UTF8)
+      $j0 = 0
+      while ($j0 -lt $lines.Count -and $lines[$j0] -notmatch '^\{') { $j0++ }
+      $r = ($lines[$j0..($lines.Count - 1)] -join "`n") | ConvertFrom-Json
+      if ($Mode -eq 'trusted') {
+        $left = $r.trusted_left
+        Say ("cycle {0} done (exit {1}): named editors: downloaded {2}, staged {3} sections, not kept {4}, {5} min, {6} anime uploads left" -f $k, $code, $r.downloaded, $r.staged, @($r.failed).Count, $r.minutes, $left)
+      } else {
+        $left = $r.approved_left
+        $shown = (($r.entries | ForEach-Object { $_.show }) -join ', ')
+        Say ("cycle {0} done (exit {1}): {2}: downloaded {3}, staged {4}, {5} min, {6} approved uploads untried" -f $k, $code, $shown, $r.downloaded, $r.staged, $r.minutes, $left)
+      }
+    } catch { Say "cycle $k done (exit $code): no summary" }
+    if ($left -eq 0) { Say "$Mode editors: nothing left to download - add channels to core/edit/refs/ranking-style-refs.json; waiting 6 h"; Start-Sleep -Seconds 21600; continue }
+    Start-Sleep -Seconds ($PauseMin * 60)
+    continue
+  }
 
   # the plan (shows that unlock the most lists first), rotated: every show gets its turn
   $plan = @(& $Py core/edit/ranking_pool.py plan-shows --focus $Focus 2>$null | ForEach-Object {

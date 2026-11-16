@@ -173,10 +173,32 @@ def mining_busy():
     """True while a GitHub pool-mining run (same spare YouTube account) is queued / running (never inside that run)."""
     if os.environ.get('GITHUB_ACTIONS') == 'true':
         return False
+    # 2026-11-15: only a RANKING night uses the spare account (ranking-pool-mine.yml is the only workflow with
+    # YT_SPARE_COOKIES); a quiz / sound / slow-mo night blocked the local miner for hours for nothing
+    def gh(*args):
+        return subprocess.run(['gh', *args], capture_output=True, text=True, timeout=60, cwd=ROOT).stdout or ''
     try:
-        r = subprocess.run(['gh', 'run', 'list', '--workflow', 'pool-mine-nightly.yml', '-L', '3', '--json', 'status'],
-                           capture_output=True, text=True, timeout=60, cwd=ROOT)
-        return any(x.get('status') in ('in_progress', 'queued', 'waiting', 'pending') for x in json.loads(r.stdout or '[]'))
+        runs = json.loads(gh('run', 'list', '--workflow', 'pool-mine-nightly.yml', '-L', '3', '--json',
+                             'status,createdAt,databaseId') or '[]')
+        for x in runs:
+            if x.get('status') not in ('in_progress', 'queued', 'waiting', 'pending'):
+                continue
+            jobs = [j.get('name') or '' for j in (json.loads(gh('run', 'view', str(x['databaseId']), '--json', 'jobs')
+                                                              or '{}').get('jobs') or [])
+                    if j.get('conclusion') != 'skipped']          # the other pools' jobs show up as skipped
+            mine = [n for n in jobs if re.search(r'ranking|quiz|sound|slow', n, re.I) and not re.search(r'pick|rotation', n, re.I)]
+            if mine:
+                if any(re.search(r'ranking', n, re.I) for n in mine):
+                    return True
+                continue
+            # not started yet: tonight's pool from MINE_WEEK (repo variable, UTC weekday of the run)
+            week = dict(p.split(':') for p in (gh('variable', 'get', 'MINE_WEEK').strip() or
+                                               'mon:sound,tue:slowmo,wed:ranking,thu:sound,fri:quiz,sat:slowmo,sun:quiz').split(',')
+                        if ':' in p)
+            day = time.strftime('%a', time.strptime(x['createdAt'][:10], '%Y-%m-%d')).lower()[:3]
+            if week.get(day, 'ranking') == 'ranking':
+                return True
+        return False
     except Exception:
         return False
 
@@ -236,7 +258,16 @@ def search(q, n=40):
     return _cached(f's_{q}_{n}', run)
 
 
-def full_info(vid):
+def full_info(vid, need=()):
+    """need: keys an older cached info may lack (e.g. 'chapters', kept since 2026-11-15): such an info is fetched again"""
+    if need and YT_CACHE[0] and not OFFLINE[0]:
+        p = os.path.join(YT_CACHE[0], re.sub(r'[^A-Za-z0-9_-]+', '_', f'i_{vid}')[:120] + '.json')
+        try:
+            if os.path.exists(p) and any(k not in json.load(open(p, encoding='utf-8')) for k in need):
+                os.remove(p)
+        except (OSError, ValueError):
+            pass
+
     def run():
         pace()
         out = ytdlp(['-J', '--skip-download', f'https://www.youtube.com/watch?v={vid}'])
@@ -247,7 +278,7 @@ def full_info(vid):
         if not isinstance(d, dict):
             return None
         keep = ('id', 'title', 'description', 'tags', 'channel', 'uploader', 'uploader_id', 'channel_id', 'view_count',
-                'like_count', 'width', 'height', 'duration', 'upload_date', 'license')
+                'like_count', 'width', 'height', 'duration', 'upload_date', 'license', 'chapters')
         return {k: d.get(k) for k in keep}
     return _cached(f'i_{vid}', run)
 
@@ -359,7 +390,12 @@ def prefilter(e, entry, min_views=None):
     d = e.get('duration') or 0
     if not 12 <= d <= entry.get('max_dur', MAX_SRC_DUR):
         return False, f'dur_{d}'
-    if (e.get('view_count') or 0) < (MIN_VIEWS if min_views is None else min_views):
+    # owner 2026-11-14: the owner's editors (--prefer ids, e.g. Mila + Purgify) have good edits with smaller audiences; the
+    # 100K view bar rejected almost all of them (the 11-13 'editors first' run downloaded none) -> the permit bar for them
+    floor = PERMIT_MIN_VIEWS if e.get('id') in PREFER else (MIN_VIEWS if min_views is None else min_views)
+    if _style_editor(e):
+        floor = 0                          # owner 2026-11-15: the approved editors are human-checked, any upload counts
+    if (e.get('view_count') or 0) < floor:
         return False, 'views'
     if re.search(r'twixtor clips|clips for edit|scene ?pack|raw clips', t, re.I) or (
             re.search(r'free clips', t, re.I) and not re.search(r'\bamv\b|\[\s*edit|\bedit\s*[/\]|]', t, re.I)):
@@ -414,7 +450,8 @@ def info_gate(info):
     if h < 720:
         return False, f'res_{h}'
     v, lk = info.get('view_count') or 0, info.get('like_count') or 0
-    if v and lk and lk / v < MIN_LIKE_RATIO:
+    # owner 2026-11-15: the owner's approved editors (PREFER) are human-checked: the like ratio does not drop their edits
+    if v and lk and lk / v < MIN_LIKE_RATIO and info.get('id') not in PREFER:
         return False, f'like_ratio_{lk / v:.3f}'
     if L.EXPLICIT_RE.search(' '.join([info.get('title') or '', info.get('description') or '', ' '.join(info.get('tags') or [])])):
         return False, 'explicit_meta'
@@ -1146,7 +1183,9 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
         return best[1] if best else None
     seen, cands = set(), []
     # the reference editors' own uploads (entry['extra'], ranking_pool.style_uploads) are candidates like search results
-    for q in queries(entry) + ['__extra__']:
+    # owner 2026-11-15 ("I thought we were downloading from the channels I human checked"): entry['no_search'] = only the
+    # approved editors' uploads, never a random search result
+    for q in ([] if entry.get('no_search') else queries(entry)) + ['__extra__']:
         for e in ((entry.get('extra') or []) if q == '__extra__' else (search(q) or [])):
             if e.get('id') in seen or e.get('id') in used:
                 continue
@@ -1641,15 +1680,26 @@ def attribute(judge, cast, frames, ts, runs=None, gaps=None):
     return shares, sorted(mains, key=lambda n: -shares[n])
 
 
+END_CHAPTER_RE = re.compile(r'^\W*(end|ending tag|outro|credits?|tag|end ?card|endcard)\W*$', re.I)
+TRUSTED_TAIL_S = 2.5               # no 'End' chapter and no tag found: the last seconds of a named editor's edit are the tag
+
+
 def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None, distinct=False,
-             cast=None):
+             cast=None, approved=False, named=False):
     """Phrase-aligned 18-24 s windows (ranking_score.phrase_windows) -> text / subtitle / eventful / song
     gates -> safety -> character match. Keeps up to `max_pass` passing windows (best quality first) so the
     builder can balance the entry lengths. seg_len (old fixed length) only caps the window: (min, max).
     distinct=True (the pool miner): the passing windows do not overlap, each is its own section of the edit.
     Library mode (owner 2026-10-31): entry = the SHOW (kind anime: any of its characters owns the window), theme 'any'
     (every theme the section passes is recorded), cast = the show's ranking characters: each passed window records
-    which of them own it (attribute)."""
+    which of them own it (attribute).
+    approved=True (owner 2026-11-15: an edit of an approved editor - refs/ranking-style-refs.json - must give a section): when
+    no window passes, the best windows pass with the soft gates relaxed (subtitles, eventful, song, character, main
+    character, reference theme, name sting); each relaxed window lists the gates it failed in w['relaxed'] for the review.
+    Safety, rating and overlap stay hard.
+    named=True (owner 2026-11-15, the editors the owner named - refs 'trusted': "keep all, they are the best sources",
+    "don't reject any except if not anime"): no quality / character / theme / name gates at all, only safety; the sections
+    end before the editor's 'End' / 'Outro' chapter (owner: "there is a marker for End and that is when they plug the tag")."""
     import ranking_score as RS
     txt, path = res['_txt'], res['path']
     ana = res.get('_ana')
@@ -1666,6 +1716,18 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     if hi <= lo and os.environ.get('RANKING_KEEP_NAMES', '1') != '0':
         lo, hi = lo0, hi0             # the editor's tags fill the edit: keep them (owner 2026-11-10), windows still avoid them first
         res['name_kept'] = True
+    if named:
+        chs = (res.get('_info') or {}).get('chapters') or []
+        tag_t = [float(c.get('start_time') or 0) for c in chs
+                 if END_CHAPTER_RE.search(c.get('title') or '') and float(c.get('start_time') or 0) > 0.3 * dur]
+        # the editor's tag: the 'End' chapter, else the last TRUSTED_TAIL_S seconds
+        named_hi = (min(tag_t) - 0.2) if tag_t else dur - TRUSTED_TAIL_S
+        if tag_t:
+            res['end_chapter'] = min(tag_t)
+            hi = min(hi, named_hi)
+        elif not tags:
+            hi = min(hi, named_hi)
+        res['chapters'] = [(c.get('start_time'), c.get('title')) for c in chs][:12]
     if hi <= lo:
         res.update(verdict='reject', why='editor_tag', windows=[], quality=0, conf=0, match=None)
         res.pop('_ana', None)
@@ -1675,6 +1737,9 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     seg = (seg[0], min(seg[1], (dur - 1.0) if dur <= SHORT_EDIT_S else MAX_SHARE * dur))
     if dur <= SHORT_EDIT_S:   # owner refs are 9-60 s: a short edit gives one section of 12 s .. the whole edit (- 1 s)
         seg = (SHORT_SEC_MIN, max(SHORT_SEC_MIN, min(seg_hi, dur - 1.0)))   # under 13 s: nothing fits (too short)
+    seg_base = seg
+    if named and hi - lo < seg[0] and hi - lo >= 6.0:
+        seg = (hi - lo - 0.05, hi - lo)          # the owner's editors: keep the edit even when the tag leaves < 12 s
     # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))
@@ -1699,7 +1764,20 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return ws
     wins = mkwins(lo)
     wins.sort(key=lambda w: -w['quality'])
-    tgt, oth = targets_and_distractors(judge, entry, others)
+    if named and not wins:
+        # a named editor's name / handle text spread over the whole edit (Mila's Aizen edit 2026-11-15: a 'MILA' corner mark
+        # every 3.5 s narrowed the span to 7.5-20.5 s and no window fit): the whole edit up to the tag, the name stays
+        # (owner 2026-11-10 "if we can't [cut] we keep the tag"; never blurred)
+        skip = sorted(set(avoid))
+        lo, hi = lo0, min(hi0, named_hi)
+        seg = seg_base
+        if hi - lo < seg[0] and hi - lo >= 6.0:
+            seg = (hi - lo - 0.05, hi - lo)
+        wins = mkwins(lo)
+        wins.sort(key=lambda w: -w['quality'])
+        res['name_kept'] = True
+    # the owner's named editors: no character check (their edits are kept whatever the show) -> no targets needed
+    tgt, oth = ([], []) if named else targets_and_distractors(judge, entry, others)
     fr_t = sorted(ana['frames'])
     other_tags = [t for o in others for t in o.get('tags', [])]
     lab_cache, expl_cache, diag_cache, meth = {}, {}, {}, ['']
@@ -1727,25 +1805,69 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
 
     passed = []
     keep_names = [False]   # the last resort below: windows with an editor-name flash pass (the name stays)
+    relax = [False]        # approved editor, nothing passed: soft gates only record what failed (w['relaxed'])
+
+    def soft(w, why):
+        """a soft gate failed: reject, or (relaxed pass) note it and go on"""
+        if relax[0]:
+            w.setdefault('relaxed', []).append(why)
+            return False
+        w['reject'] = why
+        return True
     # owner 2026-11-01: 'if the title names the character, trust the edit is about that person' (a character entry: the
     # who-owns-the-window gates are skipped; safety, rating, quality and the reference gate still apply)
     trusted = entry.get('kind') != 'anime' and bool(title_names(res.get('title'), [entry]))
     style = style_match({'title': res.get('title'), 'duration': dur})   # the owner's reference style (short '[Edit/AMV]')
 
+    def trusted_window(w):
+        """a named editor's window: safety only; themes / characters are recorded for the lists, never gate"""
+        wait_ram('the next window', need=min(MIN_FREE_GB, 0.7))
+        ts = [t for t in fr_t if w['s'] <= t < w['e']]
+        frames = [ana['frames'][t] for t in ts]
+        if not frames:
+            w['reject'] = 'no_frames'
+            return False
+        ok, why = judge.safe(frames)
+        if not ok:
+            w['reject'] = why
+            return False
+        w['conf'], w['match'], w['trusted_editor'] = 1.0, {'method': 'trusted_editor', 'votes': 0, 'wins': 0, 'others': {}}, True
+        w['themes'] = ['action']
+        if theme and os.environ.get('RANKING_REF_GATE', '1') != '0':
+            try:
+                import ranking_profile as RP
+                f = RP.measure(path, w['s'], w['e'], per_t={t: txt['per_t'][t] for t in txt['per_t'] if w['s'] <= t < w['e']},
+                               audio=a)
+                f['manga_siglip'] = RP.manga_siglip(judge.sig, frames)
+                gs = {th: RP.gate(f, th) for th in (THEMES if theme == 'any' else (theme,))}
+                ok_th = [th for th in gs if gs[th]['ok']]
+                th = max(ok_th or list(gs), key=lambda k: gs[k]['ref_score'] or 0)
+                w.update(theme=th, themes=ok_th or [th], ref_score=gs[th]['ref_score'], ref_groups=gs[th]['ref_groups'],
+                         manga=gs[th]['manga'], manga_share=gs[th].get('manga_share'))
+            except Exception as ex:  # noqa: BLE001  (the themes are only tags here)
+                log(f'ref profile failed: {ex}')
+        if cast:
+            try:
+                w['cast_runs'], w['cast_gaps'] = {}, {}
+                w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'], gaps=w['cast_gaps'])
+            except Exception as ex:  # noqa: BLE001
+                log(f'attribute failed: {ex}')
+        passed.append(w)
+        return True
+
     def try_window(w):
         if distinct and any(min(w['e'], p['e']) - max(w['s'], p['s']) > 2.0 for p in passed):
             w['reject'] = 'overlaps_a_section'          # owner 2026-10-28: several sections of one edit, never the same twice
             return False
-        if w['subs'] > 0.15:
-            w['reject'] = 'subtitles'
+        if named:
+            return trusted_window(w)
+        if w['subs'] > 0.15 and soft(w, 'subtitles'):
             return False
         # the owner's reference style includes calm edits ('Gojo Eyes - Fluxxwave「AMV」' 2.8): a short '[Edit/AMV]' edit
         # gets 1 point of slack (2026-11-01)
-        if w['eventful'] < EVENT_MIN[pace_kind] - (1.0 if style else 0.0):
-            w['reject'] = f'not_eventful_{w["eventful"]}'
+        if w['eventful'] < EVENT_MIN[pace_kind] - (1.0 if style else 0.0) and soft(w, f'not_eventful_{w["eventful"]}'):
             return False
-        if w['song'] < SONG_MIN:
-            w['reject'] = f'weak_song_{w["song"]}'
+        if w['song'] < SONG_MIN and soft(w, f'weak_song_{w["song"]}'):
             return False
         # models are already resident here; one window adds ~0.1 GB. Waiting for the full threshold while this
         # process itself holds ~3 GB of models deadlocked on the 16 GB PC (2026-10-25), so the per-window
@@ -1783,15 +1905,14 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         # any other single character (0.5 / near-ties let Yuta-heavy windows pass as Toji in the preview)
         if trusted:
             w['title_trusted'] = True
-        elif not (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det['wins'] >= 2 * top_other):
-            w['reject'] = 'character'
+        elif (not (det['votes'] >= MIN_VOTES.get(det.get('method'), 6) and conf >= CHAR_MIN and det['wins'] >= 2 * top_other)
+              and soft(w, 'character')):
             return False
         # owner 2026-10-27: the entry's character must be the MAIN character of the section: no other character (off-list
         # and unknown ones included) owns a long continuous stretch or more than a third of it
         if labs is not None and not trusted:
             why = own_check(ts, labs)
-            if why:
-                w['reject'] = why
+            if why and soft(w, why):
                 return False
         # owner 2026-10-25 late: ON PAR with ALL our analysed reference edits in quality + the theme's vibe
         # (ranking_profile: effects / camera + 3D / text / sync / rhythm / grade vs the theme's reference profile);
@@ -1815,14 +1936,15 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             w.update(theme=th, themes=ok_th, ref_score=g['ref_score'], ref_groups=g['ref_groups'], manga=g['manga'],
                      manga_share=g.get('manga_share'))
             if not ok_th:
-                w['reject'] = g['why']
-                return False
+                if soft(w, g['why']):
+                    return False
+                w['themes'] = [th]        # relaxed: the closest theme carries it
         if os.environ.get('RANKING_STING', '1') != '0':
             st_t = []
             marks = sting_scan(path, w['s'], w['e'], res, cache=res.setdefault('_sting', {}), times=st_t)
             if marks:
                 w['sting'], w['sting_t'] = marks, st_t
-                if not keep_names[0]:
+                if not keep_names[0] and not relax[0]:
                     w['reject'] = 'name_sting'
                     return False
                 w['name_kept'] = True   # owner 2026-11-10: no clean cut fits -> the editor's name stays (never blurred)
@@ -1838,8 +1960,8 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         try_window(w)
     # a window rejected because ANOTHER character owns part of it: the target's own section may start later. Anchor
     # candidate windows where the target's span starts (first phrase boundary after it) so the later section can win.
-    if len(passed) < max_pass and any(w.get('reject') == 'character' or str(w.get('reject', '')).startswith('others_')
-                                     for w in wins):
+    if not named and len(passed) < max_pass and any(w.get('reject') == 'character' or str(w.get('reject', '')).startswith('others_')
+                                                     for w in wins):
         ts_all = [t for t in fr_t if lo <= t < hi]
         labs_all, _ = labels_for(ts_all) if ts_all else (None, None)
         if labs_all is not None:
@@ -1901,6 +2023,24 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             w.pop('reject', None)
             try_window(w)
         wins += fresh
+    # owner 2026-11-15 ("I human checked [the channels] ... every download should give a section"): an approved editor's
+    # edit never comes back empty when a window exists. The best windows (fewest soft failures, then quality) pass with the
+    # soft gates relaxed; at most APPROVED_RELAXED_MAX of them, flagged for the review.
+    if not passed and approved and wins and os.environ.get('RANKING_APPROVED_RELAX', '1') != '0':
+        relax[0] = keep_names[0] = True
+        n_max = min(max_pass, int(os.environ.get('RANKING_APPROVED_RELAXED_MAX', '3')))
+        hard = ('overlaps_a_section', 'rating', 'nudenet')
+        cand = [w for w in wins if w.get('reject') not in hard and not str(w.get('reject') or '').startswith('siglip_unsafe')]
+        cand.sort(key=lambda w: (w.get('reject') is not None and w.get('reject') != 'character', -w['quality']))
+        for w in cand:
+            if len(passed) >= n_max:
+                break
+            was = w.pop('reject', None)
+            w.pop('relaxed', None)
+            if not try_window(w) and 'reject' not in w and was:
+                w['reject'] = was            # a hard gate refused it again: keep the old reason on the sheet
+        if passed:
+            res['relaxed'] = True
     res['windows'] = wins
     res.pop('_ana', None)
     res.pop('_sting', None)

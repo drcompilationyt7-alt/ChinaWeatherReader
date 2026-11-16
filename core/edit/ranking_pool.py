@@ -267,8 +267,13 @@ def usable(items, key, led, exclude_sources=(), theme=None, smap=None):
     out = [it for it in items if it.get('status') == 'reviewed' and key in serve_keys(it, smap)
            and (theme is None or item_themes(it) is None or theme in item_themes(it))
            and it['source_id'] not in recent and (it.get('editor_handle') or '').lower().lstrip('@') not in bl]
-    # anime-footage edits first (owner 2026-10-25: a manga-panel edit is only a fallback), then the rank score
-    return sorted(out, key=lambda it: (bool(it.get('manga')), -(it.get('rank_score') or it.get('quality') or 0)))
+    # anime-footage edits first (owner 2026-10-25: a manga-panel edit is only a fallback), then the clip used longest ago
+    # (never used first; owner 2026-11-15 "we can repeat clips" + varied clips: the best-scored clip alone filled every
+    # list - a 26-week simulation used 20 of 90 clips, one 5 times), then the rank score
+    hist = led.get('ranking_recent') or []
+    last = {sid: i for i, sid in enumerate(hist)}
+    return sorted(out, key=lambda it: (bool(it.get('manga')), last.get(it['source_id'], -1),
+                                       -(it.get('rank_score') or it.get('quality') or 0)))
 
 
 # ------------------------------------------------------------------ the list of one video (owner 2026-11-07)
@@ -690,7 +695,9 @@ def style_uploads(RC):
         except Exception as ex:  # noqa: BLE001  (one channel never stops a run)
             log(f'style channel {cid}: {ex}')
             continue
-        out += [{k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')}
+        name = (rj(STYLE_REFS, {}).get('channels') or {}).get(cid)
+        out += [dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
+                     channel_id=cid, channel=e.get('channel') or (lst or {}).get('channel') or name)
                 for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
     _STYLE.append(out)
     log(f'style refs: {len(out)} uploads of {len(rj(STYLE_REFS, {}).get("channels") or {})} reference editors')
@@ -713,7 +720,327 @@ def show_cast_alias(sk):
     return list(dict.fromkeys(out))
 
 
-def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=4, offline=False, first=(), only=None):
+def decided_ids(st, ap_ids=()):
+    """source ids the library miner never downloads again"""
+    return {sid for sid, v in st['sources'].items()
+            if v.get('status') in ('staged', 'reviewed', 'rejected')
+            or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))
+                and not charfix_retry(v) and not stingfix_retry(v) and not v.get('retry')
+                # an approved editor's edit rejected before the relaxed gates (2026-11-15) gets one more evaluation
+                and not (sid in ap_ids and not v.get('relaxed_tried')))}
+
+
+def library_entry(RC, smap, sk):
+    """the library search entry of one show (searches, aliases, crossover patterns, the approved editors' uploads)"""
+    G = smap[sk]
+    show, cast = G['show'], G['cast']
+    # one broad search entry: the show's searches + "<character> edit" per cast member; a title naming the show OR
+    # any of its characters passes; vs / mixed edits are welcome (solo False)
+    q = RC.no_amv(list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
+                           + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast]
+                           + [q_ for cp in G.get('couples') or [] for q_ in cp.get('q') or []])))
+    se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
+                                                  + [a for cp in G.get('couples') or [] for a in cp.get('alias') or []]
+                                                  + show_cast_alias(sk))),
+              solo=False, search=show.get('search') or sk, extra=style_uploads(RC))
+    # a title naming another library show is a crossover ('Solo Leveling x Attack On Titan'): every one reviewed so far
+    # had no clean section of this show (2026-11-07: a titans-only section passed as Sung Jinwoo) -> skipped before the
+    # download. Strict title words only (anime_words, whole words); same-franchise shows ('dragon ball' / 'dragon ball
+    # super') and words this show's own names contain never count.
+    own = ' | '.join([sk, show['name'], show.get('anime') or ''] + [c['name'] for c in cast]).lower()
+    se['cross'] = [rf'(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])' for o in smap if o != sk and o not in sk and sk not in o
+                   for w in RC.anime_words(smap[o]['show']) if w not in own]
+    return se
+
+
+# ------------------------------------------------------------------ the owner's named editors (owner 2026-11-15)
+# "just download from the youtubers I tell you, nothing else" / "they are the best sources I found, we should be keeping all" /
+# "you should not be rejecting any of them except if the edits are not on anime" / "there is a marker for End and that is when
+# they plug the tag". refs/ranking-style-refs.json 'trusted' = those channels (Mila, Purgify, Kimyo ...).
+TRUSTED_NOT_ANIME = re.compile(
+    r'the boys|homelander|stranger things|minecraft|herobrine|sonic the hedgehog|squid game|\bjoker\b|dark knight|'
+    r'dexter morgan|backrooms|springtrap|\bfnaf\b|five nights|clash royale|sabrina carpenter|\barcane\b|k-?pop demon hunters|'
+    r'devil may cry|miguel o.?hara|spider-?(man|verse)|editing challenge|editing pack|\bvs\.? \d+ hours?\b|\bmessi\b|ronaldo|'
+    r'wuthering waves|weathering waves|genshin|honkai', re.I)
+# library shows the titles name in ways the show aliases miss (seen in the named editors' titles 2026-11-15)
+TRUSTED_ALIASES = {r'love is war': 'kaguya-sama', r'blue ?lock': 'blue lock', r'infinity castle': 'demon slayer',
+                   r'\bbankai\b': 'bleach', r'\b(shinobu|giyuu?|tengen|muichiro|tokito|tanjiro|nezuko|zenitsu|inosuke|'
+                   r'rengoku|akaza|kokushibo|douma)\b': 'demon slayer', r'\b(obito|madara|itachi|kakashi|minato)\b': 'naruto',
+                   r'\b(nagi|isagi|rin itoshi)\b': 'blue lock', r'\b(fern|frieren|himmel)\b': 'frieren',
+                   r'\b(gojo|sukuna|toji|megumi|geto)\b': 'jujutsu kaisen'}
+# anime outside the library that the character pool does not know (named editors' titles 2026-11-15)
+TRUSTED_ANIME = {r'more than a married couple': 'More Than a Married Couple, But Not Lovers',
+                 r'loving yamada': 'My Love Story with Yamada-kun at Lv999', r'hitori no shita': 'Hitori no Shita: The Outcast',
+                 r'tunnel to summer': 'The Tunnel to Summer, the Exit of Goodbyes',
+                 r'behind the supermarket': 'Smoking Behind the Supermarket with You',
+                 r'\bkanna\b': "Miss Kobayashi's Dragon Maid", r'\byamato\b': 'One Piece'}
+_ANIME_IDX = []
+
+
+def trusted_channels():
+    return rj(STYLE_REFS, {}).get('trusted') or {}
+
+
+def trusted_uploads(RC):
+    tc = trusted_channels()
+    return [e for e in style_uploads(RC) if e.get('channel_id') in tc]
+
+
+def anime_index():
+    """[(regex, anime name)] from the quiz character pool (2465 characters): anime titles (also written without spaces,
+    'DAN DA DAN' = 'Dandadan'), full character names (either order) and first / last names unique to one anime"""
+    if _ANIME_IDX:
+        return _ANIME_IDX[0]
+    chars = rj(os.path.join(ROOT, 'core', 'quiz', 'assets', 'anime-characters.json'), {}).get('characters') or []
+    out, seen = [], set()
+    for an in sorted({c.get('anime') for c in chars if c.get('anime')}, key=len, reverse=True):
+        base = re.sub(r':.*$', '', an).strip()
+        words = re.findall(r'[a-z0-9]+', base.lower())
+        if not words or len(''.join(words)) < 4:
+            continue
+        pat = r'(?<![a-z0-9])' + r'[\W_]*'.join(words) + r'(?![a-z0-9])'
+        if pat not in seen:
+            seen.add(pat)
+            out.append((re.compile(pat, re.I), an))
+        if len(words) > 1 and len(''.join(words)) >= 7:
+            out.append((re.compile(r'(?<![a-z0-9])' + ''.join(words) + r'(?![a-z0-9])', re.I), an))
+    owner = {}
+    for c in chars:
+        ws = re.findall(r'[a-z]+', (c.get('name') or '').lower())
+        if len(ws) >= 2 and min(len(w) for w in ws[:2]) >= 3:
+            for o in (ws[:2], ws[:2][::-1]):
+                out.append((re.compile(r'(?<![a-z])' + r'\s*'.join(o) + r'(?![a-z])', re.I), c['anime']))
+        for w in ws:
+            if len(w) >= 5:
+                owner.setdefault(w, set()).add(re.sub(r':.*$', '', c['anime']).strip().lower())
+    common = set(RC_COMMON_WORDS) | {'queen', 'prince', 'princess', 'master', 'angel', 'devil', 'demon', 'black', 'white',
+                                     'shadow', 'death', 'night', 'heart', 'love', 'happy', 'super', 'little', 'young'}
+    for w, ans in owner.items():
+        if len(ans) == 1 and w not in common:
+            an = next(c['anime'] for c in chars if w in re.findall(r'[a-z]+', (c.get('name') or '').lower()))
+            out.append((re.compile(r'(?<![a-z])' + w + r'(?![a-z])', re.I), an))
+    out.append((re.compile(r'(?<![a-z])okarun(?![a-z])', re.I), 'DAN DA DAN'))
+    _ANIME_IDX.append(out)
+    return out
+
+
+RC_COMMON_WORDS = ('another', 'world', 'flower', 'voice', 'silent', 'tokyo', 'grand', 'season', 'attack', 'piece', 'level')
+
+
+def classify_trusted(title, RC, smap, ents):
+    """-> (library show key or None, anime name or None, why): why 'not_anime' = skipped, 'library' / 'anime' / 'mix' /
+    'unknown' = kept ('unknown': the title names no anime we know - kept, the review checks it is anime)"""
+    import unicodedata
+    t = unicodedata.normalize('NFKC', title or '')
+    if TRUSTED_NOT_ANIME.search(t):
+        return None, None, 'not_anime'
+    hits = []
+    for sk, se in ents.items():
+        if any(re.search(a, t, re.I) for a in se['alias']) or any(
+                re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in RC.anime_words(se)):
+            hits.append(sk)
+    hits += [sk for pat, sk in TRUSTED_ALIASES.items() if sk in smap and re.search(pat, t, re.I)]
+    if hits:
+        return sorted(set(hits), key=len, reverse=True)[0], None, 'library'
+    for pat, an in TRUSTED_ANIME.items():
+        if re.search(pat, t, re.I):
+            k = RC.show_key(an)
+            return (k, None, 'library') if k in smap else (None, an, 'anime')
+    for rx, an in anime_index():
+        if rx.search(t):
+            k = RC.show_key(an)
+            return (k, None, 'library') if k in smap else (None, an, 'anime')
+    if re.search(r'anime ?mix|amv', t, re.I):
+        return None, 'Anime Mix', 'mix'
+    return None, None, 'unknown'
+
+
+def stage_sections(res, show, sk, skey, cast, sd, RC, man, flags):
+    """stage every passed window of an evaluated edit (library tags: serves / themes / cast) -> (staged ids, marks)"""
+    staged, marks = [], []
+    for w in sorted(res.get('passed') or [res['window']], key=lambda w: w['s']):
+        mains = RC.title_names(res.get('title'), cast) or [c for n in (w.get('mains') or []) for c in cast if c['name'] == n]
+        e = mains[0] if mains else show
+        extra = {'show': sk, 'lib': True, 'themes': w.get('themes') or [], 'cast': w.get('cast') or {},
+                 'cast_runs': w.get('cast_runs') or {}, 'cast_gaps': w.get('cast_gaps') or {},
+                 'serves': [entry_key(c) for c in mains] + [skey], **flags}
+        kept = [x for x in (res.get('kept_mark'), 'name' if (w.get('name_kept') or res.get('name_kept')) else None) if x]
+        if kept:
+            extra['kept_marks'] = kept
+        if res.get('end_chapter') is not None:
+            extra['end_chapter'] = res['end_chapter']
+        try:
+            it = stage_item(res, e, entry_key(e), sd, RC, w, extra, keep_marks=True)
+        except Exception as ex:  # noqa: BLE001
+            log(f'{res.get("id")}: staging {w["s"]:.1f}s failed: {type(ex).__name__}: {ex}')
+            continue
+        if 'id' not in it:
+            marks += (it.get('window_marks') or [])[:3]
+            continue
+        if it.get('window_marks'):
+            it['kept_marks'] = list(dict.fromkeys((it.get('kept_marks') or []) + ['window_mark']))
+        man['items'] = [x for x in man['items'] if x['id'] != it['id']] + [it]
+        staged.append(it['id'])
+    return staged, marks
+
+
+def trusted_backlog(RC, st, smap, ents):
+    """the named editors' uploads not decided yet, with their classification (newest first per channel, channels
+    interleaved so every editor progresses)"""
+    done = {sid for sid, v in st['sources'].items()
+            if v.get('status') in ('staged', 'reviewed', 'rejected') or (v.get('status') == 'gate_reject' and v.get('trusted'))}
+    per = {}
+    for e in trusted_uploads(RC):
+        if e.get('id') in done:
+            continue
+        sk, an, why = classify_trusted(e.get('title'), RC, smap, ents)
+        per.setdefault(e.get('channel_id'), []).append(dict(e, _show=sk, _anime=an, _why=why))
+    out = []
+    for i in range(max([len(v) for v in per.values()] or [0])):
+        out += [v[i] for v in per.values() if i < len(v)]
+    return out
+
+
+def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=False, from_end=False):
+    """Owner 2026-11-15: download ONLY the named editors' uploads (refs 'trusted'), every anime one is kept: no view / like /
+    age / title / quality / character / theme gate - safety stays (judge.safe), and the sections end before the editor's
+    'End' / 'Outro' chapter. Non-anime uploads (live action, games, editing challenges) are skipped and listed."""
+    import ranking_compilation as RC
+    t0 = time.time()
+    work = work or os.path.join(ROOT, 'output', 'ranking-mine')
+    RC.YT_CACHE[0] = os.path.join(work, 'cache', 'yt')
+    RC.OFFLINE[0] = offline
+    _KEEP[0] = offline
+    sd = staged_dir()
+    RC.PROOF_DIR[0] = os.path.join(sd, 'proofs')
+    RC.idle()
+    sp = state_path(state_file)
+    st = merge_state({'candidates': {}, 'sources': {}}, rj(sp, {}))
+    man = manifest(sd)
+    for it in manifest(live_dir())['items'] + man['items']:
+        st['sources'].setdefault(it['source_id'], {'status': it.get('status', 'staged'), 'entry': it.get('entry_key')})
+    jh = {}
+
+    def judge():
+        if 'j' not in jh:
+            RC.wait_ram('the SigLIP / analysis models')
+            jh['j'] = RC.Judge(os.path.join(work, 'cache'))
+        return jh['j']
+    smap = shows(RT.load())
+    ents = {sk: library_entry(RC, smap, sk) for sk in smap}
+    RC.PREFER.update(e['id'] for e in trusted_uploads(RC))
+    todo = trusted_backlog(RC, st, smap, ents)
+    if from_end:                                # the GitHub run works from the other end of the list than the PC loop
+        todo = todo[::-1]
+    tc = trusted_channels()
+    summary = {'mode': 'trusted', 'channels': [v.get('name') for v in tc.values()], 'downloaded': 0, 'staged': 0,
+               'skipped_not_anime': [], 'kept_unknown': [], 'failed': [], 'items': []}
+    summary['trusted_left'] = sum(1 for e in todo if e['_why'] != 'not_anime')
+    log(f'named editors {summary["channels"]}: {summary["trusted_left"]} anime uploads to do, '
+        f'{sum(1 for e in todo if e["_why"] == "not_anime")} not anime')
+    n_dl = 0
+    for e in todo:
+        if e['_why'] == 'not_anime':
+            st['sources'][e['id']] = {'status': 'gate_reject', 'why': 'not_anime', 'trusted': True, 'lib': True,
+                                      'at': time.strftime('%Y-%m-%d'), 'title': (e.get('title') or '')[:120]}
+            summary['skipped_not_anime'].append(e.get('title'))
+            continue
+        if n_dl >= max_dl or (time.time() - t0) / 60 > budget_min:
+            break
+        sk = e['_show']
+        if sk:
+            show, cast, skey = smap[sk]['show'], smap[sk]['cast'], entry_key(smap[sk]['show'])
+        else:                                   # an anime outside the library (Dandadan ...) / an anime mix / unknown
+            an = e['_anime'] or 'Anime (unknown)'
+            sk = RC.show_key(an) or 'anime'
+            show = {'name': an.upper(), 'anime': an, 'kind': 'anime', 'q': [], 'alias': [], 'chars': [], 'tags': []}
+            cast, skey = [], entry_key(show)
+        info = RC.full_info(e['id'], need=('chapters',))
+        if not info:
+            if not offline:
+                summary['failed'].append([e['id'], 'no_info'])
+            continue
+        if (info.get('height') or 0) > (info.get('width') or 0):
+            st['sources'][e['id']] = {'status': 'gate_reject', 'why': 'vertical', 'trusted': True, 'lib': True, 'entry': skey,
+                                      'at': time.strftime('%Y-%m-%d'), 'title': (info.get('title') or '')[:120]}
+            continue                           # the list layout needs a 16:9 edit
+        path = RC.download(info, os.path.join(work, 'src'))
+        if not path:
+            if not offline:
+                summary['failed'].append([e['id'], 'download'])
+            continue
+        n_dl += 1
+        summary['downloaded'] += 1
+        res = RC.text_gate(path, info)          # cached OCR; a mark never drops a named editor's edit
+        res['_info'] = info
+        res['rights'] = {'type': 'owner_named_editor', 'age_days': None, 'reason': 'owner 2026-11-15: named editor, keep all'}
+        if res.get('verdict') == 'reject' and res.get('why') not in ('no_frames',) and not str(res.get('why')).startswith('gate_error'):
+            res = dict(res, verdict='clean', kept_mark=res.get('why'))
+        why = res.get('why') if res.get('verdict') == 'reject' else None
+        if not why:
+            try:
+                res = RC.evaluate(res, show, [], judge(), SEG, 'lib', max_pass=LIB_SECTIONS, all_infos=RC.cached_infos(),
+                                  theme='any', distinct=True, cast=cast, named=True)
+                why = None if res['verdict'] == 'ok' else (res.get('why') or 'no_window')
+            except Exception as ex:  # noqa: BLE001
+                log(f'{e["id"]}: evaluate failed: {type(ex).__name__}: {ex}')
+                why = f'eval_error_{type(ex).__name__}'
+        staged = []
+        if not why:
+            flags = {'trusted_editor': True, 'approved_editor': True}
+            if e['_why'] == 'unknown':
+                flags['check_anime'] = True     # the title names no anime we know: the review confirms it is anime
+            staged, marks = stage_sections(res, show, sk, skey, cast, sd, RC, man, flags)
+            if not staged:
+                why = 'window_mark' if marks else 'staging'
+        _rm(res.get('path'))
+        if why:
+            st['sources'][e['id']] = {'status': 'gate_reject', 'why': why, 'trusted': True, 'lib': True, 'entry': skey,
+                                      'at': time.strftime('%Y-%m-%d'), 'title': (info.get('title') or '')[:120],
+                                      'windows': [w.get('reject') for w in (res.get('windows') or [])[:6]]}
+            summary['failed'].append([e['id'], why])
+            log(f'{e["id"]}: NOT kept ({why}): {info.get("title")}')
+        else:
+            st['sources'][e['id']] = {'status': 'staged', 'entry': skey, 'item': staged[0], 'items': staged, 'lib': True,
+                                      'trusted': True, 'at': time.strftime('%Y-%m-%d')}
+            summary['staged'] += len(staged)
+            summary['items'].append({'source': e['id'], 'title': info.get('title'), 'show': skey, 'sections': staged,
+                                     'end_chapter': res.get('end_chapter'), 'class': e['_why']})
+            if e['_why'] == 'unknown':
+                summary['kept_unknown'].append(info.get('title'))
+            if os.environ.get('RANKING_STAGE_SOURCE', '1') != '0':
+                try:
+                    srec = stage_source(res, sd, [x for x in man['items'] if x['id'] in staged])
+                    if srec:
+                        man['sources'] = [x for x in man.get('sources') or [] if x['source_id'] != srec['source_id']] + [srec]
+                except Exception as ex:  # noqa: BLE001
+                    log(f'{e["id"]}: staging the whole edit failed: {type(ex).__name__}: {ex}')
+            log(f'{e["id"]}: kept {len(staged)} section(s) [{skey}] end chapter {res.get("end_chapter")}: {info.get("title")}')
+        save_manifest(sd, man)
+        wj(sp, st)
+    save_manifest(sd, man)
+    wj(sp, st)
+    summary['trusted_left'] = sum(1 for e in trusted_backlog(RC, st, smap, ents) if e['_why'] != 'not_anime')
+    summary['minutes'] = round((time.time() - t0) / 60, 1)
+    return summary
+
+
+def approved_backlog(RC, smap, done, entry_for):
+    """{show key: [untried uploads of the approved editors that pass the show's prefilter]} (owner 2026-11-15)"""
+    ups = style_uploads(RC)
+    out = {}
+    for sk in smap:
+        se = entry_for(sk)
+        out[sk] = [e for e in ups if e.get('id') not in done and RC.prefilter(e, se)[0]]
+    return out
+
+
+def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=4, offline=False, first=(), only=None,
+                 approved_only=False):
+    """approved_only (owner 2026-11-15: "I thought we were downloading from the channels I human checked and allowed, every
+    download should give a section"): no YouTube searches, only the untried uploads of the approved editors
+    (refs/ranking-style-refs.json channels), the shows with the most of them first; their edits pass the relaxed gates
+    (ranking_compilation.evaluate approved=True) so a download is never wasted."""
     import ranking_compilation as RC
     t0 = time.time()
     work = work or os.path.join(ROOT, 'output', 'ranking-mine')
@@ -739,6 +1066,11 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
     smap = shows(topics)
     order = [r['show'] for r in plan_shows(topics)]
     full_order = list(order)                   # distractor shows come from the whole plan, also with --shows
+    ap_ids = {e['id'] for e in style_uploads(RC) if e.get('id')}
+    RC.PREFER.update(ap_ids)                   # owner-approved editors: no view / like bar, downloaded first, rank bonus
+
+    done_ids = lambda: decided_ids(st, ap_ids)
+    entry_for = lambda sk: library_entry(RC, smap, sk)
     if only:
         ol = {x.lower() for x in only}
         order = [k for k in order if k in ol or smap[k]['show']['name'].lower() in ol
@@ -755,6 +1087,21 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             return min([i for i, x in enumerate(fl) if x in names] or [len(fl)])
         order = sorted(order, key=pos)
     summary = {'mode': 'library', 'entries': [], 'staged': 0, 'downloaded': 0}
+    backlog = {}
+    if approved_only:
+        backlog = approved_backlog(RC, {k: smap[k] for k in order}, done_ids(), entry_for)
+        # round-robin (fewest approved cycles first), the biggest backlog first within a round: every show with untried
+        # approved uploads gets its turn (JJK's 243 would otherwise take every cycle)
+        turns_p = os.path.join(work, 'approved-turns.json')
+        turns = rj(turns_p, {})
+        order = sorted([k for k in order if backlog.get(k)], key=lambda k: (turns.get(k, 0), -len(backlog[k])))
+        summary['mode'] = 'approved'
+        summary['approved_left'] = sum(len(v) for v in backlog.values())
+        summary['approved_backlog'] = {k: len(backlog[k]) for k in order}
+        log(f'approved editors: {summary["approved_left"]} untried uploads in {len(order)} shows '
+            f'{dict(list(summary["approved_backlog"].items())[:8])}')
+        if not order:
+            log('approved editors: nothing untried left (add channels to refs/ranking-style-refs.json)')
     tried = 0
     for sk in order:
         if tried >= max_shows:
@@ -765,29 +1112,15 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
         G = smap[sk]
         show, cast = G['show'], G['cast']
         skey = entry_key(show)
-        # one broad search entry: the show's searches + "<character> edit" per cast member; a title naming the show OR
-        # any of its characters passes; vs / mixed edits are welcome (solo False)
-        q = RC.no_amv(list(dict.fromkeys(list(show['q']) + [f'{show.get("search") or sk} edit']
-                               + [f'{(c.get("search") or c["name"]).lower()} edit' for c in cast]
-                               + [q_ for cp in G.get('couples') or [] for q_ in cp.get('q') or []])))
-        se = dict(show, q=q, alias=list(dict.fromkeys(list(show.get('alias') or []) + [a for c in cast for a in c['alias']]
-                                                      + [a for cp in G.get('couples') or [] for a in cp.get('alias') or []]
-                                                      + show_cast_alias(sk))),
-                  solo=False, search=show.get('search') or sk, extra=style_uploads(RC))
-        # a title naming another library show is a crossover ('Solo Leveling x Attack On Titan'): every one reviewed so far
-        # had no clean section of this show (2026-11-07: a titans-only section passed as Sung Jinwoo) -> skipped before the
-        # download. Strict title words only (anime_words, whole words); same-franchise shows ('dragon ball' / 'dragon ball
-        # super') and words this show's own names contain never count.
-        own = ' | '.join([sk, show['name'], show.get('anime') or ''] + [c['name'] for c in cast]).lower()
-        se['cross'] = [rf'(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])' for o in smap if o != sk and o not in sk and sk not in o
-                       for w in RC.anime_words(smap[o]['show']) if w not in own]
+        se = entry_for(sk)
+        if approved_only:
+            se['no_search'] = True                 # only the approved editors' uploads
+            se['extra'] = backlog.get(sk) or []
         others = [smap[o]['show'] for o in full_order if o != sk][:4]      # distractor shows for the show-level check
-        done = {sid for sid, v in st['sources'].items()
-                if v.get('status') in ('staged', 'reviewed', 'rejected')
-                or (v.get('status') == 'gate_reject' and (v.get('lib') or not str(v.get('why') or '').startswith(LIB_RETRY_WHY))
-                    and not charfix_retry(v) and not stingfix_retry(v) and not v.get('retry'))}   # 'retry': a review flagged it
+        done = done_ids()
         report = {'searched': 0, 'downloaded': 0, 'watermark_free': 0, 'reject': {}, 'evaluated': [], '_dl': {}}
-        log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, {len(q)} searches')
+        log(f'== library {show["name"]} ({sk}): cast {[c["name"] for c in cast]}, '
+            + (f'approved editors only ({len(se["extra"])} untried uploads)' if approved_only else f'{len(se["q"])} searches'))
         try:
             pre = RC.find_source(se, None, None, work, 0, done, report, max_dl=max_dl)
         except Exception as ex:  # noqa: BLE001  (one bad show never kills the run)
@@ -796,6 +1129,9 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             continue
         if report['downloaded'] or report['_dl']:
             tried += 1
+            if approved_only:
+                turns[sk] = turns.get(sk, 0) + 1
+                wj(turns_p, turns)
         summary['downloaded'] += report['downloaded']
         row = {'entry': show['name'], 'key': skey, 'show': sk, 'downloaded': report['downloaded'], 'clean': len(pre),
                'reject': report['reject'], 'staged': [], 'serves': {}}
@@ -803,7 +1139,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             if r.get('verdict') == 'reject':
                 _rm(os.path.join(work, 'src', f"{r.get('id')}.mp4"))
                 st['sources'][r['id']] = {'status': 'gate_reject', 'why': r.get('why'), 'entry': skey, 'lib': True,
-                                          'at': time.strftime('%Y-%m-%d')}
+                                          'at': time.strftime('%Y-%m-%d'), 'relaxed_tried': r.get('id') in ap_ids}
         for res, _ in pre:
             if (time.time() - t0) / 60 > budget_min + 20:
                 break
@@ -817,7 +1153,8 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                                                                  + [re.escape(w) for w in RC.anime_words(smap[o]['show'])])])]
                 res = RC.evaluate(res, show, xo + [o for o in others if o['name'] not in {x['name'] for x in xo}], judge(),
                                   SEG, 'lib', max_pass=LIB_SECTIONS,
-                                  all_infos=RC.cached_infos(), theme='any', distinct=True, cast=cast)
+                                  all_infos=RC.cached_infos(), theme='any', distinct=True, cast=cast,
+                                  approved=res.get('id') in ap_ids)
             except Exception as ex:  # noqa: BLE001
                 log(f'{res.get("id")}: evaluate failed: {type(ex).__name__}: {ex}')
                 res.update(verdict='reject', why=f'eval_error_{type(ex).__name__}', windows=[])
@@ -825,6 +1162,7 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 _rm(res.get('path'))
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': res.get('why') or 'no_window', 'entry': skey,
                                             'lib': True, 'at': time.strftime('%Y-%m-%d'), 'title': (res.get('title') or '')[:120],
+                                            'relaxed_tried': res.get('id') in ap_ids,
                                             'windows': [w.get('reject') for w in (res.get('windows') or [])[:6]],
                                             'detail': [window_detail(w) for w in (res.get('windows') or [])[:6]]}
                 continue
@@ -841,6 +1179,10 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
                 kept = [x for x in (res.get('kept_mark'), 'name' if (w.get('name_kept') or res.get('name_kept')) else None) if x]
                 if kept:
                     extra['kept_marks'] = kept
+                if res.get('id') in ap_ids:
+                    extra['approved_editor'] = True
+                if w.get('relaxed'):                 # approved editor: the soft gates this section failed (review it)
+                    extra['relaxed'] = w['relaxed']
                 try:
                     # 2026-11-12: stage_item used to delete the clip and return {'window_marks'} (no 'id') even when the mark
                     # was to be kept -> KeyError 'id' killed the GitHub ranking mine (11-12 01:36 run, l3xGSMayfgI)
@@ -861,7 +1203,8 @@ def mine_library(budget_min=60, work=None, state_file=None, max_shows=6, max_dl=
             _rm(res.get('path'))
             if not staged:
                 st['sources'][res['id']] = {'status': 'gate_reject', 'why': 'window_mark' if marks else 'staging', 'lib': True,
-                                            'marks': marks[:3], 'entry': skey, 'at': time.strftime('%Y-%m-%d')}
+                                            'marks': marks[:3], 'entry': skey, 'at': time.strftime('%Y-%m-%d'),
+                                            'relaxed_tried': res.get('id') in ap_ids}
                 continue
             st['sources'][res['id']] = {'status': 'staged', 'entry': skey, 'item': staged[0], 'items': staged, 'lib': True,
                                         'at': time.strftime('%Y-%m-%d')}
@@ -946,6 +1289,8 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None, keep_marks=False):
     if extra:                                  # library: what the section serves + its themes, on the sheet too
         it.update(extra)
         lab += f' | serves {",".join(x.split("__")[0] for x in extra.get("serves") or [])} | {"/".join(extra.get("themes") or [])}'
+        if extra.get('relaxed'):               # approved editor, kept although these soft gates failed (owner 2026-11-15)
+            lab += f' | RELAXED {",".join(extra["relaxed"])}'
     it['sheet'] = os.path.relpath(sheet(clip, os.path.join(sd, 'sheets', iid + '.jpg'), lab) or '', sd).replace('\\', '/')
     return it
 
@@ -1562,7 +1907,7 @@ def mining_order(ps):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
+    ap.add_argument('cmd', choices=['approved-backlog', 'mine-trusted', 'trusted-backlog', 'plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
                                     'assemble', 'status', 'mark', 'remove', 'rescreen', 'recast', 'recut', 'add-section',
                                     'timeline', 'clean-sources'])
     ap.add_argument('--result')
@@ -1581,6 +1926,10 @@ def main():
     ap.add_argument('--per-entry', action='store_true', help='mine: the old per-entry miner (default: the library, per show;'
                     ' --entries / --retry also use the per-entry miner)')
     ap.add_argument('--shows', default='', help='mine (library): only these shows / their characters (comma-separated)')
+    ap.add_argument('--from-end', action='store_true', help='mine-trusted: start from the end of the list (the GitHub run; '
+                    'the PC loop starts at the front)')
+    ap.add_argument('--approved-only', action='store_true', help='mine (library): only the approved editors\' untried uploads '
+                    '(refs/ranking-style-refs.json), no YouTube searches (owner 2026-11-15)')
     ap.add_argument('--merge-remote', action='store_true', help='publish: merge the release state in first')
     ap.add_argument('--dest')
     ap.add_argument('--label', default='ci')
@@ -1603,6 +1952,49 @@ def main():
     ap.add_argument('--no-snap', action='store_true', help='recut / add-section: keep the exact times (no scene-cut snap)')
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     a = ap.parse_args()
+    if a.cmd == 'mine-trusted':             # owner 2026-11-15: only the editors the owner named, keep every anime edit
+        print(json.dumps(mine_trusted(a.budget_min, a.work, a.state, a.max_dl, a.offline, a.from_end), ensure_ascii=False, indent=1,
+                         default=str))
+        return
+    if a.cmd == 'trusted-backlog':          # read-only: the named editors' uploads still to do + how they are classified
+        import ranking_compilation as RC
+        RC.YT_CACHE[0] = os.path.join(a.work or os.path.join(ROOT, 'output', 'ranking-mine'), 'cache', 'yt')
+        RC.OFFLINE[0] = a.offline
+        st = merge_state({'candidates': {}, 'sources': {}}, rj(state_path(a.state), {}))
+        for it in manifest(live_dir())['items'] + manifest(staged_dir())['items']:
+            st['sources'].setdefault(it['source_id'], {'status': it.get('status', 'staged'), 'entry': it.get('entry_key')})
+        smap = shows(RT.load())
+        ents = {sk: library_entry(RC, smap, sk) for sk in smap}
+        todo = trusted_backlog(RC, st, smap, ents)
+        names = {k: v.get('name') for k, v in trusted_channels().items()}
+        from collections import Counter
+        print('to do:', dict(Counter((names.get(e['channel_id']), e['_why']) for e in todo)))
+        for e in todo:
+            print(f"{names.get(e['channel_id']):<8} {e['_why']:<9} {(e['_show'] or e['_anime'] or '-'):<28} "
+                  f"{e.get('duration')} s  {(e.get('title') or '')[:70]}")
+        return
+    if a.cmd == 'approved-backlog':         # read-only: untried uploads of the approved editors per show
+        import ranking_compilation as RC
+        RC.YT_CACHE[0] = os.path.join(a.work or os.path.join(ROOT, 'output', 'ranking-mine'), 'cache', 'yt')
+        RC.OFFLINE[0] = a.offline
+        ups = style_uploads(RC)
+        ap_ids = {e['id'] for e in ups if e.get('id')}
+        RC.PREFER.update(ap_ids)
+        st = merge_state({'candidates': {}, 'sources': {}}, rj(state_path(a.state), {}))
+        for it in manifest(live_dir())['items'] + manifest(staged_dir())['items']:
+            st['sources'].setdefault(it['source_id'], {'status': it.get('status', 'staged'), 'entry': it.get('entry_key')})
+        smap = shows(RT.load())
+        bl = approved_backlog(RC, smap, decided_ids(st, ap_ids), lambda sk: library_entry(RC, smap, sk))
+        tried = {sid: v for sid, v in st['sources'].items() if sid in ap_ids}
+        print(f'approved editors: {len(rj(STYLE_REFS, {}).get("channels") or {})} channels, {len(ups)} uploads listed, '
+              f'{len(tried)} tried before ({sum(v.get("status") in ("staged", "reviewed") for v in tried.values())} gave sections)')
+        tot = set()
+        for sk, lst in sorted(bl.items(), key=lambda x: -len(x[1])):
+            if lst:
+                tot |= {e['id'] for e in lst}
+                print(f'{len(lst):4d}  {sk}')
+        print(f'{len(tot)} distinct untried uploads match a library show')
+        return
     if a.cmd == 'plan-shows':
         ps = plan_shows()
         if a.focus > 0:                   # the slow loop's rotation (owner 2026-11-10: action / strong first, then romance + couples)
@@ -1621,7 +2013,8 @@ def main():
         if not (a.per_entry or a.entries.strip() or a.retry.strip()):
             print(json.dumps(mine_library(a.budget_min, a.work, a.state, a.max_entries, max(a.max_dl, 4), a.offline,
                                           [x.strip() for x in a.first.split(',') if x.strip()],
-                                          [x.strip() for x in a.shows.split(',') if x.strip()] or None),
+                                          [x.strip() for x in a.shows.split(',') if x.strip()] or None,
+                                          approved_only=a.approved_only),
                              ensure_ascii=False, indent=1, default=str))
             return
         print(json.dumps(mine(a.budget_min, a.work, a.state, a.max_entries, a.max_dl, a.offline,

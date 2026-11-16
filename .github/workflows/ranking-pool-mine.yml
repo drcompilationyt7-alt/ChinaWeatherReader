@@ -115,7 +115,14 @@ jobs:
           MAX_DL: ${{ inputs.max_dl || '4' }}
         run: |
           set -o pipefail
-          python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES"             --shows "$SHOWS" --max-dl "$MAX_DL" --max-entries 12 | tail -c 4000
+          if [ -z "$ENTRIES$SHOWS" ]; then
+            # owner 2026-11-15: "just download from the youtubers I tell you, nothing else" - only the named editors
+            # (refs/ranking-style-refs.json 'trusted'), every anime edit kept; from the end of the list (the PC loop starts
+            # at the front)
+            python core/edit/ranking_pool.py mine-trusted --budget-min "${{ inputs.budget_min || '255' }}" --work work               --max-dl "${{ inputs.max_dl || '80' }}" --from-end | tail -c 4000
+          else
+            python core/edit/ranking_pool.py mine --budget-min "${{ inputs.budget_min || '255' }}" --work work --entries "$ENTRIES"               --shows "$SHOWS" --max-dl "$MAX_DL" --max-entries 12 | tail -c 4000
+          fi
           rm -f /tmp/yt_cookies.txt
       - name: Publish to edit-pools-staging
         if: always()
