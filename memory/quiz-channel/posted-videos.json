@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=KHEouuyMYHQ",
-      "title": "Can You Name These Anime Characters From Their Costume? 🎧 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-17T07:08:43.451Z",
-      "videoId": "KHEouuyMYHQ",
-      "category": "quiz-outfit",
-      "titleSource": "outfit-design",
-      "quizFormat": "outfit",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=wD5s6VBh9Mk",
       "title": "Guess the Anime From One Scene 🔥 #anime",
       "country": "Global",
@@ -604,6 +593,17 @@
       "titleSource": "shape-all5",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Pe29XHzxJEs",
+      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
+      "country": "Global",
+      "postedAt": "2026-11-16T10:01:05.827Z",
+      "videoId": "Pe29XHzxJEs",
+      "category": "quiz-vtuber",
+      "titleSource": "vt-ramp",
+      "quizFormat": "vtuber",
+      "quizTheme": "vtubers"
     }
   ]
 }

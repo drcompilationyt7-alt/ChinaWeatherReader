@@ -3150,6 +3150,54 @@
     "titleStyle": "challenge",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "Pe29XHzxJEs",
+   "url": "https://www.youtube.com/watch?v=Pe29XHzxJEs",
+   "postedAt": "2026-11-16T10:01:05.554Z",
+   "publishAt": "2026-11-16T13:00:00.000Z",
+   "format": "vtuber",
+   "theme": "vtubers",
+   "seed": 467697484,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the VTuber?",
+     "template": "Can you guess the VTuber?",
+     "sec": 1.34
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Koseki Bijou.",
+     "template": null,
+     "sec": 1.41
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "That was Finana Ryugu.",
+     "template": null,
+     "sec": 1.87
+    }
+   ],
+   "titleTemplate": "vt-ramp",
+   "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
+   "answers": [
+    "vtuber:gawr gura#1s1qapi",
+    "vtuber:koseki bijou#1li6s8q",
+    "vtuber:finana ryugu#j6hyl4"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
