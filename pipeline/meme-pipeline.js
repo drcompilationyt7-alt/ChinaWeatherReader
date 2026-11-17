@@ -42,23 +42,23 @@ const HISTORY_FILE = path.join(MEM, 'meme-history.json');
 // native-script titles, which clip titles must mention.
 const SONGS = [
   // anime openings
-  { name: 'idol', query: 'YOASOBI Idol official audio', theme: 'anime', source: 'Oshi no Ko', kind: 'anime',
+  { name: 'idol', query: 'YOASOBI Idol official audio', theme: 'anime', source: 'Oshi no Ko', kind: 'anime', role: 'opening',
     aliases: ['oshi no ko', '推しの子', 'ai hoshino', 'hoshino ai', 'aqua hoshino', 'ruby hoshino', 'kana arima'] },
-  { name: 'bling bang bang born', query: 'Creepy Nuts Bling-Bang-Bang-Born official audio', theme: 'anime', source: 'Mashle', kind: 'anime',
+  { name: 'bling bang bang born', query: 'Creepy Nuts Bling-Bang-Bang-Born official audio', theme: 'anime', source: 'Mashle', kind: 'anime', role: 'opening',
     aliases: ['mashle', 'マッシュル', 'mash burnedead', 'magic and muscles'] },
-  { name: 'otonoke', query: 'Creepy Nuts Otonoke official audio', theme: 'anime', source: 'Dandadan', kind: 'anime',
+  { name: 'otonoke', query: 'Creepy Nuts Otonoke official audio', theme: 'anime', source: 'Dandadan', kind: 'anime', role: 'opening',
     aliases: ['dandadan', 'dan da dan', 'ダンダダン', 'okarun', 'momo ayase', 'turbo granny'] },
-  { name: 'kick back', query: 'Kenshi Yonezu KICK BACK official audio', theme: 'anime', source: 'Chainsaw Man', kind: 'anime',
+  { name: 'kick back', query: 'Kenshi Yonezu KICK BACK official audio', theme: 'anime', source: 'Chainsaw Man', kind: 'anime', role: 'opening',
     aliases: ['chainsaw man', 'チェンソーマン', 'denji', 'makima', 'power', 'aki hayakawa'] },
-  { name: 'unravel', query: 'TK from Ling tosite sigure unravel official audio', theme: 'anime', source: 'Tokyo Ghoul', kind: 'anime',
+  { name: 'unravel', query: 'TK from Ling tosite sigure unravel official audio', theme: 'anime', source: 'Tokyo Ghoul', kind: 'anime', role: 'opening',
     aliases: ['tokyo ghoul', '東京喰種', 'kaneki', 'touka'] },
-  { name: 'gurenge', query: 'LiSA Gurenge official audio', theme: 'anime', source: 'Demon Slayer', kind: 'anime',
+  { name: 'gurenge', query: 'LiSA Gurenge official audio', theme: 'anime', source: 'Demon Slayer', kind: 'anime', role: 'opening',
     aliases: ['demon slayer', 'kimetsu no yaiba', '鬼滅の刃', 'tanjiro', 'nezuko', 'zenitsu', 'inosuke', 'rengoku'] },
-  { name: 'blue bird', query: 'Ikimonogakari Blue Bird official audio', theme: 'anime', source: 'Naruto', kind: 'anime',
+  { name: 'blue bird', query: 'Ikimonogakari Blue Bird official audio', theme: 'anime', source: 'Naruto', kind: 'anime', role: 'opening',
     aliases: ['naruto', 'naruto shippuden', 'ナルト', 'sasuke', 'kakashi', 'itachi'] },
-  { name: 'kaikai kitan', query: 'Eve Kaikai Kitan official audio', theme: 'anime', source: 'Jujutsu Kaisen', kind: 'anime',
+  { name: 'kaikai kitan', query: 'Eve Kaikai Kitan official audio', theme: 'anime', source: 'Jujutsu Kaisen', kind: 'anime', role: 'opening',
     aliases: ['jujutsu kaisen', 'jjk', '呪術廻戦', 'gojo', 'itadori', 'sukuna', 'megumi', 'nobara'] },
-  { name: 'specialz', query: 'King Gnu SPECIALZ official audio', theme: 'anime', source: 'Jujutsu Kaisen', kind: 'anime',
+  { name: 'specialz', query: 'King Gnu SPECIALZ official audio', theme: 'anime', source: 'Jujutsu Kaisen', kind: 'anime', role: 'opening',
     aliases: ['jujutsu kaisen', 'jjk', '呪術廻戦', 'gojo', 'itadori', 'sukuna', 'toji', 'shibuya'] },
   { name: 'cha la head cha la', query: 'Cha-La Head-Cha-La Dragon Ball Z opening', theme: 'anime', source: 'Dragon Ball Z', kind: 'anime',
     aliases: ['dragon ball', 'dbz', 'ドラゴンボール', 'goku', 'vegeta', 'gohan', 'piccolo'] },
@@ -67,7 +67,7 @@ const SONGS = [
   { name: 'pokemon theme', query: 'Pokemon theme song original English', theme: 'anime', source: 'Pokemon', kind: 'anime',
     aliases: ['pokemon', 'pokémon', 'ポケモン', 'pikachu', 'ash ketchum'] },
   // beyond the giants: loved mid-size and cult anime, so the channel isn't the same five shows every day
-  { name: 'kiss of death', query: 'Mika Nakashima HYDE KISS OF DEATH official audio', theme: 'anime', source: 'Darling in the FranXX', kind: 'anime',
+  { name: 'kiss of death', query: 'Mika Nakashima HYDE KISS OF DEATH official audio', theme: 'anime', source: 'Darling in the FranXX', kind: 'anime', role: 'opening',
     aliases: ['darling in the franxx', 'franxx', 'ダーリン・イン・ザ・フランキス', 'zero two', 'hiro', 'ichigo'] },
   { name: 'hey world', query: 'Yuka Iguchi Hey World DanMachi opening', theme: 'anime', source: 'DanMachi', kind: 'anime',
     aliases: ['danmachi', 'dungeon ni deai', 'pick up girls in a dungeon', 'ダンまち', 'bell cranel', 'hestia', 'ais wallenstein'] },
@@ -75,9 +75,9 @@ const SONGS = [
     aliases: ['reincarnated as a slime', 'tensura', 'tensei shitara slime', '転スラ', 'rimuru', 'milim', 'benimaru', 'veldora'] },
   { name: 'chika dance', query: 'Chikatto Chika Chika Konomi Kohara Kaguya-sama ending', theme: 'anime', source: 'Kaguya-sama', kind: 'anime',
     aliases: ['kaguya-sama', 'kaguya sama', 'love is war', 'かぐや様', 'chika', 'fujiwara chika', 'shirogane', 'kaguya shinomiya'] },
-  { name: 'love dramatic', query: 'Masayuki Suzuki Love Dramatic Rikka Ihara official audio', theme: 'anime', source: 'Kaguya-sama', kind: 'anime',
+  { name: 'love dramatic', query: 'Masayuki Suzuki Love Dramatic Rikka Ihara official audio', theme: 'anime', source: 'Kaguya-sama', kind: 'anime', role: 'opening',
     aliases: ['kaguya-sama', 'kaguya sama', 'love is war', 'かぐや様', 'chika', 'shirogane', 'kaguya shinomiya'] },
-  { name: 'seishun complex', query: 'Kessoku Band Seishun Complex official audio', theme: 'anime', source: 'Bocchi the Rock', kind: 'anime',
+  { name: 'seishun complex', query: 'Kessoku Band Seishun Complex official audio', theme: 'anime', source: 'Bocchi the Rock', kind: 'anime', role: 'opening',
     aliases: ['bocchi the rock', 'ぼっち・ざ・ろっく', 'bocchi', 'hitori gotoh', 'nijika', 'kessoku band'] },
   { name: '99', query: 'MOB CHOIR 99 Mob Psycho 100 opening', theme: 'anime', source: 'Mob Psycho 100', kind: 'anime',
     aliases: ['mob psycho', 'モブサイコ', 'shigeo', 'reigen', 'dimple'] },
@@ -105,7 +105,7 @@ const SONGS = [
     aliases: ['sakamoto days', 'サカモトデイズ', 'taro sakamoto', 'shin asakura'] },
   { name: 'redo', query: 'Konomi Suzuki Redo Re:Zero opening official audio', theme: 'anime', source: 'Re:Zero', kind: 'anime',
     aliases: ['re:zero', 'rezero', 're zero', 'リゼロ', 'subaru', 'emilia', 'rem'] },
-  { name: 'mixed nuts', query: 'Official HIGE DANdism Mixed Nuts official audio', theme: 'anime', source: 'Spy x Family', kind: 'anime',
+  { name: 'mixed nuts', query: 'Official HIGE DANdism Mixed Nuts official audio', theme: 'anime', source: 'Spy x Family', kind: 'anime', role: 'opening',
     aliases: ['spy x family', 'spy family', 'スパイファミリー', 'anya', 'loid', 'yor'] },
   { name: 'imagination', query: 'SPYAIR Imagination Haikyuu opening official audio', theme: 'anime', source: 'Haikyuu', kind: 'anime',
     aliases: ['haikyuu', 'haikyu', 'ハイキュー', 'hinata', 'kageyama', 'oikawa'] },
@@ -165,6 +165,19 @@ const SONGS = [
     aliases: ['newjeans', 'new jeans', '뉴진스', 'minji', 'hanni', 'danielle', 'haerin', 'hyein'] },
 ];
 
+/** 'opening' / 'ending' for an anime song (the entry's role, else its search query says so; top-up songs too), else null. */
+function songRole(song) {
+  if (!song || song.kind !== 'anime' || !song.source) return null;
+  if (song.role) return song.role;
+  // the query, then the aliases (top-up songs: "oshi no ko season 2 op", "oshi no ko ed", "aot op 7")
+  // ("op" / "ed" count only after a name: an alias "ed" alone is a nickname, e.g. Edward)
+  for (const q of [song.query, ...(song.aliases || [])].map(x => String(x || '').trim())) {
+    if (/\bopening\b|\S\s+op(\s?\d+)?\b/i.test(q)) return 'opening';
+    if (/\bending\b|\S\s+ed(\s?\d+)?$/i.test(q)) return 'ending';
+  }
+  return null;
+}
+
 // songs added automatically by scripts/song-topup.js (quality gates, config/song-candidates.json "approved"); they enter on
 // probation (see pickSong) and are retired by the monthly run when they keep underperforming
 try {
@@ -173,7 +186,7 @@ try {
   for (const x of cand.approved || []) {
     if (x && x.name && x.query && x.source && !have.has(x.name)) {
       SONGS.push({ name: x.name, query: x.query, artist: x.artist, theme: x.theme || 'anime', source: x.source, kind: x.kind || 'anime',
-        aliases: x.aliases || [], probation: x.probation ? true : undefined });
+        aliases: x.aliases || [], probation: x.probation ? true : undefined, role: x.role || undefined });
       have.add(x.name);
     }
   }
@@ -518,6 +531,8 @@ async function runMemePipeline(opts = {}) {
     channel: 'meme', contentType: 'stem-edit',
     facts: { song: song.name, artist: song.artist || insights.songInfo(song).artist || null, source: clips.source ? song.source : null,
       kind: song.kind, theme: song.theme, query: song.query,
+      // owner 2026-11-17: an anime opening / ending is titled with its anime ("imagination (haikyuu opening) acapella ...")
+      songAnime: song.kind === 'anime' ? song.source || null : null, songRole: songRole(song),
       aliases: song.aliases, extraTags: tagsByTheme[theme] || [], recentTitles: history.uploads.slice(-30).map(u => u.title) },
     style: (hitUpload && hitUpload.meta) || {},
   });

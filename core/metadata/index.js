@@ -394,6 +394,37 @@ function compactFacts(f) {
  *   titleHashtags, hashtagLine, descriptionHead, description, tags, comment, arms (log these), modes, titleSource,
  *   templateId, keyword, suggestions, candidates, choice (pass to recordMetadataChoice)}
  */
+/**
+ * Owner 2026-11-17: a stem edit of an anime opening / ending names the anime ("imagination acapella" alone is a weak name):
+ * "imagination (haikyuu opening) acapella but the beat drops 🔥". facts.songRole 'opening' | 'ending' + facts.songAnime come
+ * from the pipeline. A "({source})" already in the title becomes "({source} opening)"; a title naming the anime otherwise is
+ * kept; over YouTube's 100 characters the base title is kept.
+ */
+function withSongTheme(title, f) {
+  const role = String(f.songRole || '').toLowerCase();
+  const anime = catalog.lower(f.songAnime || '');
+  const sn = catalog.songName(f);
+  if (!title || !anime || !sn || !['opening', 'ending'].includes(role)) return title;
+  const t = title.toLowerCase();
+  const label = `${anime} ${role}`;
+  if (t.includes(label)) return title;
+  let out;
+  const paren = `(${anime})`;
+  if (t.includes(paren)) {
+    const i = t.indexOf(paren);
+    out = `${title.slice(0, i)}(${label})${title.slice(i + paren.length)}`;
+  } else if (t.includes(anime)) {
+    return title;
+  } else {
+    const m = new RegExp(`(?<![#\\p{L}\\p{N}])${sn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'iu').exec(title);
+    if (!m) return title;
+    const j = m.index + m[0].length;
+    out = `${title.slice(0, j)} (${label})${title.slice(j)}`;
+  }
+  out = clean(out);
+  return len(out) <= 100 ? out : title;
+}
+
 async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', facts = {}, style = {}, llm: useLLM = true, n = 4,
   rng = Math.random } = {}) {
   const pool = poolKey(channel, contentType);
@@ -473,7 +504,7 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
           for (const v of variants) {
             const text = fill(p.template, { ...ctx.vars, e: v.split(',').slice(0, st ? st.maxEmoji : 3).join('') });
             if (!text || !validateTitle(text, ctx.rules).ok) break;
-            if (seen.has(normTitle(text))) continue;
+            if (seen.has(normTitle(text)) || seen.has(normTitle(withSongTheme(text, f)))) continue;
             title = text; mimicked = p;
             em.list = v.split(',');
             break;
@@ -594,6 +625,8 @@ async function optimizeMetadata({ channel = 'meme', contentType = 'stem-edit', f
     armsUsed.titlePattern = editInsights.titlePattern(title, f);
     if (titleMode) armsUsed.titleMode = titleMode;
   }
+  // AFTER the pattern (learned on the base title, so "(… opening)" is never mimicked onto a song that is not an opening)
+  if (pool === 'meme/stem-edit') title = withSongTheme(title, f);
   const choice = { pool, arms: armsUsed, modes, title, onVideoTitle, titleSource, templateId, facts: compactFacts(f) };
   return {
     title, onVideoTitle,
