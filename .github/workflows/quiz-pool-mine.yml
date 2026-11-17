@@ -96,6 +96,12 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install
+        env:
+          # 2026-11-15 the art shard died here: youtube-dl-exec's postinstall fetched its yt-dlp binary through the GitHub
+          # API unauthenticated and the runner IP's 60/h limit was used up (retries 30 s apart cannot outlast it). Nothing in
+          # the repo uses that binary (the miners run yt-dlp from pip): skip the download, like quiz-channel / daily-create
+          YOUTUBE_DL_SKIP_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 2026-11-08: a transient GitHub / npm 5xx (504 on a package's binary download) failed both quiz + edit runs:
           # retry, then fall back to npm install
