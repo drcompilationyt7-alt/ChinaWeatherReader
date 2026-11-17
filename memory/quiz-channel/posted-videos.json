@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=wD5s6VBh9Mk",
-      "title": "Guess the Anime From One Scene 🔥 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-18T07:25:51.131Z",
-      "videoId": "wD5s6VBh9Mk",
-      "category": "quiz-scene",
-      "titleSource": "scene-4sec",
-      "quizFormat": "scene",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=X2ILgSorUj4",
       "title": "SUMMER FESTIVAL EDITION 🎆 Anime Emoji Quiz: Easy to IMPOSSIBLE 🎬 #anime",
       "country": "Global",
@@ -604,6 +593,17 @@
       "titleSource": "vt-ramp",
       "quizFormat": "vtuber",
       "quizTheme": "vtubers"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=op7i41bl02A",
+      "title": "Anime Eyes Quiz: Glasses Edition 👓",
+      "country": "Global",
+      "postedAt": "2026-11-17T10:57:16.732Z",
+      "videoId": "op7i41bl02A",
+      "category": "quiz-eyes",
+      "titleSource": "eyes-ramp",
+      "quizFormat": "eyes",
+      "quizTheme": "anime"
     }
   ]
 }

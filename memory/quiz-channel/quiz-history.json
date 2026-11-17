@@ -3198,6 +3198,32 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "op7i41bl02A",
+   "url": "https://www.youtube.com/watch?v=op7i41bl02A",
+   "postedAt": "2026-11-17T10:57:16.572Z",
+   "publishAt": "2026-11-17T13:00:00.000Z",
+   "format": "eyes",
+   "theme": "anime",
+   "seed": 881491868,
+   "length": "quick",
+   "edition": "glasses",
+   "hookV2": true,
+   "titleTemplate": "eyes-ramp",
+   "title": "Anime Eyes Quiz: Glasses Edition 👓",
+   "answers": [
+    "eyes:hange zoe#c4s7az",
+    "eyes:kei tsukishima#16vda0g",
+    "eyes:mirai kuriyama#14ovtud"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-topic-quiz",
+    "hashtagSet": "title-tag",
+    "titleStyle": "ramp",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
