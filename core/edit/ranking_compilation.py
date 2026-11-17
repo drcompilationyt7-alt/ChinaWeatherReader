@@ -1130,6 +1130,22 @@ class Judge:
             return False, f'siglip_unsafe_{float((p_unsafe > 0.5).mean()):.2f}'
         return True, ''
 
+    def unsafe_times(self, frames, ts):
+        """the times of the frames safe() would object to (NudeNet confirmed by the tagger, SigLIP unsafe > 0.5): a named
+        editor's whole edit keeps its longest clean stretch instead of being dropped (owner 2026-11-17)"""
+        tg = self.tagger()
+        bad = set()
+        for t, f in zip(ts, frames):
+            if cf.nude(f):
+                r = tg.rating(tg(f)) if tg is not None else {'explicit': 1.0}
+                if r.get('questionable', 0) + r.get('explicit', 0) >= 0.35:
+                    bad.add(t)
+        e = self.sig.images(frames)
+        lg = self.sig.logits(e, self.safe_t)
+        p_unsafe = 1 / (1 + np.exp(-lg[:, :len(cj.UNSAFE)])).max(1)
+        bad |= {t for t, p in zip(ts, p_unsafe) if p > 0.5}
+        return sorted(bad)
+
 
 # ---------------------------------------------------------------- source finding per entry
 
@@ -1681,7 +1697,122 @@ def attribute(judge, cast, frames, ts, runs=None, gaps=None):
 
 
 END_CHAPTER_RE = re.compile(r'^\W*(end|ending tag|outro|credits?|tag|end ?card|endcard)\W*$', re.I)
-TRUSTED_TAIL_S = 2.5               # no 'End' chapter and no tag found: the last seconds of a named editor's edit are the tag
+TRUSTED_TAIL_S = 2.5               # an editor with no tag profile and no 'End' chapter: the last seconds are taken as the tag
+TRUSTED_HINT_S = (9.0, 19.5)       # the hint windows inside a whole named edit (assemble's per-entry length range)
+
+# ------------------------------------------------------------------ the named editors' end tag (owner 2026-11-17)
+# "just try to not get the tag in". Study of 8 edits (2026-11-17): Purgify ends on a spade logo card (dark gradient + light
+# leak, 4-6 s, background colour varies), Mila on a round 'MILA' logo card (~2 s, it zooms in), Kimyo on content or black,
+# Xyuno on ~6 s of black. Each editor's card is the same in every video: templates (64x36 grey frames of the card, from
+# sample edits) are matched in the last seconds, zoom-tolerant, normalised (colour / brightness free); trailing black is cut
+# too. refs 'trusted' <channel>.tag = {"kind": "card" | "black" | "none", "lead": s cut before the detected card start (the
+# card pops in over the last shot, and a zooming card matches late: Purgify 0.6, Mila 1.5)}.
+TAG_DIR = os.path.join(HERE, 'refs', 'trusted_tags')
+STYLE_REFS = os.path.join(HERE, 'refs', 'ranking-style-refs.json')
+
+
+def rj(p, default=None):
+    try:
+        return json.load(open(p, encoding='utf-8'))
+    except (OSError, ValueError):
+        return default
+TAG_FPS, TAG_TAIL_S, TAG_THR, TAG_BLACK = 4.0, 14.0, 0.8, 12.0
+TAG_SCALES = (1.0, 1.15, 1.3, 1.5, 1.75)
+TAG_CARD_MAX_S = 9.0               # a 'card' longer than this is not a card (the walk stops)
+
+
+def _grey_frames(path, t0, t1=None, fps=TAG_FPS):
+    """(t, 36x64 float32 grey) every 1/fps s from t0 (to t1): one ffmpeg pass (seeking per frame in OpenCV is slow)"""
+    cmd = ['ffmpeg', '-v', 'error', '-ss', f'{max(0.0, t0):.3f}', '-i', path]
+    if t1 is not None:
+        cmd += ['-t', f'{max(0.1, t1 - t0):.3f}']
+    raw = subprocess.run(cmd + ['-vf', f'fps={fps},scale=64:36:flags=area,format=gray', '-f', 'rawvideo', '-'],
+                         capture_output=True, timeout=300).stdout
+    a = np.frombuffer(raw, np.uint8)
+    a = a[:len(a) // 2304 * 2304].reshape(-1, 36, 64).astype(np.float32)
+    return [(round(max(0.0, t0) + i / fps, 3), g) for i, g in enumerate(a)]
+
+
+def _is_black(g):
+    """really black: dim AND no visible detail (a dark shot with a lit figure - Purgify's Bakugo intro - is the edit)"""
+    return g.mean() < TAG_BLACK and float(np.percentile(g, 98)) < 35
+
+
+def _tag_norm(g):
+    v = g.flatten() - g.mean()
+    return v / (np.linalg.norm(v) + 1e-6)
+
+
+def _tag_zooms(g):
+    out = [g]
+    for z in TAG_SCALES[1:]:
+        w, h = int(round(64 / z)), int(round(36 / z))
+        x, y = (64 - w) // 2, (36 - h) // 2
+        out.append(cv2.resize(g[y:y + h, x:x + w], (64, 36), interpolation=cv2.INTER_LINEAR))
+    return out
+
+
+def tag_templates(channel_id):
+    p = os.path.join(TAG_DIR, f'{channel_id}.npy')
+    if not channel_id or not os.path.exists(p):
+        return None
+    return np.stack([_tag_norm(g.astype(np.float32)) for g in np.load(p)])
+
+
+def add_tag_template(channel_id, path, start, end=None):
+    """the editor's card frames of one sample edit (start = where the card begins, read off a contact sheet) -> appended
+    to refs/trusted_tags/<channel>.npy (uint8 36x64 grey; near-black frames left out)"""
+    fr = [g for t, g in _grey_frames(path, start, end) if g.mean() >= TAG_BLACK]
+    if not fr:
+        return 0
+    os.makedirs(TAG_DIR, exist_ok=True)
+    p = os.path.join(TAG_DIR, f'{channel_id}.npy')
+    new = np.stack(fr).round().clip(0, 255).astype(np.uint8)
+    np.save(p, np.concatenate([np.load(p), new]) if os.path.exists(p) else new)
+    return len(fr)
+
+
+def trusted_tag(path, dur, channel_id, end_chapter=None, profile=None):
+    """Where a named editor's tag starts -> {'start', 'lead_in', 'how', 'card', 'black'}: the section is lead_in .. start.
+    Walk back from the end: trailing black, then the editor's card (template match, one miss allowed); the black BEFORE
+    a card is the edit's own (Purgify's 'they used to call us a joke' text on black) and stays. No profile: the old
+    TRUSTED_TAIL_S guess. The 'End' chapter (when there is one) caps it."""
+    prof = profile if profile is not None else ((rj(STYLE_REFS, {}).get('trusted') or {}).get(channel_id) or {}).get('tag') or {}
+    kind, lead = prof.get('kind'), float(prof.get('lead', 0.5))
+    fr = _grey_frames(path, dur - TAG_TAIL_S) if dur > 0 else []
+    res = {'how': None, 'card': None, 'black': None}
+    i = len(fr) - 1
+    while i >= 0 and _is_black(fr[i][1]):
+        i -= 1
+    if i < len(fr) - 1:
+        res['black'] = fr[i + 1][0]
+    T = tag_templates(channel_id) if kind == 'card' else None
+    if T is not None and i >= 0:
+        j, miss, card = i, 0, None
+        while j >= 0 and fr[i][0] - fr[j][0] <= TAG_CARD_MAX_S:
+            if max(float((T @ _tag_norm(z)).max()) for z in _tag_zooms(fr[j][1])) >= TAG_THR:
+                card, miss = fr[j][0], 0
+            else:
+                miss += 1
+                if miss > 1:
+                    break
+            j -= 1
+        res['card'] = card
+    cands = []
+    if res['card'] is not None:
+        cands.append((res['card'] - lead, f'card-{lead}'))
+    if res['black'] is not None:
+        cands.append((res['black'] - 0.1, 'black'))
+    if end_chapter:
+        cands.append((end_chapter - 0.2, 'end_chapter'))
+    if not cands and kind not in ('card', 'black', 'none'):
+        cands.append((dur - TRUSTED_TAIL_S, 'tail_guess'))           # an editor never profiled: the old guess
+    start, how = min(cands) if cands else (dur - 0.3, 'none')
+    res.update(start=round(max(0.0, min(start, dur - 0.3)), 2), how=how)
+    # the edit's first frame that is not pure black
+    head = _grey_frames(path, 0.0, min(4.0, dur))
+    res['lead_in'] = next((t for t, g in head if g.mean() >= 3.0), 0.0)   # only true black (a dark shot is the edit)
+    return res
 
 
 def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3, all_infos=(), theme=None, distinct=False,
@@ -1720,14 +1851,17 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         chs = (res.get('_info') or {}).get('chapters') or []
         tag_t = [float(c.get('start_time') or 0) for c in chs
                  if END_CHAPTER_RE.search(c.get('title') or '') and float(c.get('start_time') or 0) > 0.3 * dur]
-        # the editor's tag: the 'End' chapter, else the last TRUSTED_TAIL_S seconds
-        named_hi = (min(tag_t) - 0.2) if tag_t else dur - TRUSTED_TAIL_S
         if tag_t:
             res['end_chapter'] = min(tag_t)
-            hi = min(hi, named_hi)
-        elif not tags:
-            hi = min(hi, named_hi)
         res['chapters'] = [(c.get('start_time'), c.get('title')) for c in chs][:12]
+        # owner 2026-11-17 "keep the whole edit, the ranking video decides how long and where; just try to not get the tag
+        # in": the span is the edit's first frame .. the editor's tag (trusted_tag: card template / black / 'End' chapter).
+        # Names and watermarks inside stay (never blurred).
+        tg = trusted_tag(path, dur, (res.get('_info') or {}).get('channel_id'), min(tag_t) if tag_t else None)
+        res['tag'] = tg
+        lo, hi = tg['lead_in'], tg['start']
+        if hi - lo < 6.0:
+            lo, hi = 0.0, tg['start']
     if hi <= lo:
         res.update(verdict='reject', why='editor_tag', windows=[], quality=0, conf=0, match=None)
         res.pop('_ana', None)
@@ -1737,15 +1871,18 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
     seg = (seg[0], min(seg[1], (dur - 1.0) if dur <= SHORT_EDIT_S else MAX_SHARE * dur))
     if dur <= SHORT_EDIT_S:   # owner refs are 9-60 s: a short edit gives one section of 12 s .. the whole edit (- 1 s)
         seg = (SHORT_SEC_MIN, max(SHORT_SEC_MIN, min(seg_hi, dur - 1.0)))   # under 13 s: nothing fits (too short)
-    seg_base = seg
-    if named and hi - lo < seg[0] and hi - lo >= 6.0:
-        seg = (hi - lo - 0.05, hi - lo)          # the owner's editors: keep the edit even when the tag leaves < 12 s
+    if named:
+        # the whole edit is the section; these windows are only HINTS where the ranking video may cut it (assemble picks
+        # the length: 9 s .. ~19 s per entry), so they span that range
+        seg = (min(TRUSTED_HINT_S[0], hi - lo - 0.05), min(TRUSTED_HINT_S[1], hi - lo))
     # owner 2026-10-28: a bad stretch (title cards on black, a white-out) is no reason to drop the edit: it costs the
     # window quality, so a clean section of the same edit wins, and a short edit still keeps its best section
     dead = np.array(dead_runs(ana))
     res['dead_t'] = dead.tolist()
     avoid = [float(x) for a_, b_ in AVOID.get(res.get('id'), ()) for x in np.arange(a_, b_ + 0.01, 0.5)]
     skip = sorted(set(txt.get('brand_t', [])) | {t['t'] for t in tags} | set(avoid))
+    if named:
+        skip = sorted(set(avoid))            # names are kept in a named editor's edit: they never split the hints
     def mkwins(lo_, k=24):
         ws = (RS.phrase_windows(v, a, lo_, hi, seg=seg, target=0.5 * (seg[0] + seg[1]), k=k, skip=skip)
               if hi - lo_ >= seg[0] else [])
@@ -1764,18 +1901,6 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
         return ws
     wins = mkwins(lo)
     wins.sort(key=lambda w: -w['quality'])
-    if named and not wins:
-        # a named editor's name / handle text spread over the whole edit (Mila's Aizen edit 2026-11-15: a 'MILA' corner mark
-        # every 3.5 s narrowed the span to 7.5-20.5 s and no window fit): the whole edit up to the tag, the name stays
-        # (owner 2026-11-10 "if we can't [cut] we keep the tag"; never blurred)
-        skip = sorted(set(avoid))
-        lo, hi = lo0, min(hi0, named_hi)
-        seg = seg_base
-        if hi - lo < seg[0] and hi - lo >= 6.0:
-            seg = (hi - lo - 0.05, hi - lo)
-        wins = mkwins(lo)
-        wins.sort(key=lambda w: -w['quality'])
-        res['name_kept'] = True
     # the owner's named editors: no character check (their edits are kept whatever the show) -> no targets needed
     tgt, oth = ([], []) if named else targets_and_distractors(judge, entry, others)
     fr_t = sorted(ana['frames'])
@@ -1953,6 +2078,37 @@ def evaluate(res, entry, others, judge, seg_len, pace_kind='action', max_pass=3,
             w['cast'], w['mains'] = attribute(judge, cast, frames, ts, runs=w['cast_runs'], gaps=w['cast_gaps'])
         passed.append(w)
         return True
+
+    if named:
+        # owner 2026-11-17: ONE section = the whole edit up to the tag; the best phrase windows inside go along as hints
+        # (assemble starts the entry at the best one and picks the length). Safety over the whole edit is the only gate.
+        best = wins[0] if wins else {}
+        wf = {k: best.get(k) for k in ('eventful', 'song', 'song_pop', 'song_name', 'text_cover', 'subs', 'dead_s')}
+        wf.update(s=round(lo, 2), e=round(hi, 2), len=round(hi - lo, 2), quality=best.get('quality') or 0.0, whole_edit=True,
+                  hints=[{'s': round(w['s'], 2), 'e': round(w['e'], 2), 'q': w['quality']} for w in wins[:6]])
+        if not trusted_window(wf) and str(wf.get('reject') or '').startswith(('nudenet', 'siglip_unsafe')):
+            # an unsafe moment drops only itself: the longest clean stretch (>= TRUSTED_HINT_S[0], 1 s clear of every
+            # flagged frame) is the section, checked again in full
+            ts = [t for t in fr_t if lo <= t < hi]
+            bad = judge.unsafe_times([ana['frames'][t] for t in ts], ts)
+            edges = [lo] + [x for t in bad for x in (t - 1.0, t + 1.0)] + [hi]
+            spans = [(max(lo, edges[i]), min(hi, edges[i + 1])) for i in range(0, len(edges) - 1, 2)]
+            spans = [sp for sp in spans if sp[1] - sp[0] >= TRUSTED_HINT_S[0]]
+            if spans:
+                s1, e1 = max(spans, key=lambda sp: sp[1] - sp[0])
+                was = wf.pop('reject')
+                wf.update(s=round(s1, 2), e=round(e1, 2), len=round(e1 - s1, 2), unsafe_cut=[round(t, 1) for t in bad][:20],
+                          hints=[h for h in wf['hints'] if h['s'] >= s1 - 0.01 and h['e'] <= e1 + 0.01])
+                log(f'{res.get("id")}: {was} at {[round(t, 1) for t in bad][:8]} -> the clean stretch {s1:.1f}-{e1:.1f}s')
+                trusted_window(wf)
+        res['windows'] = [wf]
+        res.pop('_ana', None)
+        res.pop('_sting', None)
+        if passed:
+            res.update(verdict='ok', why='', window=wf, conf=1.0, match=wf['match'], passed=[wf], quality=wf['quality'])
+        else:
+            res.update(verdict='reject', why=wf.get('reject') or 'unsafe', quality=wf['quality'], conf=0, match=None)
+        return res
 
     for w in wins:
         if len(passed) >= max_pass:

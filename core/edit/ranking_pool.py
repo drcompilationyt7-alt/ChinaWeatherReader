@@ -1247,7 +1247,8 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None, keep_marks=False):
     the staged clip (it['window_marks'], for the review) instead of dropping it."""
     w = w or res['window']
     dur = res.get('dur') or w['e'] + MARGIN
-    s0, e0 = max(0.0, w['s'] - MARGIN), min(float(dur), w['e'] + MARGIN)
+    # a named editor's whole edit ends where the tag starts: no margin after it (the stored clip never holds the tag)
+    s0, e0 = max(0.0, w['s'] - MARGIN), min(float(dur), w['e'] + (0.0 if w.get('whole_edit') else MARGIN))
     iid = f'r_{res["id"]}_{int(w["s"] * 1000)}'
     clip = os.path.join(sd, 'clips', iid + '.mp4')
     RC.cut_clip(res['path'], s0, e0, clip)
@@ -1284,8 +1285,14 @@ def stage_item(res, e, key, sd, RC, w=None, extra=None, keep_marks=False):
           'status': 'staged', 'added': time.strftime('%Y-%m-%d')}
     if marks:
         it['window_marks'] = marks
-    lab = (f'{e["name"]} | {it["editor_handle"]} | {res["id"]} {w["s"]:.1f}-{w["e"]:.1f}s | char {it["char_conf"]} '
-           f'({it["char_method"]}) | ev {it["eventful"]} song {it["song"]} | {it["age_days"]} d old')
+    if w.get('whole_edit'):
+        # owner 2026-11-17: the whole edit; assemble starts the entry at the best hint (clip time) and picks the length
+        it['whole_edit'] = True
+        it['hints'] = [{'in': round(h['s'] - s0, 2), 'out': round(h['e'] - s0, 2), 'q': h['q']} for h in w.get('hints') or []]
+        it['tag'] = {k: (res.get('tag') or {}).get(k) for k in ('start', 'how', 'card', 'black', 'lead_in')}
+    lab = (f'{e["name"]} | {it["editor_handle"]} | {res["id"]} {w["s"]:.1f}-{w["e"]:.1f}s'
+           + (f' WHOLE (tag {it["tag"]["how"]} @ {it["tag"]["start"]})' if w.get('whole_edit') else '')
+           + f' | char {it["char_conf"]} ({it["char_method"]}) | ev {it["eventful"]} song {it["song"]} | {it["age_days"]} d old')
     if extra:                                  # library: what the section serves + its themes, on the sheet too
         it.update(extra)
         lab += f' | serves {",".join(x.split("__")[0] for x in extra.get("serves") or [])} | {"/".join(extra.get("themes") or [])}'
@@ -1816,6 +1823,11 @@ def assemble(topic, out, work=None, mark_used=False, seed=None):
         if not os.path.exists(clip):
             return {'ok': False, 'reason': f'missing clip {it["file"]}'}
         s_, e_ = float(it['clip_in']), float(it['clip_out'])
+        if e_ - s_ > sec_s + 0.5 and it.get('hints'):
+            # a whole named edit (owner 2026-11-17 "the ranking video decides how long and where"): start at the best
+            # phrase-aligned hint, moved earlier when the budget would run past the edit's end (the tag)
+            h = max(it['hints'], key=lambda h: h.get('q') or 0)
+            s_ = max(s_, min(float(h['in']), e_ - sec_s))
         if e_ - s_ > sec_s + 0.5:
             # a longer list: the section keeps its start (the character's entrance) and ends on the scene cut nearest the
             # budget (owner rule: a section starts where the character starts)
@@ -1907,7 +1919,7 @@ def mining_order(ps):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['approved-backlog', 'mine-trusted', 'trusted-backlog', 'plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
+    ap.add_argument('cmd', choices=['approved-backlog', 'mine-trusted', 'trusted-backlog', 'tag-template', 'tag-test', 'plan', 'plan-shows', 'mine', 'publish', 'pull-staged', 'review', 'import', 'push-state', 'eligible',
                                     'assemble', 'status', 'mark', 'remove', 'rescreen', 'recast', 'recut', 'add-section',
                                     'timeline', 'clean-sources'])
     ap.add_argument('--result')
@@ -1951,7 +1963,18 @@ def main():
     ap.add_argument('--entry', default=None, help='recut / add-section: file the section under this entry key')
     ap.add_argument('--no-snap', action='store_true', help='recut / add-section: keep the exact times (no scene-cut snap)')
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
+    ap.add_argument('--video', default='', help='tag-template / tag-test: a local edit of a named editor')
+    ap.add_argument('--channel', default='', help='tag-template / tag-test: the editor\'s channel id (refs trusted)')
     a = ap.parse_args()
+    if a.cmd in ('tag-template', 'tag-test'):   # owner 2026-11-17: the named editors' end tag (card templates, see RC.trusted_tag)
+        import ranking_compilation as RC
+        if a.cmd == 'tag-template':          # --video --channel --s <where the card starts, from a contact sheet>
+            print(RC.add_tag_template(a.channel, a.video, a.s, a.e), 'card frames added')
+        else:                                 # --video --channel: where the tag would be cut
+            d = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', a.video],
+                                     capture_output=True, text=True).stdout.strip())
+            print(json.dumps({'dur': round(d, 2), **RC.trusted_tag(a.video, d, a.channel)}))
+        return
     if a.cmd == 'mine-trusted':             # owner 2026-11-15: only the editors the owner named, keep every anime edit
         print(json.dumps(mine_trusted(a.budget_min, a.work, a.state, a.max_dl, a.offline, a.from_end), ensure_ascii=False, indent=1,
                          default=str))

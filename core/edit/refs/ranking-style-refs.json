@@ -284,22 +284,41 @@
   "UC8wAEj6bTJVAQ0V4ZDN38pA": {
    "name": "Mila",
    "handle": "@Mila.edit243",
-   "added": "2026-11-12"
+   "added": "2026-11-12",
+   "tag": {
+    "kind": "card",
+    "lead": 1.5,
+    "what": "round 'MILA' logo card, ~2 s (zooms in, matches late)"
+   }
   },
   "UCK3JvjP5TwtetNSRwur-Reg": {
    "name": "Purgify",
    "handle": "@purgify.mp4",
-   "added": "2026-11-13"
+   "added": "2026-11-13",
+   "tag": {
+    "kind": "card",
+    "lead": 1.2,
+    "what": "spade logo card on a dark gradient, 4-6 s; the spade forms over the last shot 0.5-1 s before"
+   }
   },
   "UCt3S_q9SK_wslTJpSrbantw": {
    "name": "Kimyo",
    "handle": "@Kimyo_ae",
-   "added": "2026-11-15"
+   "added": "2026-11-15",
+   "tag": {
+    "kind": "black",
+    "what": "no tag: ends on content or ~2 s of black"
+   }
   },
   "UCQzYYHOCqbs1zPmoeyXsuIw": {
    "name": "Xyuno",
    "handle": "@xyunovfx",
-   "added": "2026-11-15"
+   "added": "2026-11-15",
+   "tag": {
+    "kind": "black",
+    "what": "~6 s of black, no logo"
+   }
   }
- }
+ },
+ "_trusted_tag_about": "Owner 2026-11-17 'keep the whole edit, just try to not get the tag in': each named editor's tag profile (core/edit/ranking_compilation.py trusted_tag). kind card = template frames in refs/trusted_tags/<channel>.npy (ranking_pool.py tag-template --channel C --video V --s <card start>), cut 'lead' s before the detected card; black = trailing black only; a new editor without a profile: the last 2.5 s."
 }
