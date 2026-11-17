@@ -2993,6 +2993,60 @@
     149.79,
     193.02
    ]
+  },
+  {
+   "videoId": "jrLfWG5qVFU",
+   "url": "https://www.youtube.com/watch?v=jrLfWG5qVFU",
+   "postedAt": "2026-11-17T11:29:56.155Z",
+   "publishAt": "2026-11-17T12:00:00.000Z",
+   "song": "imagination",
+   "theme": "anime",
+   "emoji": "🔥,🗿",
+   "title": "imagination acapella but the beat drops 🔥",
+   "clipIds": [
+    "9TmkAQoWxz0",
+    "n-QPPLWWjlk",
+    "UiG9qUya5Q0",
+    "0Qdi_bJamcY",
+    "YeKP2klzOm4",
+    "ekqPBsKIb9A",
+    "OTio-0LwlXE",
+    "gWzbJ2Qg90k",
+    "oRAF2-Exzx4"
+   ],
+   "clipChannels": [
+    "Arashi Ch.",
+    "BOLEXX TV",
+    "Haikyuu Max",
+    "Milk Carton",
+    "Path of Milo",
+    "Yuji",
+    "アニメソングコレクション",
+    "バラッド"
+   ],
+   "clipSource": "Haikyuu",
+   "settings": {
+    "drop": 14,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "op-desc-layer-build"
+   },
+   "onVideoTitle": "wait for the drop",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "edit-community",
+    "titleStyle": "mimic",
+    "ovStyle": "op-ov-milestone",
+    "descHook": "op-desc-layer-build",
+    "titlePattern": "{song} acapella but the beat drops {e}",
+    "titleMode": "mimic"
+   },
+   "why": "thompson (explore)",
+   "whyMode": "explore",
+   "bpm": 101.98,
+   "titlePattern": "{song} acapella but the beat drops {e}"
   }
  ]
 }
