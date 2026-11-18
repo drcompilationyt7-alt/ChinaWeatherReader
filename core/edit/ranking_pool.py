@@ -761,19 +761,24 @@ TRUSTED_NOT_ANIME = re.compile(
     r'the boys|homelander|stranger things|minecraft|herobrine|sonic the hedgehog|squid game|\bjoker\b|dark knight|'
     r'dexter morgan|backrooms|springtrap|\bfnaf\b|five nights|clash royale|sabrina carpenter|\barcane\b|k-?pop demon hunters|'
     r'devil may cry|miguel o.?hara|spider-?(man|verse)|editing challenge|editing pack|\bvs\.? \d+ hours?\b|\bmessi\b|ronaldo|'
-    r'wuthering waves|weathering waves|genshin|honkai|breaking bad|walter white|heisenberg|better call saul', re.I)
+    r'wuthering waves|weathering waves|genshin|honkai|breaking bad|walter white|heisenberg|better call saul|'
+    # Minatox (added 2026-11-18): Avatar, Dune, GTA, Christmas / ski / vacation edits, a rapper edit, an AE tutorial
+    r'zuko|azula|beauty of avatar|last airbender|\bdune\b|\bgta\b|\bgmv\b|christmas edit|alpine ski|vacation edit|'
+    r"\bi'?m yeat\b|tutorial|miles morales|\bjinx\b|\bekko\b", re.I)
 # library shows the titles name in ways the show aliases miss (seen in the named editors' titles 2026-11-15)
 TRUSTED_ALIASES = {r'love is war': 'kaguya-sama', r'blue ?lock': 'blue lock', r'infinity castle': 'demon slayer',
                    r'\bbankai\b': 'bleach', r'\b(shinobu|giyuu?|tengen|muichiro|tokito|tanjiro|nezuko|zenitsu|inosuke|'
                    r'rengoku|akaza|kokushibo|douma)\b': 'demon slayer', r'\b(obito|madara|itachi|kakashi|minato)\b': 'naruto',
                    r'\b(nagi|isagi|rin itoshi)\b': 'blue lock', r'\b(fern|frieren|himmel)\b': 'frieren',
-                   r'\b(gojo|sukuna|toji|megumi|geto)\b': 'jujutsu kaisen'}
+                   r'\b(gojo|sukuna|toji|megumi|geto)\b': 'jujutsu kaisen',
+                   r'sendai colony|culling game|higuruma|shibuya incident': 'jujutsu kaisen'}   # Minatox 2026-11-18
 # anime outside the library that the character pool does not know (named editors' titles 2026-11-15)
 TRUSTED_ANIME = {r'more than a married couple': 'More Than a Married Couple, But Not Lovers',
                  r'loving yamada': 'My Love Story with Yamada-kun at Lv999', r'hitori no shita': 'Hitori no Shita: The Outcast',
                  r'tunnel to summer': 'The Tunnel to Summer, the Exit of Goodbyes',
                  r'behind the supermarket': 'Smoking Behind the Supermarket with You',
-                 r'\bkanna\b': "Miss Kobayashi's Dragon Maid", r'\byamato\b': 'One Piece'}
+                 r'\bkanna\b': "Miss Kobayashi's Dragon Maid", r'\byamato\b': 'One Piece',
+                 r'qin shi huang|record of ragnarok': 'Record of Ragnarok'}
 _ANIME_IDX = []
 
 
@@ -834,14 +839,24 @@ def classify_trusted(title, RC, smap, ents):
     t = unicodedata.normalize('NFKC', title or '')
     if TRUSTED_NOT_ANIME.search(t):
         return None, None, 'not_anime'
-    hits = []
+    # 'Sung Jin-Woo' must hit the aliases 'jinwoo' / 'jin woo' (as RC.title_names does)
+    ts = [t, re.sub(r'(?<=\w)-(?=\w)', '', t), re.sub(r'(?<=\w)-(?=\w)', ' ', t)]
+    # 2026-11-18 (Minatox titles): the curated aliases decide first ('Gojo & Geto' is Jujutsu Kaisen, not My Dress-Up
+    # Darling's Wakana Gojo; 'Blue Lock' is not Grand Blue); otherwise the show with the LONGEST matched name wins
+    cur = [sk for pat, sk in TRUSTED_ALIASES.items() if sk in smap and any(re.search(pat, x, re.I) for x in ts)]
+    if cur:
+        return sorted(set(cur), key=len, reverse=True)[0], None, 'library'
+    best = {}
     for sk, se in ents.items():
-        if any(RC.alias_hit(a, t) for a in se['alias']) or any(
-                re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in RC.anime_words(se)):
-            hits.append(sk)
-    hits += [sk for pat, sk in TRUSTED_ALIASES.items() if sk in smap and re.search(pat, t, re.I)]
-    if hits:
-        return sorted(set(hits), key=len, reverse=True)[0], None, 'library'
+        pats = [r'(?<![a-z])(?:' + a + ')' for a in se['alias']] + \
+               [r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])' for w in RC.anime_words(se)]
+        for p_ in pats:
+            for x in ts:
+                m = re.search(p_, x, re.I)
+                if m:
+                    best[sk] = max(best.get(sk, 0), len(m.group(0)))
+    if best:
+        return max(best, key=lambda k: (best[k], len(k))), None, 'library'
     for pat, an in TRUSTED_ANIME.items():
         if re.search(pat, t, re.I):
             k = RC.show_key(an)

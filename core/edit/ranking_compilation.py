@@ -1744,6 +1744,11 @@ def _is_black(g):
     return g.mean() < TAG_BLACK and float(np.percentile(g, 98)) < 35
 
 
+def _is_dark(g):
+    """black, or a small logo / text line on black (an editor's logo card or credit, see trusted_tag)"""
+    return g.mean() < 16 and float(np.percentile(g, 90)) < 45
+
+
 def _tag_norm(g):
     v = g.flatten() - g.mean()
     return v / (np.linalg.norm(v) + 1e-6)
@@ -1796,6 +1801,9 @@ def trusted_tag(path, dur, channel_id, end_chapter=None, profile=None):
     if T is not None and i >= 0:
         j, miss, card = i, 0, None
         while j >= 0 and fr[i][0] - fr[j][0] <= TAG_CARD_MAX_S:
+            if card is None and _is_dark(fr[j][1]):   # logos on black between the card and the black (Minatox): walk on
+                j -= 1
+                continue
             if max(float((T @ _tag_norm(z)).max()) for z in _tag_zooms(fr[j][1])) >= TAG_THR:
                 card, miss = fr[j][0], 0
             else:
@@ -1814,7 +1822,23 @@ def trusted_tag(path, dur, channel_id, end_chapter=None, profile=None):
     if not cands and kind not in ('card', 'black', 'none'):
         cands.append((dur - TRUSTED_TAIL_S, 'tail_guess'))           # an editor never profiled: the old guess
     start, how = min(cands) if cands else (dur - 0.3, 'none')
-    res.update(start=round(max(0.0, min(start, dur - 0.3)), 2), how=how)
+    start = max(0.0, min(start, dur - 0.3))
+    # 2026-11-18: a logo / credit on black right before the cut is tag too (Minatox's three logos and 'by Minatox' credit,
+    # Purgify's spade forming on black - the 11-17 review). Such frames stay dark: mean < 16 and 90 % of the pixels < 45,
+    # where an anime shot almost never is. Walk back over them (one brighter frame allowed) and cut where they begin.
+    k = max((n for n, (t, _) in enumerate(fr) if t < start), default=-1)
+    dark, miss = None, 0
+    while k >= 0 and start - fr[k][0] <= TAG_CARD_MAX_S:
+        if _is_dark(fr[k][1]):
+            dark, miss = fr[k][0], 0
+        else:
+            miss += 1
+            if miss > 1:
+                break
+        k -= 1
+    if dark is not None and start - dark >= 0.4:
+        start, how = max(0.0, dark - 0.05), f'{how}+dark'
+    res.update(start=round(start, 2), how=how, dark=dark)
     # the edit's first frame that is not pure black
     head = _grey_frames(path, 0.0, min(4.0, dur))
     res['lead_in'] = next((t for t, g in head if g.mean() >= 3.0), 0.0)   # only true black (a dark shot is the edit)
