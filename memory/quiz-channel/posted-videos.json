@@ -1,17 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=X2ILgSorUj4",
-      "title": "SUMMER FESTIVAL EDITION 🎆 Anime Emoji Quiz: Easy to IMPOSSIBLE 🎬 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-19T07:58:21.056Z",
-      "videoId": "X2ILgSorUj4",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-anime-ramp",
-      "quizFormat": "emoji",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=BN6PL8vkgdk",
       "title": "Only Real Otakus Get 3/3 🔥 #anime",
       "country": "Global",
@@ -604,6 +593,17 @@
       "titleSource": "eyes-ramp",
       "quizFormat": "eyes",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aBFXTBfz5rw",
+      "title": "Guess the Asian Dish From One Photo 🔥 #asianfood",
+      "country": "Global",
+      "postedAt": "2026-11-18T10:49:43.654Z",
+      "videoId": "aBFXTBfz5rw",
+      "category": "quiz-cuisine",
+      "titleSource": "dish-guess",
+      "quizFormat": "cuisine",
+      "quizTheme": "food"
     }
   ]
 }

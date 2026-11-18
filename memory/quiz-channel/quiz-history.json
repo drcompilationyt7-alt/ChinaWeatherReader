@@ -3224,6 +3224,69 @@
     "titleStyle": "ramp",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "aBFXTBfz5rw",
+   "url": "https://www.youtube.com/watch?v=aBFXTBfz5rw",
+   "postedAt": "2026-11-18T10:49:43.476Z",
+   "publishAt": "2026-11-18T13:00:00.000Z",
+   "format": "cuisine",
+   "theme": "food",
+   "seed": 902678159,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai-short",
+     "line": "Can you name these Asian dishes?",
+     "template": "Can you name these Asian dishes?",
+     "sec": 2
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How many did you get right? Drop your score!",
+     "template": "How many did you get right? Drop your score!",
+     "sec": 2.29
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Peking duck!",
+     "template": null,
+     "sec": 0.98
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "Nasi lemak. Did you get it?",
+     "template": null,
+     "sec": 1.9
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's Cheung fun!",
+     "template": null,
+     "sec": 1
+    }
+   ],
+   "followUpOf": "cweN0o4RoXg",
+   "titleTemplate": "dish-guess",
+   "title": "Guess the Asian Dish From One Photo 🔥 #asianfood",
+   "answers": [
+    "cuisine:peking duck#m4gsks",
+    "cuisine:nasi lemak#ywkh6t",
+    "cuisine:cheung fun#z436me"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
