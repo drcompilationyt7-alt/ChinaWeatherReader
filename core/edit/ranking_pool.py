@@ -761,7 +761,7 @@ TRUSTED_NOT_ANIME = re.compile(
     r'the boys|homelander|stranger things|minecraft|herobrine|sonic the hedgehog|squid game|\bjoker\b|dark knight|'
     r'dexter morgan|backrooms|springtrap|\bfnaf\b|five nights|clash royale|sabrina carpenter|\barcane\b|k-?pop demon hunters|'
     r'devil may cry|miguel o.?hara|spider-?(man|verse)|editing challenge|editing pack|\bvs\.? \d+ hours?\b|\bmessi\b|ronaldo|'
-    r'wuthering waves|weathering waves|genshin|honkai', re.I)
+    r'wuthering waves|weathering waves|genshin|honkai|breaking bad|walter white|heisenberg|better call saul', re.I)
 # library shows the titles name in ways the show aliases miss (seen in the named editors' titles 2026-11-15)
 TRUSTED_ALIASES = {r'love is war': 'kaguya-sama', r'blue ?lock': 'blue lock', r'infinity castle': 'demon slayer',
                    r'\bbankai\b': 'bleach', r'\b(shinobu|giyuu?|tengen|muichiro|tokito|tanjiro|nezuko|zenitsu|inosuke|'
@@ -836,7 +836,7 @@ def classify_trusted(title, RC, smap, ents):
         return None, None, 'not_anime'
     hits = []
     for sk, se in ents.items():
-        if any(re.search(a, t, re.I) for a in se['alias']) or any(
+        if any(RC.alias_hit(a, t) for a in se['alias']) or any(
                 re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in RC.anime_words(se)):
             hits.append(sk)
     hits += [sk for pat, sk in TRUSTED_ALIASES.items() if sk in smap and re.search(pat, t, re.I)]
@@ -1407,12 +1407,49 @@ def _apply_window(it, sd, src, s, e, label_extra=''):
     it['sheet'] = _rel(sheet(clip, os.path.join(sd, 'sheets', it['id'] + '.jpg'), lab) or '', sd)
 
 
-def _set_tags(it, serves=None, themes=None, entry=None):
+def _trim_whole(it, sd, s, e):
+    """Review: a whole edit (no separate source staged: the clip IS the edit) trimmed to [s, e] source seconds inside it,
+    e.g. a 'THANKS FOR WATCHING' end card or a 'THANKS FOR 20K' intro the tag check missed (2026-11-17). Up to MARGIN of the
+    edit stays before s, nothing after e (past it is the editor's card); the hints follow the new clip start."""
+    import ranking_compilation as RC
+    st, en = float(it.get('start') or 0.0), float(it.get('end') or 0.0)
+    if not (st - 0.05 <= s < e <= en + 0.05):
+        raise SystemExit(f'{it["id"]}: {s}-{e} is outside the stored whole edit {st}-{en}')
+    pre = min(MARGIN, s - st)
+    a, b = max(0.0, s - st - pre), e - st
+    clip = os.path.join(sd, it['file'])
+    tmp = clip[:-4] + '.pretrim.mp4'
+    os.replace(clip, tmp)
+    try:
+        RC.cut_clip(tmp, a, b, clip)
+    except Exception:
+        os.replace(tmp, clip)
+        raise
+    os.remove(tmp)
+    cin, cout = s - st - a, e - st - a
+    hs = []
+    for h in it.get('hints') or []:
+        h0, h1 = max(float(h['in']) - a, cin), min(float(h['out']) - a, cout)
+        if h1 - h0 >= 6.0:
+            hs.append(dict(h, **{'in': round(h0, 2), 'out': round(h1, 2)}))
+    it.update(start=round(st + a, 3), end=round(st + b, 3), clip_in=round(cin, 3), clip_out=round(cout, 3),
+              win_len=round(e - s, 2), hints=hs, recut=time.strftime('%Y-%m-%d'))
+    it['tag'] = dict(it.get('tag') or {}, start=round(e, 2), how=f'review ({(it.get("tag") or {}).get("how")})')
+    lab = (f"{it['entry_name']} | {it.get('editor_handle')} | {it['source_id']} {s:.1f}-{e:.1f}s WHOLE | RECUT | serves "
+           f"{','.join(x.split('__')[0] for x in it.get('serves') or [])} | {'/'.join(it.get('themes') or [])}")
+    it['sheet'] = _rel(sheet(clip, os.path.join(sd, 'sheets', it['id'] + '.jpg'), lab) or '', sd)
+
+
+def _set_tags(it, serves=None, themes=None, entry=None, show=None):
     if entry:
         e, _ = all_entries().get(entry) or (None, None)
         if not e:
             raise SystemExit(f'unknown entry key {entry}')
         it.update(entry_key=entry, entry_name=e['name'], kind=e.get('kind', 'character'), chars=e.get('chars'))
+        if e.get('anime'):
+            it['anime'] = e['anime']
+    if show:                                   # the library show (wrong-show fix): the old show's cast shares are dropped
+        it.update(show=show, cast={}, cast_runs={}, cast_gaps={})
     if serves is not None:
         it['serves'] = list(serves)
         it['serves_by'] = 'review'
@@ -1421,23 +1458,28 @@ def _set_tags(it, serves=None, themes=None, entry=None):
         it['theme'] = themes[0] if themes else it.get('theme')
 
 
-def recut(iid, s=None, e=None, serves=None, themes=None, snap=True, entry=None):
+def recut(iid, s=None, e=None, serves=None, themes=None, snap=True, entry=None, show=None):
     """Review: move a staged section to [s, e] of its source (source seconds, snapped to scene cuts), optionally set what it
-    serves (entry keys) / its themes / the entry it is filed under."""
+    serves (entry keys) / its themes / the entry it is filed under / its library show. A named editor's whole edit (no
+    source staged) is trimmed inside its own clip (never snapped: the times are read off the frames)."""
     sd = staged_dir()
     man = manifest(sd)
     it = next(x for x in man['items'] if x['id'] == iid)
     src = _src_record(man, it['source_id'])
     if s is not None and e is not None:
-        if not src or not os.path.exists(os.path.join(sd, src['file'])):
+        if (not src or not os.path.exists(os.path.join(sd, src['file']))) and it.get('whole_edit'):
+            _trim_whole(it, sd, float(s), float(e))
+        elif not src or not os.path.exists(os.path.join(sd, src['file'])):
             raise SystemExit(f'{iid}: the whole edit is not staged (older batch): only serves / themes can change')
-        vid = os.path.join(sd, src['file'])
-        if snap:
-            s, e = _snap(vid, s), _snap(vid, e)
-        _apply_window(it, sd, src, float(s), float(e))
-    _set_tags(it, serves, themes, entry)
+        else:
+            vid = os.path.join(sd, src['file'])
+            if snap:
+                s, e = _snap(vid, s), _snap(vid, e)
+            _apply_window(it, sd, src, float(s), float(e))
+    _set_tags(it, serves, themes, entry, show)
     save_manifest(sd, man)
-    return {k: it.get(k) for k in ('id', 'start', 'clip_in', 'clip_out', 'win_len', 'serves', 'themes', 'entry_key', 'sheet')}
+    return {k: it.get(k) for k in ('id', 'start', 'clip_in', 'clip_out', 'win_len', 'serves', 'themes', 'entry_key', 'show',
+                                   'anime', 'hints', 'sheet')}
 
 
 def add_section(sid, s, e, like, serves=None, themes=None, snap=True, entry=None):
@@ -1962,6 +2004,7 @@ def main():
     ap.add_argument('--themes', default=None, help='recut / add-section: action,beauty,romance (comma-separated)')
     ap.add_argument('--entry', default=None, help='recut / add-section: file the section under this entry key')
     ap.add_argument('--no-snap', action='store_true', help='recut / add-section: keep the exact times (no scene-cut snap)')
+    ap.add_argument('--show', default=None, help='recut: the library show key the section belongs to (a wrong-show fix)')
     ap.add_argument('--apply', action='store_true', help='rescreen: drop failing items from the live pool')
     ap.add_argument('--video', default='', help='tag-template / tag-test: a local edit of a named editor')
     ap.add_argument('--channel', default='', help='tag-template / tag-test: the editor\'s channel id (refs trusted)')
@@ -2062,7 +2105,7 @@ def main():
     elif a.cmd in ('recut', 'add-section'):
         lst = lambda x: None if x is None else [y.strip() for y in x.split(',') if y.strip()]
         if a.cmd == 'recut':
-            r = recut(a.id, a.s, a.e, lst(a.serves), lst(a.themes), not a.no_snap, a.entry)
+            r = recut(a.id, a.s, a.e, lst(a.serves), lst(a.themes), not a.no_snap, a.entry, a.show)
         else:
             r = add_section(a.id, a.s, a.e, a.like, lst(a.serves), lst(a.themes), not a.no_snap, a.entry)
         print(json.dumps(r, ensure_ascii=False, indent=1))

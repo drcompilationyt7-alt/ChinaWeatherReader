@@ -374,13 +374,19 @@ def anime_words(entry):
     return list(dict.fromkeys(out))
 
 
+def alias_hit(a, t):
+    """An entry alias (a regex) found in a title, starting at a word start: 2026-11-17 the alias 'eren' matched inside
+    'Fri-eren' and a Frieren edit was filed as Eren / Attack on Titan. Suffixes stay free ("titans", "eren's")."""
+    return re.search(r'(?<![a-z])(?:' + a + ')', t, re.I) is not None
+
+
 def prefilter(e, entry, min_views=None):
     """Flat search entry -> (ok, reason)."""
     # NFKC: edit titles in styled letters ('𝐆𝐎𝐉𝐎 𝐒𝐀𝐓𝐎𝐑𝐔', '𝙅𝙐𝙅𝙐𝙏𝙎𝙐 𝙆𝘼𝙄𝙎𝙀𝙉') read as plain text (2026-11-01)
     t = unicodedata.normalize('NFKC', e.get('title') or '')
     if L.EXPLICIT_RE.search(t):
         return False, 'explicit'
-    if not any(re.search(a, t, re.I) for a in entry['alias']):
+    if not any(alias_hit(a, t) for a in entry['alias']):
         # owner 2026-10-31 ("search anime edit, there are lots of sources"): a title that names the anime is enough; every
         # section is checked for the entry's character, and titles naming the character are downloaded first
         if not any(re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I) for w in anime_words(entry)):
@@ -1165,7 +1171,7 @@ def title_names(title, entries):
     t = unicodedata.normalize('NFKC', title or '')
     # 'Sung Jin-Woo' must match the aliases 'jinwoo' / 'jin woo' (2026-11-10: a hyphenated name lost its title trust)
     ts = {t, re.sub(r'(?<=\w)-(?=\w)', '', t), re.sub(r'(?<=\w)-(?=\w)', ' ', t)}
-    return [e for e in entries if any(re.search(a, x, re.I) for a in e.get('alias') or [] for x in ts)]
+    return [e for e in entries if any(alias_hit(a, x) for a in e.get('alias') or [] for x in ts)]
 
 
 def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6, pre=None):
@@ -1212,7 +1218,7 @@ def find_source(entry, others, get_judge, work, seg_len, used, report, max_dl=6,
                 report['reject'][why] = report['reject'].get(why, 0) + 1
                 continue
             cands.append(e)
-    named = lambda e: any(re.search(a, unicodedata.normalize('NFKC', e.get('title') or ''), re.I) for a in entry['alias'])
+    named = lambda e: any(alias_hit(a, unicodedata.normalize('NFKC', e.get('title') or '')) for a in entry['alias'])
     # owner-approved first, then the owner's reference style (owner 2026-11-01: short 4K '[Edit/AMV]' edits, 19-60 s, used
     # nearly whole), then edits naming the character, then popularity
     cands.sort(key=lambda e: (e.get('id') not in PREFER, not style_match(e), not named(e), -(e.get('view_count') or 0)))
