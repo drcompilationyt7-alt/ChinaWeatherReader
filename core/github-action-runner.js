@@ -385,6 +385,12 @@ class DailyRunner {
         }
       }
       const publishAt = base ? new Date(base.getTime() + k * spacing * 3600000).toISOString() : null;
+      if (!result) {
+        // 2026-11-18: every type failed and the upload ran anyway with no file ('"path" argument ... Received undefined')
+        logger.error(`No video today: every type failed (${order.join(' > ')})`);
+        errors.push('no video: every type failed');
+        continue;
+      }
       if (process.env.DRY_RUN === 'true') {
         logger.success(`[dry run] ${result.meme.song} [${kind}]: "${result.title}" -> ${result.videoPath}${result.longPath ? ' + long ' + result.longPath : ''}`);
         uploaded.push({ title: result.title, url: result.videoPath, country: result.country, editType: 'meme', geminiScore: null });

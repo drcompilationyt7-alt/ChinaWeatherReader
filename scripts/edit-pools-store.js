@@ -99,8 +99,24 @@ const STORE_FILES = 'store-files.json';
 const addMode = args.includes('--add');
 const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return d; } };
 
+const sleepS = s => execFileSync(process.execPath, ['-e', `setTimeout(() => {}, ${s * 1000})`]);
+// 2026-11-18: GitHub answered one asset download with HTTP 502 (morning) and 'release not found' (afternoon); one failed
+// request aborted the whole pull, so BOTH daily runs saw sound 0 / slow-mo 0 and could only make a stem edit. Every
+// release read is retried now (20 / 40 / 60 s apart).
+function ghRetry(a, what) {
+  for (let k = 1; ; k++) {
+    try { return gh(a); } catch (e) {
+      if (k >= 4) throw e;
+      console.warn(`${what} failed (try ${k}/4): ${String(e.stderr || e.message).trim().split('\n').pop()}; retry in ${20 * k} s`);
+      sleepS(20 * k);
+    }
+  }
+}
+function download(name, dest) {
+  return ghRetry(['release', 'download', TAG, ...repo, '--pattern', name, '--dir', dest, '--clobber'], `download ${name}`);
+}
 function assets() {
-  try { return JSON.parse(gh(['release', 'view', TAG, ...repo, '--json', 'assets'])).assets || []; } catch { return null; }
+  try { return JSON.parse(ghRetry(['release', 'view', TAG, ...repo, '--json', 'assets'], 'release view')).assets || []; } catch { return null; }
 }
 /** release assets from the REST API (has the sha256 "digest" GitHub computes for every upload) */
 function apiAssets() {
@@ -206,9 +222,12 @@ function pull() {
   try { stamp = JSON.parse(fs.readFileSync(STAMP, 'utf8')); } catch {}
   const next = {};
   const groups = {};
+  // EDIT_POOLS_SKIP=ranking: the daily run does not fetch a pool it cannot post (ranking posting off: ~2 GB, 55 assets)
+  const skip = new Set(String(process.env.EDIT_POOLS_SKIP || '').split(',').map(s => s.trim()).filter(Boolean));
   for (const a of list) {
     const m = parseAsset(a.name);
     if (m && onlyPreset && m.preset !== onlyPreset) continue;
+    if (m && skip.has(m.preset)) continue;
     const g = m ? `pool-${m.preset}-${m.vibe}.tar` : a.name;
     const grp = (groups[g] = groups[g] || { preset: m && m.preset, vibe: m && m.vibe, items: [], adds: [] });
     (m && m.add ? grp.adds : grp.items).push(a);
@@ -223,19 +242,37 @@ function pull() {
       if (names.length) execFileSync(TAR, ['-xf', tar, '-C', dir, ...names]);
     } else execFileSync(TAR, ['-xf', tar, '-C', dir]);
   };
-  for (const [g, { preset, vibe, items, adds }] of Object.entries(groups)) {
+  const failed = [];
+  // sound + slow-mo first (the daily pools), the big ranking pool last
+  const order = Object.entries(groups).sort((x, y) => (x[1].preset === 'ranking') - (y[1].preset === 'ranking'));
+  for (const [g, { preset, vibe, items, adds }] of order) {
     items.sort((x, y) => x.name.localeCompare(y.name));
     adds.sort((x, y) => x.name.localeCompare(y.name));
     const key = [...items, ...adds].map(a => `${a.name}:${a.size}:${a.updatedAt}`).join('|');
-    next[g] = key;
     const have = preset ? fs.existsSync(path.join(dir, preset, vibe, STORE_FILES)) : fs.existsSync(path.join(dir, g));   // no store-files.json yet: pull again (bootstrap)
-    if (stamp[g] === key && have) continue;
+    if (stamp[g] === key && have) { next[g] = key; continue; }
     const mb = [...items, ...adds].reduce((s, a) => s + a.size, 0) / 1048576;
     console.log(`pull ${g} (${mb.toFixed(0)} MB, ${items.length} file${items.length > 1 ? 's' : ''}${adds.length ? ` + ${adds.length} add-on(s)` : ''})`);
+    try {
+      pullGroup(g, preset, vibe, items, adds);
+      next[g] = key;
+    } catch (e) {
+      // one pool that cannot be fetched never takes the others down; its stamp is not renewed, so the next pull redoes it
+      failed.push(g);
+      next[g] = 'failed';
+      console.warn(`::warning::pull ${g} FAILED after retries: ${String(e.stderr || e.message).trim().split('\n').pop()} (the other pools go on)`);
+    }
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
+  if (!manifestsOnly) fs.writeFileSync(STAMP, JSON.stringify({ ...stamp, ...next }));
+  console.log(`pools in ${dir}: ${vibes().map(v => `${v.preset}/${v.vibe}`).join(', ') || 'none'}${failed.length ? ` | FAILED: ${failed.join(', ')}` : ''}`);
+  if (failed.length) process.exitCode = 1;
+
+  function pullGroup(g, preset, vibe, items, adds) {
     fs.rmSync(tmp, { recursive: true, force: true });
     fs.mkdirSync(tmp, { recursive: true });
-    for (const a of items) gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
-    if (!preset) { fs.copyFileSync(path.join(tmp, g), path.join(dir, g)); continue; }
+    for (const a of items) download(a.name, tmp);
+    if (!preset) { fs.copyFileSync(path.join(tmp, g), path.join(dir, g)); return; }
     fs.rmSync(path.join(dir, preset, vibe), { recursive: true, force: true });   // the tars replace the vibe dir
     listed = [];
     if (items.length) {
@@ -245,7 +282,7 @@ function pull() {
       fs.rmSync(tar, { force: true });
     }
     for (const a of adds) {   // the add-ons, oldest first: new media + the newer manifests
-      gh(['release', 'download', TAG, ...repo, '--pattern', a.name, '--dir', tmp, '--clobber']);
+      download(a.name, tmp);
       extract(path.join(tmp, a.name));
       fs.rmSync(path.join(tmp, a.name), { force: true });
     }
@@ -260,9 +297,6 @@ function pull() {
       console.log(`${pre}${STORE_FILES}: bootstrapped from the release tars (${media.length} media file(s))`);
     }
   }
-  fs.rmSync(tmp, { recursive: true, force: true });
-  if (!manifestsOnly) fs.writeFileSync(STAMP, JSON.stringify({ ...stamp, ...next }));
-  console.log(`pools in ${dir}: ${vibes().map(v => `${v.preset}/${v.vibe}`).join(', ') || 'none'}`);
 }
 
 /** size + sha256 of every uploaded file against the release (API digest; without one, a download-back) */

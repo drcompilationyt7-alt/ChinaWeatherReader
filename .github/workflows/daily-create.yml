@@ -324,7 +324,13 @@ jobs:
       - name: Fetch the sound / slow-mo pools (release edit-pools; a failure only means a stem edit today)
         if: env.CONTENT_MODE == 'meme' && env.DAILY_ROTATION != 'off'
         continue-on-error: true
-        run: node scripts/edit-pools-store.js pull
+        # 2026-11-18: both runs got sound 0 / slow-mo 0 (a 502 / 'release not found' on one of the ranking pool's 55 assets
+        # aborted the whole pull). The pull retries now, one failed pool no longer stops the others, and the ranking pool
+        # (~2 GB) is not fetched while ranking posting is off (weight 0)
+        run: |
+          SKIP=""
+          case ",${DAILY_TYPE_WEIGHTS}," in *",ranking:0,"*) SKIP=ranking ;; esac
+          EDIT_POOLS_SKIP="$SKIP" node scripts/edit-pools-store.js pull
 
       - name: Run daily pipeline
         if: env.CONTENT_MODE != 'pause'

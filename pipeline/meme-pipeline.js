@@ -510,8 +510,12 @@ async function runMemePipeline(opts = {}) {
     logger.success(`Clips: ${clips.count}`);
   }
   // second opinion from a small vision model (SigLIP): vibe, theme, quality, safety
+  // 2026-11-18: Ado "Show" failed twice (2 and 3 clips kept): a J-pop artist's own MVs are often animated (Ado, YOASOBI, Eve)
+  // and the 'japanese' theme dropped them as "anime in a real-footage theme". The artist's own footage is judged without
+  // the anime / real check ('jpop' is in neither theme set); safety, gore and quality still apply.
+  const judgeTheme = clips.source && song.theme === 'jpop' && song.kind !== 'anime' ? 'jpop' : theme;
   try {
-    const judged = await run(python(), [path.join(ROOT, 'core', 'meme', 'clip_judge.py'), '--clips', clips.manifest, '--theme', theme,
+    const judged = await run(python(), [path.join(ROOT, 'core', 'meme', 'clip_judge.py'), '--clips', clips.manifest, '--theme', judgeTheme,
       ...(clips.source ? ['--no-vibe'] : [])], 8);
     if (judged.skipped) logger.warn(`Clip judge skipped: ${judged.skipped}`);
     else logger.info(`Clip judge kept ${judged.kept}, dropped ${(judged.rejected || []).length}: ${(judged.rejected || []).map(r => r[1]).join('; ')}`);
