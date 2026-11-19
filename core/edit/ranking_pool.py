@@ -685,13 +685,6 @@ STYLE_REFS = os.path.join(HERE, 'refs', 'ranking-style-refs.json')
 _STYLE = []
 
 
-def _title_key(t):
-    """a title without hashtags, emoji, brackets and edit words: the long edit and its Shorts re-cut compare equal"""
-    t = re.sub(r'#\S+', ' ', (t or '').lower())
-    t = re.sub(r'\b(edits?|amv|4k|8k|shorts?|free project file|project file|quick)\b', ' ', t)
-    return ' '.join(re.findall(r'[a-z0-9]+', t))
-
-
 def style_uploads(RC):
     """Owner 2026-11-01 ('these are the type of edits I want'): the uploads of the editors of the owner's reference edits
     (refs/ranking-style-refs.json channels; flat channel lists, cached 7 days, one paced request per channel and week) are
@@ -707,25 +700,9 @@ def style_uploads(RC):
             log(f'style channel {cid}: {ex}')
             continue
         name = (rj(STYLE_REFS, {}).get('channels') or {}).get(cid)
-        got = [dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
-                    channel_id=cid, channel=e.get('channel') or (lst or {}).get('channel') or name)
-               for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
-        out += got
-        if cid in (rj(STYLE_REFS, {}).get('trusted') or {}):
-            # owner 2026-11-19: a named editor's Shorts edits too (vertical; render_entry gives them a panel). A Short whose
-            # title matches one of the editor's videos is the same edit re-cut for Shorts: skipped.
-            try:
-                sl = RC._cached(f'chan_{cid}_shorts', lambda: RC.pace() or json.loads(RC.ytdlp(
-                    ['--flat-playlist', '-J', '--playlist-end', '150', f'https://www.youtube.com/channel/{cid}/shorts']) or '{}'))
-            except Exception as ex:  # noqa: BLE001
-                log(f'shorts of {cid}: {ex}')
-                sl = None
-            seen = {_title_key(e.get('title')) for e in got}
-            for e in ((sl or {}).get('entries') or []):
-                if isinstance(e, dict) and e.get('id') and _title_key(e.get('title')) not in seen:
-                    seen.add(_title_key(e.get('title')))
-                    out.append(dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
-                                    channel_id=cid, channel=e.get('channel') or name, short=True))
+        out += [dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
+                     channel_id=cid, channel=e.get('channel') or (lst or {}).get('channel') or name)
+                for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
     _STYLE.append(out)
     log(f'style refs: {len(out)} uploads of {len(rj(STYLE_REFS, {}).get("channels") or {})} reference editors')
     return out
@@ -860,15 +837,19 @@ def anime_index():
 RC_COMMON_WORDS = ('another', 'world', 'flower', 'voice', 'silent', 'tokyo', 'grand', 'season', 'attack', 'piece', 'level')
 
 
+SKIP_WHY = ('not_anime', 'crossover')     # classify_trusted reasons the miner skips
+
+
 def classify_trusted(title, RC, smap, ents, _split=True):
-    """-> (library show key or None, anime name or None, why): why 'not_anime' = skipped, 'library' / 'anime' / 'mix' /
+    """-> (library show key or None, anime name or None, why): why 'not_anime' / 'crossover' = skipped, 'library' / 'anime' / 'mix' /
     'unknown' = kept ('unknown': the title names no anime we know - kept, the review checks it is anime)"""
     import unicodedata
     t = unicodedata.normalize('NFKC', title or '')
     if TRUSTED_NOT_ANIME.search(t):
         return None, None, 'not_anime'
-    # 2026-11-19 (xParagon 'GOJO x RIMURU'): a crossover - both sides of ' x ' / ' vs ' name a DIFFERENT known show - is an
-    # anime mix ('Hiro x Zero Two', 'Gojo vs Sukuna' stay their show; 'Hunter x Hunter' has no known show on one side)
+    # 2026-11-19 (xParagon 'GOJO x RIMURU'; owner: "we can remove crossover", "from one show is fine like cutest couple"):
+    # a crossover - both sides of ' x ' / ' vs ' name a DIFFERENT known show - is skipped ('Hiro x Zero Two', 'Gojo vs
+    # Sukuna' stay their show; 'Hunter x Hunter' has no known show on one side)
     m = re.search(r'\s(?:x|vs\.?|×)\s', t, re.I) if _split else None
     # ... unless the title names a show itself ('Black Clover "Julius vs Licht"': both are Black Clover)
     if m and (any(re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I)
@@ -879,7 +860,7 @@ def classify_trusted(title, RC, smap, ents, _split=True):
         a = classify_trusted(t[:m.start()], RC, smap, ents, False)
         b = classify_trusted(t[m.end():], RC, smap, ents, False)
         if a[2] in ('library', 'anime') and b[2] in ('library', 'anime') and (a[0] or a[1]) != (b[0] or b[1]):
-            return None, 'Anime Mix', 'mix'
+            return None, None, 'crossover'
     # 'Sung Jin-Woo' must hit the aliases 'jinwoo' / 'jin woo' (as RC.title_names does)
     ts = [t, re.sub(r'(?<=\w)-(?=\w)', '', t), re.sub(r'(?<=\w)-(?=\w)', ' ', t)]
     # 2026-11-18 (Minatox titles): the curated aliases decide first ('Gojo & Geto' is Jujutsu Kaisen, not My Dress-Up
@@ -906,7 +887,9 @@ def classify_trusted(title, RC, smap, ents, _split=True):
         if rx.search(t):
             k = RC.show_key(an)
             return (k, None, 'library') if k in smap else (None, an, 'anime')
-    if re.search(r'anime ?mix|amv', t, re.I):
+    if re.search(r'anime ?mix', t, re.I):        # several shows in one edit: not one show (owner 2026-11-19), skipped
+        return None, None, 'crossover'
+    if re.search(r'amv', t, re.I):
         return None, 'Anime Mix', 'mix'
     return None, None, 'unknown'
 
@@ -944,8 +927,7 @@ def trusted_backlog(RC, st, smap, ents):
     """the named editors' uploads not decided yet, with their classification (newest first per channel, channels
     interleaved so every editor progresses)"""
     done = {sid for sid, v in st['sources'].items()
-            if v.get('status') in ('staged', 'reviewed', 'rejected') or (v.get('status') == 'gate_reject' and v.get('trusted')
-                                                                           and v.get('why') != 'vertical')}   # Shorts OK 11-19
+            if v.get('status') in ('staged', 'reviewed', 'rejected') or (v.get('status') == 'gate_reject' and v.get('trusted'))}
     per = {}
     for e in trusted_uploads(RC):
         if e.get('id') in done:
@@ -994,7 +976,7 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
             inf = RC.full_info(v, need=('chapters',)) or {}
             sk, an, why = classify_trusted(inf.get('title'), RC, smap, ents)
             todo.append({'id': v, 'title': inf.get('title'), 'channel_id': inf.get('channel_id'), 'channel': inf.get('channel'),
-                         '_show': sk, '_anime': an, '_why': 'owner_link' if why == 'not_anime' else why})
+                         '_show': sk, '_anime': an, '_why': 'owner_link' if why in SKIP_WHY else why})
     else:
         todo = trusted_backlog(RC, st, smap, ents)
     if from_end:                                # the GitHub run works from the other end of the list than the PC loop
@@ -1002,13 +984,13 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
     tc = trusted_channels()
     summary = {'mode': 'trusted', 'channels': [v.get('name') for v in tc.values()], 'downloaded': 0, 'staged': 0,
                'skipped_not_anime': [], 'kept_unknown': [], 'failed': [], 'items': []}
-    summary['trusted_left'] = sum(1 for e in todo if e['_why'] != 'not_anime')
+    summary['trusted_left'] = sum(1 for e in todo if e['_why'] not in SKIP_WHY)
     log(f'named editors {summary["channels"]}: {summary["trusted_left"]} anime uploads to do, '
-        f'{sum(1 for e in todo if e["_why"] == "not_anime")} not anime')
+        f'{sum(1 for e in todo if e["_why"] == "not_anime")} not anime, {sum(1 for e in todo if e["_why"] == "crossover")} crossovers')
     n_dl = 0
     for e in todo:
-        if e['_why'] == 'not_anime':
-            st['sources'][e['id']] = {'status': 'gate_reject', 'why': 'not_anime', 'trusted': True, 'lib': True,
+        if e['_why'] in SKIP_WHY:
+            st['sources'][e['id']] = {'status': 'gate_reject', 'why': e['_why'], 'trusted': True, 'lib': True,
                                       'at': time.strftime('%Y-%m-%d'), 'title': (e.get('title') or '')[:120]}
             summary['skipped_not_anime'].append(e.get('title'))
             continue
@@ -1027,7 +1009,12 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
             if not offline:
                 summary['failed'].append([e['id'], 'no_info'])
             continue
-        # owner 2026-11-19: vertical Shorts edits are kept too (render_entry gives them a vertical panel)
+        if (info.get('height') or 0) > (info.get('width') or 0) and not ids:
+            # owner 2026-11-19: "no need for shorts just yet except for ones I directly link" (--ids); render_entry has the
+            # vertical panel for those
+            st['sources'][e['id']] = {'status': 'gate_reject', 'why': 'vertical', 'trusted': True, 'lib': True, 'entry': skey,
+                                      'at': time.strftime('%Y-%m-%d'), 'title': (info.get('title') or '')[:120]}
+            continue
         path = RC.download(info, os.path.join(work, 'src'))
         if not path:
             if not offline:
@@ -1085,7 +1072,7 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
         wj(sp, st)
     save_manifest(sd, man)
     wj(sp, st)
-    summary['trusted_left'] = sum(1 for e in trusted_backlog(RC, st, smap, ents) if e['_why'] != 'not_anime')
+    summary['trusted_left'] = sum(1 for e in trusted_backlog(RC, st, smap, ents) if e['_why'] not in SKIP_WHY)
     summary['minutes'] = round((time.time() - t0) / 60, 1)
     return summary
 
