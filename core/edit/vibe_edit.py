@@ -33,7 +33,7 @@ import vibe_pool as VP  # noqa: E402
 import watermark as WM  # noqa: E402
 
 SHORT_LEN = (30.0, 50.0)
-SOUND_SHORT_LEN = (8.5, 50.0)   # sound: ~10 s (sound_edit SOUND_SHORT_TARGET_S, owner 2026-10-31), longer as the pool grows
+SOUND_SHORT_LEN = (8.5, 50.0)   # sound: ~20 s (sound_edit SOUND_SHORT_TARGET_S, owner 2026-11-19; was ~10 s since 10-31)
 LONG_LEN = (90.0, 180.0)
 
 

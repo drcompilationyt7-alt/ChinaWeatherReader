@@ -3044,7 +3044,10 @@ def plan_sound_edit(music, shots, music_start=None, duration=None, mode='accent'
     # ---- song
     song = Song(music, heatmap)
     if length_range and REMAKE:
-        d, n_bars = song.hook(music_start, n=max(1, int(math.ceil((float(length_range[0]) - 0.2) / (4 * song.P)))))
+        # 2026-11-19: the section is sized for the TARGET (SOUND_SHORT_TARGET_S, passed as duration) inside the range; it was
+        # sized for the range's floor, so every remake Short came out ~10 s whatever the target (the 20 s test: 9.1-9.9 s)
+        want = float(length_range[0]) if duration is None else min(max(float(duration), float(length_range[0])), float(length_range[1]))
+        d, n_bars = song.hook(music_start, n=max(1, int(math.ceil((want - 0.2) / (4 * song.P)))))
     elif length_range:
         d, n_bars = song.hook(music_start, n=bars_for_range(song.P, song.dur, length_range, duration))
     else:
@@ -4227,8 +4230,9 @@ def compile_long(songs, shots, out, mode='accent', seed=0, workdir=None, aspect=
 
 # ---------------------------------------------------------------- vibe pools (production entry, core/edit/vibe_edit.py)
 
-# owner 2026-10-31 late: sound Shorts are ~10 s like the references (8.5-11.3 s); raise SOUND_SHORT_TARGET_S as the pool grows
-SHORT_TARGET_S, LONG_TARGET_S = float(os.environ.get('SOUND_SHORT_TARGET_S') or 10.0), 110.0   # aimed for in the caller's range
+# owner 2026-10-31 late: sound Shorts ~10 s like the references (8.5-11.3 s); owner 2026-11-19: 20 s ("we can increase it to
+# 20 sec", the pool has grown: impact 371 clips); a small pool still gives a shorter one, down to SOUND_MIN_SHORT_S
+SHORT_TARGET_S, LONG_TARGET_S = float(os.environ.get('SOUND_SHORT_TARGET_S') or 20.0), 110.0   # aimed for in the caller's range
 RATE_SHORT, RATE_LONG = float(os.environ.get('SOUND_RATE_SHORT', '2.2')), 1.9
 # SOUND_MIN_SHORT_S: the floor (8.5 s = the shortest reference); the judge's length criterion reads the same variable
 MIN_SHORT_S, MIN_LONG_S = float(os.environ.get('SOUND_MIN_SHORT_S', '8.5')), 45.0
