@@ -165,19 +165,34 @@
     }
    ]
   },
-  "op_strongest": {
+  "strongest_overall": {
    "title": [
-    "MOST OVERPOWERED",
+    "STRONGEST",
     "ANIME CHARACTERS"
    ],
    "kind": "character",
    "order": "power",
    "pace": "action",
-   "reveal": "top",
-   "keyword": "most overpowered anime characters",
+   "reveal": "countdown",
+   "keyword": "strongest anime characters",
    "hashtag": "anime",
-   "basis": "owner request 2026-10-25 ('strongest in general, like slime, overlord, misfit ... the voldigoad guy'); Rimuru pinned #1 (owner rule); Anos above Ainz in the usual power-scaling threads (Anos one-shots gods; Ainz is a top-tier player character inside Yggdrasil rules).",
+   "basis": "ONE pool (owner 2026-11-19: STRONGEST and MOST OVERPOWERED merged; each video picks 3-5 and ranks only the picked ones). Rimuru pinned #1 (owner rule 2026-10-25), then mainstream power-scaling consensus: Saitama (gag-limitless) and Goku (multiversal, Super), the isekai OP tier (Anos one-shots gods, Wang Ling, Ainz inside Yggdrasil rules), Sung Jinwoo (Shadow Monarch), Shadow, Madara (Ten-Tails jinchuuriki), Gojo the top of his own verse.",
    "above": [
+    [
+     "GOKU",
+     "MADARA",
+     "multiversal vs planetary"
+    ],
+    [
+     "SUNG JINWOO",
+     "GOJO",
+     "Shadow Monarch vs city-level+"
+    ],
+    [
+     "MADARA",
+     "GOJO",
+     "moon-level+ vs city-level+"
+    ],
     [
      "ANOS",
      "AINZ",
@@ -187,6 +202,16 @@
      "RIMURU",
      "ANOS",
      "owner pin"
+    ],
+    [
+     "SAITAMA",
+     "SUNG JINWOO",
+     "gag-limitless vs Shadow Monarch"
+    ],
+    [
+     "ANOS",
+     "SUNG JINWOO",
+     "Anos destroys / recreates worlds"
     ]
    ],
    "entries": [
@@ -213,134 +238,6 @@
       "in_pool": true
      }
     },
-    {
-     "name": "ANOS",
-     "chars": [
-      "Anos Voldigoad"
-     ],
-     "anime": "The Misfit of Demon King Academy",
-     "wiki": "maou-gakuin",
-     "search": "anos voldigoad",
-     "q": [
-      "anos voldigoad edit 4k",
-      "anos edit",
-      "misfit of demon king academy amv edit"
-     ],
-     "alias": [
-      "anos",
-      "voldigoad",
-      "misfit"
-     ],
-     "anilist": {
-      "id": 138595,
-      "favourites": 3261,
-      "name": "Anos Voldigoad",
-      "in_pool": false
-     }
-    },
-    {
-     "name": "AINZ",
-     "chars": [
-      "Momonga"
-     ],
-     "anime": "Overlord",
-     "wiki": "overlordmaruyama",
-     "search": "ainz ooal gown",
-     "q": [
-      "ainz ooal gown edit 4k",
-      "ainz edit",
-      "overlord ainz amv edit"
-     ],
-     "alias": [
-      "ainz",
-      "momonga",
-      "overlord"
-     ],
-     "anilist": {
-      "id": 89103,
-      "favourites": 5555,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "SHADOW",
-     "chars": [
-      "Cid Kageno"
-     ],
-     "anime": "The Eminence in Shadow",
-     "wiki": "the-eminence-in-shadow",
-     "search": "cid kagenou shadow",
-     "q": [
-      "cid kagenou edit 4k",
-      "eminence in shadow edit",
-      "shadow i am atomic edit"
-     ],
-     "alias": [
-      "cid",
-      "shadow",
-      "eminence",
-      "atomic"
-     ],
-     "anilist": {
-      "id": 136837,
-      "favourites": 6998,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "WANG LING",
-     "chars": [
-      "Ling Wang"
-     ],
-     "anime": "The Daily Life of the Immortal King",
-     "search": "wang ling",
-     "q": [
-      "wang ling edit 4k",
-      "daily life of the immortal king edit"
-     ],
-     "alias": [
-      "wang ling",
-      "immortal king"
-     ],
-     "wiki": "the-daily-life-of-the-immortal-king",
-     "anilist": {
-      "id": 188942,
-      "favourites": 1041,
-      "in_pool": true
-     }
-    }
-   ]
-  },
-  "strongest_overall": {
-   "title": [
-    "STRONGEST",
-    "ANIME CHARACTERS"
-   ],
-   "kind": "character",
-   "order": "power",
-   "pace": "action",
-   "reveal": "countdown",
-   "keyword": "strongest anime characters",
-   "hashtag": "anime",
-   "basis": "mainstream power-scaling consensus (VS-battles style tiers, popular ranking videos): Saitama (gag-limitless) and Goku (multiversal, Super) on top, Sung Jinwoo (Shadow Monarch) above Madara (Ten-Tails jinchuuriki), Gojo the top of his own verse but below the planet-level+ fighters.",
-   "above": [
-    [
-     "GOKU",
-     "MADARA",
-     "multiversal vs planetary"
-    ],
-    [
-     "SUNG JINWOO",
-     "GOJO",
-     "Shadow Monarch vs city-level+"
-    ],
-    [
-     "MADARA",
-     "GOJO",
-     "moon-level+ vs city-level+"
-    ]
-   ],
-   "entries": [
     {
      "name": "SAITAMA",
      "chars": [
@@ -381,6 +278,77 @@
      }
     },
     {
+     "name": "ANOS",
+     "chars": [
+      "Anos Voldigoad"
+     ],
+     "anime": "The Misfit of Demon King Academy",
+     "wiki": "maou-gakuin",
+     "search": "anos voldigoad",
+     "q": [
+      "anos voldigoad edit 4k",
+      "anos edit",
+      "misfit of demon king academy amv edit"
+     ],
+     "alias": [
+      "anos",
+      "voldigoad",
+      "misfit"
+     ],
+     "anilist": {
+      "id": 138595,
+      "favourites": 3261,
+      "name": "Anos Voldigoad",
+      "in_pool": false
+     }
+    },
+    {
+     "name": "WANG LING",
+     "chars": [
+      "Ling Wang"
+     ],
+     "anime": "The Daily Life of the Immortal King",
+     "search": "wang ling",
+     "q": [
+      "wang ling edit 4k",
+      "daily life of the immortal king edit"
+     ],
+     "alias": [
+      "wang ling",
+      "immortal king"
+     ],
+     "wiki": "the-daily-life-of-the-immortal-king",
+     "anilist": {
+      "id": 188942,
+      "favourites": 1041,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "AINZ",
+     "chars": [
+      "Momonga"
+     ],
+     "anime": "Overlord",
+     "wiki": "overlordmaruyama",
+     "search": "ainz ooal gown",
+     "q": [
+      "ainz ooal gown edit 4k",
+      "ainz edit",
+      "overlord ainz amv edit"
+     ],
+     "alias": [
+      "ainz",
+      "momonga",
+      "overlord"
+     ],
+     "anilist": {
+      "id": 89103,
+      "favourites": 5555,
+      "in_pool": true
+     }
+    },
+    {
      "name": "SUNG JINWOO",
      "chars": [
       "Sung Jinwoo"
@@ -400,6 +368,31 @@
      "anilist": {
       "id": 129928,
       "favourites": 15239,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "SHADOW",
+     "chars": [
+      "Cid Kageno"
+     ],
+     "anime": "The Eminence in Shadow",
+     "wiki": "the-eminence-in-shadow",
+     "search": "cid kagenou shadow",
+     "q": [
+      "cid kagenou edit 4k",
+      "eminence in shadow edit",
+      "shadow i am atomic edit"
+     ],
+     "alias": [
+      "cid",
+      "shadow",
+      "eminence",
+      "atomic"
+     ],
+     "anilist": {
+      "id": 136837,
+      "favourites": 6998,
       "in_pool": true
      }
     },
@@ -1636,8 +1629,58 @@
    "reveal": "countdown",
    "keyword": "best anime waifu ranked by fans",
    "hashtag": "waifu",
-   "basis": "AniList favourites (quiz pool, 2026-10). The waifu lists are opinion: the title / description say 'ranked by fans'. Minors only with modest content (the per-frame safety gate is strict for them).",
+   "basis": "ONE pool (owner 2026-11-19: no split copies; each video picks 3-5 of these and ranks only the picked ones). AniList favourites (quiz pool, 2026-10) high to low, except ZERO TWO pinned #1 (owner pick: 'zero two is up there', like Rimuru in the power lists). The waifu lists are opinion: the title / description say 'ranked by fans'. Minors only with modest content (the per-frame safety gate is strict for them).",
    "entries": [
+    {
+     "name": "ZERO TWO",
+     "chars": [
+      "Zero Two"
+     ],
+     "tags": [
+      "zero_two_(darling_in_the_franxx)"
+     ],
+     "anime": "DARLING in the FRANXX",
+     "wiki": "darling-in-the-franxx",
+     "search": "zero two",
+     "q": [
+      "zero two edit 4k",
+      "zero two amv edit"
+     ],
+     "alias": [
+      "zero ?two",
+      "02"
+     ],
+     "anilist": {
+      "id": 124381,
+      "favourites": 14715,
+      "in_pool": true
+     },
+     "pin": 1
+    },
+    {
+     "name": "EMILIA",
+     "chars": [
+      "Emilia"
+     ],
+     "tags": [
+      "emilia_(re:zero)"
+     ],
+     "anime": "Re:ZERO -Starting Life in Another World-",
+     "wiki": "rezero",
+     "search": "emilia re zero",
+     "q": [
+      "emilia re zero edit 4k",
+      "emilia amv edit"
+     ],
+     "alias": [
+      "emilia"
+     ],
+     "anilist": {
+      "id": 88572,
+      "favourites": 27685,
+      "in_pool": true
+     }
+    },
     {
      "name": "MIKASA",
      "chars": [
@@ -1660,6 +1703,52 @@
      }
     },
     {
+     "name": "FRIEREN",
+     "chars": [
+      "Frieren"
+     ],
+     "tags": [
+      "frieren"
+     ],
+     "anime": "Frieren",
+     "wiki": "frieren",
+     "search": "frieren",
+     "q": [
+      "frieren edit 4k",
+      "frieren amv edit"
+     ],
+     "anilist": {
+      "id": 176754,
+      "favourites": 22481,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "KURISU",
+     "chars": [
+      "Kurisu Makise"
+     ],
+     "tags": [
+      "makise_kurisu"
+     ],
+     "anime": "Steins;Gate",
+     "wiki": "steins-gate",
+     "search": "kurisu makise",
+     "q": [
+      "kurisu makise edit",
+      "kurisu makise amv edit 4k"
+     ],
+     "alias": [
+      "kurisu",
+      "makise"
+     ],
+     "anilist": {
+      "id": 34470,
+      "favourites": 22354,
+      "in_pool": true
+     }
+    },
+    {
      "name": "MAKIMA",
      "chars": [
       "Makima"
@@ -1677,6 +1766,55 @@
      "anilist": {
       "id": 137080,
       "favourites": 22256,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "MAI SAKURAJIMA",
+     "chars": [
+      "Mai Sakurajima"
+     ],
+     "tags": [
+      "sakurajima_mai"
+     ],
+     "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
+     "search": "mai sakurajima",
+     "q": [
+      "mai sakurajima edit 4k",
+      "mai sakurajima amv edit"
+     ],
+     "alias": [
+      "mai sakurajima",
+      "bunny girl"
+     ],
+     "wiki": "aobuta",
+     "anilist": {
+      "id": 127222,
+      "favourites": 21185,
+      "in_pool": true
+     }
+    },
+    {
+     "name": "VIOLET",
+     "chars": [
+      "Violet Evergarden"
+     ],
+     "tags": [
+      "violet_evergarden"
+     ],
+     "anime": "Violet Evergarden",
+     "wiki": "violet-evergarden",
+     "search": "violet evergarden",
+     "q": [
+      "violet evergarden edit 4k",
+      "violet evergarden amv edit"
+     ],
+     "alias": [
+      "violet"
+     ],
+     "anilist": {
+      "id": 90169,
+      "favourites": 20383,
       "in_pool": true
      }
     },
@@ -1725,92 +1863,6 @@
      "anilist": {
       "id": 88575,
       "favourites": 16229,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "ZERO TWO",
-     "chars": [
-      "Zero Two"
-     ],
-     "tags": [
-      "zero_two_(darling_in_the_franxx)"
-     ],
-     "anime": "DARLING in the FRANXX",
-     "wiki": "darling-in-the-franxx",
-     "search": "zero two",
-     "q": [
-      "zero two edit 4k",
-      "zero two amv edit"
-     ],
-     "alias": [
-      "zero ?two",
-      "02"
-     ],
-     "anilist": {
-      "id": 124381,
-      "favourites": 14715,
-      "in_pool": true
-     }
-    }
-   ]
-  },
-  "best_waifu_2": {
-   "title": [
-    "BEST",
-    "WAIFU"
-   ],
-   "kind": "character",
-   "order": "fans",
-   "pace": "calm",
-   "reveal": "countdown",
-   "keyword": "best anime waifu ranked by fans",
-   "hashtag": "waifu",
-   "basis": "AniList favourites (quiz pool, 2026-10); a second waifu list so the topic can rotate.",
-   "entries": [
-    {
-     "name": "FRIEREN",
-     "chars": [
-      "Frieren"
-     ],
-     "tags": [
-      "frieren"
-     ],
-     "anime": "Frieren",
-     "wiki": "frieren",
-     "search": "frieren",
-     "q": [
-      "frieren edit 4k",
-      "frieren amv edit"
-     ],
-     "anilist": {
-      "id": 176754,
-      "favourites": 22481,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "KURISU",
-     "chars": [
-      "Kurisu Makise"
-     ],
-     "tags": [
-      "makise_kurisu"
-     ],
-     "anime": "Steins;Gate",
-     "wiki": "steins-gate",
-     "search": "kurisu makise",
-     "q": [
-      "kurisu makise edit",
-      "kurisu makise amv edit 4k"
-     ],
-     "alias": [
-      "kurisu",
-      "makise"
-     ],
-     "anilist": {
-      "id": 34470,
-      "favourites": 22354,
       "in_pool": true
      }
     },
@@ -1882,119 +1934,6 @@
       "favourites": 14402,
       "in_pool": true
      }
-    }
-   ]
-  },
-  "best_waifu_3": {
-   "title": [
-    "BEST",
-    "WAIFU"
-   ],
-   "kind": "character",
-   "order": "fans",
-   "pace": "calm",
-   "reveal": "countdown",
-   "keyword": "best anime waifu ranked by fans",
-   "hashtag": "waifu",
-   "basis": "AniList favourites (quiz pool, 2026-10); keeps the survey-proven C.C. / Kurisu-era classics in a third list.",
-   "entries": [
-    {
-     "name": "EMILIA",
-     "chars": [
-      "Emilia"
-     ],
-     "tags": [
-      "emilia_(re:zero)"
-     ],
-     "anime": "Re:ZERO -Starting Life in Another World-",
-     "wiki": "rezero",
-     "search": "emilia re zero",
-     "q": [
-      "emilia re zero edit 4k",
-      "emilia amv edit"
-     ],
-     "alias": [
-      "emilia"
-     ],
-     "anilist": {
-      "id": 88572,
-      "favourites": 27685,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "MAI SAKURAJIMA",
-     "chars": [
-      "Mai Sakurajima"
-     ],
-     "tags": [
-      "sakurajima_mai"
-     ],
-     "anime": "Rascal Does Not Dream of Bunny Girl Senpai",
-     "search": "mai sakurajima",
-     "q": [
-      "mai sakurajima edit 4k",
-      "mai sakurajima amv edit"
-     ],
-     "alias": [
-      "mai sakurajima",
-      "bunny girl"
-     ],
-     "wiki": "aobuta",
-     "anilist": {
-      "id": 127222,
-      "favourites": 21185,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "VIOLET",
-     "chars": [
-      "Violet Evergarden"
-     ],
-     "tags": [
-      "violet_evergarden"
-     ],
-     "anime": "Violet Evergarden",
-     "wiki": "violet-evergarden",
-     "search": "violet evergarden",
-     "q": [
-      "violet evergarden edit 4k",
-      "violet evergarden amv edit"
-     ],
-     "alias": [
-      "violet"
-     ],
-     "anilist": {
-      "id": 90169,
-      "favourites": 20383,
-      "in_pool": true
-     }
-    },
-    {
-     "name": "ZERO TWO",
-     "chars": [
-      "Zero Two"
-     ],
-     "tags": [
-      "zero_two_(darling_in_the_franxx)"
-     ],
-     "anime": "DARLING in the FRANXX",
-     "wiki": "darling-in-the-franxx",
-     "search": "zero two",
-     "q": [
-      "zero two edit 4k",
-      "zero two amv edit"
-     ],
-     "alias": [
-      "zero ?two",
-      "02"
-     ],
-     "anilist": {
-      "id": 124381,
-      "favourites": 14715,
-      "in_pool": true
-     }
     },
     {
      "name": "C.C.",
@@ -2048,7 +1987,8 @@
      },
      "added": "2026-11-12 owner (Mila 「EDIT/AMV」 example)"
     }
-   ]
+   ],
+   "order_locked": true
   },
   "romance_peak": {
    "title": [
