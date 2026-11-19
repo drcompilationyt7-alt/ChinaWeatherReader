@@ -836,6 +836,7 @@ def anime_index():
             out.append((re.compile(pat, re.I), an))
         if len(words) > 1 and len(''.join(words)) >= 7:
             out.append((re.compile(r'(?<![a-z0-9])' + ''.join(words) + r'(?![a-z0-9])', re.I), an))
+    _ANIME_IDX.append(list(out))                 # [1]: the anime TITLES only (the crossover check in classify_trusted)
     owner = {}
     for c in chars:
         ws = re.findall(r'[a-z]+', (c.get('name') or '').lower())
@@ -852,20 +853,33 @@ def anime_index():
             an = next(c['anime'] for c in chars if w in re.findall(r'[a-z]+', (c.get('name') or '').lower()))
             out.append((re.compile(r'(?<![a-z])' + w + r'(?![a-z])', re.I), an))
     out.append((re.compile(r'(?<![a-z])okarun(?![a-z])', re.I), 'DAN DA DAN'))
-    _ANIME_IDX.append(out)
+    _ANIME_IDX.insert(0, out)
     return out
 
 
 RC_COMMON_WORDS = ('another', 'world', 'flower', 'voice', 'silent', 'tokyo', 'grand', 'season', 'attack', 'piece', 'level')
 
 
-def classify_trusted(title, RC, smap, ents):
+def classify_trusted(title, RC, smap, ents, _split=True):
     """-> (library show key or None, anime name or None, why): why 'not_anime' = skipped, 'library' / 'anime' / 'mix' /
     'unknown' = kept ('unknown': the title names no anime we know - kept, the review checks it is anime)"""
     import unicodedata
     t = unicodedata.normalize('NFKC', title or '')
     if TRUSTED_NOT_ANIME.search(t):
         return None, None, 'not_anime'
+    # 2026-11-19 (xParagon 'GOJO x RIMURU'): a crossover - both sides of ' x ' / ' vs ' name a DIFFERENT known show - is an
+    # anime mix ('Hiro x Zero Two', 'Gojo vs Sukuna' stay their show; 'Hunter x Hunter' has no known show on one side)
+    m = re.search(r'\s(?:x|vs\.?|×)\s', t, re.I) if _split else None
+    # ... unless the title names a show itself ('Black Clover "Julius vs Licht"': both are Black Clover)
+    if m and (any(re.search(r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])', t, re.I)
+                  for se in ents.values() for w in RC.anime_words(se) if len(w) >= 5)
+              or (anime_index() and any(rx.search(t) for rx, _ in _ANIME_IDX[1]))):
+        m = None
+    if m:
+        a = classify_trusted(t[:m.start()], RC, smap, ents, False)
+        b = classify_trusted(t[m.end():], RC, smap, ents, False)
+        if a[2] in ('library', 'anime') and b[2] in ('library', 'anime') and (a[0] or a[1]) != (b[0] or b[1]):
+            return None, 'Anime Mix', 'mix'
     # 'Sung Jin-Woo' must hit the aliases 'jinwoo' / 'jin woo' (as RC.title_names does)
     ts = [t, re.sub(r'(?<=\w)-(?=\w)', '', t), re.sub(r'(?<=\w)-(?=\w)', ' ', t)]
     # 2026-11-18 (Minatox titles): the curated aliases decide first ('Gojo & Geto' is Jujutsu Kaisen, not My Dress-Up

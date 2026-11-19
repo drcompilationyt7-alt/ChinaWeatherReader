@@ -27,7 +27,8 @@
   "UC8wAEj6bTJVAQ0V4ZDN38pA": "Mila",
   "UCt3S_q9SK_wslTJpSrbantw": "Kimyo",
   "UCQzYYHOCqbs1zPmoeyXsuIw": "Xyuno",
-  "UCbRv7bFNayyM-DZ3k0ynWCQ": "Minatox"
+  "UCbRv7bFNayyM-DZ3k0ynWCQ": "Minatox",
+  "UCTe7swvQi0UCQjvRRDakCFA": "xParagon"
  },
  "refs": [
   {
@@ -328,6 +329,15 @@
     "kind": "card",
     "lead": 0.3,
     "what": "round avatar card on a dark background with light rays (~2 s), then 3 small glowing logos (R, flower emblem, crescent) on black (~1.5 s), then black; the '//' edits end on a credit line on black ('... by Minatox'). The logos / credit are caught by the dark-tail rule, the avatar card by templates; newer edits also have an 'End' chapter"
+   }
+  },
+  "UCTe7swvQi0UCQjvRRDakCFA": {
+   "name": "xParagon",
+   "handle": "@xParagonEditz",
+   "added": "2026-11-19",
+   "what": "owner 2026-11-19 ('add him as one of the editors'; he has the Rimuru edits): Rimuru x7, Marin, Gojo x Rimuru",
+   "tag": {
+    "what": "not studied yet: no profile = the 2.5 s end guess + the dark-tail rule; study his end card after the first downloads"
    }
   }
  },
