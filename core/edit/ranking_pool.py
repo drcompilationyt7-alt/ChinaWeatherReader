@@ -109,13 +109,43 @@ def RT_show(anime):
     return re.sub(r'\s*(-.*-|\(.*\))\s*$', '', a).strip()
 
 
+_BASE = {}      # id(manifest dict) -> {item id: the item's JSON when it was loaded} (the 3-way merge base of save_manifest)
+
+
+def _ijson(it):
+    return json.dumps(it, sort_keys=True, ensure_ascii=False)
+
+
 def manifest(d):
-    return rj(os.path.join(d, 'clips.json'), {'version': 2, 'items': []})
+    m = rj(os.path.join(d, 'clips.json'), {'version': 2, 'items': []})
+    _BASE[id(m)] = {it['id']: _ijson(it) for it in m.get('items') or [] if isinstance(it, dict) and it.get('id')}
+    return m
 
 
 def save_manifest(d, m):
+    """2026-11-19: a 3-way merge with the file as it is NOW. A long job (mine-trusted) loads the manifest at its start and
+    saved its whole copy at the end, wiping what other processes wrote meanwhile (75 pulled + reviewed items vanished from
+    the staging manifest). Items this process changed win; items it did not touch take the version on disk; items another
+    process added stay; items this process removed stay removed."""
+    base = _BASE.get(id(m))
+    if base is not None:
+        disk = rj(os.path.join(d, 'clips.json'), {'version': 2, 'items': []}).get('items') or []
+        ours = {it['id']: it for it in m['items'] if isinstance(it, dict) and it.get('id')}
+        merged, seen = [], set()
+        for it in disk:
+            i = it.get('id') if isinstance(it, dict) else None
+            if not i:
+                continue
+            if i in ours:
+                merged.append(ours[i] if base.get(i) != _ijson(ours[i]) else it)
+            elif i not in base:
+                merged.append(it)                      # added by another process since we loaded
+            seen.add(i)
+        merged += [it for i, it in ours.items() if i not in seen]
+        m['items'] = merged
     m['built'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
     wj(os.path.join(d, 'clips.json'), m)
+    _BASE[id(m)] = {it['id']: _ijson(it) for it in m.get('items') or [] if isinstance(it, dict) and it.get('id')}
 
 
 def ledger():
