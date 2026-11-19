@@ -3287,6 +3287,31 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "yN_1JhlvH20",
+   "url": "https://www.youtube.com/watch?v=yN_1JhlvH20",
+   "postedAt": "2026-11-19T10:42:31.743Z",
+   "publishAt": "2026-11-19T13:00:00.000Z",
+   "format": "wyr",
+   "theme": "food",
+   "seed": 361175704,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "wyr-casual",
+   "title": "would you rather (food edition) 🧠 #asianfood",
+   "answers": [
+    "wyr:enjoy steaming hot beef pho daily|slurp rich tonkotsu ramen daily",
+    "wyr:korean bbq every day|hotpot every day",
+    "wyr:enjoy spicy thai pad thai noodles|savor crispy vietnamese banh mi"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-sparks",
+    "hashtagSet": "title-tag",
+    "titleStyle": "casual",
+    "descHook": "challenge"
+   }
   }
  ]
 }

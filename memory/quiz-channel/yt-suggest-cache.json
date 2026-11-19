@@ -1,4 +1,19 @@
 {
+ "would you rather": {
+  "at": "2026-11-19T10:39:58.344Z",
+  "s": [
+   "would you rather",
+   "would you rather thanksgiving",
+   "would you rather food edition",
+   "would you rather brain break",
+   "would you rather christmas edition",
+   "would you rather workout",
+   "would you rather squishy edition",
+   "would you rather kids",
+   "would you rather games",
+   "would you rather halloween edition"
+  ]
+ },
  "guess the dish": {
   "at": "2026-11-18T10:48:08.508Z",
   "s": [
@@ -175,21 +190,6 @@
    "guess the anime character by their clothes"
   ]
  },
- "would you rather": {
-  "at": "2026-11-11T09:42:49.419Z",
-  "s": [
-   "would you rather",
-   "would you rather brain break",
-   "would you rather game",
-   "would you rather workout",
-   "would you rather food edition",
-   "would you rather christmas edition",
-   "would you rather kids",
-   "would you rather squishy edition",
-   "would you rather thanksgiving",
-   "would you rather food"
-  ]
- },
  "guess the anime opening": {
   "at": "2026-11-10T19:32:04.839Z",
   "s": [
@@ -239,21 +239,6 @@
    "guess the anime character by their hair",
    "guess the anime character by their voice english",
    "guess the anime character by bad description"
-  ]
- },
- "guess the anime character by voice": {
-  "at": "2026-10-29T08:52:28.839Z",
-  "s": [
-   "guess the anime character by voice",
-   "guess the anime character by voice dub",
-   "guess the anime character by voice english",
-   "guess the anime character by their voice",
-   "guess the anime character voice in hindi",
-   "guess the anime character voice demon slayer",
-   "guess the anime character voice jujutsu kaisen",
-   "guess the anime character voice naruto",
-   "guess the anime character voice one piece",
-   "guess the anime character voice demon slayer english"
   ]
  }
 }
