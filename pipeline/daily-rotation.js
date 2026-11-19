@@ -8,13 +8,11 @@
  * empty (pipeline/newtype-pipeline.js poolSize < NEWTYPE_POOL_MIN) is not eligible; stem is the fallback of the
  * fallback order, so a day is never missed (the runner tries each type in order() until one renders).
  */
-const NEW_TYPES = ['sound', 'slowmo'];
-// 2026-10-25 ranking / list compilation: WEEKLY, not in the weighted draw. On RANKING_WEEKDAY (UTC, 0 = Sunday ... 6 =
-// Saturday; default 6) it REPLACES that day's type (never a second post) when its weight is > 0 (DAILY_TYPE_WEIGHTS
-// "ranking:1"; default 0 = OFF until the owner approves the first CI-built one), a topic is eligible (poolSizes.ranking =
-// eligible topics) and the last ranking upload is >= RANKING_MIN_GAP_DAYS (6) old. Stem stays the fallback.
-const WEEKLY = ['ranking'];
-const ALL = ['stem', ...NEW_TYPES, ...WEEKLY];
+// 2026-11-19 owner ("we put it in rotation?"): RANKING is a rotation type like sound / slow-mo (was a weekly Saturday slot
+// since 2026-10-25). It needs DAILY_TYPE_WEIGHTS ranking > 0 and an eligible topic (poolSizes.ranking = eligible topics).
+const NEW_TYPES = ['sound', 'slowmo', 'ranking'];
+const WEEKLY = [];
+const ALL = ['stem', ...NEW_TYPES];
 
 function parseWeights(str = process.env.DAILY_TYPE_WEIGHTS) {
   const w = { stem: 1, sound: 0, slowmo: 0, ranking: 0 };
@@ -24,19 +22,16 @@ function parseWeights(str = process.env.DAILY_TYPE_WEIGHTS) {
       if (ALL.includes(k) && Number.isFinite(Number(v))) w[k] = Math.max(0, Number(v));
     }
   }
+  // RANKING_FROM "YYYY-MM-DD" (repo variable): no ranking before that UTC date (owner 2026-11-19: "push one tomorrow")
+  const from = String(process.env.RANKING_FROM || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from) && new Date().toISOString().slice(0, 10) < from) w.ranking = 0;
   return w;
 }
 
 /** content type of an upload record (stem edits predate the field) */
 const typeOf = u => String((u && u.contentType) || 'stem-edit').replace(/-edit$/, '').replace('stem-edit', 'stem');
-/** the weekly ranking slot is today: weight > 0, the weekday, a topic is eligible, the last ranking upload >= gap days ago */
-function rankingDue({ history = { uploads: [] }, weights = parseWeights(), poolSizes = {}, now = new Date() } = {}) {
-  if (!(weights.ranking > 0) || !((poolSizes.ranking || 0) >= 1)) return false;
-  if (now.getUTCDay() !== Number(process.env.RANKING_WEEKDAY ?? 6)) return false;
-  const gap = Number(process.env.RANKING_MIN_GAP_DAYS || 6) * 86400000;
-  const last = ((history && history.uploads) || []).filter(u => typeOf(u) === 'ranking').map(u => Date.parse(u.postedAt || 0)).sort().pop();
-  return !last || now.getTime() - last >= gap;
-}
+/** (kept for callers) the old weekly slot: ranking is a rotation type since 2026-11-19, never a separate slot */
+function rankingDue() { return false; }
 const lastType = history => {
   const ups = ((history && history.uploads) || []).filter(u => !u.long);
   return ups.length ? typeOf(ups[ups.length - 1]).replace('stem-edit', 'stem') : null;
@@ -48,7 +43,6 @@ const lastType = history => {
  */
 function dailyOrder({ history = { uploads: [] }, weights = parseWeights(), poolSizes = {}, poolMin = 1, rng = Math.random, enabled = process.env.DAILY_ROTATION === 'on' } = {}) {
   if (!enabled) return ['stem'];
-  if (rankingDue({ history, weights, poolSizes })) return ['ranking', 'stem'];      // the weekly slot replaces the day's type
   const last = lastType(history);
   const eligible = ['stem', ...NEW_TYPES].filter(t => weights[t] > 0 && (t === 'stem' || (poolSizes[t] || 0) >= poolMin));
   if (!eligible.length) return ['stem'];

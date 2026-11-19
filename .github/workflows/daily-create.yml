@@ -89,11 +89,10 @@ env:
   # The sound render settings (sound_11b: beat remake, pinned hits, rotated layout + hint, no shake) are in pipeline/newtype-pipeline.js SOUND_ENV.
   DAILY_ROTATION: ${{ (github.event.inputs.type == 'sound' || github.event.inputs.type == 'slowmo' || github.event.inputs.type == 'ranking') && 'on' || vars.DAILY_ROTATION || 'off' }}
   DAILY_TYPE_WEIGHTS: ${{ vars.DAILY_TYPE_WEIGHTS || 'stem:1,sound:1,slowmo:0' }}
-  # 2026-10-25 RANKING / list compilation (pipeline/newtype-pipeline.js runRanking): WEEKLY. On RANKING_WEEKDAY (UTC, 0 = Sunday,
-  # default 6 = Saturday) it replaces that day's type when DAILY_TYPE_WEIGHTS has ranking:1 (default ranking:0 = OFF until the
-  # owner approves the first CI-built one) and a topic has reviewed segments for every revealed entry; stem stays the fallback.
-  RANKING_WEEKDAY: ${{ vars.RANKING_WEEKDAY || '6' }}
-  RANKING_MIN_GAP_DAYS: ${{ vars.RANKING_MIN_GAP_DAYS || '6' }}
+  # RANKING / list compilation (pipeline/newtype-pipeline.js runRanking): a ROTATION type like sound / slow-mo since 2026-11-19
+  # (owner "we put it in rotation?"; was a weekly Saturday slot) when DAILY_TYPE_WEIGHTS has ranking > 0 and a topic is
+  # eligible. RANKING_FROM (repo variable, YYYY-MM-DD UTC): no ranking before that date.
+  RANKING_FROM: ${{ vars.RANKING_FROM || '' }}
   RANKING_TOPIC: ${{ github.event.inputs.ranking_topic || '' }}
   DAILY_FORCE_TYPE: ${{ github.event.inputs.type || '' }}
   NEWTYPE_CLI_ARGS: ${{ github.event.inputs.newtype_args || '' }}
@@ -326,12 +325,11 @@ jobs:
         continue-on-error: true
         # 2026-11-18: both runs got sound 0 / slow-mo 0 (a 502 / 'release not found' on one of the ranking pool's 55 assets
         # aborted the whole pull). The pull retries now, one failed pool no longer stops the others, and the ranking pool
-        # (~2 GB) is fetched only when a ranking can post today: weight > 0 AND the weekly RANKING_WEEKDAY (UTC), or a
-        # dispatch with type=ranking (owner re-enabled ranking 2026-11-19; the other 6 days never wait on it)
+        # (~2 GB) is fetched when ranking is on (weight > 0; a rotation type since 2026-11-19, any day can be ranking) or on
+        # a dispatch with type=ranking
         run: |
           SKIP=""
           case ",${DAILY_TYPE_WEIGHTS}," in *",ranking:0,"*) SKIP=ranking ;; esac
-          if [ "$(date -u +%w)" != "${RANKING_WEEKDAY}" ]; then SKIP=ranking; fi
           if [ "${{ github.event.inputs.type }}" = "ranking" ]; then SKIP=""; fi
           echo "pool pull, skipping: ${SKIP:-nothing}"
           EDIT_POOLS_SKIP="$SKIP" node scripts/edit-pools-store.js pull
