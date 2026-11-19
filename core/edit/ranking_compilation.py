@@ -293,8 +293,11 @@ def download(info, dest_dir):
     pace()
     # h264 (avc1) first: an AV1 download could not be decoded by OpenCV on the runner (2026-10-26 run 40247085474:
     # 0 frames -> crash on the first entry); other codecs only as a fallback, re-encoded when unreadable
-    ytdlp(['-f', 'bv*[vcodec^=avc1][height<=1080][height>=720]+ba/bv*[height<=1080][height>=720]+ba/'
-                 'b[height<=1080][height>=720]', '-S', 'vcodec:h264', '--merge-output-format', 'mp4',
+    # a vertical Short (owner 2026-11-19) is 720-1080 px WIDE (its height is 1280-1920)
+    ytdlp(['-f', 'bv*[vcodec^=avc1][height<=1080][height>=720]+ba/bv*[vcodec^=avc1][width<=1080][width>=720][height>1080]+ba/'
+                 'bv*[height<=1080][height>=720]+ba/bv*[width<=1080][width>=720][height>1080]+ba/'
+                 'b[height<=1080][height>=720]/b[width<=1080][width>=720][height>1080]', '-S', 'vcodec:h264',
+           '--merge-output-format', 'mp4',
            '-o', p, f'https://www.youtube.com/watch?v={info["id"]}'], timeout=900)
     if not os.path.exists(p):
         return None
@@ -451,10 +454,9 @@ def info_gate(info):
     if not info:
         return False, 'no_info'
     w, h = info.get('width') or 0, info.get('height') or 0
-    if h > w:
-        return False, 'vertical'            # the layout needs a 16:9 edit (as the references)
-    if h < 720:
-        return False, f'res_{h}'
+    # owner 2026-11-19: Shorts edits (9:16) are fine too; render_entry gives a vertical edit its own panel
+    if min(w, h) < 720:
+        return False, f'res_{min(w, h)}'
     v, lk = info.get('view_count') or 0, info.get('like_count') or 0
     # owner 2026-11-15: the owner's approved editors (PREFER) are human-checked: the like ratio does not drop their edits
     if v and lk and lk / v < MIN_LIKE_RATIO and info.get('id') not in PREFER:
@@ -2285,13 +2287,40 @@ def overlay_png(path, title, names, shown, credit, label=''):
     Image.alpha_composite(sh, im).save(path)
 
 
+# Owner 2026-11-19: Shorts edits (9:16) are sources too. A vertical edit cannot fill the 16:9 band (it would be a third
+# of its height), so it gets a 4:5 panel from the band's top to the canvas bottom, centred (the list stays clear above it):
+# the middle of the Short, cut a little above centre (faces / the subject sit high in vertical edits).
+VPANEL_H = H - BAND_Y - 14                        # 836
+VPANEL_W = int(VPANEL_H * 4 / 5) // 2 * 2         # 668
+VPANEL_TOP = 0.42                                 # share of the cropped-away height taken from the top
+
+
+def is_vertical(src):
+    try:
+        r = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height:stream_side_data=rotation',
+                            '-of', 'json', src], capture_output=True, text=True, timeout=60)
+        st = (json.loads(r.stdout or '{}').get('streams') or [{}])[0]
+        w, h = int(st.get('width') or 0), int(st.get('height') or 0)
+        if any(abs(int(float(d.get('rotation') or 0))) in (90, 270) for d in st.get('side_data_list') or []):
+            w, h = h, w
+        return h > w
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def render_entry(src, win, png, out, threads=4):
     s, dur = win['s'], win['e'] - win['s']
     fg_h = 608
+    if is_vertical(src):
+        crop = (f"crop=iw:'min(ih,iw*5/4)':0:'(ih-min(ih,iw*5/4))*{VPANEL_TOP}',"
+                f"scale={VPANEL_W}:{VPANEL_H}:force_original_aspect_ratio=increase,crop={VPANEL_W}:{VPANEL_H}")
+        fg, pos = f'[b]{crop}[fg];', f'{(W - VPANEL_W) // 2}:{BAND_Y}'
+    else:
+        fg, pos = f'[b]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}[fg];', f'0:{BAND_Y}'
     fc = (f'[0:v]fps={FPS},split=2[a][b];'
           f'[a]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=22:2,eq=brightness=-0.04[bg];'
-          f'[b]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}[fg];'
-          f'[bg][fg]overlay=0:{BAND_Y},fade=t=in:st=0:d=0.2,fade=t=out:st={dur - 0.15:.3f}:d=0.15[c];[c][1:v]overlay=0:0,format=yuv420p[v];'
+          f'{fg}'
+          f'[bg][fg]overlay={pos},fade=t=in:st=0:d=0.2,fade=t=out:st={dur - 0.15:.3f}:d=0.15[c];[c][1:v]overlay=0:0,format=yuv420p[v];'
           f'[0:a]aresample=48000,afade=t=in:d=0.04,afade=t=out:st={dur - 0.12:.3f}:d=0.12,'
           f'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[a2]')
     cmd = ['ffmpeg', '-v', 'error', '-y', '-threads', str(threads), '-ss', f'{s:.3f}', '-t', f'{dur:.3f}', '-i', src,

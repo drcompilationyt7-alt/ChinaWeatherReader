@@ -515,14 +515,18 @@ def sheet(clip, out_png, label):
     rng = random.Random(label)
     idx = sorted(rng.sample(range(max(1, n)), min(20, max(1, n))))
     tiles = []
+    tw, th = 384, 216
     for i in idx:
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
         ok, f = cap.read()
         if ok:
-            tiles.append(cv2.resize(f, (384, 216)))
+            if f.shape[0] > f.shape[1]:                  # a vertical Short (owner 2026-11-19): tall tiles, not squashed
+                tw, th = 216, 384
+            tiles.append(cv2.resize(f, (tw, th)))
     cap.release()
+    tiles = [t if t.shape[:2] == (th, tw) else cv2.resize(t, (tw, th)) for t in tiles]
     while len(tiles) % 5:
-        tiles.append(np.zeros((216, 384, 3), np.uint8))
+        tiles.append(np.zeros((th, tw, 3), np.uint8))
     if not tiles:
         return None
     grid = np.vstack([np.hstack(tiles[r:r + 5]) for r in range(0, len(tiles), 5)])
@@ -681,6 +685,13 @@ STYLE_REFS = os.path.join(HERE, 'refs', 'ranking-style-refs.json')
 _STYLE = []
 
 
+def _title_key(t):
+    """a title without hashtags, emoji, brackets and edit words: the long edit and its Shorts re-cut compare equal"""
+    t = re.sub(r'#\S+', ' ', (t or '').lower())
+    t = re.sub(r'\b(edits?|amv|4k|8k|shorts?|free project file|project file|quick)\b', ' ', t)
+    return ' '.join(re.findall(r'[a-z0-9]+', t))
+
+
 def style_uploads(RC):
     """Owner 2026-11-01 ('these are the type of edits I want'): the uploads of the editors of the owner's reference edits
     (refs/ranking-style-refs.json channels; flat channel lists, cached 7 days, one paced request per channel and week) are
@@ -696,9 +707,25 @@ def style_uploads(RC):
             log(f'style channel {cid}: {ex}')
             continue
         name = (rj(STYLE_REFS, {}).get('channels') or {}).get(cid)
-        out += [dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
-                     channel_id=cid, channel=e.get('channel') or (lst or {}).get('channel') or name)
-                for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
+        got = [dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
+                    channel_id=cid, channel=e.get('channel') or (lst or {}).get('channel') or name)
+               for e in ((lst or {}).get('entries') or []) if isinstance(e, dict) and e.get('id')]
+        out += got
+        if cid in (rj(STYLE_REFS, {}).get('trusted') or {}):
+            # owner 2026-11-19: a named editor's Shorts edits too (vertical; render_entry gives them a panel). A Short whose
+            # title matches one of the editor's videos is the same edit re-cut for Shorts: skipped.
+            try:
+                sl = RC._cached(f'chan_{cid}_shorts', lambda: RC.pace() or json.loads(RC.ytdlp(
+                    ['--flat-playlist', '-J', '--playlist-end', '150', f'https://www.youtube.com/channel/{cid}/shorts']) or '{}'))
+            except Exception as ex:  # noqa: BLE001
+                log(f'shorts of {cid}: {ex}')
+                sl = None
+            seen = {_title_key(e.get('title')) for e in got}
+            for e in ((sl or {}).get('entries') or []):
+                if isinstance(e, dict) and e.get('id') and _title_key(e.get('title')) not in seen:
+                    seen.add(_title_key(e.get('title')))
+                    out.append(dict({k: e.get(k) for k in ('id', 'title', 'channel', 'uploader_id', 'view_count', 'duration')},
+                                    channel_id=cid, channel=e.get('channel') or name, short=True))
     _STYLE.append(out)
     log(f'style refs: {len(out)} uploads of {len(rj(STYLE_REFS, {}).get("channels") or {})} reference editors')
     return out
@@ -903,7 +930,8 @@ def trusted_backlog(RC, st, smap, ents):
     """the named editors' uploads not decided yet, with their classification (newest first per channel, channels
     interleaved so every editor progresses)"""
     done = {sid for sid, v in st['sources'].items()
-            if v.get('status') in ('staged', 'reviewed', 'rejected') or (v.get('status') == 'gate_reject' and v.get('trusted'))}
+            if v.get('status') in ('staged', 'reviewed', 'rejected') or (v.get('status') == 'gate_reject' and v.get('trusted')
+                                                                           and v.get('why') != 'vertical')}   # Shorts OK 11-19
     per = {}
     for e in trusted_uploads(RC):
         if e.get('id') in done:
@@ -916,7 +944,7 @@ def trusted_backlog(RC, st, smap, ents):
     return out
 
 
-def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=False, from_end=False):
+def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=False, from_end=False, ids=None):
     """Owner 2026-11-15: download ONLY the named editors' uploads (refs 'trusted'), every anime one is kept: no view / like /
     age / title / quality / character / theme gate - safety stays (judge.safe), and the sections end before the editor's
     'End' / 'Outro' chapter. Non-anime uploads (live action, games, editing challenges) are skipped and listed."""
@@ -944,7 +972,17 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
     smap = shows(RT.load())
     ents = {sk: library_entry(RC, smap, sk) for sk in smap}
     RC.PREFER.update(e['id'] for e in trusted_uploads(RC))
-    todo = trusted_backlog(RC, st, smap, ents)
+    if ids:
+        # owner 2026-11-19: videos the owner links directly (any channel, Shorts too) are kept like a named editor's
+        RC.PREFER.update(ids)
+        todo = []
+        for v in ids:
+            inf = RC.full_info(v, need=('chapters',)) or {}
+            sk, an, why = classify_trusted(inf.get('title'), RC, smap, ents)
+            todo.append({'id': v, 'title': inf.get('title'), 'channel_id': inf.get('channel_id'), 'channel': inf.get('channel'),
+                         '_show': sk, '_anime': an, '_why': 'owner_link' if why == 'not_anime' else why})
+    else:
+        todo = trusted_backlog(RC, st, smap, ents)
     if from_end:                                # the GitHub run works from the other end of the list than the PC loop
         todo = todo[::-1]
     tc = trusted_channels()
@@ -975,10 +1013,7 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
             if not offline:
                 summary['failed'].append([e['id'], 'no_info'])
             continue
-        if (info.get('height') or 0) > (info.get('width') or 0):
-            st['sources'][e['id']] = {'status': 'gate_reject', 'why': 'vertical', 'trusted': True, 'lib': True, 'entry': skey,
-                                      'at': time.strftime('%Y-%m-%d'), 'title': (info.get('title') or '')[:120]}
-            continue                           # the list layout needs a 16:9 edit
+        # owner 2026-11-19: vertical Shorts edits are kept too (render_entry gives them a vertical panel)
         path = RC.download(info, os.path.join(work, 'src'))
         if not path:
             if not offline:
@@ -988,7 +1023,8 @@ def mine_trusted(budget_min=60, work=None, state_file=None, max_dl=4, offline=Fa
         summary['downloaded'] += 1
         res = RC.text_gate(path, info)          # cached OCR; a mark never drops a named editor's edit
         res['_info'] = info
-        res['rights'] = {'type': 'owner_named_editor', 'age_days': None, 'reason': 'owner 2026-11-15: named editor, keep all'}
+        res['rights'] = ({'type': 'owner_link', 'age_days': None, 'reason': 'owner 2026-11-19: the owner linked this video'} if ids else
+                         {'type': 'owner_named_editor', 'age_days': None, 'reason': 'owner 2026-11-15: named editor, keep all'})
         if res.get('verdict') == 'reject' and res.get('why') not in ('no_frames',) and not str(res.get('why')).startswith('gate_error'):
             res = dict(res, verdict='clean', kept_mark=res.get('why'))
         why = res.get('why') if res.get('verdict') == 'reject' else None
@@ -2034,7 +2070,8 @@ def main():
             print(json.dumps({'dur': round(d, 2), **RC.trusted_tag(a.video, d, a.channel)}))
         return
     if a.cmd == 'mine-trusted':             # owner 2026-11-15: only the editors the owner named, keep every anime edit
-        print(json.dumps(mine_trusted(a.budget_min, a.work, a.state, a.max_dl, a.offline, a.from_end), ensure_ascii=False, indent=1,
+        print(json.dumps(mine_trusted(a.budget_min, a.work, a.state, a.max_dl, a.offline, a.from_end,
+                                      [x for x in a.ids.split(',') if x] or None), ensure_ascii=False, indent=1,
                          default=str))
         return
     if a.cmd == 'trusted-backlog':          # read-only: the named editors' uploads still to do + how they are classified
