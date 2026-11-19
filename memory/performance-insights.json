@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-19T01:40:49.539Z",
+  "updatedAt": "2026-11-19T02:46:02.192Z",
   "channel": {
     "title": "Zero Yen Otaku",
     "subscribers": 31,
@@ -8,14 +8,14 @@
   },
   "sampleSize": 60,
   "reliable": true,
-  "globalMeanScore": 50.8,
+  "globalMeanScore": 50.5,
   "typicalScore": 17.3,
   "topTitles": [
     {
       "videoId": "jrLfWG5qVFU",
       "title": "imagination acapella but the beat drops 🔥",
       "views": 851,
-      "score": 580.3,
+      "score": 564,
       "country": "Global",
       "ageDays": 1.6
     },
@@ -23,7 +23,7 @@
       "videoId": "4y13vXVgOQE",
       "title": "shape of you anime edit sfx 🗿 #anime",
       "views": 849,
-      "score": 168,
+      "score": 167,
       "country": "Global",
       "ageDays": 7.6
     },
@@ -31,15 +31,15 @@
       "videoId": "FxlEq_ZFMBA",
       "title": "havana anime edit sound design 🗿",
       "views": 930,
-      "score": 139.3,
+      "score": 138.7,
       "country": "Global",
-      "ageDays": 10.4
+      "ageDays": 10.5
     },
     {
       "videoId": "Bw95121fb80",
       "title": "montero anime edit sound design 🗿",
       "views": 1131,
-      "score": 128.9,
+      "score": 128.5,
       "country": "Global",
       "ageDays": 13.6
     },
@@ -47,7 +47,7 @@
       "videoId": "Q0tECAlRP88",
       "title": "love dramatic acapella but the beat drops 🗿",
       "views": 1035,
-      "score": 125.2,
+      "score": 124,
       "country": "Global",
       "ageDays": 4.6
     },
@@ -57,7 +57,7 @@
       "views": 1583,
       "score": 119,
       "country": "Global",
-      "ageDays": 14.5
+      "ageDays": 14.6
     },
     {
       "videoId": "OP4oWjr6juI",
@@ -87,7 +87,7 @@
       "videoId": "YOgoz2FeJpg",
       "title": "resonance acapella but the beat drops 🔥",
       "views": 1015,
-      "score": 86.8,
+      "score": 86.1,
       "country": "Global",
       "ageDays": 5.6
     }
@@ -144,7 +144,7 @@
   "countries": {
     "Global": {
       "n": 29,
-      "meanScore": 85.6,
+      "meanScore": 84.9,
       "weight": 1.6
     }
   },
@@ -152,17 +152,17 @@
   "categories": {
     "meme-anime": {
       "n": 10,
-      "meanScore": 116.7,
+      "meanScore": 114.9,
       "weight": 1.6
     },
     "edit-sound": {
       "n": 6,
-      "meanScore": 91.2,
+      "meanScore": 90.8,
       "weight": 1.6
     },
     "meme-japanese": {
       "n": 4,
-      "meanScore": 77.1,
+      "meanScore": 77,
       "weight": 1.6
     },
     "meme-kpop": {
@@ -172,7 +172,7 @@
     },
     "edit-slowmo": {
       "n": 6,
-      "meanScore": 44.3,
+      "meanScore": 44,
       "weight": 1.6
     }
   },
@@ -180,23 +180,23 @@
   "history": [
     {
       "title": "imagination acapella but the beat drops 🔥",
-      "score": 6.365
+      "score": 6.337
     },
     {
       "title": "shape of you anime edit sfx 🗿 #anime",
-      "score": 5.13
+      "score": 5.124
     },
     {
       "title": "havana anime edit sound design 🗿",
-      "score": 4.944
+      "score": 4.94
     },
     {
       "title": "montero anime edit sound design 🗿",
-      "score": 4.867
+      "score": 4.863
     },
     {
       "title": "love dramatic acapella but the beat drops 🗿",
-      "score": 4.838
+      "score": 4.828
     },
     {
       "title": "bling bang bang born acapella 🎧",
@@ -216,11 +216,11 @@
     },
     {
       "title": "resonance acapella but the beat drops 🔥",
-      "score": 4.476
+      "score": 4.468
     },
     {
       "title": "yoru ni kakeru acapella but beat drops 💿",
-      "score": 4.459
+      "score": 4.454
     },
     {
       "title": "show acapella but the beat drops 🔥",
@@ -228,7 +228,7 @@
     },
     {
       "title": "dandelions but it's anime ✨",
-      "score": 4.251
+      "score": 4.246
     },
     {
       "title": "soda pop acapella but the beat drops ⚡",
@@ -247,12 +247,12 @@
       "score": 4.093
     },
     {
-      "title": "idol acapella yoasobi 🗿",
-      "score": 4.031
-    },
-    {
       "title": "pink venom acapella but the beat drops 🗿",
       "score": 4.03
+    },
+    {
+      "title": "idol acapella yoasobi 🗿",
+      "score": 4.027
     },
     {
       "title": "yoru ni kakeru acapella but the beat drops ⚡🔥",
@@ -268,7 +268,7 @@
     },
     {
       "title": "don't start now anime edit sfx 🗿 #anime",
-      "score": 3.881
+      "score": 3.868
     },
     {
       "title": "soda pop acapella saja boys 🎧🎶",
@@ -276,15 +276,15 @@
     },
     {
       "title": "somewhere only we know but it's anime 🎧",
-      "score": 3.855
-    },
-    {
-      "title": "first love but it's anime ✨",
-      "score": 3.815
+      "score": 3.849
     },
     {
       "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
-      "score": 3.807
+      "score": 3.808
+    },
+    {
+      "title": "first love but it's anime ✨",
+      "score": 3.798
     },
     {
       "title": "hanaichi monme acapella but the beat drops 🗿",
@@ -324,7 +324,7 @@
     },
     {
       "title": "those eyes anime edit hits different 🔥",
-      "score": 3.363
+      "score": 3.359
     },
     {
       "title": "anime sound design edit goes insane on antifragile 🎶🔥",
@@ -420,5 +420,5 @@
     }
   ],
   "promptSummary": "Based on 60 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 17.3/day):\nTitles that performed BEST for us:\n  - \"imagination acapella but the beat drops 🔥\" (851 views, Global)\n  - \"shape of you anime edit sfx 🗿 #anime\" (849 views, Global)\n  - \"havana anime edit sound design 🗿\" (930 views, Global)\n  - \"montero anime edit sound design 🗿\" (1,131 views, Global)\n  - \"love dramatic acapella but the beat drops 🗿\" (1,035 views, Global)\n  - \"bling bang bang born acapella 🎧\" (1,583 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\n  - \"super shy acapella 🗿 #newjeans\" (6 views)\nPatterns that WORK for this channel: short (<= 40 chars) (x1.32)",
-  "summaryLine": "Best recent: \"imagination acapella but the beat drops 🔥\" (851 views, 580.3/day) — typical short 17.3/day over 60 shorts"
+  "summaryLine": "Best recent: \"imagination acapella but the beat drops 🔥\" (851 views, 564/day) — typical short 17.3/day over 60 shorts"
 }
