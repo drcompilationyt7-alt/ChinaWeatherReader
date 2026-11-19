@@ -3099,6 +3099,60 @@
    "whyMode": "insight-driven",
    "bpm": 129.98,
    "titlePattern": "{song} acapella but beat drops {e}"
+  },
+  {
+   "videoId": "IFwS-_3ODTA",
+   "url": "https://www.youtube.com/watch?v=IFwS-_3ODTA",
+   "postedAt": "2026-11-19T11:36:03.581Z",
+   "publishAt": "2026-11-19T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Dance Monkey",
+   "theme": "anime",
+   "emoji": "🔥,🎧",
+   "title": "Tones and I - Dance Monkey (Anime Remix)",
+   "clipIds": [
+    "c_94gGChbw7Lk_4368",
+    "c_Cw9_Kh3KSrA_50500",
+    "c_DQ6WAHp7R-o_154219",
+    "c_IFYCx3opUn4_17269",
+    "c_Ipr0YNnwlXA_40900",
+    "c_KbjmnBu7scU_45969",
+    "c_O2JRxaMNK_c_28850",
+    "c_P8j50ByEd7w_29601",
+    "c_VeIXoZwoy4Y_16463",
+    "c_biPUhMQn8Qw_161771",
+    "c_krc6M4vPx28_36300",
+    "c_z1In_sZL7xg_155531"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 9.8,
+    "pool": "sound",
+    "render_s": {
+     "short": 656.1,
+     "watermark_short": 34.9,
+     "total": 691
+    },
+    "attempts": 2
+   },
+   "onVideoTitle": "anime x dance monkey",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "fire",
+    "hashtagSet": "niche3",
+    "titleStyle": "artist-remix",
+    "ovStyle": "ov-song",
+    "descHook": "llm-line",
+    "titlePattern": "{song} anime edit sound design {e}",
+    "titleMode": "mimic"
+   },
+   "vibe": "impact",
+   "musicPoolId": "tones_and_i_dance_monkey",
+   "songSection": [
+    167.345,
+    199.182
+   ]
   }
  ]
 }

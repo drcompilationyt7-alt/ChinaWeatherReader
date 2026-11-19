@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=lpbT8Xc09Ek",
-      "title": "anime sound design edit 🗿🔥",
-      "country": "Global",
-      "postedAt": "2026-10-20T08:32:57.544Z",
-      "videoId": "lpbT8Xc09Ek",
-      "category": "edit-sound",
-      "titleSource": "Dance Monkey"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=J91EYGAeUTI",
       "title": "golden hour but it's anime girls ✨ #anime",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "jIQE6hQRbd0",
       "category": "meme-kpop",
       "titleSource": "how you like that"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=IFwS-_3ODTA",
+      "title": "Tones and I - Dance Monkey (Anime Remix)",
+      "country": "Global",
+      "postedAt": "2026-11-19T11:36:03.995Z",
+      "videoId": "IFwS-_3ODTA",
+      "category": "edit-sound",
+      "titleSource": "Dance Monkey"
     }
   ]
 }
