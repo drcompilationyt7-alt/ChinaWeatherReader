@@ -1,71 +1,69 @@
 {
- "at": "2026-11-16T11:10:03.443Z",
- "type": "slowmo",
+ "at": "2026-11-19T23:13:40.270Z",
+ "type": "sound",
  "ok": false,
  "posted": true,
- "reason": "attempts used up; MUST PUBLISH: attempt 2 (score 8.88)",
- "dryRun": false,
+ "reason": "attempts used up; MUST PUBLISH: attempt 4 (score 9.67)",
+ "dryRun": true,
  "attempts": [
   {
    "n": 1,
-   "song": "new_west_those_eyes@v0.9",
-   "seed": 24122,
+   "song": "imagine_dragons_believer",
+   "seed": 25786,
    "input": "first",
-   "work": "work-slowmo-1794824122380",
-   "min": 6.6,
-   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
-   "next": "new_song"
-  },
-  {
-   "n": 2,
-   "song": "hikaru_utada_first_love@v1",
-   "seed": 24333,
-   "input": "new_song",
-   "work": "work-slowmo-1794824520473",
-   "min": 17.2,
-   "overall": 8.88,
+   "work": "work-sound-1795125786004",
+   "min": 33.4,
+   "overall": 9.49,
    "failed": {
-    "4_mix": 5.78,
-    "12_sync": 0
+    "5_density_no_dead": 7.1,
+    "6_vertical_framing_quality": 7.5,
+    "16_drum_onsets_recreated": 7
    },
    "result": "NOT PASS",
    "next": "new_song"
   },
   {
-   "n": 3,
-   "song": "radwimps_nandemonaiya@v1",
-   "seed": 24544,
+   "n": 2,
+   "song": "dua_lipa_levitating",
+   "seed": 25997,
    "input": "new_song",
-   "work": "work-slowmo-1794825552280",
-   "min": 6.5,
-   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "work": "work-sound-1795127792711",
+   "min": 14.2,
+   "result": "render failed: too_short: 20.4 s (< 8.5 s) / hold 0.231 s (> 0.15 s) with 24 fresh clips",
+   "next": "new_song"
+  },
+  {
+   "n": 3,
+   "song": "ac_dc_thunderstruck",
+   "seed": 26208,
+   "input": "new_song",
+   "work": "work-sound-1795128643397",
+   "min": 8.5,
+   "result": "render failed: too_short: 19.0 s (< 8.5 s) / hold 0.233 s (> 0.15 s) with 21 fresh clips",
    "next": "new_song"
   },
   {
    "n": 4,
-   "song": "aimer_kataomoi@v1",
-   "seed": 24755,
+   "song": "s_shape_of_you",
+   "seed": 26419,
    "input": "new_song",
-   "work": "work-slowmo-1794825942425",
-   "min": 6.3,
-   "result": "render failed: no_lyrics: no sung words placed in the chosen window (no lyric-less slow-mo)",
+   "work": "work-sound-1795129154108",
+   "min": 7.3,
+   "overall": 9.67,
+   "failed": {
+    "18_song_audible": 7
+   },
+   "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 5,
-   "song": "coldplay_yellow@v1",
-   "seed": 24966,
+   "song": "michael_jackson_smooth_criminal",
+   "seed": 26630,
    "input": "new_song",
-   "work": "work-slowmo-1794826322965",
-   "min": 18,
-   "overall": 7.92,
-   "failed": {
-    "3_lyrics": 0,
-    "11_waves": 7,
-    "12_sync": 7.51,
-    "13_hold_outro": 0
-   },
-   "result": "NOT PASS (HARD: lyrics_wrong)",
+   "work": "work-sound-1795129590428",
+   "min": 7.2,
+   "result": "render failed: too_short: 20.0 s (< 8.5 s) / hold 0.235 s (> 0.15 s) with 24 fresh clips",
    "next": "new_song"
   }
  ]
