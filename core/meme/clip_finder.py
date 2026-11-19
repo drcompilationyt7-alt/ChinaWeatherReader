@@ -404,6 +404,8 @@ NOT_SOURCE_KIND = {
               'ダンス映像', 'ダンス動画', '振付', '振り付け', '踊ってみた', 'チャレンジ'],
     'group': ['animation', 'animated', 'cartoon', 'anime', 'kid', 'kids', 'child', 'children', 'lyrics', 'ai'],
 }
+# A J-pop artist's own MVs are often animated (Ado, YOASOBI, Eve): owner 2026-11-18 "anime is fine"
+ANIMATED_WORDS = {'animation', 'animated', 'cartoon', 'anime'}
 # More off-brand topics for a named source (its sad arcs are famous): matched on the title.
 SOURCE_DARK_WORDS = ['death', 'dies', 'died', 'dying', 'die', 'stab', 'stabbed', 'stabs', 'kill', 'kills',
                      'killed', 'corpse', 'suicide', 'funeral', 'grave', '死', '殺', '사망', '죽음']
@@ -718,7 +720,7 @@ OP_RE = _word_re(OP_WORDS)
 class Source:
     """--source: the anime or K-pop group every clip must show."""
 
-    def __init__(self, name, kind, aliases=(), song=''):
+    def __init__(self, name, kind, aliases=(), song='', animated_ok=False):
         self.name, self.kind, self.song = name.strip(), kind, (song or '').strip()
         raw = [self.name] + [a.strip() for a in aliases if a and a.strip()]
         self.strong, self.weak, seen = [], [], set()
@@ -736,7 +738,8 @@ class Source:
 
         def without_names(words):
             return _word_re([w for w in words if not _word_re([w]).search(names)])
-        self.not_re = without_names(NOT_SOURCE_WORDS + NOT_SOURCE_KIND[kind])
+        kind_words = [w for w in NOT_SOURCE_KIND[kind] if not (animated_ok and w in ANIMATED_WORDS)]
+        self.not_re = without_names(NOT_SOURCE_WORDS + kind_words)
         self.song_pat = self._pattern(_snorm(self.song), True) if _snorm(self.song) else None
         self.native = [r for r in raw if not r.isascii() and _script(r)]
         self.official_set = [_snorm(c) for c in OFFICIAL_CHANNELS]
@@ -2088,7 +2091,7 @@ def main():
     src = None
     if a.source and a.source.strip():
         kind = a.source_kind or ('anime' if THEME_RE['anime'].search(_norm(a.source)) else 'group')
-        src = Source(a.source, kind, a.aliases.split(','), a.song_name)
+        src = Source(a.source, kind, a.aliases.split(','), a.song_name, animated_ok=theme == 'japanese')
         if theme == 'mixed':
             theme = 'anime' if kind == 'anime' else 'kpop'
     n_edit = max(0, a.edit) if src else 0

@@ -52,7 +52,8 @@ GORE = ['blood splattered everywhere', 'a bloody wound', 'a person covered in bl
 CLEAN = ['a clean action scene without blood', 'an ordinary scene', 'a person smiling', 'a dance performance',
          'an anime fight with energy effects']
 ANIME_THEMES = {'anime'}
-REAL_THEMES = {'kpop', 'chinese', 'japanese', 'funny', 'cute'}
+# 'japanese' is not here: J-pop shorts mix anime and real footage (owner 2026-11-18: "anime is fine")
+REAL_THEMES = {'kpop', 'chinese', 'funny', 'cute'}
 
 
 def _tensor(out):
