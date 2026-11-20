@@ -877,6 +877,10 @@ def classify_trusted(title, RC, smap, ents, _split=True):
     t = unicodedata.normalize('NFKC', title or '')
     if TRUSTED_NOT_ANIME.search(t):
         return None, None, 'not_anime'
+    # several shows in one edit: not one show (owner 2026-11-19), skipped. Checked BEFORE the show lookup: 'Levitating -
+    # Anime Mix Mep' was filed as Attack on Titan (the alias 'levi' at the start of 'Levitating')
+    if re.search(r'anime ?mix', t, re.I):
+        return None, None, 'crossover'
     # 2026-11-19 (xParagon 'GOJO x RIMURU'; owner: "we can remove crossover", "from one show is fine like cutest couple"):
     # a crossover - both sides of ' x ' / ' vs ' name a DIFFERENT known show - is skipped ('Hiro x Zero Two', 'Gojo vs
     # Sukuna' stay their show; 'Hunter x Hunter' has no known show on one side)
@@ -900,7 +904,7 @@ def classify_trusted(title, RC, smap, ents, _split=True):
         return sorted(set(cur), key=len, reverse=True)[0], None, 'library'
     best = {}
     for sk, se in ents.items():
-        pats = [r'(?<![a-z])(?:' + a + ')' for a in se['alias']] + \
+        pats = [r'(?<![a-z0-9])(?:' + a + r')(?![0-9])' for a in se['alias']] + \
                [r'(?<![a-z0-9])' + re.escape(w) + r'(?![a-z0-9])' for w in RC.anime_words(se)]
         for p_ in pats:
             for x in ts:
@@ -917,7 +921,8 @@ def classify_trusted(title, RC, smap, ents, _split=True):
         if rx.search(t):
             k = RC.show_key(an)
             return (k, None, 'library') if k in smap else (None, an, 'anime')
-    if re.search(r'anime ?mix', t, re.I):        # several shows in one edit: not one show (owner 2026-11-19), skipped
+    # a MEP (multi-editor project) that names no show is several shows ('Stateside | New Year 2026 MEP'): skipped
+    if re.search(r'(?<![a-z])meps?(?![a-z])', t, re.I):
         return None, None, 'crossover'
     if re.search(r'amv', t, re.I):
         return None, 'Anime Mix', 'mix'

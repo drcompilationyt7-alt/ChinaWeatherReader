@@ -379,8 +379,9 @@ def anime_words(entry):
 
 def alias_hit(a, t):
     """An entry alias (a regex) found in a title, starting at a word start: 2026-11-17 the alias 'eren' matched inside
-    'Fri-eren' and a Frieren edit was filed as Eren / Attack on Titan. Suffixes stay free ("titans", "eren's")."""
-    return re.search(r'(?<![a-z])(?:' + a + ')', t, re.I) is not None
+    'Fri-eren' and a Frieren edit was filed as Eren / Attack on Titan. Suffixes stay free ("titans", "eren's").
+    2026-11-19: never inside a number either - Zero Two's '02' matched 'New Year 2026 MEP' (filed as Darling in the Franxx)."""
+    return re.search(r'(?<![a-z0-9])(?:' + a + r')(?![0-9])', t, re.I) is not None
 
 
 def prefilter(e, entry, min_views=None):
