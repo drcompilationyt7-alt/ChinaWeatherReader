@@ -3312,6 +3312,68 @@
     "titleStyle": "casual",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "lZNyh-FvaSw",
+   "url": "https://www.youtube.com/watch?v=lZNyh-FvaSw",
+   "postedAt": "2026-11-20T10:17:29.042Z",
+   "publishAt": "2026-11-20T13:00:00.000Z",
+   "format": "cityphoto",
+   "theme": "asia",
+   "seed": 688728986,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Can you guess the Asian city from just one photo?",
+     "template": "Can you guess the Asian city from just one photo?",
+     "sec": 2.55
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How did you do? Drop your score in the comments!",
+     "template": "How did you do? Drop your score in the comments!",
+     "sec": 2.41
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Osaka. Did you get it?",
+     "template": null,
+     "sec": 1.76
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "It's Xi'an!",
+     "template": null,
+     "sec": 0.29
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "That was Nanjing.",
+     "template": null,
+     "sec": 0.93
+    }
+   ],
+   "titleTemplate": "cityphoto-llm",
+   "title": "guess the city name: asia photo quiz 🧠 #asia",
+   "answers": [
+    "cityphoto:JP:osaka#8zlmj2",
+    "cityphoto:CN:xi'an#u2dlxk",
+    "cityphoto:CN:nanjing#1oyjotl"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-sparks",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

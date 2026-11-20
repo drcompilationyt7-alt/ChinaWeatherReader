@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=IqdVixQTNWg",
-      "title": "asia city quiz: ice festival capital bund 🧠 #asia",
-      "country": "Global",
-      "postedAt": "2026-10-21T07:53:50.382Z",
-      "videoId": "IqdVixQTNWg",
-      "category": "quiz-trivia",
-      "titleSource": "trivia-llm",
-      "quizFormat": "trivia",
-      "quizTheme": "cities"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=N88FFnncCUA",
-      "title": "guess the anime character halloween edition 3 rounds anime 🔥 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-21T07:58:57.726Z",
-      "videoId": "N88FFnncCUA",
-      "category": "quiz-character",
-      "titleSource": "character-llm",
-      "quizFormat": "character",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=ntd3-aern5I",
       "title": "would you rather (kpop edition) 👀 #kpop",
       "country": "Global",
@@ -604,6 +582,17 @@
       "titleSource": "wyr-casual",
       "quizFormat": "wyr",
       "quizTheme": "food"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=lZNyh-FvaSw",
+      "title": "guess the city name: asia photo quiz 🧠 #asia",
+      "country": "Global",
+      "postedAt": "2026-11-20T10:17:29.300Z",
+      "videoId": "lZNyh-FvaSw",
+      "category": "quiz-cityphoto",
+      "titleSource": "cityphoto-llm",
+      "quizFormat": "cityphoto",
+      "quizTheme": "asia"
     }
   ]
 }
