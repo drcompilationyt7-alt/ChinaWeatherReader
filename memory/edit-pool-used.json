@@ -285,6 +285,18 @@
    "used_at": "2026-11-16T11:10:10Z",
    "video": "slowmo-summer_glow-short.mp4",
    "role": "short"
+  },
+  "ranking/clip/r__StckjDi9ak_0": {
+   "used_at": "2026-11-20T10:42:30Z",
+   "video": "ranking_jjk_strongest.mp4"
+  },
+  "ranking/clip/r_H1Q5zPXbefU_4110": {
+   "used_at": "2026-11-20T10:42:30Z",
+   "video": "ranking_jjk_strongest.mp4"
+  },
+  "ranking/clip/r_l3xGSMayfgI_2740": {
+   "used_at": "2026-11-20T10:42:30Z",
+   "video": "ranking_jjk_strongest.mp4"
   }
  },
  "moments": {},
@@ -701,5 +713,24 @@
     ]
    }
   ]
- }
+ },
+ "ranking_recent": [
+  "_StckjDi9ak",
+  "H1Q5zPXbefU",
+  "l3xGSMayfgI"
+ ],
+ "ranking_topics_recent": [
+  "jjk_strongest"
+ ],
+ "ranking_lists": [
+  {
+   "topic": "jjk_strongest",
+   "entries": [
+    "TOJI",
+    "GOJO",
+    "SUKUNA"
+   ],
+   "format": "open2"
+  }
+ ]
 }

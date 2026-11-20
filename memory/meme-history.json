@@ -3153,6 +3153,39 @@
     167.345,
     199.182
    ]
+  },
+  {
+   "videoId": "Q2sHEUBLuOE",
+   "url": "https://www.youtube.com/watch?v=Q2sHEUBLuOE",
+   "postedAt": "2026-11-20T10:42:29.924Z",
+   "publishAt": "2026-11-20T12:00:00.000Z",
+   "contentType": "ranking-edit",
+   "song": "jjk_strongest",
+   "theme": "anime",
+   "emoji": "🔥",
+   "title": "strongest jjk characters 🔥 #jujutsukaisen",
+   "clipIds": [
+    "_StckjDi9ak",
+    "H1Q5zPXbefU",
+    "l3xGSMayfgI"
+   ],
+   "clipChannels": [
+    "@MinatoxVFX",
+    "@sanchezae",
+    "@TruckKun"
+   ],
+   "settings": {
+    "topic": "jjk_strongest",
+    "entries": [
+     "#5 TOJI",
+     "#4 GOJO",
+     "#3 SUKUNA"
+    ],
+    "pool": "ranking"
+   },
+   "onVideoTitle": null,
+   "meta": null,
+   "vibe": null
   }
  ]
 }
