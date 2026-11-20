@@ -4730,11 +4730,13 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
             # picture came back every time (run 44642876934: 3 identical re-plans, hold 0.247 s -> render failed, 2 of 5
             # attempts lost). Drop the events of the shots that still hold and plan again: that slot takes another clip's hit.
             # A re-plan is kept only if it stays near the length (owner: "it is too short") and inside the reuse cap.
-            drop = set()
-            for k in range(int(os.environ.get('SOUND_HOLD_DROP_TRIES', '4'))):
+            # the holding shots are read off the LATEST re-plan (run 44661638102: reading them off the kept plan found the same
+            # event again after one round and stopped while the re-plan still froze on another shot)
+            drop, cur = set(), plan
+            for k in range(int(os.environ.get('SOUND_HOLD_DROP_TRIES', '6'))):
                 if _ok(plan):
                     break
-                bad = {(os.path.abspath(s_['path']), round(float(s_['hit']['clip_t']), 3)) for s_ in plan['shots']
+                bad = {(os.path.abspath(s_['path']), round(float(s_['hit']['clip_t']), 3)) for s_ in cur['shots']
                        if float(s_.get('hold') or 0.0) > max_hold}
                 if not bad - drop:
                     break
@@ -4748,6 +4750,7 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                                           rate=RATE_SHORT, loop_end=False, lufs=VIBE_LUFS, hit_db=VIBE_HIT_DB)
                 except TooFewEvents:
                     break
+                cur = alt
                 ids_a, rec_a = _clip_share(alt)
                 share_a = len(rec_a) / max(1, len(ids_a))
                 log(f'replan without {len(drop)} holding event(s): {alt["duration"]:.2f} s, hold max '
