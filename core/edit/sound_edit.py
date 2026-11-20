@@ -4689,6 +4689,19 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
 
         def _rank(pl):
             return (float(pl['sound_edit'].get('hold_s_max') or 0.0) <= max_hold, pl['duration'])
+        by_path0 = {os.path.abspath(s_['path']): s_ for s_ in shots}
+
+        def _clip_share(pl):
+            """(distinct pool clips in the plan, the recent ones among them): the clip-rotation reuse measure"""
+            ids, rec = [], set()
+            for s_ in pl['shots']:
+                sh = by_path0.get(os.path.abspath(s_['path'])) or {}
+                pid = sh.get('pool_id') or os.path.basename(s_['path'])
+                if pid not in ids:
+                    ids.append(pid)
+                if sh.get('rot_recent'):
+                    rec.add(pid)
+            return ids, rec
         if REMAKE and not long_form and not _ok(plan):
             # the remake plan is deterministic for a given section / pool, so the re-plans change the packing: one more bar
             # (capacity margin 1.06, then 1.0: a longer window, its holds are checked by _ok) and another seed last
@@ -4713,18 +4726,40 @@ def render_vibe(song, shots, out, *, aspect='9:16', length=(30.0, 50.0), seed=0,
                     plan = alt
                 if _ok(plan):
                     break
+            # 2026-11-20 (owner: 20 s Shorts): the re-plans above keep the same events, so the shot whose clip runs out of clean
+            # picture came back every time (run 44642876934: 3 identical re-plans, hold 0.247 s -> render failed, 2 of 5
+            # attempts lost). Drop the events of the shots that still hold and plan again: that slot takes another clip's hit.
+            # A re-plan is kept only if it stays near the length (owner: "it is too short") and inside the reuse cap.
+            drop = set()
+            for k in range(int(os.environ.get('SOUND_HOLD_DROP_TRIES', '4'))):
+                if _ok(plan):
+                    break
+                bad = {(os.path.abspath(s_['path']), round(float(s_['hit']['clip_t']), 3)) for s_ in plan['shots']
+                       if float(s_.get('hold') or 0.0) > max_hold}
+                if not bad - drop:
+                    break
+                drop |= bad
+                evs2 = [dict(e) for e in events if (os.path.abspath(e['path']), round(float(e['t']), 3)) not in drop]
+                try:
+                    alt = plan_sound_edit(song, shots, music_start=music_start, duration=target, mode='accent',
+                                          deliver=os.environ.get('SOUND_DELIVER', 'rot90'), theme=theme, title=title,
+                                          watermark=None, seed=seed, workdir=os.path.join(workdir, f'plan_drop{k + 1}'),
+                                          events=evs2, aspect=aspect, length_range=ranges[0],
+                                          rate=RATE_SHORT, loop_end=False, lufs=VIBE_LUFS, hit_db=VIBE_HIT_DB)
+                except TooFewEvents:
+                    break
+                ids_a, rec_a = _clip_share(alt)
+                share_a = len(rec_a) / max(1, len(ids_a))
+                log(f'replan without {len(drop)} holding event(s): {alt["duration"]:.2f} s, hold max '
+                    f'{alt["sound_edit"].get("hold_s_max")}, recent {share_a:.0%} (was {plan["duration"]:.2f} s, '
+                    f'{plan["sound_edit"].get("hold_s_max")})')
+                if (_rank(alt) > _rank(plan) and alt['duration'] >= 0.85 * plan['duration']
+                        and (not capped or share_a <= REUSE_CAP + 1e-6)):
+                    plan = alt
         if capped and not long_form:
             # owner 2026-10-22 "no variety and good match need both": a short under the length / hold bar, or over the reuse
             # cap, is not made (vibe_edit exits 2 -> the daily run posts stem). Measured on the plan's shots (distinct clips).
-            by_path0 = {os.path.abspath(s_['path']): s_ for s_ in shots}
-            ids, rec_ids = [], set()
-            for s_ in plan['shots']:
-                sh = by_path0.get(os.path.abspath(s_['path'])) or {}
-                pid = sh.get('pool_id') or os.path.basename(s_['path'])
-                if pid not in ids:
-                    ids.append(pid)
-                if sh.get('rot_recent'):
-                    rec_ids.add(pid)
+            ids, rec_ids = _clip_share(plan)
             share = len(rec_ids) / max(1, len(ids))
             plan['sound_edit']['reuse'] = dict(plan['sound_edit'].get('reuse') or {}, clips=len(ids), recent=len(rec_ids),
                                                share=round(share, 3))
