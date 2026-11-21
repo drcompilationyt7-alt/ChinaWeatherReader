@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=hrdvNehinLY",
-      "title": "anime sound design edit goes insane on antifragile 🎶🔥",
-      "country": "Global",
-      "postedAt": "2026-10-22T08:42:42.008Z",
-      "videoId": "hrdvNehinLY",
-      "category": "edit-sound",
-      "titleSource": "ANTIFRAGILE"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=jQNeOZ20gD8",
       "title": "soda pop acapella saja boys 🎧🎶",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "Q2sHEUBLuOE",
       "category": "edit-ranking",
       "titleSource": "jjk_strongest"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=aTa6TLYjtqM",
+      "title": "ditto but it's anime ✨ #anime",
+      "country": "Global",
+      "postedAt": "2026-11-21T11:25:41.960Z",
+      "videoId": "aTa6TLYjtqM",
+      "category": "edit-slowmo",
+      "titleSource": "Ditto (slowed)"
     }
   ]
 }

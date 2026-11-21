@@ -2591,7 +2591,8 @@
    "songSection": [
     167.76,
     208.71
-   ]
+   ],
+   "musicPerf": 4.05
   },
   {
    "videoId": "HVrCvZklZ7Y",
@@ -2768,7 +2769,8 @@
    "songSection": [
     140.76,
     183.98
-   ]
+   ],
+   "musicPerf": 3.556
   },
   {
    "videoId": "YOgoz2FeJpg",
@@ -3186,6 +3188,66 @@
    "onVideoTitle": null,
    "meta": null,
    "vibe": null
+  },
+  {
+   "videoId": "aTa6TLYjtqM",
+   "url": "https://www.youtube.com/watch?v=aTa6TLYjtqM",
+   "postedAt": "2026-11-21T11:25:41.799Z",
+   "publishAt": "2026-11-21T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "Ditto (slowed)",
+   "theme": "anime",
+   "emoji": "✨,⚡",
+   "title": "ditto but it's anime ✨ #anime",
+   "clipIds": [
+    "c_4N7q8h7ryEM_50800",
+    "c_C6ZWhqGB_hg_59700",
+    "c_DhNGYicvc5E_13800",
+    "c_GQ2_GO_553k_168500",
+    "c_ISOIATL26Fo_259600",
+    "c_JJ_0CYf70Rk_34400",
+    "c_JwDTN6NRIz8_222400",
+    "c_JwDTN6NRIz8_81500",
+    "c_KyVN14u4pvo_17700",
+    "c_LQUqqOIKJIU_18700",
+    "c_MsEsk2aREbM_2200",
+    "c_MsEsk2aREbM_7200",
+    "c_S_Micj1R3Zo_81100",
+    "c_ULDKs3aucNA_31500",
+    "c_Uy-tbO1dA6I_81700",
+    "c_YEcxGMrIngQ_41100",
+    "c_f6fmYbpWDzg_12300",
+    "c_mZVpCUtjcf4_9000",
+    "c_umffiafaUQw_119400",
+    "c_vkqPXIygBnw_33100",
+    "c_vkqPXIygBnw_49100",
+    "c_xTgLRbnUhMA_33600",
+    "c_zvolzAxb5Kw_16900"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 41.333,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 914.5,
+     "watermark_short": 62.9,
+     "total": 977.5
+    },
+    "attempts": 4
+   },
+   "onVideoTitle": "ditto (slowed) anime edit",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "title-subject",
+    "titleStyle": "song-anime",
+    "ovStyle": "ov-kw",
+    "descHook": "llm-line",
+    "titlePattern": "ditto but it's anime {e} #{tag}",
+    "titleMode": "explore"
+   },
+   "vibe": "summer_glow"
   }
  ]
 }
