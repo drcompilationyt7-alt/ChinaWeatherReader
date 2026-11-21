@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=ntd3-aern5I",
-      "title": "would you rather (kpop edition) 👀 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-22T07:56:14.927Z",
-      "videoId": "ntd3-aern5I",
-      "category": "quiz-wyr",
-      "titleSource": "wyr-casual",
-      "quizFormat": "wyr",
-      "quizTheme": "kpop"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=C6Y5XdCEjs4",
-      "title": "guess the kpop idol quiz #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-22T07:59:44.868Z",
-      "videoId": "C6Y5XdCEjs4",
-      "category": "quiz-idol",
-      "titleSource": "idol-llm",
-      "quizFormat": "idol",
-      "quizTheme": "kpop"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=QKjJqfS91jE",
       "title": "Guess the Song in 3 Seconds 🔥 #kpop",
       "country": "Global",
@@ -593,6 +571,17 @@
       "titleSource": "cityphoto-llm",
       "quizFormat": "cityphoto",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=wuoXQg8y9cY",
+      "title": "Can You Name These Anime Outfits? 🔥 #anime",
+      "country": "Global",
+      "postedAt": "2026-11-21T10:01:08.271Z",
+      "videoId": "wuoXQg8y9cY",
+      "category": "quiz-outfit",
+      "titleSource": "outfit-design",
+      "quizFormat": "outfit",
+      "quizTheme": "anime"
     }
   ]
 }

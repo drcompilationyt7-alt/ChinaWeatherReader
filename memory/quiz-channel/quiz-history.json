@@ -3374,6 +3374,54 @@
     "titleStyle": "op-exact-search",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "wuoXQg8y9cY",
+   "url": "https://www.youtube.com/watch?v=wuoXQg8y9cY",
+   "postedAt": "2026-11-21T10:01:08.101Z",
+   "publishAt": "2026-11-21T13:00:00.000Z",
+   "format": "outfit",
+   "theme": "anime",
+   "seed": 573980752,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "ai",
+     "line": "Name the anime character by their outfit!",
+     "template": "Name the anime character by their outfit!",
+     "sec": 2.42
+    },
+    {
+     "slot": "reveal 2",
+     "used": "ai",
+     "line": "You got it, Cee Cee!",
+     "template": "You got it, {a}!",
+     "sec": 1.15
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai",
+     "line": "Look at that, it's Utahime Iori!",
+     "template": "Look at that, it's {a}!",
+     "sec": 1.75
+    }
+   ],
+   "titleTemplate": "outfit-design",
+   "title": "Can You Name These Anime Outfits? 🔥 #anime",
+   "answers": [
+    "outfit:kurisu makise#yi0vti",
+    "outfit:c.c.#wdrm4l",
+    "outfit:utahime iori#184imp0"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "fire",
+    "hashtagSet": "title-tag",
+    "titleStyle": "challenge",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

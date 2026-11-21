@@ -1,4 +1,10 @@
 {
+ "guess the anime character by outfit": {
+  "at": "2026-11-21T10:00:50.278Z",
+  "s": [
+   "guess the anime character by their clothes"
+  ]
+ },
  "guess the city": {
   "at": "2026-11-20T10:16:12.727Z",
   "s": [
@@ -182,12 +188,6 @@
    "guess the kpop song boy groups",
    "guess the kpop song by its choreo",
    "guess the kpop song by intro"
-  ]
- },
- "guess the anime character by outfit": {
-  "at": "2026-11-11T09:50:48.440Z",
-  "s": [
-   "guess the anime character by their clothes"
   ]
  },
  "guess the anime opening": {
