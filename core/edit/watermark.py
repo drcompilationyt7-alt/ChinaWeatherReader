@@ -27,6 +27,9 @@ WM_SAFE_LAND = ((0.06, 0.08), (0.40, 0.07), (0.70, 0.10), (0.68, 0.80), (0.38, 0
 WM_SAFE_LETTERBOX = ((0.07, 0.16), (0.40, 0.14), (0.62, 0.22), (0.30, 0.27), (0.08, 0.25), (0.50, 0.18))
 # rot90 delivery: the handle is upright in the 16:9 MASTER; master (x, y) lands at portrait ((1 - y) W, x H), so these
 # master positions keep it out of the Shorts UI (right 22 % buttons, top 12 %, bottom 32 %) once rotated
+# ranking lists (1080x1440: title + list on the blurred top, the clip band at y .41-.83, owner 2026-11-20 "you didn't put my
+# watermark"): drift inside the clip band's corners, clear of the title / list text and the Shorts buttons (right ~22 %)
+WM_SAFE_RANKING = ((0.06, 0.78), (0.36, 0.79), (0.56, 0.75), (0.06, 0.47), (0.44, 0.46), (0.22, 0.62))
 WM_SAFE_ROT90 = ((0.15, 0.75), (0.40, 0.80), (0.50, 0.42), (0.30, 0.30), (0.15, 0.55), (0.45, 0.62))
 WM_LEG_S = 7.0
 _WM = {}
@@ -83,7 +86,7 @@ def _probe(path):
     return int(s['width']), int(s['height']), float(num) / float(den)
 
 
-def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, letterbox=False, rotate_hint=None):
+def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, letterbox=False, rotate_hint=None, layout=None):
     """rot90: the picture is a 16:9 master turned 90 deg clockwise into 9:16 (sound edit 'rot90' delivery); the handle
     is then written upright in the MASTER's frame (it turns with the picture, as the references' own marks do)."""
     text = os.environ.get('EDIT_WATERMARK', '@zeroyenotaku') if text is None else text
@@ -121,7 +124,7 @@ def burn(src, dst, text=None, crf=16, preset='medium', threads=0, rot90=False, l
             up = np.ascontiguousarray(np.rot90(fr, 1))          # counter-clockwise: the master upright
             fr = np.ascontiguousarray(np.rot90(apply(up, k / fps, text, WM_SAFE_ROT90), -1))
         else:
-            fr = apply(fr, k / fps, text, WM_SAFE_LETTERBOX if letterbox else None)
+            fr = apply(fr, k / fps, text, WM_SAFE_RANKING if layout == 'ranking' else WM_SAFE_LETTERBOX if letterbox else None)
         if hint:
             fr = np.ascontiguousarray(RH.apply(fr, k / fps, shows))
         enc.stdin.write(fr.tobytes())
@@ -138,8 +141,9 @@ def main():
     ap.add_argument('--in', dest='src', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--text')
+    ap.add_argument('--layout', choices=['ranking'], help='safe positions for that layout (default: by aspect)')
     a = ap.parse_args()
-    burn(a.src, a.out, a.text)
+    burn(a.src, a.out, a.text, layout=a.layout)
     print(json.dumps({'ok': True, 'out': a.out}))
 
 

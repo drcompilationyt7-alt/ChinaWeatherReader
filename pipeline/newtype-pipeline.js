@@ -479,7 +479,15 @@ async function runRanking({ outputDir } = {}) {
   }
   // a named final file, as the renders artifact keeps it: ranking_<topic>.mp4 (+ result / title / description)
   const videoPath = path.join(work, `ranking_${rep.topic}.mp4`);
-  fs.renameSync(out, videoPath);
+  // owner 2026-11-20: "you didn't put my watermark": the channel handle, burned like every other edit type (watermark.py,
+  // ranking-safe positions in the clip band; EDIT_WATERMARK '' = off). A failed burn keeps the clean render, never no video.
+  const wm = await runCli([CORE('watermark.py'), '--in', out, '--out', videoPath, '--layout', 'ranking'], 20);
+  if (wm.err || !fs.existsSync(videoPath)) {
+    logger.warn(`ranking: watermark pass failed (${String((wm.err && wm.err.message) || 'no file').slice(0, 120)}), posting without it`);
+    fs.renameSync(out, videoPath);
+  } else {
+    fs.unlinkSync(out);
+  }
   fs.writeFileSync(path.join(work, 'result.json'), JSON.stringify({ ...rep, short: videoPath }, null, 1));
   const problems = guardRanking(rep, videoPath);
   const title = rankingTitle(rep);
