@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=jQNeOZ20gD8",
-      "title": "soda pop acapella saja boys 🎧🎶",
-      "country": "Global",
-      "postedAt": "2026-10-23T08:11:46.519Z",
-      "videoId": "jQNeOZ20gD8",
-      "category": "meme-anime",
-      "titleSource": "soda pop"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=7idvk5Z_S6k",
       "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "aTa6TLYjtqM",
       "category": "edit-slowmo",
       "titleSource": "Ditto (slowed)"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=8bZT3PReCyM",
+      "title": "love dramatic (kaguya-sama opening) acapella but drums kick in 🔥",
+      "country": "Global",
+      "postedAt": "2026-11-22T10:36:27.635Z",
+      "videoId": "8bZT3PReCyM",
+      "category": "meme-anime",
+      "titleSource": "love dramatic"
     }
   ]
 }
