@@ -1,79 +1,87 @@
 {
-  "updatedAt": "2026-11-21T09:58:06.730Z",
+  "updatedAt": "2026-11-22T09:54:54.625Z",
   "channel": {
     "title": "ASIAN POP QUIZ",
     "subscribers": 30,
-    "totalViews": 66895,
-    "totalVideos": 87
+    "totalViews": 66936,
+    "totalVideos": 88
   },
-  "sampleSize": 86,
+  "sampleSize": 87,
   "reliable": true,
-  "globalMeanScore": 70.2,
-  "typicalScore": 35.7,
+  "globalMeanScore": 66.7,
+  "typicalScore": 35.4,
   "topTitles": [
     {
-      "videoId": "yN_1JhlvH20",
-      "title": "would you rather (food edition) 🧠 #asianfood",
-      "views": 918,
-      "score": 498.6,
+      "videoId": "lZNyh-FvaSw",
+      "title": "guess the city name: asia photo quiz 🧠 #asia",
+      "views": 905,
+      "score": 483.7,
       "country": "Global",
       "ageDays": 1.9
     },
     {
       "videoId": "cweN0o4RoXg",
       "title": "Name the K-Pop Idol Before It Unblurs 🔥 #kpop",
-      "views": 3020,
-      "score": 457.8,
-      "country": "Global",
-      "ageDays": 6.9
-    },
-    {
-      "videoId": "aBFXTBfz5rw",
-      "title": "Guess the Asian Dish From One Photo 🔥 #asianfood",
-      "views": 1055,
-      "score": 394.4,
-      "country": "Global",
-      "ageDays": 2.9
-    },
-    {
-      "videoId": "rIwslaMsFiI",
-      "title": "Can You Recognize These 3 Countries? 🔥 #geography",
-      "views": 1417,
-      "score": 266.2,
-      "country": "Global",
-      "ageDays": 5.9
-    },
-    {
-      "videoId": "Pe29XHzxJEs",
-      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
-      "views": 1121,
-      "score": 210.2,
-      "country": "Global",
-      "ageDays": 4.9
-    },
-    {
-      "videoId": "zl2L0THYWl4",
-      "title": "Guess the Anime From One Scene 🎬 #anime",
-      "views": 1318,
-      "score": 209,
-      "country": "Global",
-      "ageDays": 6.4
-    },
-    {
-      "videoId": "rOEfsxryjLU",
-      "title": "guess the kpop song from emojis quiz 🎶 #kpop",
-      "views": 1585,
-      "score": 198.9,
+      "views": 3025,
+      "score": 400.4,
       "country": "Global",
       "ageDays": 7.9
     },
     {
-      "videoId": "op7i41bl02A",
-      "title": "Anime Eyes Quiz: Glasses Edition 👓",
-      "views": 983,
-      "score": 193.9,
+      "videoId": "aBFXTBfz5rw",
+      "title": "Guess the Asian Dish From One Photo 🔥 #asianfood",
+      "views": 1056,
+      "score": 264.1,
       "country": "Global",
       "ageDays": 3.9
+    },
+    {
+      "videoId": "rIwslaMsFiI",
+      "title": "Can You Recognize These 3 Countries? 🔥 #geography",
+      "views": 1418,
+      "score": 227.7,
+      "country": "Global",
+      "ageDays": 6.9
+    },
+    {
+      "videoId": "zl2L0THYWl4",
+      "title": "Guess the Anime From One Scene 🎬 #anime",
+      "views": 1323,
+      "score": 181.5,
+      "country": "Global",
+      "ageDays": 7.4
+    },
+    {
+      "videoId": "rOEfsxryjLU",
+      "title": "guess the kpop song from emojis quiz 🎶 #kpop",
+      "views": 1586,
+      "score": 176.7,
+      "country": "Global",
+      "ageDays": 8.9
+    },
+    {
+      "videoId": "Pe29XHzxJEs",
+      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
+      "views": 1123,
+      "score": 175.4,
+      "country": "Global",
+      "ageDays": 5.9
+    },
+    {
+      "videoId": "yN_1JhlvH20",
+      "title": "would you rather (food edition) 🧠 #asianfood",
+      "views": 927,
+      "score": 169.2,
+      "country": "Global",
+      "ageDays": 2.9
+    },
+    {
+      "videoId": "op7i41bl02A",
+      "title": "Anime Eyes Quiz: Glasses Edition 👓",
+      "views": 985,
+      "score": 154.6,
+      "country": "Global",
+      "ageDays": 4.9
     },
     {
       "videoId": "QKjJqfS91jE",
@@ -81,15 +89,7 @@
       "views": 1839,
       "score": 127.1,
       "country": "Global",
-      "ageDays": 28.9
-    },
-    {
-      "videoId": "BgSU1-o7CWI",
-      "title": "How Well Do You Know Asian Food? 🧠 #asianfood",
-      "views": 1062,
-      "score": 117.3,
-      "country": "Global",
-      "ageDays": 7.4
+      "ageDays": 29.9
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 8,
       "score": 0.4,
       "country": "Global",
-      "ageDays": 10.6
+      "ageDays": 11.6
     },
     {
       "videoId": "vkEIwQ8ojLg",
@@ -107,7 +107,7 @@
       "views": 22,
       "score": 0.7,
       "country": "Global",
-      "ageDays": 25.9
+      "ageDays": 26.9
     },
     {
       "videoId": "aqIJfCd0aIk",
@@ -115,7 +115,7 @@
       "views": 15,
       "score": 0.9,
       "country": null,
-      "ageDays": 54.9
+      "ageDays": 55.9
     },
     {
       "videoId": "tHRevFmjmCQ",
@@ -123,27 +123,27 @@
       "views": 14,
       "score": 1.1,
       "country": "Global",
-      "ageDays": 23.5
+      "ageDays": 24.5
     },
     {
-      "videoId": "IqdVixQTNWg",
-      "title": "asia city quiz: ice festival capital bund 🧠 #asia",
-      "views": 44,
-      "score": 1.6,
-      "country": null,
-      "ageDays": 30.9
+      "videoId": "N298j3W_ld4",
+      "title": "Guess the Anime Opening in 3 Seconds 🗺️ #anime",
+      "views": 18,
+      "score": 1.2,
+      "country": "Global",
+      "ageDays": 11.4
     }
   ],
   "titlePatterns": [
     {
       "name": "ALL CAPS word",
       "n": 9,
-      "lift": 1.6
+      "lift": 1.58
     },
     {
       "name": "has emoji",
-      "n": 76,
-      "lift": 1.28
+      "n": 77,
+      "lift": 1.25
     },
     {
       "name": "short (<= 40 chars)",
@@ -152,13 +152,13 @@
     },
     {
       "name": "mentions place",
-      "n": 19,
-      "lift": 0.8
+      "n": 20,
+      "lift": 0.86
     },
     {
       "name": "question",
       "n": 13,
-      "lift": 0.71
+      "lift": 0.69
     },
     {
       "name": "has number",
@@ -168,62 +168,67 @@
   ],
   "countries": {
     "Global": {
-      "n": 51,
-      "meanScore": 91.7,
-      "weight": 1.26
+      "n": 50,
+      "meanScore": 84.5,
+      "weight": 1.2
     }
   },
   "channels": {},
   "categories": {
-    "quiz-wyr": {
-      "n": 5,
-      "meanScore": 132.4,
-      "weight": 0.92
+    "quiz-cityphoto": {
+      "n": 4,
+      "meanScore": 149.1,
+      "weight": 1.23
     },
     "quiz-idol": {
-      "n": 5,
-      "meanScore": 164.1,
+      "n": 4,
+      "meanScore": 164,
       "weight": 1.6
     },
     "quiz-cuisine": {
       "n": 2,
-      "meanScore": 226,
+      "meanScore": 160.8,
       "weight": 1
     },
     "quiz-shape": {
       "n": 3,
-      "meanScore": 149.5,
+      "meanScore": 136.7,
       "weight": 1.6
-    },
-    "quiz-vtuber": {
-      "n": 1,
-      "meanScore": 210.2,
-      "weight": 1
     },
     "quiz-scene": {
       "n": 1,
-      "meanScore": 209,
+      "meanScore": 181.5,
       "weight": 1
     },
     "quiz-emoji": {
       "n": 4,
-      "meanScore": 113.4,
+      "meanScore": 106.4,
       "weight": 1.6
+    },
+    "quiz-vtuber": {
+      "n": 1,
+      "meanScore": 175.4,
+      "weight": 1
+    },
+    "quiz-wyr": {
+      "n": 4,
+      "meanScore": 55.9,
+      "weight": 0.67
     },
     "quiz-eyes": {
       "n": 3,
-      "meanScore": 105.2,
-      "weight": 1.57
+      "meanScore": 91.3,
+      "weight": 1.5
     },
     "quiz-song": {
       "n": 4,
-      "meanScore": 43.7,
-      "weight": 0.75
+      "meanScore": 43.4,
+      "weight": 0.74
     },
     "quiz-trivia": {
       "n": 5,
-      "meanScore": 50.7,
-      "weight": 1
+      "meanScore": 46.6,
+      "weight": 0.98
     },
     "quiz-character": {
       "n": 1,
@@ -232,22 +237,17 @@
     },
     "quiz-outfit": {
       "n": 4,
-      "meanScore": 55.6,
-      "weight": 1.18
+      "meanScore": 55.2,
+      "weight": 1.17
     },
     "quiz-silhouette": {
       "n": 3,
-      "meanScore": 51.3,
-      "weight": 1.18
-    },
-    "quiz-cityphoto": {
-      "n": 3,
-      "meanScore": 37.7,
-      "weight": 0.83
+      "meanScore": 49.6,
+      "weight": 1.17
     },
     "quiz-duel": {
       "n": 3,
-      "meanScore": 28.4,
+      "meanScore": 28.3,
       "weight": 0.89
     },
     "quiz-voice": {
@@ -257,7 +257,7 @@
     },
     "quiz-opening": {
       "n": 1,
-      "meanScore": 1.6,
+      "meanScore": 1.2,
       "weight": 1
     },
     "quiz-city": {
@@ -269,44 +269,44 @@
   "eggs": {},
   "history": [
     {
-      "title": "would you rather (food edition) 🧠 #asianfood",
-      "score": 6.214
+      "title": "guess the city name: asia photo quiz 🧠 #asia",
+      "score": 6.183
     },
     {
       "title": "Name the K-Pop Idol Before It Unblurs 🔥 #kpop",
-      "score": 6.129
+      "score": 5.995
     },
     {
       "title": "Guess the Asian Dish From One Photo 🔥 #asianfood",
-      "score": 5.98
+      "score": 5.58
     },
     {
       "title": "Can You Recognize These 3 Countries? 🔥 #geography",
-      "score": 5.588
-    },
-    {
-      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
-      "score": 5.353
+      "score": 5.432
     },
     {
       "title": "Guess the Anime From One Scene 🎬 #anime",
-      "score": 5.347
+      "score": 5.207
     },
     {
       "title": "guess the kpop song from emojis quiz 🎶 #kpop",
-      "score": 5.298
+      "score": 5.18
+    },
+    {
+      "title": "VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber",
+      "score": 5.173
+    },
+    {
+      "title": "would you rather (food edition) 🧠 #asianfood",
+      "score": 5.137
     },
     {
       "title": "Anime Eyes Quiz: Glasses Edition 👓",
-      "score": 5.273
+      "score": 5.047
     },
     {
       "title": "Guess the Song in 3 Seconds 🔥 #kpop",
       "score": 4.853
-    },
-    {
-      "title": "How Well Do You Know Asian Food? 🧠 #asianfood",
-      "score": 4.774
     },
     {
       "title": "guess the kpop song from emojis ⚡ #kpop",
@@ -317,8 +317,12 @@
       "score": 4.701
     },
     {
+      "title": "How Well Do You Know Asian Food? 🧠 #asianfood",
+      "score": 4.648
+    },
+    {
       "title": "Name the Country From Its Outline 🤯 #geography",
-      "score": 4.647
+      "score": 4.648
     },
     {
       "title": "guess the kpop idol quiz #kpop",
@@ -341,10 +345,6 @@
       "score": 4.556
     },
     {
-      "title": "guess the kpop idol quiz 🧠 #kpop",
-      "score": 4.433
-    },
-    {
       "title": "guess the kpop idol without pausing 💜 #kpop",
       "score": 4.413
     },
@@ -357,20 +357,16 @@
       "score": 4.377
     },
     {
-      "title": "asian food quiz: can you get 3/3 💜 #asianfood",
-      "score": 4.371
-    },
-    {
       "title": "guess the anime character quiz 🤯 #anime",
       "score": 4.36
     },
     {
-      "title": "guess the kpop song from emojis quiz 👀 #kpop",
-      "score": 4.358
+      "title": "guess the kpop idol quiz 🧠 #kpop",
+      "score": 4.359
     },
     {
       "title": "Guess the Chinese City From the Map 🔥 #china",
-      "score": 4.354
+      "score": 4.355
     },
     {
       "title": "Country Shape Quiz: Easy to IMPOSSIBLE 🔥 #geography",
@@ -389,8 +385,16 @@
       "score": 4.3
     },
     {
+      "title": "asian food quiz: can you get 3/3 💜 #asianfood",
+      "score": 4.288
+    },
+    {
       "title": "Guess the Country by Its Shape 🗺️ #geography",
       "score": 4.28
+    },
+    {
+      "title": "guess the kpop song from emojis quiz 👀 #kpop",
+      "score": 4.279
     },
     {
       "title": "Guess the Anime Character by Their Outfit #anime",
@@ -405,10 +409,6 @@
       "score": 4.24
     },
     {
-      "title": "guess the anime character silhouette 🧠 #anime",
-      "score": 4.23
-    },
-    {
       "title": "guess the kpop song from emojis quiz 🤯 #kpop",
       "score": 4.222
     },
@@ -421,6 +421,10 @@
       "score": 4.159
     },
     {
+      "title": "guess the anime character silhouette 🧠 #anime",
+      "score": 4.156
+    },
+    {
       "title": "guess the city photo quiz asia #asia",
       "score": 4.089
     },
@@ -429,12 +433,12 @@
       "score": 4.068
     },
     {
-      "title": "guess the anime character by their eyes 👁️ #anime",
-      "score": 3.986
-    },
-    {
       "title": "How Well Do You Know Chinese Movies?",
       "score": 3.951
+    },
+    {
+      "title": "guess the anime character by their eyes 👁️ #anime",
+      "score": 3.941
     },
     {
       "title": "Can You Name These 3 Asian Cities? 🔥",
@@ -442,7 +446,7 @@
     },
     {
       "title": "Anime Emoji Quiz: Easy to IMPOSSIBLE 🔥",
-      "score": 3.916
+      "score": 3.918
     },
     {
       "title": "Guess the Anime Character Silhouette 🔥 #anime",
@@ -462,7 +466,7 @@
     },
     {
       "title": "guess the kpop song from emojis 🎶",
-      "score": 3.684
+      "score": 3.686
     },
     {
       "title": "Name the Anime Character From Their Shadow ⚡",
@@ -477,12 +481,12 @@
       "score": 3.497
     },
     {
-      "title": "who would you pick anime quiz ⚔️ #anime",
-      "score": 3.457
-    },
-    {
       "title": "who would you pick anime duel 🧠 #anime",
       "score": 3.449
+    },
+    {
+      "title": "who would you pick anime quiz ⚔️ #anime",
+      "score": 3.448
     },
     {
       "title": "asian food quiz: can you get 3/3 #asianfood",
@@ -530,7 +534,7 @@
     },
     {
       "title": "Can You Name These Anime Outfits? 🧠 #anime",
-      "score": 2.874
+      "score": 2.779
     },
     {
       "title": "asian cities quiz but it gets hard fast 👀 #asia",
@@ -546,7 +550,7 @@
     },
     {
       "title": "guess the kpop song quiz: 3/3 challenge 🎶 #kpop",
-      "score": 2.58
+      "score": 2.482
     },
     {
       "title": "would you rather (cities edition) 🔥✌️",
@@ -574,7 +578,7 @@
     },
     {
       "title": "guess the city quiz asian cities only 🤯 #asia",
-      "score": 1.694
+      "score": 1.603
     },
     {
       "title": "Who Would You Pick? Anime Edition ⚔️",
@@ -586,15 +590,15 @@
     },
     {
       "title": "She Quit Her TV Job Before the Internship Began | An Exciting Offer S7 EP1",
-      "score": 1.155
-    },
-    {
-      "title": "Guess the Anime Opening in 3 Seconds 🗺️ #anime",
-      "score": 0.955
+      "score": 1.3
     },
     {
       "title": "asia city quiz: ice festival capital bund 🧠 #asia",
       "score": 0.958
+    },
+    {
+      "title": "Guess the Anime Opening in 3 Seconds 🗺️ #anime",
+      "score": 0.773
     },
     {
       "title": "Guess the Chinese City From the Map #china",
@@ -610,9 +614,9 @@
     },
     {
       "title": "chinese map quiz: can you name 3/3? 🎧 #china",
-      "score": 0.359
+      "score": 0.333
     }
   ],
-  "promptSummary": "Based on 86 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 35.7/day):\nTitles that performed BEST for us:\n  - \"would you rather (food edition) 🧠 #asianfood\" (918 views, Global)\n  - \"Name the K-Pop Idol Before It Unblurs 🔥 #kpop\" (3,020 views, Global)\n  - \"Guess the Asian Dish From One Photo 🔥 #asianfood\" (1,055 views, Global)\n  - \"Can You Recognize These 3 Countries? 🔥 #geography\" (1,417 views, Global)\n  - \"VTuber Quiz: Easy to IMPOSSIBLE 🦊 #vtuber\" (1,121 views, Global)\n  - \"Guess the Anime From One Scene 🎬 #anime\" (1,318 views, Global)\nTitles that performed WORST for us:\n  - \"chinese map quiz: can you name 3/3? 🎧 #china\" (8 views)\n  - \"Would You Rather: Maid Cafe Edition ☕\" (22 views)\n  - \"Only Real Otakus Get 3/3 🎶\" (15 views)\nPatterns that WORK for this channel: ALL CAPS word (x1.6), has emoji (x1.28)\nPatterns that UNDER-perform: mentions place (x0.8), question (x0.71), has number (x0.39)",
-  "summaryLine": "Best recent: \"would you rather (food edition) 🧠 #asianfood\" (918 views, 498.6/day) — typical short 35.7/day over 86 shorts"
+  "promptSummary": "Based on 87 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 35.4/day):\nTitles that performed BEST for us:\n  - \"guess the city name: asia photo quiz 🧠 #asia\" (905 views, Global)\n  - \"Name the K-Pop Idol Before It Unblurs 🔥 #kpop\" (3,025 views, Global)\n  - \"Guess the Asian Dish From One Photo 🔥 #asianfood\" (1,056 views, Global)\n  - \"Can You Recognize These 3 Countries? 🔥 #geography\" (1,418 views, Global)\n  - \"Guess the Anime From One Scene 🎬 #anime\" (1,323 views, Global)\n  - \"guess the kpop song from emojis quiz 🎶 #kpop\" (1,586 views, Global)\nTitles that performed WORST for us:\n  - \"chinese map quiz: can you name 3/3? 🎧 #china\" (8 views)\n  - \"Would You Rather: Maid Cafe Edition ☕\" (22 views)\n  - \"Only Real Otakus Get 3/3 🎶\" (15 views)\nPatterns that WORK for this channel: ALL CAPS word (x1.58), has emoji (x1.25)\nPatterns that UNDER-perform: question (x0.69), has number (x0.39)",
+  "summaryLine": "Best recent: \"guess the city name: asia photo quiz 🧠 #asia\" (905 views, 483.7/day) — typical short 35.4/day over 87 shorts"
 }

@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=QKjJqfS91jE",
-      "title": "Guess the Song in 3 Seconds 🔥 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-23T07:48:44.515Z",
-      "videoId": "QKjJqfS91jE",
-      "category": "quiz-song",
-      "titleSource": "song-3sec",
-      "quizFormat": "song",
-      "quizTheme": "kpop"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=dKsEZJg5w9M",
-      "title": "guess the kpop song from emojis: can you get 3/3? 🧠 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-23T07:54:48.043Z",
-      "videoId": "dKsEZJg5w9M",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-llm",
-      "quizFormat": "emoji",
-      "quizTheme": "kpop song"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=d7Xhac5vfFI",
       "title": "Guess the Country by Its Shape #geography",
       "country": "Global",
@@ -581,6 +559,17 @@
       "category": "quiz-outfit",
       "titleSource": "outfit-design",
       "quizFormat": "outfit",
+      "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=k8KFc8LppuU",
+      "title": "Guess the Anime Character (Maid Cafe Edition) ☕",
+      "country": "Global",
+      "postedAt": "2026-11-22T09:59:37.913Z",
+      "videoId": "k8KFc8LppuU",
+      "category": "quiz-character",
+      "titleSource": "character-llm",
+      "quizFormat": "character",
       "quizTheme": "anime"
     }
   ]
