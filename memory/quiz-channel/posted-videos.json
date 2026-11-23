@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=d7Xhac5vfFI",
-      "title": "Guess the Country by Its Shape #geography",
-      "country": "Global",
-      "postedAt": "2026-10-24T07:28:23.947Z",
-      "videoId": "d7Xhac5vfFI",
-      "category": "quiz-shape",
-      "titleSource": "shape-guess",
-      "quizFormat": "shape",
-      "quizTheme": "asia"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=zFNElVtTZiM",
-      "title": "Can You Name These 3 Asian Cities? 🔥",
-      "country": "Global",
-      "postedAt": "2026-10-24T07:31:33.633Z",
-      "videoId": "zFNElVtTZiM",
-      "category": "quiz-cityphoto",
-      "titleSource": "cphoto-name",
-      "quizFormat": "cityphoto",
-      "quizTheme": "asia"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=l8PFbFuyw0w",
       "title": "guess the anime character by outfit 🔥 #anime",
       "country": "Global",
@@ -571,6 +549,17 @@
       "titleSource": "character-llm",
       "quizFormat": "character",
       "quizTheme": "anime"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Rchi3aOKGuc",
+      "title": "Would You Rather: K-Pop Edition 🎶 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-23T11:05:24.220Z",
+      "videoId": "Rchi3aOKGuc",
+      "category": "quiz-wyr",
+      "titleSource": "wyr-edition",
+      "quizFormat": "wyr",
+      "quizTheme": "kpop"
     }
   ]
 }

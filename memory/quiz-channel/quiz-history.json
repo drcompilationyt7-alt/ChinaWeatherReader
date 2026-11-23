@@ -3485,6 +3485,31 @@
     "titleStyle": "op-exact-search",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "Rchi3aOKGuc",
+   "url": "https://www.youtube.com/watch?v=Rchi3aOKGuc",
+   "postedAt": "2026-11-23T11:05:24.044Z",
+   "publishAt": "2026-11-23T13:00:00.000Z",
+   "format": "wyr",
+   "theme": "kpop",
+   "seed": 535385870,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "wyr-edition",
+   "title": "Would You Rather: K-Pop Edition 🎶 #kpop",
+   "answers": [
+    "wyr:write a global summer hit song|choreograph a viral dance trend",
+    "wyr:learn any k-pop dance in 1 hour|sing any k-pop song perfectly",
+    "wyr:host a fan meeting in seoul|headline a world tour in tokyo"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-sparks",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "challenge"
+   }
   }
  ]
 }
