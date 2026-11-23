@@ -2930,7 +2930,8 @@
    "songSection": [
     147.906,
     178.864
-   ]
+   ],
+   "musicPerf": 3.097
   },
   {
    "videoId": "ThtpGwsMOH4",
@@ -3300,6 +3301,72 @@
    "whyMode": "hit-spaced-repeat",
    "bpm": 129.01,
    "titlePattern": "{song} acapella but drums kick in {e}"
+  },
+  {
+   "videoId": "ObGBSWEq7w8",
+   "url": "https://www.youtube.com/watch?v=ObGBSWEq7w8",
+   "postedAt": "2026-11-23T12:02:06.786Z",
+   "publishAt": "2026-11-23T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "Shape of You",
+   "theme": "anime",
+   "emoji": "🗿",
+   "title": "Ed Sheeran - Shape of You (Anime Remix)",
+   "clipIds": [
+    "c_43Tn1OiBGt4_95263",
+    "c_4TJNIquRzAc_132863",
+    "c_BOKrwNqPoY8_55559",
+    "c_BTNEyBRynJQ_84746",
+    "c_Ei37mjbcqGQ_4952",
+    "c_EsUbAFAOXE8_119363",
+    "c_Ipr0YNnwlXA_40900",
+    "c_J3kytewub_Y_352052",
+    "c_K39jx5VkIPw_790875",
+    "c_KbjmnBu7scU_45969",
+    "c_O2JRxaMNK_c_28850",
+    "c_O2JRxaMNK_c_80566",
+    "c_OcbcJ4Urg5k_528463",
+    "c_P8j50ByEd7w_29601",
+    "c_P8j50ByEd7w_37150",
+    "c_RTDeuS24k2s_771",
+    "c_UQvmIq570dE_34185",
+    "c_X0Y72O8mY-w_6900",
+    "c_ZaJlKP4sjj0_183630",
+    "c_biPUhMQn8Qw_161771",
+    "c_krc6M4vPx28_36300",
+    "c_mBpBTRnhDl0_115884",
+    "c_mBpBTRnhDl0_192447",
+    "c_upIsOnCMthw_152245",
+    "c_utLWiscq8d4_35350",
+    "c_xT66YPk0Q5w_201106",
+    "c_z1In_sZL7xg_155531",
+    "c_zUiJ3TahSqE_28681",
+    "c_zv5lApSubRw_357242"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 18.667,
+    "pool": "sound",
+    "render_s": {
+     "short": 510.3,
+     "watermark_short": 49.6,
+     "total": 560
+    },
+    "attempts": 2
+   },
+   "onVideoTitle": "shape of you sfx edit",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "moai",
+    "hashtagSet": "niche3",
+    "titleStyle": "artist-remix",
+    "ovStyle": "op-ov-song-sfx",
+    "descHook": "rate",
+    "titlePattern": "{song} anime edit sound design {e}",
+    "titleMode": "explore"
+   },
+   "vibe": "impact"
   }
  ]
 }

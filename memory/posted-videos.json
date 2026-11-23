@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=7idvk5Z_S6k",
-      "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
-      "country": "Global",
-      "postedAt": "2026-10-24T05:48:42.132Z",
-      "videoId": "7idvk5Z_S6k",
-      "category": "edit-slowmo",
-      "titleSource": "Golden Hour"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=OP4oWjr6juI",
       "title": "yoru ni kakeru acapella but the beat drops 🎶",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "8bZT3PReCyM",
       "category": "meme-anime",
       "titleSource": "love dramatic"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=ObGBSWEq7w8",
+      "title": "Ed Sheeran - Shape of You (Anime Remix)",
+      "country": "Global",
+      "postedAt": "2026-11-23T12:02:06.958Z",
+      "videoId": "ObGBSWEq7w8",
+      "category": "edit-sound",
+      "titleSource": "Shape of You"
     }
   ]
 }
