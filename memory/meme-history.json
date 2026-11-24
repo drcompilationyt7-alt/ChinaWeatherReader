@@ -3367,6 +3367,39 @@
     "titleMode": "explore"
    },
    "vibe": "impact"
+  },
+  {
+   "videoId": "b5MhxCYSdds",
+   "url": "https://www.youtube.com/watch?v=b5MhxCYSdds",
+   "postedAt": "2026-11-24T13:08:03.315Z",
+   "publishAt": "2026-11-24T12:00:00.000Z",
+   "contentType": "ranking-edit",
+   "song": "strongest_overall",
+   "theme": "anime",
+   "emoji": "🔥",
+   "title": "strongest anime characters 🔥 #anime",
+   "clipIds": [
+    "njcOEOKNzk8",
+    "e7opqhHiVcg",
+    "2owfmwfXB84"
+   ],
+   "clipChannels": [
+    "@purgify.mp4",
+    "@forceyamv",
+    "@xParagonEditz"
+   ],
+   "settings": {
+    "topic": "strongest_overall",
+    "entries": [
+     "#3 GOJO",
+     "#2 SAITAMA",
+     "#1 RIMURU"
+    ],
+    "pool": "ranking"
+   },
+   "onVideoTitle": null,
+   "meta": null,
+   "vibe": null
   }
  ]
 }

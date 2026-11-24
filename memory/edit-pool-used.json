@@ -307,6 +307,18 @@
    "used_at": "2026-11-23T12:02:06Z",
    "video": "sound-impact-short.mp4",
    "role": "short"
+  },
+  "ranking/clip/r_njcOEOKNzk8_0": {
+   "used_at": "2026-11-24T13:08:03Z",
+   "video": "ranking_strongest_overall.mp4"
+  },
+  "ranking/clip/r_e7opqhHiVcg_3340": {
+   "used_at": "2026-11-24T13:08:03Z",
+   "video": "ranking_strongest_overall.mp4"
+  },
+  "ranking/clip/r_2owfmwfXB84_0": {
+   "used_at": "2026-11-24T13:08:03Z",
+   "video": "ranking_strongest_overall.mp4"
   }
  },
  "moments": {},
@@ -793,10 +805,14 @@
  "ranking_recent": [
   "_StckjDi9ak",
   "H1Q5zPXbefU",
-  "l3xGSMayfgI"
+  "l3xGSMayfgI",
+  "njcOEOKNzk8",
+  "e7opqhHiVcg",
+  "2owfmwfXB84"
  ],
  "ranking_topics_recent": [
-  "jjk_strongest"
+  "jjk_strongest",
+  "strongest_overall"
  ],
  "ranking_lists": [
   {
@@ -807,6 +823,15 @@
     "SUKUNA"
    ],
    "format": "open2"
+  },
+  {
+   "topic": "strongest_overall",
+   "entries": [
+    "GOJO",
+    "SAITAMA",
+    "RIMURU"
+   ],
+   "format": "top3"
   }
  ]
 }

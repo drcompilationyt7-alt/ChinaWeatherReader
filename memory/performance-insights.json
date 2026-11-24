@@ -1,39 +1,39 @@
 {
-  "updatedAt": "2026-11-23T11:26:24.360Z",
+  "updatedAt": "2026-11-24T13:05:10.217Z",
   "channel": {
     "title": "Zero Yen Otaku",
-    "subscribers": 34,
-    "totalViews": 43243,
-    "totalVideos": 65
+    "subscribers": 36,
+    "totalViews": 46335,
+    "totalVideos": 63
   },
-  "sampleSize": 64,
+  "sampleSize": 65,
   "reliable": true,
-  "globalMeanScore": 48.1,
-  "typicalScore": 17.1,
+  "globalMeanScore": 53,
+  "typicalScore": 17.4,
   "topTitles": [
     {
-      "videoId": "Q2sHEUBLuOE",
-      "title": "strongest jjk characters 🔥 #jujutsukaisen",
-      "views": 2795,
-      "score": 486.5,
-      "country": "Global",
-      "ageDays": 3
-    },
-    {
-      "videoId": "aTa6TLYjtqM",
-      "title": "ditto but it's anime ✨ #anime",
-      "views": 374,
-      "score": 198.3,
+      "videoId": "8bZT3PReCyM",
+      "title": "love dramatic (kaguya-sama opening) acapella but drums kick in 🔥",
+      "views": 1185,
+      "score": 585.4,
       "country": "Global",
       "ageDays": 2
     },
     {
-      "videoId": "IFwS-_3ODTA",
-      "title": "Tones and I - Dance Monkey (Anime Remix)",
-      "views": 497,
-      "score": 164.7,
+      "videoId": "Q2sHEUBLuOE",
+      "title": "strongest jjk characters 🔥 #jujutsukaisen",
+      "views": 2896,
+      "score": 487.2,
       "country": "Global",
       "ageDays": 4
+    },
+    {
+      "videoId": "IFwS-_3ODTA",
+      "title": "Tones and I - Dance Monkey (Anime Remix)",
+      "views": 499,
+      "score": 131.9,
+      "country": "Global",
+      "ageDays": 5
     },
     {
       "videoId": "Bw95121fb80",
@@ -41,7 +41,7 @@
       "views": 1132,
       "score": 125.3,
       "country": "Global",
-      "ageDays": 18
+      "ageDays": 19
     },
     {
       "videoId": "bX7DiNYiQxQ",
@@ -49,23 +49,15 @@
       "views": 1584,
       "score": 119.1,
       "country": "Global",
-      "ageDays": 18.9
+      "ageDays": 20
     },
     {
       "videoId": "OP4oWjr6juI",
       "title": "yoru ni kakeru acapella but the beat drops 🎶",
-      "views": 1046,
-      "score": 112.9,
+      "views": 1047,
+      "score": 113,
       "country": "Global",
-      "ageDays": 29
-    },
-    {
-      "videoId": "4y13vXVgOQE",
-      "title": "shape of you anime edit sfx 🗿 #anime",
-      "views": 849,
-      "score": 105.6,
-      "country": "Global",
-      "ageDays": 12
+      "ageDays": 30
     },
     {
       "videoId": "FxlEq_ZFMBA",
@@ -73,23 +65,31 @@
       "views": 931,
       "score": 104,
       "country": "Global",
-      "ageDays": 14.9
+      "ageDays": 15.9
+    },
+    {
+      "videoId": "4y13vXVgOQE",
+      "title": "shape of you anime edit sfx 🗿 #anime",
+      "views": 849,
+      "score": 96.9,
+      "country": "Global",
+      "ageDays": 13
     },
     {
       "videoId": "1_n7d7E6wO8",
       "title": "how you like that acapella but the beat drops 🗿⚡",
-      "views": 1834,
+      "views": 1835,
       "score": 94.1,
       "country": null,
-      "ageDays": 38
+      "ageDays": 39
     },
     {
       "videoId": "Uz9xG1BHnz4",
       "title": "gangnam style acapella but the beat drops 🎧",
-      "views": 1496,
-      "score": 89.7,
+      "views": 1499,
+      "score": 89.9,
       "country": "Global",
-      "ageDays": 22
+      "ageDays": 23
     }
   ],
   "bottomTitles": [
@@ -99,7 +99,7 @@
       "views": 1,
       "score": 0.1,
       "country": null,
-      "ageDays": 56
+      "ageDays": 57
     },
     {
       "videoId": "aJ9WPdgjEoU",
@@ -107,7 +107,7 @@
       "views": 5,
       "score": 0.1,
       "country": null,
-      "ageDays": 48
+      "ageDays": 49
     },
     {
       "videoId": "dXj0c9t-rqY",
@@ -115,7 +115,7 @@
       "views": 6,
       "score": 0.2,
       "country": null,
-      "ageDays": 52
+      "ageDays": 53
     },
     {
       "videoId": "TU8oZz2apfk",
@@ -123,7 +123,7 @@
       "views": 6,
       "score": 0.3,
       "country": null,
-      "ageDays": 57
+      "ageDays": 58
     },
     {
       "videoId": "h469omNRzVE",
@@ -131,69 +131,69 @@
       "views": 3,
       "score": 0.3,
       "country": null,
-      "ageDays": 54
+      "ageDays": 55
     }
   ],
   "titlePatterns": [
     {
       "name": "short (<= 40 chars)",
       "n": 36,
-      "lift": 1.36
+      "lift": 1.16
     }
   ],
   "countries": {
     "Global": {
       "n": 29,
-      "meanScore": 81.6,
+      "meanScore": 92.7,
       "weight": 1.6
     }
   },
   "channels": {},
   "categories": {
+    "meme-anime": {
+      "n": 10,
+      "meanScore": 108.1,
+      "weight": 1.6
+    },
     "edit-ranking": {
       "n": 1,
-      "meanScore": 486.5,
+      "meanScore": 487.2,
       "weight": 1
-    },
-    "edit-slowmo": {
-      "n": 6,
-      "meanScore": 60.3,
-      "weight": 1.6
     },
     "edit-sound": {
       "n": 5,
-      "meanScore": 104.1,
-      "weight": 1.6
-    },
-    "meme-anime": {
-      "n": 9,
-      "meanScore": 57.8,
+      "meanScore": 95.4,
       "weight": 1.6
     },
     "meme-japanese": {
       "n": 4,
-      "meanScore": 69.9,
+      "meanScore": 68.9,
       "weight": 1.6
     },
     "meme-kpop": {
       "n": 4,
-      "meanScore": 49.5,
-      "weight": 1.37
+      "meanScore": 49.3,
+      "weight": 1.31
+    },
+    "edit-slowmo": {
+      "n": 5,
+      "meanScore": 34,
+      "weight": 1.4
     }
   },
   "eggs": {},
   "history": [
     {
-      "title": "strongest jjk characters 🔥 #jujutsukaisen",
-      "score": 6.189
+      "title": "love dramatic (kaguya-sama opening) acapella but drums kick in 🔥",
+      "score": 6.374
     },
     {
-      "title": "ditto but it's anime ✨ #anime",
-      "score": 5.295
+      "title": "strongest jjk characters 🔥 #jujutsukaisen",
+      "score": 6.191
     },
     {
       "title": "Tones and I - Dance Monkey (Anime Remix)",
-      "score": 5.11
+      "score": 4.89
     },
     {
       "title": "montero anime edit sound design 🗿",
@@ -205,15 +205,15 @@
     },
     {
       "title": "yoru ni kakeru acapella but the beat drops 🎶",
-      "score": 4.736
-    },
-    {
-      "title": "shape of you anime edit sfx 🗿 #anime",
-      "score": 4.669
+      "score": 4.737
     },
     {
       "title": "havana anime edit sound design 🗿",
       "score": 4.654
+    },
+    {
+      "title": "shape of you anime edit sfx 🗿 #anime",
+      "score": 4.584
     },
     {
       "title": "how you like that acapella but the beat drops 🗿⚡",
@@ -221,11 +221,11 @@
     },
     {
       "title": "gangnam style acapella but the beat drops 🎧",
-      "score": 4.508
+      "score": 4.51
     },
     {
       "title": "imagination acapella but the beat drops 🔥",
-      "score": 4.492
+      "score": 4.333
     },
     {
       "title": "show acapella but the beat drops 🔥",
@@ -233,15 +233,11 @@
     },
     {
       "title": "soda pop acapella but the beat drops ⚡",
-      "score": 4.247
-    },
-    {
-      "title": "love dramatic acapella but the beat drops 🗿",
-      "score": 4.175
+      "score": 4.246
     },
     {
       "title": "anime sound design edit goes insane on believer 🔥",
-      "score": 4.163
+      "score": 4.159
     },
     {
       "title": "odoriko acapella but the drums kick in 🗿🔥",
@@ -249,11 +245,15 @@
     },
     {
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
-      "score": 4.099
+      "score": 4.105
     },
     {
-      "title": "yoru ni kakeru acapella but beat drops 💿",
-      "score": 4.052
+      "title": "love dramatic acapella but the beat drops 🗿",
+      "score": 4.066
+    },
+    {
+      "title": "ditto but it's anime ✨ #anime",
+      "score": 4.048
     },
     {
       "title": "pink venom acapella but the beat drops 🗿",
@@ -264,24 +264,24 @@
       "score": 4.01
     },
     {
+      "title": "yoru ni kakeru acapella but beat drops 💿",
+      "score": 3.979
+    },
+    {
       "title": "idol acapella yoasobi 🎧🔥 #oshinoko",
       "score": 3.961
     },
     {
       "title": "cupid acapella until the bass drops 🎧",
-      "score": 3.936
+      "score": 3.937
     },
     {
       "title": "dandelions but it's anime ✨",
-      "score": 3.911
-    },
-    {
-      "title": "resonance acapella but the beat drops 🔥",
-      "score": 3.901
+      "score": 3.912
     },
     {
       "title": "soda pop acapella saja boys 🎧🎶",
-      "score": 3.861
+      "score": 3.864
     },
     {
       "title": "idol acapella yoasobi 🗿",
@@ -289,11 +289,15 @@
     },
     {
       "title": "golden hour (slowed) but every frame is an anime girl ✨ #anime",
-      "score": 3.832
+      "score": 3.838
+    },
+    {
+      "title": "resonance acapella but the beat drops 🔥",
+      "score": 3.801
     },
     {
       "title": "hanaichi monme acapella but the beat drops 🗿",
-      "score": 3.763
+      "score": 3.764
     },
     {
       "title": "idol acapella yoasobi 🔥🗿 #oshinoko",
@@ -329,7 +333,7 @@
     },
     {
       "title": "somewhere only we know but it's anime 🎧",
-      "score": 3.357
+      "score": 3.267
     },
     {
       "title": "those eyes anime edit hits different 🔥",
@@ -341,11 +345,11 @@
     },
     {
       "title": "don't start now anime edit sfx 🗿 #anime",
-      "score": 3.097
+      "score": 2.99
     },
     {
       "title": "first love but it's anime ✨",
-      "score": 2.887
+      "score": 2.753
     },
     {
       "title": "fatal acapella gemn edit 🎧",
@@ -356,20 +360,20 @@
       "score": 1.374
     },
     {
-      "title": "how you like that acapella but beat drops 🗿",
-      "score": 1.314
-    },
-    {
       "title": "odoriko acapella but the drums kick in 🗿🔥 #vaundy",
       "score": 1.32
     },
     {
-      "title": "magnetic acapella ✨⚡",
-      "score": 1.044
+      "title": "how you like that acapella but beat drops 🗿",
+      "score": 1.08
     },
     {
       "title": "chaos ga kiwamaru acapella (blue lock edit) 🔥",
-      "score": 1.028
+      "score": 1.05
+    },
+    {
+      "title": "magnetic acapella ✨⚡",
+      "score": 1.044
     },
     {
       "title": "unravel acapella 🗿",
@@ -397,7 +401,7 @@
     },
     {
       "title": "god's menu acapella but the stems stack up 🎶🎧",
-      "score": 0.678
+      "score": 0.68
     },
     {
       "title": "otonoke acapella 🎧🎶 #dandadan",
@@ -440,6 +444,6 @@
       "score": 0.069
     }
   ],
-  "promptSummary": "Based on 64 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 17.1/day):\nTitles that performed BEST for us:\n  - \"strongest jjk characters 🔥 #jujutsukaisen\" (2,795 views, Global)\n  - \"ditto but it's anime ✨ #anime\" (374 views, Global)\n  - \"Tones and I - Dance Monkey (Anime Remix)\" (497 views, Global)\n  - \"montero anime edit sound design 🗿\" (1,132 views, Global)\n  - \"bling bang bang born acapella 🎧\" (1,584 views, Global)\n  - \"yoru ni kakeru acapella but the beat drops 🎶\" (1,046 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\n  - \"super shy acapella 🗿 #newjeans\" (6 views)\nPatterns that WORK for this channel: short (<= 40 chars) (x1.36)",
-  "summaryLine": "Best recent: \"strongest jjk characters 🔥 #jujutsukaisen\" (2,795 views, 486.5/day) — typical short 17.1/day over 64 shorts"
+  "promptSummary": "Based on 65 of our own recent shorts (score = views per day in the first 2 weeks, typical short gets 17.4/day):\nTitles that performed BEST for us:\n  - \"love dramatic (kaguya-sama opening) acapella but drums kick in 🔥\" (1,185 views, Global)\n  - \"strongest jjk characters 🔥 #jujutsukaisen\" (2,896 views, Global)\n  - \"Tones and I - Dance Monkey (Anime Remix)\" (499 views, Global)\n  - \"montero anime edit sound design 🗿\" (1,132 views, Global)\n  - \"bling bang bang born acapella 🎧\" (1,584 views, Global)\n  - \"yoru ni kakeru acapella but the beat drops 🎶\" (1,047 views, Global)\nTitles that performed WORST for us:\n  - \"shinunoga e-wa acapella stem build fujii kaze edit ✨🔥\" (1 views)\n  - \"iro kousui acapella (horimiya edit) 🔥 #horimiya\" (5 views)\n  - \"super shy acapella 🗿 #newjeans\" (6 views)\nPatterns that WORK for this channel: short (<= 40 chars) (x1.16)",
+  "summaryLine": "Best recent: \"love dramatic (kaguya-sama opening) acapella but drums kick in 🔥\" (1,185 views, 585.4/day) — typical short 17.4/day over 65 shorts"
 }
