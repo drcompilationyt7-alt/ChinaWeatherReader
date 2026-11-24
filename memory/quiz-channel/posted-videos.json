@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=l8PFbFuyw0w",
-      "title": "guess the anime character by outfit 🔥 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-25T07:46:42.955Z",
-      "videoId": "l8PFbFuyw0w",
-      "category": "quiz-outfit",
-      "titleSource": "outfit-llm",
-      "quizFormat": "outfit",
-      "quizTheme": "anime"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=cU3LbHOvW9M",
-      "title": "Guess the Anime Character Silhouette 🔥 #anime",
-      "country": "Global",
-      "postedAt": "2026-10-25T07:55:13.175Z",
-      "videoId": "cU3LbHOvW9M",
-      "category": "quiz-silhouette",
-      "titleSource": "silhouette-llm",
-      "quizFormat": "silhouette",
-      "quizTheme": "anime"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=vkEIwQ8ojLg",
       "title": "Would You Rather: Maid Cafe Edition ☕",
       "country": "Global",
@@ -560,6 +538,17 @@
       "titleSource": "wyr-edition",
       "quizFormat": "wyr",
       "quizTheme": "kpop"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Pe9vYJUDMec",
+      "title": "guess the kpop song from emojis 3/3 🎶 #kpop",
+      "country": "Global",
+      "postedAt": "2026-11-24T12:43:35.563Z",
+      "videoId": "Pe9vYJUDMec",
+      "category": "quiz-emoji",
+      "titleSource": "emoji-llm",
+      "quizFormat": "emoji",
+      "quizTheme": "kpop song"
     }
   ]
 }

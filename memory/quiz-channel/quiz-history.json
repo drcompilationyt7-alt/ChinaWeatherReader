@@ -3510,6 +3510,47 @@
     "titleStyle": "keyword",
     "descHook": "challenge"
    }
+  },
+  {
+   "videoId": "Pe9vYJUDMec",
+   "url": "https://www.youtube.com/watch?v=Pe9vYJUDMec",
+   "postedAt": "2026-11-24T12:43:35.411Z",
+   "publishAt": "2026-11-24T13:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 506891951,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Easy. Psycho!",
+     "template": null,
+     "sec": 1.67
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai",
+     "line": "Supernova! Perfect!",
+     "template": "{a}! Perfect!",
+     "sec": 1.26
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis 3/3 🎶 #kpop",
+   "answers": [
+    "emoji:psycho (red velvet)",
+    "emoji:tt (twice)",
+    "emoji:supernova (aespa)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }
