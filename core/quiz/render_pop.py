@@ -3089,6 +3089,29 @@ def wyr_label(r, side):
 
 
 def wyr_photo(r, side):
+    """wyr_photo_raw + the relevance gate (owner 2026-11-24: "the would you rather images are still bad, they don't even
+    relate, they are so random": the 11-23 K-pop edition showed Commons search hits for "write a global summer hit song").
+    A photo FOUND BY SEARCH (Wikimedia Commons) must show the option: SigLIP has to match the option's words better than every
+    WYR_DISTRACT line, the look-alikes and the round's other choice, else (None, why) and the side keeps its emoji card.
+    Curated sources (city snapshots, AniList covers / characters, idol / group / VTuber snapshots, pinned files) are trusted."""
+    q = str(r.get('imageQueryA' if side == 'a' else 'imageQueryB') or '').strip()
+    kind = q.partition(':')[0].strip().lower() if ':' in q else ''
+    img, info = wyr_photo_raw(r, side)
+    searched = isinstance(info, dict) and (info.pop('_searched', False) or kind not in ('city', 'anime', 'character', 'idol', 'group',
+                                                                                         'vtuber', 'file', ''))
+    if img is None or not searched or os.environ.get('WYR_PHOTO_GATE', '1') == '0':
+        return img, info
+    text = wyr_subject(r, side) or str(r[side])
+    other = wyr_subject(r, 'b' if side == 'a' else 'a')
+    m = wyr_siglip([img], text, wyr_negatives(text, (other,) if other else ()), margins=True)
+    if m is None:            # no SigLIP here: keep the photo (the old behaviour) but say so
+        return img, info
+    if m[0] <= float(os.environ.get('WYR_PHOTO_MARGIN', '0.0')):
+        return None, f'searched photo does not show "{text}" (SigLIP margin {m[0]:.3f}): {str(info.get("file") or info.get("page") or "")[:80]}'
+    return img, info
+
+
+def wyr_photo_raw(r, side):
     """(PIL image, {'credit', 'page'}) of a would-you-rather option (see photo_for); without a query, a city named in the option.
     An option about one thing in a city ('Eat through Dotonbori in Osaka', 'Feast on street food in Chengdu': both showed their
     city's skyline, owner 2026-11-11) looks for a Commons photo of that thing first; the city photo stays the fallback."""
@@ -3111,8 +3134,13 @@ def wyr_photo(r, side):
             # for Food': the city photo is better than that)
             named = isinstance(info, dict) and all(f' {w} ' in f(info.get('file') or '') for w in need)
             if img is not None and named and picture_ok(img):
-                return img, info
-    return photo_for(q, text)
+                return img, dict(info, _searched=True)
+    img, info = photo_for(q, text)
+    if isinstance(info, dict) and kind in ('city', '') and img is not None and info.get('_searched') is None:
+        # 'city:<x>' / no query: a curated snapshot unless photo_for fell back to a Commons '<x> skyline' search
+        snap = any(media._fold(c['name']) == media._fold((q.partition(':')[2] or '').strip()) for c in _asset('city-photos.json', 'cities'))
+        info = dict(info, _searched=bool(q) and not snap)
+    return img, info
 
 
 def photo_for(q, text=''):
@@ -3165,7 +3193,10 @@ def photo_for(q, text=''):
         if c:
             return media.fetch_image(c['image']), {'credit': c.get('credit'), 'page': c.get('page')}
         kind, val = 'commons', val
-    return media.commons_photo(('file:' + val) if kind == 'file' else val)
+    img, info = media.commons_photo(('file:' + val) if kind == 'file' else val)
+    # a Commons SEARCH (not a pinned file:) is marked, so wyr_photo's relevance gate checks it (an idol: name missing from the
+    # snapshot lands here too)
+    return img, (dict(info, _searched=True) if isinstance(info, dict) and kind != 'file' else info)
 
 
 def picture_ok(img):

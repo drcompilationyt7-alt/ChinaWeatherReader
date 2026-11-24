@@ -540,10 +540,14 @@ function genPrompt(fmt, topic, n, avoid, edition = null) {
   }
   return [`You write "Would you rather" dilemmas for a YouTube Shorts channel about Asian pop culture. Fun, clean, for teens and adults. ${SAFETY}`,
     `Write ${n} dilemmas about ${TOPIC_DESC[topic]}. Each: "a" and "b" (the two choices, max 34 characters each, start with a verb, `
-    + 'both tempting), "emojiA", "emojiB" (one emoji each), "twistA", "twistB" (optional funny catch starting with "but", max 34 '
+    + 'both tempting; each choice is about ONE concrete thing a photo can show: a named place, a dish, a show or character, a '
+    + 'K-pop group or idol, a famous event or object, e.g. "Watch BLACKPINK live in Seoul", "Eat Peking duck in Beijing"; never an '
+    + 'abstract skill, wish or idea like "write a global hit song", "learn any dance in 1 hour", "host a fan meeting" '
+    + '(owner 2026-11-24: their photos were random)), "emojiA", "emojiB" (one emoji each), "twistA", "twistB" (optional funny catch starting with "but", max 34 '
     + 'characters, leave "" for most; at most one per dilemma), "labelA", "labelB" (what each choice is called in 1-3 words, '
     + 'e.g. "Tokyo", "Gojo\'s Infinity", "ramen"), "imageQueryA", "imageQueryB" (the real photo shown for that choice: '
     + '"city:<city name>" for a city, "anime:<official English title>" for a show, "character:<full name>" for an anime character, '
+    + '"idol:<stage name>" for a K-pop idol, "group:<group name>" for a K-pop group, "vtuber:<name>" for a VTuber, '
     + 'otherwise 2-4 plain words to search Wikimedia Commons for a real photo of the thing, e.g. "tonkotsu ramen bowl", '
     + '"Shibuya crossing night"; a dish, a street or an activity IN a city gets a photo of that thing ("Peking duck roast", '
     + '"Dotonbori street food"), never just "city:<that city>"; never a photo of a private person), "pick" ("a" or "b": the one YOU, the narrator, would pick), '
