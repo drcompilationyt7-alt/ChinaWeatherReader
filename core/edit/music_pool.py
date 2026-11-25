@@ -391,8 +391,8 @@ def _ytdlp(args, timeout=240):
     try:
         r = subprocess.run(cmd + args, capture_output=True, text=True, timeout=timeout, encoding='utf-8', errors='replace')
         time.sleep(float(os.environ.get('MUSIC_PACE', 4)) + random.random() * 2)
-        if r.returncode and not r.stdout.strip():
-            log('yt-dlp:', (r.stderr or '').strip().splitlines()[-1][:160] if r.stderr else r.returncode)
+        if r.returncode:   # 2026-11-25: was only when stdout was empty, so download failures (progress on stdout) never showed
+            log('yt-dlp:', r.returncode, ' | '.join((r.stderr or '').strip().splitlines()[-2:])[:300])
         return r.stdout
     except Exception as e:
         log('yt-dlp failed:', str(e)[:120])
