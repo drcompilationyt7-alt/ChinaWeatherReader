@@ -1,5 +1,5 @@
 {
- "at": "2026-11-05T14:55:48Z",
+ "at": "2026-11-25T00:43:01Z",
  "added": 0,
  "verdicts": [
   {
@@ -27,29 +27,29 @@
    "song": "Enchanted",
    "artist": "Taylor Swift",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
    "song": "Moonlight",
    "artist": "Kali Uchis",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
    "song": "Kiss Me",
    "artist": "Sixpence None the Richer",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
    "song": "Bloom",
    "artist": "The Paper Kites",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
    "song": "Pink + White",
@@ -69,8 +69,8 @@
    "song": "Love Lee",
    "artist": "AKMU",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
    "song": "Marigold",
@@ -94,7 +94,7 @@
    "why": "audio download failed"
   },
   {
-   "song": "La Vie en rose",
+   "song": "La Vie en Rose",
    "artist": "Edith Piaf",
    "source": "llm",
    "status": "error",
@@ -108,36 +108,22 @@
    "why": "audio download failed"
   },
   {
-   "song": "Flightless Bird, American Mouth",
-   "artist": "Iron & Wine",
+   "song": "Moon River",
+   "artist": "Audrey Hepburn",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "What a Wonderful World",
+   "artist": "Louis Armstrong",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
   },
   {
-   "song": "Put Your Records On",
-   "artist": "Corinne Bailey Rae",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Every Summertime",
-   "artist": "NIKI",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Dream a Little Dream of Me",
-   "artist": "The Mamas & The Papas",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "At Last",
-   "artist": "Etta James",
+   "song": "Somewhere Over the Rainbow",
+   "artist": "Israel Kamakawiwoʻole",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
@@ -150,85 +136,120 @@
    "why": "audio download failed"
   },
   {
-   "song": "Electric Love",
-   "artist": "BØRNS",
+   "song": "Dream a Little Dream of Me",
+   "artist": "The Mamas & The Papas",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
   },
   {
-   "song": "Cloud 9",
-   "artist": "Beach Bunny",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Home",
-   "artist": "Edward Sharpe & The Magnetic Zeros",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Hey Lover!",
-   "artist": "Daughters of Eve",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Uchiage Hanabi",
-   "artist": "DAOKO x Kenshi Yonezu",
+   "song": "Put Your Head on My Shoulder",
+   "artist": "Paul Anka",
    "source": "llm",
    "status": "rejected",
-   "why": "views 2040582"
+   "why": "no matching official upload"
   },
   {
-   "song": "Night Dancer",
-   "artist": "imase",
+   "song": "Video Games",
+   "artist": "Lana Del Rey",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
   },
   {
-   "song": "Serendipity",
-   "artist": "Jimin",
+   "song": "Pluto Projector",
+   "artist": "Rex Orange County",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Space Song",
+   "artist": "Beach House",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Show Me How",
+   "artist": "Men I Trust",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Fade Into You",
+   "artist": "Mazzy Star",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "I Love You So",
+   "artist": "The Walters",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Telepatía",
+   "artist": "Kali Uchis",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Kimi no Toriko",
+   "artist": "Miki Matsubara",
    "source": "llm",
    "status": "rejected",
-   "why": "views 692"
+   "why": "no matching official upload"
   },
   {
-   "song": "Euphoria",
-   "artist": "Jungkook",
+   "song": "Platina",
+   "artist": "Maaya Sakamoto",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
-   "song": "Flower",
-   "artist": "Jisoo",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "OMG",
+   "song": "Hype Boy",
    "artist": "NewJeans",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   },
   {
-   "song": "Magnetic",
-   "artist": "ILLIT",
+   "song": "Love Dive",
+   "artist": "IVE",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "Xiao Xing Yun",
+   "artist": "Hebe Tien",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 3019"
+  },
+  {
+   "song": "Mojito",
+   "artist": "Jay Chou",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
   },
   {
-   "song": "Espresso",
-   "artist": "Sabrina Carpenter",
+   "song": "Feel My Rhythm",
+   "artist": "Red Velvet",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Stay With Me",
+   "artist": "CHANYEOL, PUNCH",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
@@ -241,32 +262,46 @@
    "why": "audio download failed"
   },
   {
-   "song": "L'amore dice ciao",
-   "artist": "Andrea Lazlo De Simone",
+   "song": "My Love Mine All Mine",
+   "artist": "Mitski",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Cruel Summer",
+   "artist": "Taylor Swift",
    "source": "llm",
    "status": "rejected",
    "why": "no matching official upload"
   },
   {
-   "song": "Je te laisserai des mots",
-   "artist": "Patrick Watson",
+   "song": "Feather",
+   "artist": "Sabrina Carpenter",
    "source": "llm",
    "status": "error",
    "why": "audio download failed"
   },
   {
-   "song": "Dream Girl",
-   "artist": "Anna of the North",
+   "song": "L'Amour De Ma Vie",
+   "artist": "Billie Eilish",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Chihiro",
+   "artist": "Billie Eilish",
    "source": "llm",
    "status": "rejected",
-   "why": "views 2630958"
+   "why": "no matching official upload"
   },
   {
-   "song": "Kiss of Life",
-   "artist": "Sade",
+   "song": "Sure Thing",
+   "artist": "Miguel",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "no matching official upload"
   }
  ]
 }
