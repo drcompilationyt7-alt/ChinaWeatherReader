@@ -28,7 +28,7 @@ env:
   GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
   OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
-  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_TOPUP || secrets.YOUTUBE_COOKIES }}
+  YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_EDIT }}   # owner 2026-11-24: the spare-account TOPUP jar expired (Nov: every download failed); the mining jar works
   YT_COOKIES: /tmp/yt_cookies.txt
   YT_JS_RUNTIMES: node
   MUSIC_KEEP_AUDIO: '0'
