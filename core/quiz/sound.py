@@ -7,6 +7,7 @@ with the music ducked underneath.
 import asyncio
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -251,18 +252,53 @@ def chatterbox_lines(lines):
     cfg = float(os.environ.get('CHATTERBOX_CFG', '0.6'))
     out = []
     for text in lines:
-        try:
-            with torch.inference_mode():
-                wav = _chatterbox.generate(text, audio_prompt_path=ref, exaggeration=exag, cfg_weight=cfg)
-            a = wav.squeeze().cpu().numpy().astype(np.float64)
-            sr = _chatterbox.sr
-            a = np.interp(np.linspace(0, len(a) - 1, int(len(a) * SR / sr)), np.arange(len(a)), a)
-            nz = np.where(np.abs(a) > 0.01)[0]
-            out.append(a[max(0, nz[0] - 400):nz[-1] + 1600] if len(nz) else a)
-        except Exception as e:
-            print(f'chatterbox line failed: {str(e)[:80]}', file=sys.stderr)
+        if not text:
             out.append(None)
+            continue
+        got = None
+        for attempt in range(1 + int(os.environ.get('CHATTERBOX_RETRIES', '2'))):
+            try:
+                with torch.inference_mode():
+                    wav = _chatterbox.generate(text, audio_prompt_path=ref, exaggeration=exag, cfg_weight=cfg)
+                a = wav.squeeze().cpu().numpy().astype(np.float64)
+                sr = _chatterbox.sr
+                a = np.interp(np.linspace(0, len(a) - 1, int(len(a) * SR / sr)), np.arange(len(a)), a)
+                nz = np.where(np.abs(a) > 0.01)[0]
+                a = a[max(0, nz[0] - 400):nz[-1] + 1600] if len(nz) else a
+            except Exception as e:
+                print(f'chatterbox line failed: {str(e)[:80]}', file=sys.stderr)
+                continue
+            why = speech_problem(a, text)
+            if not why:
+                got = a
+                break
+            print(f'chatterbox take {attempt + 1} of {text!r} rejected: {why}', file=sys.stderr)
+        # owner 2026-11-25 ("the 2nd one sometimes doesn't read out correctly, it gets interrupted"): Chatterbox garbles / cuts
+        # short lines ("Nepal!", "TT!") and nothing checked its output, so a round could go near-silent. A line that fails every
+        # take is left None and tts_lines voices it with Kokoro instead.
+        out.append(got)
     return out
+
+
+def speech_problem(a, text):
+    """Why a synthesised line is not usable (None = fine): the active speech must last about as long as the words need, neither
+    cut off (Chatterbox stops early on short lines) nor running on (it babbles), and not be near-silent."""
+    if a is None or not len(a):
+        return 'empty'
+    letters = len(re.sub(r'[^A-Za-z0-9]', '', str(text)))
+    k = int(0.02 * SR)
+    env = np.sqrt(np.convolve(a ** 2, np.ones(k) / k, mode='same'))
+    peak = float(env.max()) if len(env) else 0.0
+    if peak < 0.02:
+        return f'near-silent (peak {peak:.3f})'
+    active = float((env > 0.12 * peak).sum()) / SR
+    lo = max(0.30, 0.045 * letters)          # ~22 letters a second is already fast speech
+    hi = 1.2 + 0.16 * letters                # far slower than the narrator ever speaks = babble / a stuck take
+    if active < lo:
+        return f'cut short ({active:.2f} s of speech for {letters} letters, need >= {lo:.2f} s)'
+    if active > hi:
+        return f'runs on ({active:.2f} s for {letters} letters, max {hi:.2f} s)'
+    return None
 
 
 def _stretch(a, rate):
