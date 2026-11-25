@@ -30,7 +30,7 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES_EDIT }}   # owner 2026-11-24: the spare-account TOPUP jar expired (Nov: every download failed); the mining jar works
   YT_COOKIES: /tmp/yt_cookies.txt
-  YT_JS_RUNTIMES: node
+  YT_JS_RUNTIMES: deno   # 2026-11-25: with node every official upload came back 'This content isn't available' (daily-create, which downloads fine, uses deno)
   MUSIC_KEEP_AUDIO: '0'
   MUSIC_POOL_CACHE: /tmp/music-pool-audio
 
@@ -68,7 +68,9 @@ jobs:
           sudo apt-get install -y -qq ffmpeg || true
           python -m pip install -U "yt-dlp[default]" "librosa<0.11" numpy scipy soundfile
           if [ -n "$YOUTUBE_COOKIES" ]; then printf '%s\n' "$YOUTUBE_COOKIES" > /tmp/yt_cookies.txt; fi
-          node --version; yt-dlp --version
+          curl -fsSL https://deno.land/install.sh | sh -s -- -y >/dev/null 2>&1 || curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
+          "$HOME/.deno/bin/deno" --version | head -1; yt-dlp --version
       - name: Selftest
         if: steps.gate.outputs.go == 'true'
         run: python core/edit/music_pool.py selftest
