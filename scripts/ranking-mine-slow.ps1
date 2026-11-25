@@ -68,6 +68,19 @@ $CookieSrc = Join-Path $env:USERPROFILE 'yt-cookies.txt'
 $CookieDir = Join-Path $Work 'ytc'
 
 function Say($m) { "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $m" | Out-File -Append -Encoding utf8 $Log }
+# owner 2026-11-24: "make sure we have a common list of things already downloaded so no duplicate work" - the GitHub ranking
+# mine and this loop share ranking-state.json on the release edit-pools-staging. push-state = download it, merge the local
+# verdicts (staged / rejected / reviewed sources), save the merged copy here AND upload it (~200 KB). Before every cycle (skip
+# what GitHub took last night) and after it (GitHub skips what this cycle took). A failure only logs.
+function SyncState($when) {
+  try {
+    $env:GH_TOKEN = (& gh auth token --user drcompilationyt7-alt 2>$null)
+    $o = @(& $Py core/edit/ranking_pool.py push-state 2>$null) | Select-Object -Last 1
+    if ($o -match "sources'?`"?: (\d+)") { Say ("state sync ({0}): {1} sources shared with the GitHub mine" -f $when, $Matches[1]) }
+    else { Say ("state sync ({0}): no result" -f $when) }
+  } catch { Say ("state sync ({0}) failed: {1}" -f $when, $_) }
+  finally { Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue }
+}
 
 $env:PYTHONIOENCODING = 'utf-8'
 $env:EDIT_POOL_DIR = 'output/edit-pools'
@@ -103,6 +116,7 @@ while ($true) {
     $k++
     Set-Content -Path $StateF -Value $k -Encoding ascii
     $mineLog = Join-Path $Work 'slow-mine.log'
+    SyncState 'before'
     if ($Mode -eq 'trusted') {
       Say ("cycle {0}: the owner's named editors only (refs 'trusted'), every anime edit kept" -f $k)
       $cmdline = "`"$Py`" core/edit/ranking_pool.py mine-trusted --budget-min $CycleBudgetMin --work output/ranking-mine " +
@@ -115,6 +129,7 @@ while ($true) {
     cmd /c $cmdline
     $code = $LASTEXITCODE
     Remove-Item $cookie -Force -ErrorAction SilentlyContinue
+    SyncState 'after'
     $left = $null
     try {
       $lines = @(Get-Content $out -Encoding UTF8)
