@@ -319,6 +319,11 @@
   "ranking/clip/r_2owfmwfXB84_0": {
    "used_at": "2026-11-24T13:08:03Z",
    "video": "ranking_strongest_overall.mp4"
+  },
+  "slowmo/summer_glow/sound/s_blue_slowed": {
+   "used_at": "2026-11-25T12:46:11Z",
+   "video": "slowmo-summer_glow-short.mp4",
+   "role": "short"
   }
  },
  "moments": {},
@@ -798,6 +803,35 @@
      "c_KyVN14u4pvo_17700",
      "c_S_Micj1R3Zo_81100",
      "c_DhNGYicvc5E_13800"
+    ]
+   },
+   {
+    "at": "2026-11-25T12:46:11Z",
+    "video": "slowmo-summer_glow-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_RVDy_c27AtY_26400",
+     "c_KyVN14u4pvo_33700",
+     "c_W1uBeTXPcZA_43100",
+     "c__nAObEu6UJc_75500",
+     "c_RVDy_c27AtY_31100",
+     "c_IvK62Isjc5s_17800",
+     "c_ez6kAVRkI50_24600",
+     "c_ld1hJRg2vtw_100",
+     "c_gh8moSuawPc_86400",
+     "c_lgFJG6cp5rY_47900",
+     "c_gHCaoA0bzFk_41100",
+     "c_j7YiygBQHY0_36400",
+     "c_c4I2rbIWhU8_45100",
+     "c_kAZT4AMgrkY_27100",
+     "c_djXtjnXDRl4_22800",
+     "c_tM_alLegXoE_86200",
+     "c_Hv9G5ZCCfnk_383500",
+     "c_UZUoCqfeh8U_112750",
+     "c_NVBFIjU2I8E_54100",
+     "c_Hw3j0cStHmk_88600",
+     "c_56jgd7Nxq1g_18600",
+     "c_IHh-6W5jgXw_142000"
     ]
    }
   ]

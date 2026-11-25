@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=p6Fu4I_fbEg",
-      "title": "hanaichi monme acapella but the beat drops 🗿",
-      "country": "Global",
-      "postedAt": "2026-10-26T08:46:24.866Z",
-      "videoId": "p6Fu4I_fbEg",
-      "category": "meme-anime",
-      "titleSource": "hanaichi monme"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=255vHZr50-0",
       "title": "99 acapella but the beat drops 🎶",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "b5MhxCYSdds",
       "category": "edit-ranking",
       "titleSource": "strongest_overall"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=cIEJnigHxcQ",
+      "title": "blue but it's anime ✨",
+      "country": "Global",
+      "postedAt": "2026-11-25T12:46:11.263Z",
+      "videoId": "cIEJnigHxcQ",
+      "category": "edit-slowmo",
+      "titleSource": "blue (slowed)"
     }
   ]
 }

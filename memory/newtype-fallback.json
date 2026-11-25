@@ -1,73 +1,61 @@
 {
- "at": "2026-11-20T04:03:06.190Z",
- "type": "sound",
+ "at": "2026-11-25T12:46:04.298Z",
+ "type": "slowmo",
  "ok": false,
  "posted": true,
- "reason": "attempts used up; MUST PUBLISH: attempt 3 (score 9.83)",
- "dryRun": true,
+ "reason": "time budget; MUST PUBLISH: attempt 1 (score 8.14)",
+ "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "imagine_dragons_believer",
-   "seed": 42411,
+   "song": "s_blue_slowed",
+   "seed": 7611,
    "input": "first",
-   "work": "work-sound-1795142411689",
-   "min": 33.1,
-   "overall": 9.5,
+   "work": "work-slowmo-1795607611070",
+   "min": 19.7,
+   "overall": 8.14,
    "failed": {
-    "5_density_no_dead": 7.1,
-    "6_vertical_framing_quality": 7.5,
-    "16_drum_onsets_recreated": 7
+    "4_mix": 7.83,
+    "11_waves": 0,
+    "12_sync": 0
    },
    "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 2,
-   "song": "michael_jackson_smooth_criminal",
-   "seed": 42622,
+   "song": "s_shinunoga_slowed",
+   "seed": 7822,
    "input": "new_song",
-   "work": "work-sound-1795144395041",
-   "min": 21.5,
-   "overall": 9.73,
-   "failed": {
-    "6_vertical_framing_quality": 7.7
-   },
-   "result": "NOT PASS",
+   "work": "work-slowmo-1795608790438",
+   "min": 7,
+   "result": "render failed: bad plan: shot 0 is shorter than a frame",
    "next": "new_song"
   },
   {
    "n": 3,
-   "song": "the_weeknd_blinding_lights",
-   "seed": 42833,
+   "song": "s_gaobai_slowed",
+   "seed": 8033,
    "input": "new_song",
-   "work": "work-sound-1795145687187",
-   "min": 7.8,
-   "overall": 9.83,
-   "failed": {
-    "6_vertical_framing_quality": 7.5
-   },
-   "result": "NOT PASS",
+   "work": "work-slowmo-1795609209958",
+   "min": 7.2,
+   "result": "render failed: bad plan: shot 0 is shorter than a frame",
    "next": "new_song"
   },
   {
    "n": 4,
-   "song": "billie_eilish_bad_guy",
-   "seed": 43044,
+   "song": "s_blue_slowed",
+   "seed": 8244,
    "input": "new_song",
-   "work": "work-sound-1795146153947",
-   "min": 8.7,
-   "result": "render failed: too_short: 20.4 s (< 8.5 s) / hold 0.234 s (> 0.15 s) with 25 fresh clips",
-   "next": "new_song"
-  },
-  {
-   "n": 5,
-   "song": "ac_dc_thunderstruck",
-   "seed": 43255,
-   "input": "new_song",
-   "work": "work-sound-1795146673430",
-   "min": 11.9,
-   "result": "render failed: too_short: 19.1 s (< 8.5 s) / hold 0.227 s (> 0.15 s) with 21 fresh clips",
+   "work": "work-slowmo-1795609642384",
+   "min": 18.7,
+   "overall": 8.14,
+   "failed": {
+    "4_mix": 7.83,
+    "11_waves": 0,
+    "12_sync": 0
+   },
+   "result": "NOT PASS",
    "next": "new_song"
   }
  ]

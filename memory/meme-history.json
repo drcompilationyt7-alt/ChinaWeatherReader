@@ -2997,7 +2997,8 @@
    "songSection": [
     149.79,
     193.02
-   ]
+   ],
+   "musicPerf": 2.652
   },
   {
    "videoId": "jrLfWG5qVFU",
@@ -3400,6 +3401,65 @@
    "onVideoTitle": null,
    "meta": null,
    "vibe": null
+  },
+  {
+   "videoId": "cIEJnigHxcQ",
+   "url": "https://www.youtube.com/watch?v=cIEJnigHxcQ",
+   "postedAt": "2026-11-25T12:46:11.095Z",
+   "publishAt": "2026-11-25T12:00:00.000Z",
+   "contentType": "slowmo-edit",
+   "song": "blue (slowed)",
+   "theme": "anime",
+   "emoji": "✨,🔥",
+   "title": "blue but it's anime ✨",
+   "clipIds": [
+    "c_56jgd7Nxq1g_18600",
+    "c_Hv9G5ZCCfnk_383500",
+    "c_Hw3j0cStHmk_88600",
+    "c_IHh-6W5jgXw_142000",
+    "c_IvK62Isjc5s_17800",
+    "c_KyVN14u4pvo_33700",
+    "c_NVBFIjU2I8E_54100",
+    "c_RVDy_c27AtY_26400",
+    "c_RVDy_c27AtY_31100",
+    "c_UZUoCqfeh8U_112750",
+    "c_W1uBeTXPcZA_43100",
+    "c__nAObEu6UJc_75500",
+    "c_c4I2rbIWhU8_45100",
+    "c_djXtjnXDRl4_22800",
+    "c_ez6kAVRkI50_24600",
+    "c_gHCaoA0bzFk_41100",
+    "c_gh8moSuawPc_86400",
+    "c_j7YiygBQHY0_36400",
+    "c_kAZT4AMgrkY_27100",
+    "c_ld1hJRg2vtw_100",
+    "c_lgFJG6cp5rY_47900",
+    "c_tM_alLegXoE_86200"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "summer_glow",
+    "duration": 38.9,
+    "pool": "slowmo",
+    "render_s": {
+     "short": 741,
+     "watermark_short": 60.3,
+     "total": 801.3
+    },
+    "attempts": 4
+   },
+   "onVideoTitle": "blue (slowed) anime edit",
+   "meta": {
+    "contentType": "slowmo-edit",
+    "emojiSet": "spark",
+    "hashtagSet": "niche3",
+    "titleStyle": "song-anime",
+    "ovStyle": "ov-kw",
+    "descHook": "llm-line",
+    "titlePattern": "blue but it's anime {e}",
+    "titleMode": "explore"
+   },
+   "vibe": "summer_glow"
   }
  ]
 }
