@@ -357,6 +357,7 @@ function loadBank() {
       const k = key(fmt, it);
       // emoji answers from nsfw-flagged / fan-service shows never make it in (the reveal would play their opening)
       if (fmt === 'emoji' && it.topic === 'anime' && !animeSafe(it.anime || it.answer)) continue;
+      if (fmt === 'wyr' && !concreteWyr(it)) continue;   // banked abstract rounds too (2026-11-24)
       if (!seen.has(k)) { seen.add(k); bank[fmt].push(it); }
     }
   }
@@ -582,6 +583,15 @@ function hasRevealImage(it) {
 // a would-you-rather reason is the narrator's opinion, never a made-up statistic about other people
 const FAKE_STAT = /\d\s*%|percent|most (people|fans|of you)|everyone|majority|fans (picked|chose|voted)|people (picked|chose|voted)|voted|poll/i;
 
+// owner 2026-11-24 ("the images don't even relate, they are so random"): a would-you-rather choice built on an abstract verb has
+// no real photo ("design a pastel uniform", "write a global summer hit song"): dropped unless its image is a real subject
+const ABSTRACT_WYR = /^\s*(design|write|learn|create|invent|compose|choreograph|host|plan|imagine|master|launch|start|organi[sz]e)/i;
+const SUBJECT_IMG = /^(city|anime|character|idol|group|vtuber|file):/i;
+function concreteWyr(it) {
+  return ['a', 'b'].every(side => !ABSTRACT_WYR.test(String(it[side] || ''))
+    || SUBJECT_IMG.test(String(it[side === 'a' ? 'imageQueryA' : 'imageQueryB'] || '').trim()));
+}
+
 function validItem(fmt, it) {
   const s = v => typeof v === 'string' && v.trim().length > 0;
   const opt = (v, max) => v == null || (typeof v === 'string' && v.length <= max && !/[<>]/.test(v));
@@ -595,7 +605,8 @@ function validItem(fmt, it) {
     && String(it.twistA || '').length <= 40 && String(it.twistB || '').length <= 40
     && ['a', 'b'].includes(it.pick) && s(it.reason) && it.reason.trim().split(/\s+/).length <= 8 && it.reason.length <= 60
     && !FAKE_STAT.test(it.reason) && opt(it.labelA, 24) && opt(it.labelB, 24) && opt(it.imageQueryA, 60) && opt(it.imageQueryB, 60)
-    && opt(it.clipQueryA, 70) && opt(it.clipQueryB, 70) && opt(it.hype, 40) && !FAKE_STAT.test(String(it.hype || ''));
+    && opt(it.clipQueryA, 70) && opt(it.clipQueryB, 70) && opt(it.hype, 40) && !FAKE_STAT.test(String(it.hype || ''))
+    && concreteWyr(it);
 }
 
 /** Second opinion: keep only items the checker confirms. */
