@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=vkEIwQ8ojLg",
-      "title": "Would You Rather: Maid Cafe Edition ☕",
-      "country": "Global",
-      "postedAt": "2026-10-26T08:04:17.370Z",
-      "videoId": "vkEIwQ8ojLg",
-      "category": "quiz-wyr",
-      "titleSource": "wyr-anime-powers",
-      "quizFormat": "wyr",
-      "quizTheme": "anime"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=oqF_caQxwok",
-      "title": "asian cities quiz but it gets hard fast 👀 #asia",
-      "country": "Global",
-      "postedAt": "2026-10-26T08:10:08.526Z",
-      "videoId": "oqF_caQxwok",
-      "category": "quiz-trivia",
-      "titleSource": "trivia-casual",
-      "quizFormat": "trivia",
-      "quizTheme": "cities"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=Bdue_y0j6m0",
       "title": "guess the dish name asian food 🍜 #asianfood",
       "country": "Global",
@@ -549,6 +527,17 @@
       "titleSource": "emoji-llm",
       "quizFormat": "emoji",
       "quizTheme": "kpop song"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=t1MIempRTN4",
+      "title": "guess the country by its shape 🔥 #geography",
+      "country": "Global",
+      "postedAt": "2026-11-25T11:30:35.015Z",
+      "videoId": "t1MIempRTN4",
+      "category": "quiz-shape",
+      "titleSource": "shape-casual",
+      "quizFormat": "shape",
+      "quizTheme": "asia"
     }
   ]
 }
