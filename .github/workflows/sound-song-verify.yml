@@ -55,7 +55,7 @@ jobs:
     needs: list
     if: needs.list.outputs.songs != '[]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       max-parallel: 12
@@ -89,7 +89,16 @@ jobs:
         run: |
           node -e "const t=require('./pipeline/newtype-pipeline'); for (const [k,v] of Object.entries(t.typeEnv('sound'))) console.log(k+'='+v)" >> $GITHUB_ENV
       - run: |
-          python3 core/edit/vibe_edit.py --type sound --song "${{ matrix.song }}" --seed "${{ github.event.inputs.seed || '41' }}" --no-mark --out out/${{ matrix.song }} | tail -c 1500
+          # 2026-11-26: the picked section first, then the pool record's 2 alternative sections (a hold / reuse fail is the
+          # clips at that section, not the song); stops at the first render that comes out (result.json ok)
+          command -v ffmpeg >/dev/null || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+          for k in 0 1 2; do
+            rm -rf out/${{ matrix.song }}
+            SOUND_SECTION_ALT=$k python3 core/edit/vibe_edit.py --type sound --song "${{ matrix.song }}" --seed "${{ github.event.inputs.seed || '41' }}" --no-mark --out out/${{ matrix.song }} | tail -c 1500 || true
+            if python3 -c "import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if r.get('ok') and r.get('song')==sys.argv[2] else 1)" out/${{ matrix.song }}/result.json "${{ matrix.song }}" 2>/dev/null; then
+              echo "section alt $k rendered"; echo "$k" > out/${{ matrix.song }}/section_alt.txt; break
+            fi
+          done
           rm -f /tmp/yt_cookies.txt
       - uses: actions/upload-artifact@v4
         if: always()
@@ -101,3 +110,4 @@ jobs:
             out/*/*-short.mp4
             out/*/result.json
             out/*/work-*/short/plan.json
+            out/*/section_alt.txt

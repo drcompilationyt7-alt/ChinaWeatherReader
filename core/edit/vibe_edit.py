@@ -81,8 +81,17 @@ def music_pool_song(forced, rng):
             return None
         path = MP.fetch_audio(rec)
         sec = rec.get('section') or {}
+        start, end = sec.get('start'), sec.get('end')
+        # 2026-11-26 song verification: SOUND_SECTION_ALT=k renders the pool record's k-th alternative section (the picked one
+        # can need more fresh beat-matching clips than the pool has: hold / reuse fails that are not the song's fault)
+        k = int(os.environ.get('SOUND_SECTION_ALT') or 0)
+        alts = sec.get('alternatives') or []
+        if k:
+            if k > len(alts):
+                return None
+            start, end = alts[k - 1][0], alts[k - 1][1]
         s = {'id': rec['id'], 'song': rec['song'], 'artist': rec['artist'], 'audio_path': path,
-             'section_start': sec.get('start'), 'section_end': sec.get('end'), 'tempo': rec.get('tempo')}
+             'section_start': start, 'section_end': end, 'tempo': rec.get('tempo')}
     else:
         pool_path = None
         if os.environ.get('SOUND_MUSIC_VERIFIED_ONLY', '1') != '0':
