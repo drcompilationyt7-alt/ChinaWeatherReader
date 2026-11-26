@@ -384,8 +384,11 @@ def _cookie_copy():
 
 def _ytdlp(args, timeout=240):
     jar = _cookie_copy()
-    cmd = [sys.executable, '-m', 'yt_dlp', '--ignore-config', '--no-warnings', '--force-ipv4', '--retries', '2',
-           '--js-runtimes', os.environ.get('YT_JS_RUNTIMES', 'node')]
+    # 2026-11-25: on GitHub the daily edit's plain call (deno found by default, no --force-ipv4) gets audio while this one got
+    # 'Requested format is not available' for every song: YT_MATCH_DAILY=1 mirrors it
+    match = os.environ.get('YT_MATCH_DAILY') == '1'
+    cmd = [sys.executable, '-m', 'yt_dlp', '--ignore-config', '--no-warnings', '--retries', '2'] + ([] if match else [
+           '--force-ipv4', '--js-runtimes', os.environ.get('YT_JS_RUNTIMES', 'node')])
     if jar:
         cmd += ['--cookies', jar]
     try:
@@ -454,7 +457,8 @@ def fetch_audio(rec, search=None):
         have = [f for f in glob.glob(os.path.join(CACHE, vid + '.*')) if not f.endswith('.part')]
         if have:
             return have[0]
-        _ytdlp(['--no-playlist', '-f', 'bestaudio[ext=m4a]/bestaudio', '-o', os.path.join(CACHE, vid + '.%(ext)s'),
+        _ytdlp(['--no-playlist', '-f', 'bestaudio' if os.environ.get('YT_MATCH_DAILY') == '1' else 'bestaudio[ext=m4a]/bestaudio',
+                '-o', os.path.join(CACHE, vid + '.%(ext)s'),
                 f'https://www.youtube.com/watch?v={vid}'], timeout=420)
         have = [f for f in glob.glob(os.path.join(CACHE, vid + '.*')) if not f.endswith('.part')]
         if have:

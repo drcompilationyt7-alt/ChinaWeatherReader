@@ -31,6 +31,7 @@ env:
   OPENROUTER_API_KEY_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
   YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}   # owner 2026-11-25: main cookies (spare + mining jars both hit "confirm you're not a bot" on GitHub; daily-create uses these and works)
   YT_COOKIES: /tmp/yt_cookies.txt
+  YT_MATCH_DAILY: '1'
   YT_JS_RUNTIMES: deno   # 2026-11-25: with node every official upload came back 'This content isn't available' (daily-create, which downloads fine, uses deno)
   LYRICS_NO_STORE: '1'
   MUSIC_KEEP_AUDIO: '0'
