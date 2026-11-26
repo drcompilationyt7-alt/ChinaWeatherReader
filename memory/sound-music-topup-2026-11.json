@@ -1,259 +1,84 @@
 {
- "at": "2026-11-26T00:20:19Z",
- "added": 0,
+ "at": "2026-11-26T21:42:32Z",
+ "added": 8,
  "retired": 0,
  "verdicts": [
   {
-   "song": "Say So",
-   "artist": "Doja Cat",
+   "song": "God's Plan",
+   "artist": "Drake",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "tempo 77.24 outside 85-140"
   },
   {
-   "song": "WAP",
+   "song": "Bodak Yellow",
    "artist": "Cardi B",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.642 section 77.103-105.892 total 0.617"
   },
   {
-   "song": "Savage",
-   "artist": "Megan Thee Stallion",
+   "song": "This Is America",
+   "artist": "Childish Gambino",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "rejected",
+   "why": "views 0 < 2000000"
   },
   {
-   "song": "Congratulations",
-   "artist": "Post Malone",
+   "song": "Rolling in the Deep",
+   "artist": "Adele",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Wake Me Up",
-   "artist": "Avicii",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "This Is What You Came For",
-   "artist": "Calvin Harris",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Happier",
-   "artist": "Marshmello",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Clarity",
-   "artist": "Zedd",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "About Damn Time",
-   "artist": "Lizzo",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.562 section 187.618-217.318 total 0.565"
   },
   {
    "song": "New Rules",
    "artist": "Dua Lipa",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.633 section 174.481-203.445 total 0.636"
   },
   {
-   "song": "The Real Slim Shady",
-   "artist": "Eminem",
+   "song": "Sorry",
+   "artist": "Justin Bieber",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.591 section 155.969-184.774 total 0.684"
   },
   {
-   "song": "Save Your Tears",
-   "artist": "The Weeknd",
+   "song": "Wake Me Up",
+   "artist": "Avicii",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.553 section 38.945-67.969 total 0.559"
   },
   {
-   "song": "Circles",
-   "artist": "Post Malone",
+   "song": "We Found Love",
+   "artist": "Calvin Harris",
    "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "audio 0.591 section 180.222-210.211 total 0.584"
   },
   {
-   "song": "DDU-DU DDU-DU",
-   "artist": "BLACKPINK",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Dynamite",
-   "artist": "BTS",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Therefore I Am",
-   "artist": "Billie Eilish",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Dior",
-   "artist": "Pop Smoke",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Whole Lotta Love",
-   "artist": "Led Zeppelin",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Sweet Child o' Mine",
-   "artist": "Guns N' Roses",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Back in Black",
-   "artist": "AC/DC",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Walk This Way",
-   "artist": "Aerosmith",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Play That Funky Music",
-   "artist": "Wild Cherry",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Jungle Boogie",
-   "artist": "Kool & The Gang",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "September",
-   "artist": "Earth, Wind & Fire",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Stayin' Alive",
-   "artist": "Bee Gees",
-   "source": "llm",
-   "status": "rejected",
-   "why": "no matching official upload"
-  },
-  {
-   "song": "Good Times",
-   "artist": "Chic",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Disco Inferno",
-   "artist": "The Trammps",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Beggin'",
-   "artist": "Måneskin",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Royalty",
-   "artist": "Egzod & Maestro Chives",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Espresso",
-   "artist": "Sabrina Carpenter",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Whatever It Takes",
-   "artist": "Imagine Dragons",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Darkside",
+   "song": "Faded",
    "artist": "Alan Walker",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
+   "source": "llm",
+   "status": "added",
+   "why": "audio 0.53 section 54.897-86.884 total 0.669"
   },
   {
-   "song": "Safari",
-   "artist": "J Balvin",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Hand Clap",
-   "artist": "Fitz and The Tantrums",
-   "source": "trending",
+   "song": "Animals",
+   "artist": "Martin Garrix",
+   "source": "llm",
    "status": "rejected",
-   "why": "no matching official upload"
+   "why": "drums not clear enough (audio 0.464)"
   },
   {
-   "song": "One Dance",
-   "artist": "Drake",
-   "source": "trending",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Touch It (Tiktok Remix)",
-   "artist": "Busta Rhymes",
-   "source": "trending",
-   "status": "rejected",
-   "why": "no matching official upload"
+   "song": "Say So",
+   "artist": "Doja Cat",
+   "source": "llm",
+   "status": "added",
+   "why": "audio 0.695 section 12.975-43.241 total 0.702"
   }
  ]
 }

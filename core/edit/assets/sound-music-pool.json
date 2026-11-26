@@ -2476,6 +2476,497 @@
     "n": 0,
     "sum": 0.0
    }
+  },
+  {
+   "id": "cardi_b_bodak_yellow",
+   "song": "Bodak Yellow",
+   "artist": "Cardi B",
+   "video_id": "8xC8WiTRHNs",
+   "url": "https://www.youtube.com/watch?v=8xC8WiTRHNs",
+   "query": "Cardi B Bodak Yellow official audio",
+   "views": 1214035585,
+   "trend_uploads": 0,
+   "source": "llm",
+   "tempo": 125.05,
+   "bar_s": 1.9193,
+   "downbeat": 0.332,
+   "duration": 224.12,
+   "section": {
+    "start": 77.103,
+    "end": 105.892,
+    "bars": 15,
+    "score": 0.868,
+    "parts": {
+     "density": 0.814,
+     "regularity": 0.671,
+     "energy": 0.95,
+     "hook": 0.937,
+     "boundary": 0.898,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.647
+    },
+    "alternatives": [
+     [
+      169.228,
+      198.017,
+      0.835
+     ],
+     [
+      46.394,
+      77.103,
+      0.684
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.417,
+    "regularity": 0.797,
+    "tempo_stability": 1.0,
+    "drum_share": 0.484,
+    "audio": 0.642,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.868
+   },
+   "total": 0.617,
+   "status": "probation",
+   "added": "2026-11-26T21:38:07Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "adele_rolling_in_the_deep",
+   "song": "Rolling in the Deep",
+   "artist": "Adele",
+   "video_id": "1CigMPtm4FM",
+   "url": "https://www.youtube.com/watch?v=1CigMPtm4FM",
+   "query": "Adele Rolling in the Deep official audio",
+   "views": 2962691455,
+   "trend_uploads": 0,
+   "source": "llm",
+   "tempo": 105.05,
+   "bar_s": 2.2847,
+   "downbeat": 0.276,
+   "duration": 230.67,
+   "section": {
+    "start": 187.618,
+    "end": 217.318,
+    "bars": 13,
+    "score": 0.739,
+    "parts": {
+     "density": 0.507,
+     "regularity": 0.785,
+     "energy": 0.986,
+     "hook": 0.783,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.121
+    },
+    "alternatives": [
+     [
+      100.801,
+      130.501,
+      0.698
+     ],
+     [
+      59.677,
+      87.093,
+      0.681
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.332,
+    "regularity": 0.676,
+    "tempo_stability": 0.822,
+    "drum_share": 0.561,
+    "audio": 0.562,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.739
+   },
+   "total": 0.565,
+   "status": "probation",
+   "added": "2026-11-26T21:38:46Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "dua_lipa_new_rules",
+   "song": "New Rules",
+   "artist": "Dua Lipa",
+   "video_id": "TRpSC_hWkGE",
+   "url": "https://www.youtube.com/watch?v=TRpSC_hWkGE",
+   "query": "Dua Lipa New Rules official audio",
+   "views": 3354364072,
+   "trend_uploads": 1,
+   "source": "llm",
+   "tempo": 116.0,
+   "bar_s": 2.0689,
+   "downbeat": 0.693,
+   "duration": 209.51,
+   "section": {
+    "start": 174.481,
+    "end": 203.445,
+    "bars": 14,
+    "score": 0.866,
+    "parts": {
+     "density": 0.785,
+     "regularity": 0.826,
+     "energy": 0.973,
+     "hook": 0.859,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.314
+    },
+    "alternatives": [
+     [
+      122.758,
+      155.861,
+      0.783
+     ],
+     [
+      62.76,
+      91.725,
+      0.74
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.371,
+    "regularity": 0.979,
+    "tempo_stability": 0.75,
+    "drum_share": 0.544,
+    "audio": 0.633,
+    "popularity": 1.0,
+    "trend": 0.167,
+    "section": 0.866
+   },
+   "total": 0.636,
+   "status": "probation",
+   "added": "2026-11-26T21:39:20Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "justin_bieber_sorry",
+   "song": "Sorry",
+   "artist": "Justin Bieber",
+   "video_id": "60HpBjohyQk",
+   "url": "https://www.youtube.com/watch?v=60HpBjohyQk",
+   "query": "Justin Bieber Sorry official audio",
+   "views": 4185490024,
+   "trend_uploads": 4,
+   "source": "llm",
+   "tempo": 99.98,
+   "bar_s": 2.4004,
+   "downbeat": 2.344,
+   "duration": 201.04,
+   "section": {
+    "start": 155.969,
+    "end": 184.774,
+    "bars": 12,
+    "score": 0.797,
+    "parts": {
+     "density": 0.697,
+     "regularity": 0.812,
+     "energy": 0.964,
+     "hook": 0.999,
+     "boundary": 0.028,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 4.374
+    },
+    "alternatives": [
+     [
+      50.352,
+      81.557,
+      0.739
+     ],
+     [
+      117.563,
+      148.768,
+      0.726
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.457,
+    "regularity": 0.937,
+    "tempo_stability": 0.462,
+    "drum_share": 0.522,
+    "audio": 0.591,
+    "popularity": 1.0,
+    "trend": 0.667,
+    "section": 0.797
+   },
+   "total": 0.684,
+   "status": "probation",
+   "added": "2026-11-26T21:39:50Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "avicii_wake_me_up",
+   "song": "Wake Me Up",
+   "artist": "Avicii",
+   "video_id": "a3Klv0p2f74",
+   "url": "https://www.youtube.com/watch?v=a3Klv0p2f74",
+   "query": "Avicii Wake Me Up official audio",
+   "views": 2562327896,
+   "trend_uploads": 0,
+   "source": "llm",
+   "tempo": 124.04,
+   "bar_s": 1.9349,
+   "downbeat": 0.248,
+   "duration": 95.53,
+   "section": {
+    "start": 38.945,
+    "end": 67.969,
+    "bars": 15,
+    "score": 0.828,
+    "parts": {
+     "density": 0.836,
+     "regularity": 0.694,
+     "energy": 0.893,
+     "hook": 0.87,
+     "boundary": 0.835,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.687
+    },
+    "alternatives": [
+     [
+      0.248,
+      29.271,
+      0.446
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.272,
+    "regularity": 0.906,
+    "tempo_stability": 0.5,
+    "drum_share": 0.657,
+    "audio": 0.553,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.828
+   },
+   "total": 0.559,
+   "status": "probation",
+   "added": "2026-11-26T21:40:14Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "calvin_harris_we_found_love",
+   "song": "We Found Love",
+   "artist": "Calvin Harris",
+   "video_id": "FTGTpWH-Cq4",
+   "url": "https://www.youtube.com/watch?v=FTGTpWH-Cq4",
+   "query": "Calvin Harris We Found Love official audio",
+   "views": 1208624623,
+   "trend_uploads": 0,
+   "source": "llm",
+   "tempo": 128.05,
+   "bar_s": 1.8743,
+   "downbeat": 0.288,
+   "duration": 215.34,
+   "section": {
+    "start": 180.222,
+    "end": 210.211,
+    "bars": 16,
+    "score": 0.866,
+    "parts": {
+     "density": 0.8,
+     "regularity": 0.888,
+     "energy": 0.963,
+     "hook": 0.915,
+     "boundary": 0.554,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.068
+    },
+    "alternatives": [
+     [
+      67.763,
+      97.752,
+      0.85
+     ],
+     [
+      97.752,
+      127.741,
+      0.782
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.342,
+    "regularity": 0.825,
+    "tempo_stability": 0.667,
+    "drum_share": 0.658,
+    "audio": 0.591,
+    "popularity": 1.0,
+    "trend": 0.0,
+    "section": 0.866
+   },
+   "total": 0.584,
+   "status": "probation",
+   "added": "2026-11-26T21:40:48Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "alan_walker_faded",
+   "song": "Faded",
+   "artist": "Alan Walker",
+   "video_id": "1AtGxxIaOqM",
+   "url": "https://www.youtube.com/watch?v=1AtGxxIaOqM",
+   "query": "Alan Walker Faded official audio",
+   "views": 4070421801,
+   "trend_uploads": 5,
+   "source": "llm",
+   "tempo": 90.04,
+   "bar_s": 2.6656,
+   "downbeat": 1.585,
+   "duration": 212.86,
+   "section": {
+    "start": 54.897,
+    "end": 86.884,
+    "bars": 12,
+    "score": 0.789,
+    "parts": {
+     "density": 0.561,
+     "regularity": 0.775,
+     "energy": 0.979,
+     "hook": 0.782,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 2.282
+    },
+    "alternatives": [
+     [
+      129.534,
+      161.521,
+      0.703
+     ],
+     [
+      161.521,
+      190.843,
+      0.639
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.1,
+    "regularity": 0.819,
+    "tempo_stability": 0.829,
+    "drum_share": 0.625,
+    "audio": 0.53,
+    "popularity": 1.0,
+    "trend": 0.833,
+    "section": 0.789
+   },
+   "total": 0.669,
+   "status": "probation",
+   "added": "2026-11-26T21:41:20Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "doja_cat_say_so",
+   "song": "Say So",
+   "artist": "Doja Cat",
+   "video_id": "uAYG46w1SCA",
+   "url": "https://www.youtube.com/watch?v=uAYG46w1SCA",
+   "query": "Doja Cat Say So official audio",
+   "views": 641568431,
+   "trend_uploads": 2,
+   "source": "llm",
+   "tempo": 111.01,
+   "bar_s": 2.1619,
+   "downbeat": 0.004,
+   "duration": 238.77,
+   "section": {
+    "start": 12.975,
+    "end": 43.241,
+    "bars": 14,
+    "score": 0.758,
+    "parts": {
+     "density": 0.796,
+     "regularity": 0.736,
+     "energy": 0.857,
+     "hook": 0.709,
+     "boundary": 1.0,
+     "dead_bars": 0.0,
+     "break_s": 0.0,
+     "drums_per_s": 3.139
+    },
+    "alternatives": [
+     [
+      86.479,
+      116.745,
+      0.721
+     ],
+     [
+      155.659,
+      181.601,
+      0.718
+     ]
+    ]
+   },
+   "scores": {
+    "drum_clarity": 0.483,
+    "regularity": 0.895,
+    "tempo_stability": 1.0,
+    "drum_share": 0.51,
+    "audio": 0.695,
+    "popularity": 1.0,
+    "trend": 0.333,
+    "section": 0.758
+   },
+   "total": 0.702,
+   "status": "probation",
+   "added": "2026-11-26T21:42:32Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
   }
  ],
  "rejected": [
@@ -2552,6 +3043,24 @@
    "artist": "James Brown",
    "at": "2026-11-25T00:41:31Z",
    "why": "views 319626"
+  },
+  {
+   "song": "God's Plan",
+   "artist": "Drake",
+   "at": "2026-11-26T21:37:35Z",
+   "why": "tempo 77.24 outside 85-140"
+  },
+  {
+   "song": "This Is America",
+   "artist": "Childish Gambino",
+   "at": "2026-11-26T21:38:12Z",
+   "why": "views 0"
+  },
+  {
+   "song": "Animals",
+   "artist": "Martin Garrix",
+   "at": "2026-11-26T21:41:58Z",
+   "why": "drums not clear enough (audio 0.464)"
   }
  ]
 }
