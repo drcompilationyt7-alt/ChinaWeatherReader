@@ -2354,68 +2354,6 @@
    }
   },
   {
-   "id": "bad_style_time_back",
-   "song": "Time Back",
-   "artist": "Bad Style",
-   "video_id": "7S1-pJjvsDA",
-   "url": "https://www.youtube.com/watch?v=7S1-pJjvsDA",
-   "query": "Bad Style Time Back official audio",
-   "views": 2000551,
-   "trend_uploads": 12,
-   "source": "seed",
-   "tempo": 120.07,
-   "bar_s": 1.9989,
-   "downbeat": 0.208,
-   "duration": 190.37,
-   "section": {
-    "start": 56.178,
-    "end": 86.161,
-    "bars": 15,
-    "score": 0.785,
-    "parts": {
-     "density": 0.745,
-     "regularity": 0.693,
-     "energy": 0.878,
-     "hook": 0.92,
-     "boundary": 0.51,
-     "dead_bars": 0.0,
-     "break_s": 0.0,
-     "drums_per_s": 3.368
-    },
-    "alternatives": [
-     [
-      144.13,
-      174.113,
-      0.766
-     ],
-     [
-      96.156,
-      128.138,
-      0.757
-     ]
-    ]
-   },
-   "scores": {
-    "drum_clarity": 0.603,
-    "regularity": 0.933,
-    "tempo_stability": 0.892,
-    "drum_share": 0.536,
-    "audio": 0.73,
-    "popularity": 0.32,
-    "trend": 1.0,
-    "section": 0.785
-   },
-   "total": 0.689,
-   "status": "probation",
-   "added": "2026-10-17T21:55:05Z",
-   "last_used": null,
-   "uses": 0,
-   "perf": {
-    "n": 0,
-    "sum": 0.0
-   }
-  },
-  {
    "id": "beyonce_crazy_in_love",
    "song": "Crazy in Love",
    "artist": "Beyonce",
@@ -3061,6 +2999,13 @@
    "artist": "Martin Garrix",
    "at": "2026-11-26T21:41:58Z",
    "why": "drums not clear enough (audio 0.464)"
+  },
+  {
+   "id": "bad_style_time_back",
+   "song": "Time Back",
+   "artist": "Bad Style",
+   "video_id": "7S1-pJjvsDA",
+   "why": "YouTube: removed after a copyright request (2026-11-26)"
   }
  ]
 }

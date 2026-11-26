@@ -490,7 +490,7 @@
    "date": "2026-10-18"
   },
   "bad_style_time_back": {
-   "pass": true,
+   "pass": false,
    "run": 39080054144,
    "section": [
     56.178,
@@ -500,7 +500,8 @@
    "overall": 9.5,
    "overall_mean": 9.6,
    "worst": "16_drum_onsets_recreated 8.5, 15_transients_on_onsets 8.6",
-   "date": "2026-10-18"
+   "date": "2026-10-18",
+   "note": "YouTube: removed after a copyright request (2026-11-26)"
   },
   "sia_cheap_thrills": {
    "pass": false,

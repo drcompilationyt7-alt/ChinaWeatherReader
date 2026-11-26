@@ -313,67 +313,6 @@
    }
   },
   {
-   "id": "stephen_sanchez_until_i_found_you",
-   "song": "Until I Found You",
-   "artist": "Stephen Sanchez",
-   "video_id": "SZyOADPgi_I",
-   "url": "https://www.youtube.com/watch?v=SZyOADPgi_I",
-   "query": "Stephen Sanchez Until I Found You official audio",
-   "views": 648858863,
-   "slowed_uploads": 14,
-   "source": "seed",
-   "tempo": 103.4,
-   "bar_s": 2.321,
-   "speed": 0.9,
-   "duration": 178.1,
-   "section": {
-    "start": 24.17,
-    "hero": 29.12,
-    "end": 65.12,
-    "score": 0.923,
-    "parts": {
-     "hook": 1.0,
-     "energy": 0.88,
-     "jump_db": 4.4,
-     "intro_db": -6.8,
-     "hole_s": 0.0
-    },
-    "alternatives": [
-     [
-      65.13,
-      70.08,
-      106.08,
-      0.914
-     ],
-     [
-      73.44,
-      78.39,
-      114.39,
-      0.908
-     ]
-    ]
-   },
-   "scores": {
-    "calm": 0.804,
-    "perc_share": 0.102,
-    "onset_rate": 2.52,
-    "sustain": 0.934,
-    "popularity": 1.0,
-    "slowed": 1.0,
-    "section": 0.923
-   },
-   "total": 0.893,
-   "lyrics": "render-time only",
-   "status": "probation",
-   "added": "2026-10-18T21:03:52Z",
-   "last_used": null,
-   "uses": 0,
-   "perf": {
-    "n": 0,
-    "sum": 0.0
-   }
-  },
-  {
    "id": "the_weeknd_die_for_you",
    "song": "Die For You",
    "artist": "The Weeknd",
@@ -801,67 +740,6 @@
    }
   },
   {
-   "id": "billie_eilish_birds_of_a_feather",
-   "song": "BIRDS OF A FEATHER",
-   "artist": "Billie Eilish",
-   "video_id": "ekzdQi41f6Y",
-   "url": "https://www.youtube.com/watch?v=ekzdQi41f6Y",
-   "query": "Billie Eilish BIRDS OF A FEATHER official audio",
-   "views": 981053126,
-   "slowed_uploads": 13,
-   "source": "seed",
-   "tempo": 103.4,
-   "bar_s": 2.321,
-   "speed": 0.9,
-   "duration": 211.2,
-   "section": {
-    "start": 145.63,
-    "hero": 150.58,
-    "end": 186.58,
-    "score": 0.97,
-    "parts": {
-     "hook": 1.0,
-     "energy": 0.99,
-     "jump_db": 3.8,
-     "intro_db": -5.0,
-     "hole_s": 0.0
-    },
-    "alternatives": [
-     [
-      55.91,
-      60.86,
-      96.86,
-      0.955
-     ],
-     [
-      71.88,
-      76.83,
-      112.83,
-      0.847
-     ]
-    ]
-   },
-   "scores": {
-    "calm": 0.412,
-    "perc_share": 0.373,
-    "onset_rate": 4.62,
-    "sustain": 0.9,
-    "popularity": 1.0,
-    "slowed": 1.0,
-    "section": 0.97
-   },
-   "total": 0.728,
-   "lyrics": "render-time only",
-   "status": "probation",
-   "added": "2026-10-18T21:16:18Z",
-   "last_used": null,
-   "uses": 0,
-   "perf": {
-    "n": 0,
-    "sum": 0.0
-   }
-  },
-  {
    "id": "d4vd_here_with_me",
    "song": "Here With Me",
    "artist": "d4vd",
@@ -915,67 +793,6 @@
    "lyrics": "render-time only",
    "status": "probation",
    "added": "2026-10-18T21:17:13Z",
-   "last_used": null,
-   "uses": 0,
-   "perf": {
-    "n": 0,
-    "sum": 0.0
-   }
-  },
-  {
-   "id": "coldplay_yellow",
-   "song": "Yellow",
-   "artist": "Coldplay",
-   "video_id": "O70-xOKIxMs",
-   "url": "https://www.youtube.com/watch?v=O70-xOKIxMs",
-   "query": "Coldplay Yellow official audio",
-   "views": 1381218819,
-   "slowed_uploads": 11,
-   "source": "seed",
-   "tempo": 86.1,
-   "bar_s": 2.787,
-   "speed": 0.95,
-   "duration": 266.1,
-   "section": {
-    "start": 186.46,
-    "hero": 191.68,
-    "end": 229.68,
-    "score": 0.978,
-    "parts": {
-     "hook": 1.0,
-     "energy": 0.93,
-     "jump_db": 4.5,
-     "intro_db": -3.4,
-     "hole_s": 0.0
-    },
-    "alternatives": [
-     [
-      103.56,
-      108.79,
-      146.79,
-      0.958
-     ],
-     [
-      7.43,
-      12.65,
-      50.65,
-      0.892
-     ]
-    ]
-   },
-   "scores": {
-    "calm": 0.899,
-    "perc_share": 0.145,
-    "onset_rate": 1.75,
-    "sustain": 0.957,
-    "popularity": 1.0,
-    "slowed": 1.0,
-    "section": 0.978
-   },
-   "total": 0.949,
-   "lyrics": "render-time only",
-   "status": "probation",
-   "added": "2026-10-18T21:19:58Z",
    "last_used": null,
    "uses": 0,
    "perf": {
@@ -2256,6 +2073,27 @@
    "artist": "Hebe Tien",
    "at": "2026-11-25T00:40:31Z",
    "why": "views 3019"
+  },
+  {
+   "id": "stephen_sanchez_until_i_found_you",
+   "song": "Until I Found You",
+   "artist": "Stephen Sanchez",
+   "video_id": "SZyOADPgi_I",
+   "why": "YouTube: video not available (2026-11-26)"
+  },
+  {
+   "id": "billie_eilish_birds_of_a_feather",
+   "song": "BIRDS OF A FEATHER",
+   "artist": "Billie Eilish",
+   "video_id": "ekzdQi41f6Y",
+   "why": "YouTube: video not available (2026-11-26)"
+  },
+  {
+   "id": "coldplay_yellow",
+   "song": "Yellow",
+   "artist": "Coldplay",
+   "video_id": "O70-xOKIxMs",
+   "why": "YouTube: video not available (2026-11-26)"
   }
  ]
 }
