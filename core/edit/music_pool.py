@@ -449,6 +449,56 @@ def trend_count(song, artist, search=yt_search):
     return sum(1 for r in rows if ns in norm(r['title']) and TREND_RE.search(r['title']))
 
 
+AUDIO_RELEASE = os.environ.get('MUSIC_AUDIO_RELEASE', 'music-audio')
+
+
+def release_audio(vid):
+    """The song's audio stored on the GitHub release MUSIC_AUDIO_RELEASE (<video id>.m4a), downloaded into CACHE; None if it is
+    not there. 2026-11-26: YouTube no longer serves official music to GitHub runners (bot check / 'This content isn't
+    available' with every cookie jar), so the PC stores the audio of every pool song there (music_pool.py push-audio)."""
+    if os.environ.get('MUSIC_AUDIO_RELEASE_OFF') == '1':
+        return None
+    try:
+        r = subprocess.run(['gh', 'release', 'download', AUDIO_RELEASE, '--pattern', f'{vid}.*', '--dir', CACHE, '--clobber'],
+                           capture_output=True, text=True, timeout=180)
+    except Exception as e:  # noqa: BLE001  (no gh / no network: YouTube is tried next)
+        log('music audio release:', str(e)[:120])
+        return None
+    have = [f for f in glob.glob(os.path.join(CACHE, vid + '.*')) if not f.endswith('.part')]
+    if not have and r.returncode:
+        log('music audio release: no', vid, (r.stderr or '').strip()[-120:])
+    return have[0] if have else None
+
+
+def push_audio(pools=None):
+    """PC: upload the audio of every pool song (sound + slow-mo pools) that the release does not hold yet; downloads any
+    song not in the local CACHE first (needs a home connection: YouTube blocks GitHub runners)."""
+    import json as _json
+    pools = pools or [POOL, os.path.join(os.path.dirname(POOL), 'slowmo-music-pool.json')]
+    r = subprocess.run(['gh', 'release', 'view', AUDIO_RELEASE, '--json', 'assets'], capture_output=True, text=True)
+    if r.returncode:
+        subprocess.run(['gh', 'release', 'create', AUDIO_RELEASE, '--title', 'Song audio for the sound / slow-mo music pools',
+                        '--notes', 'One file per pool song (<YouTube id>.m4a). Read by core/edit/music_pool.py release_audio.'],
+                       check=True)
+        have = set()
+    else:
+        have = {a['name'].rsplit('.', 1)[0] for a in _json.loads(r.stdout).get('assets', [])}
+    done, failed = [], []
+    for pp in pools:
+        for rec in (load_pool(pp).get('songs') or []):
+            vid = rec.get('video_id')
+            if not vid or vid in have or vid in done:
+                continue
+            f = fetch_audio(dict(rec))
+            if not f:
+                failed.append(rec.get('id'))
+                continue
+            u = subprocess.run(['gh', 'release', 'upload', AUDIO_RELEASE, f, '--clobber'], capture_output=True, text=True)
+            (done if u.returncode == 0 else failed).append(vid if u.returncode == 0 else rec.get('id'))
+            log('push-audio', rec.get('id'), 'ok' if u.returncode == 0 else u.stderr.strip()[-120:])
+    return {'uploaded': len(done), 'failed': failed, 'already': len(have)}
+
+
 def fetch_audio(rec, search=None):
     """Local path of the song's audio (cached), downloaded with yt-dlp if missing; None if it cannot be fetched."""
     os.makedirs(CACHE, exist_ok=True)
@@ -457,6 +507,9 @@ def fetch_audio(rec, search=None):
         have = [f for f in glob.glob(os.path.join(CACHE, vid + '.*')) if not f.endswith('.part')]
         if have:
             return have[0]
+        got = release_audio(vid)
+        if got:
+            return got
         _ytdlp(['--no-playlist', '-f', 'bestaudio' if os.environ.get('YT_MATCH_DAILY') == '1' else 'bestaudio[ext=m4a]/bestaudio',
                 '-o', os.path.join(CACHE, vid + '.%(ext)s'),
                 f'https://www.youtube.com/watch?v={vid}'], timeout=420)
@@ -896,6 +949,9 @@ def main(argv):
         selftest()
     elif cmd == 'seed':
         topup(seed_only=True, limit=int(argv[2]) if len(argv) > 2 else None)
+    elif cmd == 'push-audio':
+        os.environ['MUSIC_AUDIO_RELEASE_OFF'] = '1'   # fetch from YouTube here (the PC), not from the release being filled
+        print(json.dumps(push_audio()))
     elif cmd == 'topup':
         topup(dry='--dry-run' in argv)
     elif cmd == 'analyze':
