@@ -3460,6 +3460,57 @@
     "titleMode": "explore"
    },
    "vibe": "summer_glow"
+  },
+  {
+   "videoId": "j8C8-qXQln0",
+   "url": "https://www.youtube.com/watch?v=j8C8-qXQln0",
+   "postedAt": "2026-11-26T11:48:31.105Z",
+   "publishAt": "2026-11-26T12:00:00.000Z",
+   "song": "bling bang bang born",
+   "theme": "anime",
+   "emoji": "🎧,🔥",
+   "title": "bling bang bang born (mashle opening) acapella 🎧",
+   "clipIds": [
+    "Us-wjpaQ5lk",
+    "nDKf6O_5LjQ",
+    "FdzvZMxZ5CA",
+    "bOr6mYQ95IU",
+    "POOAHawYlNY",
+    "Y2ir8NINJ5w",
+    "SzOWbrTG_kE",
+    "RUY9dMkpBAI"
+   ],
+   "clipChannels": [
+    "Dogun",
+    "Gold Byte",
+    "SHONEN JUMP CHANNEL OFFICIAL",
+    "Sidown",
+    "Skyhighdiaz92",
+    "アニプレックス チャンネル"
+   ],
+   "clipSource": "Mashle",
+   "settings": {
+    "drop": 14,
+    "edit": 8,
+    "look": "cinematic",
+    "hashtag": false,
+    "hook": "layers"
+   },
+   "onVideoTitle": "bling bang bang born",
+   "meta": {
+    "contentType": "stem-edit",
+    "emojiSet": "op-fire-moai",
+    "hashtagSet": "op-source-acapella",
+    "titleStyle": "keyword-only",
+    "ovStyle": "ov-kw",
+    "descHook": "layers",
+    "titlePattern": "{song} acapella {e}",
+    "titleMode": "explore"
+   },
+   "why": "thompson + insights (bonus +0.89)",
+   "whyMode": "insight-driven",
+   "bpm": 157.02,
+   "titlePattern": "{song} acapella {e}"
   }
  ]
 }
