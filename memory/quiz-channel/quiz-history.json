@@ -3576,6 +3576,31 @@
     "titleStyle": "casual",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "b4LsgIPIwwI",
+   "url": "https://www.youtube.com/watch?v=b4LsgIPIwwI",
+   "postedAt": "2026-11-26T11:19:50.024Z",
+   "publishAt": "2026-11-26T13:00:00.000Z",
+   "format": "scene",
+   "theme": "anime",
+   "seed": 80435283,
+   "length": "quick",
+   "hookV2": true,
+   "titleTemplate": "scene-llm",
+   "title": "guess the anime opening or scene quiz 🎬 #anime",
+   "answers": [
+    "scene:21355",
+    "scene:105334",
+    "scene:20931"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "none",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "no-peek"
+   }
   }
  ]
 }

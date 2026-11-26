@@ -1,28 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Bdue_y0j6m0",
-      "title": "guess the dish name asian food 🍜 #asianfood",
-      "country": "Global",
-      "postedAt": "2026-10-27T08:10:50.595Z",
-      "videoId": "Bdue_y0j6m0",
-      "category": "quiz-cuisine",
-      "titleSource": "cuisine-llm",
-      "quizFormat": "cuisine",
-      "quizTheme": "food"
-    },
-    {
-      "url": "https://www.youtube.com/watch?v=NfkeJyCc7pA",
-      "title": "guess the kpop song from emojis quiz 🤯 #kpop",
-      "country": "Global",
-      "postedAt": "2026-10-27T08:17:30.701Z",
-      "videoId": "NfkeJyCc7pA",
-      "category": "quiz-emoji",
-      "titleSource": "emoji-llm",
-      "quizFormat": "emoji",
-      "quizTheme": "kpop song"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=5-1dfJeWH0s",
       "title": "Guess the Song in 3 Seconds 🔥 #kpop",
       "country": "Global",
@@ -538,6 +516,17 @@
       "titleSource": "shape-casual",
       "quizFormat": "shape",
       "quizTheme": "asia"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=b4LsgIPIwwI",
+      "title": "guess the anime opening or scene quiz 🎬 #anime",
+      "country": "Global",
+      "postedAt": "2026-11-26T11:19:50.186Z",
+      "videoId": "b4LsgIPIwwI",
+      "category": "quiz-scene",
+      "titleSource": "scene-llm",
+      "quizFormat": "scene",
+      "quizTheme": "anime"
     }
   ]
 }
