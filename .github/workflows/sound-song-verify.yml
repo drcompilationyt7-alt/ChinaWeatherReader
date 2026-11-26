@@ -17,6 +17,10 @@ on:
         description: 'Render seed'
         required: false
         default: '41'
+      sections:
+        description: 'Sections to try in order (0 = the picked one, 1-2 = the alternatives); the first render that comes out is kept'
+        required: false
+        default: '0 1 2'
 
 env:
   EDIT_POOL_DIR: output/edit-pools
@@ -92,7 +96,7 @@ jobs:
           # 2026-11-26: the picked section first, then the pool record's 2 alternative sections (a hold / reuse fail is the
           # clips at that section, not the song); stops at the first render that comes out (result.json ok)
           command -v ffmpeg >/dev/null || (sudo apt-get update && sudo apt-get install -y ffmpeg)
-          for k in 0 1 2; do
+          for k in ${{ github.event.inputs.sections || '0 1 2' }}; do
             rm -rf out/${{ matrix.song }}
             SOUND_SECTION_ALT=$k python3 core/edit/vibe_edit.py --type sound --song "${{ matrix.song }}" --seed "${{ github.event.inputs.seed || '41' }}" --no-mark --out out/${{ matrix.song }} | tail -c 1500 || true
             if python3 -c "import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if r.get('ok') and r.get('song')==sys.argv[2] else 1)" out/${{ matrix.song }}/result.json "${{ matrix.song }}" 2>/dev/null; then

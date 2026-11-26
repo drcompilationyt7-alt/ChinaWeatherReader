@@ -528,6 +528,30 @@
    "overall_mean": 7.5,
    "worst": "17_no_frozen_frames 5.0, 6_vertical_framing_quality 8.9",
    "date": "2026-10-18"
+  },
+  "dua_lipa_new_rules": {
+   "pass": false,
+   "run": 45903014122,
+   "section": [
+    174.481,
+    203.445
+   ],
+   "duration": 20.283,
+   "overall_mean": 9.6,
+   "worst": "16_drum_onsets_recreated 7.2, 6_vertical_framing_quality 8.0",
+   "date": "2026-11-26"
+  },
+  "calvin_harris_we_found_love": {
+   "pass": false,
+   "run": 45903014122,
+   "section": [
+    180.222,
+    210.211
+   ],
+   "duration": 20.0,
+   "overall_mean": 9.6,
+   "worst": "15_transients_on_onsets 7.1, 5_density_no_dead 8.2",
+   "date": "2026-11-26"
   }
  }
 }
