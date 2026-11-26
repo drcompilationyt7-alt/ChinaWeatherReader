@@ -1,251 +1,62 @@
 {
- "at": "2026-11-26T00:17:04Z",
- "added": 0,
+ "at": "2026-11-26T21:48:22Z",
+ "added": 8,
  "verdicts": [
   {
    "song": "Make You Mine",
    "artist": "Public",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.758 section 155.87-196.82 (hero 160.82) total 0.881"
   },
   {
    "song": "I Wanna Be Yours",
    "artist": "Arctic Monkeys",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.839 section 93.34-136.57 (hero 98.57) total 0.915"
   },
   {
    "song": "Lover",
    "artist": "Taylor Swift",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.644 section 168.53-209.48 (hero 173.48) total 0.84"
   },
   {
    "song": "Enchanted",
    "artist": "Taylor Swift",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.853 section 272.14-315.36 (hero 277.36) total 0.919"
   },
   {
    "song": "Moonlight",
    "artist": "Kali Uchis",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.66 section 115.19-158.42 (hero 120.42) total 0.838"
   },
   {
    "song": "Kiss Me",
    "artist": "Sixpence None the Richer",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.577 section 115.45-156.4 (hero 120.4) total 0.802"
   },
   {
    "song": "Bloom",
    "artist": "The Paper Kites",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.657 section 77.57-116.25 (hero 82.25) total 0.815"
   },
   {
    "song": "Pink + White",
    "artist": "Frank Ocean",
    "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Super Shy",
-   "artist": "NewJeans",
-   "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Love Lee",
-   "artist": "AKMU",
-   "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Marigold",
-   "artist": "Aimyon",
-   "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Koi",
-   "artist": "Gen Hoshino",
-   "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Suzume",
-   "artist": "RADWIMPS",
-   "source": "seed",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Can't Help Falling in Love",
-   "artist": "Elvis Presley",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "La Vie en Rose",
-   "artist": "Édith Piaf",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "At My Worst",
-   "artist": "Pink Sweat$",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "L-O-V-E",
-   "artist": "Nat King Cole",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "I Love You So",
-   "artist": "The Walters",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Always Forever",
-   "artist": "Cults",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Just the Two of Us",
-   "artist": "Grover Washington Jr. feat. Bill Withers",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Dream a Little Dream of Me",
-   "artist": "The Mamas & The Papas",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Rises the Moon",
-   "artist": "Liana Flores",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "The Only Thing I Ever Need",
-   "artist": "Ben Woodward",
-   "source": "llm",
-   "status": "rejected",
-   "why": "no matching official upload"
-  },
-  {
-   "song": "Put Your Records On",
-   "artist": "Corinne Bailey Rae",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Moon River",
-   "artist": "Audrey Hepburn",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Through the Night",
-   "artist": "IU",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Every Day, Every Moment",
-   "artist": "Paul Kim",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Thinking of You",
-   "artist": "Kary Ng",
-   "source": "llm",
-   "status": "rejected",
-   "why": "no matching official upload"
-  },
-  {
-   "song": "Mo Mo",
-   "artist": "Silence Wang",
-   "source": "llm",
-   "status": "rejected",
-   "why": "no matching official upload"
-  },
-  {
-   "song": "Young and Beautiful",
-   "artist": "Lana Del Rey",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Ocean Eyes",
-   "artist": "Billie Eilish",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Telepatía",
-   "artist": "Kali Uchis",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "See You Again",
-   "artist": "Tyler, The Creator",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "Show Me How",
-   "artist": "Men I Trust",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
-  },
-  {
-   "song": "I Don't Know You",
-   "artist": "The Marías",
-   "source": "llm",
-   "status": "error",
-   "why": "audio download failed"
+   "status": "added",
+   "why": "calm 0.688 section 126.48-169.7 (hero 131.7) total 0.855"
   }
  ]
 }

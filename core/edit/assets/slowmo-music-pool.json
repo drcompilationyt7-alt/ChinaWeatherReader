@@ -1604,6 +1604,494 @@
    "version_last_used": {
     "1": "2026-11-12T12:02:41Z"
    }
+  },
+  {
+   "id": "public_make_you_mine",
+   "song": "Make You Mine",
+   "artist": "Public",
+   "video_id": "D6J9y4H_KYE",
+   "url": "https://www.youtube.com/watch?v=D6J9y4H_KYE",
+   "query": "Public Make You Mine official audio",
+   "views": 277305415,
+   "slowed_uploads": 10,
+   "source": "seed",
+   "tempo": 99.4,
+   "bar_s": 2.414,
+   "speed": 0.9,
+   "duration": 210.3,
+   "section": {
+    "start": 155.87,
+    "hero": 160.82,
+    "end": 196.82,
+    "score": 0.959,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 3.2,
+     "intro_db": -2.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      98.89,
+      103.84,
+      139.84,
+      0.949
+     ],
+     [
+      146.1,
+      151.05,
+      187.05,
+      0.949
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.758,
+    "perc_share": 0.089,
+    "onset_rate": 3.4,
+    "sustain": 0.915,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.959
+   },
+   "total": 0.881,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:44:43Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "arctic_monkeys_i_wanna_be_yours",
+   "song": "I Wanna Be Yours",
+   "artist": "Arctic Monkeys",
+   "video_id": "nyuo9-OjNNg",
+   "url": "https://www.youtube.com/watch?v=nyuo9-OjNNg",
+   "query": "Arctic Monkeys I Wanna Be Yours official audio",
+   "views": 1030221542,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 68.0,
+   "bar_s": 3.529,
+   "speed": 0.95,
+   "duration": 184.0,
+   "section": {
+    "start": 93.34,
+    "hero": 98.57,
+    "end": 136.57,
+    "score": 0.95,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.9,
+     "jump_db": 4.6,
+     "intro_db": -5.3,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      69.29,
+      74.51,
+      112.51,
+      0.907
+     ],
+     [
+      52.87,
+      58.1,
+      96.1,
+      0.889
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.839,
+    "perc_share": 0.261,
+    "onset_rate": 1.18,
+    "sustain": 0.914,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.95
+   },
+   "total": 0.915,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:45:14Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "taylor_swift_lover",
+   "song": "Lover",
+   "artist": "Taylor Swift",
+   "video_id": "bD3lyhJq0Dg",
+   "url": "https://www.youtube.com/watch?v=bD3lyhJq0Dg",
+   "query": "Taylor Swift Lover official audio",
+   "views": 364830512,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 103.4,
+   "bar_s": 2.321,
+   "speed": 0.9,
+   "duration": 223.1,
+   "section": {
+    "start": 168.53,
+    "hero": 173.48,
+    "end": 209.48,
+    "score": 1.0,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.1,
+     "intro_db": -2.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      155.64,
+      160.59,
+      196.59,
+      0.959
+     ],
+     [
+      93.15,
+      98.1,
+      134.1,
+      0.942
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.644,
+    "perc_share": 0.304,
+    "onset_rate": 1.88,
+    "sustain": 0.912,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 1.0
+   },
+   "total": 0.84,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:45:44Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "taylor_swift_enchanted",
+   "song": "Enchanted",
+   "artist": "Taylor Swift",
+   "video_id": "jaxwuEYPabA",
+   "url": "https://www.youtube.com/watch?v=jaxwuEYPabA",
+   "query": "Taylor Swift Enchanted official audio",
+   "views": 116463093,
+   "slowed_uploads": 14,
+   "source": "seed",
+   "tempo": 80.7,
+   "bar_s": 2.974,
+   "speed": 0.95,
+   "duration": 352.1,
+   "section": {
+    "start": 272.14,
+    "hero": 277.36,
+    "end": 315.36,
+    "score": 0.942,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.95,
+     "jump_db": 4.0,
+     "intro_db": -6.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      118.79,
+      124.02,
+      162.02,
+      0.9
+     ],
+     [
+      86.59,
+      91.81,
+      129.81,
+      0.872
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.853,
+    "perc_share": 0.183,
+    "onset_rate": 2.17,
+    "sustain": 0.943,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.942
+   },
+   "total": 0.919,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:46:23Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "kali_uchis_moonlight",
+   "song": "Moonlight",
+   "artist": "Kali Uchis",
+   "video_id": "rrM_-MmEP0o",
+   "url": "https://www.youtube.com/watch?v=rrM_-MmEP0o",
+   "query": "Kali Uchis Moonlight official audio",
+   "views": 178838130,
+   "slowed_uploads": 15,
+   "source": "seed",
+   "tempo": 68.0,
+   "bar_s": 3.529,
+   "speed": 0.95,
+   "duration": 189.9,
+   "section": {
+    "start": 115.19,
+    "hero": 120.42,
+    "end": 158.42,
+    "score": 0.965,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.88,
+     "jump_db": 4.4,
+     "intro_db": -3.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      123.51,
+      128.73,
+      166.73,
+      0.879
+     ],
+     [
+      87.63,
+      92.86,
+      130.86,
+      0.871
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.66,
+    "perc_share": 0.423,
+    "onset_rate": 1.59,
+    "sustain": 0.896,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.965
+   },
+   "total": 0.838,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:46:52Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "sixpence_none_the_richer_kiss_me",
+   "song": "Kiss Me",
+   "artist": "Sixpence None the Richer",
+   "video_id": "WOgx6RXg46s",
+   "url": "https://www.youtube.com/watch?v=WOgx6RXg46s",
+   "query": "Sixpence None the Richer Kiss Me official audio",
+   "views": 190300852,
+   "slowed_uploads": 13,
+   "source": "seed",
+   "tempo": 99.4,
+   "bar_s": 2.414,
+   "speed": 0.9,
+   "duration": 198.1,
+   "section": {
+    "start": 115.45,
+    "hero": 120.4,
+    "end": 156.4,
+    "score": 0.97,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.96,
+     "jump_db": 4.4,
+     "intro_db": -5.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      65.1,
+      70.05,
+      106.05,
+      0.879
+     ],
+     [
+      125.08,
+      130.03,
+      166.03,
+      0.865
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.577,
+    "perc_share": 0.283,
+    "onset_rate": 3.8,
+    "sustain": 0.924,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.97
+   },
+   "total": 0.802,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:47:22Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_paper_kites_bloom",
+   "song": "Bloom",
+   "artist": "The Paper Kites",
+   "video_id": "Ixc50iMhQ5c",
+   "url": "https://www.youtube.com/watch?v=Ixc50iMhQ5c",
+   "query": "The Paper Kites Bloom official audio",
+   "views": 45265746,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 129.2,
+   "bar_s": 1.858,
+   "speed": 0.85,
+   "duration": 210.1,
+   "section": {
+    "start": 77.57,
+    "hero": 82.25,
+    "end": 116.25,
+    "score": 0.989,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.96,
+     "jump_db": 4.1,
+     "intro_db": -3.6,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      117.67,
+      122.35,
+      156.35,
+      0.988
+     ],
+     [
+      177.6,
+      182.28,
+      208.59,
+      0.981
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.657,
+    "perc_share": 0.119,
+    "onset_rate": 3.21,
+    "sustain": 0.919,
+    "popularity": 0.862,
+    "slowed": 1.0,
+    "section": 0.989
+   },
+   "total": 0.815,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:47:53Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "frank_ocean_pink_white",
+   "song": "Pink + White",
+   "artist": "Frank Ocean",
+   "video_id": "uzS3WG6__G4",
+   "url": "https://www.youtube.com/watch?v=uzS3WG6__G4",
+   "query": "Frank Ocean Pink + White official audio",
+   "views": 149174358,
+   "slowed_uploads": 11,
+   "source": "seed",
+   "tempo": 80.7,
+   "bar_s": 2.974,
+   "speed": 0.95,
+   "duration": 184.6,
+   "section": {
+    "start": 126.48,
+    "hero": 131.7,
+    "end": 169.7,
+    "score": 0.982,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.98,
+     "jump_db": 3.7,
+     "intro_db": -3.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      117.49,
+      122.72,
+      160.72,
+      0.974
+     ],
+     [
+      99.5,
+      104.72,
+      142.72,
+      0.896
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.688,
+    "perc_share": 0.275,
+    "onset_rate": 2.88,
+    "sustain": 0.885,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.982
+   },
+   "total": 0.855,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-26T21:48:22Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
   }
  ],
  "rejected": [
