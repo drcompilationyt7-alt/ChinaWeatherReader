@@ -1,0 +1,40 @@
+name: Kaggle YouTube download probe (manual)
+# 2026-11-27: GitHub runners can no longer download from YouTube; this checks whether a Kaggle CPU session can
+# (scripts/kaggle/yt_probe_kernel.py: 3 ids that failed on GitHub, no cookies). Prints the RESULT lines in the summary.
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -q kaggle
+      - name: Push the probe kernel (CPU, internet on)
+        run: |
+          mkdir -p kn && cp scripts/kaggle/yt_probe_kernel.py kn/
+          python - <<'PY'
+          import json, os
+          u = os.environ['KAGGLE_USERNAME']
+          json.dump({'id': f'{u}/yt-probe', 'title': 'yt-probe', 'code_file': 'yt_probe_kernel.py', 'language': 'python',
+                     'kernel_type': 'script', 'is_private': True, 'enable_gpu': False, 'enable_internet': True,
+                     'dataset_sources': [], 'competition_sources': [], 'kernel_sources': []}, open('kn/kernel-metadata.json', 'w'))
+          PY
+          kaggle kernels push -p kn
+      - name: Wait and read the log
+        run: |
+          for i in $(seq 1 30); do
+            s=$(kaggle kernels status "$KAGGLE_USERNAME/yt-probe" 2>&1 | tail -1); echo "$s"
+            case "$s" in *COMPLETE*|*ERROR*|*CANCEL*) break;; esac; sleep 60
+          done
+          mkdir -p out && kaggle kernels output "$KAGGLE_USERNAME/yt-probe" -p out >/dev/null 2>&1 || true
+          cat out/*.log 2>/dev/null | python -c "import sys,json; t=sys.stdin.read(); 
+          try: print(''.join(x.get('data','') for x in json.loads(t)))
+          except Exception: print(t)" | tee probe.txt | grep -E "RESULT|yt-dlp" || true
+          { echo '### Kaggle YouTube probe'; echo '```'; grep -E "RESULT|yt-dlp" probe.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
