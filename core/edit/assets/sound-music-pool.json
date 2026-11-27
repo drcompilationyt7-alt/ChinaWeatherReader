@@ -2492,10 +2492,10 @@
    "downbeat": 0.276,
    "duration": 230.67,
    "section": {
-    "start": 187.618,
-    "end": 217.318,
+    "start": 100.801,
+    "end": 130.501,
     "bars": 13,
-    "score": 0.739,
+    "score": 0.698,
     "parts": {
      "density": 0.507,
      "regularity": 0.785,
@@ -2508,16 +2508,17 @@
     },
     "alternatives": [
      [
-      100.801,
-      130.501,
-      0.698
+      187.618,
+      217.318,
+      0.739
      ],
      [
       59.677,
       87.093,
       0.681
      ]
-    ]
+    ],
+    "promoted": "2026-11-26: alternative 1 rendered + passed the judge; the old pick failed on holds / reuse"
    },
    "scores": {
     "drum_clarity": 0.332,
@@ -2616,10 +2617,10 @@
    "downbeat": 2.344,
    "duration": 201.04,
    "section": {
-    "start": 155.969,
-    "end": 184.774,
+    "start": 117.563,
+    "end": 148.768,
     "bars": 12,
-    "score": 0.797,
+    "score": 0.726,
     "parts": {
      "density": 0.697,
      "regularity": 0.812,
@@ -2637,11 +2638,12 @@
       0.739
      ],
      [
-      117.563,
-      148.768,
-      0.726
+      155.969,
+      184.774,
+      0.797
      ]
-    ]
+    ],
+    "promoted": "2026-11-26: alternative 2 rendered + passed the judge; the old pick failed on holds / reuse"
    },
    "scores": {
     "drum_clarity": 0.457,
@@ -2797,10 +2799,10 @@
    "downbeat": 1.585,
    "duration": 212.86,
    "section": {
-    "start": 54.897,
-    "end": 86.884,
+    "start": 129.534,
+    "end": 161.521,
     "bars": 12,
-    "score": 0.789,
+    "score": 0.703,
     "parts": {
      "density": 0.561,
      "regularity": 0.775,
@@ -2813,16 +2815,17 @@
     },
     "alternatives": [
      [
-      129.534,
-      161.521,
-      0.703
+      54.897,
+      86.884,
+      0.789
      ],
      [
       161.521,
       190.843,
       0.639
      ]
-    ]
+    ],
+    "promoted": "2026-11-26: alternative 1 rendered + passed the judge; the old pick failed on holds / reuse"
    },
    "scores": {
     "drum_clarity": 0.1,

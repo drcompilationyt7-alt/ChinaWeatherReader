@@ -531,27 +531,84 @@
   },
   "dua_lipa_new_rules": {
    "pass": false,
-   "run": 45903014122,
+   "run": 45913579341,
    "section": [
     174.481,
     203.445
    ],
    "duration": 20.283,
    "overall_mean": 9.6,
-   "worst": "16_drum_onsets_recreated 7.2, 6_vertical_framing_quality 8.0",
+   "worst": "2 sections rendered (main + alt 1): 9.6 both, 16_drum_onsets_recreated 7.2",
    "date": "2026-11-26"
   },
   "calvin_harris_we_found_love": {
    "pass": false,
-   "run": 45903014122,
+   "run": 45913579341,
    "section": [
     180.222,
     210.211
    ],
    "duration": 20.0,
    "overall_mean": 9.6,
-   "worst": "15_transients_on_onsets 7.1, 5_density_no_dead 8.2",
+   "worst": "main 9.6 (15_transients_on_onsets 7.1); alts 1-2 did not render",
    "date": "2026-11-26"
+  },
+  "adele_rolling_in_the_deep": {
+   "pass": true,
+   "run": 45913579341,
+   "section": [
+    100.801,
+    130.501
+   ],
+   "duration": 19.833,
+   "overall_mean": 9.9,
+   "worst": "min 8.6",
+   "still_max_s": 0.0,
+   "date": "2026-11-26"
+  },
+  "justin_bieber_sorry": {
+   "pass": true,
+   "run": 45913579341,
+   "section": [
+    117.563,
+    148.768
+   ],
+   "duration": 18.7,
+   "overall_mean": 9.8,
+   "worst": "min 8.4",
+   "still_max_s": 0.075,
+   "date": "2026-11-26"
+  },
+  "alan_walker_faded": {
+   "pass": true,
+   "run": 45913579341,
+   "section": [
+    129.534,
+    161.521
+   ],
+   "duration": 20.233,
+   "overall_mean": 9.7,
+   "worst": "min 8.3",
+   "still_max_s": 0.055,
+   "date": "2026-11-26"
+  },
+  "avicii_wake_me_up": {
+   "pass": false,
+   "worst": "9.5: 16_drum_onsets_recreated 7.8, 18_song_audible 7.5",
+   "date": "2026-11-26",
+   "run": 45913579341
+  },
+  "cardi_b_bodak_yellow": {
+   "pass": false,
+   "worst": "no section rendered (reuse > 30 % / holds)",
+   "date": "2026-11-26",
+   "run": 45913579341
+  },
+  "doja_cat_say_so": {
+   "pass": false,
+   "worst": "no section rendered (holds)",
+   "date": "2026-11-26",
+   "run": 45913579341
   }
  }
 }
