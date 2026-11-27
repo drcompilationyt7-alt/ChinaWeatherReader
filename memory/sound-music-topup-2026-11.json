@@ -1,84 +1,224 @@
 {
- "at": "2026-11-26T21:42:32Z",
- "added": 8,
+ "at": "2026-11-27T20:14:03Z",
+ "added": 0,
  "retired": 0,
  "verdicts": [
   {
-   "song": "God's Plan",
-   "artist": "Drake",
-   "source": "llm",
-   "status": "rejected",
-   "why": "tempo 77.24 outside 85-140"
-  },
-  {
-   "song": "Bodak Yellow",
-   "artist": "Cardi B",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.642 section 77.103-105.892 total 0.617"
-  },
-  {
-   "song": "This Is America",
-   "artist": "Childish Gambino",
+   "song": "The Box",
+   "artist": "Roddy Ricch",
    "source": "llm",
    "status": "rejected",
    "why": "views 0 < 2000000"
   },
   {
-   "song": "Rolling in the Deep",
-   "artist": "Adele",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.562 section 187.618-217.318 total 0.565"
-  },
-  {
-   "song": "New Rules",
-   "artist": "Dua Lipa",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.633 section 174.481-203.445 total 0.636"
-  },
-  {
-   "song": "Sorry",
-   "artist": "Justin Bieber",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.591 section 155.969-184.774 total 0.684"
-  },
-  {
-   "song": "Wake Me Up",
-   "artist": "Avicii",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.553 section 38.945-67.969 total 0.559"
-  },
-  {
-   "song": "We Found Love",
-   "artist": "Calvin Harris",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.591 section 180.222-210.211 total 0.584"
-  },
-  {
-   "song": "Faded",
-   "artist": "Alan Walker",
-   "source": "llm",
-   "status": "added",
-   "why": "audio 0.53 section 54.897-86.884 total 0.669"
-  },
-  {
-   "song": "Animals",
-   "artist": "Martin Garrix",
+   "song": "Turn Down for What",
+   "artist": "DJ Snake ft. Lil Jon",
    "source": "llm",
    "status": "rejected",
-   "why": "drums not clear enough (audio 0.464)"
+   "why": "views 0 < 2000000"
   },
   {
-   "song": "Say So",
+   "song": "As It Was",
+   "artist": "Harry Styles",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0 < 2000000"
+  },
+  {
+   "song": "Savage",
+   "artist": "Megan Thee Stallion",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Latch",
+   "artist": "Disclosure ft. Sam Smith",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Truth Hurts",
+   "artist": "Lizzo",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Dior",
+   "artist": "Pop Smoke",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Don't You Worry Child",
+   "artist": "Swedish House Mafia ft. John Martin",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Blank Space",
+   "artist": "Taylor Swift",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0 < 2000000"
+  },
+  {
+   "song": "Bad and Boujee",
+   "artist": "Migos ft. Lil Uzi Vert",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Supernova",
+   "artist": "aespa",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "DNA.",
+   "artist": "Kendrick Lamar",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Paint The Town Red",
    "artist": "Doja Cat",
    "source": "llm",
-   "status": "added",
-   "why": "audio 0.695 section 12.975-43.241 total 0.702"
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Boy's a liar Pt. 2",
+   "artist": "PinkPantheress & Ice Spice",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Training Season",
+   "artist": "Dua Lipa",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Hype Boy",
+   "artist": "NewJeans",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "LOVE DIVE",
+   "artist": "IVE",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Makeba",
+   "artist": "Jain",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Calm Down",
+   "artist": "Rema & Selena Gomez",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Standing Next to You",
+   "artist": "Jung Kook",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Stayin' Alive",
+   "artist": "Bee Gees",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "Back in Black",
+   "artist": "AC/DC",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "September",
+   "artist": "Earth, Wind & Fire",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Play That Funky Music",
+   "artist": "Wild Cherry",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Sweet Child o' Mine",
+   "artist": "Guns N' Roses",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Good Times",
+   "artist": "Chic",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Walk This Way",
+   "artist": "Aerosmith",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "I Will Survive",
+   "artist": "Gloria Gaynor",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Enter Sandman",
+   "artist": "Metallica",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Le Freak",
+   "artist": "Chic",
+   "source": "llm",
+   "status": "error",
+   "why": "audio download failed"
+  },
+  {
+   "song": "Touch It",
+   "artist": "Busta Rhymes",
+   "source": "trending",
+   "status": "error",
+   "why": "audio download failed"
   }
  ]
 }
