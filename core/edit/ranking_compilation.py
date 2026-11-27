@@ -529,6 +529,7 @@ def ocr(img):
     res, _ = _OCR[0](img)
     out = []
     for box, txt, conf in res or []:
+        conf = float(conf)           # 2026-11-27: some rapidocr builds (Kaggle) return the score as a string
         if conf < 0.6 or len(txt.strip()) < 2:
             continue
         xs = [p[0] / w for p in box]

@@ -462,7 +462,15 @@ def run_library(src_dir, out_dir, n_src, cache):
     with open(out_dir + '.log', 'w', encoding='utf-8') as lf:
         subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env, timeout=4 * 3600)
     log(f'library {n_src} sources: {time.time() - t0:.0f} s')
-    return os.path.join(out_dir, 'shots.json')
+    sj = os.path.join(out_dir, 'shots.json')
+    if not os.path.exists(sj):
+        # 2026-11-27 (first Kaggle night): a library run that writes no shots.json used to vanish without a word
+        try:
+            tail = open(out_dir + '.log', encoding='utf-8', errors='replace').read().strip().splitlines()[-25:]
+        except OSError:
+            tail = ['(no library log)']
+        log('library wrote no shots.json; its log ends: ' + ' | '.join(x[:220] for x in tail))
+    return sj
 
 
 def gate_child(shots, work):
