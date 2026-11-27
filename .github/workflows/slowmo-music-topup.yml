@@ -84,13 +84,15 @@ jobs:
         # 2026-11-27: GitHub runners cannot download from YouTube at all; API keys never leave GitHub
         if: steps.gate.outputs.go == 'true' && vars.MINE_ON_KAGGLE != 'off'
         env:
+          K_JAR_SPARE: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
+          K_JAR_MINING: ${{ secrets.YOUTUBE_COOKIES_TOPUP }}
           GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
           KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
         run: |
           DRY=""; [ "${{ github.event.inputs.dry_run }}" = "true" ] && DRY="--dry-run"
           python core/edit/slowmo_music.py topup --cands-out /tmp/cands.json
-          python scripts/kaggle_run.py --slug topup-slowmo --inputs /tmp/cands.json             --outputs core/edit/assets/slowmo-music-pool.json memory /tmp/music-pool-audio             --pip "yt-dlp[default] yt-dlp-ejs deno librosa<0.11 soundfile" --apt ffmpeg --wait-min 140             --env MUSIC_KEEP_AUDIO=1 --env MUSIC_POOL_CACHE=/tmp/music-pool-audio --env MUSIC_AUDIO_RELEASE_OFF=1             --env YT_JS_RUNTIMES=deno --env PYTHONIOENCODING=utf-8 -- "python core/edit/slowmo_music.py topup --cands-in /tmp/cands.json $DRY"
+          python scripts/kaggle_run.py --cookie-env K_JAR_SPARE,K_JAR_MINING --slug topup-slowmo --inputs /tmp/cands.json             --outputs core/edit/assets/slowmo-music-pool.json memory /tmp/music-pool-audio             --pip "yt-dlp[default] yt-dlp-ejs deno librosa<0.11 soundfile" --apt ffmpeg --wait-min 140             --env MUSIC_KEEP_AUDIO=1 --env MUSIC_POOL_CACHE=/tmp/music-pool-audio --env MUSIC_AUDIO_RELEASE_OFF=1             --env YT_JS_RUNTIMES=deno --env PYTHONIOENCODING=utf-8 -- "python core/edit/slowmo_music.py topup --cands-in /tmp/cands.json $DRY"
           if [ -z "$DRY" ]; then MUSIC_POOL_CACHE=/tmp/music-pool-audio python core/edit/music_pool.py push-audio; fi
       - name: Top-up
         if: steps.gate.outputs.go == 'true' && vars.MINE_ON_KAGGLE == 'off'

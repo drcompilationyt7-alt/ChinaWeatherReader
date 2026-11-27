@@ -56,6 +56,15 @@ if JOB['inputs_url']:
             t.extract(m, '/')
 env = dict(os.environ, **JOB['env'])
 env['PATH'] = os.path.dirname(sys.executable) + ':' + env.get('PATH', '')
+if JOB.get('cookies'):
+    import glob, shutil
+    jars = glob.glob('/kaggle/input/**/cookies.txt', recursive=True)
+    if jars:
+        shutil.copyfile(jars[0], '/tmp/yt_cookies.txt')
+        env.update(YT_COOKIES='/tmp/yt_cookies.txt', YT_SPARE_COOKIES='/tmp/yt_cookies.txt', YT_COOKIE_COPY='1')
+        print('cookie jar: on', flush=True)
+    else:
+        print('cookie jar: missing (running without)', flush=True)
 print(f'setup {time.time() - t0:.0f} s; running: {JOB["cmd"]}', flush=True)
 with open(os.path.join(W, 'run.log'), 'w') as log:
     p = subprocess.Popen(['bash', '-c', JOB['cmd']], cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -68,6 +77,9 @@ with tarfile.open(os.path.join(W, 'result.tar'), 'w') as t:
         if os.path.exists(src):
             t.add(src, ('abs' + o) if o.startswith('/') else ('rel/' + o))
 json.dump({'rc': rc, 'job': JOB['job_id'], 'minutes': round((time.time() - t0) / 60, 1)}, open(os.path.join(W, 'status.json'), 'w'))
+for f in ('/tmp/yt_cookies.txt',):
+    if os.path.exists(f):
+        os.remove(f)
 print('exit', rc, flush=True)
 '''
 
@@ -104,6 +116,42 @@ def upload_inputs(paths, name):
     return f'https://github.com/{repo}/releases/download/{RELEASE}/{name}'
 
 
+def push_jar(user, names, slug=''):
+    """One of the cookie jars (env vars named in `names`, picked by the run id so the accounts take turns) -> the PRIVATE
+    Kaggle dataset <user>/yt-jar (cookies.txt). Never printed; the temp copy is deleted. Returns the dataset ref or None."""
+    jars = [n for n in names if (os.environ.get(n) or '').strip()]
+    if not jars:
+        log('no cookie jar in the environment: running without')
+        return None
+    # owner 2026-11-27 "use spare and mining alternately": the jar alternates night by night, and two jobs on the same day
+    # (different slugs) use different jars
+    import datetime as _dt
+    import zlib
+    k = _dt.datetime.now(_dt.timezone.utc).date().toordinal() + zlib.crc32(slug.encode())
+    pick = jars[k % len(jars)]
+    ref = f'{user}/yt-jar'
+    d = tempfile.mkdtemp()
+    try:
+        with open(os.path.join(d, 'cookies.txt'), 'w', encoding='utf-8') as f:
+            f.write(os.environ[pick].strip() + chr(10))
+        json.dump({'title': 'yt-jar', 'id': ref, 'licenses': [{'name': 'other'}]}, open(os.path.join(d, 'dataset-metadata.json'), 'w'))
+        exists = run(['kaggle', 'datasets', 'status', ref]).returncode == 0
+        r = run(['kaggle', 'datasets', 'version', '-p', d, '-m', os.environ.get('GITHUB_RUN_ID', 'run')] if exists else
+                ['kaggle', 'datasets', 'create', '-p', d])
+        if r.returncode:
+            log('cookie dataset push failed (running without):', (r.stdout + r.stderr).strip()[-200:])
+            return None
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    for _ in range(20):
+        st = (run(['kaggle', 'datasets', 'status', ref]).stdout or '').strip().lower()
+        if 'ready' in st:
+            break
+        time.sleep(15)
+    log(f'cookie jar {pick} -> private dataset {ref} ({st or "?"})')
+    return ref
+
+
 def status(ref):
     r = run(['kaggle', 'kernels', 'status', ref])
     return (r.stdout + r.stderr).strip().splitlines()[-1:] or ['?']
@@ -118,6 +166,7 @@ def main():
     ap.add_argument('--apt', default='ffmpeg libgl1 libsndfile1')
     ap.add_argument('--env', action='append', default=[])
     ap.add_argument('--wait-min', type=float, default=300)
+    ap.add_argument('--cookie-env', default='', help='comma-separated env var names holding cookie jars (one per run, rotating)')
     ap.add_argument('cmd', nargs=argparse.REMAINDER)
     a = ap.parse_args()
     cmd = ' '.join(a.cmd[1:] if a.cmd[:1] == ['--'] else a.cmd)
@@ -129,12 +178,14 @@ def main():
     job = {'job_id': job_id, 'repo': os.environ['GITHUB_REPOSITORY'], 'sha': os.environ['GITHUB_SHA'], 'cmd': cmd, 'inputs_url': url,
            'outputs': a.outputs, 'pip': a.pip.split(), 'apt': a.apt,
            'env': dict(kv.split('=', 1) for kv in a.env)}
+    jar = push_jar(user, [x for x in a.cookie_env.split(',') if x], a.slug) if a.cookie_env else None
+    job['cookies'] = bool(jar)
     kn = tempfile.mkdtemp()
     with open(os.path.join(kn, 'job.py'), 'w') as f:
         f.write(KERNEL % {'job': json.dumps(job)})
     json.dump({'id': ref, 'title': a.slug, 'code_file': 'job.py', 'language': 'python', 'kernel_type': 'script',
                'is_private': True, 'enable_gpu': False, 'enable_internet': True,
-               'dataset_sources': [], 'competition_sources': [], 'kernel_sources': []},
+               'dataset_sources': [jar] if jar else [], 'competition_sources': [], 'kernel_sources': []},
               open(os.path.join(kn, 'kernel-metadata.json'), 'w'))
     r = run(['kaggle', 'kernels', 'push', '-p', kn])
     log('push:', (r.stdout + r.stderr).strip()[-300:])

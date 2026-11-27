@@ -116,6 +116,8 @@ jobs:
       - name: Mine on Kaggle (named editors, every anime edit kept; no cookies)
         if: vars.MINE_ON_KAGGLE != 'off'
         env:
+          K_JAR_SPARE: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
+          K_JAR_MINING: ${{ secrets.YOUTUBE_COOKIES_TOPUP }}
           ENTRIES: ${{ inputs.entries }}
           SHOWS: ${{ inputs.shows }}
           MAX_DL: ${{ inputs.max_dl || '4' }}
@@ -126,7 +128,7 @@ jobs:
           else
             CMD="python core/edit/ranking_pool.py mine --budget-min $B --work work --entries '$ENTRIES' --shows '$SHOWS' --max-dl $MAX_DL --max-entries 12 | tail -c 4000"
           fi
-          python scripts/kaggle_run.py --slug mine-ranking --inputs output/edit-pools --outputs output/edit-pools/_staged/ranking             --pip "yt-dlp[default] yt-dlp-ejs deno opencv-python-headless librosa==0.11.0 onnxruntime soundfile psutil rapidocr-onnxruntime==1.4.4" --wait-min $((B + 45))             --env EDIT_POOL_DIR=output/edit-pools --env EDIT_GPU=0 --env EDIT_THREADS=4 --env OMP_NUM_THREADS=4             --env RANKING_MIN_FREE_GB=1.5 --env PYTHONIOENCODING=utf-8 -- "set -o pipefail; $CMD"
+          python scripts/kaggle_run.py --cookie-env K_JAR_SPARE,K_JAR_MINING --slug mine-ranking --inputs output/edit-pools --outputs output/edit-pools/_staged/ranking             --pip "yt-dlp[default] yt-dlp-ejs deno opencv-python-headless librosa==0.11.0 onnxruntime soundfile psutil rapidocr-onnxruntime==1.4.4" --wait-min $((B + 45))             --env EDIT_POOL_DIR=output/edit-pools --env EDIT_GPU=0 --env EDIT_THREADS=4 --env OMP_NUM_THREADS=4             --env RANKING_MIN_FREE_GB=1.5 --env PYTHONIOENCODING=utf-8 -- "set -o pipefail; $CMD"
       - name: Mine (one job, paced)
         if: vars.MINE_ON_KAGGLE == 'off'
         env:

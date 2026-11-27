@@ -138,9 +138,12 @@ jobs:
         run: python -m pip install -q kaggle six
       - name: Mine on Kaggle (no cookies)
         if: vars.MINE_ON_KAGGLE != 'off'
+        env:
+          K_JAR_SPARE: ${{ secrets.YOUTUBE_COOKIES_EDIT }}
+          K_JAR_MINING: ${{ secrets.YOUTUBE_COOKIES_TOPUP }}
         run: |
           B=$(( MINE_BUDGET > 225 ? 225 : MINE_BUDGET ))
-          python scripts/kaggle_run.py --slug mine-slowmo --inputs /tmp/st output/edit-pools --outputs work/out             --pip "yt-dlp[default] yt-dlp-ejs deno opencv-python-headless librosa==0.11.0 onnxruntime soundfile psutil" --wait-min $((B + 40))             --env NSH=1 --env SLOWMO_LIBRARY_CAP=9 --env EDIT_POOL_DIR=output/edit-pools --env EDIT_GPU=0 --env EDIT_THREADS=4             --env OMP_NUM_THREADS=4 --env SLOWMO_GROW_MIN_GB=0 --env YT_JS_RUNTIMES=deno --env PYTHONIOENCODING=utf-8 --             "set -o pipefail; python core/pools/clip_prefilter.py selftest > /dev/null && python core/pools/slowmo_grow.py mine --work work --shard 0/1 --budget-min $B --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000"
+          python scripts/kaggle_run.py --cookie-env K_JAR_SPARE,K_JAR_MINING --slug mine-slowmo --inputs /tmp/st output/edit-pools --outputs work/out             --pip "yt-dlp[default] yt-dlp-ejs deno opencv-python-headless librosa==0.11.0 onnxruntime soundfile psutil" --wait-min $((B + 40))             --env NSH=1 --env SLOWMO_LIBRARY_CAP=9 --env EDIT_POOL_DIR=output/edit-pools --env EDIT_GPU=0 --env EDIT_THREADS=4             --env OMP_NUM_THREADS=4 --env SLOWMO_GROW_MIN_GB=0 --env YT_JS_RUNTIMES=deno --env PYTHONIOENCODING=utf-8 --             "set -o pipefail; python core/pools/clip_prefilter.py selftest > /dev/null && python core/pools/slowmo_grow.py mine --work work --shard 0/1 --budget-min $B --batch 8 --state /tmp/st/slowmo-grow-state.json | tail -c 3000"
           du -sh work/out || true
       - name: Mine shard ${{ matrix.shard }}
         if: vars.MINE_ON_KAGGLE == 'off'
