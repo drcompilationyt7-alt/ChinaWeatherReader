@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install -q kaggle
+      - run: python -m pip install -q kaggle six
       - name: Push the probe kernel (CPU, internet on)
         run: |
           mkdir -p kn && cp scripts/kaggle/yt_probe_kernel.py kn/
