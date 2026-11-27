@@ -3601,6 +3601,69 @@
     "titleStyle": "op-exact-search",
     "descHook": "no-peek"
    }
+  },
+  {
+   "videoId": "be-03fvqucI",
+   "url": "https://www.youtube.com/watch?v=be-03fvqucI",
+   "postedAt": "2026-11-27T11:12:43.615Z",
+   "publishAt": "2026-11-27T13:00:00.000Z",
+   "format": "character",
+   "theme": "anime",
+   "seed": 323952164,
+   "length": "quick",
+   "edition": "festival",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "intro",
+     "used": "pool",
+     "line": "Summer festival edition! Guess who's in a yukata!",
+     "template": null,
+     "sec": 2.8
+    },
+    {
+     "slot": "outro",
+     "used": "ai",
+     "line": "How many did you get right? Comment your score!",
+     "template": "How many did you get right? Comment your score!",
+     "sec": 2.34
+    },
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "Kurisu Makise. Did you get it?",
+     "template": null,
+     "sec": 2.06
+    },
+    {
+     "slot": "reveal 2",
+     "used": "pool",
+     "line": "That was Kana Arima.",
+     "template": null,
+     "sec": 1.43
+    },
+    {
+     "slot": "reveal 3",
+     "used": "ai-short",
+     "line": "Found Mejiro McQueen!",
+     "template": "Found {a}!",
+     "sec": 1.48
+    }
+   ],
+   "titleTemplate": "char-guess",
+   "title": "Anime Character Quiz: Summer Festival Edition 🎆",
+   "answers": [
+    "character:kurisu makise#1n8vmnn",
+    "character:kana arima#18wtsmz",
+    "character:mejiro mcqueen#3npsqk"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-quiz-sparks",
+    "hashtagSet": "title-tag",
+    "titleStyle": "keyword",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
