@@ -1909,6 +1909,1287 @@
     "n": 0,
     "sum": 0.0
    }
+  },
+  {
+   "id": "newjeans_super_shy",
+   "song": "Super Shy",
+   "artist": "NewJeans",
+   "video_id": "cQY5brXxEig",
+   "url": "https://www.youtube.com/watch?v=cQY5brXxEig",
+   "query": "NewJeans Super Shy official audio",
+   "views": 305225530,
+   "slowed_uploads": 12,
+   "source": "seed",
+   "tempo": 76.0,
+   "bar_s": 3.158,
+   "speed": 0.95,
+   "duration": 154.7,
+   "section": {
+    "start": 100.82,
+    "hero": 106.05,
+    "end": 144.05,
+    "score": 0.999,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.3,
+     "intro_db": -3.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      9.64,
+      14.86,
+      52.86,
+      0.905
+     ],
+     [
+      110.43,
+      115.66,
+      153.19,
+      0.84
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.663,
+    "perc_share": 0.211,
+    "onset_rate": 4.55,
+    "sustain": 0.864,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.999
+   },
+   "total": 0.848,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:07:09Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "gen_hoshino_koi",
+   "song": "Koi",
+   "artist": "Gen Hoshino",
+   "video_id": "jhOVibLEDhA",
+   "url": "https://www.youtube.com/watch?v=jhOVibLEDhA",
+   "query": "Gen Hoshino Koi official audio",
+   "views": 286492354,
+   "slowed_uploads": 2,
+   "source": "seed",
+   "tempo": 80.7,
+   "bar_s": 2.974,
+   "speed": 0.95,
+   "duration": 293.0,
+   "section": {
+    "start": 158.57,
+    "hero": 163.79,
+    "end": 201.79,
+    "score": 0.934,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 2.7,
+     "intro_db": -3.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      138.44,
+      143.66,
+      181.66,
+      0.92
+     ],
+     [
+      40.08,
+      45.3,
+      83.3,
+      0.898
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.711,
+    "perc_share": 0.261,
+    "onset_rate": 2.52,
+    "sustain": 0.865,
+    "popularity": 1.0,
+    "slowed": 0.25,
+    "section": 0.934
+   },
+   "total": 0.778,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:08:44Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "snow_patrol_chasing_cars",
+   "song": "Chasing Cars",
+   "artist": "Snow Patrol",
+   "video_id": "33OdnB0YnEU",
+   "url": "https://www.youtube.com/watch?v=33OdnB0YnEU",
+   "query": "Snow Patrol Chasing Cars official audio",
+   "views": 443092801,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 103.4,
+   "bar_s": 2.321,
+   "speed": 0.9,
+   "duration": 266.8,
+   "section": {
+    "start": 167.55,
+    "hero": 172.5,
+    "end": 208.5,
+    "score": 0.933,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.1,
+     "intro_db": -8.5,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      206.77,
+      211.72,
+      247.72,
+      0.882
+     ],
+     [
+      91.3,
+      96.25,
+      132.25,
+      0.88
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.807,
+    "perc_share": 0.152,
+    "onset_rate": 2.01,
+    "sustain": 0.943,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.933
+   },
+   "total": 0.896,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:09:49Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "dith_piaf_la_vie_en_rose",
+   "song": "La Vie en rose",
+   "artist": "Édith Piaf",
+   "video_id": "qPU8mENUBXk",
+   "url": "https://www.youtube.com/watch?v=qPU8mENUBXk",
+   "query": "Édith Piaf La Vie en rose official audio",
+   "views": 14032534,
+   "slowed_uploads": 13,
+   "source": "llm",
+   "tempo": 129.2,
+   "bar_s": 1.858,
+   "speed": 0.85,
+   "duration": 187.3,
+   "section": {
+    "start": 30.09,
+    "hero": 34.76,
+    "end": 68.76,
+    "score": 0.982,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.94,
+     "jump_db": 4.1,
+     "intro_db": -3.8,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      22.05,
+      26.73,
+      60.73,
+      0.962
+     ],
+     [
+      141.84,
+      146.52,
+      180.52,
+      0.905
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.692,
+    "perc_share": 0.146,
+    "onset_rate": 1.54,
+    "sustain": 0.86,
+    "popularity": 0.659,
+    "slowed": 1.0,
+    "section": 0.982
+   },
+   "total": 0.789,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:10:32Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "lana_del_rey_young_and_beautiful",
+   "song": "Young and Beautiful",
+   "artist": "Lana Del Rey",
+   "video_id": "o_1aF54DO60",
+   "url": "https://www.youtube.com/watch?v=o_1aF54DO60",
+   "query": "Lana Del Rey Young and Beautiful official audio",
+   "views": 854752013,
+   "slowed_uploads": 12,
+   "source": "llm",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 238.6,
+   "section": {
+    "start": 161.17,
+    "hero": 166.12,
+    "end": 202.12,
+    "score": 0.987,
+    "parts": {
+     "hook": 0.98,
+     "energy": 1.0,
+     "jump_db": 3.9,
+     "intro_db": -3.7,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      112.15,
+      117.1,
+      153.1,
+      0.967
+     ],
+     [
+      46.95,
+      51.9,
+      87.9,
+      0.938
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.737,
+    "perc_share": 0.05,
+    "onset_rate": 2.64,
+    "sustain": 0.924,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.987
+   },
+   "total": 0.878,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:11:25Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "audrey_hepburn_moon_river",
+   "song": "Moon River",
+   "artist": "Audrey Hepburn",
+   "video_id": "bkM5_IR4WEg",
+   "url": "https://www.youtube.com/watch?v=bkM5_IR4WEg",
+   "query": "Audrey Hepburn Moon River official audio",
+   "views": 9108664,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 123.2,
+   "section": {
+    "start": 42.44,
+    "hero": 47.39,
+    "end": 83.39,
+    "score": 0.985,
+    "parts": {
+     "hook": 0.96,
+     "energy": 1.0,
+     "jump_db": 6.0,
+     "intro_db": -3.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      57.91,
+      62.86,
+      98.86,
+      0.93
+     ],
+     [
+      27.53,
+      32.48,
+      68.48,
+      0.924
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.804,
+    "perc_share": 0.064,
+    "onset_rate": 1.08,
+    "sustain": 0.927,
+    "popularity": 0.584,
+    "slowed": 1.0,
+    "section": 0.985
+   },
+   "total": 0.825,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:12:03Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "pink_sweat_at_my_worst",
+   "song": "At My Worst",
+   "artist": "Pink Sweat$",
+   "video_id": "m2htQJuFrnY",
+   "url": "https://www.youtube.com/watch?v=m2htQJuFrnY",
+   "query": "Pink Sweat$ At My Worst official audio",
+   "views": 286237365,
+   "slowed_uploads": 13,
+   "source": "llm",
+   "tempo": 92.3,
+   "bar_s": 2.6,
+   "speed": 0.95,
+   "duration": 170.5,
+   "section": {
+    "start": 102.14,
+    "hero": 107.37,
+    "end": 145.37,
+    "score": 0.992,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.97,
+     "jump_db": 4.2,
+     "intro_db": -3.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      37.59,
+      42.82,
+      80.82,
+      0.956
+     ],
+     [
+      21.92,
+      27.14,
+      65.14,
+      0.904
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.768,
+    "perc_share": 0.188,
+    "onset_rate": 2.83,
+    "sustain": 0.945,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.992
+   },
+   "total": 0.894,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:12:46Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "cults_always_forever",
+   "song": "Always Forever",
+   "artist": "Cults",
+   "video_id": "z7lHqcFFk8U",
+   "url": "https://www.youtube.com/watch?v=z7lHqcFFk8U",
+   "query": "Cults Always Forever official audio",
+   "views": 13548863,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 80.7,
+   "bar_s": 2.974,
+   "speed": 0.95,
+   "duration": 225.3,
+   "section": {
+    "start": 151.09,
+    "hero": 156.32,
+    "end": 194.32,
+    "score": 0.868,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.86,
+     "jump_db": 2.3,
+     "intro_db": -4.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      99.31,
+      104.54,
+      142.54,
+      0.855
+     ],
+     [
+      73.91,
+      79.13,
+      117.13,
+      0.849
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.951,
+    "perc_share": 0.117,
+    "onset_rate": 1.4,
+    "sustain": 0.936,
+    "popularity": 0.653,
+    "slowed": 1.0,
+    "section": 0.868
+   },
+   "total": 0.876,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:13:31Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "kali_uchis_telepat_a",
+   "song": "Telepatía",
+   "artist": "Kali Uchis",
+   "video_id": "Bs0SsHxBsGI",
+   "url": "https://www.youtube.com/watch?v=Bs0SsHxBsGI",
+   "query": "Kali Uchis Telepatía official audio",
+   "views": 267593122,
+   "slowed_uploads": 13,
+   "source": "llm",
+   "tempo": 80.7,
+   "bar_s": 2.974,
+   "speed": 0.95,
+   "duration": 160.4,
+   "section": {
+    "start": 52.82,
+    "hero": 58.05,
+    "end": 96.05,
+    "score": 0.88,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.6,
+     "jump_db": 4.6,
+     "intro_db": -2.9,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      2.09,
+      7.31,
+      45.31,
+      0.86
+     ],
+     [
+      32.11,
+      37.34,
+      75.34,
+      0.859
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.851,
+    "perc_share": 0.162,
+    "onset_rate": 2.26,
+    "sustain": 0.91,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.88
+   },
+   "total": 0.903,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:14:21Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "the_neighbourhood_softcore",
+   "song": "Softcore",
+   "artist": "The Neighbourhood",
+   "video_id": "tCoFMPNjh6E",
+   "url": "https://www.youtube.com/watch?v=tCoFMPNjh6E",
+   "query": "The Neighbourhood Softcore official audio",
+   "views": 112852264,
+   "slowed_uploads": 15,
+   "source": "llm",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 206.4,
+   "section": {
+    "start": 158.08,
+    "hero": 163.03,
+    "end": 199.03,
+    "score": 0.98,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.93,
+     "jump_db": 4.0,
+     "intro_db": -3.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      84.05,
+      89.0,
+      125.0,
+      0.953
+     ],
+     [
+      17.67,
+      22.62,
+      58.62,
+      0.903
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.871,
+    "perc_share": 0.122,
+    "onset_rate": 1.46,
+    "sustain": 0.901,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.98
+   },
+   "total": 0.937,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:15:02Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "b_rns_electric_love",
+   "song": "Electric Love",
+   "artist": "BØRNS",
+   "video_id": "-wiBRhX_QTU",
+   "url": "https://www.youtube.com/watch?v=-wiBRhX_QTU",
+   "query": "BØRNS Electric Love official audio",
+   "views": 215553705,
+   "slowed_uploads": 13,
+   "source": "llm",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 217.3,
+   "section": {
+    "start": 183.15,
+    "hero": 188.1,
+    "end": 215.79,
+    "score": 0.994,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 3.9,
+     "intro_db": -4.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      122.67,
+      127.62,
+      163.62,
+      0.92
+     ],
+     [
+      64.66,
+      69.61,
+      105.61,
+      0.899
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.441,
+    "perc_share": 0.335,
+    "onset_rate": 3.8,
+    "sustain": 0.897,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.994
+   },
+   "total": 0.747,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:15:57Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "corinne_bailey_rae_put_your_records_on",
+   "song": "Put Your Records On",
+   "artist": "Corinne Bailey Rae",
+   "video_id": "Hr01oIrRVu8",
+   "url": "https://www.youtube.com/watch?v=Hr01oIrRVu8",
+   "query": "Corinne Bailey Rae Put Your Records On official audio",
+   "views": 75572231,
+   "slowed_uploads": 12,
+   "source": "llm",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 234.5,
+   "section": {
+    "start": 165.11,
+    "hero": 170.06,
+    "end": 206.06,
+    "score": 1.0,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 4.3,
+     "intro_db": -3.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      117.63,
+      122.58,
+      158.58,
+      0.967
+     ],
+     [
+      50.73,
+      55.68,
+      91.68,
+      0.955
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.663,
+    "perc_share": 0.28,
+    "onset_rate": 2.58,
+    "sustain": 0.921,
+    "popularity": 0.951,
+    "slowed": 1.0,
+    "section": 1.0
+   },
+   "total": 0.839,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:17:24Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "harry_styles_adore_you",
+   "song": "Adore You",
+   "artist": "Harry Styles",
+   "video_id": "lLmD23p7RvE",
+   "url": "https://www.youtube.com/watch?v=lLmD23p7RvE",
+   "query": "Harry Styles Adore You official audio",
+   "views": 497012928,
+   "slowed_uploads": 10,
+   "source": "llm",
+   "tempo": 99.4,
+   "bar_s": 2.414,
+   "speed": 0.9,
+   "duration": 211.8,
+   "section": {
+    "start": 92.23,
+    "hero": 97.18,
+    "end": 133.18,
+    "score": 0.878,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.94,
+     "jump_db": 1.9,
+     "intro_db": -2.1,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      25.56,
+      30.51,
+      66.51,
+      0.873
+     ],
+     [
+      115.26,
+      120.21,
+      156.21,
+      0.857
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.524,
+    "perc_share": 0.287,
+    "onset_rate": 4.2,
+    "sustain": 0.877,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.878
+   },
+   "total": 0.755,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:18:04Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ellie_goulding_love_me_like_you_do",
+   "song": "Love Me Like You Do",
+   "artist": "Ellie Goulding",
+   "video_id": "_cmUtH0Ovjc",
+   "url": "https://www.youtube.com/watch?v=_cmUtH0Ovjc",
+   "query": "Ellie Goulding Love Me Like You Do official audio",
+   "views": 2421880349,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 95.7,
+   "bar_s": 2.508,
+   "speed": 0.9,
+   "duration": 253.7,
+   "section": {
+    "start": 116.07,
+    "hero": 121.02,
+    "end": 157.02,
+    "score": 0.937,
+    "parts": {
+     "hook": 1.0,
+     "energy": 1.0,
+     "jump_db": 2.7,
+     "intro_db": -3.0,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      189.96,
+      194.91,
+      230.91,
+      0.932
+     ],
+     [
+      75.65,
+      80.6,
+      116.6,
+      0.877
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.822,
+    "perc_share": 0.155,
+    "onset_rate": 1.86,
+    "sustain": 0.91,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.937
+   },
+   "total": 0.904,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:18:46Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "crush_beautiful",
+   "song": "Beautiful",
+   "artist": "Crush",
+   "video_id": "W0cs6ciCt_k",
+   "url": "https://www.youtube.com/watch?v=W0cs6ciCt_k",
+   "query": "Crush Beautiful official audio",
+   "views": 163281046,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 112.3,
+   "bar_s": 2.137,
+   "speed": 0.9,
+   "duration": 227.6,
+   "section": {
+    "start": 151.85,
+    "hero": 156.8,
+    "end": 192.8,
+    "score": 0.976,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.92,
+     "jump_db": 4.9,
+     "intro_db": -2.6,
+     "hole_s": 0.5
+    },
+    "alternatives": [
+     [
+      108.2,
+      113.15,
+      149.15,
+      0.957
+     ],
+     [
+      73.93,
+      78.88,
+      114.88,
+      0.921
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.831,
+    "perc_share": 0.079,
+    "onset_rate": 1.51,
+    "sustain": 0.941,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.976
+   },
+   "total": 0.918,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:19:32Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "ive_love_dive",
+   "song": "Love Dive",
+   "artist": "IVE",
+   "video_id": "HsL_d1uAODQ",
+   "url": "https://www.youtube.com/watch?v=HsL_d1uAODQ",
+   "query": "IVE Love Dive official audio",
+   "views": 343657880,
+   "slowed_uploads": 12,
+   "source": "llm",
+   "tempo": 117.5,
+   "bar_s": 2.043,
+   "speed": 0.9,
+   "duration": 176.6,
+   "section": {
+    "start": 120.11,
+    "hero": 125.06,
+    "end": 161.06,
+    "score": 0.989,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.97,
+     "jump_db": 5.6,
+     "intro_db": -4.2,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      72.3,
+      77.25,
+      113.25,
+      0.983
+     ],
+     [
+      3.18,
+      8.13,
+      44.13,
+      0.936
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.723,
+    "perc_share": 0.153,
+    "onset_rate": 2.11,
+    "sustain": 0.905,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.989
+   },
+   "total": 0.873,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:20:12Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "enhypen_polaroid_love",
+   "song": "Polaroid Love",
+   "artist": "ENHYPEN",
+   "video_id": "Zo4paFNw6z0",
+   "url": "https://www.youtube.com/watch?v=Zo4paFNw6z0",
+   "query": "ENHYPEN Polaroid Love official audio",
+   "views": 149953177,
+   "slowed_uploads": 15,
+   "source": "llm",
+   "tempo": 68.0,
+   "bar_s": 3.529,
+   "speed": 0.95,
+   "duration": 189.4,
+   "section": {
+    "start": 39.29,
+    "hero": 44.51,
+    "end": 82.51,
+    "score": 0.919,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.9,
+     "jump_db": 3.0,
+     "intro_db": -2.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      126.66,
+      131.89,
+      169.89,
+      0.882
+     ],
+     [
+      95.36,
+      100.59,
+      138.59,
+      0.879
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.731,
+    "perc_share": 0.243,
+    "onset_rate": 3.56,
+    "sustain": 0.9,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.919
+   },
+   "total": 0.859,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:20:53Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "doja_cat_say_so",
+   "song": "Say So",
+   "artist": "Doja Cat",
+   "video_id": "uAYG46w1SCA",
+   "url": "https://www.youtube.com/watch?v=uAYG46w1SCA",
+   "query": "Doja Cat Say So official audio",
+   "views": 641743826,
+   "slowed_uploads": 11,
+   "source": "llm",
+   "tempo": 112.3,
+   "bar_s": 2.137,
+   "speed": 0.9,
+   "duration": 238.8,
+   "section": {
+    "start": 119.37,
+    "hero": 124.32,
+    "end": 160.32,
+    "score": 0.88,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.91,
+     "jump_db": 2.1,
+     "intro_db": -1.7,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      6.4,
+      11.35,
+      47.35,
+      0.876
+     ],
+     [
+      84.77,
+      89.72,
+      125.72,
+      0.869
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.485,
+    "perc_share": 0.294,
+    "onset_rate": 3.51,
+    "sustain": 0.839,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.88
+   },
+   "total": 0.738,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:21:57Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "billie_eilish_ocean_eyes",
+   "song": "Ocean Eyes",
+   "artist": "Billie Eilish",
+   "video_id": "N0vlgDNTjUw",
+   "url": "https://www.youtube.com/watch?v=N0vlgDNTjUw",
+   "query": "Billie Eilish Ocean Eyes official audio",
+   "views": 651822408,
+   "slowed_uploads": 11,
+   "source": "llm",
+   "tempo": 71.8,
+   "bar_s": 3.343,
+   "speed": 0.95,
+   "duration": 200.1,
+   "section": {
+    "start": 37.64,
+    "hero": 42.86,
+    "end": 80.86,
+    "score": 0.951,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.97,
+     "jump_db": 4.3,
+     "intro_db": -6.6,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      67.85,
+      73.07,
+      111.07,
+      0.841
+     ],
+     [
+      95.6,
+      100.82,
+      138.82,
+      0.835
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.987,
+    "perc_share": 0.085,
+    "onset_rate": 1.6,
+    "sustain": 0.963,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.951
+   },
+   "total": 0.982,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:22:38Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "sabrina_carpenter_espresso",
+   "song": "Espresso",
+   "artist": "Sabrina Carpenter",
+   "video_id": "HqFkWJgLaUA",
+   "url": "https://www.youtube.com/watch?v=HqFkWJgLaUA",
+   "query": "Sabrina Carpenter Espresso official audio",
+   "views": 718026415,
+   "slowed_uploads": 14,
+   "source": "llm",
+   "tempo": 103.4,
+   "bar_s": 2.321,
+   "speed": 0.9,
+   "duration": 175.6,
+   "section": {
+    "start": 120.09,
+    "hero": 125.04,
+    "end": 161.04,
+    "score": 0.992,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.97,
+     "jump_db": 4.1,
+     "intro_db": -3.4,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      83.17,
+      88.12,
+      124.12,
+      0.94
+     ],
+     [
+      5.29,
+      10.24,
+      46.24,
+      0.932
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.438,
+    "perc_share": 0.349,
+    "onset_rate": 3.86,
+    "sustain": 0.828,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.992
+   },
+   "total": 0.745,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:23:14Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
+  },
+  {
+   "id": "tate_mcrae_greedy",
+   "song": "greedy",
+   "artist": "Tate McRae",
+   "video_id": "UTmZqY_arzk",
+   "url": "https://www.youtube.com/watch?v=UTmZqY_arzk",
+   "query": "Tate McRae greedy official audio",
+   "views": 287005332,
+   "slowed_uploads": 13,
+   "source": "llm",
+   "tempo": 112.3,
+   "bar_s": 2.137,
+   "speed": 0.9,
+   "duration": 132.0,
+   "section": {
+    "start": 87.07,
+    "hero": 92.02,
+    "end": 128.02,
+    "score": 0.977,
+    "parts": {
+     "hook": 1.0,
+     "energy": 0.92,
+     "jump_db": 4.3,
+     "intro_db": -3.0,
+     "hole_s": 0.0
+    },
+    "alternatives": [
+     [
+      38.45,
+      43.4,
+      79.4,
+      0.907
+     ],
+     [
+      15.74,
+      20.69,
+      56.69,
+      0.87
+     ]
+    ]
+   },
+   "scores": {
+    "calm": 0.496,
+    "perc_share": 0.32,
+    "onset_rate": 3.07,
+    "sustain": 0.86,
+    "popularity": 1.0,
+    "slowed": 1.0,
+    "section": 0.977
+   },
+   "total": 0.767,
+   "lyrics": "render-time only",
+   "status": "probation",
+   "added": "2026-11-27T20:24:07Z",
+   "last_used": null,
+   "uses": 0,
+   "perf": {
+    "n": 0,
+    "sum": 0.0
+   }
   }
  ],
  "rejected": [
@@ -2094,6 +3375,54 @@
    "artist": "Coldplay",
    "video_id": "O70-xOKIxMs",
    "why": "YouTube: video not available (2026-11-26)"
+  },
+  {
+   "song": "Love Lee",
+   "artist": "AKMU",
+   "at": "2026-11-27T20:07:45Z",
+   "why": "not calm / emotional enough (calm 0.347)"
+  },
+  {
+   "song": "Marigold",
+   "artist": "Aimyon",
+   "at": "2026-11-27T20:07:52Z",
+   "why": "views 0"
+  },
+  {
+   "song": "Suzume",
+   "artist": "RADWIMPS",
+   "at": "2026-11-27T20:08:51Z",
+   "why": "views 0"
+  },
+  {
+   "song": "My Love Mine All Mine",
+   "artist": "Mitski",
+   "at": "2026-11-27T20:08:58Z",
+   "why": "views 0"
+  },
+  {
+   "song": "Can't Help Falling in Love",
+   "artist": "Elvis Presley",
+   "at": "2026-11-27T20:10:39Z",
+   "why": "views 0"
+  },
+  {
+   "song": "Can I Call You Tonight?",
+   "artist": "Dayglow",
+   "at": "2026-11-27T20:16:43Z",
+   "why": "not calm / emotional enough (calm 0.267)"
+  },
+  {
+   "song": "Saturn",
+   "artist": "SZA",
+   "at": "2026-11-27T20:23:21Z",
+   "why": "views 0"
+  },
+  {
+   "song": "Moonlight Sunrise",
+   "artist": "TWICE",
+   "at": "2026-11-27T20:24:14Z",
+   "why": "views 0"
   }
  ]
 }

@@ -1,62 +1,223 @@
 {
- "at": "2026-11-26T21:48:22Z",
- "added": 8,
+ "at": "2026-11-27T20:24:14Z",
+ "added": 21,
  "verdicts": [
   {
-   "song": "Make You Mine",
-   "artist": "Public",
+   "song": "Super Shy",
+   "artist": "NewJeans",
    "source": "seed",
    "status": "added",
-   "why": "calm 0.758 section 155.87-196.82 (hero 160.82) total 0.881"
+   "why": "calm 0.663 section 100.82-144.05 (hero 106.05) total 0.848"
   },
   {
-   "song": "I Wanna Be Yours",
-   "artist": "Arctic Monkeys",
+   "song": "Love Lee",
+   "artist": "AKMU",
+   "source": "seed",
+   "status": "rejected",
+   "why": "not calm / emotional enough (calm 0.347)"
+  },
+  {
+   "song": "Marigold",
+   "artist": "Aimyon",
+   "source": "seed",
+   "status": "rejected",
+   "why": "views 0"
+  },
+  {
+   "song": "Koi",
+   "artist": "Gen Hoshino",
    "source": "seed",
    "status": "added",
-   "why": "calm 0.839 section 93.34-136.57 (hero 98.57) total 0.915"
+   "why": "calm 0.711 section 158.57-201.79 (hero 163.79) total 0.778"
   },
   {
-   "song": "Lover",
-   "artist": "Taylor Swift",
+   "song": "Suzume",
+   "artist": "RADWIMPS",
    "source": "seed",
-   "status": "added",
-   "why": "calm 0.644 section 168.53-209.48 (hero 173.48) total 0.84"
+   "status": "rejected",
+   "why": "views 0"
   },
   {
-   "song": "Enchanted",
-   "artist": "Taylor Swift",
-   "source": "seed",
-   "status": "added",
-   "why": "calm 0.853 section 272.14-315.36 (hero 277.36) total 0.919"
+   "song": "My Love Mine All Mine",
+   "artist": "Mitski",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0"
   },
   {
-   "song": "Moonlight",
+   "song": "Chasing Cars",
+   "artist": "Snow Patrol",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.807 section 167.55-208.5 (hero 172.5) total 0.896"
+  },
+  {
+   "song": "La Vie en rose",
+   "artist": "Édith Piaf",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.692 section 30.09-68.76 (hero 34.76) total 0.789"
+  },
+  {
+   "song": "Can't Help Falling in Love",
+   "artist": "Elvis Presley",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0"
+  },
+  {
+   "song": "Young and Beautiful",
+   "artist": "Lana Del Rey",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.737 section 161.17-202.12 (hero 166.12) total 0.878"
+  },
+  {
+   "song": "Moon River",
+   "artist": "Audrey Hepburn",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.804 section 42.44-83.39 (hero 47.39) total 0.825"
+  },
+  {
+   "song": "At My Worst",
+   "artist": "Pink Sweat$",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.768 section 102.14-145.37 (hero 107.37) total 0.894"
+  },
+  {
+   "song": "Always Forever",
+   "artist": "Cults",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.951 section 151.09-194.32 (hero 156.32) total 0.876"
+  },
+  {
+   "song": "Telepatía",
    "artist": "Kali Uchis",
-   "source": "seed",
+   "source": "llm",
    "status": "added",
-   "why": "calm 0.66 section 115.19-158.42 (hero 120.42) total 0.838"
+   "why": "calm 0.851 section 52.82-96.05 (hero 58.05) total 0.903"
   },
   {
-   "song": "Kiss Me",
-   "artist": "Sixpence None the Richer",
-   "source": "seed",
+   "song": "Softcore",
+   "artist": "The Neighbourhood",
+   "source": "llm",
    "status": "added",
-   "why": "calm 0.577 section 115.45-156.4 (hero 120.4) total 0.802"
+   "why": "calm 0.871 section 158.08-199.03 (hero 163.03) total 0.937"
   },
   {
-   "song": "Bloom",
-   "artist": "The Paper Kites",
-   "source": "seed",
+   "song": "Electric Love",
+   "artist": "BØRNS",
+   "source": "llm",
    "status": "added",
-   "why": "calm 0.657 section 77.57-116.25 (hero 82.25) total 0.815"
+   "why": "calm 0.441 section 183.15-215.79 (hero 188.1) total 0.747"
   },
   {
-   "song": "Pink + White",
-   "artist": "Frank Ocean",
-   "source": "seed",
+   "song": "Can I Call You Tonight?",
+   "artist": "Dayglow",
+   "source": "llm",
+   "status": "rejected",
+   "why": "not calm / emotional enough (calm 0.267)"
+  },
+  {
+   "song": "Put Your Records On",
+   "artist": "Corinne Bailey Rae",
+   "source": "llm",
    "status": "added",
-   "why": "calm 0.688 section 126.48-169.7 (hero 131.7) total 0.855"
+   "why": "calm 0.663 section 165.11-206.06 (hero 170.06) total 0.839"
+  },
+  {
+   "song": "Adore You",
+   "artist": "Harry Styles",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.524 section 92.23-133.18 (hero 97.18) total 0.755"
+  },
+  {
+   "song": "Love Me Like You Do",
+   "artist": "Ellie Goulding",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.822 section 116.07-157.02 (hero 121.02) total 0.904"
+  },
+  {
+   "song": "Beautiful",
+   "artist": "Crush",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.831 section 151.85-192.8 (hero 156.8) total 0.918"
+  },
+  {
+   "song": "Love Dive",
+   "artist": "IVE",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.723 section 120.11-161.06 (hero 125.06) total 0.873"
+  },
+  {
+   "song": "Polaroid Love",
+   "artist": "ENHYPEN",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.731 section 39.29-82.51 (hero 44.51) total 0.859"
+  },
+  {
+   "song": "Light Chaser",
+   "artist": "Centos",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "Say So",
+   "artist": "Doja Cat",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.485 section 119.37-160.32 (hero 124.32) total 0.738"
+  },
+  {
+   "song": "Ocean Eyes",
+   "artist": "Billie Eilish",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.987 section 37.64-80.86 (hero 42.86) total 0.982"
+  },
+  {
+   "song": "Espresso",
+   "artist": "Sabrina Carpenter",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.438 section 120.09-161.04 (hero 125.04) total 0.745"
+  },
+  {
+   "song": "Saturn",
+   "artist": "SZA",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0"
+  },
+  {
+   "song": "Pink Skies",
+   "artist": "L.A.B.",
+   "source": "llm",
+   "status": "rejected",
+   "why": "no matching official upload"
+  },
+  {
+   "song": "greedy",
+   "artist": "Tate McRae",
+   "source": "llm",
+   "status": "added",
+   "why": "calm 0.496 section 87.07-128.02 (hero 92.02) total 0.767"
+  },
+  {
+   "song": "Moonlight Sunrise",
+   "artist": "TWICE",
+   "source": "llm",
+   "status": "rejected",
+   "why": "views 0"
   }
  ]
 }
