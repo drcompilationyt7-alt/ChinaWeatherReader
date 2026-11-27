@@ -289,6 +289,19 @@ def _judge(work, out, rep, t0, budget_min):
     rep.update(judged=len(verdicts), approved=len(approved))
 
 
+def judge_work(work, budget_min=60.0):
+    """2026-11-27: the vision gate (Gemini keys) on GitHub over minis a Kaggle session cut (`mine --no-judge` there: GitHub
+    runners can no longer download from YouTube; API keys never go to Kaggle). Same _judge + shard files as an inline judge."""
+    t0 = time.time()
+    out = os.path.join(work, 'out')
+    os.makedirs(os.path.join(out, 'mini'), exist_ok=True)
+    os.makedirs(os.path.join(out, 'strips'), exist_ok=True)
+    rep = read_json(os.path.join(out, 'report.json'), {'shard': 0, 'batches': 0, 'sources': 0, 'minis': 0})
+    rep['judged_on'] = 'github (minis cut on kaggle)'
+    _judge(work, out, rep, t0, budget_min)
+    return _write_shard(work, out, rep, t0)
+
+
 def _write_shard(work, out, rep, t0):
     fst = read_json(os.path.join(work, 'fetch.json'), {'seen': {}, 'queries': {}})
     write_json(os.path.join(out, 'fetch.json'), fst)
@@ -905,7 +918,7 @@ def selftest():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['mine', 'merge', 'sharpen', 'check', 'sheet', 'baseline', 'queries', 'stage', 'apply-staged',
-                                    'pull-staged', 'sharpen-staged', 'selftest'])
+                                    'pull-staged', 'sharpen-staged', 'judge', 'selftest'])
     ap.add_argument('--tars', nargs='*')
     ap.add_argument('--reject', default='')
     ap.add_argument('--sheets', nargs='*', default=[])
@@ -926,6 +939,8 @@ def main():
         r = selftest()
     elif a.cmd == 'mine':
         r = mine(a.work, k, n, a.budget_min, a.max_sources, a.queries, not a.no_judge)
+    elif a.cmd == 'judge':
+        r = judge_work(a.work, a.budget_min)
     elif a.cmd == 'queries':
         r = pick_queries(k, n, a.queries, read_json(FETCH_STATE, {'seen': {}, 'queries': {}}))
     elif a.cmd == 'merge':

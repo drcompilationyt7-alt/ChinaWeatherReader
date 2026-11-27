@@ -67,12 +67,14 @@ env:
   EDIT_THREADS: '4'
   OMP_NUM_THREADS: '4'
   RANKING_MIN_FREE_GB: '1.5'
+  KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+  KAGGLE_USERNAME: ${{ vars.KAGGLE_USERNAME }}
 
 jobs:
   mine:
     if: vars.RANKING_MINE != 'off'
     runs-on: ubuntu-24.04
-    timeout-minutes: 300
+    timeout-minutes: 330
     permissions:
       contents: write
     steps:
@@ -108,7 +110,25 @@ jobs:
           node scripts/edit-pools-store.js pull --manifests-only --preset ranking || true
           python core/edit/ranking_topics.py check
           python core/edit/ranking_pool.py plan | head -20
+      - name: Kaggle CLI (the mine runs on Kaggle; GitHub runners cannot download from YouTube since ~11-25)
+        if: vars.MINE_ON_KAGGLE != 'off'
+        run: python -m pip install -q kaggle six
+      - name: Mine on Kaggle (named editors, every anime edit kept; no cookies)
+        if: vars.MINE_ON_KAGGLE != 'off'
+        env:
+          ENTRIES: ${{ inputs.entries }}
+          SHOWS: ${{ inputs.shows }}
+          MAX_DL: ${{ inputs.max_dl || '4' }}
+        run: |
+          B="${{ inputs.budget_min || '240' }}"
+          if [ -z "$ENTRIES$SHOWS" ]; then
+            CMD="python core/edit/ranking_pool.py mine-trusted --budget-min $B --work work --max-dl ${{ inputs.max_dl || '80' }} --from-end | tail -c 4000"
+          else
+            CMD="python core/edit/ranking_pool.py mine --budget-min $B --work work --entries '$ENTRIES' --shows '$SHOWS' --max-dl $MAX_DL --max-entries 12 | tail -c 4000"
+          fi
+          python scripts/kaggle_run.py --slug mine-ranking --inputs output/edit-pools --outputs output/edit-pools/_staged/ranking             --pip "yt-dlp[default] yt-dlp-ejs deno opencv-python-headless librosa==0.11.0 onnxruntime soundfile psutil rapidocr-onnxruntime" --wait-min $((B + 45))             --env EDIT_POOL_DIR=output/edit-pools --env EDIT_GPU=0 --env EDIT_THREADS=4 --env OMP_NUM_THREADS=4             --env RANKING_MIN_FREE_GB=1.5 --env PYTHONIOENCODING=utf-8 -- "set -o pipefail; $CMD"
       - name: Mine (one job, paced)
+        if: vars.MINE_ON_KAGGLE == 'off'
         env:
           ENTRIES: ${{ inputs.entries }}
           SHOWS: ${{ inputs.shows }}
