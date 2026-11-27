@@ -464,7 +464,8 @@ def run_library(src_dir, out_dir, n_src, cache):
     log(f'library {n_src} sources: {time.time() - t0:.0f} s')
     sj = os.path.join(out_dir, 'shots.json')
     try:
-        n_shots = len((rj(sj, {}) or {}).get('shots') or []) if os.path.exists(sj) else 0
+        d = rj(sj, {}) if os.path.exists(sj) else {}
+        n_shots = len((d.get('shots') if isinstance(d, dict) else d) or [])
     except Exception:  # noqa: BLE001
         n_shots = 0
     log(f'library: {n_shots} shots')
