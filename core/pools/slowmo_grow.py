@@ -463,7 +463,12 @@ def run_library(src_dir, out_dir, n_src, cache):
         subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env, timeout=4 * 3600)
     log(f'library {n_src} sources: {time.time() - t0:.0f} s')
     sj = os.path.join(out_dir, 'shots.json')
-    if not os.path.exists(sj):
+    try:
+        n_shots = len((rj(sj, {}) or {}).get('shots') or []) if os.path.exists(sj) else 0
+    except Exception:  # noqa: BLE001
+        n_shots = 0
+    log(f'library: {n_shots} shots')
+    if not n_shots:
         # 2026-11-27 (first Kaggle night): a library run that writes no shots.json used to vanish without a word
         try:
             tail = open(out_dir + '.log', encoding='utf-8', errors='replace').read().strip().splitlines()[-25:]
