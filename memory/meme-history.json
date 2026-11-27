@@ -3156,7 +3156,8 @@
    "songSection": [
     167.345,
     199.182
-   ]
+   ],
+   "musicPerf": 4.449
   },
   {
    "videoId": "Q2sHEUBLuOE",
@@ -3511,6 +3512,80 @@
    "whyMode": "insight-driven",
    "bpm": 157.02,
    "titlePattern": "{song} acapella {e}"
+  },
+  {
+   "videoId": "1bARQblOx1I",
+   "url": "https://www.youtube.com/watch?v=1bARQblOx1I",
+   "postedAt": "2026-11-27T12:21:36.542Z",
+   "publishAt": "2026-11-27T12:00:00.000Z",
+   "contentType": "sound-edit",
+   "song": "ANTIFRAGILE",
+   "theme": "anime",
+   "emoji": "🎶,🎧",
+   "title": "LE SSERAFIM - ANTIFRAGILE (Anime Remix)",
+   "clipIds": [
+    "c_3iKoZbmQKo0_76816",
+    "c_4TJNIquRzAc_29530",
+    "c_4TJNIquRzAc_80322",
+    "c_4j1TyN4nLZA_59982",
+    "c_5yCCTdiI_bo_159497",
+    "c_5yCCTdiI_bo_96497",
+    "c_A7ZZTRzKd9c_81832",
+    "c_A_5JOOeFi5g_326030",
+    "c_BOKrwNqPoY8_55559",
+    "c_Ipr0YNnwlXA_40900",
+    "c_IvlTzGeBmHE_115630",
+    "c_J3kytewub_Y_352052",
+    "c_K39jx5VkIPw_790875",
+    "c_KbjmnBu7scU_45969",
+    "c_L1TVoSHBDKc_93140",
+    "c_MnELmsLLEwY_17629",
+    "c_SH9HRJFl0oM_66147",
+    "c_VeIXoZwoy4Y_6228",
+    "c_Z1bq3cyZMVQ_131012",
+    "c_biPUhMQn8Qw_161771",
+    "c_cd7fEl_Bnw0_108305",
+    "c_cd7fEl_Bnw0_130269",
+    "c_fqXR5TiMYV0_53097",
+    "c_krc6M4vPx28_36300",
+    "c_lDzXBSxAxKw_53147",
+    "c_upIsOnCMthw_132454",
+    "c_upIsOnCMthw_152245",
+    "c_utLWiscq8d4_35350",
+    "c_xT66YPk0Q5w_149513",
+    "c_xT66YPk0Q5w_366354",
+    "c_zAYMK_djbns_4030",
+    "c_zUiJ3TahSqE_37647"
+   ],
+   "clipChannels": [],
+   "settings": {
+    "vibe": "impact",
+    "duration": 19.533,
+    "pool": "sound",
+    "render_s": {
+     "short": 1941.7,
+     "watermark_short": 58.9,
+     "total": 2000.6
+    },
+    "attempts": 3
+   },
+   "onVideoTitle": "antifragile anime edit",
+   "meta": {
+    "contentType": "sound-edit",
+    "emojiSet": "music",
+    "hashtagSet": "title-subject",
+    "titleStyle": "artist-remix",
+    "ovStyle": "ov-kw",
+    "descHook": "rate",
+    "titlePattern": "{song} anime edit {e} #{tag}",
+    "titleMode": "explore"
+   },
+   "vibe": "impact",
+   "musicPoolId": "le_sserafim_antifragile",
+   "songSection": [
+    9.155,
+    36.571
+   ]
   }
  ]
 }

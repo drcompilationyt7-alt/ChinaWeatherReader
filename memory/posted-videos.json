@@ -1,15 +1,6 @@
 {
   "videos": [
     {
-      "url": "https://www.youtube.com/watch?v=Oxy-eUSZu4w",
-      "title": "show acapella but the beat drops 🔥",
-      "country": "Global",
-      "postedAt": "2026-10-28T09:39:10.525Z",
-      "videoId": "Oxy-eUSZu4w",
-      "category": "meme-japanese",
-      "titleSource": "show"
-    },
-    {
       "url": "https://www.youtube.com/watch?v=MkEoMr9xikc",
       "title": "odoriko acapella but the beat drops 🗿",
       "country": "Global",
@@ -269,6 +260,15 @@
       "videoId": "j8C8-qXQln0",
       "category": "meme-anime",
       "titleSource": "bling bang bang born"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1bARQblOx1I",
+      "title": "LE SSERAFIM - ANTIFRAGILE (Anime Remix)",
+      "country": "Global",
+      "postedAt": "2026-11-27T12:21:36.858Z",
+      "videoId": "1bARQblOx1I",
+      "category": "edit-sound",
+      "titleSource": "ANTIFRAGILE"
     }
   ]
 }

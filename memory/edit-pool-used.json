@@ -222,7 +222,7 @@
    "role": "short"
   },
   "sound/impact/sound/le_sserafim_antifragile": {
-   "used_at": "2026-10-22T08:41:55Z",
+   "used_at": "2026-11-27T12:21:36Z",
    "video": "sound-impact-short.mp4",
    "role": "short"
   },
@@ -587,6 +587,45 @@
      "c_BOKrwNqPoY8_55559",
      "c_J3kytewub_Y_352052",
      "c_zUiJ3TahSqE_28681"
+    ]
+   },
+   {
+    "at": "2026-11-27T12:21:36Z",
+    "video": "sound-impact-short.mp4",
+    "role": "short",
+    "clips": [
+     "c_xT66YPk0Q5w_149513",
+     "c_MnELmsLLEwY_17629",
+     "c_BOKrwNqPoY8_55559",
+     "c_A_5JOOeFi5g_326030",
+     "c_upIsOnCMthw_132454",
+     "c_4TJNIquRzAc_29530",
+     "c_biPUhMQn8Qw_161771",
+     "c_KbjmnBu7scU_45969",
+     "c_5yCCTdiI_bo_159497",
+     "c_L1TVoSHBDKc_93140",
+     "c_utLWiscq8d4_35350",
+     "c_zAYMK_djbns_4030",
+     "c_IvlTzGeBmHE_115630",
+     "c_cd7fEl_Bnw0_130269",
+     "c_lDzXBSxAxKw_53147",
+     "c_krc6M4vPx28_36300",
+     "c_SH9HRJFl0oM_66147",
+     "c_VeIXoZwoy4Y_6228",
+     "c_Z1bq3cyZMVQ_131012",
+     "c_K39jx5VkIPw_790875",
+     "c_upIsOnCMthw_152245",
+     "c_J3kytewub_Y_352052",
+     "c_zUiJ3TahSqE_37647",
+     "c_4j1TyN4nLZA_59982",
+     "c_5yCCTdiI_bo_96497",
+     "c_4TJNIquRzAc_80322",
+     "c_Ipr0YNnwlXA_40900",
+     "c_fqXR5TiMYV0_53097",
+     "c_cd7fEl_Bnw0_108305",
+     "c_3iKoZbmQKo0_76816",
+     "c_xT66YPk0Q5w_366354",
+     "c_A7ZZTRzKd9c_81832"
     ]
    }
   ],

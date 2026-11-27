@@ -1,62 +1,47 @@
 {
- "at": "2026-11-25T12:46:04.298Z",
- "type": "slowmo",
+ "at": "2026-11-27T12:20:03.506Z",
+ "type": "sound",
  "ok": false,
  "posted": true,
- "reason": "time budget; MUST PUBLISH: attempt 1 (score 8.14)",
+ "reason": "pool too small: pool_too_small: reuse 33% > 30% with 20 fresh clips; MUST PUBLISH: attempt 1 (score 9.65)",
  "dryRun": false,
  "attempts": [
   {
    "n": 1,
-   "song": "s_blue_slowed",
-   "seed": 7611,
+   "song": "le_sserafim_antifragile",
+   "seed": 79096,
    "input": "first",
-   "work": "work-slowmo-1795607611070",
-   "min": 19.7,
-   "overall": 8.14,
+   "work": "work-sound-1795779096385",
+   "min": 34,
+   "overall": 9.65,
    "failed": {
-    "4_mix": 7.83,
-    "11_waves": 0,
-    "12_sync": 0
+    "6_vertical_framing_quality": 7.5
    },
    "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 2,
-   "song": "s_shinunoga_slowed",
-   "seed": 7822,
+   "song": "imagine_dragons_believer",
+   "seed": 79307,
    "input": "new_song",
-   "work": "work-slowmo-1795608790438",
-   "min": 7,
-   "result": "render failed: bad plan: shot 0 is shorter than a frame",
+   "work": "work-sound-1795781138898",
+   "min": 11.7,
+   "overall": 9.63,
+   "failed": {
+    "5_density_no_dead": 7.4
+   },
+   "result": "NOT PASS",
    "next": "new_song"
   },
   {
    "n": 3,
-   "song": "s_gaobai_slowed",
-   "seed": 8033,
+   "song": "the_weeknd_blinding_lights",
+   "seed": 79518,
    "input": "new_song",
-   "work": "work-slowmo-1795609209958",
-   "min": 7.2,
-   "result": "render failed: bad plan: shot 0 is shorter than a frame",
-   "next": "new_song"
-  },
-  {
-   "n": 4,
-   "song": "s_blue_slowed",
-   "seed": 8244,
-   "input": "new_song",
-   "work": "work-slowmo-1795609642384",
-   "min": 18.7,
-   "overall": 8.14,
-   "failed": {
-    "4_mix": 7.83,
-    "11_waves": 0,
-    "12_sync": 0
-   },
-   "result": "NOT PASS",
-   "next": "new_song"
+   "work": "work-sound-1795781842280",
+   "min": 2.7,
+   "result": "pool too small"
   }
  ]
 }
