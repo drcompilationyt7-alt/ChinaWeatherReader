@@ -387,21 +387,31 @@ def propose(n, have, ask=MP.llm_ask):
     return out
 
 
-def topup(dry=False, seed_only=False, limit=None, pool_path=None, search=MP.yt_search, ask=MP.llm_ask, **fns):
+def topup(dry=False, seed_only=False, limit=None, pool_path=None, search=MP.yt_search, ask=MP.llm_ask, cands_out=None, cands_in=None, **fns):
+    """2026-11-27 split like music_pool.topup: cands_out on GitHub (LLM proposals + beauty fit), cands_in on Kaggle (no LLM)."""
     pool = load_pool(pool_path)
     month = MP.now().strftime('%Y-%m')
     added_m = sum(1 for s in pool['songs'] if (s.get('added') or '').startswith(month) and s.get('source') != 'seed')
     cap = limit if limit is not None else (999 if seed_only else MAX_PER_MONTH - added_m)
     have = [s['song'] for s in pool['songs']] + [s['song'] for s in pool['rejected']]
-    cands = [{'song': a, 'artist': b, 'source': 'seed'} for a, b in SEEDS]
-    if not seed_only:
-        cands = propose(24, have, ask) + cands
-    cands = beauty_fit(cands, ask)
+    if cands_in:
+        with open(cands_in, encoding='utf-8') as f:
+            cands = json.load(f)
+    else:
+        cands = [{'song': a, 'artist': b, 'source': 'seed'} for a, b in SEEDS]
+        if not seed_only:
+            cands = propose(24, have, ask) + cands
+        cands = beauty_fit(cands, ask)
     seen, uniq = set(), []
     for c in cands:
         if MP.norm(c['song']) not in seen:
             seen.add(MP.norm(c['song']))
             uniq.append(c)
+    if cands_out:
+        with open(cands_out, 'w', encoding='utf-8') as f:
+            json.dump(uniq, f, indent=1, ensure_ascii=False)
+        log(f'{len(uniq)} candidates -> {cands_out}')
+        return {'candidates': len(uniq)}
     report, n_added = [], 0
     for c in uniq:
         if n_added >= cap:
@@ -493,7 +503,8 @@ def main(argv):
     elif cmd == 'seed':
         topup(seed_only=True, limit=int(argv[2]) if len(argv) > 2 else None)
     elif cmd == 'topup':
-        topup(dry='--dry-run' in argv)
+        opt = {k: argv[argv.index(f'--{k.replace("_", "-")}') + 1] for k in ('cands_out', 'cands_in') if f'--{k.replace("_", "-")}' in argv}
+        topup(dry='--dry-run' in argv, **opt)
     elif cmd == 'analyze':
         print(json.dumps(analyze(argv[2]), indent=1))
     elif cmd == 'pick':

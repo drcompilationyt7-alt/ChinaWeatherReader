@@ -783,15 +783,21 @@ def trending(search=yt_search):
     return [{**x, 'source': 'trending'} for x in parse_songs(txt)]
 
 
-def topup(dry=False, seed_only=False, limit=None, pool_path=None, search=yt_search, ask=llm_ask, analyze_fn=None, fetch_fn=None, trend_fn=None, channel_mean=None):
-    """Monthly: candidates (LLM + trending + seed) -> gates -> probation; retire losers; report to memory/sound-music-topup-YYYY-MM.json."""
+def topup(dry=False, seed_only=False, limit=None, pool_path=None, search=yt_search, ask=llm_ask, analyze_fn=None, fetch_fn=None, trend_fn=None, channel_mean=None,
+          cands_out=None, cands_in=None):
+    """Monthly: candidates (LLM + trending + seed) -> gates -> probation; retire losers; report to memory/sound-music-topup-YYYY-MM.json.
+    2026-11-27 split (GitHub cannot download from YouTube, API keys stay on GitHub): cands_out = write the candidate list and stop
+    (GitHub, LLM); cands_in = take the candidates from that file, no LLM (Kaggle: search, download, gates)."""
     pool = load_pool(pool_path)
     month = now().strftime('%Y-%m')
     added_this_month = sum(1 for s in pool['songs'] if (s.get('added') or '').startswith(month) and s.get('source') != 'seed')
     cap = limit if limit is not None else (999 if seed_only else MAX_PER_MONTH - added_this_month)
     have = [s['song'] for s in pool['songs']] + [s['song'] for s in pool['rejected']]
     cands = []
-    if seed_only:
+    if cands_in:
+        with open(cands_in, encoding='utf-8') as f:
+            cands = json.load(f)
+    elif seed_only:
         cands = [{'song': a, 'artist': b, 'source': 'seed'} for a, b in SEEDS]
     else:
         cands += propose(24, have, ask)
@@ -806,6 +812,11 @@ def topup(dry=False, seed_only=False, limit=None, pool_path=None, search=yt_sear
                 seen.add(norm(c['song']))
                 uniq.append(c)
         cands = uniq
+    if cands_out:
+        with open(cands_out, 'w', encoding='utf-8') as f:
+            json.dump(cands, f, indent=1, ensure_ascii=False)
+        log(f'{len(cands)} candidates -> {cands_out}')
+        return {'candidates': len(cands)}
     report, n_added = [], 0
     for c in cands:
         if n_added >= cap:
@@ -953,7 +964,8 @@ def main(argv):
         os.environ['MUSIC_AUDIO_RELEASE_OFF'] = '1'   # fetch from YouTube here (the PC), not from the release being filled
         print(json.dumps(push_audio()))
     elif cmd == 'topup':
-        topup(dry='--dry-run' in argv)
+        opt = {k: argv[argv.index(f'--{k.replace("_", "-")}') + 1] for k in ('cands_out', 'cands_in') if f'--{k.replace("_", "-")}' in argv}
+        topup(dry='--dry-run' in argv, **opt)
     elif cmd == 'analyze':
         a = analyze(argv[2])
         print(json.dumps(a, indent=1))
