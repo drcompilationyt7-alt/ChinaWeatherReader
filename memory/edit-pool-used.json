@@ -324,6 +324,18 @@
    "used_at": "2026-11-25T12:46:11Z",
    "video": "slowmo-summer_glow-short.mp4",
    "role": "short"
+  },
+  "ranking/clip/r_HATCWr__2Dc_5870": {
+   "used_at": "2026-11-28T11:00:54Z",
+   "video": "ranking_naruto_strongest.mp4"
+  },
+  "ranking/clip/r_wMb0WABzi8o_7890": {
+   "used_at": "2026-11-28T11:00:54Z",
+   "video": "ranking_naruto_strongest.mp4"
+  },
+  "ranking/clip/r_km-jpcx0xRM_2000": {
+   "used_at": "2026-11-28T11:00:54Z",
+   "video": "ranking_naruto_strongest.mp4"
   }
  },
  "moments": {},
@@ -881,11 +893,15 @@
   "l3xGSMayfgI",
   "njcOEOKNzk8",
   "e7opqhHiVcg",
-  "2owfmwfXB84"
+  "2owfmwfXB84",
+  "HATCWr__2Dc",
+  "wMb0WABzi8o",
+  "km-jpcx0xRM"
  ],
  "ranking_topics_recent": [
   "jjk_strongest",
-  "strongest_overall"
+  "strongest_overall",
+  "naruto_strongest"
  ],
  "ranking_lists": [
   {
@@ -905,6 +921,15 @@
     "RIMURU"
    ],
    "format": "top3"
+  },
+  {
+   "topic": "naruto_strongest",
+   "entries": [
+    "MADARA",
+    "SASUKE",
+    "NARUTO"
+   ],
+   "format": "open2"
   }
  ]
 }

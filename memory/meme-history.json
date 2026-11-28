@@ -3586,6 +3586,39 @@
     9.155,
     36.571
    ]
+  },
+  {
+   "videoId": "8dyjN3AcRAY",
+   "url": "https://www.youtube.com/watch?v=8dyjN3AcRAY",
+   "postedAt": "2026-11-28T11:00:54.930Z",
+   "publishAt": "2026-11-28T12:00:00.000Z",
+   "contentType": "ranking-edit",
+   "song": "naruto_strongest",
+   "theme": "anime",
+   "emoji": "🔥",
+   "title": "strongest naruto characters 🔥 #naruto",
+   "clipIds": [
+    "HATCWr__2Dc",
+    "wMb0WABzi8o",
+    "km-jpcx0xRM"
+   ],
+   "clipChannels": [
+    "@purgify.mp4",
+    "@Flobyedit",
+    "@Jemartob."
+   ],
+   "settings": {
+    "topic": "naruto_strongest",
+    "entries": [
+     "#5 MADARA",
+     "#4 SASUKE",
+     "#3 NARUTO"
+    ],
+    "pool": "ranking"
+   },
+   "onVideoTitle": null,
+   "meta": null,
+   "vibe": null
   }
  ]
 }
