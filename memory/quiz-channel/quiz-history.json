@@ -3664,6 +3664,47 @@
     "titleStyle": "keyword",
     "descHook": "op-comment-score"
    }
+  },
+  {
+   "videoId": "wFJ2vtC9ie0",
+   "url": "https://www.youtube.com/watch?v=wFJ2vtC9ie0",
+   "postedAt": "2026-11-28T10:43:39.313Z",
+   "publishAt": "2026-11-28T13:00:00.000Z",
+   "format": "emoji",
+   "theme": "kpop song",
+   "seed": 148252222,
+   "length": "quick",
+   "hookV2": true,
+   "aiLines": [
+    {
+     "slot": "reveal 1",
+     "used": "pool",
+     "line": "It's Boy With Luv!",
+     "template": null,
+     "sec": 1.18
+    },
+    {
+     "slot": "reveal 3",
+     "used": "pool",
+     "line": "It's God's Menu!",
+     "template": null,
+     "sec": 1.3
+    }
+   ],
+   "titleTemplate": "emoji-llm",
+   "title": "guess the kpop song from emojis quiz 🔥 #kpop",
+   "answers": [
+    "emoji:boy with luv (bts)",
+    "emoji:flower (jisoo)",
+    "emoji:god's menu (stray kids)"
+   ],
+   "meta": {
+    "contentType": "quiz",
+    "emojiSet": "op-hype-eyes",
+    "hashtagSet": "title-tag",
+    "titleStyle": "op-exact-search",
+    "descHook": "op-comment-score"
+   }
   }
  ]
 }
